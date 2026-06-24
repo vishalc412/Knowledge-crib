@@ -12,6 +12,8 @@ import {
   TypeScriptExtractor,
 } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
+import { runCluster } from './cluster/index.js';
+import type { ClusterStats } from './cluster/index.js';
 import { runLink } from './linker/index.js';
 import type { LinkStats } from './linker/index.js';
 import { runParse } from './parse.js';
@@ -37,6 +39,8 @@ export interface IndexOpts {
   buildOpts?: BuildOpts;
   /** link persist threshold (default 0.4). */
   linkThreshold?: number;
+  /** run structural clustering (Louvain) after the link phase; default true (M7). */
+  cluster?: boolean;
 }
 
 export interface IndexReport {
@@ -45,6 +49,7 @@ export interface IndexReport {
   resolve: ResolveStats;
   cfg: { annotated: number; skipped: number };
   link: LinkStats;
+  cluster: ClusterStats;
 }
 
 /** Full index of a repo through the deterministic linker, then (optional) index build. */
@@ -70,6 +75,7 @@ export async function indexRepo(
   const resolve = runResolve(soul, root, files, opts.resolvers); // Phase 3 (TS + PL/SQL)
   const cfg = runCfg(soul, root, files, opts.cfgPasses); // Phase 3d (M11 guard-chain annotation)
   const link = runLink(soul, root, opts.linkThreshold); // Phase 4
+  const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul); // Phase 4b (M7)
   // Best-effort VCS anchor (M6): stamp the current HEAD so `crib update` / `detect_changes` can diff
   // against it. Non-git repos silently skip (the stamp stays absent → update degrades to full index).
   try {
@@ -82,5 +88,5 @@ export async function indexRepo(
 
   if (opts.index) opts.index.buildFromSoul(soul, opts.buildOpts);
 
-  return { files: files.length, parse, resolve, cfg, link };
+  return { files: files.length, parse, resolve, cfg, link, cluster };
 }

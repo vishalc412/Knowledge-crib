@@ -18,6 +18,8 @@ import { buildDelta, fileScopedIds, pathFromId } from '@knowledge-crib/core';
 import type { IndexDelta, SoulStore } from '@knowledge-crib/core';
 import { ExtractorRegistry, MarkdownExtractor, TypeScriptExtractor } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
+import { runCluster } from './cluster/index.js';
+import type { ClusterStats } from './cluster/index.js';
 import { runLink } from './linker/index.js';
 import type { LinkStats } from './linker/index.js';
 import { runParse } from './parse.js';
@@ -36,6 +38,10 @@ export interface UpdateOpts {
   since?: string;
   /** extractors to register; defaults to TypeScript + Markdown. */
   extractors?: Extractor[];
+  /** re-run structural clustering after re-extraction; default true (M7). Clustering is a global,
+   *  deterministic, idempotent phase — re-running it keeps cluster nodes + member-of edges consistent
+   *  with the re-extracted symbols so a body-only edit produces no spurious cluster-edge delta. */
+  cluster?: boolean;
 }
 
 export interface UpdateReport {
@@ -46,6 +52,7 @@ export interface UpdateReport {
   parse: ParseStats;
   resolve: ResolveStats;
   link: LinkStats;
+  cluster: ClusterStats;
 }
 
 export interface UpdateNoopReport {
@@ -129,9 +136,23 @@ export async function updateRepo(
   const scopeDocFiles = scopeMetas.filter((m) => m.lang === 'markdown').map((m) => m.path);
   const link = runLink(soul, root, opts.linkThreshold, scopeDocFiles);
 
+  // Re-cluster (M7): clustering is global + idempotent, so re-running it re-emits the member-of edges
+  // for symbols in the changed files — preventing a body-only edit from silently dropping a cluster
+  // edge into `delta.removed`. `before` captured these ids pre-removal; re-emission makes after==before.
+  const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul);
+
   soul.setVcsHead(head);
   soul.commit(opts.now);
 
   const delta = buildDelta(soul, before, scope);
-  return { delta, changedPaths, scopeFiles: [...scope].sort(), head, parse, resolve, link };
+  return {
+    delta,
+    changedPaths,
+    scopeFiles: [...scope].sort(),
+    head,
+    parse,
+    resolve,
+    link,
+    cluster,
+  };
 }
