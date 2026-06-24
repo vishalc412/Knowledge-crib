@@ -17,6 +17,7 @@ import type { FileMeta } from '@knowledge-crib/parsers';
 import { edgeId } from '@knowledge-crib/soul-schema';
 import type { Edge, Rel } from '@knowledge-crib/soul-schema';
 import ts from 'typescript';
+import type { ResolveContext, Resolver } from './resolver-registry.js';
 import type { SymbolTable } from './symbol-table.js';
 
 const TS_EXTS = ['.ts', '.tsx', '.mts', '.cts'];
@@ -34,6 +35,12 @@ export interface ResolveStats {
   implements: number;
   /** references seen that did not resolve to an indexed symbol (dropped). */
   dropped: number;
+  /** SQL resolver (M10) contributes reads/writes here; other resolvers may add more. */
+  reads?: number;
+  writes?: number;
+  // NOTE: optional named fields above are `number`, matching the index signature. Other resolvers
+  // add arbitrary counters (e.g. executes/guardedBy) through the index without a named field.
+  [k: string]: number | undefined;
 }
 
 export interface ResolveResult {
@@ -200,5 +207,19 @@ function safeRead(abs: string): string | undefined {
     return readFileSync(abs, 'utf8');
   } catch {
     return undefined;
+  }
+}
+
+/**
+ * TypeScriptResolver — the {@link Resolver} adapter around {@link resolveTypeScript}. No behavioral
+ * change; this is the P0a dispatch shape so the pipeline registers resolvers append-only.
+ */
+export class TypeScriptResolver implements Resolver {
+  name = 'ts-resolver';
+  supports(file: FileMeta): boolean {
+    return TS_EXTS.some((e) => file.path.endsWith(e));
+  }
+  resolve(ctx: ResolveContext): { edges: Edge[]; stats: ResolveStats } {
+    return resolveTypeScript(ctx.table, ctx.root, ctx.files);
   }
 }
