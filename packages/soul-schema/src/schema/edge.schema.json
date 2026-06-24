@@ -34,8 +34,10 @@
     "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
     "evidence": { "type": "object" },
     "guard": { "type": "string" },
-    "cfgPath": { "type": "string" },
+    "cfgPath": { "type": "array", "items": { "type": "string" } },
     "branch": { "type": "string" },
+    "inLoop": { "type": "boolean" },
+    "inException": { "type": "boolean" },
     "meta": { "type": "object" }
   },
   "additionalProperties": true

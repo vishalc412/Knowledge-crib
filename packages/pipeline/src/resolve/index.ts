@@ -1,13 +1,17 @@
 import type { SoulStore } from '@knowledge-crib/core';
 /**
  * Phase 3 — resolve. Builds the global symbol table from the soul, dispatches the per-language
- * resolvers (P0a registry), and writes the cross-file EXTRACTED edges back to the soul.
+ * resolvers (P0a registry), and writes the cross-file EXTRACTED edges back to the soul. Then the
+ * M11 CFG pass (Phase 3d) annotates the `executes`/`calls` edges with their guard chain.
  *
- * Defaults: TypeScript + PL/SQL (M10). Other languages (M8) register append-only through the
- * {@link ResolverRegistry} passed via `IndexOpts.resolvers`. A reference that does not resolve to
+ * Defaults: TypeScript + PL/SQL (M10 resolvers; M11 CFG pass). Other languages (M8) register
+ * append-only through the registries passed via `IndexOpts`. A reference that does not resolve to
  * an indexed node is dropped, never guessed.
  */
 import type { FileMeta } from '@knowledge-crib/parsers';
+import type { CfgPass } from './dispatch.js';
+import { CfgPassRegistry } from './dispatch.js';
+import { PlSqlCfgPass } from './plsql-cfg.js';
 import { ResolverRegistry } from './resolver-registry.js';
 import type { Resolver } from './resolver-registry.js';
 import { SqlResolver } from './sql-resolver.js';
@@ -26,10 +30,22 @@ export type {
   ResolveContext,
   ResolveResult as ResolverResult,
 } from './resolver-registry.js';
+export { CfgPassRegistry } from './dispatch.js';
+export type { CfgPass, CfgContext, CfgStats } from './dispatch.js';
+export { PlSqlCfgPass } from './plsql-cfg.js';
+export { segmentBlock } from '../cfg/basic-block.js';
+export type { BasicBlock } from '../cfg/basic-block.js';
+export { pathCondition } from '../cfg/guard-chain.js';
+export type { GuardFrame, PathCondition } from '../cfg/guard-chain.js';
 
 /** Default resolvers when the caller doesn't override: TypeScript + PL/SQL. */
 export function defaultResolvers(): Resolver[] {
   return [new TypeScriptResolver(), new SqlResolver()];
+}
+
+/** Default CFG passes when the caller doesn't override: PL/SQL (M11). */
+export function defaultCfgPasses(): CfgPass[] {
+  return [new PlSqlCfgPass()];
 }
 
 /** Phase 3: resolve cross-file edges and persist them. Returns aggregate stats (merged per resolver). */
@@ -55,4 +71,29 @@ export function runResolve(
   }
   if (allEdges.length > 0) soul.putEdges(allEdges);
   return agg;
+}
+
+/**
+ * Phase 3d (M11): annotate the guard chain onto existing `executes`/`calls` edges. Runs AFTER
+ * {@link runResolve} so the cross-file `calls` edges it annotates already exist. Returns aggregate
+ * stats (merged per pass).
+ */
+export function runCfg(
+  soul: SoulStore,
+  root: string,
+  files: FileMeta[],
+  passes?: CfgPass[],
+): { annotated: number; skipped: number } {
+  const registry = new CfgPassRegistry();
+  for (const p of passes ?? defaultCfgPasses()) registry.register(p);
+  let annotated = 0;
+  let skipped = 0;
+  for (const pass of registry.all()) {
+    const supported = files.filter((f) => pass.supports(f));
+    if (supported.length === 0) continue;
+    const stats = pass.run({ soul, root, files: supported });
+    annotated += stats.annotated ?? 0;
+    skipped += stats.skipped ?? 0;
+  }
+  return { annotated, skipped };
 }

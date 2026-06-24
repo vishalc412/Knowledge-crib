@@ -20,6 +20,11 @@ export type {
   Stmt,
   SqlStmt,
   IfStmt,
+  IfBranch,
   LoopStmt,
+  CallStmt,
+  AssignStmt,
+  PlainStmt,
+  AstSpan,
   CallSite,
 } from './plsql/ast.js';

@@ -86,13 +86,17 @@ export interface Edge {
   confidence: number;
   evidence?: Evidence;
 
-  // --- migration metadata (deep-extraction): the rule's guard chain ---
-  /** guard predicate reaching this edge's action */
+  // --- migration metadata (deep-extraction): the rule's guard chain (M11 CFG pass) ---
+  /** guard predicate reaching this edge's action (innermost condition node id on the path) */
   guard?: string;
-  /** path through the CFG from procedure entry */
-  cfgPath?: string;
-  /** branch label (e.g. "THEN"/"ELSE"/"CASE n") */
+  /** path through the CFG from procedure entry — the chain of condition node ids, outer→inner */
+  cfgPath?: string[];
+  /** branch label of the innermost IF branch (e.g. "THEN"/"ELSIF"/"ELSE"); undefined for loops */
   branch?: string;
+  /** true if the edge's action sits inside a loop body */
+  inLoop?: boolean;
+  /** true if the edge's action sits inside an exception handler */
+  inException?: boolean;
 
   /** extensible; unknown keys preserved on read→write */
   meta?: Record<string, unknown>;
@@ -148,8 +152,19 @@ export interface Manifest {
 
 /** Current format + schema versions. */
 export const CRIB_FORMAT_VERSION = '1.0';
-export const SCHEMA_VERSION = '1.0';
+/**
+ * Schema version. 1.1 (M11) widens `Edge.cfgPath` from `string` to `string[]` and adds
+ * `inLoop`/`inException`. A soul written at 1.0 (no `cfgPath` on its edges) still loads — the
+ * absent field stays `undefined` (no widening) — see {@link SUPPORTED_SCHEMA_VERSIONS}.
+ */
+export const SCHEMA_VERSION = '1.1';
 export const TOOL_NAME = 'knowledge-crib';
+
+/**
+ * Schema versions the loader will hydrate. A 1.0 soul (pre-M11) loads as-is; its edges have no
+ * `cfgPath` and that is preserved on re-write (no widening). Unknown versions → load() refuses.
+ */
+export const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1'] as const;
 
 /** Default chunking knobs (per spec storage §6 / C4). */
 export const DEFAULT_CHUNKING: ManifestChunking = {

@@ -20,7 +20,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { VENDORED_SCHEMAS } from '@knowledge-crib/soul-schema';
+import { SUPPORTED_SCHEMA_VERSIONS, VENDORED_SCHEMAS } from '@knowledge-crib/soul-schema';
 import type { Edge, Manifest, Node, NodeKind, Rel } from '@knowledge-crib/soul-schema';
 import { resolveEdgeConflict } from './conflict-rule.js';
 import { newManifest } from './manifest.js';
@@ -33,6 +33,19 @@ const CLUSTERS_FILE = join('clusters', 'clusters.jsonl');
 export interface SoulStoreOpts {
   /** Manifest to seed a fresh soul; ignored if a manifest already exists on disk. */
   manifest?: Manifest;
+}
+
+/**
+ * A guard-chain patch for {@link SoulStore.annotateEdges}. `id` selects an existing edge; the
+ * remaining fields are the M11 CFG annotation. Only fields present (≠ `undefined`) are written.
+ */
+export interface EdgeAnnotation {
+  id: string;
+  guard?: string;
+  cfgPath?: string[];
+  branch?: string;
+  inLoop?: boolean;
+  inException?: boolean;
 }
 
 export class SoulStore {
@@ -61,6 +74,15 @@ export class SoulStore {
     const manifestPath = join(this.cribDir, MANIFEST_FILE);
     if (existsSync(manifestPath)) {
       this.manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as Manifest;
+      // Loader gate (M11): refuse a soul whose schemaVersion we don't know how to read. A 1.0 soul
+      // (pre-M11, no Edge.cfgPath) is accepted as-is — its absent cfgPath stays `undefined` (no
+      // widening) and is preserved verbatim on the next commit.
+      const v = this.manifest.schemaVersion;
+      if (!SUPPORTED_SCHEMA_VERSIONS.includes(v as (typeof SUPPORTED_SCHEMA_VERSIONS)[number])) {
+        throw new Error(
+          `unsupported soul schemaVersion "${v}"; supported: ${SUPPORTED_SCHEMA_VERSIONS.join(', ')}`,
+        );
+      }
     }
     this.nodes.clear();
     this.edges.clear();
@@ -89,6 +111,43 @@ export class SoulStore {
       const winner = existing ? resolveEdgeConflict(existing, edge) : edge;
       this.edges.set(edge.id, winner);
       this.dirtyEdgeShards.add(shardOf(shardKeyForEdge(winner), this.shardDigits));
+    }
+  }
+
+  /**
+   * Annotate-existing (M11 CFG pass): overwrite the guard-chain fields on edges already in the
+   * soul. This is the overwrite primitive the CFG pass uses to stamp `guard`/`cfgPath`/`branch`/
+   * `inLoop`/`inException` onto `executes`/`calls` edges the extractor + resolver already emitted.
+   * A field absent from an update is left untouched; an update whose edge id isn't present is
+   * skipped (never invents an edge). The edge keeps its own provenance/method/confidence/evidence
+   * — only the guard-chain fields are merged. Dirty shards are rewritten on the next `commit()`.
+   */
+  annotateEdges(updates: EdgeAnnotation[]): void {
+    for (const u of updates) {
+      const edge = this.edges.get(u.id);
+      if (!edge) continue;
+      let changed = false;
+      if (u.guard !== undefined) {
+        edge.guard = u.guard;
+        changed = true;
+      }
+      if (u.cfgPath !== undefined) {
+        edge.cfgPath = u.cfgPath;
+        changed = true;
+      }
+      if (u.branch !== undefined) {
+        edge.branch = u.branch;
+        changed = true;
+      }
+      if (u.inLoop !== undefined) {
+        edge.inLoop = u.inLoop;
+        changed = true;
+      }
+      if (u.inException !== undefined) {
+        edge.inException = u.inException;
+        changed = true;
+      }
+      if (changed) this.dirtyEdgeShards.add(shardOf(shardKeyForEdge(edge), this.shardDigits));
     }
   }
 

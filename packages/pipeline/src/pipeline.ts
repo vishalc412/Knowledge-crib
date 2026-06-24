@@ -16,9 +16,10 @@ import { runLink } from './linker/index.js';
 import type { LinkStats } from './linker/index.js';
 import { runParse } from './parse.js';
 import type { ParseStats } from './parse.js';
+import { runCfg } from './resolve/index.js';
 import { runResolve } from './resolve/index.js';
 import type { ResolveStats } from './resolve/index.js';
-import type { Resolver } from './resolve/index.js';
+import type { CfgPass, Resolver } from './resolve/index.js';
 import { discoverFiles, runStructure } from './structure.js';
 import { currentHead } from './vcs.js';
 
@@ -27,6 +28,8 @@ export interface IndexOpts {
   extractors?: Extractor[];
   /** cross-file resolvers to register; defaults to TypeScript + PL/SQL (M10). */
   resolvers?: Resolver[];
+  /** CFG guard-chain passes to register; defaults to PL/SQL (M11). */
+  cfgPasses?: CfgPass[];
   /** commit timestamp for deterministic output. */
   now?: string;
   /** build the derived index after committing the soul. */
@@ -40,6 +43,7 @@ export interface IndexReport {
   files: number;
   parse: ParseStats;
   resolve: ResolveStats;
+  cfg: { annotated: number; skipped: number };
   link: LinkStats;
 }
 
@@ -64,6 +68,7 @@ export async function indexRepo(
   runStructure(soul, root, files); // Phase 1
   const parse = await runParse(soul, registry, root, files); // Phase 2 + 3b (Markdown extractor)
   const resolve = runResolve(soul, root, files, opts.resolvers); // Phase 3 (TS + PL/SQL)
+  const cfg = runCfg(soul, root, files, opts.cfgPasses); // Phase 3d (M11 guard-chain annotation)
   const link = runLink(soul, root, opts.linkThreshold); // Phase 4
   // Best-effort VCS anchor (M6): stamp the current HEAD so `crib update` / `detect_changes` can diff
   // against it. Non-git repos silently skip (the stamp stays absent → update degrades to full index).
@@ -77,5 +82,5 @@ export async function indexRepo(
 
   if (opts.index) opts.index.buildFromSoul(soul, opts.buildOpts);
 
-  return { files: files.length, parse, resolve, link };
+  return { files: files.length, parse, resolve, cfg, link };
 }
