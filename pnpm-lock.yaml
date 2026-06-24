@@ -43,6 +43,35 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@20.19.43)
 
+  packages/parsers:
+    dependencies:
+      '@knowledge-crib/soul-schema':
+        specifier: workspace:*
+        version: link:../soul-schema
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+    devDependencies:
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@20.19.43)
+
+  packages/pipeline:
+    dependencies:
+      '@knowledge-crib/core':
+        specifier: workspace:*
+        version: link:../core
+      '@knowledge-crib/parsers':
+        specifier: workspace:*
+        version: link:../parsers
+      '@knowledge-crib/soul-schema':
+        specifier: workspace:*
+        version: link:../soul-schema
+    devDependencies:
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@20.19.43)
+
   packages/soul-schema:
     dependencies:
       '@noble/hashes':

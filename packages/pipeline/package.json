@@ -1,0 +1,29 @@
+{
+  "name": "@knowledge-crib/pipeline",
+  "version": "0.0.0",
+  "description": "The phased pipeline: structure → parse → resolve → doc-extract → link → cluster → index.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --reporter=dot"
+  },
+  "dependencies": {
+    "@knowledge-crib/soul-schema": "workspace:*",
+    "@knowledge-crib/core": "workspace:*",
+    "@knowledge-crib/parsers": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.0"
+  }
+}
