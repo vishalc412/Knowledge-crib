@@ -1,0 +1,35 @@
+Knowledge-crib
+Copyright 2026 Knowledge-crib contributors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+This product includes software developed by the Knowledge-crib project
+(https://github.com/knowledge-crib).
+
+ACKNOWLEDGEMENTS — DESIGN INSPIRATION ONLY
+==========================================
+Knowledge-crib is a greenfield, independent work. No source code from the
+following projects is included or derived from; they served as design
+inspiration only:
+
+- GitNexus (https://github.com/abhigyanpatwari/GitNexus)
+  Deep code analysis: impact analysis, call chains, type resolution.
+  Licensed by its authors (PolyForm-Noncommercial). No code reused.
+
+- Graphify (https://github.com/safishamsi/graphify)
+  Broad multimodal indexing: any input to a queryable graph.
+  MIT licensed. No code reused; ideas studied under its permissive terms.
+
+THIRD-PARTY DEPENDENCIES (runtime, used under their respective licenses):
+- @noble/hashes (MIT) — pure-JS BLAKE3 hashing (no native bindings).
+- better-sqlite3 (MIT) — derived IndexStore backend (sqlite + FTS5).
+- sqlite-vec (MIT) — optional vector search extension.
+- @modelcontextprotocol/server (MIT) — MCP server SDK.
+- web-tree-sitter (MIT) — WASM parser bindings.
+
+Tree-sitter grammar .wasm files are vendored under packages/parsers/grammars/
+with their upstream permissive-license notices retained.
