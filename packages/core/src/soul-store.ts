@@ -150,6 +150,16 @@ export class SoulStore {
     return this.manifest;
   }
 
+  /**
+   * Stamp the VCS anchor: the git sha an incremental update is anchored to (M6). Sets both
+   * `repo.vcsHead` and `stats.incrementalSince` so the next `crib update` / `detect_changes` can diff
+   * against it. Persisted on the next `commit()`.
+   */
+  setVcsHead(sha: string): void {
+    this.manifest.repo = { ...this.manifest.repo, vcsHead: sha };
+    this.manifest.stats = { ...this.manifest.stats, incrementalSince: sha };
+  }
+
   // ---------------------------------------------------------------------------
   // internals
   // ---------------------------------------------------------------------------

@@ -37,3 +37,18 @@ export function buildIndex(rt: Runtime): IndexStore {
   index.buildFromSoul(rt.soul, { withEmbeddings: manifest.capabilities.embeddings });
   return index;
 }
+
+/**
+ * Open the derived IndexStore at the manifest's declared path WITHOUT rebuilding from the soul (M6).
+ * Used by `crib update`, which mutates the soul then applies an `IndexDelta` to the existing index.
+ * Throws if no index exists yet (the caller should run `crib index` first).
+ */
+export function openIndexOnly(rt: Runtime): IndexStore {
+  const manifest = rt.soul.getManifest();
+  const rel = manifest.stores.index.path;
+  const path = isAbsolute(rel) ? rel : resolve(rt.repoRoot, rel);
+  if (!existsSync(path)) {
+    throw new Error('index not built — run `crib index` first');
+  }
+  return openIndex(manifest.stores.index.backend, { path });
+}

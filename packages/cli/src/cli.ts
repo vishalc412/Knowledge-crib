@@ -2,14 +2,17 @@
 /**
  * `crib` — the Knowledge-crib CLI. Wraps the pipeline + MCP server.
  *
- * Commands: index | status | query | serve. Exit codes (cli spec): 0 ok · 1 error · 2 bad args ·
- * 3 not indexed.
+ * Commands: index | status | query | serve | update | reindex | merge-driver | install-hooks.
+ * Exit codes (cli spec): 0 ok · 1 error · 2 bad args · 3 not indexed.
  */
 import { resolve } from 'node:path';
 import { SoulStore, newManifest } from '@knowledge-crib/core';
+import type { IndexStore } from '@knowledge-crib/core';
 import { Verbs, serveStdio } from '@knowledge-crib/mcp';
-import { indexRepo } from '@knowledge-crib/pipeline';
-import { buildIndex, isIndexed, openSoul } from './runtime.js';
+import type { VcsAdapter } from '@knowledge-crib/mcp';
+import { changedFilesSince, currentHead, indexRepo, updateRepo } from '@knowledge-crib/pipeline';
+import { installHooks, mergeDriverFiles } from './hooks.js';
+import { buildIndex, isIndexed, openIndexOnly, openSoul } from './runtime.js';
 
 const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3 } as const;
 
@@ -24,6 +27,14 @@ async function main(argv: string[]): Promise<number> {
       return cmdQuery(rest);
     case 'serve':
       return cmdServe(rest);
+    case 'update':
+      return cmdUpdate(rest);
+    case 'reindex':
+      return cmdReindex(rest);
+    case 'merge-driver':
+      return cmdMergeDriver(rest);
+    case 'install-hooks':
+      return cmdInstallHooks(rest);
     case undefined:
     case '-h':
     case '--help':
@@ -33,6 +44,16 @@ async function main(argv: string[]): Promise<number> {
       process.stderr.write(`unknown command: ${cmd}\n`);
       printHelp();
       return EXIT.BAD_ARGS;
+  }
+}
+
+/** Real VCS adapter backed by the pipeline's git helpers; injected into the MCP verbs for serve. */
+class CliVcsAdapter implements VcsAdapter {
+  currentHead(root: string): string {
+    return currentHead(root);
+  }
+  changedFilesSince(root: string, since: string): string[] {
+    return changedFilesSince(root, since);
   }
 }
 
@@ -60,7 +81,7 @@ async function cmdStatus(args: string[]): Promise<number> {
   }
   const rt = openSoul(repoRoot);
   const index = buildIndex(rt);
-  const verbs = new Verbs({ soul: rt.soul, index, repoRoot });
+  const verbs = new Verbs({ soul: rt.soul, index, repoRoot, vcs: new CliVcsAdapter() });
   process.stdout.write(`${JSON.stringify(verbs.status(), null, 2)}\n`);
   index.close();
   return EXIT.OK;
@@ -94,10 +115,93 @@ async function cmdServe(args: string[]): Promise<number> {
   }
   const rt = openSoul(repoRoot);
   const index = buildIndex(rt);
-  const verbs = new Verbs({ soul: rt.soul, index, repoRoot });
+  const verbs = new Verbs({ soul: rt.soul, index, repoRoot, vcs: new CliVcsAdapter() });
   // stdout is the MCP transport; logs go to stderr only.
   process.stderr.write('knowledge-crib MCP server on stdio\n');
   await serveStdio(verbs);
+  return EXIT.OK;
+}
+
+async function cmdUpdate(args: string[]): Promise<number> {
+  const repoRoot = resolve(args[0] && !args[0].startsWith('-') ? args[0] : '.');
+  const sinceIdx = args.indexOf('--since');
+  const since = sinceIdx >= 0 ? args[sinceIdx + 1] : undefined;
+  if (!isIndexed(repoRoot)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(repoRoot);
+  const started = Date.now();
+  const result = await updateRepo(rt.soul, repoRoot, since ? { since } : {});
+  if (result === null) {
+    // No anchor / non-git → degrade to a full index.
+    process.stderr.write('no incremental anchor — falling back to full index\n');
+    return cmdReindex(args);
+  }
+  if ('noop' in result) {
+    process.stdout.write(
+      `up to date (head ${result.head.slice(0, 12)}) in ${Date.now() - started}ms\n`,
+    );
+    return EXIT.OK;
+  }
+  // Apply the delta to the existing derived index; if none exists yet, build it fresh from the
+  // (already-committed) updated soul — a delta applied to an empty index would be meaningless.
+  let index: IndexStore;
+  try {
+    index = openIndexOnly(rt);
+    index.applyDelta(result.delta);
+  } catch {
+    index = buildIndex(rt); // full buildFromSoul from the just-updated soul
+  }
+  index.close();
+  const d = result.delta;
+  process.stdout.write(
+    `updated ${result.changedPaths.length} file(s) [scope ${result.scopeFiles.length}] → ` +
+      `+${d.nodes.length} nodes +${d.edges.length} edges −${d.removed.length} in ${Date.now() - started}ms\n` +
+      `changed: ${result.changedPaths.join(', ')}\n`,
+  );
+  return EXIT.OK;
+}
+
+async function cmdReindex(args: string[]): Promise<number> {
+  const repoRoot = resolve(args[0] && !args[0].startsWith('-') ? args[0] : '.');
+  const withEmbeddings = args.includes('--with-embeddings');
+  const cribDir = resolve(repoRoot, '.crib');
+  const soul = new SoulStore(cribDir, { manifest: newManifest({ root: '.' }) });
+  soul.load();
+  const started = Date.now();
+  const report = await indexRepo(soul, repoRoot, { buildOpts: { withEmbeddings } });
+  const stats = soul.getManifest().stats;
+  process.stdout.write(
+    `reindexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
+      `(${report.link.describes} describes, ${report.link.references} references) in ${Date.now() - started}ms\n`,
+  );
+  return EXIT.OK;
+}
+
+/** `crib merge-driver %O %A %B %P` — git custom merge driver for one `.crib` JSONL chunk. */
+function cmdMergeDriver(args: string[]): number {
+  // git passes: %O ancestor  %A current/ours (output)  %B other/theirs  %P pathname
+  const [basePath, oursPath, theirsPath] = args;
+  if (!basePath || !oursPath || !theirsPath) {
+    process.stderr.write('usage: crib merge-driver %O %A %B %P\n');
+    return EXIT.BAD_ARGS;
+  }
+  const { warnings, conflicts } = mergeDriverFiles(basePath, oursPath, theirsPath);
+  for (const w of warnings) process.stderr.write(`merge warning: ${w}\n`);
+  // 0 = clean merge (incl. auto-resolved edges); 1 = unresolvable node collision needing human review.
+  return conflicts ? EXIT.ERROR : EXIT.OK;
+}
+
+function cmdInstallHooks(args: string[]): number {
+  const repoRoot = resolve(args[0] && !args[0].startsWith('-') ? args[0] : '.');
+  const res = installHooks(repoRoot);
+  process.stdout.write(
+    `installed kcrib hooks at ${res.gitDir}\n` +
+      `  post-commit → ${res.postCommitPath}\n` +
+      `  .gitattributes → ${res.gitattributesPath} (.crib/** merge=kcrib)\n` +
+      `  merge.kcrib.driver = ${res.driverConfig}\n`,
+  );
   return EXIT.OK;
 }
 
@@ -111,6 +215,10 @@ function printHelp(): void {
       '  crib status [path]                       health + stats',
       '  crib query <text>                        BM25 search over code + docs',
       '  crib serve [path]                        run the MCP server on stdio',
+      '  crib update [path] [--since <sha>]      incremental re-extract since the VCS anchor',
+      '  crib reindex [path]                     full re-index (alias for `crib index`)',
+      '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',
+      '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',
       '',
     ].join('\n'),
   );

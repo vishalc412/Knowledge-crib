@@ -1,3 +1,4 @@
+import { pathFromId } from '@knowledge-crib/core';
 import type { Dir, IndexStore, SoulStore } from '@knowledge-crib/core';
 /**
  * The MCP verbs as pure functions over the soul + index. These are the product surface; the stdio
@@ -9,10 +10,21 @@ import type { Edge, Node, NodeKind } from '@knowledge-crib/soul-schema';
 import { rehydrate } from './snippet.js';
 import { DEFAULT_DOC_LIMIT, DEFAULT_LIMIT, bound } from './token-budget.js';
 
+/**
+ * Injected VCS adapter (M6) so `detect_changes` can read the git anchor + changed files without the MCP
+ * package depending on the pipeline. The CLI supplies a real adapter; tests inject a stub. Absent ⇒ the
+ * verb reports "not configured" rather than guessing.
+ */
+export interface VcsAdapter {
+  currentHead(root: string): string;
+  changedFilesSince(root: string, since: string): string[];
+}
+
 export interface VerbDeps {
   soul: SoulStore;
   index: IndexStore;
   repoRoot: string;
+  vcs?: VcsAdapter;
 }
 
 /** Direction as the MCP api expresses it. */
@@ -174,15 +186,65 @@ export class Verbs {
     return { path: r.path, edges: r.edges.map(publicEdge), found: r.found };
   }
 
-  detectChanges(_args: { since?: string }): Record<string, unknown> {
-    // Dry-run delta report. The git-diff-driven computeDelta lands at M6; until then this verb is
-    // registered but reports no delta rather than guessing.
-    return {
-      changedSymbols: [],
-      newEdges: [],
-      removedEdges: [],
-      note: 'detect_changes completes at M6 (computeDelta)',
-    };
+  /**
+   * `detect_changes` — a READ-ONLY dry run (M6): reports the nodes whose files changed since the VCS
+   * anchor and the edges that touch those files (projected removals), WITHOUT mutating the soul or the
+   * index. Never commits. Degrades gracefully when no adapter / no anchor / non-git.
+   */
+  detectChanges(args: { since?: string }): Record<string, unknown> {
+    const vcs = this.deps.vcs;
+    const manifest = this.deps.soul.getManifest();
+    const since = args.since ?? manifest.stats.incrementalSince ?? manifest.repo.vcsHead;
+    if (!vcs) {
+      return {
+        changedSymbols: [],
+        newEdges: [],
+        removedEdges: [],
+        note: 'vcs adapter not configured',
+      };
+    }
+    let head: string;
+    try {
+      head = vcs.currentHead(this.deps.repoRoot);
+    } catch {
+      return { changedSymbols: [], newEdges: [], removedEdges: [], note: 'not a git work tree' };
+    }
+    if (!since) {
+      return {
+        changedSymbols: [],
+        newEdges: [],
+        removedEdges: [],
+        head,
+        note: 'no incremental anchor — run `crib index` to establish one',
+      };
+    }
+    let changedPaths: string[];
+    try {
+      changedPaths = vcs.changedFilesSince(this.deps.repoRoot, since);
+    } catch {
+      return {
+        changedSymbols: [],
+        newEdges: [],
+        removedEdges: [],
+        head,
+        note: 'not a git work tree',
+      };
+    }
+    const changed = new Set(changedPaths);
+    const changedSymbols: string[] = [];
+    const removedEdges: Array<{ id: string; src: string; dst: string; rel: string }> = [];
+    for (const node of this.deps.soul.iterate()) {
+      const p = node.file ?? pathFromId(node.id);
+      if (p !== undefined && changed.has(p)) changedSymbols.push(node.id);
+    }
+    for (const edge of this.deps.soul.iterateEdges()) {
+      const s = pathFromId(edge.src);
+      const d = pathFromId(edge.dst);
+      if ((s !== undefined && changed.has(s)) || (d !== undefined && changed.has(d))) {
+        removedEdges.push({ id: edge.id, src: edge.src, dst: edge.dst, rel: edge.rel });
+      }
+    }
+    return { since, head, changedPaths, changedSymbols, removedEdges };
   }
 
   // ---------------------------------------------------------------------------

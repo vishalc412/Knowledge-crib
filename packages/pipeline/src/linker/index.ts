@@ -22,18 +22,32 @@ export interface LinkStats {
   references: number;
 }
 
-/** Phase 4: link doc-sections to symbols and persist the edges. Returns counts by rel. */
-export function runLink(soul: SoulStore, root: string, threshold?: number): LinkStats {
+/**
+ * Phase 4: link doc-sections to symbols and persist the edges. Returns counts by rel.
+ *
+ * `docFiles` (optional, M6) scopes the emit to a set of repo-relative doc paths while the InvertedIndex
+ * still spans the whole soul — so an incremental update re-links only changed/reverse-dep docs without
+ * disturbing the rest. Omitted → link every doc-section (full index).
+ */
+export function runLink(
+  soul: SoulStore,
+  root: string,
+  threshold?: number,
+  docFiles?: string[],
+): LinkStats {
   const index = new InvertedIndex(soul);
 
-  // group doc-section nodes by file
-  const docFiles = new Map<string, true>();
-  for (const node of soul.iterate('doc-section')) if (node.file) docFiles.set(node.file, true);
+  // group doc-section nodes by file (optionally restricted to `docFiles`)
+  const scope = docFiles ? new Set(docFiles) : undefined;
+  const docFilesInScope = new Map<string, true>();
+  for (const node of soul.iterate('doc-section')) {
+    if (node.file && (!scope || scope.has(node.file))) docFilesInScope.set(node.file, true);
+  }
 
   const edges: Edge[] = [];
   const stats: LinkStats = { describes: 0, references: 0 };
 
-  for (const docFile of docFiles.keys()) {
+  for (const docFile of docFilesInScope.keys()) {
     let text: string;
     try {
       text = readFileSync(join(root, docFile), 'utf8');

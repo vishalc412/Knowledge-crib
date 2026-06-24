@@ -66,6 +66,26 @@ export function runStructure(soul: SoulStore, root: string, files: FileMeta[]): 
   soul.putNodes(nodes);
 }
 
+/**
+ * Build FileMeta for a specific set of repo-relative paths (no full walk). Used by incremental update
+ * (M6) to re-extract only changed files + their reverse-dependency closure. Missing/deleted paths are
+ * skipped (stat fails) — the caller's `removeByFile` has already dropped their old nodes.
+ */
+export function metaForPaths(root: string, paths: string[]): FileMeta[] {
+  const out: FileMeta[] = [];
+  for (const p of paths) {
+    try {
+      const st = statSync(join(root, p));
+      if (st.isFile()) {
+        out.push({ path: p, lang: langForPath(p), bytes: st.size, mtime: st.mtimeMs });
+      }
+    } catch {
+      // deleted file → no meta; its old soul records are already removed
+    }
+  }
+  return out.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+}
+
 export function fileNode(root: string, file: FileMeta): Node {
   const content = safeRead(join(root, file.path));
   return {

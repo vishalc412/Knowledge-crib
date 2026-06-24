@@ -14,6 +14,7 @@ import type { ParseStats } from './parse.js';
 import { runResolve } from './resolve/index.js';
 import type { ResolveStats } from './resolve/index.js';
 import { discoverFiles, runStructure } from './structure.js';
+import { currentHead } from './vcs.js';
 
 export interface IndexOpts {
   /** extractors to register; defaults to TypeScript + Markdown. */
@@ -51,6 +52,14 @@ export async function indexRepo(
   const parse = await runParse(soul, registry, root, files); // Phase 2 + 3b (Markdown extractor)
   const resolve = runResolve(soul, root, files); // Phase 3
   const link = runLink(soul, root, opts.linkThreshold); // Phase 4
+  // Best-effort VCS anchor (M6): stamp the current HEAD so `crib update` / `detect_changes` can diff
+  // against it. Non-git repos silently skip (the stamp stays absent → update degrades to full index).
+  try {
+    const head = currentHead(root);
+    if (head) soul.setVcsHead(head);
+  } catch {
+    // not a git repo — leave the anchor unset
+  }
   soul.commit(opts.now);
 
   if (opts.index) opts.index.buildFromSoul(soul, opts.buildOpts);
