@@ -1,0 +1,30 @@
+{
+  "name": "@knowledge-crib/mcp",
+  "version": "0.0.0",
+  "description": "One MCP server (stdio) exposing token-bounded, provenance-tagged verbs over the soul + index.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --reporter=dot"
+  },
+  "dependencies": {
+    "@knowledge-crib/soul-schema": "workspace:*",
+    "@knowledge-crib/core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.0"
+  }
+}
