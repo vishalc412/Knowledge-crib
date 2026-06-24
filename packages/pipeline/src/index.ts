@@ -5,4 +5,5 @@ export * from './structure.js';
 export * from './parse.js';
 export * from './pipeline.js';
 export * from './resolve/index.js';
+export * from './linker/index.js';
 export { makeExtractCtx } from './extract-ctx.js';
