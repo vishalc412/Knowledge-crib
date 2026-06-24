@@ -1,0 +1,79 @@
+/**
+ * IndexStore — the derived, fast, swappable query layer.
+ *
+ * 100% derived from the SoulStore: delete it and `buildFromSoul` rebuilds it, so soul↔index drift
+ * is impossible. The pipeline and MCP depend ONLY on this interface — swapping the sqlite backend
+ * for Kùzu later touches nothing upstream (storage §2). The deterministic verbs
+ * (query/impact/neighbors/shortestPath) never need a network or vectors.
+ */
+import type { Edge, Node, NodeKind, Rel } from '@knowledge-crib/soul-schema';
+import type { SoulStore } from './soul-store.js';
+
+/** Traversal direction. `up` = follow incoming edges (dependents / blast-radius); `down` = outgoing (dependencies). */
+export type Dir = 'up' | 'down';
+
+export interface BuildOpts {
+  /** Build the optional vector table for semantic search. Default false (deterministic core needs none). */
+  withEmbeddings?: boolean;
+}
+
+/** An incremental change set applied to the index after the soul is updated. */
+export interface IndexDelta {
+  nodes: Node[];
+  edges: Edge[];
+  /** ids of nodes/edges removed from the soul. */
+  removed: string[];
+}
+
+export interface HybridQuery {
+  /** free-text query against names/signatures/headings (FTS5 BM25). */
+  text: string;
+  /** restrict to these node kinds. */
+  kinds?: NodeKind[];
+  limit?: number;
+}
+
+export interface Hit {
+  id: string;
+  kind: NodeKind;
+  /** lower BM25 score = better match; normalized so callers can sort ascending. */
+  score: number;
+  name?: string;
+  file?: string;
+}
+
+export interface ImpactResult {
+  root: string;
+  dir: Dir;
+  depth: number;
+  /** node ids in the blast radius, excluding the root. */
+  nodes: string[];
+  /** the edges traversed to reach them (carry provenance/confidence for trust). */
+  edges: Edge[];
+}
+
+export interface PathResult {
+  found: boolean;
+  /** node ids from `from` to `to` inclusive, or [] if not found. */
+  path: string[];
+  edges: Edge[];
+}
+
+export interface IndexCapabilities {
+  /** Cypher pass-through (Kùzu only; false for sqlite — reconciliation #9). */
+  cypher: boolean;
+  /** vector / ANN search available (requires withEmbeddings + a loaded vector extension). */
+  vector: boolean;
+}
+
+export interface IndexStore {
+  buildFromSoul(soul: SoulStore, opts?: BuildOpts): void;
+  applyDelta(changed: IndexDelta): void;
+  query(q: HybridQuery): Hit[];
+  impact(id: string, dir: Dir, depth?: number): ImpactResult;
+  neighbors(id: string, rel?: Rel, dir?: Dir): Edge[];
+  shortestPath(from: string, to: string, maxHops?: number): PathResult;
+  capabilities(): IndexCapabilities;
+  /** release the underlying handle (sqlite connection). */
+  close(): void;
+}
