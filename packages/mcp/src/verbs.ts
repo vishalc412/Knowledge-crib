@@ -1,5 +1,6 @@
 import { pathFromId } from '@knowledge-crib/core';
 import type { Dir, IndexStore, SoulStore } from '@knowledge-crib/core';
+import { decisionTable } from '@knowledge-crib/core';
 /**
  * The MCP verbs as pure functions over the soul + index. These are the product surface; the stdio
  * server is thin wiring on top. Every edge-bearing result carries {method, provenance, confidence,
@@ -245,6 +246,32 @@ export class Verbs {
       }
     }
     return { since, head, changedPaths, changedSymbols, removedEdges };
+  }
+
+  /**
+   * `extract_rules` (M12) — walk a procedure's guard-annotated CFG (the M11 `cfgPath`/`guard`/
+   * `branch` stamped on its `executes`/`calls` edges) and materialize the decision table / rule
+   * records. Pure over the soul. `procedure` is a node id or a (qualified|simple) name. Returns
+   * NOT_FOUND when no procedure matches.
+   */
+  extractRules(args: {
+    procedure: string;
+    includeTables?: boolean;
+  }): Record<string, unknown> {
+    const table = decisionTable(this.deps.soul, args.procedure, {
+      ...(args.includeTables ? { includeTables: true } : {}),
+    });
+    if (table.rules.length === 0 && !this.deps.soul.getNode(args.procedure)) {
+      // confirm the procedure exists at all before declaring emptiness a miss
+      const sym = [...this.deps.soul.iterate('symbol')].find(
+        (n) =>
+          (n.type === 'procedure' || n.type === 'function') &&
+          (n.qualifiedName?.toLowerCase() === args.procedure.toLowerCase() ||
+            n.name?.toLowerCase() === args.procedure.toLowerCase()),
+      );
+      if (!sym) return notFound(args.procedure);
+    }
+    return table as unknown as Record<string, unknown>;
   }
 
   // ---------------------------------------------------------------------------

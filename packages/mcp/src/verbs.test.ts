@@ -172,3 +172,74 @@ describe('verbs', () => {
     expect((verbs.describes({ id: issue.id, extractedOnly: true }) as any).docs).toHaveLength(0);
   });
 });
+
+describe('extract_rules verb (M12)', () => {
+  // Self-contained soul: a procedure with one guarded executes edge, to verify the verb delegates
+  // to decisionTable and surfaces the materialized path condition + NOT_FOUND for unknown procs.
+  let r2: string;
+  let s2: SoulStore;
+  let idx2: SqliteIndexStore;
+  let v2: Verbs;
+
+  beforeEach(() => {
+    r2 = mkdtempSync(join(tmpdir(), 'crib-rules-verb-'));
+    s2 = new SoulStore(join(r2, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    s2.load();
+    const proc = sym('src/p.plsql', 'pkg.doIt', 5, { type: 'procedure', lang: 'plsql' });
+    const stmt: Node = {
+      id: idFor({ kind: 'statement', file: 'src/p.plsql', line: 8 }),
+      kind: 'statement',
+      sqlKind: 'insert',
+      expr: 'INSERT INTO t VALUES (1)',
+      file: 'src/p.plsql',
+      span: { start: 8, end: 8 },
+      lang: 'plsql',
+      hash: contentHash('s'),
+    };
+    const cond: Node = {
+      id: idFor({ kind: 'condition', file: 'src/p.plsql', line: 7 }),
+      kind: 'condition',
+      expr: 'x > 0',
+      file: 'src/p.plsql',
+      span: { start: 7, end: 7 },
+      lang: 'plsql',
+      hash: contentHash('c'),
+    };
+    s2.putNodes([fileNode('src/p.plsql'), proc, stmt, cond]);
+    s2.putEdges([
+      edge(proc.id, stmt.id, 'executes', {
+        guard: cond.id,
+        cfgPath: [cond.id],
+        branch: 'THEN',
+        inLoop: false,
+        inException: false,
+      }),
+    ]);
+    s2.commit('2026-01-01T00:00:00.000Z');
+    idx2 = new SqliteIndexStore();
+    idx2.buildFromSoul(s2);
+    v2 = new Verbs({ soul: s2, index: idx2, repoRoot: r2 });
+  });
+  afterEach(() => {
+    idx2.close();
+    rmSync(r2, { recursive: true, force: true });
+  });
+
+  it('materializes the decision table for a procedure by qualified name', () => {
+    const res = v2.extractRules({ procedure: 'pkg.doIt' }) as any;
+    expect(res.rules).toHaveLength(1);
+    const rule = res.rules[0];
+    expect(rule.action.kind).toBe('executes');
+    expect(rule.action.sqlKind).toBe('insert');
+    expect(rule.guard).toBe(idFor({ kind: 'condition', file: 'src/p.plsql', line: 7 }));
+    expect(rule.branch).toBe('THEN');
+    expect(rule.conditions[0].polarity).toBe('THEN');
+  });
+
+  it('returns NOT_FOUND for an unknown procedure', () => {
+    const res = v2.extractRules({ procedure: 'no_such_proc' }) as any;
+    expect(res.error.code).toBe('NOT_FOUND');
+  });
+});

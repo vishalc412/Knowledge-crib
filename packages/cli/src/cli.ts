@@ -2,7 +2,7 @@
 /**
  * `crib` — the Knowledge-crib CLI. Wraps the pipeline + MCP server.
  *
- * Commands: index | status | query | serve | update | reindex | merge-driver | install-hooks.
+ * Commands: index | status | query | serve | update | reindex | merge-driver | install-hooks | export.
  * Exit codes (cli spec): 0 ok · 1 error · 2 bad args · 3 not indexed.
  */
 import { resolve } from 'node:path';
@@ -10,7 +10,13 @@ import { SoulStore, newManifest } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
 import { Verbs, serveStdio } from '@knowledge-crib/mcp';
 import type { VcsAdapter } from '@knowledge-crib/mcp';
-import { changedFilesSince, currentHead, indexRepo, updateRepo } from '@knowledge-crib/pipeline';
+import {
+  changedFilesSince,
+  currentHead,
+  indexRepo,
+  renderExport,
+  updateRepo,
+} from '@knowledge-crib/pipeline';
 import { installHooks, mergeDriverFiles } from './hooks.js';
 import { buildIndex, isIndexed, openIndexOnly, openSoul } from './runtime.js';
 
@@ -35,6 +41,8 @@ async function main(argv: string[]): Promise<number> {
       return cmdMergeDriver(rest);
     case 'install-hooks':
       return cmdInstallHooks(rest);
+    case 'export':
+      return cmdExport(rest);
     case undefined:
     case '-h':
     case '--help':
@@ -205,6 +213,54 @@ function cmdInstallHooks(args: string[]): number {
   return EXIT.OK;
 }
 
+/**
+ * `crib export [--format rules|mermaid|graph.json|report] [--procedure <id|name>]` — render the
+ * soul. `rules`/`mermaid` need `--procedure` (a node id or a procedure/function name); `graph.json`
+ * and `report` dump the whole soul (report optionally scoped to one procedure via --procedure).
+ */
+async function cmdExport(args: string[]): Promise<number> {
+  // Parse flags + their values out so flag values aren't mistaken for a positional path.
+  let format = 'report';
+  let procedure: string | undefined;
+  const positional: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i]!;
+    if (a === '--format') {
+      format = args[++i] ?? '';
+    } else if (a === '--procedure') {
+      procedure = args[++i];
+    } else if (!a.startsWith('-')) {
+      positional.push(a);
+    }
+  }
+  const repoRoot = resolve(positional[0] ?? '.');
+
+  const formats = ['rules', 'mermaid', 'graph.json', 'report'] as const;
+  type ExportFormat = (typeof formats)[number];
+  if (!(formats as readonly string[]).includes(format)) {
+    process.stderr.write(`unknown format: ${format || '(none)'}\nvalid: ${formats.join(', ')}\n`);
+    return EXIT.BAD_ARGS;
+  }
+  const fmt: ExportFormat = format as ExportFormat;
+  if (!isIndexed(repoRoot)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  if ((fmt === 'rules' || fmt === 'mermaid') && !procedure) {
+    process.stderr.write(`--procedure <id|name> is required for --format ${fmt}\n`);
+    return EXIT.BAD_ARGS;
+  }
+
+  const rt = openSoul(repoRoot);
+  try {
+    process.stdout.write(renderExport(rt.soul, fmt, procedure));
+  } catch (err) {
+    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+    return EXIT.ERROR;
+  }
+  return EXIT.OK;
+}
+
 function printHelp(): void {
   process.stdout.write(
     [
@@ -219,6 +275,7 @@ function printHelp(): void {
       '  crib reindex [path]                     full re-index (alias for `crib index`)',
       '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',
       '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',
+      '  crib export [--format F] [--procedure P] render soul: rules|mermaid|graph.json|report',
       '',
     ].join('\n'),
   );

@@ -9,3 +9,4 @@ export * from './linker/index.js';
 export * from './update.js';
 export * from './vcs.js';
 export { makeExtractCtx } from './extract-ctx.js';
+export * from './rules/index.js';

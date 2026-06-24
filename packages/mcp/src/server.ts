@@ -123,6 +123,19 @@ export function buildServer(verbs: Verbs, version = '0.0.0'): McpServer {
     async (a) => TOOL_RESULT(verbs.detectChanges(a)),
   );
 
+  server.registerTool(
+    'extract_rules',
+    {
+      description:
+        'Walk a procedure guard-annotated CFG (M11) and materialize its decision table / rule records.',
+      inputSchema: {
+        procedure: z.string(),
+        includeTables: z.boolean().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.extractRules(a)),
+  );
+
   return server;
 }
 

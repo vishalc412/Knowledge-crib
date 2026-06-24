@@ -13,3 +13,4 @@ export * from './index-store.js';
 export { SqliteIndexStore } from './index/sqlite-index.js';
 export { KuzuIndexStore } from './index/kuzu-index.js';
 export { openIndex } from './index/factory.js';
+export * from './rules/index.js';
