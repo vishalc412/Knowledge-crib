@@ -8,6 +8,8 @@ import { ExtractorRegistry, TypeScriptExtractor } from '@knowledge-crib/parsers'
 import type { Extractor } from '@knowledge-crib/parsers';
 import { runParse } from './parse.js';
 import type { ParseStats } from './parse.js';
+import { runResolve } from './resolve/index.js';
+import type { ResolveStats } from './resolve/index.js';
 import { discoverFiles, runStructure } from './structure.js';
 
 export interface IndexOpts {
@@ -23,9 +25,13 @@ export interface IndexOpts {
 export interface IndexReport {
   files: number;
   parse: ParseStats;
+  resolve: ResolveStats;
 }
 
-/** Full index of a repo: Phase 1 structure → Phase 2 parse → commit soul → (optional) build index. */
+/**
+ * Full index of a repo: Phase 1 structure → Phase 2 parse → Phase 3 resolve → commit soul →
+ * (optional) build index. Later phases (doc-extract, link, cluster) slot in before commit.
+ */
 export async function indexRepo(
   soul: SoulStore,
   root: string,
@@ -37,9 +43,10 @@ export async function indexRepo(
   const files = discoverFiles(root);
   runStructure(soul, root, files);
   const parse = await runParse(soul, registry, root, files);
+  const resolve = runResolve(soul, root, files);
   soul.commit(opts.now);
 
   if (opts.index) opts.index.buildFromSoul(soul, opts.buildOpts);
 
-  return { files: files.length, parse };
+  return { files: files.length, parse, resolve };
 }
