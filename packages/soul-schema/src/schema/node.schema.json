@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/1.0/node.schema.json",
+  "title": "Node",
+  "description": "A Knowledge-crib graph node. Text is referenced by file+span, never copied.",
+  "type": "object",
+  "required": ["id", "kind", "hash"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "file",
+        "symbol",
+        "doc-section",
+        "media-seg",
+        "explanation",
+        "cluster",
+        "table",
+        "column",
+        "statement",
+        "condition"
+      ]
+    },
+    "hash": { "type": "string", "pattern": "^blake3:[0-9a-f]+$" },
+    "file": { "type": "string" },
+    "span": {
+      "type": "object",
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "integer", "minimum": 1 },
+        "end": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "lang": { "type": "string" },
+    "type": { "type": "string" },
+    "name": { "type": "string" },
+    "qualifiedName": { "type": "string" },
+    "signature": { "type": "string" },
+    "clusterId": { "type": "string" },
+    "heading": { "type": "string" },
+    "level": { "type": "integer" },
+    "anchor": { "type": "string" },
+    "textRef": { "type": "string" },
+    "label": { "type": "string" },
+    "members": { "type": "array", "items": { "type": "string" } },
+    "schema": { "type": "string" },
+    "table": { "type": "string" },
+    "dataType": { "type": "string" },
+    "sqlKind": { "type": "string" },
+    "expr": { "type": "string" },
+    "branch": { "type": "string" },
+    "meta": { "type": "object" }
+  },
+  "additionalProperties": true
+}

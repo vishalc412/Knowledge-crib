@@ -1,0 +1,29 @@
+{
+  "name": "@knowledge-crib/core",
+  "version": "0.0.0",
+  "description": "SoulStore (chunked JSONL source of truth) + IndexStore (derived fast cache) + GraphModel.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --reporter=dot"
+  },
+  "dependencies": {
+    "@knowledge-crib/soul-schema": "workspace:*",
+    "ajv": "^8.17.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

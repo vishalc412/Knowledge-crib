@@ -1,0 +1,32 @@
+{
+  "name": "@knowledge-crib/soul-schema",
+  "version": "0.0.0",
+  "description": "The frozen graph schema (types + JSON Schema + id grammar) shared by soul, index, MCP, and soul-reader.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schemas/*": {
+      "types": "./dist/schema/*.d.ts",
+      "import": "./dist/schema/*.js"
+    }
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --reporter=dot"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
