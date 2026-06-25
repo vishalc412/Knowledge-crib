@@ -2,10 +2,18 @@
 /**
  * `crib` — the Knowledge-crib CLI. Wraps the pipeline + MCP server.
  *
- * Commands: index | status | query | serve | update | reindex | merge-driver | install-hooks | export | viz.
+ * Commands: index | status | query | serve | update | reindex | merge-driver | install-hooks |
+ *           export | viz | mcp.
+ *
+ * Root resolution (REQ-1): `crib serve`/`status`/`update`/`export`/`viz`/`query` resolve the project
+ * root via a priority chain — explicit positional arg or `--cwd` → `KCRIB_ROOT` → `CLAUDE_PROJECT_DIR`
+ * → upward walk for `.crib/crib.json` → cwd — so a single user-scoped IDE entry can serve every
+ * project. `crib index`/`reindex` target the exact given dir (no upward walk) and register the
+ * project in `~/.crib/registry.json` so later `crib mcp list` / resolution can find it.
+ *
  * Exit codes (cli spec): 0 ok · 1 error · 2 bad args · 3 not indexed.
  */
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { SoulStore, newManifest } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
 import { Verbs, serveStdio } from '@knowledge-crib/mcp';
@@ -20,9 +28,23 @@ import {
 import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
 import { buildVizGraph, vizAssetsDir } from '@knowledge-crib/ui';
 import { installHooks, mergeDriverFiles } from './hooks.js';
-import { buildIndex, isIndexed, openIndexOnly, openSoul } from './runtime.js';
+import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
+import { registerProject } from './registry.js';
+import {
+  type ResolvedRoot,
+  buildIndex,
+  isIndexedRoot,
+  openIndexOnly,
+  openSoul,
+  resolveProjectRoot,
+} from './runtime.js';
 
 const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3 } as const;
+
+/** Per-invocation context threaded from `main` (currently just the `--cwd` global flag). */
+interface CmdCtx {
+  cwdOverride?: string;
+}
 
 /**
  * Parse `--exclude a,b,c` (repeatable) into a discovery ignore set merged with DEFAULT_IGNORES.
@@ -44,29 +66,62 @@ function parseExcludes(args: string[]): Set<string> {
   return ignores;
 }
 
-async function main(argv: string[]): Promise<number> {
+/** First non-flag positional arg (the path for path-taking commands), or `undefined`. */
+function pathArg(args: string[]): string | undefined {
+  return args.find((a) => !a.startsWith('-'));
+}
+
+/**
+ * Extract the `--cwd <path>` global flag from argv, returning the cleaned argv + the override.
+ * `--cwd` is the highest-priority explicit root and may appear before or after the command.
+ */
+function extractCwdFlag(argv: string[]): { argv: string[]; cwdOverride?: string } {
+  const out: string[] = [];
+  let cwdOverride: string | undefined;
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--cwd') {
+      cwdOverride = argv[++i];
+      continue;
+    }
+    out.push(argv[i]!);
+  }
+  return { argv: out, cwdOverride };
+}
+
+/** Resolve a root for the path-taking commands (serve/status/update/export/viz): walks up + registry overlay. */
+function resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot {
+  const pos = pathArg(args);
+  const explicitRoot = ctx?.cwdOverride ?? (pos && pos !== '.' ? pos : undefined);
+  return resolveProjectRoot({ explicitRoot });
+}
+
+async function main(argvRaw: string[]): Promise<number> {
+  const { argv, cwdOverride } = extractCwdFlag(argvRaw);
+  const ctx: CmdCtx = { cwdOverride };
   const [cmd, ...rest] = argv;
   switch (cmd) {
     case 'index':
-      return cmdIndex(rest);
+      return cmdIndex(rest, ctx);
     case 'status':
-      return cmdStatus(rest);
+      return cmdStatus(rest, ctx);
     case 'query':
-      return cmdQuery(rest);
+      return cmdQuery(rest, ctx);
     case 'serve':
-      return cmdServe(rest);
+      return cmdServe(rest, ctx);
     case 'update':
-      return cmdUpdate(rest);
+      return cmdUpdate(rest, ctx);
     case 'reindex':
-      return cmdReindex(rest);
+      return cmdReindex(rest, ctx);
     case 'merge-driver':
       return cmdMergeDriver(rest);
     case 'install-hooks':
-      return cmdInstallHooks(rest);
+      return cmdInstallHooks(rest, ctx);
     case 'export':
-      return cmdExport(rest);
+      return cmdExport(rest, ctx);
     case 'viz':
-      return cmdViz(rest);
+      return cmdViz(rest, ctx);
+    case 'mcp':
+      return cmdMcp(rest, ctx);
     case undefined:
     case '-h':
     case '--help':
@@ -89,11 +144,22 @@ class CliVcsAdapter implements VcsAdapter {
   }
 }
 
-async function cmdIndex(args: string[]): Promise<number> {
-  const repoRoot = resolve(args[0] && !args[0].startsWith('-') ? args[0] : '.');
+/** Register the just-indexed project in `~/.crib/registry.json` (REQ-1). Idempotent. */
+function registerIndexed(repoRoot: string, cribDir: string, soul: SoulStore): void {
+  const m = soul.getManifest();
+  registerProject(repoRoot, {
+    repoId: m.repo.id,
+    cribDir,
+    ...(m.repo.vcsHead !== undefined ? { vcsHead: m.repo.vcsHead } : {}),
+  });
+}
+
+async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
+  // index targets the exact given dir (no upward walk) — you index THIS, not a parent.
+  const repoRoot = resolve(ctx?.cwdOverride ?? pathArg(args) ?? '.');
   const withEmbeddings = args.includes('--with-embeddings');
   const ignores = parseExcludes(args);
-  const cribDir = resolve(repoRoot, '.crib');
+  const cribDir = join(repoRoot, '.crib');
   const soul = new SoulStore(cribDir, { manifest: newManifest({ root: '.' }) });
   soul.load();
   const started = Date.now();
@@ -101,6 +167,7 @@ async function cmdIndex(args: string[]): Promise<number> {
     buildOpts: { withEmbeddings },
     ignores,
   });
+  registerIndexed(repoRoot, cribDir, soul);
   const stats = soul.getManifest().stats;
   process.stdout.write(
     `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
@@ -109,70 +176,81 @@ async function cmdIndex(args: string[]): Promise<number> {
   return EXIT.OK;
 }
 
-async function cmdStatus(args: string[]): Promise<number> {
-  const repoRoot = resolve(args[0] ?? '.');
-  if (!isIndexed(repoRoot)) {
+async function cmdStatus(args: string[], ctx?: CmdCtx): Promise<number> {
+  const resolved = resolveRoot(args, ctx);
+  if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return EXIT.NOT_INDEXED;
   }
-  const rt = openSoul(repoRoot);
+  const rt = openSoul(resolved);
   const index = buildIndex(rt);
-  const verbs = new Verbs({ soul: rt.soul, index, repoRoot, vcs: new CliVcsAdapter() });
+  const verbs = new Verbs({
+    soul: rt.soul,
+    index,
+    repoRoot: resolved.repoRoot,
+    vcs: new CliVcsAdapter(),
+  });
   process.stdout.write(`${JSON.stringify(verbs.status(), null, 2)}\n`);
   index.close();
   return EXIT.OK;
 }
 
-async function cmdQuery(args: string[]): Promise<number> {
+async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
+  // query positionals are the search text, NOT a root — root comes from --cwd / env / cwd walk only.
   const positional = args.filter((a) => !a.startsWith('-'));
-  const repoRoot = resolve(process.env.KCRIB_ROOT ?? '.');
   const q = positional.join(' ');
   if (!q) {
     process.stderr.write('usage: crib query <text>\n');
     return EXIT.BAD_ARGS;
   }
-  if (!isIndexed(repoRoot)) {
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return EXIT.NOT_INDEXED;
   }
-  const rt = openSoul(repoRoot);
+  const rt = openSoul(resolved);
   const index = buildIndex(rt);
-  const verbs = new Verbs({ soul: rt.soul, index, repoRoot });
+  const verbs = new Verbs({ soul: rt.soul, index, repoRoot: resolved.repoRoot });
   process.stdout.write(`${JSON.stringify(verbs.query({ q }), null, 2)}\n`);
   index.close();
   return EXIT.OK;
 }
 
-async function cmdServe(args: string[]): Promise<number> {
-  const repoRoot = resolve(args[0] && !args[0].startsWith('-') ? args[0] : '.');
-  if (!isIndexed(repoRoot)) {
+async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
+  const resolved = resolveRoot(args, ctx);
+  if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return EXIT.NOT_INDEXED;
   }
-  const rt = openSoul(repoRoot);
+  const rt = openSoul(resolved);
   const index = buildIndex(rt);
-  const verbs = new Verbs({ soul: rt.soul, index, repoRoot, vcs: new CliVcsAdapter() });
+  const verbs = new Verbs({
+    soul: rt.soul,
+    index,
+    repoRoot: resolved.repoRoot,
+    vcs: new CliVcsAdapter(),
+  });
   // stdout is the MCP transport; logs go to stderr only.
   process.stderr.write('knowledge-crib MCP server on stdio\n');
   await serveStdio(verbs);
   return EXIT.OK;
 }
 
-async function cmdUpdate(args: string[]): Promise<number> {
-  const repoRoot = resolve(args[0] && !args[0].startsWith('-') ? args[0] : '.');
+async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
+  const resolved = resolveRoot(args, ctx);
   const sinceIdx = args.indexOf('--since');
   const since = sinceIdx >= 0 ? args[sinceIdx + 1] : undefined;
-  if (!isIndexed(repoRoot)) {
+  if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return EXIT.NOT_INDEXED;
   }
-  const rt = openSoul(repoRoot);
+  const rt = openSoul(resolved);
   const started = Date.now();
-  const result = await updateRepo(rt.soul, repoRoot, since ? { since } : {});
+  const result = await updateRepo(rt.soul, resolved.repoRoot, since ? { since } : {});
   if (result === null) {
     // No anchor / non-git → degrade to a full index.
     process.stderr.write('no incremental anchor — falling back to full index\n');
-    return cmdReindex(args);
+    return cmdIndex(args, ctx);
   }
   if ('noop' in result) {
     process.stdout.write(
@@ -190,6 +268,7 @@ async function cmdUpdate(args: string[]): Promise<number> {
     index = buildIndex(rt); // full buildFromSoul from the just-updated soul
   }
   index.close();
+  registerIndexed(resolved.repoRoot, resolved.cribDir, rt.soul);
   const d = result.delta;
   process.stdout.write(
     `updated ${result.changedPaths.length} file(s) [scope ${result.scopeFiles.length}] → ` +
@@ -199,11 +278,12 @@ async function cmdUpdate(args: string[]): Promise<number> {
   return EXIT.OK;
 }
 
-async function cmdReindex(args: string[]): Promise<number> {
-  const repoRoot = resolve(args[0] && !args[0].startsWith('-') ? args[0] : '.');
+async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
+  // reindex targets the exact given dir (no upward walk), like index.
+  const repoRoot = resolve(ctx?.cwdOverride ?? pathArg(args) ?? '.');
   const withEmbeddings = args.includes('--with-embeddings');
   const ignores = parseExcludes(args);
-  const cribDir = resolve(repoRoot, '.crib');
+  const cribDir = join(repoRoot, '.crib');
   const soul = new SoulStore(cribDir, { manifest: newManifest({ root: '.' }) });
   soul.load();
   const started = Date.now();
@@ -211,6 +291,7 @@ async function cmdReindex(args: string[]): Promise<number> {
     buildOpts: { withEmbeddings },
     ignores,
   });
+  registerIndexed(repoRoot, cribDir, soul);
   const stats = soul.getManifest().stats;
   process.stdout.write(
     `reindexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
@@ -233,8 +314,8 @@ function cmdMergeDriver(args: string[]): number {
   return conflicts ? EXIT.ERROR : EXIT.OK;
 }
 
-function cmdInstallHooks(args: string[]): number {
-  const repoRoot = resolve(args[0] && !args[0].startsWith('-') ? args[0] : '.');
+function cmdInstallHooks(args: string[], ctx?: CmdCtx): number {
+  const repoRoot = resolve(ctx?.cwdOverride ?? pathArg(args) ?? '.');
   const res = installHooks(repoRoot);
   process.stdout.write(
     `installed kcrib hooks at ${res.gitDir}\n` +
@@ -246,11 +327,89 @@ function cmdInstallHooks(args: string[]): number {
 }
 
 /**
+ * `crib mcp <install|list|remove> [--ide <name|all>] [--global] [--bin <path>] [path]` (REQ-2).
+ * Auto-wires the MCP server into each IDE's config so the user never hand-edits JSON/TOML.
+ */
+function cmdMcp(args: string[], ctx?: CmdCtx): number {
+  const [sub, ...rest] = args;
+  const repoRoot = resolve(ctx?.cwdOverride ?? pathArg(rest) ?? '.');
+
+  let ide: McpIde | 'all' = 'all';
+  let scope: McpScope = 'project';
+  let bin: string | undefined;
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i]!;
+    if (a === '--ide') ide = (rest[++i] as McpIde | 'all') ?? 'all';
+    else if (a === '--global') scope = 'global';
+    else if (a === '--bin') bin = rest[++i];
+  }
+  const validIdes: Array<McpIde | 'all'> = ['all', 'claude', 'cursor', 'vscode', 'codex'];
+  if (!validIdes.includes(ide)) {
+    process.stderr.write(`unknown --ide: ${ide}\nvalid: ${validIdes.join(', ')}\n`);
+    return EXIT.BAD_ARGS;
+  }
+
+  switch (sub) {
+    case 'install': {
+      const results = installMcp(repoRoot, { ide, scope, bin });
+      for (const r of results) {
+        const tag = `${r.ide}/${r.scope}`;
+        if (r.note) {
+          process.stdout.write(`${tag}: ${r.note}\n`);
+        } else if (r.written) {
+          process.stdout.write(
+            `${tag}: wrote ${r.configPath}\n  command: ${r.command} ${r.args.join(' ')}\n`,
+          );
+        } else {
+          process.stdout.write(`${tag}: already up to date at ${r.configPath}\n`);
+        }
+      }
+      return EXIT.OK;
+    }
+    case 'list': {
+      const entries = listMcp(repoRoot, { ide, scope });
+      if (entries.length === 0) {
+        process.stdout.write('no matching IDE/scope combinations\n');
+        return EXIT.OK;
+      }
+      for (const e of entries) {
+        process.stdout.write(
+          `${e.ide}/${e.scope}: ${e.present ? 'present' : 'absent'} → ${e.configPath}\n`,
+        );
+      }
+      return EXIT.OK;
+    }
+    case 'remove': {
+      const results = removeMcp(repoRoot, { ide, scope, bin });
+      for (const r of results) {
+        const tag = `${r.ide}/${r.scope}`;
+        if (r.note) process.stdout.write(`${tag}: ${r.note}\n`);
+        else
+          process.stdout.write(
+            `${tag}: ${r.written ? 'removed' : 'not present'} → ${r.configPath}\n`,
+          );
+      }
+      return EXIT.OK;
+    }
+    case undefined:
+    case '-h':
+    case '--help':
+      process.stderr.write(
+        'usage: crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]\n',
+      );
+      return EXIT.BAD_ARGS;
+    default:
+      process.stderr.write(`unknown mcp subcommand: ${sub}\n`);
+      return EXIT.BAD_ARGS;
+  }
+}
+
+/**
  * `crib export [--format rules|mermaid|graph.json|report] [--procedure <id|name>]` — render the
  * soul. `rules`/`mermaid` need `--procedure` (a node id or a procedure/function name); `graph.json`
  * and `report` dump the whole soul (report optionally scoped to one procedure via --procedure).
  */
-async function cmdExport(args: string[]): Promise<number> {
+async function cmdExport(args: string[], ctx?: CmdCtx): Promise<number> {
   // Parse flags + their values out so flag values aren't mistaken for a positional path.
   let format = 'report';
   let procedure: string | undefined;
@@ -265,7 +424,10 @@ async function cmdExport(args: string[]): Promise<number> {
       positional.push(a);
     }
   }
-  const repoRoot = resolve(positional[0] ?? '.');
+  const resolved = resolveProjectRoot({
+    explicitRoot:
+      ctx?.cwdOverride ?? (positional[0] && positional[0] !== '.' ? positional[0] : undefined),
+  });
 
   const formats = ['rules', 'mermaid', 'graph.json', 'report'] as const;
   type ExportFormat = (typeof formats)[number];
@@ -274,7 +436,7 @@ async function cmdExport(args: string[]): Promise<number> {
     return EXIT.BAD_ARGS;
   }
   const fmt: ExportFormat = format as ExportFormat;
-  if (!isIndexed(repoRoot)) {
+  if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return EXIT.NOT_INDEXED;
   }
@@ -283,7 +445,7 @@ async function cmdExport(args: string[]): Promise<number> {
     return EXIT.BAD_ARGS;
   }
 
-  const rt = openSoul(repoRoot);
+  const rt = openSoul(resolved);
   try {
     process.stdout.write(renderExport(rt.soul, fmt, procedure));
   } catch (err) {
@@ -294,7 +456,7 @@ async function cmdExport(args: string[]): Promise<number> {
 }
 
 /** `crib viz` — serve the offline web UI (Claude Design DC runtime) over the soul graph and open a browser. */
-async function cmdViz(args: string[]): Promise<number> {
+async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
   const positional: string[] = [];
   let port = 0;
   for (let i = 0; i < args.length; i++) {
@@ -302,12 +464,15 @@ async function cmdViz(args: string[]): Promise<number> {
     if (a === '--port') port = Number(args[++i] ?? 0);
     else if (!a.startsWith('-')) positional.push(a);
   }
-  const repoRoot = resolve(positional[0] ?? '.');
-  if (!isIndexed(repoRoot)) {
+  const resolved = resolveProjectRoot({
+    explicitRoot:
+      ctx?.cwdOverride ?? (positional[0] && positional[0] !== '.' ? positional[0] : undefined),
+  });
+  if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return EXIT.NOT_INDEXED;
   }
-  const rt = openSoul(repoRoot);
+  const rt = openSoul(resolved);
   const graph = buildVizGraph(rt.soul);
   const assets = vizAssetsDir();
   const { createServer } = await import('node:http');
@@ -380,13 +545,17 @@ function printHelp(): void {
       '  crib index [path] [--with-embeddings] [--exclude a,b,...]   full index → .crib soul + derived index',
       '  crib status [path]                       health + stats',
       '  crib query <text>                        BM25 search over code + docs',
-      '  crib serve [path]                        run the MCP server on stdio',
+      '  crib serve [path]                        run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd)',
       '  crib update [path] [--since <sha>]      incremental re-extract since the VCS anchor',
       '  crib reindex [path]                     full re-index (alias for `crib index`)',
       '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',
       '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',
       '  crib export [--format F] [--procedure P] render soul: rules|mermaid|graph.json|report',
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
+      '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]',
+      '                                          auto-wire the MCP server into each IDE config (REQ-2)',
+      '',
+      'Global: --cwd <path>   override the project root for any command',
       '',
     ].join('\n'),
   );

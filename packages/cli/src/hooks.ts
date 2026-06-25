@@ -83,7 +83,13 @@ export function installHooks(root: string, opts: HookInstallOptions = {}): HookI
 }
 
 /** Replace (or append) the managed region between the given markers; prefix with a shebang when fresh. */
-function spliceManaged(
+/**
+ * Replace (or append) the managed region between the given markers; prefix with a shebang when fresh.
+ * Exported so `crib mcp install` can reuse the same idempotent-block strategy for TOML config files
+ * (which, like shell hooks, permit `#` comments). JSON configs use a parse/modify/reserialize strategy
+ * instead (JSON forbids comments).
+ */
+export function spliceManaged(
   content: string,
   block: string,
   beginMarker: string,

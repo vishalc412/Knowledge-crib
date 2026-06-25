@@ -41,6 +41,10 @@ Two existing tools each prove half and serve as **design inspiration only (no co
 | 11 | [knowledge-crib-interview-guide.md](knowledge-crib-interview-guide.md) | User research plan |
 | — | [knowledge-crib-decisions.md](knowledge-crib-decisions.md) | Locked decisions (Q1–Q38) — the why |
 | — | [knowledge-crib-questionnaire.md](knowledge-crib-questionnaire.md) | The full decision questionnaire |
+| — | [knowledge-crib-changelog-req1-req2.md](knowledge-crib-changelog-req1-req2.md) | Changelog: single-entry root resolution + `crib mcp` auto-wiring (REQ-1, REQ-2) |
+| — | [knowledge-crib-user-guide.md](knowledge-crib-user-guide.md) | User guide (install, workflow, 9 verbs, worked example) |
+| — | [knowledge-crib-client-setup.md](knowledge-crib-client-setup.md) | IDE MCP wiring (Claude Code, Cursor, VS Code/Copilot, Codex) |
+| — | [knowledge-crib-m6-m13-build-plan.md](knowledge-crib-m6-m13-build-plan.md) | Milestones M6→M13 (post-foundation build plan) |
 
 ## Repo layout (target)
 ```
@@ -51,7 +55,7 @@ knowledge-crib/                 # pnpm monorepo
     parsers/       # tree-sitter (WASM) wrappers
     pipeline/      # extract → resolve → link → cluster → index
     mcp/           # MCP server (npx knowledge-crib)
-    cli/           # crib index|update|export|migrate|serve
+    cli/           # crib index|update|export|serve|mcp|viz|install-hooks|merge-driver
     ui/            # web graph viz (later)
     soul-reader/   # engine-free reader for SeeroFlow / external
   docs/            # these specs

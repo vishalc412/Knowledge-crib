@@ -1,7 +1,8 @@
 # Knowledge-crib — MCP Client Setup Guide
 
 > How to wire the Knowledge-crib MCP server into **Claude Code**, **Cursor**, **GitHub Copilot
-> (VS Code)**, and **OpenAI Codex CLI**. One-time machine setup, then a 2-line per-project config.
+> (VS Code)**, and **OpenAI Codex CLI**. One-time machine setup, then **one user-scope entry that
+> serves every project** — no per-project config needed.
 >
 > Knowledge-crib is a local-first "project soul": a knowledge graph of a codebase served to any AI
 > coding agent over one MCP server. The agent gets full architectural context (call graphs, blast
@@ -64,6 +65,11 @@ crib status .                         # confirm: nodes, edges, clusters, vcsHead
 That's it. The `.crib/` directory is the project's memory. **Commit `.crib/` to git** so the whole
 team (and every agent) shares the same soul — it's chunked JSONL, diff-friendly, and engine-free.
 
+`crib index` also **registers the project** in `~/.crib/registry.json` (see §3) — a local pointer
+table mapping this project's absolute path to its `.crib/` dir, so the single user-scope IDE entry
+below can find the right soul per workspace. The registry is machine-local (absolute paths) and
+gitignored; the soul itself stays committed and portable.
+
 ### Supported languages (extractors shipped by default)
 
 | Language | Extensions | Notes |
@@ -111,9 +117,45 @@ tools** (provenance-tagged + token-bounded so the agent never dumps the whole gr
 | `detect_changes` | Dry-run delta since a git ref (for reviewing diffs) |
 | `extract_rules` | Decision table from a procedure's guard-annotated CFG |
 
-The `<project-root>` you pass to `crib serve` **must be the indexed root** (the dir containing
-`.crib/`). Every config below uses a workspace variable so the right project soul is served in each
-workspace.
+### Root resolution — one entry, every project
+
+You do **not** have to pass the exact indexed root, and you do **not** need a per-project IDE
+entry. `crib serve` resolves the project root through this priority chain (highest wins):
+
+1. **explicit positional arg** — `crib serve /abs/path` (an arg other than `.`)
+2. **`--cwd <path>`** flag
+3. **`KCRIB_ROOT`** env var
+4. **`CLAUDE_PROJECT_DIR`** env var — Claude Code's real workspace signal (its `cwd` field is
+   ignored; see Claude Code issue #42883). This is what makes a single user-scope Claude entry
+   serve every project.
+5. **upward walk from CWD** for `.crib/crib.json` — handles monorepo subdirs
+6. **CWD fallback** — preserves pre-REQ-1 behaviour
+
+Then `~/.crib/registry.json` is consulted as an **overlay**: if the discovered root is registered
+with a custom `.crib` location, the soul is opened from there; otherwise the standard
+`<root>/.crib` is used. The registry is a **pointer layer, not a second store** — the soul stays
+committed inside each project's `.crib/`.
+
+**Practical upshot:** a single user-scope IDE entry (`crib serve` with no path arg, or
+`crib serve .`) resolves the correct soul per workspace via `CLAUDE_PROJECT_DIR` + the upward walk +
+the registry. Existing per-project entries that pass an explicit root keep working unchanged
+(explicit always wins).
+
+### `crib mcp` — auto-wire the IDE configs (REQ-2)
+
+Instead of hand-editing JSON/TOML, run one command per IDE (or `--ide all`):
+
+```bash
+crib mcp install --ide all               # project-scope: writes committable per-repo configs
+crib mcp install --ide claude --global    # user-scope: one machine-wide entry (serves every project)
+crib mcp list                             # show which IDEs have the managed entry
+crib mcp remove --ide cursor              # strip the managed entry, leaving sibling content intact
+```
+
+It is idempotent (re-running is a no-op), preserves sibling servers byte-for-byte, and embeds the
+absolute `which crib` path so GUI-launched IDEs that don't inherit the shell PATH still find the
+server. See the per-IDE sections below for what each writes, and the [CLI spec](knowledge-crib-cli.md)
+for the full flag reference.
 
 ---
 
@@ -140,11 +182,21 @@ Create `.mcp.json` in the project root:
 
 Then in that project: `claude` will prompt you to approve the project MCP server on first use.
 
-**Option B — CLI:**
+**Option B — CLI (project-scope):**
 
 ```bash
-claude mcp add knowledge-crib -- crib serve /absolute/path/to/project
+crib mcp install --ide claude              # writes .mcp.json with ["serve","."] (committable)
 ```
+
+**Option C — one user-scope entry for every project (recommended):**
+
+```bash
+crib mcp install --ide claude --global     # runs `claude mcp add -s user` with `crib serve` (no path)
+```
+
+The global entry runs `crib serve` with **no path arg**, so the root-resolution chain in §3
+(`CLAUDE_PROJECT_DIR` → upward walk → registry) picks the right soul per workspace. One entry, every
+project — no per-project config.
 
 Verify inside a Claude Code session:
 
@@ -152,8 +204,10 @@ Verify inside a Claude Code session:
 /mcp          # lists connected servers + tools; knowledge-crib should show 9 tools
 ```
 
-> The `.` in `args` is resolved by `crib` relative to its own CWD, which Claude Code sets to the
-> project root. For an absolute guarantee, use the absolute project path.
+> The `.` in `args` is **not** resolved by Claude Code's CWD — Claude Code ignores the `cwd` field
+> (issue #42883). It works because `crib`'s resolution chain falls through to `CLAUDE_PROJECT_DIR`
+> (Claude Code's real workspace signal) then the upward walk from CWD. That same chain is why the
+> global no-arg entry serves every project.
 
 ---
 
@@ -161,7 +215,12 @@ Verify inside a Claude Code session:
 
 Cursor reads `.cursor/mcp.json` (project, committable) or `~/.cursor/mcp.json` (global).
 
-Create `.cursor/mcp.json` in the project root:
+```bash
+crib mcp install --ide cursor             # project: .cursor/mcp.json with ${workspaceFolder}
+crib mcp install --ide cursor --global     # global: ~/.cursor/mcp.json (one entry, every project)
+```
+
+Or create `.cursor/mcp.json` in the project root by hand:
 
 ```json
 {
@@ -188,7 +247,14 @@ GitHub Copilot Chat in VS Code supports MCP via `.vscode/mcp.json` (GA in VS Cod
 **Two differences from Cursor/Claude:** the root key is `servers` (not `mcpServers`) and `type:
 "stdio"` is **required**. Tools only run in Copilot **Agent mode**.
 
-Create `.vscode/mcp.json` in the project root (committable):
+```bash
+crib mcp install --ide vscode              # writes .vscode/mcp.json (servers + type:stdio)
+```
+
+> VS Code/Copilot user-scoped MCP config is not documented upstream, so only project-scope is
+> offered (the command notes + skips if you pass `--global`).
+
+Or create `.vscode/mcp.json` in the project root by hand (committable):
 
 ```json
 {
@@ -215,7 +281,12 @@ Codex CLI reads `~/.codex/config.toml` (user) or `.codex/config.toml` (project, 
 only). The table is **snake_case** `[mcp_servers.<name>]` — `[mcpServers]` / `[mcp.servers]` is
 silently ignored.
 
-Add to `~/.codex/config.toml`:
+```bash
+crib mcp install --ide codex              # project: .codex/config.toml (managed TOML block)
+crib mcp install --ide codex --global      # global: ~/.codex/config.toml
+```
+
+Or add to `~/.codex/config.toml` by hand:
 
 ```toml
 [mcp_servers.knowledge-crib]
@@ -225,7 +296,7 @@ startup_timeout_sec = 20
 tool_timeout_sec = 60
 ```
 
-Or via CLI:
+Or via Codex CLI:
 
 ```bash
 codex mcp add knowledge-crib -- crib serve /absolute/path/to/project
@@ -234,10 +305,14 @@ codex mcp list                          # confirm it's registered
 
 Inside the Codex TUI, `/mcp` lists active servers and their tools.
 
-> Codex doesn't interpolate `${workspaceFolder}`, so for a portable per-project setup use the
-> project-scoped `.codex/config.toml` (after marking the repo as a trusted project) with an
-> absolute path, or maintain one global entry per project.
-
+> **Honest limitation:** Codex does **not** interpolate `${workspaceFolder}`, so a Codex entry
+> must embed an absolute project path — one global Codex entry cannot transparently serve multiple
+> projects the way the Claude/Cursor user-scope entries can. Options: (a) one project-scoped
+> `.codex/config.toml` per repo (committable, after marking the repo trusted), or (b) one global
+> entry per project in `~/.codex/config.toml`. The `~/.crib` registry (§3) still resolves a custom
+> `.crib` location if the absolute path's `.crib` was moved, but it cannot make a single Codex
+> entry path-agnostic. This is the one IDE where the "single entry for every project" goal is not
+> fully achievable; the others reach it via `CLAUDE_PROJECT_DIR` / `${workspaceFolder}`.
 ---
 
 ## 8. Verify it works (any client)

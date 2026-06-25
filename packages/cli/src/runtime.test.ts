@@ -5,7 +5,7 @@ import { SoulStore, newManifest } from '@knowledge-crib/core';
 import { Verbs } from '@knowledge-crib/mcp';
 import { indexRepo } from '@knowledge-crib/pipeline';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { buildIndex, isIndexed, openSoul } from './runtime.js';
+import { buildIndex, isIndexed, openSoul, resolveProjectRoot } from './runtime.js';
 
 let repo: string;
 beforeEach(() => {
@@ -34,7 +34,7 @@ describe('CLI runtime — index → open → query', () => {
     seed.load();
     await indexRepo(seed, repo);
 
-    const rt = openSoul(repo);
+    const rt = openSoul(resolveProjectRoot({ explicitRoot: repo }));
     const index = buildIndex(rt);
     const verbs = new Verbs({ soul: rt.soul, index, repoRoot: repo });
 

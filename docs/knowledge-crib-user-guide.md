@@ -97,6 +97,7 @@ crib status .                           # 2. health + stats
 | `crib merge-driver %O %A %B %P` | Git custom merge driver for `.crib` chunks |
 | `crib export [--format F] [--procedure P]` | Render: `rules` \| `mermaid` \| `graph.json` \| `report` |
 | `crib viz [path] [--port N]` | Serve the offline web UI (Cytoscape canvas) + open browser |
+| `crib mcp <install\|list\|remove> [--ide <name\|all>] [--global]` | Auto-wire the MCP server into each IDE config (no hand-editing); `--ide claude --global` = one user-scope entry for every project |
 
 Exit codes: `0` ok · `1` error · `2` bad args · `3` not indexed.
 
@@ -130,6 +131,16 @@ crib index . --exclude vendor,third_party,generated
 `.crib/` is meant to be committed. It's chunked JSONL — diff-friendly and engine-free — so the whole
 team shares one soul and every agent sees the same graph. Add `.crib/index/` (the derived SQLite) to
 `.gitignore`; keep `.crib/*.jsonl`, `.crib/crib.json`, `.crib/schema/`.
+
+### One IDE entry for every project (root resolution)
+
+`crib index` registers the project in `~/.crib/registry.json` — a local pointer table (absolute path
+→ `.crib` dir; machine-local, gitignored). `crib serve` then resolves the right soul per workspace
+through: explicit arg → `--cwd` → `KCRIB_ROOT` → `CLAUDE_PROJECT_DIR` → upward walk from CWD → CWD,
+with the registry as an overlay for custom `.crib` locations. So you can install **one user-scope**
+IDE entry (`crib mcp install --ide claude --global`) and it serves every project — no per-project
+config. See [`knowledge-crib-client-setup.md`](knowledge-crib-client-setup.md) §3 and the
+[CLI spec](knowledge-crib-cli.md) for the full chain.
 
 ---
 
@@ -330,9 +341,16 @@ immediately.
 
 ### 5.8 Wiring it to the IDEs
 
-With the soul at `FTCCloud/.crib`, point each client at `crib serve <abs path to FTCCloud>`. See
-[`knowledge-crib-client-setup.md`](knowledge-crib-client-setup.md) for the exact
-`.mcp.json` / `.cursor/mcp.json` / `.vscode/mcp.json` / `config.toml` blocks.
+With the soul at `FTCCloud/.crib`, auto-wire each IDE in one command (or hand-edit the configs):
+
+```bash
+crib mcp install --ide all                 # project-scope committable configs for all 4 IDEs
+crib mcp install --ide claude --global      # one user-scope entry → serves every project via CLAUDE_PROJECT_DIR
+```
+
+See [`knowledge-crib-client-setup.md`](knowledge-crib-client-setup.md) for the exact
+`.mcp.json` / `.cursor/mcp.json` / `.vscode/mcp.json` / `config.toml` blocks and the root-resolution
+chain.
 
 ---
 

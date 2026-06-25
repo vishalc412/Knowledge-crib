@@ -40,7 +40,7 @@ knowledge-crib/                 # pnpm monorepo
     parsers/       # tree-sitter (WASM) wrappers + ANTLR4 legacy front-end
     pipeline/      # extract → resolve → link → cluster → index
     mcp/           # MCP server (npx knowledge-crib)
-    cli/           # crib index|update|export|migrate|serve
+    cli/           # crib index|update|export|serve|mcp|viz|install-hooks|merge-driver
     ui/            # web graph viz (later)
     soul-reader/   # engine-free reader for SeeroFlow / external
   docs/            # the spec package
