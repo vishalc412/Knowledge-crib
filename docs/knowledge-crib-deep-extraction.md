@@ -76,8 +76,91 @@ demands.
 ## 4. PL/SQL extractor (first migration target)
 - Grammar: tree-sitter PL/SQL (or dedicated parser). Emit `symbol(procedure|function|package|
   trigger)`, plus `table`/`column` from DDL.
+- **Object types & collections**: `CREATE TYPE … AS OBJECT (…)` becomes a `symbol(type)` node
+  carrying the **full attribute field list** on `meta.attributes` (the deep context that was
+  previously missing for types like `T_APPLICANT_CTX_OBJ`); `AS TABLE OF` / `AS VARRAY OF` carry
+  `meta.collection`. `CREATE VIEW` becomes a `table` node (`meta.kind:"view"`) with explicit
+  columns. Without this, an applicant/context object type is invisible to `context`/`source`/`query`
+  — only the procedure that uses it shows up.
 - Resolver: cross-package proc→proc calls; table/column refs → DDL nodes.
 - Pairs with Phase 3d to attach guards.
+
+### 4a. Serving-layer deep context (universal, all languages)
+The lean soul stores `file`+`span` references, never source text. Deep context is rehydrated on
+demand, language-agnostically, from disk:
+
+- `source(node)` — the full source body of one node's span, budgeted (`maxChars`/`maxLines`).
+  A procedure body, a CREATE TABLE DDL, a DML statement, a doc section. Works for **every** parser
+  (TS, Java, C#, Go, Rust, Python, PL/SQL), because rehydration is span-based, not AST-based.
+- `context(node, {withSource, withRules})` — folds the rehydrated body (`withSource`) and/or the
+  decision table (`withRules`, procedures/functions only) into the 360° context, and surfaces every
+  captured deep node field rather than just the symbol header.
+- `rehydrateBody(repoRoot, node, {maxChars, maxLines})` (exported from `@knowledge-crib/mcp`) — the
+  primitive under both verbs, for callers that want the body directly.
+
+This is what closes the "high-level only, not low-level" gap for **all** parsers without per-language
+AST deepening: any symbol's full body is one `source` call away.
+
+---
+
+### 4b. Schema 1.2 — behavior-bearing fidelity (the "detailed-level" part)
+A call graph + guard chain says *what runs under what condition*. Migration (and any deep analysis)
+also needs *what the body **does*** — the raises, the exception handlers, the cursors it iterates, the
+case arms, the assignments. Schema **1.2** makes those first-class so the analysis is detailed-level,
+not a skeleton. Forward-compatible (1.0/1.1 souls load verbatim; 1.1 `cfgPath:string[]` +
+`inLoop`/`inException` are preserved, never widened).
+
+| `kind` | Represents | id | key fields |
+|--------|-----------|----|------------|
+| `raise` | a throw/`RAISE_APPLICATION_ERROR`/`panic!`/`return Err(…)` | `raise:<file>@L<line>` | `errorCode`, `errorMessage` |
+| `exception-handler` | a catch/`except`/`WHEN …`/`defer recover` | `exch:<file>@L<line>` | `whenSelector` |
+| `assignment` | `v := …` / `let x = …` / `x = …` | `asgn:<file>@L<line>` | `assignTarget` |
+| `case-branch` | one WHEN arm / `case` / `match` arm / `switch` case | `case:<file>@L<line>` | `whenSelector` (omitted for ELSE/default/`_`) |
+| `cursor` | a SQL cursor (PL/SQL) | `crs:<file>#<name>@L<line>` | `cursorQuery` |
+| `explanation` | a doc comment attached to a symbol | `expl:<path>@L<start>` | `commentRef`, `meta.text` |
+
+| new `rel` | from → to | meaning |
+|-----------|-----------|---------|
+| `raises` | symbol → raise | this callable throws here |
+| `handles` | exception-handler → stmt/raise | handler catches this body action |
+| `iterates` | condition → cursor | this loop iterates that cursor |
+| `declares` | symbol → cursor | this callable declares that cursor |
+| `describes` | explanation → symbol | this doc comment documents that symbol |
+
+All deterministic → `provenance: EXTRACTED`, `confidence: 1`. The guard chain from §2 still stamps
+`cfgPath`/`branch`/`inLoop`/`inException` on `raises`/`executes`/`calls` edges, so a raise knows the
+*conditions under which it fires* — that is the migration-critical fact (error -20001 happens *only
+when `v_decision='REJECT'`*).
+
+### 4c. Cross-language parity (Track 3 + Workstream B)
+The same 1.2 constructs are emitted by **every** extractor, capability-honest per language:
+
+| Language | raise | exception-handler | assignment | case-branch | explanation | cursor/iterates |
+|----------|-------|-------------------|------------|-------------|-------------|-----------------|
+| PL/SQL | `RAISE_APPLICATION_ERROR` | `WHEN …` | `:=` | `CASE WHEN` | `--`/`/* */` | ✅ full |
+| TypeScript | `throw` | `catch (e)` | `=`/`let` | `case`/discriminated | `//`/`/** */` | n/a |
+| Java | `throw` | `catch`/multi-catch | `=` | `case`+default | `//`/`/* */`/Javadoc | n/a |
+| C# | `throw` | `catch`+`when` filter | `=` | `case`+switch-expr | `//`/`///`/`/* */` | n/a |
+| Go | `panic`/`errors.New`/`fmt.Errorf` | `defer recover` | `=` | `case`+type-switch | `//`/`/* */` | n/a |
+| Rust | `panic!`/`return Err` | *(skipped — no try/catch)* | `let`/`=` | `match` arm | `//`/`///`/`/* */` | n/a |
+| Python | `raise` | `except`/tuple/bare | `=`/`:=`/aug | `case`+`_` | `#`/docstring | n/a |
+
+**Capability-honest skips** are documented per extractor: `cursor`/`iterates` are PL/SQL-only (no SQL
+cursors elsewhere); Rust has no exception handlers (a `match` on `Result` is already a `case-branch`,
+so a handler would double-count); `iterates` over a non-resolvable local collection is skipped rather
+than guessed. The extractor never invents a node it can't deterministically ground — so a local LLM
+consuming a dossier is never misled by a fabricated edge.
+
+### 4d. Dossier — the persisted reusable deep context (Workstream D/E)
+`buildDossier(soul, repoRoot, nodeId, now, opts)` is **pure** over the soul + repoRoot and folds
+together everything an agent otherwise assembles from `context` + `source` + `extract_rules`: the
+deep node, the paged rehydrated source body, callers/callees, linked docs, the decision table (for a
+callable), and the 1.2 control-flow constructs. The pipeline builds + persists it post-resolve
+(`runDossiers`, sharded under `.crib/dossiers/`, atomic, hash-anchored to `node.hash`); the MCP
+`dossier` verb rebuilds it from the **same code path** on a cache miss — so the persisted artifact
+and the live verb output are byte-identical in shape. See [prompts](knowledge-crib-prompts.md) for
+how a local LLM consumes it in one call, and [mcp-api](knowledge-crib-mcp-api.md#dossiersymbol) for
+the verb contract.
 
 ---
 

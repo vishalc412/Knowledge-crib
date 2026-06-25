@@ -1,6 +1,13 @@
 import { pathFromId } from '@knowledge-crib/core';
-import type { Dir, IndexStore, SoulStore } from '@knowledge-crib/core';
-import { decisionTable } from '@knowledge-crib/core';
+import type { Dir, Dossier, IndexStore, SoulStore } from '@knowledge-crib/core';
+import {
+  CALLABLE_SYMBOL_TYPES,
+  buildDossier,
+  decisionTable,
+  dossierToMarkdown,
+  readDossier,
+  writeDossier,
+} from '@knowledge-crib/core';
 /**
  * The MCP verbs as pure functions over the soul + index. These are the product surface; the stdio
  * server is thin wiring on top. Every edge-bearing result carries {method, provenance, confidence,
@@ -8,7 +15,13 @@ import { decisionTable } from '@knowledge-crib/core';
  * touch the network or the enricher.
  */
 import type { Edge, Node, NodeKind } from '@knowledge-crib/soul-schema';
-import { rehydrate } from './snippet.js';
+import {
+  DEFAULT_BODY_MAX_CHARS,
+  DEFAULT_BODY_MAX_LINES,
+  type RehydratedBody,
+  rehydrate,
+  rehydrateBody,
+} from './snippet.js';
 import { DEFAULT_DOC_LIMIT, DEFAULT_LIMIT, bound } from './token-budget.js';
 
 /**
@@ -59,10 +72,21 @@ export class Verbs {
     };
   }
 
-  context(args: { id: string; docLimit?: number; extractedOnly?: boolean }): Record<
-    string,
-    unknown
-  > {
+  context(args: {
+    id: string;
+    docLimit?: number;
+    extractedOnly?: boolean;
+    /** include the full source text of the node's span (rehydrated from disk, budgeted) */
+    withSource?: boolean;
+    /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */
+    withRules?: boolean;
+    /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */
+    sourceMaxChars?: number;
+    /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */
+    sourceMaxLines?: number;
+    /** absolute file line to start the source page at (paging cursor; default = span start) */
+    sourceStartLine?: number;
+  }): Record<string, unknown> {
     const node = this.deps.soul.getNode(args.id);
     if (!node) return notFound(args.id);
     const callers = this.callEdges(args.id, 'up', args.extractedOnly).map((e) =>
@@ -75,13 +99,136 @@ export class Verbs {
       this.docsFor(args.id, 0, args.extractedOnly),
       args.docLimit ?? DEFAULT_DOC_LIMIT,
     );
-    return {
+    const result: Record<string, unknown> = {
       node: this.publicNode(node),
       callers,
       callees,
       docs: docs.items,
       truncated: docs.truncated,
     };
+    if (args.withSource) result.source = this.bodyOf(node, args);
+    if (args.withRules && node.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {
+      result.rules = decisionTable(this.deps.soul, args.id, { includeTables: true });
+    }
+    return result;
+  }
+
+  /**
+   * `source` — the full source text of one node's span (rehydrated from disk), budgeted + page-able.
+   * This is the "give me the body" verb: a procedure body, a CREATE TABLE DDL, a statement, a doc
+   * section. Use it to read low-level code that the lean soul references but never copies. Returns
+   * NOT_FOUND for an unknown id; an empty `source.text` (truncated:false) when the node has no
+   * file/span on disk. When `truncated:true`, `source.nextLine` is the absolute file line to pass
+   * back as `startLine` to fetch the next page (line-offset paging for bodies too large for one
+   * round-trip — the migration analyst walking a 400-line PL/SQL package body).
+   */
+  source(args: {
+    id: string;
+    maxChars?: number;
+    maxLines?: number;
+    /** absolute file line to start the page at (paging cursor; default = span start) */
+    startLine?: number;
+  }): Record<string, unknown> {
+    const node = this.deps.soul.getNode(args.id);
+    if (!node) return notFound(args.id);
+    return { node: this.publicNode(node), source: this.bodyOf(node, args) };
+  }
+
+  /**
+   * `dossier` — one-shot deep reusable context for a symbol, backed by a persisted artifact.
+   * Folds together everything an agent otherwise assembles from `context` + `source` +
+   * `extract_rules`: the deep node fields, the paged rehydrated source body, callers / callees,
+   * linked docs, the decision table (for a callable), AND the schema-1.2 control-flow constructs
+   * (raises / handles / iterates / declares). The artifact is built by the shared core
+   * {@link buildDossier} (the SAME code path the pipeline uses to persist it post-resolve), so the
+   * persisted file and the live verb output are identical in shape.
+   *
+   * Cache discipline: a default-shape request (no source paging opts) is served from the persisted
+   * artifact under `.crib/dossiers/` when it is fresh (node hash + schema version match the live
+   * soul); otherwise it is rebuilt and re-persisted. A paged request (sourceStartLine / sourceMaxLines
+   * / sourceMaxChars) is a live view — it is rebuilt every time (the cache holds the default page).
+   * `format: 'markdown'` returns the deterministic human/agent-facing projection.
+   */
+  dossier(args: {
+    id: string;
+    includeTables?: boolean;
+    sourceMaxChars?: number;
+    sourceMaxLines?: number;
+    /** absolute file line to start the source page at (paging cursor; default = span start) */
+    sourceStartLine?: number;
+    extractedOnly?: boolean;
+    format?: 'json' | 'markdown';
+  }): Record<string, unknown> {
+    const soul = this.deps.soul;
+    const node = soul.getNode(args.id);
+    if (!node) return notFound(args.id);
+    const manifest = soul.getManifest();
+    const paged =
+      args.sourceMaxChars !== undefined ||
+      args.sourceMaxLines !== undefined ||
+      args.sourceStartLine !== undefined;
+    const buildOpts = {
+      ...(args.includeTables ? { includeTables: true } : {}),
+      ...(args.extractedOnly ? { extractedOnly: true } : {}),
+      ...(args.sourceMaxChars !== undefined ? { sourceMaxChars: args.sourceMaxChars } : {}),
+      ...(args.sourceMaxLines !== undefined ? { sourceMaxLines: args.sourceMaxLines } : {}),
+      ...(args.sourceStartLine !== undefined ? { sourceStartLine: args.sourceStartLine } : {}),
+    };
+
+    let dossier: Dossier | undefined;
+    if (!paged) {
+      // default-shape: prefer the persisted artifact when fresh, else build + persist.
+      const read = readDossier(soul.cribDir, args.id, {
+        nodeHash: node.hash,
+        schemaVersion: manifest.schemaVersion,
+      });
+      if (!read.missing && !read.stale && read.dossier) {
+        dossier = read.dossier;
+      } else {
+        dossier = buildDossier(
+          soul,
+          this.deps.repoRoot,
+          args.id,
+          manifest.stats.lastUpdated,
+          buildOpts,
+        );
+        if (dossier) writeDossier(soul.cribDir, dossier);
+      }
+    } else {
+      // paged view: always rebuild (the cache holds the default page only).
+      dossier = buildDossier(
+        soul,
+        this.deps.repoRoot,
+        args.id,
+        manifest.stats.lastUpdated,
+        buildOpts,
+      );
+    }
+    if (!dossier) return notFound(args.id);
+    if (args.format === 'markdown') {
+      return { id: args.id, markdown: dossierToMarkdown(dossier) };
+    }
+    return dossier as unknown as Record<string, unknown>;
+  }
+
+  /** Rehydrate a node's full span, mapping the budget + paging args onto the snippet defaults. */
+  private bodyOf(
+    node: Node,
+    args: {
+      sourceMaxChars?: number;
+      sourceMaxLines?: number;
+      sourceStartLine?: number;
+      maxChars?: number;
+      maxLines?: number;
+      startLine?: number;
+    },
+  ): RehydratedBody {
+    return rehydrateBody(this.deps.repoRoot, node, {
+      maxChars: args.sourceMaxChars ?? args.maxChars ?? DEFAULT_BODY_MAX_CHARS,
+      maxLines: args.sourceMaxLines ?? args.maxLines ?? DEFAULT_BODY_MAX_LINES,
+      ...(args.sourceStartLine !== undefined ? { startLine: args.sourceStartLine } : {}),
+      ...(args.startLine !== undefined ? { startLine: args.startLine } : {}),
+    });
   }
 
   impact(args: {
@@ -317,19 +464,74 @@ export class Verbs {
 
   private brief(id: string, confidence: number): Record<string, unknown> {
     const n = this.deps.soul.getNode(id);
-    return { id, ...(n?.name ? { name: n.name } : {}), confidence };
+    if (!n) return { id, confidence };
+    return {
+      id,
+      ...(n.name ? { name: n.name } : {}),
+      ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),
+      ...(n.signature ? { signature: n.signature } : {}),
+      ...(n.type ? { type: n.type } : {}),
+      ...(n.file ? { file: n.file } : {}),
+      ...(n.span ? { line: n.span.start } : {}),
+      confidence,
+    };
   }
 
+  /**
+   * The public node shape — surfaces EVERY captured field, not just the symbol-header subset. The
+   * deep-extraction fields (schema/table/dataType for columns, sqlKind/expr for statements, branch
+   * for conditions, heading/anchor for doc-sections, meta.columns for tables, meta.returnType for
+   * procs) are what make crib's context low-level rather than high-level. Only present fields are
+   * included, so the shape stays honest per node kind.
+   */
   private publicNode(n: Node): Record<string, unknown> {
-    return {
+    const out: Record<string, unknown> = {
       id: n.id,
       kind: n.kind,
-      ...(n.name ? { name: n.name } : {}),
-      ...(n.signature ? { signature: n.signature } : {}),
-      ...(n.file ? { file: n.file } : {}),
-      ...(n.span ? { span: n.span } : {}),
-      ...(n.clusterId ? { clusterId: n.clusterId } : {}),
     };
+    if (n.type) out.type = n.type;
+    if (n.name) out.name = n.name;
+    if (n.qualifiedName) out.qualifiedName = n.qualifiedName;
+    if (n.signature) out.signature = n.signature;
+    if (n.lang) out.lang = n.lang;
+    if (n.file) out.file = n.file;
+    if (n.span) out.span = n.span;
+    if (n.clusterId) out.clusterId = n.clusterId;
+    // deep-extraction: SQL / table / column
+    if (n.schema) out.schema = n.schema;
+    if (n.table) out.table = n.table;
+    if (n.dataType) out.dataType = n.dataType;
+    if (n.sqlKind) out.sqlKind = n.sqlKind;
+    if (n.expr) out.expr = n.expr;
+    if (n.branch) out.branch = n.branch;
+    // deep-extraction 1.2 (behavior-bearing fidelity) — the fields that make crib's context
+    // detailed-level rather than high-level: raises, exception handlers, cursors, assignments,
+    // inline column constraints, and the comment span an explanation was derived from.
+    if (n.errorCode) out.errorCode = n.errorCode;
+    if (n.errorMessage) out.errorMessage = n.errorMessage;
+    if (n.whenSelector) out.whenSelector = n.whenSelector;
+    if (n.assignTarget) out.assignTarget = n.assignTarget;
+    if (n.cursorQuery) out.cursorQuery = n.cursorQuery;
+    if (Array.isArray(n.constraints)) out.constraints = n.constraints;
+    if (n.commentRef) out.commentRef = n.commentRef;
+    // doc-section
+    if (n.heading) out.heading = n.heading;
+    if (n.level !== undefined) out.level = n.level;
+    if (n.anchor) out.anchor = n.anchor;
+    // selective meta — surface the structured deep fields, not arbitrary blobs
+    if (n.meta) {
+      const m = n.meta as Record<string, unknown>;
+      if (Array.isArray(m.columns)) out.columns = m.columns;
+      if (m.returnType !== undefined) out.returnType = m.returnType;
+      if (Array.isArray(m.tables)) out.tables = m.tables;
+      // PL/SQL object type: the full attribute field list (the deep context)
+      if (Array.isArray(m.attributes)) out.attributes = m.attributes;
+      // PL/SQL collection type: TABLE OF / VARRAY OF element
+      if (m.collection !== undefined) out.collection = m.collection;
+      // PL/SQL view marker (a table node that is actually a view)
+      if (m.kind !== undefined) out.kindMeta = m.kind;
+    }
+    return out;
   }
 }
 

@@ -178,3 +178,83 @@ function isIdentStart(c: string | undefined): boolean {
 function isIdentPart(c: string | undefined): boolean {
   return isIdentStart(c) || isDigit(c) || c === '$' || c === '#';
 }
+
+// ── 1.2: comment retention ──────────────────────────────────────────────────────────────
+// The tokenizer skips comments (the parser is comment-blind). For deep extraction we separately
+// collect comment blocks so the extractor can associate a preceding block with the next declared
+// symbol as an `explanation` node. A "block" is a maximal run of contiguous `--` lines (a leading
+// `--` on each line, no blank line between) OR a single `/* … */` block comment. Pure deterministic.
+
+/** One retained comment block with its 1-based inclusive line span + cleaned text. */
+export interface CommentBlock {
+  start: number;
+  end: number;
+  text: string;
+}
+
+/**
+ * Collect comment blocks from PL/SQL source. Contiguous `--` lines merge into one block; each
+ * slash-star block comment is its own block. The leading comment markers (`--`, star-slash, and
+ * leading star) are stripped and each line is trimmed; the block text is the lines joined by `\n`.
+ * Never throws.
+ */
+export function collectComments(src: string): CommentBlock[] {
+  const out: CommentBlock[] = [];
+  const lines = src.split('\n');
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i] ?? '';
+    const trimmed = line.trim();
+    // line comment `--`
+    if (trimmed.startsWith('--')) {
+      const start = i + 1;
+      const parts: string[] = [];
+      while (i < lines.length) {
+        const l = (lines[i] ?? '').trim();
+        if (!l.startsWith('--')) break;
+        parts.push(l.replace(/^--\s?/, '').trim());
+        i++;
+      }
+      out.push({ start, end: i, text: parts.join('\n') });
+      continue;
+    }
+    // block comment /* … */ (may span lines)
+    if (trimmed.startsWith('/*')) {
+      const start = i + 1;
+      const parts: string[] = [];
+      // single-line block comment closes on the same line
+      if (trimmed.endsWith('*/') && trimmed.length > 2) {
+        parts.push(
+          trimmed
+            .replace(/^\/\*+\s?/, '')
+            .replace(/\*+\/$/, '')
+            .trim(),
+        );
+        out.push({ start, end: start, text: parts.join('\n') });
+        i++;
+        continue;
+      }
+      parts.push(trimmed.replace(/^\/\*+\s?/, '').trim());
+      i++;
+      while (i < lines.length) {
+        const l = (lines[i] ?? '').trim();
+        if (l.endsWith('*/')) {
+          parts.push(
+            l
+              .replace(/\*+\/$/, '')
+              .replace(/^\s*\*\s?/, '')
+              .trim(),
+          );
+          i++;
+          break;
+        }
+        parts.push(l.replace(/^\s*\*\s?/, '').trim());
+        i++;
+      }
+      out.push({ start, end: i, text: parts.filter((p) => p.length > 0).join('\n') });
+      continue;
+    }
+    i++;
+  }
+  return out;
+}

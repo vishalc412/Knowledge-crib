@@ -69,6 +69,22 @@ export interface Node {
   expr?: string;
   branch?: string;
 
+  // --- deep-extraction 1.2 (behavior-bearing fidelity) ---
+  /** `raise` node: the Oracle error code, e.g. "-20001" (from RAISE_APPLICATION_ERROR). */
+  errorCode?: string;
+  /** `raise` node: the error message text. */
+  errorMessage?: string;
+  /** `exception-handler` node: the WHEN selector, e.g. "NO_DATA_FOUND" / "OTHERS" / user exception. */
+  whenSelector?: string;
+  /** `assignment` node: the assignment target (LHS), e.g. "v_status". */
+  assignTarget?: string;
+  /** `cursor` node: the cursor's SELECT query text. */
+  cursorQuery?: string;
+  /** `column` node: inline constraints as written, e.g. ["NOT NULL","DEFAULT 0","CHECK (…)"]. */
+  constraints?: string[];
+  /** `explanation` node: the source span of the comment block this explanation was derived from. */
+  commentRef?: { file: string; span: Span };
+
   /** extensible; unknown keys preserved on read→write */
   meta?: Record<string, unknown>;
 }
@@ -154,17 +170,20 @@ export interface Manifest {
 export const CRIB_FORMAT_VERSION = '1.0';
 /**
  * Schema version. 1.1 (M11) widens `Edge.cfgPath` from `string` to `string[]` and adds
- * `inLoop`/`inException`. A soul written at 1.0 (no `cfgPath` on its edges) still loads — the
- * absent field stays `undefined` (no widening) — see {@link SUPPORTED_SCHEMA_VERSIONS}.
+ * `inLoop`/`inException`. 1.2 (deep-extraction fidelity) adds NodeKinds `exception-handler`,
+ * `raise`, `cursor`, `assignment`, `case-branch`; Rels `raises`/`handles`/`iterates`/`declares`;
+ * and optional Node fields `errorCode`/`errorMessage`/`whenSelector`/`assignTarget`/`cursorQuery`/
+ * `constraints`/`commentRef`. ALL additions are optional, so a 1.0/1.1 soul still loads verbatim —
+ * absent fields stay `undefined` (no widening) and are preserved on re-write.
  */
-export const SCHEMA_VERSION = '1.1';
+export const SCHEMA_VERSION = '1.2';
 export const TOOL_NAME = 'knowledge-crib';
 
 /**
  * Schema versions the loader will hydrate. A 1.0 soul (pre-M11) loads as-is; its edges have no
  * `cfgPath` and that is preserved on re-write (no widening). Unknown versions → load() refuses.
  */
-export const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1'] as const;
+export const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2'] as const;
 
 /** Default chunking knobs (per spec storage §6 / C4). */
 export const DEFAULT_CHUNKING: ManifestChunking = {

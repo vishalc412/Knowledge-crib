@@ -198,10 +198,307 @@ describe('PlSqlExtractor — golden (M10 gate)', () => {
     expect(r.edges).toEqual([]);
   });
 
+  it('terminates on an anonymous block with CASE + EXCEPTION (stray WHEN at top level)', async () => {
+    // Regression: the parser does not model CASE/EXCEPTION precisely, so the EXCEPTION handler's
+    // `WHEN` (a BLOCK_END keyword) was left as a stray top-level token. parseFile's unknown-construct
+    // fallback called recover(), which bails on BLOCK_END keywords without advancing → infinite loop.
+    // The block is followed by a bare SELECT to prove parseFile kept walking past the stray tokens.
+    const src = [
+      'DECLARE',
+      '  v_icon VARCHAR2(3);',
+      'BEGIN',
+      '  CASE v_status',
+      "    WHEN 'PASSED' THEN v_icon := 'OK';",
+      "    ELSE v_icon := '?';",
+      '  END CASE;',
+      'EXCEPTION',
+      '  WHEN OTHERS THEN',
+      '    ROLLBACK;',
+      'END;',
+      '/',
+      'SELECT * FROM DUAL;',
+      '',
+    ].join('\n');
+    const r = await run(src);
+    // no throw, no hang — and the trailing top-level SELECT was reached (a statement node exists).
+    const selects = r.nodes.filter((n) => n.kind === 'statement' && n.sqlKind === 'select');
+    expect(selects.length).toBe(1);
+  });
+
   it('every edge is EXTRACTED/static/confidence 1 with plsql-extractor evidence', async () => {
     const { edges } = await run();
     expect(edges.length).toBeGreaterThan(0);
     for (const e of edges) {
+      expect(e.provenance).toBe('EXTRACTED');
+      expect(e.method).toBe('static');
+      expect(e.confidence).toBe(1);
+      expect(e.evidence?.by).toBe('plsql-extractor');
+    }
+  });
+});
+
+describe('PlSqlExtractor — CREATE TYPE / VIEW (Track 2 deep-context)', () => {
+  const TYPES_FIXTURE = fileURLToPath(new URL('../../fixtures/plsql/types.sql', import.meta.url));
+  const TYPES_PATH = 'fixtures/plsql/types.sql';
+
+  async function runTypes(): Promise<ExtractResult> {
+    const text = readFileSync(TYPES_FIXTURE, 'utf8');
+    const meta: FileMeta = { path: TYPES_PATH, lang: 'plsql', bytes: text.length, mtime: 0 };
+    return new PlSqlExtractor().extract(meta, ctxFor(text));
+  }
+
+  it('models CREATE TYPE AS OBJECT as a symbol with the FULL attribute field list', async () => {
+    const { nodes } = await runTypes();
+    const t = nodes.find((n) => n.qualifiedName === 'applicant_ctx_obj');
+    expect(t).toBeDefined();
+    expect(t!.kind).toBe('symbol');
+    expect(t!.type).toBe('type');
+    // the full attribute list — the deep context that was previously missing
+    const attrs = (t!.meta?.attributes as Array<{ name: string; dataType: string }>) ?? [];
+    expect(attrs.map((a) => a.name)).toEqual([
+      'applicant_id',
+      'full_name',
+      'date_of_birth',
+      'gender',
+      'nationality',
+      'residency_code',
+      'monthly_income',
+      'existing_debt',
+      'kyc_passed',
+    ]);
+    expect(attrs.find((a) => a.name === 'full_name')!.dataType).toContain('VARCHAR2');
+  });
+
+  it('models a TABLE OF collection type with element type on meta.collection', async () => {
+    const { nodes } = await runTypes();
+    const t = nodes.find((n) => n.qualifiedName === 'income_sources');
+    expect(t?.type).toBe('type');
+    expect(t?.meta?.collection).toEqual({ kind: 'table', elementType: 'income_source_obj' });
+    expect((t?.meta?.attributes as unknown[]) ?? []).toHaveLength(0);
+  });
+
+  it('models a VARRAY OF collection type', async () => {
+    const { nodes } = await runTypes();
+    const t = nodes.find((n) => n.qualifiedName === 'doc_list');
+    const collection = t?.meta?.collection as { kind: string; elementType: string } | undefined;
+    expect(collection?.kind).toBe('varray');
+    expect(collection?.elementType).toContain('VARCHAR2');
+  });
+
+  it('models CREATE VIEW as a table node (meta.kind:view) with explicit columns', async () => {
+    const { nodes, edges } = await runTypes();
+    const v = nodes.find((n) => n.kind === 'table' && n.name === 'applicant_summary');
+    expect(v).toBeDefined();
+    expect(v!.meta?.kind).toBe('view');
+    expect(v!.meta?.columns).toEqual(['applicant_id', 'full_name', 'total_income']);
+    // explicit view columns become column nodes member-of the view
+    const cols = nodes.filter((n) => n.kind === 'column' && n.table === 'applicant_summary');
+    expect(cols.map((c) => c.name).sort()).toEqual(['applicant_id', 'full_name', 'total_income']);
+    expect(
+      cols.every((c) =>
+        edges.some((e) => e.rel === 'member-of' && e.src === c.id && e.dst === v!.id),
+      ),
+    ).toBe(true);
+  });
+
+  it('the object type is member-of the file and indexed for cross-file resolution', async () => {
+    const { nodes, edges } = await runTypes();
+    const t = nodes.find((n) => n.qualifiedName === 'applicant_ctx_obj')!;
+    const fileId = idFor({ kind: 'file', path: TYPES_PATH });
+    expect(edges.some((e) => e.rel === 'member-of' && e.src === t.id && e.dst === fileId)).toBe(
+      true,
+    );
+  });
+
+  it('uses the canonical id grammar for the type symbol', async () => {
+    const { nodes } = await runTypes();
+    const t = nodes.find((n) => n.qualifiedName === 'applicant_ctx_obj');
+    expect(t?.id).toMatch(/^sym:fixtures\/plsql\/types\.sql#applicant_ctx_obj@L\d+$/);
+  });
+});
+
+describe('PlSqlExtractor — schema-1.2 behavior constructs (Workstream B/G golden)', () => {
+  const LOAN_FIXTURE = fileURLToPath(
+    new URL('../../fixtures/plsql/loan_rule_engine.pkb', import.meta.url),
+  );
+  const LOAN_PATH = 'fixtures/plsql/loan_rule_engine.pkb';
+
+  async function runLoan(): Promise<ExtractResult> {
+    const text = readFileSync(LOAN_FIXTURE, 'utf8');
+    const meta: FileMeta = { path: LOAN_PATH, lang: 'plsql', bytes: text.length, mtime: 0 };
+    return new PlSqlExtractor().extract(meta, ctxFor(text));
+  }
+
+  /** label ids for the 1.2 behavior kinds so assertions stay readable. */
+  function loanLabel(r: ExtractResult): (id: string) => string {
+    const nm = new Map(r.nodes.map((n) => [n.id, n] as const));
+    return (id: string): string => {
+      const n = nm.get(id);
+      if (!n) return id;
+      switch (n.kind) {
+        case 'symbol':
+          return n.qualifiedName ?? n.name ?? id;
+        case 'table':
+          return `table:${n.name}`;
+        case 'statement':
+          return `stmt:L${n.span?.start}:${n.sqlKind ?? n.type}`;
+        case 'condition':
+          return `cond:L${n.span?.start}:${n.branch}`;
+        case 'cursor':
+          return `cursor:${n.name}`;
+        case 'raise':
+          return `raise:L${n.span?.start}:${n.errorCode ?? n.name}`;
+        case 'exception-handler':
+          return `exc:L${n.span?.start}:${n.whenSelector}`;
+        case 'case-branch':
+          return `case:L${n.span?.start}:${n.whenSelector ?? 'default'}`;
+        case 'assignment':
+          return `assign:L${n.span?.start}:${n.assignTarget}`;
+        case 'explanation':
+          return `expl:L${n.span?.start}`;
+        default:
+          return n.kind;
+      }
+    };
+  }
+
+  it('emits a cursor node (with cursorQuery) + declares + a loop iterates edge', async () => {
+    const { nodes, edges } = await runLoan();
+    const label = loanLabel({ nodes, edges } as ExtractResult);
+    const cur = nodes.find((n) => n.kind === 'cursor' && n.name === 'c_app');
+    expect(cur).toBeDefined();
+    expect(cur?.cursorQuery).toContain('SELECT amount, status, credit_score');
+    expect(cur?.cursorQuery).toContain('FROM loan_applications');
+
+    const proc = nodes.find((n) => n.qualifiedName === 'loan_engine.assess_application')!;
+    // proc declares the cursor
+    expect(edges.some((e) => e.rel === 'declares' && e.src === proc.id && e.dst === cur!.id)).toBe(
+      true,
+    );
+    // the FOR ... IN c_app LOOP iterates the cursor (loop condition -> cursor)
+    const loopCond = nodes.find((n) => n.kind === 'condition' && n.branch === 'LOOP');
+    expect(loopCond).toBeDefined();
+    expect(
+      edges.some((e) => e.rel === 'iterates' && e.src === loopCond!.id && e.dst === cur!.id),
+    ).toBe(true);
+  });
+
+  it('emits an explanation node from the comment block above the procedure + a describes edge', async () => {
+    const { nodes, edges } = await runLoan();
+    const label = loanLabel({ nodes, edges } as ExtractResult);
+    const expl = nodes.find((n) => n.kind === 'explanation');
+    expect(expl).toBeDefined();
+    expect(expl?.commentRef?.file).toBe(LOAN_PATH);
+    expect(String(expl?.meta?.text ?? '')).toContain('Assess one loan application');
+    const proc = nodes.find((n) => n.qualifiedName === 'loan_engine.assess_application')!;
+    expect(
+      edges.some((e) => e.rel === 'describes' && e.src === expl!.id && e.dst === proc.id),
+    ).toBe(true);
+  });
+
+  it('emits assignment nodes with assignTarget for each := in the body', async () => {
+    const { nodes } = await runLoan();
+    const assigns = nodes
+      .filter((n) => n.kind === 'assignment')
+      .map((n) => `${n.assignTarget}@L${n.span?.start}`)
+      .sort();
+    expect(assigns).toEqual(
+      [
+        'v_amount@L28',
+        'v_decision@L33',
+        'v_decision@L35',
+        'v_decision@L37',
+        'v_decision@L46',
+        'v_score@L30',
+        'v_status@L29',
+      ].sort(),
+    );
+  });
+
+  it('emits one case-branch per WHEN/ELSE with the WHEN condition as whenSelector', async () => {
+    const { nodes } = await runLoan();
+    const cases = nodes
+      .filter((n) => n.kind === 'case-branch')
+      .map((n) => `${n.span?.start}:${n.whenSelector ?? 'default'}`)
+      .sort();
+    expect(cases).toEqual(
+      ['32:v_amount > 50000 AND v_score >= 700', '34:v_score >= 600', '36:default'].sort(),
+    );
+  });
+
+  it('emits raise nodes with errorCode + errorMessage and raises edges from the proc', async () => {
+    const { nodes, edges } = await runLoan();
+    const label = loanLabel({ nodes, edges } as ExtractResult);
+    const raises = nodes.filter((n) => n.kind === 'raise');
+    expect(raises.map((n) => n.errorCode).sort()).toEqual(['-20001', '-20002']);
+    const r1 = raises.find((n) => n.errorCode === '-20001')!;
+    expect(r1.errorMessage).toBe('application rejected: insufficient credit');
+    const r2 = raises.find((n) => n.errorCode === '-20002')!;
+    expect(r2.errorMessage).toBe('assess_application failed');
+
+    const proc = nodes.find((n) => n.qualifiedName === 'loan_engine.assess_application')!;
+    const raisesEdges = edges
+      .filter((e) => e.rel === 'raises' && e.src === proc.id)
+      .map((e) => label(e.dst))
+      .sort();
+    expect(raisesEdges).toEqual(['raise:L40:-20001', 'raise:L49:-20002']);
+  });
+
+  it('emits exception-handler nodes (whenSelector) with handles edges to their guarded stmts', async () => {
+    const { nodes, edges } = await runLoan();
+    const label = loanLabel({ nodes, edges } as ExtractResult);
+    const excs = nodes
+      .filter((n) => n.kind === 'exception-handler')
+      .map((n) => `${n.span?.start}:${n.whenSelector}`)
+      .sort();
+    expect(excs).toEqual(['45:NO_DATA_FOUND', '48:OTHERS']);
+
+    const handles = edges
+      .filter((e) => e.rel === 'handles')
+      .map((e) => `${label(e.src)} -> ${label(e.dst)}`)
+      .sort();
+    expect(handles).toEqual(
+      [
+        'exc:L45:NO_DATA_FOUND -> assign:L46:v_decision',
+        'exc:L45:NO_DATA_FOUND -> stmt:L47:update',
+        'exc:L48:OTHERS -> raise:L49:-20002',
+      ].sort(),
+    );
+  });
+
+  it('stamps guard-chain: the raise inside the guarded IF is guarded-by the IF condition', async () => {
+    const { nodes, edges } = await runLoan();
+    const label = loanLabel({ nodes, edges } as ExtractResult);
+    const r1 = nodes.find((n) => n.kind === 'raise' && n.errorCode === '-20001')!;
+    // the IF v_decision = 'REJECT' THEN guard stamps a guarded-by edge onto the raise
+    const guardedBy = edges
+      .filter((e) => e.rel === 'guarded-by' && e.src === r1.id)
+      .map((e) => label(e.dst));
+    expect(guardedBy.length).toBe(1);
+    expect(guardedBy[0]).toMatch(/^cond:L\d+:THEN$/);
+  });
+
+  it('emits executes edges from the proc to its assignments + DML (no regression to Track-3)', async () => {
+    const { nodes, edges } = await runLoan();
+    const label = loanLabel({ nodes, edges } as ExtractResult);
+    const proc = nodes.find((n) => n.qualifiedName === 'loan_engine.assess_application')!;
+    const exec = edges
+      .filter((e) => e.rel === 'executes' && e.src === proc.id)
+      .map((e) => label(e.dst))
+      .sort();
+    // 7 assignments + 2 DML statements (the body UPDATE + the NO_DATA_FOUND handler UPDATE)
+    expect(exec).toContain('stmt:L42:update');
+    expect(exec).toContain('stmt:L47:update');
+    expect(exec.filter((x) => x.startsWith('assign:')).length).toBe(7);
+  });
+
+  it('every 1.2 edge is EXTRACTED/static/confidence 1 with plsql-extractor evidence', async () => {
+    const { edges } = await runLoan();
+    const rel12 = edges.filter((e) =>
+      ['raises', 'handles', 'iterates', 'declares', 'describes'].includes(e.rel),
+    );
+    expect(rel12.length).toBeGreaterThan(0);
+    for (const e of rel12) {
       expect(e.provenance).toBe('EXTRACTED');
       expect(e.method).toBe('static');
       expect(e.confidence).toBe(1);

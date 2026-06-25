@@ -116,6 +116,169 @@ describe('round-trip + byte stability (M0 gate)', () => {
   });
 });
 
+describe('schema 1.2 round-trip + 1.1 forward-compat (Workstream G)', () => {
+  it('round-trips every 1.2 behavior node + edge field through write→read byte-identically', () => {
+    const proc: Node = {
+      id: idFor({ kind: 'symbol', path: 'src/loan.pkb', qualifiedName: 'assess', startLine: 5 }),
+      kind: 'symbol',
+      type: 'procedure',
+      name: 'assess',
+      qualifiedName: 'assess',
+      file: 'src/loan.pkb',
+      span: { start: 5, end: 30 },
+      lang: 'plsql',
+      hash: contentHash('assess'),
+    };
+    const raise: Node = {
+      id: idFor({ kind: 'raise', file: 'src/loan.pkb', line: 12 }),
+      kind: 'raise',
+      name: 'raise_application_error',
+      errorCode: '-20001',
+      errorMessage: 'bad claim',
+      file: 'src/loan.pkb',
+      span: { start: 12, end: 12 },
+      lang: 'plsql',
+      hash: contentHash('raise'),
+    };
+    const exc: Node = {
+      id: idFor({ kind: 'exception-handler', file: 'src/loan.pkb', line: 20 }),
+      kind: 'exception-handler',
+      whenSelector: 'NO_DATA_FOUND',
+      file: 'src/loan.pkb',
+      span: { start: 20, end: 20 },
+      lang: 'plsql',
+      hash: contentHash('exc'),
+    };
+    const caseB: Node = {
+      id: idFor({ kind: 'case-branch', file: 'src/loan.pkb', line: 9 }),
+      kind: 'case-branch',
+      whenSelector: "v_status = 'OPEN'",
+      file: 'src/loan.pkb',
+      span: { start: 9, end: 9 },
+      lang: 'plsql',
+      hash: contentHash('case'),
+    };
+    const assign: Node = {
+      id: idFor({ kind: 'assignment', file: 'src/loan.pkb', line: 8 }),
+      kind: 'assignment',
+      assignTarget: 'v_status',
+      file: 'src/loan.pkb',
+      span: { start: 8, end: 8 },
+      lang: 'plsql',
+      hash: contentHash('assign'),
+    };
+    const cursor: Node = {
+      id: idFor({ kind: 'cursor', file: 'src/loan.pkb', name: 'c_app', line: 6 }),
+      kind: 'cursor',
+      name: 'c_app',
+      cursorQuery: 'SELECT * FROM loan_applications',
+      file: 'src/loan.pkb',
+      span: { start: 6, end: 6 },
+      lang: 'plsql',
+      hash: contentHash('cursor'),
+    };
+    const expl: Node = {
+      id: idFor({ kind: 'explanation', path: 'src/loan.pkb', startLine: 4 }),
+      kind: 'explanation',
+      commentRef: { file: 'src/loan.pkb', span: { start: 3, end: 4 } },
+      file: 'src/loan.pkb',
+      span: { start: 3, end: 4 },
+      lang: 'plsql',
+      hash: contentHash('expl'),
+      meta: { text: 'assess a loan' },
+    };
+    const mk = (rel: Edge['rel'], src: string, dst: string): Edge => ({
+      id: edgeId(src, dst, rel),
+      src,
+      dst,
+      rel,
+      method: 'static',
+      provenance: 'EXTRACTED',
+      confidence: 1,
+      // 1.1/1.2 edge guard-chain fields round-trip too
+      cfgPath: ['root', 'if'],
+      branch: 'THEN',
+      inLoop: true,
+      inException: false,
+      evidence: { by: 'test' },
+    });
+
+    const store = open();
+    store.putNodes([fileNode('src/loan.pkb'), proc, raise, exc, caseB, assign, cursor, expl]);
+    store.putEdges([
+      mk('raises', proc.id, raise.id),
+      mk('handles', exc.id, assign.id),
+      mk('iterates', caseB.id, cursor.id),
+      mk('declares', proc.id, cursor.id),
+      mk('describes', expl.id, proc.id),
+    ]);
+    store.commit('2026-01-01T00:00:00.000Z');
+
+    const reopened = open();
+    // every 1.2 node field preserved verbatim
+    expect(reopened.getNode(raise.id)).toEqual(raise);
+    expect(reopened.getNode(exc.id)).toEqual(exc);
+    expect(reopened.getNode(caseB.id)).toEqual(caseB);
+    expect(reopened.getNode(assign.id)).toEqual(assign);
+    expect(reopened.getNode(cursor.id)).toEqual(cursor);
+    expect(reopened.getNode(expl.id)).toEqual(expl);
+    // every 1.2 rel + guard-chain edge field preserved verbatim
+    for (const rel of ['raises', 'handles', 'iterates', 'declares', 'describes'] as const) {
+      const e = [...reopened.iterateEdges(rel)][0]!;
+      expect(e.cfgPath).toEqual(['root', 'if']);
+      expect(e.branch).toBe('THEN');
+      expect(e.inLoop).toBe(true);
+      expect(e.inException).toBe(false);
+    }
+    // re-commit is byte-stable (no churn on an unchanged soul)
+    const snap1 = snapshotJsonl(dir);
+    reopened.commit('2026-01-01T00:00:00.000Z');
+    expect(snapshotJsonl(dir)).toEqual(snap1);
+  });
+
+  it('loads a 1.1 soul verbatim + rewrites it byte-stably WITHOUT widening to 1.2', () => {
+    // a 1.1 soul: cfgPath:string[] + inLoop/inException, but no 1.2 kinds/fields.
+    const manifest11 = {
+      ...newManifest({ now: '2026-01-01T00:00:00.000Z', repoId: 'fixed' }),
+      schemaVersion: '1.1' as const,
+    };
+    const store = new SoulStore(dir, { manifest: manifest11 });
+    store.load(); // no crib.json yet → keeps the 1.1 manifest
+    expect(store.getManifest().schemaVersion).toBe('1.1');
+
+    const a = symNode('src/a.ts', 'doA', 1);
+    store.putNodes([fileNode('src/a.ts'), a]);
+    store.putEdges([
+      {
+        id: edgeId(a.id, a.id, 'executes'),
+        src: a.id,
+        dst: a.id,
+        rel: 'executes',
+        method: 'static',
+        provenance: 'EXTRACTED',
+        confidence: 1,
+        cfgPath: ['doA'],
+        inLoop: false,
+        evidence: { by: 'test' },
+      },
+    ]);
+    store.commit('2026-01-01T00:00:00.000Z');
+
+    // reload: schemaVersion stays 1.1 (the loader never widens), 1.1 fields preserved
+    const reopened = new SoulStore(dir);
+    reopened.load();
+    expect(reopened.getManifest().schemaVersion).toBe('1.1');
+    const e = [...reopened.iterateEdges('executes')][0]!;
+    expect(e.cfgPath).toEqual(['doA']);
+    expect(e.inLoop).toBe(false);
+
+    // re-commit a 1.1 soul is byte-stable (no silent 1.2 widening churn)
+    const snap1 = snapshotJsonl(dir);
+    reopened.commit('2026-01-01T00:00:00.000Z');
+    expect(snapshotJsonl(dir)).toEqual(snap1);
+  });
+});
+
 describe('invariant #1 — no dangling edges after commit', () => {
   it('drops edges whose endpoints do not exist', () => {
     const a = symNode('src/a.ts', 'doA', 1);

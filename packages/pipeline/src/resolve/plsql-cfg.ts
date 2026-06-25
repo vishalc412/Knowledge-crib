@@ -3,7 +3,16 @@ import { join } from 'node:path';
 import type { EdgeAnnotation } from '@knowledge-crib/core';
 import type { FileMeta } from '@knowledge-crib/parsers';
 import { parsePlSql } from '@knowledge-crib/parsers';
-import type { Block, CallStmt, IfStmt, LoopStmt, Stmt, Unit } from '@knowledge-crib/parsers';
+import type {
+  Block,
+  CallStmt,
+  CaseStmt,
+  ExceptionBlock,
+  IfStmt,
+  LoopStmt,
+  Stmt,
+  Unit,
+} from '@knowledge-crib/parsers';
 import { edgeId, idFor } from '@knowledge-crib/soul-schema';
 import { segmentBlock } from '../cfg/basic-block.js';
 import { pathCondition } from '../cfg/guard-chain.js';
@@ -132,10 +141,12 @@ class Walker {
       const cond = pathCondition(frames);
       for (const s of bb.statements) this.annotate(s, procId, cond);
     }
-    // 2. recurse into compound statements, pushing a frame for each branch / loop body.
+    // 2. recurse into compound statements, pushing a frame for each branch / loop / case / handler.
     for (const s of block.statements) {
       if (s.kind === 'if') this.walkIf(s, procId, frames);
       else if (s.kind === 'loop') this.walkLoop(s, procId, frames);
+      else if (s.kind === 'case') this.walkCase(s, procId, frames);
+      else if (s.kind === 'exception') this.walkException(s, procId, frames);
     }
   }
 
@@ -162,8 +173,42 @@ class Walker {
     this.walkBlock(s.body, procId, [...frames, frame]);
   }
 
+  /**
+   * 1.2: a CASE statement contributes one `case-branch` condition node per WHEN/ELSE branch, keyed
+   * by the branch's start line (matching the extractor). Each branch body is walked under a frame
+   * whose condId is that case-branch id and whose branch label is WHEN/ELSE (polarity).
+   */
+  private walkCase(s: CaseStmt, procId: string, frames: GuardFrame[]): void {
+    for (const branch of s.branches) {
+      const caseBranchId = idFor({ kind: 'case-branch', file: this.path, line: branch.span.start });
+      const frame: GuardFrame = {
+        condId: caseBranchId,
+        branch: branch.label,
+        loop: false,
+        exception: false,
+      };
+      this.walkBlock(branch.body, procId, [...frames, frame]);
+    }
+  }
+
+  /**
+   * 1.2: an EXCEPTION clause marks each handler body `inException: true`. The handler contributes
+   * NO condition to the path (an exception is not a guarded branch — it's an alternate entry), so
+   * the frame's condId is undefined and the existing guard chain is inherited unchanged.
+   */
+  private walkException(s: ExceptionBlock, procId: string, frames: GuardFrame[]): void {
+    for (const handler of s.handlers) {
+      const frame: GuardFrame = { condId: undefined, loop: false, exception: true };
+      this.walkBlock(handler.body, procId, [...frames, frame]);
+    }
+  }
+
   /** Stamp the path condition onto the statement's `executes` (or `calls`) edge. */
   private annotate(s: Stmt, procId: string, cond: ReturnType<typeof pathCondition>): void {
+    // case / exception are compound — segmented out of basic blocks and recursed into, never
+    // annotated directly. raise has no executes edge (it emits a `raises` edge, not executes).
+    if (s.kind === 'case' || s.kind === 'exception' || s.kind === 'raise') return;
+
     const patch: Omit<EdgeAnnotation, 'id'> = {
       cfgPath: cond.cfgPath,
       inLoop: cond.inLoop,
@@ -176,8 +221,12 @@ class Walker {
       this.annotateCall(s, procId, patch);
       return;
     }
-    // sql / assign / plain → an `executes` edge (proc → statement) the extractor wrote.
-    const stmtId = idFor({ kind: 'statement', file: this.path, line: s.span.start });
+    // 1.2: an assignment emits an `assignment` node (not a `statement`); compute its id so the
+    // executes edge the extractor wrote is stamped with the path condition.
+    const stmtId =
+      s.kind === 'assign'
+        ? idFor({ kind: 'assignment', file: this.path, line: s.span.start })
+        : idFor({ kind: 'statement', file: this.path, line: s.span.start });
     this.updates.push({ id: edgeId(procId, stmtId, 'executes'), ...patch });
   }
 

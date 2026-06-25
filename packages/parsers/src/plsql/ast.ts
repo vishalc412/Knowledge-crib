@@ -51,12 +51,18 @@ export interface Unit {
   body?: Block;
 }
 
-/** A declaration inside a unit's declarative part: a nested procedure/function or a local variable. */
+/** A declaration inside a unit's declarative part: a nested procedure/function, a local variable,
+ *  or a cursor. 1.2 adds `cursor` (CURSOR c IS SELECT …) with `cursorQuery`, and `variable` carries
+ *  `dataType` so package-level state is recoverable for migration. */
 export interface Decl {
-  kind: 'procedure' | 'function' | 'variable';
+  kind: 'procedure' | 'function' | 'variable' | 'cursor';
   name: string;
   params?: string;
   returnType?: string;
+  /** variable: the type as written, e.g. "NUMBER" / "VARCHAR2(20)". */
+  dataType?: string;
+  /** cursor: the SELECT query text (everything after IS), whitespace-collapsed. */
+  cursorQuery?: string;
   span: AstSpan;
   body?: Block;
   declarations?: Decl[];
@@ -68,8 +74,19 @@ export interface Block {
   statements: Stmt[];
 }
 
-/** Discriminated statement union. `sqlKind`/`expr`/`tables`/`columns` drive reads/writes edges. */
-export type Stmt = SqlStmt | IfStmt | LoopStmt | AssignStmt | CallStmt | PlainStmt;
+/** Discriminated statement union. `sqlKind`/`expr`/`tables`/`columns` drive reads/writes edges.
+ *  1.2 adds `CaseStmt` and `ExceptionBlock` (previously parsed-and-skipped) so guards and handlers
+ *  survive into the graph. */
+export type Stmt =
+  | SqlStmt
+  | IfStmt
+  | LoopStmt
+  | CaseStmt
+  | ExceptionBlock
+  | AssignStmt
+  | CallStmt
+  | RaiseStmt
+  | PlainStmt;
 
 export interface SqlStmt {
   kind: 'sql';
@@ -82,6 +99,8 @@ export interface SqlStmt {
   columns: string[];
   /** the action verb, e.g. "SELECT … FROM claims.claims WHERE id = :1" (truncated snippet). */
   expr?: string;
+  /** 1.2: SELECT … INTO <var> — the target variable (provenance), when present. */
+  intoTarget?: string;
 }
 
 export interface IfStmt {
@@ -106,12 +125,36 @@ export interface LoopStmt {
   condition?: string;
   body: Block;
   span: AstSpan;
+  /** 1.2: for a cursor FOR-loop (`FOR rec IN c LOOP`), the cursor name `c` — drives an `iterates`
+   *  edge to the cursor node so the rule's row source is visible. */
+  cursor?: string;
 }
 
-/** An assignment `target := expr;`. Not data-flow-tracked beyond recording it exists. */
+/** 1.2: a CASE statement. `operand` is the CASE selector (simple case `CASE x WHEN …`); a searched
+ *  case (`CASE WHEN cond …`) has no operand. Each branch becomes a `case-branch` condition node. */
+export interface CaseStmt {
+  kind: 'case';
+  /** the CASE selector expression, e.g. "v_status"; undefined for a searched CASE. */
+  operand?: string;
+  branches: CaseBranch[];
+  span: AstSpan;
+}
+
+export interface CaseBranch {
+  /** "WHEN" | "ELSE". */
+  label: 'WHEN' | 'ELSE';
+  /** the WHEN value (simple case) or predicate (searched case); undefined for ELSE. */
+  condition?: string;
+  body: Block;
+  span: AstSpan;
+}
+
+/** An assignment `target := expr;`. 1.2 captures the LHS target so variable provenance is traceable. */
 export interface AssignStmt {
   kind: 'assign';
   span: AstSpan;
+  /** the assignment target (LHS) as written, e.g. "v_status" / "self.amount". */
+  target?: string;
   expr?: string;
 }
 
@@ -123,15 +166,38 @@ export interface CallStmt {
   span: AstSpan;
 }
 
-/** A statement we recognize as a statement but don't model further (e.g. NULL;, RETURN). */
+/** 1.2: a RAISE statement. Covers both `RAISE <name>;` (a named exception) and the re-raise `RAISE;`
+ *  (empty `name`). `RAISE_APPLICATION_ERROR(code, msg)` is parsed as a raise with `name` set to
+ *  `RAISE_APPLICATION_ERROR` and `errorCode`/`errorMessage` split out of the call args. */
+export interface RaiseStmt {
+  kind: 'raise';
+  /** the raised exception name, or '' for a bare re-raise, or 'RAISE_APPLICATION_ERROR' for the
+   *  call form. */
+  name: string;
+  /** raise_application_error only: the first arg (error code) as written. */
+  errorCode?: string;
+  /** raise_application_error only: the second arg (error message) as written, quotes stripped. */
+  errorMessage?: string;
+  span: AstSpan;
+}
+
+/** A statement we recognize as a statement but don't model further (e.g. NULL;, RETURN). 1.2: an
+ *  `OPEN <cursor>` records the cursor name so an `iterates` edge can link it to the cursor node. */
 export interface PlainStmt {
   kind: 'plain';
   span: AstSpan;
-  /** the leading keyword, e.g. "RETURN" / "NULL" / "COMMIT" / "ROLLBACK". */
+  /** the leading keyword, e.g. "RETURN" / "NULL" / "COMMIT" / "ROLLBACK" / "OPEN". */
   head: string;
+  /** present when head is "OPEN": the cursor name being opened. */
+  cursorName?: string;
+  /** 1.2: present when head is "RAISE" and the raise targets a named exception (RAISE <name>); the
+   *  raised name. RAISE_APPLICATION_ERROR is handled separately (parsed as a call). */
+  raiseName?: string;
 }
 
-/** An EXCEPTION block: `EXCEPTION WHEN <cond> THEN ... [WHEN OTHERS THEN ...]`. */
+/** An EXCEPTION block: `EXCEPTION WHEN <cond> THEN ... [WHEN OTHERS THEN ...]`. 1.2: now actually
+ *  instantiated by the parser (previously defined-but-dead); each handler becomes an
+ *  `exception-handler` node with `whenSelector` + `handles` edges to the guarded statements. */
 export interface ExceptionBlock {
   kind: 'exception';
   handlers: ExceptionHandler[];
@@ -160,6 +226,8 @@ export interface ColumnDef {
   name: string;
   /** the type as written, e.g. "NUMBER" / "VARCHAR2(20)". */
   dataType: string;
+  /** 1.2: inline column constraints as written, e.g. ["NOT NULL","DEFAULT 0","PRIMARY KEY"]. */
+  constraints?: string[];
 }
 
 export interface TableDef {
@@ -171,5 +239,36 @@ export interface TableDef {
   span: AstSpan;
 }
 
-/** A top-level construct the parser can produce: an executable unit or a DDL table definition. */
-export type TopLevel = Unit | TableDef;
+/**
+ * A `CREATE [OR REPLACE] TYPE [schema.]name AS OBJECT ( attr type, ... )` definition, or a
+ * collection type (`AS TABLE OF <type>` / `AS VARRAY(n) OF <type>`). Object types (e.g. Oracle's
+ * `T_APPLICANT_CTX_OBJ`) carry a rich attribute list — the migration-relevant "full DB context" — so
+ * the extractor surfaces them as `symbol` (type:'type') nodes with `meta.attributes`. Collections
+ * have an empty attribute list and `meta.collection: { kind, elementType }` instead. A view
+ * (`CREATE VIEW`) reuses {@link TableDef} with `kind: 'view-ddl'`.
+ */
+export interface TypeDef {
+  kind: 'type-def';
+  schema: string;
+  name: string;
+  /** object-type attributes; empty for a collection type. */
+  attributes: ColumnDef[];
+  /** present iff this is a collection (TABLE OF / VARRAY OF), not an object type. */
+  collection?: { kind: 'table' | 'varray'; elementType: string };
+  span: AstSpan;
+}
+
+/** A `CREATE [OR REPLACE] VIEW [schema.]name [( c1, c2, ... )] AS SELECT ...` definition. The view
+ * body (the SELECT) is NOT modelled — we capture the name + optional explicit column list so the
+ * view is an addressable node, not silently dropped. */
+export interface ViewDef {
+  kind: 'view-ddl';
+  schema: string;
+  name: string;
+  /** explicit column list if written `VIEW v (c1, c2) AS ...`; else [] (the projection isn't parsed). */
+  columns: ColumnDef[];
+  span: AstSpan;
+}
+
+/** A top-level construct the parser can produce: an executable unit, a table/view DDL, or a type. */
+export type TopLevel = Unit | TableDef | ViewDef | TypeDef;

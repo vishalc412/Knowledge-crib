@@ -21,7 +21,7 @@ Health + whether the project is indexed.
 ```jsonc
 // req: {}
 // res:
-{ "indexed": true, "schemaVersion":"1.0", "stats":{"nodes":12044,"edges":31188,"clusters":37},
+{ "indexed": true, "schemaVersion":"1.2", "stats":{"nodes":12044,"edges":31188,"clusters":37},
   "vcsHead":"a1b2c3", "incrementalSince":"a1b2c3", "capabilities":{"embeddings":false} }
 ```
 
@@ -40,18 +40,91 @@ Incremental update from changed files.
 ```
 
 ## `context(symbol)`
-360° context for one symbol: signature, neighbors, cluster, and **linked docs**.
+360° context for one symbol: signature, neighbors, cluster, and **linked docs**. The `node` shape
+surfaces every captured deep field the extractor recorded (not just the symbol header): for a column
+that means `schema`/`table`/`dataType`; for a statement `sqlKind`/`expr`; for a condition `branch`;
+for a doc-section `heading`/`anchor`; for a PL/SQL object type `attributes`; for a collection type
+`collection`; for a table/view `columns`/`returnType`/`tables`/`kindMeta`. Schema-1.2 behavior nodes
+add `errorCode`/`errorMessage` (raise), `whenSelector` (exception-handler / case-branch),
+`assignTarget` (assignment), `cursorQuery` (cursor), `commentRef` (explanation). Only present fields
+are included, so the shape stays honest per node kind.
+
+Set `withSource` to fold in the **full source body** of the node's span, rehydrated from disk and
+budgeted (`sourceMaxChars`/`sourceMaxLines`); set `withRules` to fold in the decision table for a
+procedure/function (delegates to `extract_rules`, omitted for other node types).
+
 ```jsonc
-// req: { "id":"sym:src/auth/AuthService.ts#AuthService.login@L42", "docLimit?":3 }
+// req: { "id":"sym:src/auth/AuthService.ts#AuthService.login@L42", "docLimit?":3,
+//        "withSource?":true, "withRules?":true,
+//        "sourceMaxChars?":4000, "sourceMaxLines?":200 }
 // res:
-{ "node": { "id":"…","name":"login","signature":"…","file":"…","span":{…},"clusterId":"c:auth" },
-  "callers":  [ { "id":"…","name":"handleLogin","confidence":1.0 } ],
-  "callees":  [ { "id":"…","name":"TokenService.issue","confidence":1.0 } ],
+{ "node": { "id":"…","name":"login","qualifiedName":"AuthService.login","signature":"…","type":"method",
+            "file":"src/auth.ts","span":{"start":42,"end":58},"clusterId":"c:auth" },
+  "callers":  [ { "id":"…","name":"handleLogin","qualifiedName":"Controller.handleLogin",
+                 "file":"src/http.ts","line":10,"confidence":1.0 } ],
+  "callees":  [ { "id":"…","name":"TokenService.issue","qualifiedName":"TokenService.issue",
+                 "file":"src/token.ts","line":88,"confidence":1.0 } ],
   "docs": [ { "sectionId":"doc:docs/auth.md#sessions","heading":"Sessions","anchor":"sessions",
               "snippet":"`AuthService.login` issues…","edgeType":"describes",
               "method":"explicit","provenance":"EXTRACTED","confidence":0.95 } ],
+  // withSource only — the full rehydrated body (the deep code context):
+  "source": { "text":"login(user, pass) {\n    return issue(user, pass);\n  }",
+              "truncated":false, "totalLines":2 },
+  // withRules only, and only when the node is a procedure/function:
+  "rules": { "rules":[ { "action":{ "kind":"executes","sqlKind":"insert" },
+                         "guard":"cond:…@L7","branch":"THEN",
+                         "conditions":[ { "polarity":"THEN" } ] } ] },
   "truncated": false }
 ```
+
+## `source(node)` *(deep-context)*
+The "give me the body" verb — the full source text of one node's span, rehydrated from disk and
+budgeted. This is how crib surfaces **low-level code context** the lean soul references but never
+copies: a procedure body, a CREATE TABLE DDL, a single DML statement, a doc section. Works for any
+node of any language (the rehydration is span-based and language-agnostic). `NOT_FOUND` for an
+unknown id; an empty `source.text` (`truncated:false`) when the node has no file/span on disk.
+
+```jsonc
+// req: { "id":"sym:…#PKG_LOAN_RULE_ENGINE.RESOLVE_AND_EVALUATE_RULES@L120", "maxChars?":4000, "maxLines?":200 }
+// res:
+{ "node": { "id":"…","qualifiedName":"…","file":"…","span":{…} },
+  "source": { "text":"PROCEDURE RESOLVE_AND_EVALUATE_RULES (…) IS\n  …\nEND;",
+              "truncated":true, "totalLines":480 } }
+```
+
+## `dossier(symbol)` *(deep-context, persisted — Workstream D/E)*
+The **one-shot** deep reusable context for a symbol — the highest-leverage verb for a local LLM.
+Folds into one artifact: the deep node fields, the paged rehydrated source body, callers/callees,
+linked docs, the decision table (for a callable), AND the schema-1.2 control-flow constructs
+(`raises`/`handles`/`iterates`/`declares`). Pure over the soul + repoRoot, so it is **persisted**
+under `.crib/dossiers/<shard>/` (sharded by `blake3(nodeId).slice(0,2)`, atomic, hash-anchored to
+the node's `hash`): a repeat for an unchanged node is a disk cache hit, and the persisted artifact
+is byte-identical in shape to the live verb output (the pipeline builds it post-resolve via the same
+code path the verb uses on a cache miss).
+
+`format:'markdown'` returns a deterministic Markdown projection (fixed section order: `## Source`,
+`## Callers`, `## Callees`, `## Decision table`, `## Raises`, `## Exception handlers`, `## Iterates
+(cursors)`, `## Declares`, `## Docs`) — diffable across languages (PL/SQL vs a C# migration). A paged
+request (any of `sourceMaxChars`/`sourceMaxLines`/`sourceStartLine`) always rebuilds the default page
+fresh; the cache holds the default page only.
+
+```jsonc
+// req: { "id":"sym:src/auth/AuthService.ts#AuthService.login@L42",
+//        "includeTables?":true, "sourceMaxChars?":4000, "sourceMaxLines?":200,
+//        "sourceStartLine?":120, "extractedOnly?":true, "format?":"json"|"markdown" }
+// res (format=json):
+{ "id":"…","schemaVersion":"1.2","nodeHash":"blake3:…","builtAt":"2026-06-25T…",
+  "node": { "id":"…","name":"login","type":"method","signature":"…","file":"…","span":{…} },
+  "source": { "text":"login(user,pass){…}","truncated":false,"totalLines":17 },
+  "callers":[ {…} ], "callees":[ {…} ], "docs":[ {…} ],
+  "rules": { "conditions":["v_amt > 50000","v_score >= 700",…], "rules":[ {…} ] },
+  "controlFlow": { "raises":[ {"errorCode":"-20001","errorMessage":"…","confidence":1} ],
+                   "handles":[ {"whenSelector":"NO_DATA_FOUND","confidence":1} ],
+                   "iterates":[ {"name":"c_app","confidence":1} ],
+                   "declares":[ {"kind":"cursor","name":"c_app","cursorQuery":"SELECT …","confidence":1} ] } }
+// res (format=markdown): { "id":"…","markdown":"# AuthService.login\n\n- kind: symbol\n…\n## Source\n```…\n## Decision table\n…\n## Raises\n- -20001 …\n## Exception handlers\n- WHEN NO_DATA_FOUND …\n" }
+```
+`NOT_FOUND` for an unknown id; a callable with no behavior constructs simply omits `controlFlow`.
 
 ## `impact(symbol, dir)`
 Blast radius + the docs describing affected nodes. **The wedge verb.**

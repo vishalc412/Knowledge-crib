@@ -6,15 +6,21 @@
  */
 import type { BuildOpts, IndexStore, SoulStore } from '@knowledge-crib/core';
 import {
+  CsharpExtractor,
   ExtractorRegistry,
+  GoExtractor,
+  JavaExtractor,
   MarkdownExtractor,
   PlSqlExtractor,
   PythonExtractor,
+  RustExtractor,
   TypeScriptExtractor,
 } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
 import { runCluster } from './cluster/index.js';
 import type { ClusterStats } from './cluster/index.js';
+import { runDossiers } from './dossiers.js';
+import type { DossierStats } from './dossiers.js';
 import { runLink } from './linker/index.js';
 import type { LinkStats } from './linker/index.js';
 import type { SemanticStats } from './linker/index.js';
@@ -32,9 +38,9 @@ import { discoverFiles, runStructure } from './structure.js';
 import { currentHead } from './vcs.js';
 
 export interface IndexOpts {
-  /** extractors to register; defaults to Markdown + TypeScript + PL/SQL + Python. */
+  /** extractors to register; defaults to Markdown + TypeScript + PL/SQL + Python + Java + C# + Go + Rust. */
   extractors?: Extractor[];
-  /** cross-file resolvers to register; defaults to TypeScript + PL/SQL + Python. */
+  /** cross-file resolvers to register; defaults to TypeScript + PL/SQL + Python + Java + C# + Go + Rust. */
   resolvers?: Resolver[];
   /** CFG guard-chain passes to register; defaults to PL/SQL (M11). */
   cfgPasses?: CfgPass[];
@@ -58,6 +64,10 @@ export interface IndexOpts {
    *  nodes, link them to symbols, flip `capabilities.multimodal`. Default OFF — pure-TS safety: the
    *  default index/serve path never spawns a subprocess. Present → run with these opts. */
   multimodal?: MultimodalPhaseOpts;
+  /** build + persist reusable deep dossiers for every callable symbol post-resolve (Workstream E).
+   *  Default ON — the artifact the MCP `dossier` verb serves from cache; fresh artifacts are left
+   *  untouched so an unchanged repo re-indexes without rewriting the dossier store. */
+  dossiers?: boolean;
 }
 
 export interface IndexReport {
@@ -65,6 +75,7 @@ export interface IndexReport {
   parse: ParseStats;
   resolve: ResolveStats;
   cfg: { annotated: number; skipped: number };
+  dossiers: DossierStats;
   multimodal: MultimodalReport;
   link: LinkStats;
   cluster: ClusterStats;
@@ -79,12 +90,17 @@ export async function indexRepo(
 ): Promise<IndexReport> {
   const registry = new ExtractorRegistry();
   // Markdown first so doc files never fall through to a code extractor; TypeScript + PL/SQL + Python
-  // ship by default. Supports() are disjoint by extension, so order is only load-bearing for .md.
+  // + Java + C# + Go + Rust ship by default. Supports() are disjoint by extension, so order is only
+  // load-bearing for .md.
   for (const e of opts.extractors ?? [
     new MarkdownExtractor(),
     new TypeScriptExtractor(),
     new PlSqlExtractor(),
     new PythonExtractor(),
+    new JavaExtractor(),
+    new CsharpExtractor(),
+    new GoExtractor(),
+    new RustExtractor(),
   ]) {
     registry.register(e);
   }
@@ -113,7 +129,25 @@ export async function indexRepo(
   }
   soul.commit(opts.now);
 
+  // Phase 5 (Workstream E): build + persist reusable deep dossiers for every callable symbol. Runs
+  // after commit so the manifest (schemaVersion + lastUpdated) is final; fresh artifacts are skipped.
+  const committedAt = opts.now ?? soul.getManifest().stats.lastUpdated;
+  const dossiers =
+    opts.dossiers === false
+      ? { candidates: 0, written: 0, fresh: 0, skipped: 0 }
+      : runDossiers(soul, root, committedAt);
+
   if (opts.index) opts.index.buildFromSoul(soul, opts.buildOpts);
 
-  return { files: files.length, parse, resolve, cfg, multimodal, link, cluster, semantic };
+  return {
+    files: files.length,
+    parse,
+    resolve,
+    cfg,
+    dossiers,
+    multimodal,
+    link,
+    cluster,
+    semantic,
+  };
 }

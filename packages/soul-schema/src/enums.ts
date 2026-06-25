@@ -13,7 +13,14 @@ export type NodeKind =
   | 'table'
   | 'column'
   | 'statement'
-  | 'condition';
+  | 'condition'
+  // 1.2 (deep-extraction fidelity): behavior-bearing constructs that migration needs but
+  // the 1.1 soul collapsed to a `plain`/`call` statement or dropped entirely.
+  | 'exception-handler' // one per EXCEPTION WHEN <selector> THEN …
+  | 'raise' // RAISE_APPLICATION_ERROR(code,msg) / RAISE <ex>
+  | 'cursor' // CURSOR c IS <query>
+  | 'assignment' // target := expr  (provenance of a variable)
+  | 'case-branch'; // one per CASE WHEN <val> THEN …
 
 export type Rel =
   | 'calls'
@@ -27,7 +34,12 @@ export type Rel =
   | 'executes'
   | 'reads'
   | 'writes'
-  | 'guarded-by';
+  | 'guarded-by'
+  // 1.2 (deep-extraction fidelity):
+  | 'raises' // action → raise node (the error this action can raise)
+  | 'handles' // exception-handler → the statement(s)/block it guards
+  | 'iterates' // loop/cursor-for → cursor (the row source a loop walks)
+  | 'declares'; // unit → cursor/variable/package-state it declares
 
 /** HOW an edge was derived — also drives ranking: static > explicit > identifier > path > semantic > inferred */
 export type Method = 'static' | 'explicit' | 'identifier' | 'path' | 'semantic' | 'inferred';
@@ -45,6 +57,11 @@ export const NODE_KINDS: readonly NodeKind[] = [
   'column',
   'statement',
   'condition',
+  'exception-handler',
+  'raise',
+  'cursor',
+  'assignment',
+  'case-branch',
 ];
 
 export const RELS: readonly Rel[] = [
@@ -60,6 +77,10 @@ export const RELS: readonly Rel[] = [
   'reads',
   'writes',
   'guarded-by',
+  'raises',
+  'handles',
+  'iterates',
+  'declares',
 ];
 
 export const METHODS: readonly Method[] = [

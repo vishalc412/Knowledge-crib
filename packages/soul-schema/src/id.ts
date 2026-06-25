@@ -19,6 +19,13 @@ import type { Rel } from './enums.js';
  *   statement   stmt:<file>@L<line>
  *   condition   cond:<file>@L<line>
  *   edge        e:<blake3(src|dst|rel)>
+ *
+ * 1.2 (deep-extraction fidelity):
+ *   exception-handler  exc:<file>@L<line>      (one per WHEN handler, keyed by the WHEN line)
+ *   raise              raise:<file>@L<line>
+ *   cursor             cursor:<file>#<name>@L<line>
+ *   assignment         assign:<file>@L<line>
+ *   case-branch        case:<file>@L<line>      (one per CASE WHEN, keyed by the WHEN line)
  */
 import { blake3Hex } from './hash.js';
 
@@ -33,7 +40,12 @@ export type IdSpec =
   | { kind: 'table'; schema: string; name: string }
   | { kind: 'column'; schema: string; table: string; column: string }
   | { kind: 'statement'; file: string; line: number }
-  | { kind: 'condition'; file: string; line: number };
+  | { kind: 'condition'; file: string; line: number }
+  | { kind: 'exception-handler'; file: string; line: number }
+  | { kind: 'raise'; file: string; line: number }
+  | { kind: 'cursor'; file: string; name: string; line: number }
+  | { kind: 'assignment'; file: string; line: number }
+  | { kind: 'case-branch'; file: string; line: number };
 
 /** ID prefix per node kind. `column` deliberately uses `col:` (data-model reconciliation #6). */
 export const ID_PREFIX = {
@@ -47,6 +59,11 @@ export const ID_PREFIX = {
   column: 'col',
   statement: 'stmt',
   condition: 'cond',
+  'exception-handler': 'exc',
+  raise: 'raise',
+  cursor: 'cursor',
+  assignment: 'assign',
+  'case-branch': 'case',
 } as const;
 
 /** Build the deterministic id for a node from its identifying parts. */
@@ -72,6 +89,16 @@ export function idFor(spec: IdSpec): string {
       return `stmt:${spec.file}@L${spec.line}`;
     case 'condition':
       return `cond:${spec.file}@L${spec.line}`;
+    case 'exception-handler':
+      return `exc:${spec.file}@L${spec.line}`;
+    case 'raise':
+      return `raise:${spec.file}@L${spec.line}`;
+    case 'cursor':
+      return `cursor:${spec.file}#${spec.name}@L${spec.line}`;
+    case 'assignment':
+      return `assign:${spec.file}@L${spec.line}`;
+    case 'case-branch':
+      return `case:${spec.file}@L${spec.line}`;
   }
 }
 

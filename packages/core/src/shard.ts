@@ -23,14 +23,19 @@ export function pathFromId(id: string): string | undefined {
       return rest;
     case 'sym':
     case 'doc':
-    case 'media': {
+    case 'media':
+    case 'cursor': {
       // path is up to the first '#'
       const hash = rest.indexOf('#');
       return hash === -1 ? rest : rest.slice(0, hash);
     }
     case 'expl':
     case 'stmt':
-    case 'cond': {
+    case 'cond':
+    case 'exc':
+    case 'raise':
+    case 'assign':
+    case 'case': {
       // path is up to the '@L' line suffix
       const at = rest.lastIndexOf('@L');
       return at === -1 ? rest : rest.slice(0, at);

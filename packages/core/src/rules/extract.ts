@@ -75,19 +75,38 @@ export interface ExtractRulesOpts {
   includeTables?: boolean;
 }
 
+/**
+ * Symbol `type` values that count as a "procedure" for rule extraction — i.e. a callable with a
+ * body that carries `executes`/`calls` edges. Covers every parser's naming: PL/SQL
+ * procedure/function, TypeScript/Java/C#/Python method/function, Go func, Rust fn, plus
+ * getters/setters/constructors (a getter body can be guarded too). Widened from the original
+ * procedure|function set so `extract_rules` and `context(withRules)` work for ALL languages, not
+ * just PL/SQL.
+ */
+export const CALLABLE_SYMBOL_TYPES: ReadonlySet<string> = new Set([
+  'procedure',
+  'function',
+  'method',
+  'func',
+  'fn',
+  'getter',
+  'setter',
+  'constructor',
+]);
+
 /** Locate a procedure node by id, qualified name, or simple name (case-insensitive). */
 export function findProcedure(soul: SoulStore, procedure: string): Node | undefined {
   const byId = soul.getNode(procedure);
   if (byId) return byId;
   const needle = procedure.toLowerCase();
   for (const n of soul.iterate('symbol')) {
-    if ((n.type === 'procedure' || n.type === 'function') && n.qualifiedName) {
+    if (n.type && CALLABLE_SYMBOL_TYPES.has(n.type) && n.qualifiedName) {
       if (n.qualifiedName.toLowerCase() === needle) return n;
     }
   }
   // last resort: simple name match
   for (const n of soul.iterate('symbol')) {
-    if ((n.type === 'procedure' || n.type === 'function') && n.name) {
+    if (n.type && CALLABLE_SYMBOL_TYPES.has(n.type) && n.name) {
       if (n.name.toLowerCase() === needle) return n;
     }
   }

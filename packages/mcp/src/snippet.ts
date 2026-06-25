@@ -1,24 +1,14 @@
 /**
- * Snippet rehydration: text is referenced (file + span), never copied into the soul, so verbs read
- * the first meaningful line of a node's span on demand. Falls back to the edge evidence snippet.
+ * Snippet rehydration — re-exported from @knowledge-crib/core so the serving layer (verbs) and the
+ * persisted-dossier builder share ONE implementation. The logic lives in core/src/source.ts because
+ * the dossier builder (core) must embed the rehydrated body without depending on the mcp package.
+ *
+ * See {@link ../core/src/source.ts} for the full-depth + line-offset-paging contract.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import type { Node } from '@knowledge-crib/soul-schema';
-
-const MAX_SNIPPET = 160;
-
-/** First non-blank line of `node`'s span, trimmed to MAX_SNIPPET chars; '' if unavailable. */
-export function rehydrate(repoRoot: string, node: Node | undefined): string {
-  if (!node?.file || !node.span) return '';
-  try {
-    const lines = readFileSync(join(repoRoot, node.file), 'utf8').split('\n');
-    for (let i = node.span.start - 1; i < node.span.end && i < lines.length; i++) {
-      const line = (lines[i] ?? '').trim().replace(/^#+\s*/, '');
-      if (line.length > 0) return line.slice(0, MAX_SNIPPET);
-    }
-  } catch {
-    // fall through
-  }
-  return '';
-}
+export {
+  DEFAULT_BODY_MAX_CHARS,
+  DEFAULT_BODY_MAX_LINES,
+  rehydrate,
+  rehydrateBody,
+} from '@knowledge-crib/core';
+export type { RehydratedBody } from '@knowledge-crib/core';

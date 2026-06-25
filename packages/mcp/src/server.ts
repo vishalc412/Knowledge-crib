@@ -26,14 +26,53 @@ export function buildServer(verbs: Verbs, version = '0.0.0'): McpServer {
   server.registerTool(
     'context',
     {
-      description: '360° context for one symbol: signature, callers, callees, and linked docs.',
+      description:
+        '360° context for one symbol: deep fields, callers, callees, and linked docs. Set withSource to include the full source body (rehydrated from disk, budgeted) and withRules to fold in a procedure decision table (conditions/actions/reads/writes).',
       inputSchema: {
         id: z.string(),
         docLimit: z.number().int().positive().optional(),
         extractedOnly: z.boolean().optional(),
+        withSource: z.boolean().optional(),
+        withRules: z.boolean().optional(),
+        sourceMaxChars: z.number().int().positive().optional(),
+        sourceMaxLines: z.number().int().positive().optional(),
+        sourceStartLine: z.number().int().positive().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.context(a)),
+  );
+
+  server.registerTool(
+    'source',
+    {
+      description:
+        'Full source text of one node span, rehydrated from disk and char/line-budgeted. Use this to read the actual code body / DDL / statement / doc-section that the lean soul references but never copies. truncated=true means the on-disk span exceeded the budget.',
+      inputSchema: {
+        id: z.string(),
+        maxChars: z.number().int().positive().optional(),
+        maxLines: z.number().int().positive().optional(),
+        startLine: z.number().int().positive().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.source(a)),
+  );
+
+  server.registerTool(
+    'dossier',
+    {
+      description:
+        'One-shot deep reusable context for a symbol: deep node fields, paged rehydrated source body, callers, callees, linked docs, the decision table (callable), and the schema-1.2 control-flow constructs (raises / handles / iterates / declares). The artifact a migration analyst consumes in one call instead of orchestrating context + source + extract_rules. source.nextLine (when truncated) is the paging cursor — pass it back as sourceStartLine.',
+      inputSchema: {
+        id: z.string(),
+        includeTables: z.boolean().optional(),
+        sourceMaxChars: z.number().int().positive().optional(),
+        sourceMaxLines: z.number().int().positive().optional(),
+        sourceStartLine: z.number().int().positive().optional(),
+        extractedOnly: z.boolean().optional(),
+        format: z.enum(['json', 'markdown']).optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.dossier(a)),
   );
 
   server.registerTool(

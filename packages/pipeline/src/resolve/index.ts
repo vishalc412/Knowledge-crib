@@ -9,12 +9,16 @@ import type { SoulStore } from '@knowledge-crib/core';
  * an indexed node is dropped, never guessed.
  */
 import type { FileMeta } from '@knowledge-crib/parsers';
+import { CsharpResolver } from './csharp-resolver.js';
 import type { CfgPass } from './dispatch.js';
 import { CfgPassRegistry } from './dispatch.js';
+import { GoResolver } from './go-resolver.js';
+import { JavaResolver } from './java-resolver.js';
 import { PlSqlCfgPass } from './plsql-cfg.js';
 import { PythonResolver } from './python-resolver.js';
 import { ResolverRegistry } from './resolver-registry.js';
 import type { Resolver } from './resolver-registry.js';
+import { RustResolver } from './rust-resolver.js';
 import { SqlResolver } from './sql-resolver.js';
 import { SymbolTable } from './symbol-table.js';
 import { TypeScriptResolver } from './ts-resolver.js';
@@ -25,6 +29,10 @@ export { resolveTypeScript, TypeScriptResolver } from './ts-resolver.js';
 export type { ResolveStats, ResolveResult } from './ts-resolver.js';
 export { SqlResolver } from './sql-resolver.js';
 export { PythonResolver, resolvePython } from './python-resolver.js';
+export { JavaResolver, resolveJava } from './java-resolver.js';
+export { CsharpResolver, resolveCsharp } from './csharp-resolver.js';
+export { GoResolver, resolveGo } from './go-resolver.js';
+export { RustResolver, resolveRust } from './rust-resolver.js';
 export { SchemaCatalog } from './schema-catalog.js';
 export { ResolverRegistry } from './resolver-registry.js';
 export type {
@@ -40,9 +48,17 @@ export type { BasicBlock } from '../cfg/basic-block.js';
 export { pathCondition } from '../cfg/guard-chain.js';
 export type { GuardFrame, PathCondition } from '../cfg/guard-chain.js';
 
-/** Default resolvers when the caller doesn't override: TypeScript + PL/SQL + Python. */
+/** Default resolvers when the caller doesn't override: TypeScript + PL/SQL + Python + Java + C# + Go + Rust. */
 export function defaultResolvers(): Resolver[] {
-  return [new TypeScriptResolver(), new SqlResolver(), new PythonResolver()];
+  return [
+    new TypeScriptResolver(),
+    new SqlResolver(),
+    new PythonResolver(),
+    new JavaResolver(),
+    new CsharpResolver(),
+    new GoResolver(),
+    new RustResolver(),
+  ];
 }
 
 /** Default CFG passes when the caller doesn't override: PL/SQL (M11). */

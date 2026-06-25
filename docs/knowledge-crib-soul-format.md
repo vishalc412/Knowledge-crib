@@ -1,4 +1,4 @@
-# Knowledge-crib — The Soul Format (v1.0 spec)
+# Knowledge-crib — The Soul Format (v1.0 / 1.1 / 1.2 spec)
 
 > The **soul** is the project's portable memory: chunked, git-committable files that are the
 > **source of truth** [Q9]. The fast index (LadybugDB/swappable) is derived from it and
@@ -26,6 +26,7 @@
   nodes/<shard>/<chunk>.jsonl  # node records, sharded by source-path hash
   edges/<shard>/<chunk>.jsonl  # edge records
   clusters/clusters.jsonl      # community detection output
+  dossiers/<shard>/<hash>.json # persisted deep-context artifacts (Workstream E; sharded by node-id hash)
   schema/                      # vendored JSON Schema for nodes/edges/manifest (self-describing)
   .gitignore                   # ignores index/ and embeddings/ by default
   index/                       # GITIGNORED — derived LadybugDB/sqlite + ANN; rebuildable
@@ -46,7 +47,9 @@
 ```jsonc
 {
   "id": "sym:src/auth/AuthService.ts#AuthService.login@L42",  // stable, deterministic, human-readable
-  "kind": "symbol",            // symbol | file | doc-section | media-seg | explanation | cluster
+  "kind": "symbol",            // symbol|file|doc-section|media-seg|explanation|cluster (1.0)
+                              // +table|column|statement|condition (1.1, deep-extraction)
+                              // +raise|exception-handler|assignment|case-branch|cursor (1.2, behavior)
   "type": "method",            // AST type (class|function|method|interface|…) or doc level (h2…)
   "name": "login",
   "qualifiedName": "AuthService.login",
@@ -56,6 +59,9 @@
   "signature": "login(email: string, pw: string): Promise<Session>",
   "clusterId": "c:auth",
   "hash": "blake3:9f2c…",      // content hash → change detection + dedup
+  // deep-extraction (1.1): schema/table/dataType/sqlKind/expr/branch + meta.columns/attributes/collection
+  // behavior (1.2): errorCode/errorMessage (raise) · whenSelector (exception-handler|case-branch)
+  //                 assignTarget (assignment) · cursorQuery (cursor) · commentRef (explanation)
   "meta": {}                   // extensible; unknown keys preserved on round-trip
 }
 ```
@@ -64,6 +70,8 @@
 - file   → `file:<path>`
 - doc    → `doc:<file>#<anchor>`
 - media  → `media:<file>#<tStart>` · cluster → `c:<slug>`
+- 1.1/1.2 behavior nodes → `raise|exch|asgn|case:<file>@L<line>`, `crs:<file>#<name>@L<line>`,
+  `stmt:<file>@L<line>`, `cond:<file>@L<line>`, `expl:<path>@L<startLine>` (deterministic via `idFor`)
 
 ### Edge
 ```jsonc
@@ -71,10 +79,13 @@
   "id": "e:blake3(src|dst|rel)",
   "src": "sym:src/auth/AuthService.ts#AuthService.login@L42",
   "dst": "sym:src/auth/TokenService.ts#TokenService.issue@L88",
-  "rel": "calls",              // calls|imports|inherits|implements|describes|references|derived-from
+  "rel": "calls",              // calls|imports|inherits|implements|describes|references|derived-from (1.0)
+                              // +executes|reads|writes|guarded-by (1.1, deep-extraction)
+                              // +raises|handles|iterates|declares (1.2, behavior)
   "method": "static",          // static|explicit|identifier|semantic|inferred (HOW it was derived)
   "provenance": "EXTRACTED",   // EXTRACTED (deterministic) | INFERRED (LLM/heuristic)   [Q35]
   "confidence": 1.0,           // 0..1
+  // guard-chain (1.1): cfgPath:string[] (AND-chain entry→callsite), branch, inLoop, inException
   "evidence": { "snippet": "return tokenService.issue(...)", "by": "ts-call-resolver" },
   "meta": {}
 }
@@ -93,7 +104,7 @@ This rule is what the `.crib` git **merge driver** applies on chunk conflicts (u
 ```jsonc
 {
   "cribFormatVersion": "1.0",
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.2",       // 1.0 | 1.1 | 1.2 — all forward-compatible (unknown fields preserved)
   "repo": { "id": "<uuid>", "root": ".", "vcsHead": "<git sha at last full index>" },
   "generator": { "tool": "knowledge-crib", "version": "x.y.z" },
   "chunking": { "shardHexDigits": 2, "maxChunkLines": 5000, "format": "jsonl" },
@@ -119,6 +130,13 @@ Cost ∝ change size, not repo size.
 
 ## 6. Versioning & migration
 - `cribFormatVersion` (file layout) + `schemaVersion` (record shape) in the manifest.
+- Supported schema versions: `1.0`, `1.1`, `1.2`. The loader never widens an older soul — a 1.1
+  soul reloads verbatim and re-commits byte-stably (1.1's `cfgPath:string[]` + `inLoop`/`inException`
+  are preserved, not silently bumped to 1.2). New kinds/rels/fields are **additive**.
+- 1.1 widened `Edge.cfgPath` `string → string[]` + added `inLoop`/`inException` (guard chain).
+- 1.2 added behavior node kinds (`raise`/`exception-handler`/`assignment`/`case-branch`/`cursor`),
+  behavior rels (`raises`/`handles`/`iterates`/`declares`), and node fields
+  (`errorCode`/`errorMessage`/`whenSelector`/`assignTarget`/`cursorQuery`/`constraints`/`commentRef`).
 - Engine runs `crib migrate` to upgrade an old soul forward.
 - **Round-trip safety:** unknown fields are preserved, so a newer soul stays readable by an older
   reader (forward-compatible) for additive changes.

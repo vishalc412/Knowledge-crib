@@ -256,8 +256,11 @@ class Lexer {
     if (quote.triple) {
       // enter triple state; finishString continues across newlines in a separate path.
       this.triple = delim;
-      // record the string's start position token; we emit it once the closer is found.
-      this.scanInsideTriple(startLine, startCol, prefix + delim);
+      // record the string's start position token; we emit it once the closer is found. The opening
+      // delimiter is THREE quotes (matchQuote consumed them but `delim` is the single-char quote), so
+      // rebuild the full `"""`/`'''` opener — otherwise the token value (and any source slice derived
+      // from value.length) is short by two chars and a docstring's closing quotes get clipped.
+      this.scanInsideTriple(startLine, startCol, prefix + delim.repeat(3));
       return;
     }
     this.scanSingleString(delim, startLine, startCol, prefix);
@@ -471,4 +474,41 @@ function isNumberPart(c: string): boolean {
 function isStringPrefix(c: string): boolean {
   const l = c.toLowerCase();
   return l === 'r' || l === 'b' || l === 'f' || l === 'u';
+}
+
+// ---------------------------------------------------------------------------------------------
+// Schema 1.2 — `#` comment blocks for `explanation` nodes (mirrors PlSqlLexer.collectComments).
+// ---------------------------------------------------------------------------------------------
+
+/** One retained `#` comment block with its 1-based inclusive line span + cleaned text. */
+export interface CommentBlock {
+  start: number;
+  end: number;
+  text: string;
+}
+
+/**
+ * Collect `#` comment blocks from Python source. A maximal run of contiguous `#` lines (no blank
+ * line between) merges into one block; the leading `#` and one space are stripped from each line and
+ * the line is trimmed; the block text is the lines joined by `\n`. Never throws.
+ */
+export function collectPythonComments(src: string): CommentBlock[] {
+  const out: CommentBlock[] = [];
+  const lines = src.split('\n');
+  let i = 0;
+  while (i < lines.length) {
+    const trimmed = (lines[i] ?? '').trim();
+    if (trimmed.startsWith('#')) {
+      const start = i + 1;
+      const parts: string[] = [];
+      while (i < lines.length && (lines[i] ?? '').trim().startsWith('#')) {
+        parts.push((lines[i] ?? '').trim().replace(/^#\s?/, '').trim());
+        i++;
+      }
+      out.push({ start, end: i, text: parts.join('\n') });
+      continue;
+    }
+    i++;
+  }
+  return out;
 }

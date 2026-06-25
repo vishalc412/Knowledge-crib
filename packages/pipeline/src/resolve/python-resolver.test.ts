@@ -81,15 +81,20 @@ describe('PythonResolver — cross-file edges (M8 gate)', () => {
     const pyEdges = edgesInFiles(soul, PY_EXTS);
     const rels = new Set(pyEdges.map((e) => e.rel));
     // Python declares {imports, calls, inheritance, types:'none'} ⇒ only these rels may appear.
-    expect(rels).toEqual(new Set<Rel>(['member-of', 'calls', 'imports', 'inherits']));
-    // ZERO type edges: no references / derived-from / implements / reads / writes / executes.
+    // `executes` is an intra-file control-flow edge the Track-3 extractor body-walk stamps
+    // (proc → statement) — NOT a resolver type edge, so it IS allowed. `describes` is an intra-file
+    // doc edge the schema-1.2 comment-attachment pass stamps (explanation → symbol) — also NOT a
+    // resolver type edge, so it IS allowed.
+    expect(rels).toEqual(
+      new Set<Rel>(['member-of', 'calls', 'imports', 'inherits', 'executes', 'describes']),
+    );
+    // ZERO genuine type/data edges: no references / derived-from / implements / reads / writes.
     for (const typeRel of [
       'references',
       'derived-from',
       'implements',
       'reads',
       'writes',
-      'executes',
     ] as const) {
       expect(rels.has(typeRel)).toBe(false);
     }

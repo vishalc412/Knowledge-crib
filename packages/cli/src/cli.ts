@@ -332,17 +332,20 @@ function cmdInstallHooks(args: string[], ctx?: CmdCtx): number {
  */
 function cmdMcp(args: string[], ctx?: CmdCtx): number {
   const [sub, ...rest] = args;
-  const repoRoot = resolve(ctx?.cwdOverride ?? pathArg(rest) ?? '.');
-
   let ide: McpIde | 'all' = 'all';
   let scope: McpScope = 'project';
   let bin: string | undefined;
+  const positionals: string[] = [];
+  // Parse flags + collect positionals in ONE pass so a flag value (e.g. `--ide vscode`) is not
+  // mistaken for the project path. `pathArg` alone can't tell value-tokens from positionals.
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i]!;
     if (a === '--ide') ide = (rest[++i] as McpIde | 'all') ?? 'all';
     else if (a === '--global') scope = 'global';
     else if (a === '--bin') bin = rest[++i];
+    else if (!a.startsWith('-')) positionals.push(a);
   }
+  const repoRoot = resolve(ctx?.cwdOverride ?? positionals[0] ?? '.');
   const validIdes: Array<McpIde | 'all'> = ['all', 'claude', 'cursor', 'vscode', 'codex'];
   if (!validIdes.includes(ide)) {
     process.stderr.write(`unknown --ide: ${ide}\nvalid: ${validIdes.join(', ')}\n`);

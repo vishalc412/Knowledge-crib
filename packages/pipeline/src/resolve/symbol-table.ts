@@ -36,6 +36,22 @@ export class SymbolTable {
     return this.topLevel.get(file)?.get(name);
   }
 
+  /**
+   * A symbol named `name` in `file` whose `type` is in `kinds`, at ANY nesting depth. Use this for
+   * languages that model namespaces as symbols (C#): a type nested under a namespace symbol is NOT
+   * "top-level" per {@link topLevelSymbol} (its `parentQualifier` is the namespace), but it IS the
+   * cross-file resolution target. `kinds` scopes to type kinds (class/interface/...) so a method
+   * that happens to share a type's simple name doesn't shadow it. Returns the first match.
+   */
+  symbolByKind(file: string, name: string, kinds: ReadonlySet<string>): Node | undefined {
+    const syms = this.byFile.get(file);
+    if (!syms) return undefined;
+    for (const s of syms) {
+      if (s.name === name && s.type !== undefined && kinds.has(s.type)) return s;
+    }
+    return undefined;
+  }
+
   /** The file node id for a path (always exists after Phase 1). */
   fileId(path: string): string {
     return idFor({ kind: 'file', path });

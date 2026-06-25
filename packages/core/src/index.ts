@@ -9,6 +9,8 @@ export * from './shard.js';
 export * from './delta.js';
 export * from './merge.js';
 export * from './validate.js';
+export * from './source.js';
+export * from './dossier/index.js';
 export * from './index-store.js';
 export { SqliteIndexStore } from './index/sqlite-index.js';
 export { KuzuIndexStore } from './index/kuzu-index.js';

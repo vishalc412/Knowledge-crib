@@ -13,10 +13,16 @@ interface ImpactResult {
   relatedDocs: Array<{ edgeType: string; provenance: string; confidence: number; snippet: string }>;
 }
 interface ContextResult {
-  node: { name?: string };
-  callers: Array<{ id: string }>;
-  callees: Array<{ id: string }>;
+  node: { name?: string; signature?: string; file?: string; line?: number; qualifiedName?: string };
+  callers: Array<{ id: string; signature?: string; file?: string; line?: number }>;
+  callees: Array<{ id: string; signature?: string; file?: string; line?: number }>;
   docs: Array<{ edgeType: string }>;
+  source?: { text: string; truncated: boolean; totalLines: number };
+  rules?: { rules: Array<{ action: { kind: string } }> };
+}
+interface SourceResult {
+  node: { id: string; file?: string };
+  source: { text: string; truncated: boolean };
 }
 interface DescribesResult {
   docs: Array<unknown>;
@@ -46,6 +52,26 @@ interface RulesResult {
     conditions: Array<{ polarity?: string }>;
   }>;
   error?: { code: string };
+}
+interface DossierResult {
+  node: { id: string; name?: string; qualifiedName?: string };
+  source: {
+    text: string;
+    truncated: boolean;
+    totalLines: number;
+    startLine: number;
+    nextLine?: number;
+  };
+  callers: Array<{ id: string }>;
+  callees: Array<{ id: string }>;
+  docs: Array<{ edgeType: string }>;
+  rules?: { rules: Array<{ action: { kind: string } }> };
+  controlFlow?: {
+    raises: Array<{ kind: string; errorCode?: string; errorMessage?: string; confidence: number }>;
+    handles: Array<{ kind: string }>;
+    iterates: Array<{ kind: string }>;
+    declares: Array<{ kind: string; name?: string; cursorQuery?: string; confidence: number }>;
+  };
 }
 
 let repo: string;
@@ -100,9 +126,20 @@ const docSection: Node = {
 beforeEach(() => {
   repo = mkdtempSync(join(tmpdir(), 'crib-verbs-'));
   mkdirSync(join(repo, 'docs'), { recursive: true });
+  mkdirSync(join(repo, 'src'), { recursive: true });
   writeFileSync(
     join(repo, 'docs', 'auth.md'),
     '# Sessions\n\nThe AuthService.login method issues a session.\n',
+  );
+  // a real auth.ts so context(withSource) / source() can rehydrate the login body (lines 10-11).
+  writeFileSync(
+    join(repo, 'src', 'auth.ts'),
+    `${'\n'.repeat(8)}class AuthService {
+  login(user, pass) {
+    return issue(user, pass);
+  }
+}
+`,
   );
 
   soul = new SoulStore(join(repo, '.crib'), {
@@ -162,6 +199,63 @@ describe('verbs', () => {
     expect(res.callers.map((c) => c.id)).toContain(handle.id);
     expect(res.callees.map((c) => c.id)).toContain(issue.id);
     expect(res.docs[0]!.edgeType).toBe('describes');
+  });
+
+  it('context surfaces deep node fields (file + span + qualifiedName) — not just name', () => {
+    const res = verbs.context({ id: login.id }) as unknown as ContextResult;
+    expect(res.node.file).toBe('src/auth.ts');
+    expect(res.node.qualifiedName).toBe('AuthService.login'); // unstripped deep field
+  });
+
+  it('context brief includes file + line for callers/callees (locate the call)', () => {
+    const res = verbs.context({ id: login.id }) as unknown as ContextResult;
+    const caller = res.callers.find((c) => c.id === handle.id)!;
+    expect(caller.file).toBe('src/http.ts');
+    expect(caller.line).toBe(5);
+  });
+
+  it('context withSource rehydrates the FULL body from disk, not just the first line', () => {
+    const res = verbs.context({ id: login.id, withSource: true }) as unknown as ContextResult;
+    expect(res.source).toBeDefined();
+    expect(res.source!.truncated).toBe(false);
+    // lines 10-11 of src/auth.ts: the login header + its return statement
+    expect(res.source!.text).toContain('login(user, pass)');
+    expect(res.source!.text).toContain('return issue(user, pass)');
+    expect(res.source!.totalLines).toBe(2);
+  });
+
+  it('context withRules on a non-callable node (doc-section) omits rules', () => {
+    // a doc-section is not a callable symbol — rules must not be fabricated for it.
+    const res = verbs.context({ id: docSection.id, withRules: true }) as unknown as ContextResult;
+    expect(res.rules).toBeUndefined();
+  });
+
+  it('context withRules on a method (callable) DOES fold in its decision table', () => {
+    // login is type 'method' — now a callable per CALLABLE_SYMBOL_TYPES (Track 3 widened the gate
+    // from procedure|function to all callable symbol types so extract_rules works for every parser).
+    // login has an outgoing calls edge to issue → a non-empty decision table.
+    const res = verbs.context({ id: login.id, withRules: true }) as unknown as ContextResult;
+    expect(res.rules).toBeDefined();
+    const rules = res.rules as { rules: Array<{ action: { kind: string } }> };
+    expect(rules.rules.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('source verb returns the full span text for a node', () => {
+    const res = verbs.source({ id: login.id }) as unknown as SourceResult;
+    expect(res.node.file).toBe('src/auth.ts');
+    expect(res.source.text).toContain('login(user, pass)');
+    expect(res.source.truncated).toBe(false);
+  });
+
+  it('source verb returns NOT_FOUND for an unknown id', () => {
+    const res = verbs.source({ id: 'sym:nope' }) as unknown as ErrorResult;
+    expect(res.error.code).toBe('NOT_FOUND');
+  });
+
+  it('source verb respects the char budget + signals truncation', () => {
+    const res = verbs.source({ id: login.id, maxChars: 5 }) as unknown as SourceResult;
+    expect(res.source.truncated).toBe(true);
+    expect(res.source.text.length).toBe(5);
   });
 
   it('describes returns linked docs with min confidence', () => {
@@ -293,5 +387,103 @@ describe('extract_rules verb (M12)', () => {
   it('returns NOT_FOUND for an unknown procedure', () => {
     const res = v2.extractRules({ procedure: 'no_such_proc' }) as unknown as RulesResult;
     expect(res.error?.code).toBe('NOT_FOUND');
+  });
+});
+
+describe('dossier verb (Workstream D — one-shot deep reusable context)', () => {
+  it('folds node + paged source + callers + callees + docs + rules into one artifact', () => {
+    const res = verbs.dossier({ id: login.id }) as unknown as DossierResult;
+    expect(res.node.qualifiedName).toBe('AuthService.login');
+    expect(res.source.text).toContain('login(user, pass)'); // rehydrated from disk
+    expect(res.source.startLine).toBe(10); // span start
+    expect(res.callers.map((c) => c.id)).toContain(handle.id);
+    expect(res.callees.map((c) => c.id)).toContain(issue.id);
+    expect(res.docs[0]!.edgeType).toBe('describes');
+    // login is callable (type 'method') → decision table folded in
+    expect(res.rules?.rules.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('surfaces the schema-1.2 control-flow constructs (raises + declares) with deep fields', () => {
+    // dedicated soul: a PL/SQL-like proc that raises raise_application_error + declares a cursor.
+    const r = mkdtempSync(join(tmpdir(), 'crib-dossier-cf-'));
+    mkdirSync(join(r, 'src'), { recursive: true });
+    writeFileSync(join(r, 'src', 'p.plsql'), `${'\n'.repeat(9)}process_claim\n`);
+    const s = new SoulStore(join(r, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    s.load();
+    const proc = sym('src/p.plsql', 'claims.process_claim', 10);
+    const raiseN: Node = {
+      id: idFor({ kind: 'raise', file: 'src/p.plsql', line: 11 }),
+      kind: 'raise',
+      name: 'raise_application_error',
+      errorCode: '-20001',
+      errorMessage: 'invalid claim',
+      file: 'src/p.plsql',
+      span: { start: 11, end: 11 },
+      lang: 'plsql',
+      hash: contentHash('raise-invalid-claim'),
+    };
+    const cursorN: Node = {
+      id: idFor({ kind: 'cursor', file: 'src/p.plsql', name: 'claim_cur', line: 12 }),
+      kind: 'cursor',
+      name: 'claim_cur',
+      cursorQuery: 'SELECT id FROM claims WHERE status = :1',
+      file: 'src/p.plsql',
+      span: { start: 12, end: 12 },
+      lang: 'plsql',
+      hash: contentHash('cursor-claim-cur'),
+    };
+    s.putNodes([fileNode('src/p.plsql'), proc, raiseN, cursorN]);
+    s.putEdges([edge(proc.id, raiseN.id, 'raises'), edge(proc.id, cursorN.id, 'declares')]);
+    s.commit('2026-01-01T00:00:00.000Z');
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(s);
+    const v = new Verbs({ soul: s, index: idx, repoRoot: r });
+    try {
+      const res = v.dossier({ id: proc.id }) as unknown as DossierResult;
+      expect(res.controlFlow).toBeDefined();
+      const raises = res.controlFlow!.raises;
+      expect(raises).toHaveLength(1);
+      expect(raises[0]!.kind).toBe('raise');
+      expect(raises[0]!.errorCode).toBe('-20001'); // the behavior-bearing detail
+      expect(raises[0]!.errorMessage).toBe('invalid claim');
+      const declares = res.controlFlow!.declares;
+      expect(declares).toHaveLength(1);
+      expect(declares[0]!.kind).toBe('cursor');
+      expect(declares[0]!.name).toBe('claim_cur');
+      expect(declares[0]!.cursorQuery).toContain('SELECT id FROM claims');
+    } finally {
+      idx.close();
+      rmSync(r, { recursive: true, force: true });
+    }
+  });
+
+  it('returns NOT_FOUND for an unknown id', () => {
+    const res = verbs.dossier({ id: 'sym:nope' }) as unknown as ErrorResult;
+    expect(res.error.code).toBe('NOT_FOUND');
+  });
+
+  it('omits rules + controlFlow for a non-callable node (doc-section)', () => {
+    const res = verbs.dossier({ id: docSection.id }) as unknown as DossierResult;
+    expect(res.rules).toBeUndefined();
+    expect(res.controlFlow).toBeUndefined();
+  });
+
+  it('pages a large body via sourceStartLine → nextLine cursor', () => {
+    // login span is lines 10-11 (2 lines); page 1 line at a time and walk the cursor.
+    const page1 = verbs.dossier({ id: login.id, sourceMaxLines: 1 }) as unknown as DossierResult;
+    expect(page1.source.startLine).toBe(10);
+    expect(page1.source.truncated).toBe(true);
+    expect(page1.source.nextLine).toBe(11);
+    const page2 = verbs.dossier({
+      id: login.id,
+      sourceMaxLines: 1,
+      sourceStartLine: page1.source.nextLine,
+    }) as unknown as DossierResult;
+    expect(page2.source.startLine).toBe(11);
+    expect(page2.source.text).toContain('return issue(user, pass)');
+    expect(page2.source.truncated).toBe(false);
+    expect(page2.source.nextLine).toBeUndefined();
   });
 });

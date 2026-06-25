@@ -16,9 +16,9 @@ export interface BasicBlock {
   statements: Stmt[];
 }
 
-/** is this statement a control-flow split (an IF or LOOP that starts a sub-CFG)? */
+/** is this statement a control-flow split (an IF / LOOP / CASE / EXCEPTION that starts a sub-CFG)? */
 function isCompound(s: Stmt): boolean {
-  return s.kind === 'if' || s.kind === 'loop';
+  return s.kind === 'if' || s.kind === 'loop' || s.kind === 'case' || s.kind === 'exception';
 }
 
 /**

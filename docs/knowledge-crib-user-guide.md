@@ -324,7 +324,7 @@ Drove `crib serve FTCCloud` through a canonical MCP SDK client (`Client` +
 
 ```
 initialize  → serverInfo { name: "knowledge-crib", version: "0.0.0" }
-tools/list  → 9 tools (status, context, impact, query, describes, neighbors,
+tools/list  → 11 tools (status, context, source, dossier, impact, query, describes, neighbors,
                         shortest_path, detect_changes, extract_rules)
 status      → { nodes:1576, edges:1831, clusters:104, vcsHead:… }
 query "schedule" → ScheduleFilterBar (score -4.01), ScheduleStatsCards, ScheduleItemRequest

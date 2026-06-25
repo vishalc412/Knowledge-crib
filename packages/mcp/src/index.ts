@@ -4,7 +4,13 @@
  */
 export * from './verbs.js';
 export * from './token-budget.js';
-export { rehydrate } from './snippet.js';
+export {
+  rehydrate,
+  rehydrateBody,
+  DEFAULT_BODY_MAX_CHARS,
+  DEFAULT_BODY_MAX_LINES,
+  type RehydratedBody,
+} from './snippet.js';
 export { buildServer, serveStdio } from './server.js';
 export { Enricher, enricherFromEnv } from './enrichment.js';
 export type { EnrichOp, EnricherConfig } from './enrichment.js';

@@ -70,7 +70,7 @@ export class SoulStore {
    * @param cribDir absolute path to the `.crib` directory.
    */
   constructor(
-    private readonly cribDir: string,
+    private readonly cribDirPrivate: string,
     opts: SoulStoreOpts = {},
   ) {
     this.manifest = opts.manifest ?? newManifest({ root: '.' });
@@ -78,7 +78,7 @@ export class SoulStore {
 
   /** Read the manifest and hydrate the graph from existing chunks. Returns the manifest. */
   load(): Manifest {
-    const manifestPath = join(this.cribDir, MANIFEST_FILE);
+    const manifestPath = join(this.cribDirPrivate, MANIFEST_FILE);
     if (existsSync(manifestPath)) {
       this.manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as Manifest;
       // Loader gate (M11): refuse a soul whose schemaVersion we don't know how to read. A 1.0 soul
@@ -216,6 +216,11 @@ export class SoulStore {
     return this.manifest;
   }
 
+  /** Absolute path to the `.crib` directory this store owns (where dossiers + shards live). */
+  get cribDir(): string {
+    return this.cribDirPrivate;
+  }
+
   /**
    * Stamp the VCS anchor: the git sha an incremental update is anchored to (M6). Sets both
    * `repo.vcsHead` and `stats.incrementalSince` so the next `crib update` / `detect_changes` can diff
@@ -282,18 +287,18 @@ export class SoulStore {
   // --- hydration ---
 
   private hydrateNodes(): void {
-    const nodesRoot = join(this.cribDir, 'nodes');
+    const nodesRoot = join(this.cribDirPrivate, 'nodes');
     for (const file of this.walkJsonl(nodesRoot)) {
       for (const node of this.readRecords<Node>(file)) this.nodes.set(node.id, node);
     }
-    const clustersPath = join(this.cribDir, CLUSTERS_FILE);
+    const clustersPath = join(this.cribDirPrivate, CLUSTERS_FILE);
     if (existsSync(clustersPath)) {
       for (const node of this.readRecords<Node>(clustersPath)) this.nodes.set(node.id, node);
     }
   }
 
   private hydrateEdges(): void {
-    const edgesRoot = join(this.cribDir, 'edges');
+    const edgesRoot = join(this.cribDirPrivate, 'edges');
     for (const file of this.walkJsonl(edgesRoot)) {
       for (const edge of this.readRecords<Edge>(file)) this.edges.set(edge.id, edge);
     }
@@ -331,14 +336,14 @@ export class SoulStore {
         (n) => n.kind !== 'cluster' && shardOf(shardKeyForNode(n), this.shardDigits) === shard,
       )
       .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-    this.writeShardChunks(join(this.cribDir, 'nodes', shard), records);
+    this.writeShardChunks(join(this.cribDirPrivate, 'nodes', shard), records);
   }
 
   private writeEdgeShard(shard: string): void {
     const records = [...this.edges.values()]
       .filter((e) => shardOf(shardKeyForEdge(e), this.shardDigits) === shard)
       .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-    this.writeShardChunks(join(this.cribDir, 'edges', shard), records);
+    this.writeShardChunks(join(this.cribDirPrivate, 'edges', shard), records);
   }
 
   private writeClusters(): void {
@@ -346,7 +351,7 @@ export class SoulStore {
     const records = [...this.nodes.values()]
       .filter((n) => n.kind === 'cluster')
       .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-    const path = join(this.cribDir, CLUSTERS_FILE);
+    const path = join(this.cribDirPrivate, CLUSTERS_FILE);
     if (records.length === 0) {
       if (existsSync(path)) rmSync(path);
       return;
@@ -378,7 +383,7 @@ export class SoulStore {
   }
 
   private writeVendoredSchemas(): void {
-    const dir = join(this.cribDir, 'schema');
+    const dir = join(this.cribDirPrivate, 'schema');
     mkdirSync(dir, { recursive: true });
     for (const [name, schema] of Object.entries(VENDORED_SCHEMAS)) {
       this.atomicWrite(join(dir, name), `${JSON.stringify(schema, null, 2)}\n`);
@@ -386,7 +391,7 @@ export class SoulStore {
   }
 
   private writeGitignore(): void {
-    const path = join(this.cribDir, '.gitignore');
+    const path = join(this.cribDirPrivate, '.gitignore');
     if (!existsSync(path)) {
       this.atomicWrite(path, 'index/\nembeddings/\n');
     }
@@ -395,7 +400,7 @@ export class SoulStore {
   private writeManifest(): void {
     assertValidManifest(this.manifest);
     this.atomicWrite(
-      join(this.cribDir, MANIFEST_FILE),
+      join(this.cribDirPrivate, MANIFEST_FILE),
       `${JSON.stringify(this.manifest, null, 2)}\n`,
     );
   }

@@ -201,7 +201,7 @@ project — no per-project config.
 Verify inside a Claude Code session:
 
 ```
-/mcp          # lists connected servers + tools; knowledge-crib should show 9 tools
+/mcp          # lists connected servers + tools; knowledge-crib should show 11 tools
 ```
 
 > The `.` in `args` is **not** resolved by Claude Code's CWD — Claude Code ignores the `cwd` field

@@ -3,6 +3,7 @@
  * The renderers (mermaid / graph.json / report) live in @knowledge-crib/pipeline.
  */
 export {
+  CALLABLE_SYMBOL_TYPES,
   extractRules,
   decisionTable,
   findProcedure,
