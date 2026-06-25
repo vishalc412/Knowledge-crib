@@ -21,7 +21,14 @@ import {
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { SUPPORTED_SCHEMA_VERSIONS, VENDORED_SCHEMAS } from '@knowledge-crib/soul-schema';
-import type { Edge, Manifest, Node, NodeKind, Rel } from '@knowledge-crib/soul-schema';
+import type {
+  Edge,
+  Manifest,
+  ManifestCapabilities,
+  Node,
+  NodeKind,
+  Rel,
+} from '@knowledge-crib/soul-schema';
 import { resolveEdgeConflict } from './conflict-rule.js';
 import { newManifest } from './manifest.js';
 import { pathFromId, shardKeyForEdge, shardKeyForNode, shardOf } from './shard.js';
@@ -217,6 +224,16 @@ export class SoulStore {
   setVcsHead(sha: string): void {
     this.manifest.repo = { ...this.manifest.repo, vcsHead: sha };
     this.manifest.stats = { ...this.manifest.stats, incrementalSince: sha };
+  }
+
+  /**
+   * Record a derived capability (M13): `multimodal` flips true once media segments have been ingested,
+   * `embeddings` once a vector index exists (M7+). Merge-in semantics — pass only the flags that
+   * changed. Persisted on the next `commit()`. Readers (`status`, MCP) advertise capabilities so a
+   * client knows whether media nodes / ANN search are available without scanning the soul.
+   */
+  setCapabilities(patch: Partial<ManifestCapabilities>): void {
+    this.manifest.capabilities = { ...this.manifest.capabilities, ...patch };
   }
 
   // ---------------------------------------------------------------------------

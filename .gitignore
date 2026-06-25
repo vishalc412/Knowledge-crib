@@ -17,3 +17,14 @@ coverage/
 .vscode/*
 !.vscode/extensions.json
 *.log
+.gstack/
+
+# Python / crib_worker (M13) — uv-managed sibling project; artifacts are rebuildable
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+# local model dirs for whisper/surya backends (never fetched by the worker; user-supplied)
+python/models/

@@ -47,6 +47,23 @@ interface ExtractResult { nodes: Node[]; edges: Edge[]; }  // edges: member-of, 
 - Future: PDF/image/audio handled by the **offline Python worker** [Q32], which emits the same node/edge
   records into the soul — *not* an in-process TS extractor (keeps the MCP path pure-TS/fast).
 
+### Multimodal worker (M13 — shipped)
+PDF/image/whisper-audio extraction is a **subprocess extractor**, not a TS `Extractor` plugin: a
+sibling `python/crib_worker` (uv-managed, outside `packages/*`) invoked as `python3 -m
+crib_worker.cli` by `packages/pipeline/src/multimodal/worker.ts`. It emits one JSON payload per media
+file (`{schemaVersion, file, modality, segments:[{tStartMs,tEndMs,text,lang}], dropped}`); the TS side
+owns node ids (`media:<path>#<tStartMs`) + blake3 hashing, turns segments into `media-seg` nodes +
+`member-of` edges to the Phase-1 `file:<path>` node, and links them to symbols via the deterministic
+`explicitSignal`/`identifierSignal` (dotted qualified-name refs in transcript text → `describes`).
+- **Backends:** `fake` (default, pure-stdlib, reads a `<media>.txt` sidecar — fully offline, drives the
+  gate tests), `pdf` (pypdf, zero-model), `audio` (faster-whisper, needs `--model-path`), `image`
+  (surya, needs `--model-path`). Real backends are import-guarded runtime plugins; all degrade to `[]`
+  on missing dep/model/corrupt media — the worker always exits 0, `runWorker` never throws.
+- **Pure-TS safety:** `crib index`/`crib serve` never spawn; only `crib multimodal` or
+  `indexRepo({multimodal})` do. Absent worker → graceful no-op (no crash, no media nodes).
+- **Capability:** a successful ingest flips `manifest.capabilities.multimodal = true` (via
+  `SoulStore.setCapabilities`); a fully-degraded run leaves it `false` (honest).
+
 ## 3. Registration & discovery
 ```ts
 // packages/parsers/registry.ts

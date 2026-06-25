@@ -16,9 +16,17 @@ import { explicitSignal, identifierSignal, pathSignal } from './signals.js';
 import type { SignalHit } from './signals.js';
 
 export { InvertedIndex } from './inverted-index.js';
+export { runMediaLink } from './media.js';
+export type { MediaLinkStats } from './media.js';
 export { runSemanticLink } from './semantic.js';
 export type { SemanticStats } from './semantic.js';
 export { TfidfIndex, tokenize } from './tfidf.js';
+// re-exported so the media linker (and future cross-modal passes) reuse the exact same signals + scorer
+// as the deterministic doc→symbol linker — one scoring path, no drift.
+export { scoreLink } from './score.js';
+export type { ScoredLink } from './score.js';
+export { explicitSignal, identifierSignal, pathSignal } from './signals.js';
+export type { SignalHit } from './signals.js';
 
 export interface LinkStats {
   describes: number;
