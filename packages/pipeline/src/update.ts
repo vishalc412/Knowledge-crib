@@ -22,6 +22,8 @@ import { runCluster } from './cluster/index.js';
 import type { ClusterStats } from './cluster/index.js';
 import { runLink } from './linker/index.js';
 import type { LinkStats } from './linker/index.js';
+import type { SemanticStats } from './linker/index.js';
+import { runSemanticLink } from './linker/index.js';
 import { runParse } from './parse.js';
 import type { ParseStats } from './parse.js';
 import { runResolve } from './resolve/index.js';
@@ -42,6 +44,8 @@ export interface UpdateOpts {
    *  deterministic, idempotent phase — re-running it keeps cluster nodes + member-of edges consistent
    *  with the re-extracted symbols so a body-only edit produces no spurious cluster-edge delta. */
   cluster?: boolean;
+  /** run the INFERRED TF-IDF semantic linker pass over scoped docs; default false (M7). */
+  semantic?: boolean;
 }
 
 export interface UpdateReport {
@@ -53,6 +57,7 @@ export interface UpdateReport {
   resolve: ResolveStats;
   link: LinkStats;
   cluster: ClusterStats;
+  semantic: SemanticStats;
 }
 
 export interface UpdateNoopReport {
@@ -141,6 +146,9 @@ export async function updateRepo(
   // edge into `delta.removed`. `before` captured these ids pre-removal; re-emission makes after==before.
   const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul);
 
+  // Semantic pass (M7, INFERRED): scoped to the docs in scope, like the deterministic re-link.
+  const semantic = opts.semantic ? runSemanticLink(soul, root, scopeDocFiles) : { added: 0 };
+
   soul.setVcsHead(head);
   soul.commit(opts.now);
 
@@ -154,5 +162,6 @@ export async function updateRepo(
     resolve,
     link,
     cluster,
+    semantic,
   };
 }

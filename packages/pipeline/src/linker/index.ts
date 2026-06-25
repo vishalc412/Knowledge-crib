@@ -16,6 +16,9 @@ import { explicitSignal, identifierSignal, pathSignal } from './signals.js';
 import type { SignalHit } from './signals.js';
 
 export { InvertedIndex } from './inverted-index.js';
+export { runSemanticLink } from './semantic.js';
+export type { SemanticStats } from './semantic.js';
+export { TfidfIndex, tokenize } from './tfidf.js';
 
 export interface LinkStats {
   describes: number;
