@@ -17,11 +17,32 @@ import {
   renderExport,
   updateRepo,
 } from '@knowledge-crib/pipeline';
+import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
 import { buildVizGraph, vizAssetsDir } from '@knowledge-crib/ui';
 import { installHooks, mergeDriverFiles } from './hooks.js';
 import { buildIndex, isIndexed, openIndexOnly, openSoul } from './runtime.js';
 
 const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3 } as const;
+
+/**
+ * Parse `--exclude a,b,c` (repeatable) into a discovery ignore set merged with DEFAULT_IGNORES.
+ * Lets users skip project-specific cache/source dirs that aren't in the default list.
+ */
+function parseExcludes(args: string[]): Set<string> {
+  const ignores = new Set(DEFAULT_IGNORES);
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--exclude') {
+      const val = args[++i];
+      if (!val) continue;
+      for (const d of val
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean))
+        ignores.add(d);
+    }
+  }
+  return ignores;
+}
 
 async function main(argv: string[]): Promise<number> {
   const [cmd, ...rest] = argv;
@@ -71,11 +92,15 @@ class CliVcsAdapter implements VcsAdapter {
 async function cmdIndex(args: string[]): Promise<number> {
   const repoRoot = resolve(args[0] && !args[0].startsWith('-') ? args[0] : '.');
   const withEmbeddings = args.includes('--with-embeddings');
+  const ignores = parseExcludes(args);
   const cribDir = resolve(repoRoot, '.crib');
   const soul = new SoulStore(cribDir, { manifest: newManifest({ root: '.' }) });
   soul.load();
   const started = Date.now();
-  const report = await indexRepo(soul, repoRoot, { buildOpts: { withEmbeddings } });
+  const report = await indexRepo(soul, repoRoot, {
+    buildOpts: { withEmbeddings },
+    ignores,
+  });
   const stats = soul.getManifest().stats;
   process.stdout.write(
     `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
@@ -177,11 +202,15 @@ async function cmdUpdate(args: string[]): Promise<number> {
 async function cmdReindex(args: string[]): Promise<number> {
   const repoRoot = resolve(args[0] && !args[0].startsWith('-') ? args[0] : '.');
   const withEmbeddings = args.includes('--with-embeddings');
+  const ignores = parseExcludes(args);
   const cribDir = resolve(repoRoot, '.crib');
   const soul = new SoulStore(cribDir, { manifest: newManifest({ root: '.' }) });
   soul.load();
   const started = Date.now();
-  const report = await indexRepo(soul, repoRoot, { buildOpts: { withEmbeddings } });
+  const report = await indexRepo(soul, repoRoot, {
+    buildOpts: { withEmbeddings },
+    ignores,
+  });
   const stats = soul.getManifest().stats;
   process.stdout.write(
     `reindexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
@@ -348,7 +377,7 @@ function printHelp(): void {
       'crib — Knowledge-crib CLI',
       '',
       'Usage:',
-      '  crib index [path] [--with-embeddings]   full index → .crib soul + derived index',
+      '  crib index [path] [--with-embeddings] [--exclude a,b,...]   full index → .crib soul + derived index',
       '  crib status [path]                       health + stats',
       '  crib query <text>                        BM25 search over code + docs',
       '  crib serve [path]                        run the MCP server on stdio',

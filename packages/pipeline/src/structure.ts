@@ -10,7 +10,14 @@ import type { FileMeta } from '@knowledge-crib/parsers';
 import { contentHash, idFor } from '@knowledge-crib/soul-schema';
 import type { Node } from '@knowledge-crib/soul-schema';
 
-const DEFAULT_IGNORES = new Set([
+/**
+ * Dirs never walked by discovery: VCS, dependency caches, build output, and the soul itself.
+ * Conservative — only dirs that are never meaningful source. Package-manager caches (`.yarn`,
+ * `.gradle`, `target`, `.turbo`, …) are included because they hold thousands of generated/cache
+ * files whose only effect is to blow up indexing time + pollute the soul with file nodes. Extend
+ * per-run via `--exclude` (CLI) or `DiscoverOpts.ignores`.
+ */
+export const DEFAULT_IGNORES = new Set([
   '.git',
   'node_modules',
   '.crib',
@@ -18,6 +25,26 @@ const DEFAULT_IGNORES = new Set([
   'coverage',
   '.next',
   'build',
+  // package-manager / build-tool caches (generated, never source)
+  '.yarn',
+  '.gradle',
+  'target',
+  'out',
+  '.turbo',
+  '.parcel-cache',
+  '.nuxt',
+  '.svelte-kit',
+  '.remix',
+  '.astro',
+  '.angular',
+  'bower_components',
+  '.cache',
+  '.idea',
+  '.vscode',
+  '.cursor',
+  'tmp',
+  'temp',
+  'logs',
 ]);
 
 const LANG_BY_EXT: Record<string, string> = {

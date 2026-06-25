@@ -45,6 +45,9 @@ export interface IndexOpts {
   buildOpts?: BuildOpts;
   /** link persist threshold (default 0.4). */
   linkThreshold?: number;
+  /** dirs to skip during discovery; REPLACES the default ignore set (merge with DEFAULT_IGNORES at
+   *  the caller if you want to extend rather than narrow). */
+  ignores?: Set<string>;
   /** run structural clustering (Louvain) after the link phase; default true (M7). */
   cluster?: boolean;
   /** run the INFERRED TF-IDF semantic linker pass after the deterministic linker; default false (M7).
@@ -86,7 +89,7 @@ export async function indexRepo(
     registry.register(e);
   }
 
-  const files = discoverFiles(root);
+  const files = discoverFiles(root, opts.ignores ? { ignores: opts.ignores } : {});
   runStructure(soul, root, files); // Phase 1
   const parse = await runParse(soul, registry, root, files); // Phase 2 + 3b (Markdown extractor)
   const resolve = runResolve(soul, root, files, opts.resolvers); // Phase 3 (TS + PL/SQL + Python)

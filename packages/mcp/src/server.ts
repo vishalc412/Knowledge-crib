@@ -139,8 +139,20 @@ export function buildServer(verbs: Verbs, version = '0.0.0'): McpServer {
   return server;
 }
 
-/** Connect the server to a stdio transport (the `crib serve` runtime). */
+/**
+ * Connect the server to a stdio transport (the `crib serve` runtime) and BLOCK until the client
+ * disconnects (stdin EOF). {@link McpServer.connect} resolves as soon as the transport starts
+ * listening — it does NOT keep the process alive by itself. The CLI wrapper calls `process.exit`
+ * once `main()` resolves, so without blocking here the server would be killed before it could
+ * answer a single request. We wait on stdin's `end`/`close` so the process lives exactly as long
+ * as the client keeps the connection open.
+ */
 export async function serveStdio(verbs: Verbs, version = '0.0.0'): Promise<void> {
   const server = buildServer(verbs, version);
-  await server.connect(new StdioServerTransport());
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  await new Promise<void>((resolve) => {
+    process.stdin.on('end', resolve);
+    process.stdin.on('close', resolve);
+  });
 }
