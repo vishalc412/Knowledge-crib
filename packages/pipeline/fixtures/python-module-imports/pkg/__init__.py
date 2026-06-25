@@ -1,0 +1,1 @@
+"""pkg package — module-import fixture (M8 NICE-5)."""

@@ -215,9 +215,17 @@ hard worker preemption deferred (P1-3: cache only the `Language`, fresh `Parser`
 EDIT `pipeline.ts` (`IndexOpts.resolvers?/grammarPool?/workerTimeout?`); EDIT `cli/runtime.ts`;
 EDIT `NOTICE`; optional `scripts/fetch-grammar.ts`.
 
-**Gate:** golden (fixture → exact nodes/edges); degradation (missing grammar → file node only, no throw;
+**Gate:** golden (fixture → exact nodes/edges); degradation (parse/IO failure → file node only, no throw;
 malformed → empty); id-stability; capability-honesty (≥1 imports/calls/inherits, ZERO type edges); TS+Python
 dispatch in one `indexRepo` without cross-talk; 71 existing green.
+
+> **Implementation note (built):** the web-tree-sitter + vendored-`.wasm` approach above was abandoned
+> in favor of a hand-rolled, zero-dependency INDENT/DEDENT tokenizer + structural parser — same
+> offline/pure-JS/deterministic posture as the TypeScript compiler API and the PL/SQL lexer, with no
+> grammar-loading path to degrade. The "missing grammar → file node only" dimension is therefore
+> covered by the extractor's try/catch (any parse/IO failure → `{nodes:[],edges:[]}` → file node only,
+> never throws the pipeline); "malformed → empty" is the same path. No `GrammarPool`, no vendored
+> grammars, no `treeSitter()` runtime (the `ExtractCtx.treeSitter` stub remains unimplemented by design).
 
 ---
 

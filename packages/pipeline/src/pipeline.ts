@@ -9,6 +9,7 @@ import {
   ExtractorRegistry,
   MarkdownExtractor,
   PlSqlExtractor,
+  PythonExtractor,
   TypeScriptExtractor,
 } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
@@ -28,9 +29,9 @@ import { discoverFiles, runStructure } from './structure.js';
 import { currentHead } from './vcs.js';
 
 export interface IndexOpts {
-  /** extractors to register; defaults to TypeScript + Markdown + PL/SQL. */
+  /** extractors to register; defaults to Markdown + TypeScript + PL/SQL + Python. */
   extractors?: Extractor[];
-  /** cross-file resolvers to register; defaults to TypeScript + PL/SQL (M10). */
+  /** cross-file resolvers to register; defaults to TypeScript + PL/SQL + Python. */
   resolvers?: Resolver[];
   /** CFG guard-chain passes to register; defaults to PL/SQL (M11). */
   cfgPasses?: CfgPass[];
@@ -66,12 +67,13 @@ export async function indexRepo(
   opts: IndexOpts = {},
 ): Promise<IndexReport> {
   const registry = new ExtractorRegistry();
-  // Markdown first so doc files never fall through to a code extractor; TypeScript + PL/SQL ship
-  // by default. Supports() are disjoint by extension, so order is only load-bearing for .md.
+  // Markdown first so doc files never fall through to a code extractor; TypeScript + PL/SQL + Python
+  // ship by default. Supports() are disjoint by extension, so order is only load-bearing for .md.
   for (const e of opts.extractors ?? [
     new MarkdownExtractor(),
     new TypeScriptExtractor(),
     new PlSqlExtractor(),
+    new PythonExtractor(),
   ]) {
     registry.register(e);
   }
@@ -79,7 +81,7 @@ export async function indexRepo(
   const files = discoverFiles(root);
   runStructure(soul, root, files); // Phase 1
   const parse = await runParse(soul, registry, root, files); // Phase 2 + 3b (Markdown extractor)
-  const resolve = runResolve(soul, root, files, opts.resolvers); // Phase 3 (TS + PL/SQL)
+  const resolve = runResolve(soul, root, files, opts.resolvers); // Phase 3 (TS + PL/SQL + Python)
   const cfg = runCfg(soul, root, files, opts.cfgPasses); // Phase 3d (M11 guard-chain annotation)
   const link = runLink(soul, root, opts.linkThreshold); // Phase 4
   const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul); // Phase 4b (M7)

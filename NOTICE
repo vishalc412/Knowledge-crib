@@ -29,7 +29,11 @@ THIRD-PARTY DEPENDENCIES (runtime, used under their respective licenses):
 - better-sqlite3 (MIT) — derived IndexStore backend (sqlite + FTS5).
 - sqlite-vec (MIT) — optional vector search extension.
 - @modelcontextprotocol/server (MIT) — MCP server SDK.
-- web-tree-sitter (MIT) — WASM parser bindings.
+- typescript (Apache-2.0) — the TypeScript compiler API used by the TS extractor.
 
-Tree-sitter grammar .wasm files are vendored under packages/parsers/grammars/
-with their upstream permissive-license notices retained.
+LANGUAGE EXTRACTORS (all pure-JS, offline, deterministic — no vendored grammars):
+- TypeScript: the official TypeScript compiler API (syntactic parse only).
+- PL/SQL (M10): hand-rolled zero-dependency lexer + parser.
+- Python (M8): hand-rolled zero-dependency INDENT/DEDENT tokenizer + structural parser.
+- Markdown (M4): hand-rolled section splitter.
+No tree-sitter WASM grammars are shipped; no web-tree-sitter runtime dependency.

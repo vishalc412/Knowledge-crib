@@ -4,7 +4,7 @@ import type { SoulStore } from '@knowledge-crib/core';
  * resolvers (P0a registry), and writes the cross-file EXTRACTED edges back to the soul. Then the
  * M11 CFG pass (Phase 3d) annotates the `executes`/`calls` edges with their guard chain.
  *
- * Defaults: TypeScript + PL/SQL (M10 resolvers; M11 CFG pass). Other languages (M8) register
+ * Defaults: TypeScript + PL/SQL + Python (M10/M8 resolvers; M11 CFG pass). Other languages register
  * append-only through the registries passed via `IndexOpts`. A reference that does not resolve to
  * an indexed node is dropped, never guessed.
  */
@@ -12,6 +12,7 @@ import type { FileMeta } from '@knowledge-crib/parsers';
 import type { CfgPass } from './dispatch.js';
 import { CfgPassRegistry } from './dispatch.js';
 import { PlSqlCfgPass } from './plsql-cfg.js';
+import { PythonResolver } from './python-resolver.js';
 import { ResolverRegistry } from './resolver-registry.js';
 import type { Resolver } from './resolver-registry.js';
 import { SqlResolver } from './sql-resolver.js';
@@ -23,6 +24,7 @@ export { SymbolTable } from './symbol-table.js';
 export { resolveTypeScript, TypeScriptResolver } from './ts-resolver.js';
 export type { ResolveStats, ResolveResult } from './ts-resolver.js';
 export { SqlResolver } from './sql-resolver.js';
+export { PythonResolver, resolvePython } from './python-resolver.js';
 export { SchemaCatalog } from './schema-catalog.js';
 export { ResolverRegistry } from './resolver-registry.js';
 export type {
@@ -38,9 +40,9 @@ export type { BasicBlock } from '../cfg/basic-block.js';
 export { pathCondition } from '../cfg/guard-chain.js';
 export type { GuardFrame, PathCondition } from '../cfg/guard-chain.js';
 
-/** Default resolvers when the caller doesn't override: TypeScript + PL/SQL. */
+/** Default resolvers when the caller doesn't override: TypeScript + PL/SQL + Python. */
 export function defaultResolvers(): Resolver[] {
-  return [new TypeScriptResolver(), new SqlResolver()];
+  return [new TypeScriptResolver(), new SqlResolver(), new PythonResolver()];
 }
 
 /** Default CFG passes when the caller doesn't override: PL/SQL (M11). */
