@@ -39,11 +39,7 @@ const CONF_CEIL = 0.6;
  * already linked (describes or references) by the deterministic pass. `docFiles` (M6) scopes the emit
  * while the TF-IDF index still spans the whole soul.
  */
-export function runSemanticLink(
-  soul: SoulStore,
-  root: string,
-  docFiles?: string[],
-): SemanticStats {
+export function runSemanticLink(soul: SoulStore, root: string, docFiles?: string[]): SemanticStats {
   const tfidf = new TfidfIndex(soul.iterate('symbol'));
   if (tfidf.size === 0) return { added: 0 };
 
@@ -72,10 +68,7 @@ export function runSemanticLink(
       const query = `${section.heading} ${section.prose} ${section.codeRefs.join(' ')}`;
       for (const hit of tfidf.query(query, FLOOR, TOP_K)) {
         if (existing.has(`${sectionId}|${hit.id}`)) continue; // deterministic already linked this pair
-        const confidence = Math.min(
-          CONF_CEIL,
-          CONF_FLOOR + (CONF_CEIL - CONF_FLOOR) * hit.score,
-        );
+        const confidence = Math.min(CONF_CEIL, CONF_FLOOR + (CONF_CEIL - CONF_FLOOR) * hit.score);
         edges.push({
           id: edgeId(sectionId, hit.id, 'references'),
           src: sectionId,

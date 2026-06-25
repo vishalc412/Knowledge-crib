@@ -54,9 +54,10 @@ describe('M7 semantic linker (INFERRED TF-IDF pass)', () => {
     expect(describesRotate?.method).toBe('explicit');
     expect(describesRotate?.provenance).toBe('EXTRACTED');
     // prose says "token", but no symbol is named "token" → deterministic misses the class
-    const classEdges = [...soul.iterateEdges('describes'), ...soul.iterateEdges('references')].filter(
-      (e) => e.dst === cls.id,
-    );
+    const classEdges = [
+      ...soul.iterateEdges('describes'),
+      ...soul.iterateEdges('references'),
+    ].filter((e) => e.dst === cls.id);
     expect(classEdges).toHaveLength(0);
     // every deterministic edge is EXTRACTED (--extracted-only is a clean subset)
     for (const e of [...soul.iterateEdges('describes'), ...soul.iterateEdges('references')]) {

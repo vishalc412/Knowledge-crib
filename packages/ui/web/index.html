@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Knowledge-crib graph</title>
+    <style>
+      :root { color-scheme: light dark; }
+      html, body { height: 100%; margin: 0; font: 14px/1.4 system-ui, sans-serif; }
+      #bar { padding: 6px 10px; border-bottom: 1px solid #8884; background: #8881; }
+      #bar b { font-size: 16px; }
+      #bar span { margin-left: 8px; opacity: 0.75; }
+      #cy { position: absolute; left: 0; right: 0; bottom: 0; top: 32px; }
+    </style>
+  </head>
+  <body>
+    <div id="bar">
+      <b>Knowledge-crib</b>
+      <span id="stats">loading…</span>
+    </div>
+    <div id="cy"></div>
+    <script src="vendor/cytoscape.min.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>

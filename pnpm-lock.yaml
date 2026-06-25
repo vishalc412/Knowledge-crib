@@ -35,6 +35,9 @@ importers:
       '@knowledge-crib/soul-schema':
         specifier: workspace:*
         version: link:../soul-schema
+      '@knowledge-crib/ui':
+        specifier: workspace:*
+        version: link:../ui
     devDependencies:
       vitest:
         specifier: ^2.1.0
@@ -119,6 +122,22 @@ importers:
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@20.19.43)
+
+  packages/ui:
+    dependencies:
+      '@knowledge-crib/core':
+        specifier: workspace:*
+        version: link:../core
+      '@knowledge-crib/soul-schema':
+        specifier: workspace:*
+        version: link:../soul-schema
+    devDependencies:
+      cytoscape:
+        specifier: ^3.34.0
+        version: 3.34.0
       vitest:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@20.19.43)
@@ -594,6 +613,10 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
+
+  cytoscape@3.34.0:
+    resolution: {integrity: sha512-62rNSrioXw93uliKFBwjukeQyeWwH2PqDrTac31r2P6464u3AUvTk0xS4LVvT251g7IgkFunrI48ZEZGjywSOg==}
+    engines: {node: '>=0.10'}
 
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -1512,6 +1535,8 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+
+  cytoscape@3.34.0: {}
 
   debug@4.4.3:
     dependencies:

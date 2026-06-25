@@ -2,7 +2,7 @@
 /**
  * `crib` — the Knowledge-crib CLI. Wraps the pipeline + MCP server.
  *
- * Commands: index | status | query | serve | update | reindex | merge-driver | install-hooks | export.
+ * Commands: index | status | query | serve | update | reindex | merge-driver | install-hooks | export | viz.
  * Exit codes (cli spec): 0 ok · 1 error · 2 bad args · 3 not indexed.
  */
 import { resolve } from 'node:path';
@@ -17,6 +17,7 @@ import {
   renderExport,
   updateRepo,
 } from '@knowledge-crib/pipeline';
+import { buildVizGraph, vizAssetsDir } from '@knowledge-crib/ui';
 import { installHooks, mergeDriverFiles } from './hooks.js';
 import { buildIndex, isIndexed, openIndexOnly, openSoul } from './runtime.js';
 
@@ -43,6 +44,8 @@ async function main(argv: string[]): Promise<number> {
       return cmdInstallHooks(rest);
     case 'export':
       return cmdExport(rest);
+    case 'viz':
+      return cmdViz(rest);
     case undefined:
     case '-h':
     case '--help':
@@ -261,6 +264,84 @@ async function cmdExport(args: string[]): Promise<number> {
   return EXIT.OK;
 }
 
+/** `crib viz` — serve the offline web UI (vendored Cytoscape.js) over the soul graph and open a browser. */
+async function cmdViz(args: string[]): Promise<number> {
+  const positional: string[] = [];
+  let port = 0;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i]!;
+    if (a === '--port') port = Number(args[++i] ?? 0);
+    else if (!a.startsWith('-')) positional.push(a);
+  }
+  const repoRoot = resolve(positional[0] ?? '.');
+  if (!isIndexed(repoRoot)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(repoRoot);
+  const graph = buildVizGraph(rt.soul);
+  const assets = vizAssetsDir();
+  const { createServer } = await import('node:http');
+  const { readFile } = await import('node:fs/promises');
+  const { join, extname } = await import('node:path');
+
+  const MIME: Record<string, string> = {
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'text/javascript; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.svg': 'image/svg+xml',
+  };
+
+  const server = createServer(async (req, res) => {
+    try {
+      if (req.url === '/graph.json') {
+        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(graph));
+        return;
+      }
+      const rel = (req.url ?? '/').split('?')[0]!.replace(/^\//, '');
+      const path = join(assets, rel === '' ? 'index.html' : rel);
+      const body = await readFile(path);
+      res.writeHead(200, { 'content-type': MIME[extname(path)] ?? 'application/octet-stream' });
+      res.end(body);
+    } catch (err) {
+      res.writeHead(404, { 'content-type': 'text/plain' });
+      res.end(`not found: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  });
+
+  await new Promise<void>((q) => server.listen(port, '127.0.0.1', q));
+  const addr = server.address();
+  const actualPort = typeof addr === 'object' && addr ? addr.port : port;
+  const url = `http://127.0.0.1:${actualPort}/`;
+  process.stderr.write(
+    `viz → ${url}  (${graph.stats.nodes} nodes · ${graph.stats.edges} edges · ${graph.stats.clusters} clusters)\nCtrl-C to stop.\n`,
+  );
+  // best-effort browser open (macOS/linux/windows); never fatal.
+  const { spawn } = await import('node:child_process');
+  let opener: string;
+  let openerArgs: string[];
+  if (process.platform === 'darwin') {
+    opener = 'open';
+    openerArgs = [url];
+  } else if (process.platform === 'win32') {
+    opener = 'cmd';
+    openerArgs = ['/c', 'start', '', url];
+  } else {
+    opener = 'xdg-open';
+    openerArgs = [url];
+  }
+  try {
+    spawn(opener, openerArgs, { stdio: 'ignore', detached: true }).unref();
+  } catch {
+    // ignore — the URL is printed above.
+  }
+  await new Promise<void>(() => {
+    // run until interrupted
+  });
+  return EXIT.OK;
+}
+
 function printHelp(): void {
   process.stdout.write(
     [
@@ -276,6 +357,7 @@ function printHelp(): void {
       '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',
       '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',
       '  crib export [--format F] [--procedure P] render soul: rules|mermaid|graph.json|report',
+      '  crib viz [path] [--port N]               serve the offline web UI (Cytoscape graph) + open browser',
       '',
     ].join('\n'),
   );
