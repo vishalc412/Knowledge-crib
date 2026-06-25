@@ -264,7 +264,7 @@ async function cmdExport(args: string[]): Promise<number> {
   return EXIT.OK;
 }
 
-/** `crib viz` — serve the offline web UI (vendored Cytoscape.js) over the soul graph and open a browser. */
+/** `crib viz` — serve the offline web UI (Claude Design DC runtime) over the soul graph and open a browser. */
 async function cmdViz(args: string[]): Promise<number> {
   const positional: string[] = [];
   let port = 0;
@@ -357,7 +357,7 @@ function printHelp(): void {
       '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',
       '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',
       '  crib export [--format F] [--procedure P] render soul: rules|mermaid|graph.json|report',
-      '  crib viz [path] [--port N]               serve the offline web UI (Cytoscape graph) + open browser',
+      '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
       '',
     ].join('\n'),
   );

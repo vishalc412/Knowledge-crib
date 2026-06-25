@@ -7,6 +7,47 @@ import type { Edge, Node, Rel } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Verbs } from './verbs.js';
 
+// Minimal result shapes for the verb calls below so the tests can drop `as any`.
+interface ImpactResult {
+  affected: Array<{ id: string }>;
+  relatedDocs: Array<{ edgeType: string; provenance: string; confidence: number; snippet: string }>;
+}
+interface ContextResult {
+  node: { name?: string };
+  callers: Array<{ id: string }>;
+  callees: Array<{ id: string }>;
+  docs: Array<{ edgeType: string }>;
+}
+interface DescribesResult {
+  docs: Array<unknown>;
+}
+interface QueryResult {
+  hits: Array<{ id: string }>;
+}
+interface NeighborsResult {
+  edges: Array<{ src: string; dst: string }>;
+}
+interface ShortestPathResult {
+  found: boolean;
+  path: string[];
+}
+interface StatusResult {
+  indexed: boolean;
+  capabilities: Record<string, unknown>;
+}
+interface ErrorResult {
+  error: { code: string };
+}
+interface RulesResult {
+  rules: Array<{
+    action: { kind: string; sqlKind?: string };
+    guard?: string;
+    branch?: string;
+    conditions: Array<{ polarity?: string }>;
+  }>;
+  error?: { code: string };
+}
+
 let repo: string;
 let soul: SoulStore;
 let index: SqliteIndexStore;
@@ -96,12 +137,12 @@ afterEach(() => {
 
 describe('M5 wedge — impact returns blast radius + describing docs', () => {
   it('impact(login, up) returns dependents AND a describes doc with provenance + snippet', () => {
-    const res = verbs.impact({ id: login.id, dir: 'up' }) as any;
+    const res = verbs.impact({ id: login.id, dir: 'up' }) as unknown as ImpactResult;
     // blast radius: handleLogin depends on login
-    expect(res.affected.map((a: any) => a.id)).toContain(handle.id);
+    expect(res.affected.map((a) => a.id)).toContain(handle.id);
     // related docs for the changed symbol, with provenance + rehydrated snippet
     expect(res.relatedDocs.length).toBeGreaterThanOrEqual(1);
-    const doc = res.relatedDocs[0];
+    const doc = res.relatedDocs[0]!;
     expect(doc.edgeType).toBe('describes');
     expect(doc.provenance).toBe('EXTRACTED');
     expect(doc.confidence).toBeCloseTo(0.95);
@@ -109,53 +150,62 @@ describe('M5 wedge — impact returns blast radius + describing docs', () => {
   });
 
   it('impact down returns dependencies (issue), not dependents', () => {
-    const res = verbs.impact({ id: login.id, dir: 'down' }) as any;
-    expect(res.affected.map((a: any) => a.id)).toEqual([issue.id]);
+    const res = verbs.impact({ id: login.id, dir: 'down' }) as unknown as ImpactResult;
+    expect(res.affected.map((a) => a.id)).toEqual([issue.id]);
   });
 });
 
 describe('verbs', () => {
   it('context bundles signature, callers, callees, docs', () => {
-    const res = verbs.context({ id: login.id }) as any;
+    const res = verbs.context({ id: login.id }) as unknown as ContextResult;
     expect(res.node.name).toBe('login');
-    expect(res.callers.map((c: any) => c.id)).toContain(handle.id);
-    expect(res.callees.map((c: any) => c.id)).toContain(issue.id);
-    expect(res.docs[0].edgeType).toBe('describes');
+    expect(res.callers.map((c) => c.id)).toContain(handle.id);
+    expect(res.callees.map((c) => c.id)).toContain(issue.id);
+    expect(res.docs[0]!.edgeType).toBe('describes');
   });
 
   it('describes returns linked docs with min confidence', () => {
-    expect((verbs.describes({ id: login.id }) as any).docs).toHaveLength(1);
-    expect((verbs.describes({ id: login.id, minConfidence: 0.99 }) as any).docs).toHaveLength(0);
+    expect((verbs.describes({ id: login.id }) as unknown as DescribesResult).docs).toHaveLength(1);
+    expect(
+      (verbs.describes({ id: login.id, minConfidence: 0.99 }) as unknown as DescribesResult).docs,
+    ).toHaveLength(0);
   });
 
   it('query finds symbols by BM25', () => {
-    const res = verbs.query({ q: 'login', kinds: ['symbol'] }) as any;
-    expect(res.hits[0].id).toBe(login.id);
+    const res = verbs.query({ q: 'login', kinds: ['symbol'] }) as unknown as QueryResult;
+    expect(res.hits[0]!.id).toBe(login.id);
   });
 
   it('neighbors maps in/out/both', () => {
-    expect((verbs.neighbors({ id: login.id, rel: 'calls', dir: 'in' }) as any).edges[0].src).toBe(
-      handle.id,
-    );
-    expect((verbs.neighbors({ id: login.id, rel: 'calls', dir: 'out' }) as any).edges[0].dst).toBe(
-      issue.id,
-    );
+    expect(
+      (verbs.neighbors({ id: login.id, rel: 'calls', dir: 'in' }) as unknown as NeighborsResult)
+        .edges[0]!.src,
+    ).toBe(handle.id);
+    expect(
+      (verbs.neighbors({ id: login.id, rel: 'calls', dir: 'out' }) as unknown as NeighborsResult)
+        .edges[0]!.dst,
+    ).toBe(issue.id);
   });
 
   it('shortest_path walks the chain', () => {
-    const res = verbs.shortestPath({ from: handle.id, to: issue.id }) as any;
+    const res = verbs.shortestPath({
+      from: handle.id,
+      to: issue.id,
+    }) as unknown as ShortestPathResult;
     expect(res.found).toBe(true);
     expect(res.path).toEqual([handle.id, login.id, issue.id]);
   });
 
   it('status reports indexed + capabilities', () => {
-    const res = verbs.status() as any;
+    const res = verbs.status() as unknown as StatusResult;
     expect(res.indexed).toBe(true);
     expect(res.capabilities.cypher).toBe(false);
   });
 
   it('NOT_FOUND for unknown id', () => {
-    expect((verbs.context({ id: 'sym:nope' }) as any).error.code).toBe('NOT_FOUND');
+    expect((verbs.context({ id: 'sym:nope' }) as unknown as ErrorResult).error.code).toBe(
+      'NOT_FOUND',
+    );
   });
 
   it('extractedOnly filters out INFERRED doc links', () => {
@@ -168,8 +218,10 @@ describe('verbs', () => {
     ]);
     soul.commit('2026-01-02T00:00:00.000Z');
     index.buildFromSoul(soul);
-    expect((verbs.describes({ id: issue.id }) as any).docs).toHaveLength(1);
-    expect((verbs.describes({ id: issue.id, extractedOnly: true }) as any).docs).toHaveLength(0);
+    expect((verbs.describes({ id: issue.id }) as unknown as DescribesResult).docs).toHaveLength(1);
+    expect(
+      (verbs.describes({ id: issue.id, extractedOnly: true }) as unknown as DescribesResult).docs,
+    ).toHaveLength(0);
   });
 });
 
@@ -228,18 +280,18 @@ describe('extract_rules verb (M12)', () => {
   });
 
   it('materializes the decision table for a procedure by qualified name', () => {
-    const res = v2.extractRules({ procedure: 'pkg.doIt' }) as any;
+    const res = v2.extractRules({ procedure: 'pkg.doIt' }) as unknown as RulesResult;
     expect(res.rules).toHaveLength(1);
-    const rule = res.rules[0];
+    const rule = res.rules[0]!;
     expect(rule.action.kind).toBe('executes');
     expect(rule.action.sqlKind).toBe('insert');
     expect(rule.guard).toBe(idFor({ kind: 'condition', file: 'src/p.plsql', line: 7 }));
     expect(rule.branch).toBe('THEN');
-    expect(rule.conditions[0].polarity).toBe('THEN');
+    expect(rule.conditions[0]!.polarity).toBe('THEN');
   });
 
   it('returns NOT_FOUND for an unknown procedure', () => {
-    const res = v2.extractRules({ procedure: 'no_such_proc' }) as any;
-    expect(res.error.code).toBe('NOT_FOUND');
+    const res = v2.extractRules({ procedure: 'no_such_proc' }) as unknown as RulesResult;
+    expect(res.error?.code).toBe('NOT_FOUND');
   });
 });

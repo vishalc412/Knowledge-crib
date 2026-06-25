@@ -26,23 +26,19 @@ function soulFor(): SoulStore {
   return s;
 }
 
-describe('crib viz — buildVizGraph (M7 compound-node contract)', () => {
-  it('emits cluster nodes and marks member symbols with a compound parent', async () => {
+describe('crib viz — buildVizGraph (DC runtime contract)', () => {
+  it('emits clusters separately and marks member symbols with clusterId', async () => {
     const soul = soulFor();
     await indexRepo(soul, repo, { now: NOW });
     const g = buildVizGraph(soul);
 
-    const clusters = g.nodes.filter((n) => n.data.kind === 'cluster');
-    expect(clusters.length).toBeGreaterThanOrEqual(1);
+    expect(g.clusters.length).toBeGreaterThanOrEqual(1);
 
-    // every cluster has ≥2 members whose node data carries parent == cluster id (Cytoscape compound)
-    for (const c of clusters) {
-      const cid = c.data.id;
-      const members = g.nodes.filter((n) => n.data.parent === cid);
+    // every cluster has ≥2 members whose node data carries clusterId == cluster id
+    for (const c of g.clusters) {
+      const cid = c.id;
+      const members = g.nodes.filter((n) => n.data.clusterId === cid);
       expect(members.length).toBeGreaterThanOrEqual(2);
-      for (const m of members) {
-        expect(m.data.kind).toBe('symbol');
-      }
       // the cluster's members match the soul's member-of edges into this cluster
       const soulMembers = [...soul.iterateEdges('member-of')]
         .filter((e) => e.dst === cid)
@@ -50,7 +46,7 @@ describe('crib viz — buildVizGraph (M7 compound-node contract)', () => {
         .sort();
       expect(members.map((m) => m.data.id).sort()).toEqual(soulMembers);
     }
-    expect(g.stats.clusters).toBe(clusters.length);
+    expect(g.stats.clusters).toBe(g.clusters.length);
     expect(g.stats.nodes).toBe(g.nodes.length);
     expect(g.stats.edges).toBe(g.edges.length);
   });
@@ -67,23 +63,23 @@ describe('crib viz — buildVizGraph (M7 compound-node contract)', () => {
     expect(JSON.stringify(gb)).toBe(JSON.stringify(ga));
   });
 
-  it('serializes as plain JSON (no soul types leak) and edges reference real node ids', async () => {
+  it('serializes as plain JSON (no soul types leak) and edges reference real node/cluster ids', async () => {
     const soul = soulFor();
     await indexRepo(soul, repo, { now: NOW });
     const g = buildVizGraph(soul);
     const ids = new Set(g.nodes.map((n) => n.data.id));
+    const clusterIds = new Set(g.clusters.map((c) => c.id));
     for (const e of g.edges) {
-      expect(ids.has(e.data.source)).toBe(true);
-      expect(ids.has(e.data.target)).toBe(true);
+      expect(ids.has(e.data.source) || clusterIds.has(e.data.source)).toBe(true);
+      expect(ids.has(e.data.target) || clusterIds.has(e.data.target)).toBe(true);
     }
     // round-trips through JSON cleanly
     expect(() => JSON.parse(JSON.stringify(g))).not.toThrow();
   });
 
-  it('vizAssetsDir points at the vendored cytoscape + index.html', () => {
+  it('vizAssetsDir points at the DC runtime assets', () => {
     const dir = vizAssetsDir();
     expect(existsSync(join(dir, 'index.html'))).toBe(true);
-    expect(existsSync(join(dir, 'main.js'))).toBe(true);
-    expect(existsSync(join(dir, 'vendor', 'cytoscape.min.js'))).toBe(true);
+    expect(existsSync(join(dir, 'support.js'))).toBe(true);
   });
 });

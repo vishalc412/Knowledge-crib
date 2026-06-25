@@ -133,8 +133,9 @@ export function extractRules(
       return rc;
     });
     // polarity is recorded only for the innermost IF — tag the last condition.
-    if (conditions.length > 0 && e.branch !== undefined) {
-      conditions[conditions.length - 1]!.polarity = e.branch;
+    const innermost = conditions[conditions.length - 1];
+    if (innermost && e.branch !== undefined) {
+      innermost.polarity = e.branch;
     }
 
     rules.push({
