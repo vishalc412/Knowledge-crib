@@ -2,8 +2,8 @@
 /**
  * `crib` — the Knowledge-crib CLI. Wraps the pipeline + MCP server.
  *
- * Commands: index | status | query | serve | update | reindex | merge-driver | install-hooks |
- *           export | viz | mcp.
+ * Commands: index | status | query | gaps | rules | context | dossier | impact | path | neighbors |
+ *           serve | update | reindex | merge-driver | install-hooks | export | viz | mcp.
  *
  * Root resolution (REQ-1): `crib serve`/`status`/`update`/`export`/`viz`/`query` resolve the project
  * root via a priority chain — explicit positional arg or `--cwd` → `KCRIB_ROOT` → `CLAUDE_PROJECT_DIR`
@@ -17,8 +17,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { MANIFEST_FILE, SoulStore, newManifest } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
-import { Verbs, serveStdio } from '@knowledge-crib/mcp';
-import type { VcsAdapter } from '@knowledge-crib/mcp';
+import { EnrichmentStore, Verbs, serveStdio } from '@knowledge-crib/mcp';
+import type { EnrichLayer, EnrichScope, VcsAdapter } from '@knowledge-crib/mcp';
 import {
   changedFilesSince,
   currentHead,
@@ -39,6 +39,7 @@ import {
   openSoul,
   resolveProjectRoot,
 } from './runtime.js';
+import { installSkill, listBundledSkills } from './skill-install.js';
 
 const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3 } as const;
 
@@ -107,6 +108,22 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdStatus(rest, ctx);
     case 'query':
       return cmdQuery(rest, ctx);
+    case 'gaps':
+      return cmdGaps(rest, ctx);
+    case 'rules':
+      return cmdRules(rest, ctx);
+    case 'context':
+      return cmdContext(rest, ctx);
+    case 'dossier':
+      return cmdDossier(rest, ctx);
+    case 'reconstruct':
+      return cmdReconstruct(rest, ctx);
+    case 'impact':
+      return cmdImpact(rest, ctx);
+    case 'path':
+      return cmdPath(rest, ctx);
+    case 'neighbors':
+      return cmdNeighbors(rest, ctx);
     case 'serve':
       return cmdServe(rest, ctx);
     case 'update':
@@ -121,8 +138,12 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdExport(rest, ctx);
     case 'viz':
       return cmdViz(rest, ctx);
+    case 'enrich':
+      return cmdEnrich(rest, ctx);
     case 'mcp':
       return cmdMcp(rest, ctx);
+    case 'skill':
+      return cmdSkill(rest);
     case undefined:
     case '-h':
     case '--help':
@@ -155,6 +176,26 @@ function registerIndexed(repoRoot: string, cribDir: string, soul: SoulStore): vo
   });
 }
 
+/**
+ * After a (re)index, surface how many LLM-graph targets are pending and point the user at the driver.
+ * The deterministic index is LLM-free, so "auto" here is a nudge: print the count + the follow-up command.
+ * The actual generation is driven by the `/crib-enrich` skill (the host IDE LLM) or `crib enrich --next`.
+ */
+function printLlmPending(soul: SoulStore, repoRoot: string): void {
+  try {
+    const st = new EnrichmentStore(soul, repoRoot).status();
+    if (st.done) return;
+    const pending = Object.values(st.layers).reduce((n, l) => n + l.missing + l.stale, 0);
+    if (pending <= 0) return;
+    const next = st.nextLayer ?? 'symbol';
+    process.stdout.write(
+      `${pending} target(s) pending LLM graph generation (next: ${next}) — run \`/crib-enrich\` or \`crib enrich --next\` to drive the loop.\n`,
+    );
+  } catch {
+    // Enrichment status is best-effort; never let it mask a successful index.
+  }
+}
+
 async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   // index targets the exact given dir (no upward walk) — you index THIS, not a parent.
   const repoRoot = resolve(ctx?.cwdOverride ?? pathArg(args) ?? '.');
@@ -177,6 +218,7 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
     `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
       `(${report.link.describes} describes, ${report.link.references} references) in ${Date.now() - started}ms\n`,
   );
+  printLlmPending(soul, repoRoot);
   return EXIT.OK;
 }
 
@@ -228,9 +270,19 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
   const positional = args.filter((a) => !a.startsWith('-'));
   const q = positional.join(' ');
   if (!q) {
-    process.stderr.write('usage: crib query <text>\n');
+    process.stderr.write(
+      'usage: crib query <text> [--with-source] [--with-rules] [--with-framework] [--extracted-only] [--limit N]\n',
+    );
     return EXIT.BAD_ARGS;
   }
+  // WS-2: fold the deep per-symbol context into each hit so one CLI call returns what a full file
+  // read surfaces (bodies + decision tables), not just signatures. Flags mirror the MCP `query` tool.
+  const withSource = args.includes('--with-source');
+  const withRules = args.includes('--with-rules');
+  const withFramework = args.includes('--with-framework');
+  const extractedOnly = args.includes('--extracted-only');
+  const limitIdx = args.indexOf('--limit');
+  const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;
   const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
@@ -239,7 +291,334 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
   const rt = openSoul(resolved);
   const index = buildIndex(rt);
   const verbs = new Verbs({ soul: rt.soul, index, repoRoot: resolved.repoRoot });
-  process.stdout.write(`${JSON.stringify(verbs.query({ q }), null, 2)}\n`);
+  process.stdout.write(
+    `${JSON.stringify(
+      verbs.query({
+        q,
+        ...(withSource ? { withSource: true } : {}),
+        ...(withRules ? { withRules: true } : {}),
+        ...(withFramework ? { withFramework: true } : {}),
+        ...(extractedOnly ? { extractedOnly: true } : {}),
+        ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
+      }),
+      null,
+      2,
+    )}\n`,
+  );
+  index.close();
+  return EXIT.OK;
+}
+
+/**
+ * Shared setup for the read-only analyst commands (WS-5): resolve root, confirm it is indexed, open
+ * the soul, (re)build the derived index, and hand back a wired {@link Verbs}. Prints the
+ * "not indexed" message and returns `null` when the root has no `.crib`, so each command stays a
+ * thin wrapper over one verb. The index is rebuilt from the committed soul every call — a stale or
+ * gitignored index can never drift (the soul is the source of truth).
+ */
+function openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexStore } | null {
+  const resolved = resolveRoot(args, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return null;
+  }
+  const rt = openSoul(resolved);
+  const index = buildIndex(rt);
+  const verbs = new Verbs({
+    soul: rt.soul,
+    index,
+    repoRoot: resolved.repoRoot,
+    vcs: new CliVcsAdapter(),
+  });
+  return { verbs, index };
+}
+
+/** `crib gaps` — analysis readiness, missing bodies (spec-only callables), unresolved call sites. */
+async function cmdGaps(args: string[], ctx?: CmdCtx): Promise<number> {
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  process.stdout.write(
+    `${JSON.stringify(verbs.gaps({ ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}) }), null, 2)}\n`,
+  );
+  index.close();
+  return EXIT.OK;
+}
+
+/** `crib rules <proc>` — decision table + coverage readiness for one callable. */
+async function cmdRules(args: string[], ctx?: CmdCtx): Promise<number> {
+  const proc = args.find((a) => !a.startsWith('-'));
+  if (!proc) {
+    process.stderr.write('usage: crib rules <procedure> [--include-tables]\n');
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  process.stdout.write(
+    `${JSON.stringify(
+      verbs.extractRules({
+        procedure: proc,
+        ...(args.includes('--include-tables') ? { includeTables: true } : {}),
+      }),
+      null,
+      2,
+    )}\n`,
+  );
+  index.close();
+  return EXIT.OK;
+}
+
+/** `crib context <id>` — deep per-symbol context; fold body + rules + framework via flags. */
+async function cmdContext(args: string[], ctx?: CmdCtx): Promise<number> {
+  // Bulk path: `crib context --package <pkg>` (or --file <path> / --cluster <slug>) returns per-symbol
+  // dossiers for EVERY symbol in the scope in ONE call (WS-4). The scope flag may carry its value as
+  // the next arg (`--package PKG`) or rely on a positional (`PKG --package`).
+  const scope = scopeOf(args);
+  if (scope) {
+    return cmdContextByScope(args, scope, ctx);
+  }
+  const id = args.find((a) => !a.startsWith('-'));
+  if (!id) {
+    process.stderr.write(
+      'usage: crib context <id> [--with-source] [--with-rules] [--with-framework] [--extracted-only]\n' +
+        '       crib context --package <pkg> [--file <path> | --cluster <slug>]\n' +
+        '                      [--format markdown] [--include-tables] [--max-symbols N] [--extracted-only]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  process.stdout.write(
+    `${JSON.stringify(
+      verbs.context({
+        id,
+        ...(args.includes('--with-source') ? { withSource: true } : {}),
+        ...(args.includes('--with-rules') ? { withRules: true } : {}),
+        ...(args.includes('--with-framework') ? { withFramework: true } : {}),
+        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+      }),
+      null,
+      2,
+    )}\n`,
+  );
+  index.close();
+  return EXIT.OK;
+}
+
+/** Resolve the bulk-scope flag (`--package` / `--file` / `--cluster`) on a `context` argv, if any. */
+function scopeOf(args: string[]): 'package' | 'file' | 'cluster' | undefined {
+  if (args.includes('--package')) return 'package';
+  if (args.includes('--file')) return 'file';
+  if (args.includes('--cluster')) return 'cluster';
+  return undefined;
+}
+
+/** The bulk `crib context --<scope> <id>` path → `verbs.dossierByScope` (per-symbol dossiers). */
+async function cmdContextByScope(
+  args: string[],
+  scope: 'package' | 'file' | 'cluster',
+  ctx?: CmdCtx,
+): Promise<number> {
+  const flag = scope === 'package' ? '--package' : scope === 'file' ? '--file' : '--cluster';
+  const flagIdx = args.indexOf(flag);
+  // value may ride the flag (`--package PKG`) or be the positional non-flag arg (`PKG --package`)
+  const afterFlag = args[flagIdx + 1];
+  const id =
+    afterFlag && !afterFlag.startsWith('-')
+      ? afterFlag
+      : args.find((a, i) => !a.startsWith('-') && i !== flagIdx + 1);
+  if (!id) {
+    process.stderr.write(
+      `usage: crib context ${flag} <id> [--format markdown] [--include-tables] [--max-symbols N] [--extracted-only]\n`,
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  const fmtIdx = args.indexOf('--format');
+  const format = fmtIdx >= 0 ? (args[fmtIdx + 1] === 'markdown' ? 'markdown' : 'json') : undefined;
+  const maxSymIdx = args.indexOf('--max-symbols');
+  const maxSymbols = maxSymIdx >= 0 ? Number.parseInt(args[maxSymIdx + 1] ?? '', 10) : undefined;
+  process.stdout.write(
+    `${JSON.stringify(
+      verbs.dossierByScope({
+        scope,
+        id,
+        ...(args.includes('--include-tables') ? { includeTables: true } : {}),
+        ...(Number.isFinite(maxSymbols) && maxSymbols! > 0 ? { maxSymbols } : {}),
+        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+        ...(format ? { format } : {}),
+      }),
+      null,
+      2,
+    )}\n`,
+  );
+  index.close();
+  return EXIT.OK;
+}
+
+/** `crib dossier <id>` — persisted deep artifact (body + callers/callees + rules + CFG constructs). */
+async function cmdDossier(args: string[], ctx?: CmdCtx): Promise<number> {
+  const id = args.find((a) => !a.startsWith('-'));
+  if (!id) {
+    process.stderr.write(
+      'usage: crib dossier <id> [--format markdown] [--include-tables] [--extracted-only]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  const fmtIdx = args.indexOf('--format');
+  const format = fmtIdx >= 0 ? (args[fmtIdx + 1] === 'markdown' ? 'markdown' : 'json') : undefined;
+  process.stdout.write(
+    `${JSON.stringify(
+      verbs.dossier({
+        id,
+        ...(args.includes('--include-tables') ? { includeTables: true } : {}),
+        ...(format ? { format } : {}),
+        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+      }),
+      null,
+      2,
+    )}\n`,
+  );
+  index.close();
+  return EXIT.OK;
+}
+
+/** `crib reconstruct <pkg>` — package-scoped migration reconstruction (constants + members + tables + docs). */
+async function cmdReconstruct(args: string[], ctx?: CmdCtx): Promise<number> {
+  const id = args.find((a) => !a.startsWith('-'));
+  if (!id) {
+    process.stderr.write(
+      'usage: crib reconstruct <package> [--format markdown] [--no-tables] [--max-symbols N] [--extracted-only]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  const fmtIdx = args.indexOf('--format');
+  const format = fmtIdx >= 0 ? (args[fmtIdx + 1] === 'markdown' ? 'markdown' : 'json') : undefined;
+  const maxSymIdx = args.indexOf('--max-symbols');
+  const maxSymbols = maxSymIdx >= 0 ? Number.parseInt(args[maxSymIdx + 1] ?? '', 10) : undefined;
+  process.stdout.write(
+    `${JSON.stringify(
+      verbs.reconstruct({
+        id,
+        ...(args.includes('--no-tables') ? { includeTables: false } : {}),
+        // guard: a non-positive or non-finite maxSymbols would pass through as 0/negative and silently
+        // corrupt downstream `slice(0, N)` (e.g. --max-symbols -5 → slice(0,-5)). Only forward a real cap.
+        ...(Number.isFinite(maxSymbols) && maxSymbols! > 0 ? { maxSymbols } : {}),
+        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+        ...(format ? { format } : {}),
+      }),
+      null,
+      2,
+    )}\n`,
+  );
+  index.close();
+  return EXIT.OK;
+}
+
+/** `crib impact <id> --dir up|down [--depth N]` — blast radius. */
+async function cmdImpact(args: string[], ctx?: CmdCtx): Promise<number> {
+  const id = args.find((a) => !a.startsWith('-'));
+  const dirIdx = args.indexOf('--dir');
+  const dir = dirIdx >= 0 ? (args[dirIdx + 1] as 'up' | 'down' | undefined) : undefined;
+  if (!id || (dir !== 'up' && dir !== 'down')) {
+    process.stderr.write(
+      'usage: crib impact <id> --dir up|down [--depth N] [--limit N] [--extracted-only]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  const depthIdx = args.indexOf('--depth');
+  const depth = depthIdx >= 0 ? Number.parseInt(args[depthIdx + 1] ?? '', 10) : undefined;
+  const limitIdx = args.indexOf('--limit');
+  const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;
+  process.stdout.write(
+    `${JSON.stringify(
+      verbs.impact({
+        id,
+        dir,
+        ...(Number.isFinite(depth) && depth! > 0 ? { depth } : {}),
+        ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
+        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+      }),
+      null,
+      2,
+    )}\n`,
+  );
+  index.close();
+  return EXIT.OK;
+}
+
+/** `crib path <from> <to>` — shortest dependency path between two nodes. */
+async function cmdPath(args: string[], ctx?: CmdCtx): Promise<number> {
+  const positional = args.filter((a) => !a.startsWith('-'));
+  const [from, to] = positional;
+  if (!from || !to) {
+    process.stderr.write('usage: crib path <from> <to> [--max-hops N]\n');
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  const hopsIdx = args.indexOf('--max-hops');
+  const maxHops = hopsIdx >= 0 ? Number.parseInt(args[hopsIdx + 1] ?? '', 10) : undefined;
+  process.stdout.write(
+    `${JSON.stringify(
+      verbs.shortestPath({
+        from,
+        to,
+        ...(Number.isFinite(maxHops) && maxHops! > 0 ? { maxHops } : {}),
+      }),
+      null,
+      2,
+    )}\n`,
+  );
+  index.close();
+  return EXIT.OK;
+}
+
+/** `crib neighbors <id> [--rel reads] [--dir in|out|both]` — direct edges of one node. */
+async function cmdNeighbors(args: string[], ctx?: CmdCtx): Promise<number> {
+  const id = args.find((a) => !a.startsWith('-'));
+  if (!id) {
+    process.stderr.write(
+      'usage: crib neighbors <id> [--rel reads] [--dir in|out|both] [--limit N] [--extracted-only]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  const relIdx = args.indexOf('--rel');
+  const rel = relIdx >= 0 ? args[relIdx + 1] : undefined;
+  const dirIdx = args.indexOf('--dir');
+  const dir = dirIdx >= 0 ? (args[dirIdx + 1] as 'in' | 'out' | 'both' | undefined) : undefined;
+  const limitIdx = args.indexOf('--limit');
+  const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;
+  process.stdout.write(
+    `${JSON.stringify(
+      verbs.neighbors({
+        id,
+        ...(rel ? { rel } : {}),
+        ...(dir ? { dir } : {}),
+        ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
+        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+      }),
+      null,
+      2,
+    )}\n`,
+  );
   index.close();
   return EXIT.OK;
 }
@@ -291,7 +670,7 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
   let index: IndexStore;
   try {
     index = openIndexOnly(rt);
-    index.applyDelta(result.delta);
+    index.applyDelta(result.delta, resolved.repoRoot);
   } catch {
     index = buildIndex(rt); // full buildFromSoul from the just-updated soul
   }
@@ -324,6 +703,7 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
     `reindexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
       `(${report.link.describes} describes, ${report.link.references} references) in ${Date.now() - started}ms\n`,
   );
+  printLlmPending(soul, repoRoot);
   return EXIT.OK;
 }
 
@@ -566,6 +946,230 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
   return EXIT.OK;
 }
 
+/**
+ * `crib enrich` — LLM-graph work queue + driver surface (Phase D). The CLI process itself has no
+ * model, so this is the *queue + seed* view, not the author: it prints coverage (`enrich_status`),
+ * the next batch of grounded work items (`enrich_next`), or persists an externally-authored batch
+ * (`enrich_save --file <path>`). The authoring is done by the host IDE LLM via the `/crib-enrich`
+ * skill (which calls the same verbs over MCP) or by any agent that reads `--next` and writes `--save`.
+ *
+ * Usage:
+ *   crib enrich [path]                              coverage + pending count + follow-up hint
+ *   crib enrich --next [path] [--layer L] [--limit N] [--scope PFX]    print the next grounded batch
+ *   crib enrich --save <file> [path] [--scope PFX]   persist a {batchId, items[]} JSON batch
+ *   crib enrich --overview [path] [--scope PFX]     print the bible (scoped to PFX if given)
+ *   crib enrich --scopes [path]                     ranked path-prefix scopes for the picker
+ *
+ * `--scope <prefix>` restricts status/next to in-scope targets (system layer is whole-repo only).
+ * `--scope-cluster <cluster>` optionally refines inside the prefix. `--scopes` is a discovery view.
+ */
+async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
+  // Strip --save <file> so the file path is not misinterpreted as the project root.
+  const rootArgs = args.slice();
+  const saveIdx = rootArgs.indexOf('--save');
+  if (saveIdx >= 0) {
+    rootArgs.splice(saveIdx, 2);
+  }
+  const resolved = resolveRoot(rootArgs, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const enrich = new EnrichmentStore(rt.soul, resolved.repoRoot);
+
+  let scope: EnrichScope | undefined;
+  try {
+    scope = parseScopeFlag(args);
+  } catch (e) {
+    // `--scope` present but malformed (missing/flag-like value) MUST NOT silently default to full-repo
+    // — that silent default is the exact failure mode the scope picker exists to prevent.
+    process.stderr.write(`error: ${(e as Error).message}\n`);
+    return EXIT.BAD_ARGS;
+  }
+
+  // --scopes: discovery view — ranked path-prefix scopes for a headless/CI agent to pick from.
+  if (args.includes('--scopes')) {
+    const st = enrich.status({ scopes: true });
+    process.stdout.write(`${JSON.stringify(st, null, 2)}\n`);
+    return EXIT.OK;
+  }
+
+  if (args.includes('--overview')) {
+    process.stdout.write(
+      `${JSON.stringify(enrich.overview({ ...(scope ? { scope } : {}) }), null, 2)}\n`,
+    );
+    return EXIT.OK;
+  }
+
+  if (args.includes('--save')) {
+    const fileIdx = args.indexOf('--save');
+    const file = args[fileIdx + 1];
+    if (file === undefined || file.startsWith('--')) {
+      process.stderr.write('usage: crib enrich --save <file> [path] [--scope PFX]\n');
+      return EXIT.BAD_ARGS;
+    }
+    const batch = JSON.parse(readFileSync(file, 'utf8')) as {
+      batchId: string;
+      items: Array<Record<string, unknown>>;
+    };
+    const result = enrich.save(batch as never) as { accepted: unknown[]; rejected: unknown[] };
+    // Advisory: scope is a queue filter, not a write constraint — but warn if a saved target is
+    // out-of-scope so a headless driver notices a scope/file mismatch.
+    if (scope) {
+      for (const item of batch.items) {
+        const tid = String(item.targetId ?? '');
+        const node = rt.soul.getNode(tid);
+        if (node?.file && !pathInPrefix(node.file, scope)) {
+          process.stderr.write(
+            `warning: saved target ${tid} is outside scope ${scope.pathPrefix}\n`,
+          );
+        }
+      }
+    }
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return EXIT.OK;
+  }
+
+  if (args.includes('--next')) {
+    const layerIdx = args.indexOf('--layer');
+    const layer = layerIdx >= 0 ? (args[layerIdx + 1] as EnrichLayer | undefined) : undefined;
+    const limitIdx = args.indexOf('--limit');
+    const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;
+    const batch = enrich.next({
+      ...(layer ? { layer } : {}),
+      ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
+      ...(scope ? { scope } : {}),
+    });
+    process.stdout.write(`${JSON.stringify(batch, null, 2)}\n`);
+    if (batch.zeroProgress) {
+      process.stderr.write(
+        `zero-progress: batchId ${batch.batchId} was already issued for layer ${batch.layer}` +
+          ` (previousBatchId ${batch.previousBatchId ?? 'n/a'}) with no save landing — stop and check that enrich_save is persisting.\n`,
+      );
+    }
+    return EXIT.OK;
+  }
+
+  // default: coverage + pending + follow-up hint (scoped if --scope given).
+  const st = enrich.status({ ...(scope ? { scope } : {}) });
+  process.stdout.write(`${JSON.stringify(st, null, 2)}\n`);
+  const layers = st.layers as Record<string, { missing: number; stale: number }>;
+  if (!st.done) {
+    // Under a scope the system key in `layers` is the WHOLE-REPO system count (reported separately in
+    // wholeRepoPending.system) — exclude it from the scoped pending sum so the hint reflects scoped work.
+    const scopedKeys = scope
+      ? ['symbol', 'file', 'cluster']
+      : ['symbol', 'file', 'cluster', 'system'];
+    const pending = scopedKeys.reduce(
+      (n, k) => n + (layers[k]?.missing ?? 0) + (layers[k]?.stale ?? 0),
+      0,
+    );
+    process.stdout.write(
+      `${pending} target(s) pending (next: ${st.nextLayer ?? 'symbol'}) — run \`/crib-enrich\` to author the LLM graph.\n`,
+    );
+    if (scope && st.wholeRepoPending?.system) {
+      process.stdout.write(
+        `(${st.wholeRepoPending.system} whole-repo system target(s) still pending — needs an unscoped pass)\n`,
+      );
+    }
+  } else if (scope) {
+    process.stdout.write(
+      `scope \`${scope.pathPrefix}\` complete — run \`crib enrich --overview --scope ${scope.pathPrefix}\` for the module bible (whole-repo system layer still needs an unscoped pass).\n`,
+    );
+  } else {
+    process.stdout.write('LLM graph complete — `crib enrich --overview` for the bible.\n');
+  }
+  return EXIT.OK;
+}
+
+/**
+ * Parse `--scope <prefix>` + optional `--scope-cluster <cluster>` into an EnrichScope (or undefined
+ * when `--scope` is absent). Throws when `--scope` (or `--scope-cluster`) is present but its value is
+ * missing or flag-like — a malformed scope MUST surface as BAD_ARGS, never silently default to full-repo.
+ */
+function parseScopeFlag(args: string[]): EnrichScope | undefined {
+  const idx = args.indexOf('--scope');
+  if (idx < 0) return undefined;
+  const pathPrefix = args[idx + 1];
+  if (looksLikeFlag(pathPrefix)) {
+    throw new Error(
+      `--scope requires a path prefix (e.g. packages/cli); got ${pathPrefix === undefined ? 'nothing' : `'${pathPrefix}'`}`,
+    );
+  }
+  const clusterIdx = args.indexOf('--scope-cluster');
+  if (clusterIdx >= 0) {
+    const cluster = args[clusterIdx + 1];
+    if (looksLikeFlag(cluster)) {
+      throw new Error(
+        `--scope-cluster requires a cluster id; got ${cluster === undefined ? 'nothing' : `'${cluster}'`}`,
+      );
+    }
+    return { pathPrefix, cluster };
+  }
+  return { pathPrefix };
+}
+
+/** True when a flag's value slot is missing or itself looks like another flag (e.g. `--scope --next`). */
+function looksLikeFlag(v: string | undefined): boolean {
+  return v === undefined || v.startsWith('--');
+}
+
+/** Trailing-slash-safe prefix test: `packages/core` matches itself and `packages/core/x` only. */
+function pathInPrefix(path: string, scope: EnrichScope): boolean {
+  const prefix = scope.pathPrefix;
+  if (!prefix) return true;
+  return path === prefix || path.startsWith(`${prefix}/`);
+}
+
+/**
+ * `crib skill <install|list> [name] [--dest <dir>]` — install the bundled `/crib-enrich` skill into
+ * `~/.claude/skills/` (or `--dest`) so the LLM-graph loop is drivable from any Claude Code session.
+ * Mirrors `crib mcp install` (idempotent, non-clobbering). `list` prints the bundled skills.
+ */
+function cmdSkill(args: string[]): number {
+  const [sub, ...rest] = args;
+  const destIdx = rest.indexOf('--dest');
+  const destRoot = destIdx >= 0 ? rest[destIdx + 1] : undefined;
+  const name = rest.find((a) => !a.startsWith('-'));
+
+  switch (sub) {
+    case 'install': {
+      const results = installSkill({
+        ...(name ? { name } : {}),
+        ...(destRoot ? { destRoot } : {}),
+      });
+      for (const r of results) {
+        if (r.note) process.stdout.write(`${r.name}: ${r.note}\n`);
+        else
+          process.stdout.write(
+            `${r.name}: ${r.written ? 'installed' : 'up to date'} → ${r.destDir}\n`,
+          );
+      }
+      return EXIT.OK;
+    }
+    case 'list': {
+      const skills = listBundledSkills();
+      if (skills.length === 0) {
+        process.stdout.write('no bundled skills\n');
+        return EXIT.OK;
+      }
+      for (const s of skills) {
+        process.stdout.write(`${s.name}${s.description ? ` — ${s.description}` : ''}\n`);
+      }
+      return EXIT.OK;
+    }
+    case undefined:
+    case '-h':
+    case '--help':
+      process.stderr.write('usage: crib skill <install|list> [name] [--dest <dir>]\n');
+      return EXIT.BAD_ARGS;
+    default:
+      process.stderr.write(`unknown skill subcommand: ${sub}\n`);
+      return EXIT.BAD_ARGS;
+  }
+}
+
 function printHelp(): void {
   process.stdout.write(
     [
@@ -574,7 +1178,16 @@ function printHelp(): void {
       'Usage:',
       '  crib index [path] [--semantic] [--exclude a,b,...]     full index → .crib soul + derived index (+ INFERRED TF-IDF semantic links)',
       '  crib status [path]                       health + stats',
-      '  crib query <text>                        BM25 search over code + docs',
+      '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',
+      '  crib gaps [path] [--extracted-only]      analysis readiness + missing bodies (spec-only) + unresolved call sites',
+      '  crib rules <proc> [--include-tables]      decision table + coverage readiness for a callable',
+      '  crib context <id> [--with-source] [--with-rules] [--with-framework]   deep per-symbol context',
+      '  crib context --package <pkg> [--format markdown] [--max-symbols N]   bulk dossiers for every symbol in a scope (also --file / --cluster)',
+      '  crib dossier <id> [--format markdown]    persisted deep artifact (body + callers/callees + rules + CFG constructs)',
+      '  crib reconstruct <pkg> [--format markdown]   package reconstruction: CONSTANT values + members + referenced tables + docs + expectedBodyFile',
+      '  crib impact <id> --dir up|down [--depth N]   blast radius (dependents / dependencies)',
+      '  crib path <from> <to> [--max-hops N]     shortest dependency path between two nodes',
+      '  crib neighbors <id> [--rel reads] [--dir in|out|both]   direct edges of one node',
       '  crib serve [path]                        run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd)',
       '  crib update [path] [--since <sha>]      incremental re-extract since the VCS anchor',
       '  crib reindex [path]                     full re-index (alias for `crib index`)',
@@ -582,8 +1195,10 @@ function printHelp(): void {
       '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',
       '  crib export [--format F] [--procedure P] render soul: rules|mermaid|graph.json|report',
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
+      '  crib enrich [path]                        LLM-graph work queue + driver: coverage, --next (grounded batch), --save <file>, --overview, --scope PFX, --scopes',
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]',
       '                                          auto-wire the MCP server into each IDE config (REQ-2)',
+      '  crib skill <install|list> [name] [--dest <dir>]   install bundled skills (e.g. crib-enrich) into ~/.claude/skills',
       '',
       'Global: --cwd <path>   override the project root for any command',
       '',

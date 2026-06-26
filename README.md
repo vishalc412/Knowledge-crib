@@ -46,6 +46,20 @@ knowledge-crib/                 # pnpm monorepo
   docs/            # the spec package
 ```
 
+## Install
+
+Knowledge-crib is a pnpm workspace. The recommended way to make the `crib` CLI available globally is to link the workspace `cli` package, not to install a separate copy from a registry. Linking keeps the global binary pointing at your local checkout so workspace dependencies resolve correctly.
+
+```bash
+cd knowledge-crib
+pnpm install
+pnpm build
+pnpm --filter knowledge-crib link --global   # or: cd packages/cli && pnpm link --global
+crib --help
+```
+
+Do **not** run `pnpm add -g knowledge-crib` from inside the workspace — pnpm may create broken relative symlinks in the global install because the package declares workspace dependencies.
+
 ## Develop
 ```bash
 pnpm install
