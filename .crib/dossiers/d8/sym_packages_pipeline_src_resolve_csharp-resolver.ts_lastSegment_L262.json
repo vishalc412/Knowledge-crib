@@ -1,0 +1,114 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#lastSegment@L262",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c7b99ad580c5ad640d2e78e39bd8f212670c2a64e8dfed2ad274d63b5885c9ca",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#lastSegment@L262",
+    "kind": "symbol",
+    "type": "function",
+    "name": "lastSegment",
+    "qualifiedName": "lastSegment",
+    "signature": "lastSegment(dotted: string): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+    "span": {
+      "start": 262,
+      "end": 265
+    },
+    "callSites": [
+      {
+        "callee": "lastIndexOf",
+        "line": 263
+      },
+      {
+        "callee": "slice",
+        "line": 264
+      }
+    ]
+  },
+  "source": {
+    "text": "function lastSegment(dotted: string): string {\n  const i = dotted.lastIndexOf('.');\n  return i === -1 ? dotted : dotted.slice(i + 1);\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 262
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+      "confidence": 1,
+      "name": "resolveTypeName",
+      "qualifiedName": "resolveTypeName",
+      "signature": "resolveTypeName(name: string, file: string, nsPrefix: string, imports: Map<string, NameBinding>, fqnFile: Map<string, string>, table: SymbolTable): Node | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+      "line": 224
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#lastSegment@L262",
+    "procedureName": "lastSegment",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#lastSegment@L262",
+        "procedureName": "lastSegment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:96a7d19138ecd5d69a4fcbe184e92882672ba6ab0ae5989908289122ce60e2c3",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L263",
+          "line": 263,
+          "expr": "const i = dotted.lastIndexOf('.');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#lastSegment@L262",
+        "procedureName": "lastSegment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6aa9e636833a85011ebaa9f72c8bfd84270562f2265c8f01ffe3ad4af7d6210a",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L264",
+          "line": 264,
+          "expr": "return i === -1 ? dotted : dotted.slice(i + 1);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/csharp-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

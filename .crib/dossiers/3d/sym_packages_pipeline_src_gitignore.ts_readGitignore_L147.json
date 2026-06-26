@@ -1,0 +1,222 @@
+{
+  "id": "sym:packages/pipeline/src/gitignore.ts#readGitignore@L147",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:a81e1aef714e8bb4c8d498b4416fc01c65c3b45065dc6a4b694587dde540e1cf",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/gitignore.ts#readGitignore@L147",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readGitignore",
+    "qualifiedName": "readGitignore",
+    "signature": "readGitignore(root: string, dir: string): GitignoreRule[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/gitignore.ts",
+    "span": {
+      "start": 147,
+      "end": 155
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 148
+      },
+      {
+        "callee": "join",
+        "line": 148
+      },
+      {
+        "callee": "parseGitignore",
+        "line": 151
+      },
+      {
+        "callee": "readFileSync",
+        "line": 151
+      }
+    ]
+  },
+  "source": {
+    "text": "export function readGitignore(root: string, dir: string): GitignoreRule[] {\n  const path = dir === '' ? join(root, '.gitignore') : join(root, dir, '.gitignore');\n  if (!existsSync(path)) return [];\n  try {\n    return parseGitignore(readFileSync(path, 'utf8'));\n  } catch {\n    return [];\n  }\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 147
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles@L93",
+      "confidence": 1,
+      "name": "discoverFiles",
+      "qualifiedName": "discoverFiles",
+      "signature": "discoverFiles(root: string, opts: DiscoverOpts = {}): FileMeta[]",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 93
+    },
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L98",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "discoverFiles.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 98
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/gitignore.ts#parseGitignore@L48",
+      "confidence": 1,
+      "name": "parseGitignore",
+      "qualifiedName": "parseGitignore",
+      "signature": "parseGitignore(text: string): GitignoreRule[]",
+      "type": "function",
+      "file": "packages/pipeline/src/gitignore.ts",
+      "line": 48
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/gitignore.ts@L146",
+      "snippet": "/** Read + parse a `.gitignore` at `dir/.gitignore` if present, else return `[]`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/gitignore.ts#readGitignore@L147",
+    "procedureName": "readGitignore",
+    "conditions": [
+      "cond:packages/pipeline/src/gitignore.ts@L149"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#readGitignore@L147",
+        "procedureName": "readGitignore",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9f87aadcbb5156b745d80a8f4720d532584014cb237216f88d9a502b52f7794d",
+          "target": "stmt:packages/pipeline/src/gitignore.ts@L148",
+          "line": 148,
+          "expr": "const path = dir === '' ? join(root, '.gitignore') : join(root, dir, '.gitignore');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#readGitignore@L147",
+        "procedureName": "readGitignore",
+        "guard": "cond:packages/pipeline/src/gitignore.ts@L149",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L149",
+            "expr": "!existsSync(path)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dc18887101e31d245dd2176dda1e9e5038690ae52d9c202567a3c5ddfa9b32e6",
+          "target": "stmt:packages/pipeline/src/gitignore.ts@L149",
+          "line": 149,
+          "expr": "return [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#readGitignore@L147",
+        "procedureName": "readGitignore",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3304a7f45317ee01f316efa08e9720f8f59db9df72f6209e17d20258ecb35d16",
+          "target": "sym:packages/pipeline/src/gitignore.ts#parseGitignore@L48",
+          "expr": "parseGitignore",
+          "line": 151
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#readGitignore@L147",
+        "procedureName": "readGitignore",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:11cd16aa2c0e2b62f2f40c69084bc0b6c875289e1736b772a3c81aa001f96936",
+          "target": "stmt:packages/pipeline/src/gitignore.ts@L151",
+          "line": 151,
+          "expr": "return parseGitignore(readFileSync(path, 'utf8'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#readGitignore@L147",
+        "procedureName": "readGitignore",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3b68ded81069b6ec8b86ead736f83b0f4ed29d4e20a18db97ca7f4ce4fc6dea6",
+          "target": "stmt:packages/pipeline/src/gitignore.ts@L153",
+          "line": 153,
+          "expr": "return [];"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/pipeline/src/gitignore.ts@L152",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/pipeline/src/gitignore.ts",
+        "span": {
+          "start": 152,
+          "end": 152
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/pipeline/src/structure.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 4,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

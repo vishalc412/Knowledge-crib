@@ -1,0 +1,136 @@
+{
+  "id": "sym:packages/core/src/dossier/serializer.ts#label@L188",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:879c4c4ace2f6c71ff201388f8961d17b2743e20f6d95d8a0998a4645fb067d4",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/core/src/dossier/serializer.ts#label@L188",
+    "kind": "symbol",
+    "type": "function",
+    "name": "label",
+    "qualifiedName": "label",
+    "signature": "label(b: { qualifiedName?: string; name?: string; id: string }): string",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/serializer.ts",
+    "span": {
+      "start": 188,
+      "end": 190
+    },
+    "callSites": [
+      {
+        "callee": "String",
+        "line": 189
+      }
+    ]
+  },
+  "source": {
+    "text": "function label(b: { qualifiedName?: string; name?: string; id: string }): string {\n  return String(b.qualifiedName ?? b.name ?? b.id);\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 188
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
+      "confidence": 1,
+      "name": "dossierToMarkdown",
+      "qualifiedName": "dossierToMarkdown",
+      "signature": "dossierToMarkdown(d: Dossier): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/serializer.ts",
+      "line": 15
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#11-verification-strategy-end-to-end",
+      "heading": "11. Verification strategy (end-to-end)",
+      "anchor": "11-verification-strategy-end-to-end",
+      "snippet": "11. Verification strategy (end-to-end)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#4-link-precision-measurement-m4-the-trust-gate",
+      "heading": "4. Link-precision measurement (M4 — the trust gate)",
+      "anchor": "4-link-precision-measurement-m4-the-trust-gate",
+      "snippet": "4. Link-precision measurement (M4 — the trust gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/serializer.ts#label@L188",
+    "procedureName": "label",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/serializer.ts#label@L188",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d3416f3a9ff0c4001c286544284172f2c01405200f0cc6df503b8add50cf62e5",
+          "target": "stmt:packages/core/src/dossier/serializer.ts@L189",
+          "line": 189,
+          "expr": "return String(b.qualifiedName ?? b.name ?? b.id);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/dossier/serializer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

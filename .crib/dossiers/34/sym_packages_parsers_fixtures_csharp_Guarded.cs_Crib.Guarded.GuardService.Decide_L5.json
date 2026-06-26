@@ -1,0 +1,199 @@
+{
+  "id": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Decide@L5",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e7536876ffcd93ac05ffdda8981ee89095c83bb48dfb34fbefe0b06e7ccee208",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Decide@L5",
+    "kind": "symbol",
+    "type": "method",
+    "name": "Decide",
+    "qualifiedName": "Crib.Guarded.GuardService.Decide",
+    "signature": "Decide(x)",
+    "lang": "csharp",
+    "file": "packages/parsers/fixtures/csharp/Guarded.cs",
+    "span": {
+      "start": 5,
+      "end": 16
+    },
+    "callSites": [
+      {
+        "callee": "Approve",
+        "line": 9
+      },
+      {
+        "callee": "Reject",
+        "line": 13
+      }
+    ],
+    "params": [
+      "x"
+    ]
+  },
+  "source": {
+    "text": "    public string Decide(int x)\n    {\n        if (x > 0)\n        {\n            Approve(x);\n        }\n        else\n        {\n            Reject(x);\n        }\n        return \"done\";\n    }",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 5
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Approve@L26",
+      "confidence": 1,
+      "name": "Approve",
+      "qualifiedName": "Crib.Guarded.GuardService.Approve",
+      "signature": "Approve(n)",
+      "type": "method",
+      "file": "packages/parsers/fixtures/csharp/Guarded.cs",
+      "line": 26
+    },
+    {
+      "id": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Reject@L27",
+      "confidence": 1,
+      "name": "Reject",
+      "qualifiedName": "Crib.Guarded.GuardService.Reject",
+      "signature": "Reject(n)",
+      "type": "method",
+      "file": "packages/parsers/fixtures/csharp/Guarded.cs",
+      "line": 27
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Decide@L5",
+    "procedureName": "Crib.Guarded.GuardService.Decide",
+    "conditions": [
+      "cond:packages/parsers/fixtures/csharp/Guarded.cs@L7"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Decide@L5",
+        "procedureName": "Crib.Guarded.GuardService.Decide",
+        "guard": "cond:packages/parsers/fixtures/csharp/Guarded.cs@L7",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/csharp/Guarded.cs@L7",
+            "expr": "x > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:34df6772c112fd80cb099fb32fd1c2f270e16d529728c5c71008294ddbbd0ae7",
+          "target": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Approve@L26",
+          "expr": "Approve",
+          "line": 9
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Decide@L5",
+        "procedureName": "Crib.Guarded.GuardService.Decide",
+        "guard": "cond:packages/parsers/fixtures/csharp/Guarded.cs@L7",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/csharp/Guarded.cs@L7",
+            "expr": "x > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:193f10b4f856d07af118c50d3673396db5551e9c046d78d9f8521e5c9f8c5c96",
+          "target": "stmt:packages/parsers/fixtures/csharp/Guarded.cs@L9",
+          "line": 9,
+          "expr": "Approve(x)"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Decide@L5",
+        "procedureName": "Crib.Guarded.GuardService.Decide",
+        "guard": "cond:packages/parsers/fixtures/csharp/Guarded.cs@L7",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/csharp/Guarded.cs@L7",
+            "expr": "x > 0",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2c37ad97157baf2a5e3511fcca0e97d3f35fb96d0b7af8a5cf08cd28389f06c7",
+          "target": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Reject@L27",
+          "expr": "Reject",
+          "line": 13
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Decide@L5",
+        "procedureName": "Crib.Guarded.GuardService.Decide",
+        "guard": "cond:packages/parsers/fixtures/csharp/Guarded.cs@L7",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/csharp/Guarded.cs@L7",
+            "expr": "x > 0",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f6a289cee684b5d3b67d6e185aa9070e21f25fb6d6061688855fafa5cf680dff",
+          "target": "stmt:packages/parsers/fixtures/csharp/Guarded.cs@L13",
+          "line": 13,
+          "expr": "Reject(x)"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Decide@L5",
+        "procedureName": "Crib.Guarded.GuardService.Decide",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ab964bbc8bc76f1aab73ab19d0e16d0b8f6d4a3daf5075a36e219ef372d80184",
+          "target": "stmt:packages/parsers/fixtures/csharp/Guarded.cs@L15",
+          "line": 15,
+          "expr": "return \"done\""
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,250 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.readUntilKeyword@L1062",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:47091dbc020532d739f965606740857677d19ccc1bb650faf13effbb8173e969",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.readUntilKeyword@L1062",
+    "kind": "symbol",
+    "type": "method",
+    "name": "readUntilKeyword",
+    "qualifiedName": "Parser.readUntilKeyword",
+    "signature": "readUntilKeyword(kw: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 1062,
+      "end": 1073
+    },
+    "callSites": [
+      {
+        "callee": "at",
+        "line": 1063
+      },
+      {
+        "callee": "at",
+        "line": 1071
+      },
+      {
+        "callee": "trim",
+        "line": 1072
+      },
+      {
+        "callee": "replace",
+        "line": 1072
+      },
+      {
+        "callee": "slice",
+        "line": 1072
+      }
+    ]
+  },
+  "source": {
+    "text": "  private readUntilKeyword(kw: string): string {\n    const startOff = this.at().off;\n    let depth = 0;\n    while (this.at().type !== 'eof') {\n      if (this.isPunct('(')) depth++;\n      else if (this.isPunct(')')) depth--;\n      else if (depth === 0 && this.isWord(kw)) break;\n      this.pos++;\n    }\n    const endOff = this.at().off;\n    return this.src.slice(startOff, endOff).replace(/\\s+/g, ' ').trim();\n  }",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 1062
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCase@L775",
+      "confidence": 1,
+      "name": "parseCase",
+      "qualifiedName": "Parser.parseCase",
+      "signature": "parseCase(): CaseStmt",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 775
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseExceptionBlock@L814",
+      "confidence": 1,
+      "name": "parseExceptionBlock",
+      "qualifiedName": "Parser.parseExceptionBlock",
+      "signature": "parseExceptionBlock(): ExceptionBlock",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 814
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseIf@L711",
+      "confidence": 1,
+      "name": "parseIf",
+      "qualifiedName": "Parser.parseIf",
+      "signature": "parseIf(): IfStmt",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 711
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseLoop@L737",
+      "confidence": 1,
+      "name": "parseLoop",
+      "qualifiedName": "Parser.parseLoop",
+      "signature": "parseLoop(): LoopStmt",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 737
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L118",
+      "confidence": 1,
+      "name": "at",
+      "qualifiedName": "Parser.at",
+      "signature": "at(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 118
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L128",
+      "confidence": 1,
+      "name": "isPunct",
+      "qualifiedName": "Parser.isPunct",
+      "signature": "isPunct(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 128
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.isWord@L124",
+      "confidence": 1,
+      "name": "isWord",
+      "qualifiedName": "Parser.isWord",
+      "signature": "isWord(...ws: string[]): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 124
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/parser.ts@L1061",
+      "snippet": "/** Read raw source until a keyword (depth-0), returning the trimmed snippet. Consumes up to (not) the keyword. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.readUntilKeyword@L1062",
+    "procedureName": "Parser.readUntilKeyword",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.readUntilKeyword@L1062",
+        "procedureName": "Parser.readUntilKeyword",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e742c6397264d6a8e01b4910a8f6ccc5658cdcc627698592f23f251e0ac81aa1",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.isWord@L124",
+          "expr": "isWord"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.readUntilKeyword@L1062",
+        "procedureName": "Parser.readUntilKeyword",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:65772d5f370bb7998191f8caca3eb42a1dc7f102cb83a0f9a49a82511e045fc7",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L128",
+          "expr": "isPunct"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.readUntilKeyword@L1062",
+        "procedureName": "Parser.readUntilKeyword",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:150b9f04fcdd0deedd2f56299369daa85a2a12db50ed45ca0805c7e73ccf3fd5",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L118",
+          "expr": "at",
+          "line": 1063
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.readUntilKeyword@L1062",
+        "procedureName": "Parser.readUntilKeyword",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:386b2e6fd934daac92a0d0b3c4e184c0ccccaff7202b60015cda669747019fb8",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1063",
+          "line": 1063,
+          "expr": "const startOff = this.at().off;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.readUntilKeyword@L1062",
+        "procedureName": "Parser.readUntilKeyword",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3aa72afc84d216231fbd99fae7ba05468326bb83c64cfd7f10d477324cfaddbf",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1071",
+          "line": 1071,
+          "expr": "const endOff = this.at().off;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.readUntilKeyword@L1062",
+        "procedureName": "Parser.readUntilKeyword",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e5a36762b19e5c5cf87b39cfabbed459437c7fd31a9cf4b8b9a24b9f0c17e699",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1072",
+          "line": 1072,
+          "expr": "return this.src.slice(startOff, endOff).replace(/\\s+/g, ' ').trim();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 5,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

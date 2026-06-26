@@ -1,0 +1,242 @@
+{
+  "id": "sym:packages/parsers/fixtures/java/Behavior.java#Behavior.decide@L13",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:bfa51946b7d2f7a295e4292b2f822805d9bba282eb869ea95930e4354cb64788",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/java/Behavior.java#Behavior.decide@L13",
+    "kind": "symbol",
+    "type": "method",
+    "name": "decide",
+    "qualifiedName": "Behavior.decide",
+    "signature": "decide(status)",
+    "lang": "java",
+    "file": "packages/parsers/fixtures/java/Behavior.java",
+    "span": {
+      "start": 13,
+      "end": 31
+    },
+    "callSites": [
+      {
+        "callee": "IllegalStateException",
+        "line": 18
+      }
+    ],
+    "params": [
+      "status"
+    ]
+  },
+  "source": {
+    "text": "    public String decide(int status) {\n        int count;\n        count = status + 1;\n        try {\n            if (status < 0) {\n                throw new IllegalStateException(\"negative status\");\n            }\n            switch (status) {\n                case 0:\n                    return \"zero\";\n                case 1:\n                    return \"one\";\n                default:\n                    return \"other\";\n            }\n        } catch (IllegalStateException ex) {\n            return \"caught\";\n        }\n    }",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 13
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/fixtures/java/Behavior.java@L9",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-1-what-each-model-can-answer-about-one-procedure",
+      "heading": "1.1 What each model can answer about ONE procedure",
+      "anchor": "1-1-what-each-model-can-answer-about-one-procedure",
+      "snippet": "1.1 What each model can answer about ONE procedure",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/java/Behavior.java#Behavior.decide@L13",
+    "procedureName": "Behavior.decide",
+    "conditions": [
+      "cond:packages/parsers/fixtures/java/Behavior.java@L17",
+      "case:packages/parsers/fixtures/java/Behavior.java@L21",
+      "case:packages/parsers/fixtures/java/Behavior.java@L23",
+      "case:packages/parsers/fixtures/java/Behavior.java@L25"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Behavior.java#Behavior.decide@L13",
+        "procedureName": "Behavior.decide",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:904ced972a0b386c537542426857fa3e5f06d1fbd2519ff0290d3d4e027460f6",
+          "target": "assign:packages/parsers/fixtures/java/Behavior.java@L15",
+          "line": 15,
+          "expr": "count = status + 1"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Behavior.java#Behavior.decide@L13",
+        "procedureName": "Behavior.decide",
+        "guard": "cond:packages/parsers/fixtures/java/Behavior.java@L17",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/java/Behavior.java@L17",
+            "expr": "status < 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:361c018966b5c9e0fc15f9efa1231679ddf8f1aa42d7570e2978b6275e53fc20",
+          "target": "stmt:packages/parsers/fixtures/java/Behavior.java@L18",
+          "line": 18,
+          "expr": "throw new IllegalStateException(\"negative status\")"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Behavior.java#Behavior.decide@L13",
+        "procedureName": "Behavior.decide",
+        "guard": "case:packages/parsers/fixtures/java/Behavior.java@L21",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/fixtures/java/Behavior.java@L21",
+            "expr": "0",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75fbc54cbe6c6063a1186e78c7cb5c6e3e1930ec5f97ae7e33b4f8a98ab54fdb",
+          "target": "stmt:packages/parsers/fixtures/java/Behavior.java@L22",
+          "line": 22,
+          "expr": "return \"zero\""
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Behavior.java#Behavior.decide@L13",
+        "procedureName": "Behavior.decide",
+        "guard": "case:packages/parsers/fixtures/java/Behavior.java@L23",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/fixtures/java/Behavior.java@L23",
+            "expr": "1",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:66d418ab5d5e2f6d6470b66ad581911779b46fffca49d916d940f062d5ba8ee9",
+          "target": "stmt:packages/parsers/fixtures/java/Behavior.java@L24",
+          "line": 24,
+          "expr": "return \"one\""
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Behavior.java#Behavior.decide@L13",
+        "procedureName": "Behavior.decide",
+        "guard": "case:packages/parsers/fixtures/java/Behavior.java@L25",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/fixtures/java/Behavior.java@L25",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bab4f95ccf75dea35d8b94e9394f57126ebcaf38a8271c787f9144d18ece318c",
+          "target": "stmt:packages/parsers/fixtures/java/Behavior.java@L26",
+          "line": 26,
+          "expr": "return \"other\""
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Behavior.java#Behavior.decide@L13",
+        "procedureName": "Behavior.decide",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f327858cf1c77a9c24b1e188256c3350ffea515a53a8aebce98e787db19798cf",
+          "target": "stmt:packages/parsers/fixtures/java/Behavior.java@L29",
+          "line": 29,
+          "expr": "return \"caught\""
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:packages/parsers/fixtures/java/Behavior.java@L18",
+        "kind": "raise",
+        "name": "IllegalStateException",
+        "lang": "java",
+        "file": "packages/parsers/fixtures/java/Behavior.java",
+        "span": {
+          "start": 18,
+          "end": 18
+        },
+        "errorMessage": "negative status",
+        "confidence": 1
+      }
+    ],
+    "handles": [
+      {
+        "id": "exc:packages/parsers/fixtures/java/Behavior.java@L28",
+        "kind": "exception-handler",
+        "lang": "java",
+        "file": "packages/parsers/fixtures/java/Behavior.java",
+        "span": {
+          "start": 28,
+          "end": 28
+        },
+        "whenSelector": "IllegalStateException",
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 1,
+    "conditions": 4,
+    "raises": 1,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

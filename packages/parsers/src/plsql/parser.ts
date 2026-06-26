@@ -1,3 +1,4 @@
+import { clampExpr } from '../types.js';
 /**
  * PL/SQL recursive-descent parser (M10) — hand-rolled, zero-dependency, offline.
  *
@@ -872,16 +873,16 @@ class Parser {
     }
     const { tables, columns, intoTarget } = extractSqlRefs(verb, inner);
     const endOff = this.at().type !== 'eof' ? this.at().off : this.src.length;
-    const expr = this.src
-      .slice(startOff, Math.min(endOff, startOff + 120))
-      .replace(/\s+/g, ' ')
-      .trim();
+    const { expr, truncated } = clampExpr(
+      this.src.slice(startOff, endOff).replace(/\s+/g, ' ').trim(),
+    );
     const out: SqlStmt = {
       kind: 'sql',
       sqlKind,
       tables,
       columns,
       expr,
+      ...(truncated ? { exprTruncated: true } : {}),
       span: { start: startLine, end: this.at().line },
     };
     if (intoTarget) out.intoTarget = intoTarget;
@@ -941,14 +942,14 @@ class Parser {
       this.pos++;
       const exprStart = this.at().off;
       this.skipToSemicolon();
-      const expr = this.src
-        .slice(exprStart, Math.min(this.at().off, exprStart + 120))
-        .replace(/\s+/g, ' ')
-        .trim();
+      const { expr, truncated } = clampExpr(
+        this.src.slice(exprStart, this.at().off).replace(/\s+/g, ' ').trim(),
+      );
       return {
         kind: 'assign',
         target: name,
         expr,
+        ...(truncated ? { exprTruncated: true } : {}),
         span: { start: startLine, end: this.lineOf() },
       } satisfies AssignStmt;
     }
@@ -977,6 +978,7 @@ class Parser {
     const name = this.at().type === 'word' ? this.next().raw : '';
     if (this.isPunct('(')) this.readBalancedParens(); // optional parameter list
     let cursorQuery = '';
+    let cursorTruncated = false;
     if (this.isWord('is')) {
       this.pos++;
       const qStart = this.at().off;
@@ -988,12 +990,20 @@ class Parser {
         this.pos++;
       }
       const qEnd = this.at().off;
-      cursorQuery = this.src.slice(qStart, qEnd).replace(/\s+/g, ' ').trim().slice(0, 200);
+      const clamped = clampExpr(this.src.slice(qStart, qEnd).replace(/\s+/g, ' ').trim());
+      cursorQuery = clamped.expr;
+      cursorTruncated = clamped.truncated;
       this.eatPunct(';');
     } else {
       this.skipToSemicolon();
     }
-    return { kind: 'cursor', name, cursorQuery, span: { start: startLine, end: this.lineOf() } };
+    return {
+      kind: 'cursor',
+      name,
+      cursorQuery,
+      ...(cursorTruncated ? { exprTruncated: true } : {}),
+      span: { start: startLine, end: this.lineOf() },
+    };
   }
 
   /** 1.2: parse a local/package variable declaration `name type[(n)] [:= expr];` → a `variable`

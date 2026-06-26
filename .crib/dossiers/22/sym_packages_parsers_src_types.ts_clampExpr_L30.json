@@ -1,0 +1,235 @@
+{
+  "id": "sym:packages/parsers/src/types.ts#clampExpr@L30",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:af1f35979ab68b0a12867c254e2cd6d47aa472f99275fc02b618b8ecf8c1f30d",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/types.ts#clampExpr@L30",
+    "kind": "symbol",
+    "type": "function",
+    "name": "clampExpr",
+    "qualifiedName": "clampExpr",
+    "signature": "clampExpr(s: string, max = EXPR_MAX_CHARS): { expr: string; truncated: boolean }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/types.ts",
+    "span": {
+      "start": 30,
+      "end": 33
+    },
+    "callSites": [
+      {
+        "callee": "slice",
+        "line": 32
+      }
+    ]
+  },
+  "source": {
+    "text": "export function clampExpr(s: string, max = EXPR_MAX_CHARS): { expr: string; truncated: boolean } {\n  if (s.length <= max) return { expr: s, truncated: false };\n  return { expr: s.slice(0, max), truncated: true };\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 30
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addRaise@L692",
+      "confidence": 1,
+      "name": "addRaise",
+      "qualifiedName": "BodyWalker.addRaise",
+      "signature": "addRaise(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 692
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.condition@L497",
+      "confidence": 1,
+      "name": "condition",
+      "qualifiedName": "BodyWalker.condition",
+      "signature": "condition(expr: string, line: number, branch: string): string",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 497
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCursorDecl@L975",
+      "confidence": 1,
+      "name": "parseCursorDecl",
+      "qualifiedName": "Parser.parseCursorDecl",
+      "signature": "parseCursorDecl(): Decl",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 975
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseNameStmt@L913",
+      "confidence": 1,
+      "name": "parseNameStmt",
+      "qualifiedName": "Parser.parseNameStmt",
+      "signature": "parseNameStmt(): Stmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 913
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+      "confidence": 1,
+      "name": "parseSqlStmt",
+      "qualifiedName": "Parser.parseSqlStmt",
+      "signature": "parseSqlStmt(): SqlStmt",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 844
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#exprFields@L33",
+      "confidence": 1,
+      "name": "exprFields",
+      "qualifiedName": "exprFields",
+      "signature": "exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true }",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 33
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#exprFields@L49",
+      "confidence": 1,
+      "name": "exprFields",
+      "qualifiedName": "exprFields",
+      "signature": "exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true }",
+      "type": "function",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 49
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#exprFields@L32",
+      "confidence": 1,
+      "name": "exprFields",
+      "qualifiedName": "exprFields",
+      "signature": "exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true }",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 32
+    },
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#exprFields@L26",
+      "confidence": 1,
+      "name": "exprFields",
+      "qualifiedName": "exprFields",
+      "signature": "exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true }",
+      "type": "function",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 26
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#exprFields@L47",
+      "confidence": 1,
+      "name": "exprFields",
+      "qualifiedName": "exprFields",
+      "signature": "exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true }",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 47
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#exprFields@L867",
+      "confidence": 1,
+      "name": "exprFields",
+      "qualifiedName": "exprFields",
+      "signature": "exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true }",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 867
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/types.ts@L25",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/types.ts#clampExpr@L30",
+    "procedureName": "clampExpr",
+    "conditions": [
+      "cond:packages/parsers/src/types.ts@L31"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/types.ts#clampExpr@L30",
+        "procedureName": "clampExpr",
+        "guard": "cond:packages/parsers/src/types.ts@L31",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/types.ts@L31",
+            "expr": "s.length <= max",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e6e653912ef3b674fb3234d8f9e94e2cb637cafd9729227c9119b96d5ed013ec",
+          "target": "stmt:packages/parsers/src/types.ts@L31",
+          "line": 31,
+          "expr": "return { expr: s, truncated: false };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/types.ts#clampExpr@L30",
+        "procedureName": "clampExpr",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ee8787d2201dca950109bd30017a0a1cc9c96f9bb32dfc0dce22d17504b8b872",
+          "target": "stmt:packages/parsers/src/types.ts@L32",
+          "line": 32,
+          "expr": "return { expr: s.slice(0, max), truncated: true };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "packages/parsers/src/go/GoExtractor.ts",
+      "packages/parsers/src/java/JavaExtractor.ts",
+      "packages/parsers/src/plsql/parser.ts",
+      "packages/parsers/src/python/PythonExtractor.ts",
+      "packages/parsers/src/rust/RustExtractor.ts",
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,1031 @@
+{
+  "id": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:5557b6fdf8556e77e876ee4866149a2ea4f7d32c5c5eba4274db3c7a6ef12ea4",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+    "kind": "symbol",
+    "type": "function",
+    "name": "updateRepo",
+    "qualifiedName": "updateRepo",
+    "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/update.ts",
+    "span": {
+      "start": 86,
+      "end": 172
+    },
+    "callSites": [
+      {
+        "callee": "currentHead",
+        "line": 93
+      },
+      {
+        "callee": "getManifest",
+        "line": 98
+      },
+      {
+        "callee": "changedFilesSince",
+        "line": 102
+      },
+      {
+        "callee": "setVcsHead",
+        "line": 106
+      },
+      {
+        "callee": "commit",
+        "line": 107
+      },
+      {
+        "callee": "pathFromId",
+        "line": 117
+      },
+      {
+        "callee": "pathFromId",
+        "line": 119
+      },
+      {
+        "callee": "add",
+        "line": 120
+      },
+      {
+        "callee": "fileScopedIds",
+        "line": 124
+      },
+      {
+        "callee": "removeByFile",
+        "line": 127
+      },
+      {
+        "callee": "register",
+        "line": 134
+      },
+      {
+        "callee": "metaForPaths",
+        "line": 136
+      },
+      {
+        "callee": "runStructure",
+        "line": 137
+      },
+      {
+        "callee": "runParse",
+        "line": 138
+      },
+      {
+        "callee": "metaForPaths",
+        "line": 142
+      },
+      {
+        "callee": "runResolve",
+        "line": 143
+      },
+      {
+        "callee": "map",
+        "line": 146
+      },
+      {
+        "callee": "filter",
+        "line": 146
+      },
+      {
+        "callee": "runLink",
+        "line": 147
+      },
+      {
+        "callee": "runCluster",
+        "line": 152
+      },
+      {
+        "callee": "runSemanticLink",
+        "line": 155
+      },
+      {
+        "callee": "setVcsHead",
+        "line": 157
+      },
+      {
+        "callee": "commit",
+        "line": 158
+      },
+      {
+        "callee": "buildDelta",
+        "line": 160
+      },
+      {
+        "callee": "sort",
+        "line": 164
+      }
+    ]
+  },
+  "source": {
+    "text": "export async function updateRepo(\n  soul: SoulStore,\n  root: string,\n  opts: UpdateOpts = {},\n): Promise<UpdateResult> {\n  let head: string;\n  try {\n    head = currentHead(root);\n  } catch {\n    return null; // non-git → degrade to full index\n  }\n\n  const manifest = soul.getManifest();\n  const since = opts.since ?? manifest.stats.incrementalSince ?? manifest.repo.vcsHead;\n  if (!since) return null; // no anchor yet → full index\n\n  const changedPaths = changedFilesSince(root, since);\n\n  // No file changes: just advance the anchor so the next update is anchored to the new HEAD.\n  if (changedPaths.length === 0) {\n    soul.setVcsHead(head);\n    soul.commit(opts.now);\n    return { changedPaths, scopeFiles: [], head, noop: true };\n  }\n\n  // Reverse-dependency closure: every file whose references reach into a changed file. Captured BEFORE\n  // removal (single pass over edges; covers imports/calls/inherits/describes/references — any edge whose\n  // dst resolves into a changed path).\n  const changed = new Set(changedPaths);\n  const scope = new Set(changedPaths);\n  for (const edge of soul.iterateEdges()) {\n    const d = pathFromId(edge.dst);\n    if (d !== undefined && changed.has(d)) {\n      const s = pathFromId(edge.src);\n      if (s !== undefined) scope.add(s);\n    }\n  }\n\n  const before = fileScopedIds(soul, scope);\n\n  // Drop only the CHANGED files' records (reverse-dep nodes persist — their source is unchanged).\n  for (const p of changedPaths) soul.removeByFile(p);\n\n  // Re-extract changed files: structure (file nodes) + parse (symbols + intra-file edges). The\n  // default fleet is the SAME set `indexRepo` ships (via `defaultExtractors`) so a body-only edit to a\n  // `.java` controller re-emits its Spring routes/exposes/DI rather than vanishing from the graph.\n  const registry = new ExtractorRegistry();\n  for (const e of opts.extractors ?? defaultExtractors()) {\n    registry.register(e);\n  }\n  const changedMetas = metaForPaths(root, changedPaths);\n  runStructure(soul, root, changedMetas);\n  const parse = await runParse(soul, registry, root, changedMetas);\n\n  // Re-resolve the whole closure (changed + reverse deps): re-emits incoming B→A edges. The resolver\n  // only processes files in the passed set; the SymbolTable spans the whole soul (B's symbols remain).\n  const scopeMetas = metaForPaths(root, [...scope]);\n  const resolve = runResolve(soul, root, scopeMetas);\n\n  // Re-link only the docs in scope (InvertedIndex still spans the whole soul).\n  const scopeDocFiles = scopeMetas.filter((m) => m.lang === 'markdown').map((m) => m.path);\n  const link = runLink(soul, root, opts.linkThreshold, scopeDocFiles);\n\n  // Re-cluster (M7): clustering is global + idempotent, so re-running it re-emits the member-of edges\n  // for symbols in the changed files — preventing a body-only edit from silently dropping a cluster\n  // edge into `delta.removed`. `before` captured these ids pre-removal; re-emission makes after==before.\n  const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul);\n\n  // Semantic pass (M7, INFERRED): scoped to the docs in scope, like the deterministic re-link.\n  const semantic = opts.semantic ? runSemanticLink(soul, root, scopeDocFiles) : { added: 0 };\n\n  soul.setVcsHead(head);\n  soul.commit(opts.now);\n\n  const delta = buildDelta(soul, before, scope);\n  return {\n    delta,\n    changedPaths,\n    scopeFiles: [...scope].sort(),\n    head,\n    parse,\n    resolve,\n    link,\n    cluster,\n    semantic,\n  };\n}",
+    "truncated": false,
+    "totalLines": 87,
+    "startLine": 86
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+      "confidence": 1,
+      "name": "cmdUpdate",
+      "qualifiedName": "cmdUpdate",
+      "signature": "cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 267
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/core/src/delta.ts#buildDelta@L42",
+      "confidence": 1,
+      "name": "buildDelta",
+      "qualifiedName": "buildDelta",
+      "signature": "buildDelta(soul: SoulStore, before: ScopedIds, files: Set<string>): IndexDelta",
+      "type": "function",
+      "file": "packages/core/src/delta.ts",
+      "line": 42
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#changedFilesSince@L44",
+      "confidence": 1,
+      "name": "changedFilesSince",
+      "qualifiedName": "changedFilesSince",
+      "signature": "changedFilesSince(root: string, since: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 44
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#currentHead@L33",
+      "confidence": 1,
+      "name": "currentHead",
+      "qualifiedName": "currentHead",
+      "signature": "currentHead(root: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 33
+    },
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#defaultExtractors@L90",
+      "confidence": 1,
+      "name": "defaultExtractors",
+      "qualifiedName": "defaultExtractors",
+      "signature": "defaultExtractors(): Extractor[]",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 90
+    },
+    {
+      "id": "sym:packages/core/src/delta.ts#fileScopedIds@L25",
+      "confidence": 1,
+      "name": "fileScopedIds",
+      "qualifiedName": "fileScopedIds",
+      "signature": "fileScopedIds(soul: SoulStore, files: Set<string>): ScopedIds",
+      "type": "function",
+      "file": "packages/core/src/delta.ts",
+      "line": 25
+    },
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#metaForPaths@L142",
+      "confidence": 1,
+      "name": "metaForPaths",
+      "qualifiedName": "metaForPaths",
+      "signature": "metaForPaths(root: string, paths: string[]): FileMeta[]",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 142
+    },
+    {
+      "id": "sym:packages/core/src/shard.ts#pathFromId@L16",
+      "confidence": 1,
+      "name": "pathFromId",
+      "qualifiedName": "pathFromId",
+      "signature": "pathFromId(id: string): string | undefined",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L39",
+      "confidence": 1,
+      "name": "runCluster",
+      "qualifiedName": "runCluster",
+      "signature": "runCluster(soul: SoulStore): ClusterStats",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/cluster.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+      "confidence": 1,
+      "name": "runLink",
+      "qualifiedName": "runLink",
+      "signature": "runLink(soul: SoulStore, root: string, threshold?: number, docFiles?: string[]): LinkStats",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/index.ts",
+      "line": 43
+    },
+    {
+      "id": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+      "confidence": 1,
+      "name": "runParse",
+      "qualifiedName": "runParse",
+      "signature": "runParse(soul: SoulStore, registry: ExtractorRegistry, root: string, files: FileMeta[]): Promise<ParseStats>",
+      "type": "function",
+      "file": "packages/pipeline/src/parse.ts",
+      "line": 17
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
+      "confidence": 1,
+      "name": "runResolve",
+      "qualifiedName": "runResolve",
+      "signature": "runResolve(soul: SoulStore, root: string, files: FileMeta[], resolvers?: Resolver[]): ResolveStats",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/index.ts",
+      "line": 71
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L42",
+      "confidence": 1,
+      "name": "runSemanticLink",
+      "qualifiedName": "runSemanticLink",
+      "signature": "runSemanticLink(soul: SoulStore, root: string, docFiles?: string[]): SemanticStats",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/semantic.ts",
+      "line": 42
+    },
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#runStructure@L132",
+      "confidence": 1,
+      "name": "runStructure",
+      "qualifiedName": "runStructure",
+      "signature": "runStructure(soul: SoulStore, root: string, files: FileMeta[]): void",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 132
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/update.ts@L85",
+      "snippet": "/** Scoped re-extract since the manifest's VCS anchor. `null` ⇒ caller does a full `indexRepo`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#0-verified-facts-judge-conflict-reconciliations",
+      "heading": "0. Verified facts & judge-conflict reconciliations",
+      "anchor": "0-verified-facts-judge-conflict-reconciliations",
+      "snippet": "0. Verified facts & judge-conflict reconciliations",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+    "procedureName": "updateRepo",
+    "conditions": [
+      "cond:packages/pipeline/src/update.ts@L100",
+      "cond:packages/pipeline/src/update.ts@L105",
+      "cond:packages/pipeline/src/update.ts@L116",
+      "cond:packages/pipeline/src/update.ts@L118",
+      "cond:packages/pipeline/src/update.ts@L120",
+      "cond:packages/pipeline/src/update.ts@L127",
+      "cond:packages/pipeline/src/update.ts@L133"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d61a01b9d24430e4b044565f7a3f623d679dc001f8ebbdde4441d0621557a48e",
+          "target": "sym:packages/pipeline/src/pipeline.ts#defaultExtractors@L90",
+          "expr": "defaultExtractors"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6804594489ec63119ee985bfd962bb999ec35d5a9a634a5209f0cfe1fafd05ff",
+          "target": "assign:packages/pipeline/src/update.ts@L93",
+          "line": 93,
+          "expr": "head = currentHead(root);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cfc2aa383b0faa675f8fb4ec69f218044b9ee60f0a289db9dc60d87881b275ab",
+          "target": "sym:packages/pipeline/src/vcs.ts#currentHead@L33",
+          "expr": "currentHead",
+          "line": 93
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:66c76af826e6828e48405807183aba12ee6d2e74e1e13c710fd8868bbda0cae4",
+          "target": "stmt:packages/pipeline/src/update.ts@L95",
+          "line": 95,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:492168d3265d93a4e3368a2ac477bebedf2e146b20308bbf0312b16851a91753",
+          "target": "stmt:packages/pipeline/src/update.ts@L98",
+          "line": 98,
+          "expr": "const manifest = soul.getManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "guard": "cond:packages/pipeline/src/update.ts@L100",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/update.ts@L100",
+            "expr": "!since",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd66d5b67d5b6ded2c69ec662e46260ba7dfc324f4381898d340cd4a2b80d15d",
+          "target": "stmt:packages/pipeline/src/update.ts@L100",
+          "line": 100,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af4a16a07b465332afd99fc235c0870c8f08d843b998cea64fee8fef083255f5",
+          "target": "stmt:packages/pipeline/src/update.ts@L102",
+          "line": 102,
+          "expr": "const changedPaths = changedFilesSince(root, since);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2d81f5ccdcb09f1978ced7a396d280cf1210d4970df0fe5614c2ab7490f7781a",
+          "target": "sym:packages/pipeline/src/vcs.ts#changedFilesSince@L44",
+          "expr": "changedFilesSince",
+          "line": 102
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "guard": "cond:packages/pipeline/src/update.ts@L105",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/update.ts@L105",
+            "expr": "changedPaths.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:96b2527d3fd89e7e2bb9cdf1c473918430be69b3b29196bfcc5506e22523c3b8",
+          "target": "stmt:packages/pipeline/src/update.ts@L106",
+          "line": 106,
+          "expr": "soul.setVcsHead(head);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "guard": "cond:packages/pipeline/src/update.ts@L105",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/update.ts@L105",
+            "expr": "changedPaths.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3a5b4f567c88ba1e057fa0fc006361328ae97f1eb91c6521ab3805484c4a2b38",
+          "target": "stmt:packages/pipeline/src/update.ts@L107",
+          "line": 107,
+          "expr": "soul.commit(opts.now);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "guard": "cond:packages/pipeline/src/update.ts@L105",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/update.ts@L105",
+            "expr": "changedPaths.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e99181e5dc584fa743ed5e7c59a631d67bbbef2cf46b08649a69a04481e6da2",
+          "target": "stmt:packages/pipeline/src/update.ts@L108",
+          "line": 108,
+          "expr": "return { changedPaths, scopeFiles: [], head, noop: true };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "guard": "cond:packages/pipeline/src/update.ts@L116",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/update.ts@L116",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:951665df1d493b63e5bbbd37371f1639362afd12eca514c675500d3e1f3b4fc2",
+          "target": "stmt:packages/pipeline/src/update.ts@L117",
+          "line": 117,
+          "expr": "const d = pathFromId(edge.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d21ea933a18abbfafae35b35df981c96b205bf19f20ac02648327f36536e3197",
+          "target": "sym:packages/core/src/shard.ts#pathFromId@L16",
+          "expr": "pathFromId",
+          "line": 117
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "guard": "cond:packages/pipeline/src/update.ts@L118",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/update.ts@L116",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/update.ts@L118",
+            "expr": "d !== undefined && changed.has(d)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca4ef21a4e6e71ce7aab82197824ee473efd7177585ede9cc8e14de4e38ced87",
+          "target": "stmt:packages/pipeline/src/update.ts@L119",
+          "line": 119,
+          "expr": "const s = pathFromId(edge.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "guard": "cond:packages/pipeline/src/update.ts@L120",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/update.ts@L116",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/update.ts@L118",
+            "expr": "d !== undefined && changed.has(d)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/update.ts@L120",
+            "expr": "s !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d22fcf820f872f7734855247daae51735324fad00acb49dff8ec2772db87f038",
+          "target": "stmt:packages/pipeline/src/update.ts@L120",
+          "line": 120,
+          "expr": "scope.add(s);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9e197070311011bf0f53f02db57a67a1f17883d0344ba6b599a106f4e5fa0b3e",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 120
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a8abe944929295a6ca4087315a10031337561952670e87ccc05c9588e376b94f",
+          "target": "stmt:packages/pipeline/src/update.ts@L124",
+          "line": 124,
+          "expr": "const before = fileScopedIds(soul, scope);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8dacef9332fb242a99089ea50ac18796e558f608be07b93a152419463dbe7d2f",
+          "target": "sym:packages/core/src/delta.ts#fileScopedIds@L25",
+          "expr": "fileScopedIds",
+          "line": 124
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "guard": "cond:packages/pipeline/src/update.ts@L127",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/update.ts@L127",
+            "expr": "changedPaths",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8ce62e14190251bd45e42169f4f8e8ed2358693bf79ee587fd9a2e89c7e5c8a8",
+          "target": "stmt:packages/pipeline/src/update.ts@L127",
+          "line": 127,
+          "expr": "soul.removeByFile(p);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "guard": "cond:packages/pipeline/src/update.ts@L133",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/update.ts@L133",
+            "expr": "opts.extractors ?? defaultExtractors()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4486e93c74d52f7e9d023a0e42f5d2609ed4d1cb1fca94bb5f8dc98177460bf7",
+          "target": "stmt:packages/pipeline/src/update.ts@L134",
+          "line": 134,
+          "expr": "registry.register(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b80f973a78d1960a942ea40652a720f1fee0b4bec601fe14a5babd194a08711a",
+          "target": "stmt:packages/pipeline/src/update.ts@L136",
+          "line": 136,
+          "expr": "const changedMetas = metaForPaths(root, changedPaths);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d7136e12030d7d2795f6987dd21fabefe0e45bf220bc6ddbe1ddaf879d7617a5",
+          "target": "sym:packages/pipeline/src/structure.ts#metaForPaths@L142",
+          "expr": "metaForPaths",
+          "line": 136
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f84b80817add494203cdc8b1bc7862451f9f47c47c235387a58a323f66c45152",
+          "target": "stmt:packages/pipeline/src/update.ts@L137",
+          "line": 137,
+          "expr": "runStructure(soul, root, changedMetas);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ff340eb4114f5b96c61532f92d3016474ef65987a5f3bdd4dc91a7b083a69b9a",
+          "target": "sym:packages/pipeline/src/structure.ts#runStructure@L132",
+          "expr": "runStructure",
+          "line": 137
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8e81be115ac0e635fff718210153b5d16123a0ebd013e0390009ab6582dc9124",
+          "target": "stmt:packages/pipeline/src/update.ts@L138",
+          "line": 138,
+          "expr": "const parse = await runParse(soul, registry, root, changedMetas);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:eda69af16020c1ac0584fc9af3608a20ac03d27fe1bbc89df219a5f38e613ffb",
+          "target": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+          "expr": "runParse",
+          "line": 138
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2571bae250556453e141ce283dbf44a7049c76143bfc9ee1f7669e8b3b76c0e4",
+          "target": "stmt:packages/pipeline/src/update.ts@L142",
+          "line": 142,
+          "expr": "const scopeMetas = metaForPaths(root, [...scope]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:69235bbfabcb93e5ab7ae3f5d81cec5e39002f19b68d7d7b2782f0db3f371d00",
+          "target": "stmt:packages/pipeline/src/update.ts@L143",
+          "line": 143,
+          "expr": "const resolve = runResolve(soul, root, scopeMetas);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dbbc32604a3c80666bd5c4790190e470e8256640a76ee48c1eea68f37fac8b23",
+          "target": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
+          "expr": "runResolve",
+          "line": 143
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1b7a82f7d5c3dfa50c355fca10bea5efa7f881498cccbfc5643a0c1696ffa4ca",
+          "target": "stmt:packages/pipeline/src/update.ts@L146",
+          "line": 146,
+          "expr": "const scopeDocFiles = scopeMetas.filter((m) => m.lang === 'markdown').map((m) => m.path);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:41f9fefb6a57be0b7cdc27a03deee3ed3df5b71080d33957af242dfdb9cbede9",
+          "target": "stmt:packages/pipeline/src/update.ts@L147",
+          "line": 147,
+          "expr": "const link = runLink(soul, root, opts.linkThreshold, scopeDocFiles);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:679237948eff485a898cda0104d0f793a6c9ff3b9ac88de4a8f7c167f4ba07bb",
+          "target": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+          "expr": "runLink",
+          "line": 147
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cf36fdf7d34040c6d8ae2fa45aa9e3c982273ea06a5d7631fb1e3de8b6888238",
+          "target": "stmt:packages/pipeline/src/update.ts@L152",
+          "line": 152,
+          "expr": "const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:29676decf5ecff6e71c5b5c2bbbb6ada1450583e1fee340412cedfc601a15950",
+          "target": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L39",
+          "expr": "runCluster",
+          "line": 152
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7915d8dac2f08c6b8724acc410ccd19e8402b41bbcc135fd7fe06567c7411210",
+          "target": "stmt:packages/pipeline/src/update.ts@L155",
+          "line": 155,
+          "expr": "const semantic = opts.semantic ? runSemanticLink(soul, root, scopeDocFiles) : { added: 0 };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:75e04fb1cc91cc56ce7a49f8cda318f9d944826ef578dfdbc3f58a04efe07658",
+          "target": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L42",
+          "expr": "runSemanticLink",
+          "line": 155
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b3bab8252390dd030d98b8ab6cf5d59ebec751569ca92e49c03f02c95b57726f",
+          "target": "stmt:packages/pipeline/src/update.ts@L157",
+          "line": 157,
+          "expr": "soul.setVcsHead(head);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:693a43c764441a61775071405f6a5e33cd2f58d4a454bc5bb3cd9f1aa7520baa",
+          "target": "stmt:packages/pipeline/src/update.ts@L158",
+          "line": 158,
+          "expr": "soul.commit(opts.now);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f0ce6c2c81ff7b5f7b4ab7ad8cba243810d4e7fe996f0a155d36f0ec61088f0c",
+          "target": "stmt:packages/pipeline/src/update.ts@L160",
+          "line": 160,
+          "expr": "const delta = buildDelta(soul, before, scope);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9415ed6c4d7c9a34fad28aec0c87941709552e4d1115a2fc06f83ea2b49b5345",
+          "target": "sym:packages/core/src/delta.ts#buildDelta@L42",
+          "expr": "buildDelta",
+          "line": 160
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+        "procedureName": "updateRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e892153c90dce5694cc71feae769c4ec5a5407034ba62d137b8c224c3fe13cc2",
+          "target": "stmt:packages/pipeline/src/update.ts@L161",
+          "line": 161,
+          "expr": "return {\n    delta,\n    changedPaths,\n    scopeFiles: [...scope].sort(),\n    head,\n    parse,\n    resolve,\n    link,\n    cluster,\n    semantic,\n  };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/pipeline/src/update.ts@L94",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/pipeline/src/update.ts",
+        "span": {
+          "start": 94,
+          "end": 94
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 27,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 27,
+    "assignments": 1,
+    "conditions": 7,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 14,
+      "recorded": 25,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,563 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4f9ef2d21ecf66c76e5abe9716894d80eb09bd8fe233a8324b8ef7977e32e8e0",
+  "builtAt": "2026-06-25T22:41:29.085Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+    "kind": "symbol",
+    "type": "function",
+    "name": "columnMetaOf",
+    "qualifiedName": "columnMetaOf",
+    "signature": "columnMetaOf(def: JavaDef): Record<string, unknown> | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 479,
+      "end": 507
+    },
+    "callSites": [
+      {
+        "callee": "includes",
+        "line": 481
+      },
+      {
+        "callee": "find",
+        "line": 482
+      },
+      {
+        "callee": "find",
+        "line": 483
+      },
+      {
+        "callee": "find",
+        "line": 484
+      },
+      {
+        "callee": "matchKV",
+        "line": 489
+      },
+      {
+        "callee": "matchKV",
+        "line": 491
+      },
+      {
+        "callee": "matchKV",
+        "line": 493
+      },
+      {
+        "callee": "matchKV",
+        "line": 495
+      },
+      {
+        "callee": "matchKV",
+        "line": 499
+      },
+      {
+        "callee": "matchKV",
+        "line": 503
+      }
+    ]
+  },
+  "source": {
+    "text": "function columnMetaOf(def: JavaDef): Record<string, unknown> | undefined {\n  const annos = def.annotations;\n  const hasId = annos.includes('Id');\n  const colAnno = def.annos?.find((a) => a.name === 'Column');\n  const joinAnno = def.annos?.find((a) => a.name === 'JoinColumn');\n  const genAnno = def.annos?.find((a) => a.name === 'GeneratedValue');\n  if (!hasId && !colAnno && !joinAnno && !genAnno) return undefined;\n  const out: Record<string, unknown> = {};\n  if (hasId) out.id = true;\n  if (colAnno) {\n    const name = matchKV(colAnno.args ?? '', 'name');\n    if (name) out.name = name;\n    const nullable = matchKV(colAnno.args ?? '', 'nullable');\n    if (nullable) out.nullable = nullable;\n    const unique = matchKV(colAnno.args ?? '', 'unique');\n    if (unique) out.unique = unique;\n    const length = matchKV(colAnno.args ?? '', 'length');\n    if (length) out.length = length;\n  }\n  if (joinAnno) {\n    const name = matchKV(joinAnno.args ?? '', 'name');\n    out.joinColumn = name ?? true;\n  }\n  if (genAnno) {\n    const strategy = matchKV(genAnno.args ?? '', 'strategy');\n    out.generated = strategy ?? true;\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 29,
+    "startLine": 479
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 100
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#matchKV@L512",
+      "confidence": 1,
+      "name": "matchKV",
+      "qualifiedName": "matchKV",
+      "signature": "matchKV(s: string, key: string): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 512
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L477",
+      "snippet": "/** Entity column metadata for a field: `@Id` (id flag), `@Column` (name/nullable/unique/length),",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+    "procedureName": "columnMetaOf",
+    "conditions": [
+      "cond:packages/parsers/src/java/spring.ts@L485",
+      "cond:packages/parsers/src/java/spring.ts@L487",
+      "cond:packages/parsers/src/java/spring.ts@L502",
+      "cond:packages/parsers/src/java/spring.ts@L488",
+      "cond:packages/parsers/src/java/spring.ts@L490",
+      "cond:packages/parsers/src/java/spring.ts@L492",
+      "cond:packages/parsers/src/java/spring.ts@L494",
+      "cond:packages/parsers/src/java/spring.ts@L496",
+      "cond:packages/parsers/src/java/spring.ts@L498"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:38770a679a5e7fafad5bd4ea6289de31b1080bc0403303379e52ffb9d4038b5d",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L481",
+          "line": 481,
+          "expr": "const hasId = annos.includes('Id');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:17ea347eb83cac23aae9d18513b347244b57b6c9815ae4df78cd5bc191dc1b21",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L482",
+          "line": 482,
+          "expr": "const colAnno = def.annos?.find((a) => a.name === 'Column');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:429229ca7154b593d28da51a4af338b543a933d90273beb37333e1ab5bbc47d6",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L483",
+          "line": 483,
+          "expr": "const joinAnno = def.annos?.find((a) => a.name === 'JoinColumn');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:04937a784f9a8af28b5519eefa7dc9fe01dd5558cff01455b13e5efef4bb2842",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L484",
+          "line": 484,
+          "expr": "const genAnno = def.annos?.find((a) => a.name === 'GeneratedValue');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L485",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L485",
+            "expr": "!hasId && !colAnno && !joinAnno && !genAnno",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d9491d6e60af8569b23f88c69914c0723a0fe931b59e17e81b6d4e96bc74464a",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L485",
+          "line": 485,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L487",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L487",
+            "expr": "hasId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e37de5b6538f832db0b91ffeacde01d2db237b70cbcd2fbbb39664541235a90d",
+          "target": "assign:packages/parsers/src/java/spring.ts@L487",
+          "line": 487,
+          "expr": "out.id = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L502",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L502",
+            "expr": "genAnno",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b1579d4f2c26f6b6aa3e443a73d2a960dbfef49035d3e4256bfe48275aae754e",
+          "target": "sym:packages/parsers/src/java/spring.ts#matchKV@L512",
+          "expr": "matchKV",
+          "line": 489
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L488",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L488",
+            "expr": "colAnno",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:262ef7b150224b89f04944ad98fce7caec575991b4d4a37bfe3959b35e5f6b51",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L489",
+          "line": 489,
+          "expr": "const name = matchKV(colAnno.args ?? '', 'name');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L490",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L488",
+            "expr": "colAnno"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L490",
+            "expr": "name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:478873ac9b52a4a2f05f21ec4b65eaa2b86eeaa9904cd49ee96ee056eef74e70",
+          "target": "assign:packages/parsers/src/java/spring.ts@L490",
+          "line": 490,
+          "expr": "out.name = name;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L488",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L488",
+            "expr": "colAnno",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7c88a85ef2fdcb08e9609fc1610e3cc8baddf8f4b81047985a54702f483e2317",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L491",
+          "line": 491,
+          "expr": "const nullable = matchKV(colAnno.args ?? '', 'nullable');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L492",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L488",
+            "expr": "colAnno"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L492",
+            "expr": "nullable",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cc08b9a419c2edc580ec7d4c35774b4d6cb18655ab6611cbc494360db2f526fc",
+          "target": "assign:packages/parsers/src/java/spring.ts@L492",
+          "line": 492,
+          "expr": "out.nullable = nullable;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L488",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L488",
+            "expr": "colAnno",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:705c43eb7dc592ca3d30fe82a3748a2c6d21347b096e5ea31d395328454bb7b0",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L493",
+          "line": 493,
+          "expr": "const unique = matchKV(colAnno.args ?? '', 'unique');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L494",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L488",
+            "expr": "colAnno"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L494",
+            "expr": "unique",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:586e17b46a80a3be7e1ac0c58af04354e5f11614616182e96faa5f18e19be1b2",
+          "target": "assign:packages/parsers/src/java/spring.ts@L494",
+          "line": 494,
+          "expr": "out.unique = unique;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L488",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L488",
+            "expr": "colAnno",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:22ea6072715cdc1b87e2828a9be2a1237434669e3883d662a6c5bae1040049d6",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L495",
+          "line": 495,
+          "expr": "const length = matchKV(colAnno.args ?? '', 'length');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L496",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L488",
+            "expr": "colAnno"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L496",
+            "expr": "length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:78d3156d2098bd6cf4fc1e333b3208a6a75e28e20da82210adf8e08d2070a7a4",
+          "target": "assign:packages/parsers/src/java/spring.ts@L496",
+          "line": 496,
+          "expr": "out.length = length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L498",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L498",
+            "expr": "joinAnno",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6fe12644571a8c2f4e9289dba3616e4236b005f96ae048b31f1c1cad6edcd1cc",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L499",
+          "line": 499,
+          "expr": "const name = matchKV(joinAnno.args ?? '', 'name');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L498",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L498",
+            "expr": "joinAnno",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2decb6d43fbca0dd2595d1e31c18e02c59e64dbc04ce806c25ba4b3667bce7fa",
+          "target": "assign:packages/parsers/src/java/spring.ts@L500",
+          "line": 500,
+          "expr": "out.joinColumn = name ?? true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L502",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L502",
+            "expr": "genAnno",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ba98c72ac7aa0f1af14825cae38c6bd724e50de6d06003e0472148d074d13fe3",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L503",
+          "line": 503,
+          "expr": "const strategy = matchKV(genAnno.args ?? '', 'strategy');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L502",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L502",
+            "expr": "genAnno",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ad99fda2248a90b9f3645eebd384c71961b9f75393c4bca337bfef81a6e17a57",
+          "target": "assign:packages/parsers/src/java/spring.ts@L504",
+          "line": 504,
+          "expr": "out.generated = strategy ?? true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L479",
+        "procedureName": "columnMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31ef0a83519c27ee28cbb58e9136798be2ed7cd7b62cf7a292dcce269b019b88",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L506",
+          "line": 506,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 19,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 19,
+    "assignments": 7,
+    "conditions": 9,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 10,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

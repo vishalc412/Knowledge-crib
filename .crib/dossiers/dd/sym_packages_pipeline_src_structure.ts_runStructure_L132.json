@@ -1,0 +1,183 @@
+{
+  "id": "sym:packages/pipeline/src/structure.ts#runStructure@L132",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c9cf75c4d6612a70cf04578bb015bb297ba74e855ef77ce8b770ce6d6b1e77bb",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/structure.ts#runStructure@L132",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runStructure",
+    "qualifiedName": "runStructure",
+    "signature": "runStructure(soul: SoulStore, root: string, files: FileMeta[]): void",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/structure.ts",
+    "span": {
+      "start": 132,
+      "end": 135
+    },
+    "callSites": [
+      {
+        "callee": "map",
+        "line": 133
+      },
+      {
+        "callee": "fileNode",
+        "line": 133
+      },
+      {
+        "callee": "putNodes",
+        "line": 134
+      }
+    ]
+  },
+  "source": {
+    "text": "export function runStructure(soul: SoulStore, root: string, files: FileMeta[]): void {\n  const nodes: Node[] = files.map((f) => fileNode(root, f));\n  soul.putNodes(nodes);\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 132
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L104",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 104
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+      "confidence": 1,
+      "name": "updateRepo",
+      "qualifiedName": "updateRepo",
+      "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.ts",
+      "line": 86
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#fileNode@L157",
+      "confidence": 1,
+      "name": "fileNode",
+      "qualifiedName": "fileNode",
+      "signature": "fileNode(root: string, file: FileMeta): Node",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 157
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/structure.ts@L131",
+      "snippet": "/** Phase 1: write a `file` node per discovered file into the soul. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#10-architecture",
+      "heading": "10. Architecture",
+      "anchor": "10-architecture",
+      "snippet": "10. Architecture",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/structure.ts#runStructure@L132",
+    "procedureName": "runStructure",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#runStructure@L132",
+        "procedureName": "runStructure",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1494b5c5a9b6ba836de664b72a7db625fa243cdb48d8f8dd039d1d6c0495a3d0",
+          "target": "sym:packages/pipeline/src/structure.ts#fileNode@L157",
+          "expr": "fileNode",
+          "line": 133
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#runStructure@L132",
+        "procedureName": "runStructure",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8e24d14c3813359d93f0df637ae79c49b18bc13f19d4115510c4296ecc15fe07",
+          "target": "stmt:packages/pipeline/src/structure.ts@L133",
+          "line": 133,
+          "expr": "const nodes: Node[] = files.map((f) => fileNode(root, f));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#runStructure@L132",
+        "procedureName": "runStructure",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a6c5ae37c3db9e2a41879b389f34c51e9f1df573033652b83fd4a9e1efbaa5a3",
+          "target": "stmt:packages/pipeline/src/structure.ts@L134",
+          "line": 134,
+          "expr": "soul.putNodes(nodes);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/pipeline/src/pipeline.ts",
+      "packages/pipeline/src/update.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

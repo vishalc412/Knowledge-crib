@@ -1,0 +1,331 @@
+{
+  "id": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:899bb87955a71a239e1d09eb914a38c50a979c4e43a2e8a26abc3ddda1b33cc6",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+    "kind": "symbol",
+    "type": "function",
+    "name": "resolveCandidates",
+    "qualifiedName": "resolveCandidates",
+    "signature": "resolveCandidates(docFile: string, link: string): string[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/linker/signals.ts",
+    "span": {
+      "start": 81,
+      "end": 91
+    },
+    "callSites": [
+      {
+        "callee": "split",
+        "line": 82
+      },
+      {
+        "callee": "dirname",
+        "line": 84
+      },
+      {
+        "callee": "startsWith",
+        "line": 85
+      },
+      {
+        "callee": "norm",
+        "line": 85
+      },
+      {
+        "callee": "join",
+        "line": 85
+      },
+      {
+        "callee": "find",
+        "line": 86
+      },
+      {
+        "callee": "endsWith",
+        "line": 86
+      },
+      {
+        "callee": "slice",
+        "line": 87
+      },
+      {
+        "callee": "add",
+        "line": 89
+      }
+    ]
+  },
+  "source": {
+    "text": "function resolveCandidates(docFile: string, link: string): string[] {\n  const clean = link.split('#')[0] ?? link;\n  if (!clean) return [];\n  const baseDir = dirname(docFile);\n  const target = clean.startsWith('.') ? norm(join(baseDir, clean)) : clean;\n  const jsExt = JS_EXTS.find((e) => target.endsWith(e));\n  const bare = jsExt ? target.slice(0, -jsExt.length) : target;\n  const out = new Set<string>([target, bare]);\n  if (!TS_EXTS.some((e) => bare.endsWith(e))) for (const e of TS_EXTS) out.add(bare + e);\n  return [...out];\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 81
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/linker/signals.ts#pathSignal@L68",
+      "confidence": 1,
+      "name": "pathSignal",
+      "qualifiedName": "pathSignal",
+      "signature": "pathSignal(section: MdSection, docFile: string, index: InvertedIndex): SignalHit[]",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/signals.ts",
+      "line": 68
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/signals.ts#norm@L93",
+      "confidence": 1,
+      "name": "norm",
+      "qualifiedName": "norm",
+      "signature": "norm(p: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/signals.ts",
+      "line": 93
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/linker/signals.ts@L80",
+      "snippet": "/** Candidate repo-relative file paths a doc link could mean (handles relative + .js→.ts). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+    "procedureName": "resolveCandidates",
+    "conditions": [
+      "cond:packages/pipeline/src/linker/signals.ts@L83",
+      "cond:packages/pipeline/src/linker/signals.ts@L89"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+        "procedureName": "resolveCandidates",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:35e8610d9ce8980a5c8454867f5d54997cc6b7063889f54216ca661602ad3bdb",
+          "target": "stmt:packages/pipeline/src/linker/signals.ts@L82",
+          "line": 82,
+          "expr": "const clean = link.split('#')[0] ?? link;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+        "procedureName": "resolveCandidates",
+        "guard": "cond:packages/pipeline/src/linker/signals.ts@L83",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/signals.ts@L83",
+            "expr": "!clean",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e083cbb733afa83555675b707d4af36660bba8b40bcd1d30bc24793a9674614b",
+          "target": "stmt:packages/pipeline/src/linker/signals.ts@L83",
+          "line": 83,
+          "expr": "return [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+        "procedureName": "resolveCandidates",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31423efd4551e4536c7ba41a9d58790c8f88afe081f8e85faa0a1e50e86b0836",
+          "target": "stmt:packages/pipeline/src/linker/signals.ts@L84",
+          "line": 84,
+          "expr": "const baseDir = dirname(docFile);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+        "procedureName": "resolveCandidates",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4d6f385c8a99c6aca3ceaace088febe459674b9ea1f1a28635984f36f3d058fb",
+          "target": "sym:packages/pipeline/src/linker/signals.ts#norm@L93",
+          "expr": "norm",
+          "line": 85
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+        "procedureName": "resolveCandidates",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a55f4d889464ebb5a035ab6b5eb69ea2ca05ca3eb89aa60291837608e4cc445b",
+          "target": "stmt:packages/pipeline/src/linker/signals.ts@L85",
+          "line": 85,
+          "expr": "const target = clean.startsWith('.') ? norm(join(baseDir, clean)) : clean;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+        "procedureName": "resolveCandidates",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:25468b3cbc2a4e82cd4b450b90292eae1f264ee183aa09ec3c4159aabd20d781",
+          "target": "stmt:packages/pipeline/src/linker/signals.ts@L86",
+          "line": 86,
+          "expr": "const jsExt = JS_EXTS.find((e) => target.endsWith(e));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+        "procedureName": "resolveCandidates",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4c9eb082113fe2f312159a76e1928c8c729e95feef419becb4e8777cadb0d069",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 86
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+        "procedureName": "resolveCandidates",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c26ea12040813c7d855b2c7c889e77450e3957c349ef3d5d85ee3763cd2cbad6",
+          "target": "stmt:packages/pipeline/src/linker/signals.ts@L87",
+          "line": 87,
+          "expr": "const bare = jsExt ? target.slice(0, -jsExt.length) : target;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+        "procedureName": "resolveCandidates",
+        "guard": "cond:packages/pipeline/src/linker/signals.ts@L89",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/signals.ts@L89",
+            "expr": "!TS_EXTS.some((e) => bare.endsWith(e))"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/signals.ts@L89",
+            "expr": "!TS_EXTS.some((e) => bare.endsWith(e))",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:467564e824b4373987b79972913c14350365a7aaf2379b0a7f7dde00601fbdda",
+          "target": "stmt:packages/pipeline/src/linker/signals.ts@L89",
+          "line": 89,
+          "expr": "out.add(bare + e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+        "procedureName": "resolveCandidates",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6ba1bed396bcea8e1f970429c4b05db23b140704927d35bf961b8cec0042295c",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 89
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
+        "procedureName": "resolveCandidates",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5569aa96f4789a35dc74e52e2a61a7fdbdb4cce1c246d4db568b36e36f37a6e7",
+          "target": "stmt:packages/pipeline/src/linker/signals.ts@L90",
+          "line": 90,
+          "expr": "return [...out];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 8,
+    "referencedByFiles": [
+      "packages/pipeline/src/linker/signals.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 8,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 9,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#joinPath@L244",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c1287fb8f40fe5554279ab98f0a6c4b644e8a7406ab2300296524dbe0bc9a058",
+  "builtAt": "2026-06-25T22:26:18.392Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#joinPath@L244",
+    "kind": "symbol",
+    "type": "function",
+    "name": "joinPath",
+    "qualifiedName": "joinPath",
+    "signature": "joinPath(base: string, sub: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 244,
+      "end": 250
+    },
+    "callSites": [
+      {
+        "callee": "replace",
+        "line": 245
+      },
+      {
+        "callee": "replace",
+        "line": 246
+      },
+      {
+        "callee": "startsWith",
+        "line": 248
+      },
+      {
+        "callee": "replace",
+        "line": 249
+      }
+    ]
+  },
+  "source": {
+    "text": "  if (!s) return undefined;\n  const out: string[] = [];\n  const re = /RequestMethod\\.([A-Z]+)/g;\n  let m: RegExpExecArray | null;\n  while ((m = re.exec(s)) !== null) out.push(m[1]);\n  return out.length > 0 ? out : undefined;\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 244
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L64",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 64
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L243",
+      "snippet": "function requestMethodsOf(s?: string): string[] | undefined {",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#joinPath@L244",
+    "procedureName": "joinPath",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#joinPath@L244",
+        "procedureName": "joinPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:532c3a5dba94627c1ae87a380ef36561a8e4f55809d7b7762cca3fa08e0f4d3f",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L245",
+          "line": 245,
+          "expr": "const a = base.replace(/\\/+$/, '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#joinPath@L244",
+        "procedureName": "joinPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4affb805cbc07b605e6b8be81213699a36b8d60996f37147a9613921217a1f99",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L246",
+          "line": 246,
+          "expr": "const b = sub.replace(/^\\/+/, '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#joinPath@L244",
+        "procedureName": "joinPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eeac233c577b770fb74c5ceca3a34855c1e7084eecb40fafe9c99418324d2110",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L248",
+          "line": 248,
+          "expr": "const out = joined.startsWith('/') ? joined : `/${joined}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#joinPath@L244",
+        "procedureName": "joinPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9ab78bb029ec93de6d1af8eb3c520dacdb66ca071940db02b9a0d7eab0d7ba34",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L249",
+          "line": 249,
+          "expr": "return out.replace(/\\/{2,}/g, '/') || '/';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

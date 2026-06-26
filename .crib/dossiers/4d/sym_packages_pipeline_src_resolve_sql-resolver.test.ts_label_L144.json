@@ -1,0 +1,555 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:cfa88342fbe71b5a1efdc0d69f3bfa3b20f7249fd0c4966375b00de6a0dbef8c",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+    "kind": "symbol",
+    "type": "function",
+    "name": "label",
+    "qualifiedName": "label",
+    "signature": "label(soul: SoulStore, id: string): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
+    "span": {
+      "start": 144,
+      "end": 161
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 145
+      },
+      {
+        "callee": "iterate",
+        "line": 145
+      },
+      {
+        "callee": "shortFile",
+        "line": 155
+      },
+      {
+        "callee": "shortFile",
+        "line": 157
+      }
+    ]
+  },
+  "source": {
+    "text": "function label(soul: SoulStore, id: string): string {\n  const n: Node | undefined = [...soul.iterate()].find((x) => x.id === id);\n  if (!n) return id;\n  switch (n.kind) {\n    case 'symbol':\n      return `sym:${n.qualifiedName ?? n.name}`;\n    case 'table':\n      return `table:${n.name}`;\n    case 'column':\n      return `col:${n.table}.${n.name}`;\n    case 'statement':\n      return `stmt:${shortFile(n.file)}:${n.sqlKind ?? n.type}`;\n    case 'condition':\n      return `cond:${shortFile(n.file)}:L${n.span?.start}`;\n    default:\n      return n.kind;\n  }\n}",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 144
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
+      "confidence": 1,
+      "name": "dossierToMarkdown",
+      "qualifiedName": "dossierToMarkdown",
+      "signature": "dossierToMarkdown(d: Dossier): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/serializer.ts",
+      "line": 15
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.test.ts#exposes@L51",
+      "confidence": 1,
+      "name": "exposes",
+      "qualifiedName": "exposes",
+      "signature": "exposes(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.test.ts",
+      "line": 51
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.test.ts#injects@L61",
+      "confidence": 1,
+      "name": "injects",
+      "qualifiedName": "injects",
+      "signature": "injects(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.test.ts",
+      "line": 61
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#pair@L140",
+      "confidence": 1,
+      "name": "pair",
+      "qualifiedName": "pair",
+      "signature": "pair(soul: SoulStore, srcId: string, dstId: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "line": 140
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/csharp-resolver.test.ts#pair@L142",
+      "confidence": 1,
+      "name": "pair",
+      "qualifiedName": "pair",
+      "signature": "pair(soul: SoulStore, srcId: string, dstId: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/csharp-resolver.test.ts",
+      "line": 142
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#pair@L124",
+      "confidence": 1,
+      "name": "pair",
+      "qualifiedName": "pair",
+      "signature": "pair(soul: SoulStore, srcId: string, dstId: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.test.ts",
+      "line": 124
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#pair@L212",
+      "confidence": 1,
+      "name": "pair",
+      "qualifiedName": "pair",
+      "signature": "pair(soul: SoulStore, srcId: string, dstId: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/java-resolver.test.ts",
+      "line": 212
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#pair@L219",
+      "confidence": 1,
+      "name": "pair",
+      "qualifiedName": "pair",
+      "signature": "pair(soul: SoulStore, srcId: string, dstId: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/python-resolver.test.ts",
+      "line": 219
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#pair@L147",
+      "confidence": 1,
+      "name": "pair",
+      "qualifiedName": "pair",
+      "signature": "pair(soul: SoulStore, srcId: string, dstId: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/rust-resolver.test.ts",
+      "line": 147
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.test.ts#produces@L79",
+      "confidence": 1,
+      "name": "produces",
+      "qualifiedName": "produces",
+      "signature": "produces(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.test.ts",
+      "line": 79
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.test.ts#references@L70",
+      "confidence": 1,
+      "name": "references",
+      "qualifiedName": "references",
+      "signature": "references(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.test.ts",
+      "line": 70
+    },
+    {
+      "id": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+      "confidence": 1,
+      "name": "renderMermaid",
+      "qualifiedName": "renderMermaid",
+      "signature": "renderMermaid(table: DecisionTable): string",
+      "type": "function",
+      "file": "packages/pipeline/src/rules/mermaid.ts",
+      "line": 10
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#shortFile@L163",
+      "confidence": 1,
+      "name": "shortFile",
+      "qualifiedName": "shortFile",
+      "signature": "shortFile(p: string | undefined): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "line": 163
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#query-hybrid",
+      "heading": "`query(hybrid)`",
+      "anchor": "query-hybrid",
+      "snippet": "`query(hybrid)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#11-verification-strategy-end-to-end",
+      "heading": "11. Verification strategy (end-to-end)",
+      "anchor": "11-verification-strategy-end-to-end",
+      "snippet": "11. Verification strategy (end-to-end)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#4-link-precision-measurement-m4-the-trust-gate",
+      "heading": "4. Link-precision measurement (M4 — the trust gate)",
+      "anchor": "4-link-precision-measurement-m4-the-trust-gate",
+      "snippet": "4. Link-precision measurement (M4 — the trust gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+    "procedureName": "label",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/sql-resolver.test.ts@L146",
+      "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L148",
+      "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L150",
+      "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L152",
+      "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L156",
+      "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L154"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c88a5a10d7f53ae7a4d6ce4842ad53cd574da12419d4ff0f9cbf6814f56ee079",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.test.ts@L145",
+          "line": 145,
+          "expr": "const n: Node | undefined = [...soul.iterate()].find((x) => x.id === id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7e6e3d34a9f68c1e609ef72f84ce5f2c2735ac50cecaee59f6fedcb4874b069f",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 145
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.test.ts@L146",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.test.ts@L146",
+            "expr": "!n",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:727cb5ac32da499052959491ac1d3c0de0b281217ecfeffb37d1c5167439a84c",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.test.ts@L146",
+          "line": 146,
+          "expr": "return id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4d83e213eab65e154eab790c7143a88814721e518400831893840993855ae381",
+          "target": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L148",
+          "line": 148,
+          "expr": "symbol"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L148",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L148",
+            "expr": "symbol",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:860f7e96435585cd3898dfb3e92bc39f878b8ae7daca864c01a2264447957241",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.test.ts@L149",
+          "line": 149,
+          "expr": "return `sym:${n.qualifiedName ?? n.name}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a5730fa1dbe580c96cfab59aa2b1abb6bb30a960436798864c7141b2df8989a2",
+          "target": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L150",
+          "line": 150,
+          "expr": "table"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L150",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L150",
+            "expr": "table",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:858a5fc9d1420628da28b99e8725e92872fc2ec4c7da8c2ca4d8aa3827fcf94b",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.test.ts@L151",
+          "line": 151,
+          "expr": "return `table:${n.name}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fe4dfec4721a685fe889b9a3649dbe32a508240cfb5feac1835543ee5ab6e222",
+          "target": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L152",
+          "line": 152,
+          "expr": "column"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L152",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L152",
+            "expr": "column",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b891efbc573aeffeb675ef7000ecdd4affe00fa3a7732a2af44601ce2064e42e",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.test.ts@L153",
+          "line": 153,
+          "expr": "return `col:${n.table}.${n.name}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:93bcd80b469e0b51ac51367ee3bda694f925b8744cf2cdbf5bfb3080ea0410b6",
+          "target": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L154",
+          "line": 154,
+          "expr": "statement"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L156",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L156",
+            "expr": "condition",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0647e7bbeb00d30643824d638698681e02ac87153c090221d73fdedb257d096a",
+          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#shortFile@L163",
+          "expr": "shortFile",
+          "line": 155
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L154",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L154",
+            "expr": "statement",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ab8267a47cc5dd5e4bf60c3dc21152fda690900f0c24742943162b3e71d965c7",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.test.ts@L155",
+          "line": 155,
+          "expr": "return `stmt:${shortFile(n.file)}:${n.sqlKind ?? n.type}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fd313cfdc665ee412f4f6ed03909a28a30b79b48eb5eedba2a9c898f879a08b4",
+          "target": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L156",
+          "line": 156,
+          "expr": "condition"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L156",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/sql-resolver.test.ts@L156",
+            "expr": "condition",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:91f6132a637e99514290a2829ea39ffe340778b4a5d5dd8e56897dc3633710f7",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.test.ts@L157",
+          "line": 157,
+          "expr": "return `cond:${shortFile(n.file)}:L${n.span?.start}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9fe4be047d2fd069977bfc09d82bf8d84dbcfc5ec526c06b6d1610de07e28b6b",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.test.ts@L159",
+          "line": 159,
+          "expr": "return n.kind;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 13,
+    "referencedByFiles": [
+      "packages/core/src/dossier/serializer.ts",
+      "packages/parsers/src/java/spring.test.ts",
+      "packages/pipeline/src/resolve/csharp-resolver.test.ts",
+      "packages/pipeline/src/resolve/go-resolver.test.ts",
+      "packages/pipeline/src/resolve/java-resolver.test.ts",
+      "packages/pipeline/src/resolve/python-resolver.test.ts",
+      "packages/pipeline/src/resolve/rust-resolver.test.ts",
+      "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "packages/pipeline/src/rules/mermaid.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 13,
+    "assignments": 0,
+    "conditions": 6,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 5,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

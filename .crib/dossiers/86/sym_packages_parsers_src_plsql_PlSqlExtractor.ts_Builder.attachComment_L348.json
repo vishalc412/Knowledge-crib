@@ -1,0 +1,255 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.attachComment@L348",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:70182bc3130e4d3aa5a6aa9ddaa963fa2c29d5b83be3e40ed9e3a4d7b3421134",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.attachComment@L348",
+    "kind": "symbol",
+    "type": "method",
+    "name": "attachComment",
+    "qualifiedName": "Builder.attachComment",
+    "signature": "attachComment(symId: string, startLine: number): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 348,
+      "end": 365
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 349
+      },
+      {
+        "callee": "idFor",
+        "line": 351
+      },
+      {
+        "callee": "add",
+        "line": 353
+      },
+      {
+        "callee": "push",
+        "line": 354
+      },
+      {
+        "callee": "hash",
+        "line": 361
+      },
+      {
+        "callee": "push",
+        "line": 364
+      },
+      {
+        "callee": "edge",
+        "line": 364
+      }
+    ]
+  },
+  "source": {
+    "text": "  private attachComment(symId: string, startLine: number): void {\n    const block = this.comments.find((c) => c.end === startLine - 1);\n    if (!block || !block.text) return;\n    const id = this.ctx.idFor('explanation', { path: this.path, startLine: block.start });\n    if (this.explSeen.has(id)) return;\n    this.explSeen.add(id);\n    this.nodes.push({\n      id,\n      kind: 'explanation',\n      commentRef: { file: this.path, span: { start: block.start, end: block.end } },\n      file: this.path,\n      span: { start: block.start, end: block.end },\n      lang: 'plsql',\n      hash: this.ctx.hash(`${this.path}:${block.start}:${block.text}`),\n      meta: { text: block.text }, // the comment text is carried inline (a doc, not code ref)\n    });\n    this.edges.push(this.edge(id, symId, 'describes', 'COMMENT'));\n  }",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 348
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addUnit@L254",
+      "confidence": 1,
+      "name": "addUnit",
+      "qualifiedName": "Builder.addUnit",
+      "signature": "addUnit(u: Unit, enclosingId: string, qualifier: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 254
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L757",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "Builder.edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string): Edge",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 757
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/PlSqlExtractor.ts@L344",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.attachComment@L348",
+    "procedureName": "Builder.attachComment",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L350",
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L352"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.attachComment@L348",
+        "procedureName": "Builder.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6f194efd435fa42855d2107e74cbdd9cb83a833ce5971d3cd7edc8c53fbb5f03",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L349",
+          "line": 349,
+          "expr": "const block = this.comments.find((c) => c.end === startLine - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.attachComment@L348",
+        "procedureName": "Builder.attachComment",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L350",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L350",
+            "expr": "!block || !block.text",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b544589e8bdd9e793f7f9a954c93c27ad0c41a78ef2eb8bb8bc8c642eda6c5bb",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L350",
+          "line": 350,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.attachComment@L348",
+        "procedureName": "Builder.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:43ef8512290e509ed7c30f157e1f940115a792ac8361d7b8e6a21e966a608d60",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L351",
+          "line": 351,
+          "expr": "const id = this.ctx.idFor('explanation', { path: this.path, startLine: block.start });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.attachComment@L348",
+        "procedureName": "Builder.attachComment",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L352",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L352",
+            "expr": "this.explSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8a77cce2c2ee2b577f0e42ea4a9757568e1d814038ad810356d35b51da168490",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L352",
+          "line": 352,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.attachComment@L348",
+        "procedureName": "Builder.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a652b0154db9519345fd429c239cdbbbf41cdff3203192ea0b990f2793e43c11",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L353",
+          "line": 353,
+          "expr": "this.explSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.attachComment@L348",
+        "procedureName": "Builder.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:41025ae8237216f6a37f109efd772b2717db35338e23dc7aa2b00a9632be6dd0",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L354",
+          "line": 354,
+          "expr": "this.nodes.push({\n      id,\n      kind: 'explanation',\n      commentRef: { file: this.path, span: { start: block.start, end: block.end } },\n      file: this.path,\n      span: { start: block.start, end: block.end },\n      lang: 'plsql',\n      hash: this.ctx.hash(`${this.path}:${block.start}:${block.text}`),\n      meta: { text: block.text }, // the comment text is carried inline (a doc, not code ref)\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.attachComment@L348",
+        "procedureName": "Builder.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:278081e7018daef6f3ce60a28c8550e01e9a5e85d99632bf67ca15efded7ba68",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L757",
+          "expr": "edge",
+          "line": 364
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.attachComment@L348",
+        "procedureName": "Builder.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:761aa4fc6d2c6b0b9af3446a42a94602ba60950a265b850bbee2a59a11146223",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L364",
+          "line": 364,
+          "expr": "this.edges.push(this.edge(id, symId, 'describes', 'COMMENT'));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 7,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L270",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:155f0676e792d01072b84463bf60882eda5daed0a71743e2539dca95efc1c71f",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L270",
+    "kind": "symbol",
+    "type": "function",
+    "name": "toFtsMatch",
+    "qualifiedName": "toFtsMatch",
+    "signature": "toFtsMatch(text: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 270,
+      "end": 276
+    },
+    "callSites": [
+      {
+        "callee": "map",
+        "line": 271
+      },
+      {
+        "callee": "filter",
+        "line": 271
+      },
+      {
+        "callee": "split",
+        "line": 271
+      },
+      {
+        "callee": "join",
+        "line": 275
+      }
+    ]
+  },
+  "source": {
+    "text": "function toFtsMatch(text: string): string | undefined {\n  const tokens = text\n    .split(/[^A-Za-z0-9_]+/)\n    .filter((t) => t.length > 0)\n    .map((t) => `\"${t}\"*`);\n  return tokens.length > 0 ? tokens.join(' OR ') : undefined;\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 270
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.query@L64",
+      "confidence": 1,
+      "name": "query",
+      "qualifiedName": "SqliteIndexStore.query",
+      "signature": "query(q: HybridQuery): Hit[]",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 64
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/index/sqlite-index.ts@L266",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L270",
+    "procedureName": "toFtsMatch",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L270",
+        "procedureName": "toFtsMatch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:de0a9c17fe1528ef02ce8dc58ccf6254da3e804a33e17b3b2461e142483a0626",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L271",
+          "line": 271,
+          "expr": "const tokens = text\n    .split(/[^A-Za-z0-9_]+/)\n    .filter((t) => t.length > 0)\n    .map((t) => `\"${t}\"*`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L270",
+        "procedureName": "toFtsMatch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b61e658c1d106b21389a8a1d0f45dd9d5c097fa7a80e182b5c0f0c56dab03bd8",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L275",
+          "line": 275,
+          "expr": "return tokens.length > 0 ? tokens.join(' OR ') : undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,347 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L823",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:363d9ccb603056baa718f7062f116c9e72d5359f06d671334bdd46fd7e7c8149",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L823",
+    "kind": "symbol",
+    "type": "method",
+    "name": "peek",
+    "qualifiedName": "Parser.peek",
+    "signature": "peek(): Token",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 823,
+      "end": 825
+    }
+  },
+  "source": {
+    "text": "  private peek(): Token {\n    return this.t[this.i] ?? { type: 'EOF', value: '', line: 0, col: 0 };\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 823
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.isOp@L1601",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "BodyParser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1601
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseCaseBody@L1306",
+      "confidence": 1,
+      "name": "parseCaseBody",
+      "qualifiedName": "BodyParser.parseCaseBody",
+      "signature": "parseCaseBody(closeIdx: number): JavaStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1306
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+      "confidence": 1,
+      "name": "parseDo",
+      "qualifiedName": "BodyParser.parseDo",
+      "signature": "parseDo(startLine: number): JavaStmt",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1211
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseIf@L1165",
+      "confidence": 1,
+      "name": "parseIf",
+      "qualifiedName": "BodyParser.parseIf",
+      "signature": "parseIf(startLine: number): JavaStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1165
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseStmt@L1126",
+      "confidence": 1,
+      "name": "parseStmt",
+      "qualifiedName": "BodyParser.parseStmt",
+      "signature": "parseStmt(): JavaStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1126
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseStmts@L1104",
+      "confidence": 1,
+      "name": "parseStmts",
+      "qualifiedName": "BodyParser.parseStmts",
+      "signature": "parseStmts(): JavaStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1104
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseSwitch@L1231",
+      "confidence": 1,
+      "name": "parseSwitch",
+      "qualifiedName": "BodyParser.parseSwitch",
+      "signature": "parseSwitch(startLine: number): JavaStmt",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1231
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseTry@L1273",
+      "confidence": 1,
+      "name": "parseTry",
+      "qualifiedName": "BodyParser.parseTry",
+      "signature": "parseTry(startLine: number): JavaStmt",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1273
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipToSemi@L1516",
+      "confidence": 1,
+      "name": "skipToSemi",
+      "qualifiedName": "BodyParser.skipToSemi",
+      "signature": "skipToSemi(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1516
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.atEnd@L826",
+      "confidence": 1,
+      "name": "atEnd",
+      "qualifiedName": "Parser.atEnd",
+      "signature": "atEnd(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 826
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L707",
+      "confidence": 1,
+      "name": "consumeAnnotation",
+      "qualifiedName": "Parser.consumeAnnotation",
+      "signature": "consumeAnnotation(out: string[], rich?: JavaAnno[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 707
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.consumeField@L553",
+      "confidence": 1,
+      "name": "consumeField",
+      "qualifiedName": "Parser.consumeField",
+      "signature": "consumeField(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 553
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isName@L808",
+      "confidence": 1,
+      "name": "isName",
+      "qualifiedName": "Parser.isName",
+      "signature": "isName(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 808
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isNameAnyOf@L811",
+      "confidence": 1,
+      "name": "isNameAnyOf",
+      "qualifiedName": "Parser.isNameAnyOf",
+      "signature": "isNameAnyOf(vs: string[]): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 811
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isNameToken@L815",
+      "confidence": 1,
+      "name": "isNameToken",
+      "qualifiedName": "Parser.isNameToken",
+      "signature": "isNameToken(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 815
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L801",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 801
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOpAnyOf@L804",
+      "confidence": 1,
+      "name": "isOpAnyOf",
+      "qualifiedName": "Parser.isOpAnyOf",
+      "signature": "isOpAnyOf(vs: string[]): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 804
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecl@L255",
+      "confidence": 1,
+      "name": "parseDecl",
+      "qualifiedName": "Parser.parseDecl",
+      "signature": "parseDecl(): JavaDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 255
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecls@L220",
+      "confidence": 1,
+      "name": "parseDecls",
+      "qualifiedName": "Parser.parseDecls",
+      "signature": "parseDecls(topLevel: boolean): { defs: JavaDef[]; closeLine: number }",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 220
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDottedNameList@L620",
+      "confidence": 1,
+      "name": "parseDottedNameList",
+      "qualifiedName": "Parser.parseDottedNameList",
+      "signature": "parseDottedNameList(stopKeywords: string[], stopOps: string[] = ['{', ';']): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 620
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseMember@L356",
+      "confidence": 1,
+      "name": "parseMember",
+      "qualifiedName": "Parser.parseMember",
+      "signature": "parseMember(startLine: number, annotations: string[], modifiers: string[], annos: JavaAnno[] = []): JavaDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 356
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamList@L582",
+      "confidence": 1,
+      "name": "parseParamList",
+      "qualifiedName": "Parser.parseParamList",
+      "signature": "parseParamList(): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 582
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamListTyped@L506",
+      "confidence": 1,
+      "name": "parseParamListTyped",
+      "qualifiedName": "Parser.parseParamListTyped",
+      "signature": "parseParamListTyped(): Array<{ name: string; type?: string }>",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 506
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L286",
+      "confidence": 1,
+      "name": "parseType",
+      "qualifiedName": "Parser.parseType",
+      "signature": "parseType(kind: 'class' | 'interface' | 'enum' | 'record', startLine: number, annotations: string[], modifiers: string[], annos: JavaAnno[] = []): JavaDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 286
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.skipBalancedParens@L763",
+      "confidence": 1,
+      "name": "skipBalancedParens",
+      "qualifiedName": "Parser.skipBalancedParens",
+      "signature": "skipBalancedParens(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 763
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.skipBraces@L780",
+      "confidence": 1,
+      "name": "skipBraces",
+      "qualifiedName": "Parser.skipBraces",
+      "signature": "skipBraces(): number",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 780
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+      "confidence": 1,
+      "name": "skipGenericAngle",
+      "qualifiedName": "Parser.skipGenericAngle",
+      "signature": "skipGenericAngle(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 649
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L823",
+    "procedureName": "Parser.peek",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L823",
+        "procedureName": "Parser.peek",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f25154461ef830f655b9987caa553e26201d249db3b77c5e0fbfaddfd46d43ac",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L824",
+          "line": 824,
+          "expr": "return this.t[this.i] ?? { type: 'EOF', value: '', line: 0, col: 0 };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

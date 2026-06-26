@@ -1,0 +1,181 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L448",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:abad08b5ae2a72fc5941aa14c1a99ee397429df71e9895855c81984984f7d4a8",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L448",
+    "kind": "symbol",
+    "type": "function",
+    "name": "exceptionTypesOf",
+    "qualifiedName": "exceptionTypesOf",
+    "signature": "exceptionTypesOf(s?: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 448,
+      "end": 455
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 453
+      },
+      {
+        "callee": "join",
+        "line": 454
+      }
+    ]
+  },
+  "source": {
+    "text": "function exceptionTypesOf(s?: string): string | undefined {\n  if (!s) return undefined;\n  const out: string[] = [];\n  const re = /(\\w+)\\.class/g;\n  let m: RegExpExecArray | null;\n  while ((m = re.exec(s)) !== null) out.push(m[1]!);\n  return out.length ? out.join('|') : undefined;\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 448
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 100
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L446",
+      "snippet": "/** Exception types from `@ExceptionHandler({SQLException.class, IOException.class})` / `(X.class)`,",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L448",
+    "procedureName": "exceptionTypesOf",
+    "conditions": [
+      "cond:packages/parsers/src/java/spring.ts@L449",
+      "cond:packages/parsers/src/java/spring.ts@L453"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L448",
+        "procedureName": "exceptionTypesOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L449",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L449",
+            "expr": "!s",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f90e8bee10e4543818c1d4889fd46b27f3205243502020861a0478b1e5cf93e2",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L449",
+          "line": 449,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L448",
+        "procedureName": "exceptionTypesOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L453",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L453",
+            "expr": "(m = re.exec(s)) !== null",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c86883fa982666e316f0a2e0d078562c50fc7b72c5bab39903e68008894492db",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L453",
+          "line": 453,
+          "expr": "out.push(m[1]!);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L448",
+        "procedureName": "exceptionTypesOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f44ba13520573d0b42d999f7edb3cccc8e073782f1c199a85f0d38cd7d391da9",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 453
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L448",
+        "procedureName": "exceptionTypesOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:46a34f24f45b7acbc9a07e725c9d94d695ad07df85f177d9f5a5754c1302ebdd",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L454",
+          "line": 454,
+          "expr": "return out.length ? out.join('|') : undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

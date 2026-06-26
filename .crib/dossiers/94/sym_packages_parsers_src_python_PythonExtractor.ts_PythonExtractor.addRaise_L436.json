@@ -1,0 +1,392 @@
+{
+  "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:0616b6c57477053424a47b3db95e1657faaa9a55d44eb9ed19d9058e24cdbe05",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+    "kind": "symbol",
+    "type": "method",
+    "name": "addRaise",
+    "qualifiedName": "PythonExtractor.addRaise",
+    "signature": "addRaise(s: PyStmt, procId: string, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean, w: WalkCtx): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/PythonExtractor.ts",
+    "span": {
+      "start": 436,
+      "end": 473
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 446
+      },
+      {
+        "callee": "hash",
+        "line": 456
+      },
+      {
+        "callee": "push",
+        "line": 460
+      },
+      {
+        "callee": "edge",
+        "line": 461
+      },
+      {
+        "callee": "slice",
+        "line": 462
+      },
+      {
+        "callee": "push",
+        "line": 469
+      },
+      {
+        "callee": "push",
+        "line": 470
+      },
+      {
+        "callee": "edge",
+        "line": 470
+      },
+      {
+        "callee": "recordCall",
+        "line": 472
+      }
+    ]
+  },
+  "source": {
+    "text": "  private addRaise(\n    s: PyStmt,\n    procId: string,\n    guardStack: string[],\n    branch: string | undefined,\n    inLoop: boolean,\n    inException: boolean,\n    w: WalkCtx,\n  ): void {\n    const line = s.line;\n    const id = w.ctx.idFor('raise', { file: w.path, line });\n    const inner = guardStack.length ? guardStack[guardStack.length - 1] : undefined;\n    const name = s.raiseName ?? '';\n    const node: Node = {\n      id,\n      kind: 'raise',\n      ...(name ? { name } : {}),\n      file: w.path,\n      span: { start: line, end: s.endLine },\n      lang: 'python',\n      hash: w.ctx.hash(`${w.path}:${line}:raise:${name}`),\n      ...(s.raiseMessage !== undefined ? { errorMessage: s.raiseMessage } : {}),\n      meta: { inLoop, inException },\n    };\n    w.nodes.push(node);\n    const e = this.edge(procId, id, 'raises', name || 'RAISE');\n    e.cfgPath = guardStack.slice();\n    if (inner) {\n      e.guard = inner;\n      e.branch = branch;\n    }\n    e.inLoop = inLoop;\n    e.inException = inException;\n    w.edges.push(e);\n    if (inner) w.edges.push(this.edge(id, inner, 'guarded-by', branch ?? 'RAISE'));\n    for (const c of s.calls ?? [])\n      this.recordCall(c, procId, guardStack, branch, inLoop, inException, w);\n  }",
+    "truncated": false,
+    "totalLines": 38,
+    "startLine": 436
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "PythonExtractor.walkBody",
+      "signature": "walkBody(stmts: PyStmt[], procId: string, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean, w: WalkCtx): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 186
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.edge@L650",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "PythonExtractor.edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string): Edge",
+      "type": "method",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 650
+    },
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.recordCall@L375",
+      "confidence": 1,
+      "name": "recordCall",
+      "qualifiedName": "PythonExtractor.recordCall",
+      "signature": "recordCall(c: PyCallRef, procId: string, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean, w: WalkCtx): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 375
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/PythonExtractor.ts@L431",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+    "procedureName": "PythonExtractor.addRaise",
+    "conditions": [
+      "cond:packages/parsers/src/python/PythonExtractor.ts@L470",
+      "cond:packages/parsers/src/python/PythonExtractor.ts@L463",
+      "cond:packages/parsers/src/python/PythonExtractor.ts@L471"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:80266adca1ebe3442b4fa87f2d4df2c61ccaa3bd728b745efaa6cb372712b462",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L446",
+          "line": 446,
+          "expr": "const id = w.ctx.idFor('raise', { file: w.path, line });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:36a38283cda16091ef948811953fc76e01504ac036a6499e5ce65484aee20ac3",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L449",
+          "line": 449,
+          "expr": "const node: Node = {\n      id,\n      kind: 'raise',\n      ...(name ? { name } : {}),\n      file: w.path,\n      span: { start: line, end: s.endLine },\n      lang: 'python',\n      hash: w.ctx.hash(`${w.path}:${line}:raise:${name}`),\n      ...(s.raiseMessage !== undefined ? { errorMessage: s.raiseMessage } : {}),\n      meta: { inLoop, inException },\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c675580b1518779be435c967d562b5f3ed3dd7ecaa8b0116cd18ac1cc0504dab",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L460",
+          "line": 460,
+          "expr": "w.nodes.push(node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L470",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L470",
+            "expr": "inner",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e34a2c744434c880c18981fb76996f847810c5e4bbc9677ae961e41813a2d4aa",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.edge@L650",
+          "expr": "edge",
+          "line": 461
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:073a126a90710a3717bdda3c2292141d28de835dce318da595a5fa2f0d923157",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L461",
+          "line": 461,
+          "expr": "const e = this.edge(procId, id, 'raises', name || 'RAISE');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:57eb34c48a008d98013e2c5958baf4c869fb767635efeb841ec841a24b932a84",
+          "target": "assign:packages/parsers/src/python/PythonExtractor.ts@L462",
+          "line": 462,
+          "expr": "e.cfgPath = guardStack.slice();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L463",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L463",
+            "expr": "inner",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cff32ab9b43859cdfcb3cf86c3db28f8df55bbbefea9fe5b32e5709c9bc5d717",
+          "target": "assign:packages/parsers/src/python/PythonExtractor.ts@L464",
+          "line": 464,
+          "expr": "e.guard = inner;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L463",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L463",
+            "expr": "inner",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:27726a80d44ef83bba2729dcbe76caea2d59e18d08f1081f2062a64d64431f65",
+          "target": "assign:packages/parsers/src/python/PythonExtractor.ts@L465",
+          "line": 465,
+          "expr": "e.branch = branch;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8a51356c83cccf931bae0fc7a5699b5ab790f52497a3fea0d0b38bdcffbbbc2",
+          "target": "assign:packages/parsers/src/python/PythonExtractor.ts@L467",
+          "line": 467,
+          "expr": "e.inLoop = inLoop;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb03ddc9e17acd0dd4f686bf6ce6b51067016f98278cd6c2d4465efe2ddd33fd",
+          "target": "assign:packages/parsers/src/python/PythonExtractor.ts@L468",
+          "line": 468,
+          "expr": "e.inException = inException;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:97f795d923c38b4650a19a27db994a88b5e5c7f80a0e9f924287eb5bfa4f4f2e",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L469",
+          "line": 469,
+          "expr": "w.edges.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L470",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L470",
+            "expr": "inner",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:36c1c88c8c9ff8b567151679d95eca6406e9479e4a92acbfa3d84e57ff9d0f1f",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L470",
+          "line": 470,
+          "expr": "w.edges.push(this.edge(id, inner, 'guarded-by', branch ?? 'RAISE'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L471",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L471",
+            "expr": "s.calls ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:330b973912b9e9c15264d2874910bbf85a39cf4f76ebf2a627aa54b743ce8687",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.recordCall@L375",
+          "expr": "recordCall",
+          "line": 472
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L471",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L471",
+            "expr": "s.calls ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c96e812d039e8e862251a88cf847f563c788d13e226093032e4fd64aaa5562d6",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L472",
+          "line": 472,
+          "expr": "this.recordCall(c, procId, guardStack, branch, inLoop, inException, w);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": [
+      "packages/parsers/src/python/PythonExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 5,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 9,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

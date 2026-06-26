@@ -1,0 +1,1137 @@
+{
+  "id": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e11f5d7908fb4e159c223bbbb729bc6201264d02b1ee95355f767e399120c7e5",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+    "kind": "symbol",
+    "type": "function",
+    "name": "publicNode",
+    "qualifiedName": "publicNode",
+    "signature": "publicNode(n: Node): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/builder.ts",
+    "span": {
+      "start": 237,
+      "end": 293
+    }
+  },
+  "source": {
+    "text": "export function publicNode(n: Node): Record<string, unknown> {\n  const out: Record<string, unknown> = { id: n.id, kind: n.kind };\n  if (n.type) out.type = n.type;\n  if (n.name) out.name = n.name;\n  if (n.qualifiedName) out.qualifiedName = n.qualifiedName;\n  if (n.signature) out.signature = n.signature;\n  if (n.lang) out.lang = n.lang;\n  if (n.file) out.file = n.file;\n  if (n.span) out.span = n.span;\n  if (n.clusterId) out.clusterId = n.clusterId;\n  // deep-extraction: SQL / table / column\n  if (n.schema) out.schema = n.schema;\n  if (n.table) out.table = n.table;\n  if (n.dataType) out.dataType = n.dataType;\n  if (n.sqlKind) out.sqlKind = n.sqlKind;\n  if (n.expr) out.expr = n.expr;\n  if (n.branch) out.branch = n.branch;\n  // deep-extraction 1.2 (behavior-bearing fidelity)\n  if (n.errorCode) out.errorCode = n.errorCode;\n  if (n.errorMessage) out.errorMessage = n.errorMessage;\n  if (n.whenSelector) out.whenSelector = n.whenSelector;\n  if (n.assignTarget) out.assignTarget = n.assignTarget;\n  if (n.cursorQuery) out.cursorQuery = n.cursorQuery;\n  if (n.exprTruncated) out.exprTruncated = n.exprTruncated;\n  if (Array.isArray(n.constraints)) out.constraints = n.constraints;\n  if (n.commentRef) out.commentRef = n.commentRef;\n  // doc-section\n  if (n.heading) out.heading = n.heading;\n  if (n.level !== undefined) out.level = n.level;\n  if (n.anchor) out.anchor = n.anchor;\n  // framework-semantics 1.3 identity — the handler's own route verb/path, the symbol's stereotype +\n  // framework. Without these the route section shows the route but hides the handler's own contract\n  // (e.g. its @PreAuthorize on the node), breaking the no-round-trip surfacing guarantee.\n  if (n.framework) out.framework = n.framework;\n  if (n.stereotype) out.stereotype = n.stereotype;\n  if (n.httpMethod) out.httpMethod = n.httpMethod;\n  if (n.routePath) out.routePath = n.routePath;\n  // selective meta — surface the structured deep fields, not arbitrary blobs\n  if (n.meta) {\n    const m = n.meta as Record<string, unknown>;\n    if (Array.isArray(m.columns)) out.columns = m.columns;\n    if (m.returnType !== undefined) out.returnType = m.returnType;\n    if (Array.isArray(m.tables)) out.tables = m.tables;\n    if (Array.isArray(m.attributes)) out.attributes = m.attributes;\n    if (m.collection !== undefined) out.collection = m.collection;\n    if (m.kind !== undefined) out.kindMeta = m.kind;\n    if (m.recursive !== undefined) out.recursive = m.recursive;\n    if (Array.isArray(m.calls)) out.callSites = m.calls;\n    // framework-semantics 1.3 meta — route params/security, DI injects, @Bean produces, JPA column.\n    if (Array.isArray(m.params)) out.params = m.params;\n    if (m.security !== undefined) out.security = m.security;\n    if (Array.isArray(m.injects)) out.injects = m.injects;\n    if (Array.isArray(m.produces)) out.produces = m.produces;\n    if (m.column !== undefined) out.column = m.column;\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 57,
+    "startLine": 237
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+      "confidence": 1,
+      "name": "buildDossier",
+      "qualifiedName": "buildDossier",
+      "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 134
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+      "confidence": 1,
+      "name": "controlFlow",
+      "qualifiedName": "controlFlow",
+      "signature": "controlFlow(soul: SoulStore, nodeId: string, outgoing: Map<string, Edge[]>, incoming: Map<string, Edge[]>, keep: (e: Edge) => boolean): DossierControlFlow",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 323
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#controlFlow.push@L339",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "controlFlow.push",
+      "signature": "push(…)",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 339
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/builder.ts@L236",
+      "snippet": "/** The public node shape — surfaces EVERY captured field, not just the symbol-header subset. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+    "procedureName": "publicNode",
+    "conditions": [
+      "cond:packages/core/src/dossier/builder.ts@L239",
+      "cond:packages/core/src/dossier/builder.ts@L240",
+      "cond:packages/core/src/dossier/builder.ts@L241",
+      "cond:packages/core/src/dossier/builder.ts@L242",
+      "cond:packages/core/src/dossier/builder.ts@L243",
+      "cond:packages/core/src/dossier/builder.ts@L244",
+      "cond:packages/core/src/dossier/builder.ts@L245",
+      "cond:packages/core/src/dossier/builder.ts@L246",
+      "cond:packages/core/src/dossier/builder.ts@L248",
+      "cond:packages/core/src/dossier/builder.ts@L249",
+      "cond:packages/core/src/dossier/builder.ts@L250",
+      "cond:packages/core/src/dossier/builder.ts@L251",
+      "cond:packages/core/src/dossier/builder.ts@L252",
+      "cond:packages/core/src/dossier/builder.ts@L253",
+      "cond:packages/core/src/dossier/builder.ts@L255",
+      "cond:packages/core/src/dossier/builder.ts@L256",
+      "cond:packages/core/src/dossier/builder.ts@L257",
+      "cond:packages/core/src/dossier/builder.ts@L258",
+      "cond:packages/core/src/dossier/builder.ts@L259",
+      "cond:packages/core/src/dossier/builder.ts@L260",
+      "cond:packages/core/src/dossier/builder.ts@L261",
+      "cond:packages/core/src/dossier/builder.ts@L262",
+      "cond:packages/core/src/dossier/builder.ts@L264",
+      "cond:packages/core/src/dossier/builder.ts@L265",
+      "cond:packages/core/src/dossier/builder.ts@L266",
+      "cond:packages/core/src/dossier/builder.ts@L270",
+      "cond:packages/core/src/dossier/builder.ts@L271",
+      "cond:packages/core/src/dossier/builder.ts@L272",
+      "cond:packages/core/src/dossier/builder.ts@L273",
+      "cond:packages/core/src/dossier/builder.ts@L275",
+      "cond:packages/core/src/dossier/builder.ts@L277",
+      "cond:packages/core/src/dossier/builder.ts@L278",
+      "cond:packages/core/src/dossier/builder.ts@L279",
+      "cond:packages/core/src/dossier/builder.ts@L280",
+      "cond:packages/core/src/dossier/builder.ts@L281",
+      "cond:packages/core/src/dossier/builder.ts@L282",
+      "cond:packages/core/src/dossier/builder.ts@L283",
+      "cond:packages/core/src/dossier/builder.ts@L284",
+      "cond:packages/core/src/dossier/builder.ts@L286",
+      "cond:packages/core/src/dossier/builder.ts@L287",
+      "cond:packages/core/src/dossier/builder.ts@L288",
+      "cond:packages/core/src/dossier/builder.ts@L289",
+      "cond:packages/core/src/dossier/builder.ts@L290"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L239",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L239",
+            "expr": "n.type",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:58245e68a7daf913e35109ce385594639ca2444de77a932949fa54fa9bd81e4a",
+          "target": "assign:packages/core/src/dossier/builder.ts@L239",
+          "line": 239,
+          "expr": "out.type = n.type;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L240",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L240",
+            "expr": "n.name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c8fae7b3422984d4786129dec4b8f7ec3dab8b9faca826dcccab749ef8db577b",
+          "target": "assign:packages/core/src/dossier/builder.ts@L240",
+          "line": 240,
+          "expr": "out.name = n.name;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L241",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L241",
+            "expr": "n.qualifiedName",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:afb15cd96a46a81a4f234ef5e0574b7daf7cf9acc026084f0e7d91de4d192a86",
+          "target": "assign:packages/core/src/dossier/builder.ts@L241",
+          "line": 241,
+          "expr": "out.qualifiedName = n.qualifiedName;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L242",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L242",
+            "expr": "n.signature",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:65e12db871ceb68b514041b49593b37bf50e7a18326f7cf4b9028e6c0ad9984d",
+          "target": "assign:packages/core/src/dossier/builder.ts@L242",
+          "line": 242,
+          "expr": "out.signature = n.signature;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L243",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L243",
+            "expr": "n.lang",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:65556c9727744a38f830755df8b5886cabe7e3f76d7b146d09277ae21b5a47e3",
+          "target": "assign:packages/core/src/dossier/builder.ts@L243",
+          "line": 243,
+          "expr": "out.lang = n.lang;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L244",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L244",
+            "expr": "n.file",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8e29e9400e4636d5c56b5902df5cb88595f5cb9222b00df584ae6c332b644a22",
+          "target": "assign:packages/core/src/dossier/builder.ts@L244",
+          "line": 244,
+          "expr": "out.file = n.file;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L245",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L245",
+            "expr": "n.span",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bca6b4592e9e7946c2d556b00f8698105817702ee532c207e05de513804c6e19",
+          "target": "assign:packages/core/src/dossier/builder.ts@L245",
+          "line": 245,
+          "expr": "out.span = n.span;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L246",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L246",
+            "expr": "n.clusterId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ab9f3e04aacbc87a44aad30f55e6411c13e65e139d7760bdfbf4f865ba18dc80",
+          "target": "assign:packages/core/src/dossier/builder.ts@L246",
+          "line": 246,
+          "expr": "out.clusterId = n.clusterId;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L248",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L248",
+            "expr": "n.schema",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cfc59f779a2c0b1fc59ad204cb39f9443166f2785fe035f8fd21d2b10309d360",
+          "target": "assign:packages/core/src/dossier/builder.ts@L248",
+          "line": 248,
+          "expr": "out.schema = n.schema;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L249",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L249",
+            "expr": "n.table",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bf387aed4e4542fcf0c5a5f514da78e4e2a652fa991118970bf543a6639bf857",
+          "target": "assign:packages/core/src/dossier/builder.ts@L249",
+          "line": 249,
+          "expr": "out.table = n.table;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L250",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L250",
+            "expr": "n.dataType",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e798b9d2eaa4cbe04b5ec2a39d544e012b801a08c9c4c53038e731869214ebce",
+          "target": "assign:packages/core/src/dossier/builder.ts@L250",
+          "line": 250,
+          "expr": "out.dataType = n.dataType;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L251",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L251",
+            "expr": "n.sqlKind",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f719dbf274f2417ad9c4276571c71e99688d26153a3eafd3e649b1d8f9df652",
+          "target": "assign:packages/core/src/dossier/builder.ts@L251",
+          "line": 251,
+          "expr": "out.sqlKind = n.sqlKind;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L252",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L252",
+            "expr": "n.expr",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:99aa7ed1ff252260704d1d92e97022535f961ef4d31baddf2503479b8028d933",
+          "target": "assign:packages/core/src/dossier/builder.ts@L252",
+          "line": 252,
+          "expr": "out.expr = n.expr;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L253",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L253",
+            "expr": "n.branch",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1a5a83ae3ada4a356d26f994bb015a64fcb555a378edc8f1c8a243c4aeec7b0",
+          "target": "assign:packages/core/src/dossier/builder.ts@L253",
+          "line": 253,
+          "expr": "out.branch = n.branch;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L255",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L255",
+            "expr": "n.errorCode",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:738493d0c5169c570716a2365d557b15abeb789506cb31be3096c9f0fe438bec",
+          "target": "assign:packages/core/src/dossier/builder.ts@L255",
+          "line": 255,
+          "expr": "out.errorCode = n.errorCode;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L256",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L256",
+            "expr": "n.errorMessage",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1ca4765d94bb61eceb449ef3b367fb68a0c46dfa78ee751438805de9cd978e0d",
+          "target": "assign:packages/core/src/dossier/builder.ts@L256",
+          "line": 256,
+          "expr": "out.errorMessage = n.errorMessage;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L257",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L257",
+            "expr": "n.whenSelector",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:17d6a577ec719ea077e4c8e255f601637affec7bc416d988260806a871a03b8e",
+          "target": "assign:packages/core/src/dossier/builder.ts@L257",
+          "line": 257,
+          "expr": "out.whenSelector = n.whenSelector;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L258",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L258",
+            "expr": "n.assignTarget",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9ae3422ac28bd9ba03d32e45db276dbaf12325fe577b845f91eda71f4de3915e",
+          "target": "assign:packages/core/src/dossier/builder.ts@L258",
+          "line": 258,
+          "expr": "out.assignTarget = n.assignTarget;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L259",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L259",
+            "expr": "n.cursorQuery",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8fea9145d835dc19cdea76ecd02aec5eb69ba646e9680b4b08b761af3b18fbd9",
+          "target": "assign:packages/core/src/dossier/builder.ts@L259",
+          "line": 259,
+          "expr": "out.cursorQuery = n.cursorQuery;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L260",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L260",
+            "expr": "n.exprTruncated",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:292da64312c35a018cdb20aa4f6d7b9a1771cd7c7c3abb349c3961b422c8e5ca",
+          "target": "assign:packages/core/src/dossier/builder.ts@L260",
+          "line": 260,
+          "expr": "out.exprTruncated = n.exprTruncated;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L261",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L261",
+            "expr": "Array.isArray(n.constraints)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dfbb40efe59abc17f1804a4fdb8f38e0c61ac7c99d71264302c3a6f69938ff33",
+          "target": "assign:packages/core/src/dossier/builder.ts@L261",
+          "line": 261,
+          "expr": "out.constraints = n.constraints;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L262",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L262",
+            "expr": "n.commentRef",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:14780c6ac7a0ebc016ef523a7419cbd310ab320622517f6f63cac69a49bbefe4",
+          "target": "assign:packages/core/src/dossier/builder.ts@L262",
+          "line": 262,
+          "expr": "out.commentRef = n.commentRef;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L264",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L264",
+            "expr": "n.heading",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bf141794fd27f9676d9c97170af85f554457242dee7d91726b2ef8d6e74d46f3",
+          "target": "assign:packages/core/src/dossier/builder.ts@L264",
+          "line": 264,
+          "expr": "out.heading = n.heading;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L265",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L265",
+            "expr": "n.level !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ab3407759f8dd0d927239f4135d6217b29a2cf9317c9111a44f6ca5ab93c6071",
+          "target": "assign:packages/core/src/dossier/builder.ts@L265",
+          "line": 265,
+          "expr": "out.level = n.level;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L266",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L266",
+            "expr": "n.anchor",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b2dad3c4997d21ffb910f55850e46b14712b072e3e0b8a9d30aac74560a216fd",
+          "target": "assign:packages/core/src/dossier/builder.ts@L266",
+          "line": 266,
+          "expr": "out.anchor = n.anchor;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L270",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L270",
+            "expr": "n.framework",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f12606fe740709bc7e167d284bf2bc838c1c51403d55b414544268592bd33838",
+          "target": "assign:packages/core/src/dossier/builder.ts@L270",
+          "line": 270,
+          "expr": "out.framework = n.framework;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L271",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L271",
+            "expr": "n.stereotype",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:35780d640dacf245360ccc610f5b33a4d370c54f45fb73b1505d27311b825072",
+          "target": "assign:packages/core/src/dossier/builder.ts@L271",
+          "line": 271,
+          "expr": "out.stereotype = n.stereotype;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L272",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L272",
+            "expr": "n.httpMethod",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:44c2de277cab574e101b490fa9319c063a6b163ca65b689514ba91f2cfcf811f",
+          "target": "assign:packages/core/src/dossier/builder.ts@L272",
+          "line": 272,
+          "expr": "out.httpMethod = n.httpMethod;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L273",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L273",
+            "expr": "n.routePath",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:16d5228874c3d3d6f67b903b4a40400dfa5c14c7dce41155716eb63c0554085f",
+          "target": "assign:packages/core/src/dossier/builder.ts@L273",
+          "line": 273,
+          "expr": "out.routePath = n.routePath;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L277",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L275",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L277",
+            "expr": "Array.isArray(m.columns)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4b4ebac842fa12a0d295cf13873d8d258d0dbd5612fd3ef2a9de28b9a1991f42",
+          "target": "assign:packages/core/src/dossier/builder.ts@L277",
+          "line": 277,
+          "expr": "out.columns = m.columns;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L278",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L275",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L278",
+            "expr": "m.returnType !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d7a24c4e68a456c7f3e4e8388081450eccfbbe175b51424c77f3e17a4e6ab40a",
+          "target": "assign:packages/core/src/dossier/builder.ts@L278",
+          "line": 278,
+          "expr": "out.returnType = m.returnType;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L279",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L275",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L279",
+            "expr": "Array.isArray(m.tables)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c253d75d0a8cf9cffcb190931cfed31a8fa0753277bdbd0c3e2d2ee1bee5193f",
+          "target": "assign:packages/core/src/dossier/builder.ts@L279",
+          "line": 279,
+          "expr": "out.tables = m.tables;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L280",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L275",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L280",
+            "expr": "Array.isArray(m.attributes)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:edd3ae66cc94cafd8eba91d1b89bac07f090083f4190006f491bb776d27a0cd5",
+          "target": "assign:packages/core/src/dossier/builder.ts@L280",
+          "line": 280,
+          "expr": "out.attributes = m.attributes;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L281",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L275",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L281",
+            "expr": "m.collection !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d2e733318d95556082dcf5e6ebb858d7404dda51e8d63f3c1c91637dca46db36",
+          "target": "assign:packages/core/src/dossier/builder.ts@L281",
+          "line": 281,
+          "expr": "out.collection = m.collection;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L282",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L275",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L282",
+            "expr": "m.kind !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9ebb24a1ff58f4683528e9c289c4a669502fc7b77b5a5ba35b8446f53ca8deba",
+          "target": "assign:packages/core/src/dossier/builder.ts@L282",
+          "line": 282,
+          "expr": "out.kindMeta = m.kind;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L283",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L275",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L283",
+            "expr": "m.recursive !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d20086a51ee2d8c1c7e7c7f0da5f36299728b8694cbfc552d2bc4a562c9eff93",
+          "target": "assign:packages/core/src/dossier/builder.ts@L283",
+          "line": 283,
+          "expr": "out.recursive = m.recursive;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L284",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L275",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L284",
+            "expr": "Array.isArray(m.calls)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5438bf23791e18df39669fbfae19e6f316af33135fe9251ab75dde37610bfd68",
+          "target": "assign:packages/core/src/dossier/builder.ts@L284",
+          "line": 284,
+          "expr": "out.callSites = m.calls;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L286",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L275",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L286",
+            "expr": "Array.isArray(m.params)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:337a6fec36a872aab5ae3a1a67528b167e589561c5831ea44ae04b4de1bfa624",
+          "target": "assign:packages/core/src/dossier/builder.ts@L286",
+          "line": 286,
+          "expr": "out.params = m.params;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L287",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L275",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L287",
+            "expr": "m.security !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7aecd2ef665d4e50ef6b73e8f9de1072a868f0119359c5adc918049d12e7a82b",
+          "target": "assign:packages/core/src/dossier/builder.ts@L287",
+          "line": 287,
+          "expr": "out.security = m.security;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L288",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L275",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L288",
+            "expr": "Array.isArray(m.injects)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a820700bdf8a82325fe4683388f8f1dc0e842fedb6cb55d3483a38fcff531b61",
+          "target": "assign:packages/core/src/dossier/builder.ts@L288",
+          "line": 288,
+          "expr": "out.injects = m.injects;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L289",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L275",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L289",
+            "expr": "Array.isArray(m.produces)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa7b67075c014644c2ba1816c5623bfa8c4ae445f49ee29d47edf3b46cd6cb2d",
+          "target": "assign:packages/core/src/dossier/builder.ts@L289",
+          "line": 289,
+          "expr": "out.produces = m.produces;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L290",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L275",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L290",
+            "expr": "m.column !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b9fde36f382da96bf77b3465b9667dbf45c0b9ab563a1f3fbc26d8dcc2c39e68",
+          "target": "assign:packages/core/src/dossier/builder.ts@L290",
+          "line": 290,
+          "expr": "out.column = m.column;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+        "procedureName": "publicNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3e2bd9ab1cf9ec4577e6677438ebc5d390b2d6e40ec2eeafe51bbc01896fe560",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L292",
+          "line": 292,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 43,
+    "referencedByFiles": [
+      "packages/core/src/dossier/builder.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 43,
+    "assignments": 42,
+    "conditions": 42,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

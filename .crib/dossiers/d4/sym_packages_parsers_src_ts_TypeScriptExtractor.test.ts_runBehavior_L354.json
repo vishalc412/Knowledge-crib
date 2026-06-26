@@ -1,0 +1,110 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runBehavior@L354",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ad0d3970d88c34c23646e194c5b98108b0038cb870d356adf225ae67b35e2d90",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runBehavior@L354",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runBehavior",
+    "qualifiedName": "runBehavior",
+    "signature": "runBehavior(text: string = BEHAVIOR_SRC, path: string = BEHAVIOR_PATH): Promise<ExtractResult>",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
+    "span": {
+      "start": 354,
+      "end": 360
+    },
+    "callSites": [
+      {
+        "callee": "extract",
+        "line": 359
+      },
+      {
+        "callee": "ctxFor",
+        "line": 359
+      }
+    ]
+  },
+  "source": {
+    "text": "async function runBehavior(\n  text: string = BEHAVIOR_SRC,\n  path: string = BEHAVIOR_PATH,\n): Promise<ExtractResult> {\n  const meta: FileMeta = { path, lang: 'typescript', bytes: text.length, mtime: 0 };\n  return new TypeScriptExtractor().extract(meta, ctxFor(text));\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 354
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+      "confidence": 1,
+      "name": "ctxFor",
+      "qualifiedName": "ctxFor",
+      "signature": "ctxFor(text: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
+      "line": 15
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runBehavior@L354",
+    "procedureName": "runBehavior",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runBehavior@L354",
+        "procedureName": "runBehavior",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d63563859903e919ffc05ff7cdf29921609bc723b651fa898c40d050e9394635",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+          "expr": "ctxFor",
+          "line": 359
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runBehavior@L354",
+        "procedureName": "runBehavior",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:782589b6ffdb61f9436976a419c66e868215d079508fb2137c70216988448c4d",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.test.ts@L359",
+          "line": 359,
+          "expr": "return new TypeScriptExtractor().extract(meta, ctxFor(text));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

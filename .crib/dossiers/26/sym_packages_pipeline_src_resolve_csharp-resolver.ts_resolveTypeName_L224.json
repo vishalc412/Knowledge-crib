@@ -1,0 +1,404 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:74cd7910548770bf01c8b83dad638e1679b7c0d3ba4964735a28b65518220f0d",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+    "kind": "symbol",
+    "type": "function",
+    "name": "resolveTypeName",
+    "qualifiedName": "resolveTypeName",
+    "signature": "resolveTypeName(name: string, file: string, nsPrefix: string, imports: Map<string, NameBinding>, fqnFile: Map<string, string>, table: SymbolTable): Node | undefined",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+    "span": {
+      "start": 224,
+      "end": 250
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 233
+      },
+      {
+        "callee": "symbolByKind",
+        "line": 235
+      },
+      {
+        "callee": "lastSegment",
+        "line": 235
+      },
+      {
+        "callee": "get",
+        "line": 239
+      },
+      {
+        "callee": "symbolByKind",
+        "line": 241
+      },
+      {
+        "callee": "get",
+        "line": 244
+      },
+      {
+        "callee": "symbolByKind",
+        "line": 246
+      },
+      {
+        "callee": "symbolByKind",
+        "line": 249
+      }
+    ]
+  },
+  "source": {
+    "text": "function resolveTypeName(\n  name: string,\n  file: string,\n  nsPrefix: string,\n  imports: Map<string, NameBinding>,\n  fqnFile: Map<string, string>,\n  table: SymbolTable,\n): Node | undefined {\n  if (name.includes('.')) {\n    const f = fqnFile.get(name);\n    if (f) {\n      const sym = table.symbolByKind(f, lastSegment(name), TYPE_KINDS);\n      if (sym) return sym;\n    }\n  }\n  const b = imports.get(name);\n  if (b) {\n    const sym = table.symbolByKind(b.file, b.name, TYPE_KINDS);\n    if (sym) return sym;\n  }\n  const sameNs = fqnFile.get(`${nsPrefix}${name}`);\n  if (sameNs) {\n    const sym = table.symbolByKind(sameNs, name, TYPE_KINDS);\n    if (sym) return sym;\n  }\n  return table.symbolByKind(file, name, TYPE_KINDS);\n}",
+    "truncated": false,
+    "totalLines": 27,
+    "startLine": 224
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.visitDef@L126",
+      "confidence": 1,
+      "name": "visitDef",
+      "qualifiedName": "resolveCsharp.visitDef",
+      "signature": "visitDef(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+      "line": 126
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#lastSegment@L262",
+      "confidence": 1,
+      "name": "lastSegment",
+      "qualifiedName": "lastSegment",
+      "signature": "lastSegment(dotted: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+      "line": 262
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#lastSegment@L218",
+      "confidence": 1,
+      "name": "lastSegment",
+      "qualifiedName": "lastSegment",
+      "signature": "lastSegment(path: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/rust-resolver.ts",
+      "line": 218
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/resolve/csharp-resolver.ts@L215",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+    "procedureName": "resolveTypeName",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L232",
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L234",
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L236",
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L240",
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L242",
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L245",
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L247"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+        "procedureName": "resolveTypeName",
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L232",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L232",
+            "expr": "name.includes('.')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f1684cdc135d2cf4b512bf52616772bd7dae64f4295105762560f808b7f14721",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L233",
+          "line": 233,
+          "expr": "const f = fqnFile.get(name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+        "procedureName": "resolveTypeName",
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L234",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L232",
+            "expr": "name.includes('.')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L234",
+            "expr": "f",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9bb61685f18f718d0cd55bf9f336642c80489287e35ac952a782e89a7648edca",
+          "target": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#lastSegment@L262",
+          "expr": "lastSegment",
+          "line": 235
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+        "procedureName": "resolveTypeName",
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L234",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L232",
+            "expr": "name.includes('.')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L234",
+            "expr": "f",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:88e548f7d4bb15a51fac9d16b5f9367adc34a4d6fc19a33a4efdd9aaf238f2b2",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L235",
+          "line": 235,
+          "expr": "const sym = table.symbolByKind(f, lastSegment(name), TYPE_KINDS);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+        "procedureName": "resolveTypeName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ebbcb53cb83b00c1450030ed5e91b89958d9dc36b2eecd897ca90ce964aa05da",
+          "target": "sym:packages/pipeline/src/resolve/rust-resolver.ts#lastSegment@L218",
+          "expr": "lastSegment",
+          "line": 235
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+        "procedureName": "resolveTypeName",
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L236",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L232",
+            "expr": "name.includes('.')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L234",
+            "expr": "f"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L236",
+            "expr": "sym",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d2b17e8d2133421059c895d2dbeed04bf0944ab67a5d66bf619849b07957208e",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L236",
+          "line": 236,
+          "expr": "return sym;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+        "procedureName": "resolveTypeName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c1b5126df1e69cbdca8bf21b951267c67cba33e1638ccca06fac32460851831b",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L239",
+          "line": 239,
+          "expr": "const b = imports.get(name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+        "procedureName": "resolveTypeName",
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L240",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L240",
+            "expr": "b",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1488a69ca4839cdf1a9f9322475cf67c1e988195a09cc774d3e1e444326ac978",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L241",
+          "line": 241,
+          "expr": "const sym = table.symbolByKind(b.file, b.name, TYPE_KINDS);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+        "procedureName": "resolveTypeName",
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L242",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L240",
+            "expr": "b"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L242",
+            "expr": "sym",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b2a95750fd95a7067709fa5664e48e0652dc960ec82e53f3f993b6e990142b7e",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L242",
+          "line": 242,
+          "expr": "return sym;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+        "procedureName": "resolveTypeName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9a429eb2ac69b2cd574530b23725a4a022fe70b1a951e5711513162802b0ff99",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L244",
+          "line": 244,
+          "expr": "const sameNs = fqnFile.get(`${nsPrefix}${name}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+        "procedureName": "resolveTypeName",
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L245",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L245",
+            "expr": "sameNs",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:83d6dfd102c0838607abe9a9c9661dbceef2560ccb3ea490cbbf768d5f246f67",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L246",
+          "line": 246,
+          "expr": "const sym = table.symbolByKind(sameNs, name, TYPE_KINDS);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+        "procedureName": "resolveTypeName",
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L247",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L245",
+            "expr": "sameNs"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L247",
+            "expr": "sym",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7e2cddd6baaec68afa77ea7aed62a3cee1a8c7d565fbfbb8b4b639d6e461ca67",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L247",
+          "line": 247,
+          "expr": "return sym;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveTypeName@L224",
+        "procedureName": "resolveTypeName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1c054880e11bdf8eadbf8bdf5358c0fcb4b8464ee90f42f8a035df0d4e8ecf3",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L249",
+          "line": 249,
+          "expr": "return table.symbolByKind(file, name, TYPE_KINDS);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/csharp-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 0,
+    "conditions": 7,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 8,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

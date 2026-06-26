@@ -1,0 +1,320 @@
+{
+  "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:de4521c141947e7c6867f88e8dcb995203cce2da3582b2923ad589072f8b2e04",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+    "kind": "symbol",
+    "type": "method",
+    "name": "scanOp",
+    "qualifiedName": "Lexer.scanOp",
+    "signature": "scanOp(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/lexer.ts",
+    "span": {
+      "start": 407,
+      "end": 421
+    },
+    "callSites": [
+      {
+        "callee": "advance",
+        "line": 413
+      },
+      {
+        "callee": "emit",
+        "line": 414
+      },
+      {
+        "callee": "peek",
+        "line": 418
+      },
+      {
+        "callee": "advance",
+        "line": 419
+      },
+      {
+        "callee": "emit",
+        "line": 420
+      }
+    ]
+  },
+  "source": {
+    "text": "  private scanOp(): void {\n    const sl = this.line;\n    const sc = this.col;\n    // longest multi-char op match\n    for (const op of MULTI_OPS) {\n      if (this.startsWith(op)) {\n        for (let i = 0; i < op.length; i++) this.advance();\n        this.emit('OP', op, sl, sc);\n        return;\n      }\n    }\n    const c = this.peek();\n    this.advance();\n    this.emit('OP', c, sl, sc);\n  }",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 407
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 157
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.advance@L466",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 466
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.emit@L477",
+      "confidence": 1,
+      "name": "emit",
+      "qualifiedName": "Lexer.emit",
+      "signature": "emit(type: TokenType, value: string, line: number, col: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 477
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.peek@L455",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 455
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.startsWith@L459",
+      "confidence": 1,
+      "name": "startsWith",
+      "qualifiedName": "Lexer.startsWith",
+      "signature": "startsWith(s: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 459
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+    "procedureName": "Lexer.scanOp",
+    "conditions": [
+      "cond:packages/parsers/src/rust/lexer.ts@L411",
+      "cond:packages/parsers/src/rust/lexer.ts@L412",
+      "cond:packages/parsers/src/rust/lexer.ts@L413"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+        "procedureName": "Lexer.scanOp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:045ec141839c978a209ac03adcb7a3731d516c4d29d913cc13d9c1441b863c0d",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.advance@L466",
+          "expr": "advance",
+          "line": 413
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+        "procedureName": "Lexer.scanOp",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L413",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L411",
+            "expr": "MULTI_OPS"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L412",
+            "expr": "this.startsWith(op)"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L413",
+            "expr": "i < op.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:655451a99f0d129f300a5816b2228479cb7e76d62c29e41b2e217a3db92c77fb",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L413",
+          "line": 413,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+        "procedureName": "Lexer.scanOp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4df771bd5cbdf2573663be0f52898f81d5acfd9bd15acf96a4bf15b91cabebc3",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.emit@L477",
+          "expr": "emit",
+          "line": 414
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+        "procedureName": "Lexer.scanOp",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L412",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L411",
+            "expr": "MULTI_OPS"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L412",
+            "expr": "this.startsWith(op)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:acdaca43de3ba92e1a4fced85e32d1116058bd5b46b243ef661f234b0dd0a92f",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L414",
+          "line": 414,
+          "expr": "this.emit('OP', op, sl, sc);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+        "procedureName": "Lexer.scanOp",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L412",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L411",
+            "expr": "MULTI_OPS"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L412",
+            "expr": "this.startsWith(op)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb408083913c3d1141dd800ddd99e5fbea446ad0a48f35b68077c4c0cf120e1f",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L415",
+          "line": 415,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+        "procedureName": "Lexer.scanOp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b88d2727defc049b29b9722d78648824d61870b9336222e4f17657060a9f3af3",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.peek@L455",
+          "expr": "peek",
+          "line": 418
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+        "procedureName": "Lexer.scanOp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b74af648a899410eb679678239b1c3287cc6b0604ac60aed5a6f4ea41c13b033",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L418",
+          "line": 418,
+          "expr": "const c = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+        "procedureName": "Lexer.scanOp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1b01118965bda2dcbabaa9a055d34ff57aad734192ca6f8e6b240cf9b222aa1",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L419",
+          "line": 419,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+        "procedureName": "Lexer.scanOp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8c012e5de3f17cafbf4bcf42879d16ad75834db13abb4c2747acf710b05abdc4",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L420",
+          "line": 420,
+          "expr": "this.emit('OP', c, sl, sc);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+        "procedureName": "Lexer.scanOp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d509e385f739020c97107bf48ec3750882799c6315b347b312778e73a089fa8e",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.startsWith@L459",
+          "expr": "startsWith"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 5,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -11,7 +11,9 @@
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "build": "pnpm -r run build",
+    "pretest": "pnpm -r run build",
     "test": "pnpm -r run test",
+    "verify": "pnpm -r run build && pnpm -r run test && biome check .",
     "lint": "biome check .",
     "format": "biome format --write .",
     "typecheck": "pnpm -r run typecheck",

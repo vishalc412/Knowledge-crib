@@ -1,0 +1,147 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L215",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:befe51183c85b272d0508fca5633d5f6a9018c999fc0c618c8f8483c6a97a289",
+  "builtAt": "2026-06-25T22:26:18.392Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L215",
+    "kind": "symbol",
+    "type": "function",
+    "name": "classMappingPath",
+    "qualifiedName": "classMappingPath",
+    "signature": "classMappingPath(def: JavaDef): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 215,
+      "end": 218
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 216
+      },
+      {
+        "callee": "firstQuoted",
+        "line": 217
+      }
+    ]
+  },
+  "source": {
+    "text": " *  class-level mapping with multiple paths is unusual; the first is the base. */\nfunction classMappingPath(def: JavaDef): string {\n  const anno = (def.annos ?? []).find((a) => a.name === 'RequestMapping');\n  return anno ? (allQuoted(anno.args)[0] ?? '') : '';",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 215
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L64",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 64
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#firstQuoted@L230",
+      "confidence": 1,
+      "name": "firstQuoted",
+      "qualifiedName": "firstQuoted",
+      "signature": "firstQuoted(s?: string): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 230
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L214",
+      "snippet": "/** Class-level base path from `@RequestMapping(\"/api\")` / `@RequestMapping(value=\"/api\")`. A",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L215",
+    "procedureName": "classMappingPath",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L215",
+        "procedureName": "classMappingPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eef2dd2e7358d2807aff083512005da3a7582a7f26cddc0836d06887dcf990a5",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L216",
+          "line": 216,
+          "expr": "const anno = (def.annos ?? []).find((a) => a.name === 'RequestMapping');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L215",
+        "procedureName": "classMappingPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5059a6e80e89f4cf457c36b6abc751da97cc6cd7ed217f7096c48129d27df0e1",
+          "target": "sym:packages/parsers/src/java/spring.ts#firstQuoted@L230",
+          "expr": "firstQuoted",
+          "line": 217
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L215",
+        "procedureName": "classMappingPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:299b3bb268512a0b0f527901304a3d95fa0072460abd7d7252d71a1bb29e365d",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L217",
+          "line": 217,
+          "expr": "return anno ? (firstQuoted(anno.args) ?? '') : '';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

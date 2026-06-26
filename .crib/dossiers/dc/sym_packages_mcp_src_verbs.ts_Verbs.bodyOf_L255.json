@@ -1,0 +1,113 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.bodyOf@L255",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:bbf7d4e4aa8837f0485140cd84e1a8327026707174e69a413bfc37792bacd02b",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.bodyOf@L255",
+    "kind": "symbol",
+    "type": "method",
+    "name": "bodyOf",
+    "qualifiedName": "Verbs.bodyOf",
+    "signature": "bodyOf(node: Node, args: {\n      sourceMaxChars?: number;\n      sourceMaxLines?: number;\n      sourceStartLine?: number;\n      maxChars?: number;\n      maxLines?: number;\n      startLine?: number;\n    }): RehydratedBody",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 255,
+      "end": 272
+    },
+    "callSites": [
+      {
+        "callee": "rehydrateBody",
+        "line": 266
+      }
+    ]
+  },
+  "source": {
+    "text": "  private bodyOf(\n    node: Node,\n    args: {\n      sourceMaxChars?: number;\n      sourceMaxLines?: number;\n      sourceStartLine?: number;\n      maxChars?: number;\n      maxLines?: number;\n      startLine?: number;\n    },\n  ): RehydratedBody {\n    return rehydrateBody(this.deps.repoRoot, node, {\n      maxChars: args.sourceMaxChars ?? args.maxChars ?? DEFAULT_BODY_MAX_CHARS,\n      maxLines: args.sourceMaxLines ?? args.maxLines ?? DEFAULT_BODY_MAX_LINES,\n      ...(args.sourceStartLine !== undefined ? { startLine: args.sourceStartLine } : {}),\n      ...(args.startLine !== undefined ? { startLine: args.startLine } : {}),\n    });\n  }",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 255
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.context@L93",
+      "confidence": 1,
+      "name": "context",
+      "qualifiedName": "Verbs.context",
+      "signature": "context(args: {\n    id: string;\n    docLimit?: number;\n    extractedOnly?: boolean;\n    /** include the full source text of the node's span (rehydrated from disk, budgeted) */\n    withSource?: boolean;\n    /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */\n    withRules?: boolean;\n    /** fold in the schema-1.3 framework-semantics relationships: routes exposed, beans produced,\n     *  DI dependencies/dependents, JPA relations, component renders. Auto-scopes by node — a class\n     *  (controller/@Configuration/@Entity) aggregates its members' route table / bean inventory /\n     *  DI graph / relation model via `member-of`; a callable/component/field returns its own direct\n     *  edges. A @Bean-supplied dependency is surfaced with `kind: 'produces'` + the producer in one\n     *  trip (no round-trip). Unresolved `meta.injects`/`meta.produces` type names surface as\n     *  `⚠ unresolved` entries (parity with `gaps`). */\n    withFramework?: boolean;\n    /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */\n    sourceMaxChars?: number;\n    /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 93
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.source@L165",
+      "confidence": 1,
+      "name": "source",
+      "qualifiedName": "Verbs.source",
+      "signature": "source(args: {\n    id: string;\n    maxChars?: number;\n    maxLines?: number;\n    /** absolute file line to start the page at (paging cursor; default = span start) */\n    startLine?: number;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 165
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L254",
+      "snippet": "/** Rehydrate a node's full span, mapping the budget + paging args onto the snippet defaults. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.bodyOf@L255",
+    "procedureName": "Verbs.bodyOf",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.bodyOf@L255",
+        "procedureName": "Verbs.bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ac2a7db183dc45189db42d7057a54576a692bfcf54c9a9b2283df4dec5be07f8",
+          "target": "stmt:packages/mcp/src/verbs.ts@L266",
+          "line": 266,
+          "expr": "return rehydrateBody(this.deps.repoRoot, node, {\n      maxChars: args.sourceMaxChars ?? args.maxChars ?? DEFAULT_BODY_MAX_CHARS,\n      maxLines: args.sourceMaxLines ?? args.maxLines ?? DEFAULT_BODY_MAX_LINES,\n      ...(args.sourceStartLine !== undefined ? { startLine: args.sourceStartLine } : {}),\n      ...(args.startLine !== undefined ? { startLine: args.startLine } : {}),\n    });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

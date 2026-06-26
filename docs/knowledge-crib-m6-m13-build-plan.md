@@ -300,3 +300,88 @@ contract round-trip (`ingestStaging` → `commit` → reload, `capabilities.mult
 (transcript mentioning `AuthService.login` → `describes` edge EXTRACTED conf≥0.8); determinism (greedy
 decoding → byte-identical); degradation (corrupt media → no media-seg, no throw); offline
 (`--model-path`, network disabled); pure-TS safety (default index/serve unchanged, worker absent → graceful).
+
+---
+
+### M14 — Framework-semantics layer (schema 1.3)
+
+The "above SQL" tier — what makes a Java/Node/React/Angular graph REPLACE reading the code. On top of
+the syntactic symbol/CFG graph, derive the framework artifacts (API routes, DI graph, JPA relation
+model, bean producers, component render tree) as first-class nodes + edges so a team can understand
+a Spring service WITHOUT opening it. Schema evolution is automatic + additive: every 1.0→1.3 field is
+OPTIONAL + `additionalProperties:true`, so an old soul loads verbatim; re-indexing stamps the new 1.3
+fields onto the SAME node (id-stable, hash-stable, in-place); persisted dossiers rebuild on demand via
+the `shapeVersion` + `schemaVersion` staleness gate in `readDossier` (`shapeVersion` undefined → stale
+→ rebuilt). No rewrite, no data loss, no `crib migrate` command. Dist gate: `pnpm test` runs
+`pretest: pnpm -r run build` first, so tests never run against stale dist.
+
+**New node kinds (packages/soul-schema/src/enums.ts + id.ts):** `route`, `field`, `component` (all in
+`NodeKind`; IDs via `idFor`). ID grammar: `route:<httpMethod> <routePath>@<file>#L<line>`,
+`field:<path>#<qualifiedName>@L<startLine>`, `comp:<path>#<qualifiedName>@L<startLine>`.
+
+**New rels (enums.ts Rel):** `exposes` (handler symbol → route), `injects` (consumer class → dependency
+symbol; CLASS-LEVEL, outgoing from class), `produces` (producer method → produced type; `@Bean`/`@Factory`),
+`references` (field → related type; JPA `@ManyToOne`/`@OneToMany`/`@ManyToMany`/`@OneToOne`),
+`renders` (component → child component), `member-of` (child method|field → class, incoming to class).
+
+**New node fields (types.ts Node):** `httpMethod`, `routePath`, `framework`, `stereotype`
+(optional strings) + `exprTruncated` (optional boolean; marks a Node.expr truncated at
+`EXPR_MAX_CHARS`). `whenSelector` is a **1.2** field (deep-extraction), not 1.3. New meta:
+`meta.params` = `Array<{name, type?, in}>`
+(`in` = path|query|body|header|cookie|part|form|matrix; route), `meta.security` = `Record<string,string>`
+(e.g. `{PreAuthorize: "hasRole('X')"}`; route + method), `meta.injects` = `string[]` (bean symbol: cross-file
+DI type names awaiting resolution), `meta.produces` = `string[]` (producer method: produced type names),
+`meta.column` = `{id?, name?, nullable?, unique?, length?, joinColumn?, generated?}` (field); `field.dataType`
+reused from 1.1. `references` edge meta = `{cardinality, fetch?, cascade?, mappedBy?, orphanRemoval?}` where
+`cardinality` = the relation annotation NAME (the multiplicity); cascade/fetch captured VERBATIM from the
+annotation args. Every framework edge: `method:'static'`, `provenance:'EXTRACTED'`, `confidence:1`,
+`evidence:{snippet, by:'lang:java/spring'}`.
+
+**Spring track (built + tested — packages/parsers/src/java/spring.ts, Pass 4 of JavaExtractor):** derives
+stereotypes (`@RestController`/`@Service`/`@Repository`/`@Component`/`@Configuration`/`@Entity`/`@ControllerAdvice`
++ Spring Data `extends JpaRepository<…>` fallback) + routes (all verbs + composed base path + path
+normalization + path vars + route-param contract + security) + DI graph (ctor autowire single/multi-ctor +
+`@Autowired`/`@Inject`/`@Resource` fields + setter injection, gated on bean stereotype) + JPA `references`
+(all four relations, collection→element type, gated on `@Entity`) + `@Bean` produces (collection→element type)
++ column metadata (`@Id`/`@Column`/`@GeneratedValue`/`@JoinColumn`) + `@PreAuthorize`/`@PostAuthorize`/`@Secured`/
+`@RolesAllowed` security + `@Transactional`/`@Scheduled`/`@Query`/`@Modifying`/`@Procedure` method meta +
+`@ExceptionHandler`→`exception-handler` node + `handles` edge. Resolver widens to include `injects`.
+Planned tracks (reuse 1.3 kinds/rels — no schema change): Node/NestJS/Express, React (component + renders +
+field), Angular (component/directive/pipe + renders + injects).
+
+**Surfacing tier (above SQL):**
+- `context` verb: opt-in `withFramework:boolean` (matches `withRules`/`withSource` convention — NOT
+  unconditional). Returns `framework = {routes, produces, dependencies, dependents, relations, renders}`.
+  Class scope aggregates via `member-of`; method scope = direct; `lean:true` = persisted-dossier subset
+  (routes+produces the callable OWNS); `lean:false` = context full set.
+- dossier: `buildDossier` attaches `framework` (lean) + `shapeVersion:2`. `readDossier` is stale when
+  `shapeVersion != DOSSIER_SHAPE_VERSION` (so pre-2.0 artifacts rebuild). Serializer emits `## Routes` /
+  `## Produces` / `## Dependencies` / `## Dependents` / `## Relations` / `## Renders` sections (each only
+  when non-empty), grouped after `controlFlow`, before `## Docs`.
+- `gaps` verb: NEW anomaly arrays — `controllersWithoutRoutes` (controller stereotype, member methods,
+  zero `exposes` edges) + `unresolvedInjects` (class with `meta.injects` name, no emitted `injects` edge).
+  Summary keys added.
+- viz: `buildVizGraph` surfaces `framework`/`stereotype`/`httpMethod`/`routePath` on node data; `makeSummary`
+  richer for route (`POST /api/loans`), field (`Field applicant → column applicant_id`), component
+  (`react component LoanForm`), symbol (`controller: LoanController`). All edges already emitted.
+- Supply chain (no round-trip): a dependency whose type is a `@Bean`-produced type surfaces as
+  `kind:'produces'` + producer brief in the SAME object (one-hop), built from one soul-wide `produces` scan.
+
+**Cross-language parity:** the language-agnostic `meta.recursive` recursion flag (one post-resolve
+`stampRecursion` pass) is wired across all 6 langs (TS/Java/C#/Go/Rust/Python) + PL/SQL, so the 1.3
+framework track is not Java-only at the schema level.
+
+**Files:** NEW `packages/soul-schema/src/{enums,id,types}.ts` 1.3 additions (additive); NEW
+`packages/parsers/src/java/spring.ts`; EDIT `packages/parsers/src/java/JavaExtractor.ts` (Pass 4 wiring);
+EDIT `packages/pipeline/src/resolve/index.ts` (widen resolver to `injects`); NEW
+`packages/core/src/dossier/framework.ts`; EDIT `packages/core/src/dossier/{builder,serializer}.ts`
+(`framework` + `shapeVersion:2`); EDIT `packages/mcp/src/verbs.ts` (`context withFramework`, `gaps`
+anomalies, dossier framework fields); EDIT `packages/mcp/src/viz.ts` (1.3 node/summary fields); EDIT
+`docs/testing.md` (the round-trip + forward-compat gate = `validate.test.ts`).
+
+**Acceptance gate:** Spring parity — `route.meta.params`/`security` match annotation args, `field.meta.column`
+captures `@Id`/`@Column`/`@JoinColumn`/`@GeneratedValue`, `references` edge `meta.cardinality` = the relation
+annotation NAME with cascade/fetch/mappedBy verbatim; `framework.test.ts` green (route table + DI graph +
+JPA relations + bean producers + exception handlers on a golden Spring fixture); `validate.test.ts` green
+(1.0/1.2 nodes validate under the 1.3 schema; 1.2 node → stamp 1.3 fields → re-validate, id unchanged);
+`pnpm verify` (build+test+lint) clean.

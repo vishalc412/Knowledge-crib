@@ -1,0 +1,202 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L420",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:26726261230499692be1c71e89a5737453bf65fd348f9e877c85a1672b808534",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L420",
+    "kind": "symbol",
+    "type": "function",
+    "name": "routeParamsOf",
+    "qualifiedName": "routeParamsOf",
+    "signature": "routeParamsOf(m: JavaDef): Array<{ name: string; type?: string; in: string }>",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 420,
+      "end": 432
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 427
+      },
+      {
+        "callee": "push",
+        "line": 429
+      }
+    ]
+  },
+  "source": {
+    "text": "function routeParamsOf(m: JavaDef): Array<{ name: string; type?: string; in: string }> {\n  const out: Array<{ name: string; type?: string; in: string }> = [];\n  const names = m.params ?? [];\n  const types = m.paramTypes ?? [];\n  const annosList = m.paramAnnos ?? [];\n  for (let i = 0; i < names.length; i++) {\n    const annos = annosList[i] ?? [];\n    const binding = annos.find((a) => PARAM_BINDING[a]);\n    if (!binding) continue;\n    out.push({ name: names[i]!, ...(types[i] ? { type: types[i] } : {}), in: PARAM_BINDING[binding]! });\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 420
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L408",
+      "confidence": 1,
+      "name": "routeMetaOf",
+      "qualifiedName": "routeMetaOf",
+      "signature": "routeMetaOf(m: JavaDef): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 408
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L417",
+      "snippet": "/** One entry per handler param that carries a binding annotation (`@PathVariable`→path,",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L420",
+    "procedureName": "routeParamsOf",
+    "conditions": [
+      "cond:packages/parsers/src/java/spring.ts@L425"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L420",
+        "procedureName": "routeParamsOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L425",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L425",
+            "expr": "i < names.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e4e60e12ecb33fc27eb00c82c049bf9093eb23e3ffeb62b1213059a485bba12",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L427",
+          "line": 427,
+          "expr": "const binding = annos.find((a) => PARAM_BINDING[a]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L420",
+        "procedureName": "routeParamsOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e8a20312906b967d39f50334d10f728329448bfbfc4469af140adfdd75a1d68a",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 427
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L420",
+        "procedureName": "routeParamsOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L425",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L425",
+            "expr": "i < names.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4ba66e0d4e3be0d143e3f4f5fe1be73203fc5040c50271aa9295bafe0012a1aa",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L429",
+          "line": 429,
+          "expr": "out.push({ name: names[i]!, ...(types[i] ? { type: types[i] } : {}), in: PARAM_BINDING[binding]! });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L420",
+        "procedureName": "routeParamsOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:447a993fba565e0acba527ef891f342a06345667ac2eac1a1b7c24326f851ca4",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 429
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L420",
+        "procedureName": "routeParamsOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:293a54802d5d848a1bd89bbce12710d579356cd8a459668d2d36f1893ec11bdc",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L431",
+          "line": 431,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

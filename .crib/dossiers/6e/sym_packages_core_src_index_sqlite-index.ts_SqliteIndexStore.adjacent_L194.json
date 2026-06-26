@@ -1,0 +1,151 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.adjacent@L194",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:86d2a98a96056c82ed3640de4a0ba979dc2625ffe9e496ae4eb57a0f6cea4470",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.adjacent@L194",
+    "kind": "symbol",
+    "type": "method",
+    "name": "adjacent",
+    "qualifiedName": "SqliteIndexStore.adjacent",
+    "signature": "adjacent(id: string, dir: Dir): Edge[]",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 194,
+      "end": 200
+    },
+    "callSites": [
+      {
+        "callee": "all",
+        "line": 196
+      },
+      {
+        "callee": "prepare",
+        "line": 196
+      },
+      {
+        "callee": "map",
+        "line": 199
+      },
+      {
+        "callee": "parse",
+        "line": 199
+      }
+    ]
+  },
+  "source": {
+    "text": "  private adjacent(id: string, dir: Dir): Edge[] {\n    const col = dir === 'down' ? 'src' : 'dst';\n    const rows = this.db.prepare(`SELECT json FROM edges WHERE ${col} = ?`).all(id) as Array<{\n      json: string;\n    }>;\n    return rows.map((r) => JSON.parse(r.json) as Edge);\n  }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 194
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.impact@L96",
+      "confidence": 1,
+      "name": "impact",
+      "qualifiedName": "SqliteIndexStore.impact",
+      "signature": "impact(id: string, dir: Dir, depth = Number.POSITIVE_INFINITY): ImpactResult",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 96
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L121",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "SqliteIndexStore.neighbors",
+      "signature": "neighbors(id: string, rel?: Rel, dir?: Dir): Edge[]",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 121
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L136",
+      "confidence": 1,
+      "name": "shortestPath",
+      "qualifiedName": "SqliteIndexStore.shortestPath",
+      "signature": "shortestPath(from: string, to: string, maxHops = Number.POSITIVE_INFINITY): PathResult",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 136
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/index/sqlite-index.ts@L193",
+      "snippet": "/** Edges adjacent to `id`: `down` = outgoing (src=id), `up` = incoming (dst=id). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.adjacent@L194",
+    "procedureName": "SqliteIndexStore.adjacent",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.adjacent@L194",
+        "procedureName": "SqliteIndexStore.adjacent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f3531158536e358d256637ba15582e784de2fc31dc5b69dc5539d531e6e1ea5",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L196",
+          "line": 196,
+          "expr": "const rows = this.db.prepare(`SELECT json FROM edges WHERE ${col} = ?`).all(id) as Array<{\n      json: string;\n    }>;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.adjacent@L194",
+        "procedureName": "SqliteIndexStore.adjacent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f2c3c68fd0351e029ec40180078da46cb43a5827c7af8138c7fecff531d71289",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L199",
+          "line": 199,
+          "expr": "return rows.map((r) => JSON.parse(r.json) as Edge);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

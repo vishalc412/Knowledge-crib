@@ -506,3 +506,65 @@ describe('PlSqlExtractor — schema-1.2 behavior constructs (Workstream B/G gold
     }
   });
 });
+
+describe('PlSqlExtractor — recursion flag (meta.recursive)', () => {
+  const RECURSIVE_SQL = [
+    'CREATE OR REPLACE PACKAGE BODY rule_engine IS',
+    '  PROCEDURE resolve_rules(p_id NUMBER) IS',
+    '    v_sub NUMBER;',
+    '  BEGIN',
+    '    IF p_id > 0 THEN',
+    '      v_sub := p_id - 1;',
+    '      resolve_rules(v_sub);',
+    '    END IF;',
+    '  END resolve_rules;',
+    'END rule_engine;',
+  ].join('\n');
+
+  async function runText(text: string): Promise<ExtractResult> {
+    const meta: FileMeta = {
+      path: 'fixtures/plsql/recursive.pkb',
+      lang: 'plsql',
+      bytes: text.length,
+      mtime: 0,
+    };
+    return new PlSqlExtractor().extract(meta, ctxFor(text));
+  }
+
+  it('flags a self-calling procedure meta.recursive=true and records the recursive call site', async () => {
+    const { nodes, edges } = await runText(RECURSIVE_SQL);
+    const proc = nodes.find((n) => n.qualifiedName === 'rule_engine.resolve_rules')!;
+    expect(proc).toBeDefined();
+    expect(proc.meta?.recursive).toBe(true);
+    // the recursive call site is recorded (callee + line) even though no edge is emitted
+    expect(proc.meta?.calls).toContainEqual({ callee: 'resolve_rules', line: 7 });
+    // NO self-call edge — cycle avoidance (convention shared with the cross-file SqlResolver)
+    expect(edges.some((e) => e.rel === 'calls' && e.src === proc.id && e.dst === proc.id)).toBe(
+      false,
+    );
+  });
+
+  it('does not flag a non-recursive caller; emits a real calls edge to the callee', async () => {
+    const text = [
+      'CREATE OR REPLACE PACKAGE BODY norec IS',
+      '  PROCEDURE leaf(p NUMBER) IS',
+      '  BEGIN',
+      '    NULL;',
+      '  END leaf;',
+      '  PROCEDURE caller(p NUMBER) IS',
+      '  BEGIN',
+      '    leaf(p);',
+      '  END caller;',
+      'END norec;',
+    ].join('\n');
+    const { nodes, edges } = await runText(text);
+    const caller = nodes.find((n) => n.qualifiedName === 'norec.caller')!;
+    const leaf = nodes.find((n) => n.qualifiedName === 'norec.leaf')!;
+    expect(caller).toBeDefined();
+    expect(leaf).toBeDefined();
+    expect(caller.meta?.recursive ?? false).toBe(false);
+    expect(edges.some((e) => e.rel === 'calls' && e.src === caller.id && e.dst === leaf.id)).toBe(
+      true,
+    );
+  });
+});

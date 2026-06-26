@@ -1,3 +1,4 @@
+import { CALLABLE_SYMBOL_TYPES } from '@knowledge-crib/core';
 import type { SoulStore } from '@knowledge-crib/core';
 /**
  * Phase 3 — resolve. Builds the global symbol table from the soul, dispatches the per-language
@@ -88,7 +89,83 @@ export function runResolve(
     for (const [k, v] of Object.entries(stats)) agg[k] = (agg[k] ?? 0) + (v ?? 0);
   }
   if (allEdges.length > 0) soul.putEdges(allEdges);
+  // Self-recursion stamp (language-agnostic): a callable that calls itself. Self-call EDGES are never
+  // emitted (cycle avoidance — every extractor + resolver skips them), so recursion is surfaced as a
+  // `meta.recursive = true` flag on the proc instead. Every extractor records call sites on
+  // `meta.calls` as `{ callee, line }` and RETAINS the self-call site (only the self edge is dropped),
+  // so one pass over `meta.calls` catches both intra-file (`this.m()` / bare `m()` / `self.m`) and
+  // cross-file self-recursion for TS / Java / C# / Go / Rust / Python / PL/SQL. The PL/SQL extractor +
+  // SqlResolver already stamp this directly; this is the uniform backstop for the other languages and
+  // is idempotent for PL/SQL (boolean flag). Mirrors the qualified→simple, same-file-preferred
+  // resolution the per-language resolvers use, so a call resolves to "self" exactly when a resolver
+  // would have skipped it as self.
+  agg.recursive = stampRecursion(soul);
   return agg;
+}
+
+interface CallSite {
+  callee: string;
+  line: number;
+}
+
+/**
+ * Stamp `meta.recursive = true` on every callable whose `meta.calls` includes a call that resolves to
+ * itself. Pure over the soul (reads + mutates node `meta` only). See {@link runResolve} for the
+ * rationale + the no-self-edge convention this compensates for.
+ */
+export function stampRecursion(soul: SoulStore): number {
+  const byQualified = new Map<string, string>(); // lowercased qualifiedName → symbol id
+  const bySimple = new Map<string, { id: string; file: string }[]>(); // lowercased simple name → candidates
+  for (const s of soul.iterate('symbol')) {
+    if (!s.type || !CALLABLE_SYMBOL_TYPES.has(s.type)) continue;
+    const q = (s.qualifiedName ?? '').toLowerCase();
+    const simple = (s.name ?? '').toLowerCase();
+    if (q) byQualified.set(q, s.id);
+    if (simple && s.file) {
+      const list = bySimple.get(simple) ?? [];
+      list.push({ id: s.id, file: s.file });
+      bySimple.set(simple, list);
+    }
+  }
+
+  let stamped = 0;
+  for (const s of soul.iterate('symbol')) {
+    if (!s.type || !CALLABLE_SYMBOL_TYPES.has(s.type)) continue;
+    const calls = s.meta?.calls;
+    if (!Array.isArray(calls) || calls.length === 0) continue;
+    const callerFile = s.file ?? '';
+    for (const site of calls) {
+      if (typeof site.callee !== 'string') continue;
+      if (resolveSelfCallee(site.callee, callerFile, byQualified, bySimple) === s.id) {
+        if (!s.meta) s.meta = {};
+        if (!s.meta.recursive) {
+          s.meta.recursive = true;
+          stamped++;
+        }
+        break; // one self-call is enough; don't re-stamp
+      }
+    }
+  }
+  return stamped;
+}
+
+/** Resolve a callee "pkg.proc" / "Cls.m" / "self::m" / bare "m" to a symbol id (qualified → simple,
+ *  same-file preferred), mirroring the per-language resolvers. Returns the callee's id or undefined. */
+function resolveSelfCallee(
+  callee: string,
+  callerFile: string,
+  byQualified: Map<string, string>,
+  bySimple: Map<string, { id: string; file: string }[]>,
+): string | undefined {
+  const c = callee.toLowerCase();
+  const q = byQualified.get(c);
+  if (q) return q;
+  // last `.`/`::`/`/`-separated segment is the simple name (handles `Cls.m`, `self::m`, `module::foo`).
+  const simple = c.split(/[.:]/).filter(Boolean).pop() ?? c;
+  const list = bySimple.get(simple);
+  if (!list || list.length === 0) return undefined;
+  const same = list.find((e) => e.file === callerFile);
+  return (same ?? list[0])?.id;
 }
 
 /**

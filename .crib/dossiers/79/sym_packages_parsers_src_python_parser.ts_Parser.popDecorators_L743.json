@@ -1,0 +1,112 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#Parser.popDecorators@L743",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d9bc73851f2d2e05ad01e5746a4893235802c2c0c455abb0902b1eca22545091",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#Parser.popDecorators@L743",
+    "kind": "symbol",
+    "type": "method",
+    "name": "popDecorators",
+    "qualifiedName": "Parser.popDecorators",
+    "signature": "popDecorators(): string[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 743,
+      "end": 747
+    }
+  },
+  "source": {
+    "text": "  private popDecorators(): string[] {\n    const d = this.pendingDecorators;\n    this.pendingDecorators = [];\n    return d;\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 743
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseClass@L276",
+      "confidence": 1,
+      "name": "parseClass",
+      "qualifiedName": "Parser.parseClass",
+      "signature": "parseClass(): PyDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 276
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+      "confidence": 1,
+      "name": "parseFunction",
+      "qualifiedName": "Parser.parseFunction",
+      "signature": "parseFunction(async: boolean): PyDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 307
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.popDecorators@L743",
+    "procedureName": "Parser.popDecorators",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.popDecorators@L743",
+        "procedureName": "Parser.popDecorators",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a6b84a6dbaa14e01f0a131768c3cf05ba744a10fdc1722809d5c5c7dc6d23307",
+          "target": "assign:packages/parsers/src/python/parser.ts@L745",
+          "line": 745,
+          "expr": "this.pendingDecorators = [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.popDecorators@L743",
+        "procedureName": "Parser.popDecorators",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:331ff58ecdd9e7d629fd749a7a7f8114c2543e73490a886badae1c9c06f5998a",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L746",
+          "line": 746,
+          "expr": "return d;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 1,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

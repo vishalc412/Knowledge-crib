@@ -1,0 +1,380 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c67913a5a8088cb60e839f9caae69d84036ac194c40f758f0e21b5338c229829",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+    "kind": "symbol",
+    "type": "method",
+    "name": "is",
+    "qualifiedName": "Parser.is",
+    "signature": "is(type: Token['type']): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 795,
+      "end": 797
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 796
+      }
+    ]
+  },
+  "source": {
+    "text": "  private is(type: Token['type']): boolean {\n    return this.peek().type === type;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 795
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+      "confidence": 1,
+      "name": "consumeColon",
+      "qualifiedName": "Parser.consumeColon",
+      "signature": "consumeColon(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 767
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.isName@L798",
+      "confidence": 1,
+      "name": "isName",
+      "qualifiedName": "Parser.isName",
+      "signature": "isName(value: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 798
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+      "confidence": 1,
+      "name": "parseAction",
+      "qualifiedName": "Parser.parseAction",
+      "signature": "parseAction(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 595
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseBlock@L214",
+      "confidence": 1,
+      "name": "parseBlock",
+      "qualifiedName": "Parser.parseBlock",
+      "signature": "parseBlock(stopAtDedent: boolean): PyStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 214
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseClass@L276",
+      "confidence": 1,
+      "name": "parseClass",
+      "qualifiedName": "Parser.parseClass",
+      "signature": "parseClass(): PyDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 276
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+      "confidence": 1,
+      "name": "parseFunction",
+      "qualifiedName": "Parser.parseFunction",
+      "signature": "parseFunction(async: boolean): PyDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 307
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseMatch@L550",
+      "confidence": 1,
+      "name": "parseMatch",
+      "qualifiedName": "Parser.parseMatch",
+      "signature": "parseMatch(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 550
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseParamList@L369",
+      "confidence": 1,
+      "name": "parseParamList",
+      "qualifiedName": "Parser.parseParamList",
+      "signature": "parseParamList(): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 369
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseSuite@L415",
+      "confidence": 1,
+      "name": "parseSuite",
+      "qualifiedName": "Parser.parseSuite",
+      "signature": "parseSuite(): PyStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 415
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.skipDecorators@L722",
+      "confidence": 1,
+      "name": "skipDecorators",
+      "qualifiedName": "Parser.skipDecorators",
+      "signature": "skipDecorators(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 722
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+      "confidence": 1,
+      "name": "skipParens",
+      "qualifiedName": "Parser.skipParens",
+      "signature": "skipParens(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 751
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.skipToNewline@L776",
+      "confidence": 1,
+      "name": "skipToNewline",
+      "qualifiedName": "Parser.skipToNewline",
+      "signature": "skipToNewline(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 776
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(offset = 0): Token",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 801
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-query-text",
+      "heading": "`crib query <text>`",
+      "anchor": "crib-query-text",
+      "snippet": "`crib query <text>`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#1-contract",
+      "heading": "1. Contract",
+      "anchor": "1-contract",
+      "snippet": "1. Contract",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#query-hybrid",
+      "heading": "`query(hybrid)`",
+      "anchor": "query-hybrid",
+      "snippet": "`query(hybrid)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "heading": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "anchor": "1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "snippet": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#4-deep-dive-one-symbol-the-dossier-prompt-highest-leverage",
+      "heading": "4. Deep-dive one symbol — *the dossier prompt (highest leverage)*",
+      "anchor": "4-deep-dive-one-symbol-the-dossier-prompt-highest-leverage",
+      "snippet": "4. Deep-dive one symbol — *the dossier prompt (highest leverage)*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "heading": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "anchor": "5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "snippet": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "heading": "9. Prompt skeleton you can keep at the top of a session",
+      "anchor": "9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "snippet": "9. Prompt skeleton you can keep at the top of a session",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#node",
+      "heading": "Node",
+      "anchor": "node",
+      "snippet": "Node",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#2-install",
+      "heading": "2. Install",
+      "anchor": "2-install",
+      "snippet": "2. Install",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#query-hybrid-bm25-search-over-code-docs",
+      "heading": "`query` — hybrid BM25 search over code + docs",
+      "anchor": "query-hybrid-bm25-search-over-code-docs",
+      "snippet": "`query` — hybrid BM25 search over code + docs",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#impact-blast-radius-the-wedge-verb",
+      "heading": "`impact` — blast radius (the wedge verb)",
+      "anchor": "impact-blast-radius-the-wedge-verb",
+      "snippet": "`impact` — blast radius (the wedge verb)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:python/README.md#test",
+      "heading": "Test",
+      "anchor": "test",
+      "snippet": "Test",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+    "procedureName": "Parser.is",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+        "procedureName": "Parser.is",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:66414520f409f68953f58726756c32343af674da021da843d14d65354e0392fb",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+          "expr": "peek",
+          "line": 796
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+        "procedureName": "Parser.is",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bc2bd76412eb914f32e87992ec4749d74d8102d619016b1fd19054012427fd77",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L796",
+          "line": 796,
+          "expr": "return this.peek().type === type;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

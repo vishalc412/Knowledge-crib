@@ -1,0 +1,100 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.hasExecutes@L504",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:8603894c73c848ea3db439132f9b5c90a5e3e0d0714cb916e32d8e6297a16d1b",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.hasExecutes@L504",
+    "kind": "symbol",
+    "type": "function",
+    "name": "hasExecutes",
+    "qualifiedName": "Verbs.gaps.hasExecutes",
+    "signature": "hasExecutes(…)",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 504,
+      "end": 504
+    }
+  },
+  "source": {
+    "text": "    const hasExecutes = (id: string): boolean => idx.neighbors(id, 'executes', 'down').some(keep);",
+    "truncated": false,
+    "totalLines": 1,
+    "startLine": 504
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+      "confidence": 1,
+      "name": "gaps",
+      "qualifiedName": "Verbs.gaps",
+      "signature": "gaps(args: { extractedOnly?: boolean } = {}): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 485
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L353",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "Verbs.neighbors",
+      "signature": "neighbors(args: {\n    id: string;\n    rel?: string;\n    dir?: ApiDir;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 353
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.hasExecutes@L504",
+    "procedureName": "Verbs.gaps.hasExecutes",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.hasExecutes@L504",
+        "procedureName": "Verbs.gaps.hasExecutes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b3e90aeecb8eb58d2e4c902b887457e1197c4dde250d49b85845fbce4ca05950",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L353",
+          "expr": "neighbors"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

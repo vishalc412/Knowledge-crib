@@ -3,8 +3,10 @@ import type { Dir, Dossier, IndexStore, SoulStore } from '@knowledge-crib/core';
 import {
   CALLABLE_SYMBOL_TYPES,
   buildDossier,
+  computeCoverage,
   decisionTable,
   dossierToMarkdown,
+  frameworkSemantics,
   readDossier,
   writeDossier,
 } from '@knowledge-crib/core';
@@ -23,6 +25,22 @@ import {
   rehydrateBody,
 } from './snippet.js';
 import { DEFAULT_DOC_LIMIT, DEFAULT_LIMIT, bound } from './token-budget.js';
+
+/**
+ * Infer the body file a package spec SHOULD live next to, from the spec file path. Covers the common
+ * Oracle conventions the migration feedback keys on: `.pks`→`.pkb`, `*_spec.sql`→`*_body.sql`, and a
+ * generic `spec`→`body` token swap. Returns `undefined` when the path gives no signal (honesty: we do
+ * not fabricate a name we are not confident about). Pure + language-agnostic — works for any repo.
+ */
+function expectedBodyFile(specFile: string): string | undefined {
+  if (/\.pks$/i.test(specFile)) return specFile.replace(/\.pks$/i, '.pkb');
+  if (/_spec\.sql$/i.test(specFile)) return specFile.replace(/_spec\.sql$/i, '_body.sql');
+  if (/spec\.sql$/i.test(specFile)) return specFile.replace(/spec\.sql$/i, 'body.sql');
+  if (/\.sql$/i.test(specFile) && /spec/i.test(specFile)) {
+    return specFile.replace(/spec/i, 'body');
+  }
+  return undefined;
+}
 
 /**
  * Injected VCS adapter (M6) so `detect_changes` can read the git anchor + changed files without the MCP
@@ -80,6 +98,14 @@ export class Verbs {
     withSource?: boolean;
     /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */
     withRules?: boolean;
+    /** fold in the schema-1.3 framework-semantics relationships: routes exposed, beans produced,
+     *  DI dependencies/dependents, JPA relations, component renders. Auto-scopes by node — a class
+     *  (controller/@Configuration/@Entity) aggregates its members' route table / bean inventory /
+     *  DI graph / relation model via `member-of`; a callable/component/field returns its own direct
+     *  edges. A @Bean-supplied dependency is surfaced with `kind: 'produces'` + the producer in one
+     *  trip (no round-trip). Unresolved `meta.injects`/`meta.produces` type names surface as
+     *  `⚠ unresolved` entries (parity with `gaps`). */
+    withFramework?: boolean;
     /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */
     sourceMaxChars?: number;
     /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */
@@ -87,7 +113,8 @@ export class Verbs {
     /** absolute file line to start the source page at (paging cursor; default = span start) */
     sourceStartLine?: number;
   }): Record<string, unknown> {
-    const node = this.deps.soul.getNode(args.id);
+    const soul = this.deps.soul;
+    const node = soul.getNode(args.id);
     if (!node) return notFound(args.id);
     const callers = this.callEdges(args.id, 'up', args.extractedOnly).map((e) =>
       this.brief(e.src, e.confidence),
@@ -108,7 +135,20 @@ export class Verbs {
     };
     if (args.withSource) result.source = this.bodyOf(node, args);
     if (args.withRules && node.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {
-      result.rules = decisionTable(this.deps.soul, args.id, { includeTables: true });
+      result.rules = decisionTable(soul, args.id, { includeTables: true });
+      // coverage gates the rules: an `unimplemented`/`partial` readiness tells the consumer the
+      // decision table may be empty or lossy because the body is missing or expressions were clipped.
+      result.coverage = computeCoverage(soul, args.id, {
+        keep: (e) => !args.extractedOnly || e.provenance === 'EXTRACTED',
+      });
+    }
+    if (args.withFramework) {
+      // frameworkSemantics is pure over the soul (one iterateEdges scan, cached adjacency); auto-scopes
+      // by node. Undefined when the node has no framework edges (a non-Spring method) → key omitted.
+      const fw = frameworkSemantics(soul, args.id, {
+        keep: (e) => !args.extractedOnly || e.provenance === 'EXTRACTED',
+      });
+      if (fw) result.framework = fw;
     }
     return result;
   }
@@ -418,7 +458,227 @@ export class Verbs {
       );
       if (!sym) return notFound(args.procedure);
     }
-    return table as unknown as Record<string, unknown>;
+    // Attach coverage so an EMPTY decision table is never silently read as "no rules": if readiness
+    // is `unimplemented`, the table is empty because the body is MISSING — a different fact, and the
+    // one that matters for a migration plan. `table.procedure` is the resolved node id.
+    const coverage = computeCoverage(this.deps.soul, table.procedure);
+    return { ...table, coverage } as unknown as Record<string, unknown>;
+  }
+
+  /**
+   * `gaps` — surface what an LLM otherwise misses by reading the graph alone: declarations without
+   * bodies, package specs with no body file, and call sites that resolve to no symbol. Pure over the
+   * soul + index; deterministic. This is the migration-analyst answer to "is the package body
+   * missing?" — the crib now says so explicitly instead of letting the analyst infer it from silence.
+   *
+   * Three signals:
+   *   • `unimplemented` — a callable (procedure/function/method/…) whose qualified-name group owns
+   *     zero `executes` edges: a declaration with no body anywhere in the soul. For PL/SQL this is
+   *     exactly a spec-only procedure whose `.pkb` body is absent.
+   *   • `packageSpecsWithoutBody` — a `package` symbol whose member callables are ALL unimplemented
+   *     AND none live in a body file (`.pkb`/`.pck`/`.pls`/`.pkh`). The strong "body file missing"
+   *     signal (e.g. `PKG_LOAN_RULE_ENGINE` spec present, body absent).
+   *   • `unresolvedCallSites` — a callable's recorded call site whose callee simple-name matches no
+   *     symbol in the soul: a call into a missing asset. Oracle built-in packages (`DBMS_*`/`UTL_*`/
+   *     `APEX_*`/…) are flagged `builtin:true`, never silently hidden.
+   */
+  gaps(args: { extractedOnly?: boolean } = {}): Record<string, unknown> {
+    const soul = this.deps.soul;
+    const idx = this.deps.index;
+    const keep = (e: Edge): boolean => !args.extractedOnly || e.provenance === 'EXTRACTED';
+
+    const callables: Node[] = [];
+    for (const n of soul.iterate('symbol')) {
+      if (n.type && CALLABLE_SYMBOL_TYPES.has(n.type)) callables.push(n);
+    }
+
+    // Group callables by lowercased qualified-name (or simple name) so a spec declaration + a body
+    // definition collapse to one logical procedure: "implemented" iff some member has an executes edge.
+    const byName = new Map<string, Node[]>();
+    for (const c of callables) {
+      const key = (c.qualifiedName ?? c.name ?? c.id).toLowerCase();
+      const arr = byName.get(key);
+      if (arr) arr.push(c);
+      else byName.set(key, [c]);
+    }
+    const hasExecutes = (id: string): boolean => idx.neighbors(id, 'executes', 'down').some(keep);
+
+    // Incoming `calls` edges across a whole qualified-name group → "referenced everywhere but
+    // missing" files. Pure over the index; surfaces the loan-rule-engine signal ("the body is
+    // referenced from N files") without a separate lookup.
+    const referencedBy = (group: Node[]): { count: number; files: string[] } => {
+      const files = new Set<string>();
+      let count = 0;
+      for (const c of group) {
+        for (const e of idx.neighbors(c.id, 'calls', 'up')) {
+          if (!keep(e)) continue;
+          count++;
+          const caller = soul.getNode(e.src);
+          if (caller?.file) files.add(caller.file);
+        }
+      }
+      return { count, files: [...files].sort() };
+    };
+
+    const unimplemented: Array<Record<string, unknown>> = [];
+    const implementedNames = new Set<string>();
+    for (const [key, group] of byName) {
+      if (group.some((c) => hasExecutes(c.id))) {
+        implementedNames.add(key);
+        continue;
+      }
+      const rep = group[0];
+      if (!rep) continue;
+      const refs = referencedBy(group);
+      unimplemented.push({
+        id: rep.id,
+        ...(rep.name ? { name: rep.name } : {}),
+        ...(rep.qualifiedName ? { qualifiedName: rep.qualifiedName } : {}),
+        type: rep.type,
+        ...(rep.file ? { file: rep.file } : {}),
+        ...(rep.span ? { line: rep.span.start } : {}),
+        ...(group.length > 1 ? { declaredIn: group.map((c) => c.file).filter(Boolean) } : {}),
+        referencedBy: refs,
+      });
+    }
+
+    // Package specs without a body: a `package` whose member callables are all unimplemented AND
+    // none of them live in a body file. `member-of` edges point child→parent, so members are the
+    // incoming `member-of` sources of the package node.
+    const packageSpecsWithoutBody: Array<Record<string, unknown>> = [];
+    for (const n of soul.iterate('symbol')) {
+      if (n.type !== 'package') continue;
+      const members = idx
+        .neighbors(n.id, 'member-of', 'up')
+        .map((e) => soul.getNode(e.src))
+        .filter((m): m is Node => !!m && !!m.type && CALLABLE_SYMBOL_TYPES.has(m.type));
+      if (members.length === 0) continue;
+      const implemented = members.filter((m) =>
+        implementedNames.has((m.qualifiedName ?? m.name ?? m.id).toLowerCase()),
+      ).length;
+      if (implemented > 0) continue;
+      const hasBodyFile = members.some((m) => /\.(pkb|pck|pls|pkh)$/i.test(m.file ?? ''));
+      if (hasBodyFile) continue;
+      const specFile = n.file ?? members[0]?.file;
+      packageSpecsWithoutBody.push({
+        id: n.id,
+        ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),
+        ...(n.name ? { name: n.name } : {}),
+        ...(n.file ? { file: n.file } : {}),
+        declaredCount: members.length,
+        implementedCount: 0,
+        ...(specFile ? { expectedBodyFile: expectedBodyFile(specFile) } : {}),
+        referencedBy: referencedBy(members),
+      });
+    }
+
+    // Unresolved call sites: callee simple-name matches no symbol. Built-in Oracle packages are
+    // flagged, not dropped (honesty: nothing is hidden).
+    const BUILTIN = /^(DBMS_|UTL_|APEX_|HTP|HTF_|SYS\.|STANDARD\.|DBA_|ALL_|USER_)/i;
+    const nameIndex = new Set<string>();
+    for (const c of callables) {
+      if (c.name) nameIndex.add(c.name.toLowerCase());
+      if (c.qualifiedName) {
+        nameIndex.add(c.qualifiedName.toLowerCase());
+        nameIndex.add((c.qualifiedName.split('.').pop() ?? '').toLowerCase());
+      }
+    }
+    const unresolvedCallSites: Array<Record<string, unknown>> = [];
+    for (const c of callables) {
+      const sites = c.meta?.calls as Array<{ callee: string; line: number }> | undefined;
+      if (!Array.isArray(sites)) continue;
+      for (const s of sites) {
+        const simple = (s.callee.split('.').pop() ?? s.callee).toLowerCase();
+        if (nameIndex.has(simple)) continue;
+        unresolvedCallSites.push({
+          caller: c.id,
+          ...(c.qualifiedName ? { callerName: c.qualifiedName } : {}),
+          ...(c.file ? { callerFile: c.file } : {}),
+          callee: s.callee,
+          line: s.line,
+          builtin: BUILTIN.test(s.callee),
+        });
+      }
+    }
+
+    // --- framework-semantics 1.3 gaps (Spring now, Node/React/Angular later — same shape) ---
+    // controller-no-routes: a `controller`-stereotype class whose member methods expose ZERO routes
+    // (a @Controller with no handler methods, or whose handlers all lost their @GetMapping). The
+    // member-of traversal reuses the gaps discipline: members are the incoming member-of sources.
+    const controllersWithoutRoutes: Array<Record<string, unknown>> = [];
+    for (const n of soul.iterate('symbol')) {
+      if (n.stereotype !== 'controller') continue;
+      const members = idx
+        .neighbors(n.id, 'member-of', 'up')
+        .map((e) => soul.getNode(e.src))
+        .filter((m): m is Node => !!m && !!m.type && CALLABLE_SYMBOL_TYPES.has(m.type));
+      const routeCount = members.filter((m) =>
+        idx.neighbors(m.id, 'exposes', 'down').some(keep),
+      ).length;
+      if (routeCount === 0) {
+        controllersWithoutRoutes.push({
+          id: n.id,
+          ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),
+          ...(n.name ? { name: n.name } : {}),
+          ...(n.file ? { file: n.file } : {}),
+          memberCount: members.length,
+          routeCount: 0,
+        });
+      }
+    }
+
+    // unresolved-injects: a class declares a DI type in `meta.injects` that the resolver never linked
+    // to a symbol (no `injects` edge from the class). The dual of unresolved call sites — a missing
+    // bean the consumer expects. Built-in/framework types are flagged, not dropped (honesty).
+    const unresolvedInjects: Array<Record<string, unknown>> = [];
+    for (const n of soul.iterate('symbol')) {
+      const injects = n.meta?.injects as string[] | undefined;
+      if (!Array.isArray(injects) || injects.length === 0) continue;
+      const emitted = new Set(
+        idx
+          .neighbors(n.id, 'injects', 'down')
+          .filter(keep)
+          .map((e) => e.dst),
+      );
+      // a name is resolved iff some emitted injects dst id contains it (the resolver links by type name).
+      const missing: string[] = [];
+      for (const t of injects) {
+        const ok = [...emitted].some((id) => id.toLowerCase().includes(t.toLowerCase()));
+        if (!ok) missing.push(t);
+      }
+      if (missing.length > 0) {
+        unresolvedInjects.push({
+          id: n.id,
+          ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),
+          ...(n.name ? { name: n.name } : {}),
+          ...(n.file ? { file: n.file } : {}),
+          ...(n.stereotype ? { stereotype: n.stereotype } : {}),
+          unresolved: missing,
+        });
+      }
+    }
+
+    return {
+      unimplemented,
+      packageSpecsWithoutBody,
+      unresolvedCallSites,
+      controllersWithoutRoutes,
+      unresolvedInjects,
+      summary: {
+        unimplemented: unimplemented.length,
+        packageSpecsWithoutBody: packageSpecsWithoutBody.length,
+        unresolvedCallSites: unresolvedCallSites.length,
+        controllersWithoutRoutes: controllersWithoutRoutes.length,
+        unresolvedInjects: unresolvedInjects.length,
+        // `incomplete` iff the soul has any body-missing gap — an unimplemented callable or a
+        // package spec with no body. The headline the loan-rule-engine feedback wanted: the crib
+        // says up front "you cannot trust behavior analysis here — a body is missing".
+        analysisReadiness:
+          unimplemented.length > 0 || packageSpecsWithoutBody.length > 0
+            ? 'incomplete'
+            : 'complete',
+      },
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -512,12 +772,20 @@ export class Verbs {
     if (n.whenSelector) out.whenSelector = n.whenSelector;
     if (n.assignTarget) out.assignTarget = n.assignTarget;
     if (n.cursorQuery) out.cursorQuery = n.cursorQuery;
+    if (n.exprTruncated) out.exprTruncated = n.exprTruncated;
     if (Array.isArray(n.constraints)) out.constraints = n.constraints;
     if (n.commentRef) out.commentRef = n.commentRef;
     // doc-section
     if (n.heading) out.heading = n.heading;
     if (n.level !== undefined) out.level = n.level;
     if (n.anchor) out.anchor = n.anchor;
+    // framework-semantics 1.3 identity — the handler's own route verb/path, the symbol's stereotype +
+    // framework. Without these the route section shows the route but hides the handler's own contract
+    // (e.g. its @PreAuthorize on the node), breaking the no-round-trip surfacing guarantee.
+    if (n.framework) out.framework = n.framework;
+    if (n.stereotype) out.stereotype = n.stereotype;
+    if (n.httpMethod) out.httpMethod = n.httpMethod;
+    if (n.routePath) out.routePath = n.routePath;
     // selective meta — surface the structured deep fields, not arbitrary blobs
     if (n.meta) {
       const m = n.meta as Record<string, unknown>;
@@ -530,6 +798,17 @@ export class Verbs {
       if (m.collection !== undefined) out.collection = m.collection;
       // PL/SQL view marker (a table node that is actually a view)
       if (m.kind !== undefined) out.kindMeta = m.kind;
+      // self-recursion flag (set when a procedure calls itself; no self-edge is emitted by design)
+      if (m.recursive !== undefined) out.recursive = m.recursive;
+      // recorded call sites (callee + line) — surfaces recursive + unresolved/builtin calls that
+      // have no `calls` edge, so the analyst sees the full call-site inventory, not just resolved edges
+      if (Array.isArray(m.calls)) out.callSites = m.calls;
+      // framework-semantics 1.3 meta — route params/security, DI injects, @Bean produces, JPA column.
+      if (Array.isArray(m.params)) out.params = m.params;
+      if (m.security !== undefined) out.security = m.security;
+      if (Array.isArray(m.injects)) out.injects = m.injects;
+      if (Array.isArray(m.produces)) out.produces = m.produces;
+      if (m.column !== undefined) out.column = m.column;
     }
     return out;
   }

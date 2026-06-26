@@ -44,7 +44,7 @@ Two existing tools each prove half and serve as **design inspiration only (no co
 | — | [knowledge-crib-decisions.md](knowledge-crib-decisions.md) | Locked decisions (Q1–Q38) — the why |
 | — | [knowledge-crib-questionnaire.md](knowledge-crib-questionnaire.md) | The full decision questionnaire |
 | — | [knowledge-crib-changelog-req1-req2.md](knowledge-crib-changelog-req1-req2.md) | Changelog: single-entry root resolution + `crib mcp` auto-wiring (REQ-1, REQ-2) |
-| — | [knowledge-crib-user-guide.md](knowledge-crib-user-guide.md) | User guide (install, workflow, 9 verbs, worked example) |
+| — | [knowledge-crib-user-guide.md](knowledge-crib-user-guide.md) | User guide (install, workflow, 12 verbs, worked example) |
 | — | [knowledge-crib-client-setup.md](knowledge-crib-client-setup.md) | IDE MCP wiring (Claude Code, Cursor, VS Code/Copilot, Codex) |
 | — | [knowledge-crib-prompts.md](knowledge-crib-prompts.md) | **Prompting guide** — how to drive crib from a local LLM (Claude Code / Codex) to save tokens + compute |
 | — | [knowledge-crib-refined-vs-existing-assessment.md](knowledge-crib-refined-vs-existing-assessment.md) | **Refined vs existing comparison + six-role judgment** on detailed-level analysis (plan review) |
@@ -56,7 +56,7 @@ knowledge-crib/                 # pnpm monorepo
   packages/
     soul-schema/   # JSON Schema + TS types (the contract)
     core/          # GraphModel, SoulStore, IndexStore
-    parsers/       # tree-sitter (WASM) wrappers
+    parsers/       # hand-rolled recursive-descent extractors (TS/Python/PL-SQL/MD/Java/C#/Go/Rust)
     pipeline/      # extract → resolve → link → cluster → index
     mcp/           # MCP server (npx knowledge-crib)
     cli/           # crib index|update|export|serve|mcp|viz|install-hooks|merge-driver

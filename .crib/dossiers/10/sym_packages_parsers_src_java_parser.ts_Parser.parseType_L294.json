@@ -1,0 +1,972 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:048945a95d1c9599e504b73714c69b39065cba22d9e14cc008e5fd9c2823d514",
+  "builtAt": "2026-06-25T22:25:44.295Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseType",
+    "qualifiedName": "Parser.parseType",
+    "signature": "parseType(kind: 'class' | 'interface' | 'enum' | 'record', startLine: number, annotations: string[], modifiers: string[], annos: JavaAnno[] = []): JavaDef | null",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 294,
+      "end": 364
+    },
+    "callSites": [
+      {
+        "callee": "next",
+        "line": 301
+      },
+      {
+        "callee": "peek",
+        "line": 304
+      },
+      {
+        "callee": "next",
+        "line": 305
+      },
+      {
+        "callee": "skipGenericAngle",
+        "line": 306
+      },
+      {
+        "callee": "parseParamListTyped",
+        "line": 317
+      },
+      {
+        "callee": "map",
+        "line": 318
+      },
+      {
+        "callee": "map",
+        "line": 319
+      },
+      {
+        "callee": "next",
+        "line": 324
+      },
+      {
+        "callee": "push",
+        "line": 325
+      },
+      {
+        "callee": "parseDottedNameList",
+        "line": 325
+      },
+      {
+        "callee": "next",
+        "line": 329
+      },
+      {
+        "callee": "push",
+        "line": 330
+      },
+      {
+        "callee": "parseDottedNameList",
+        "line": 330
+      },
+      {
+        "callee": "next",
+        "line": 333
+      },
+      {
+        "callee": "next",
+        "line": 339
+      },
+      {
+        "callee": "skipEnumConstants",
+        "line": 340
+      },
+      {
+        "callee": "parseDecls",
+        "line": 341
+      },
+      {
+        "callee": "peek",
+        "line": 343
+      },
+      {
+        "callee": "next",
+        "line": 345
+      },
+      {
+        "callee": "peek",
+        "line": 346
+      },
+      {
+        "callee": "max",
+        "line": 348
+      },
+      {
+        "callee": "map",
+        "line": 348
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseType(\n    kind: 'class' | 'interface' | 'enum' | 'record',\n    startLine: number,\n    annotations: string[],\n    modifiers: string[],\n    annos: JavaAnno[] = [],\n  ): JavaDef | null {\n    this.next(); // kind keyword\n    // a type name must be a NAME that is NOT a hard-reserved keyword (`class void {` is malformed).\n    if (!this.isNameToken() || HARD_KEYWORDS.has(this.peek().value)) return null;\n    const name = this.peek().value;\n    this.next();\n    this.skipGenericAngle(); // type params <T extends ...>\n\n    const bases: string[] = [];\n    const impls: string[] = [];\n    // record has params before extends/implements: `record Name(TYPE p) implements I {}`. A record's\n    // header params ARE its canonical constructor — Spring treats a single-ctor bean's compact ctor as\n    // an autowire point — so capture BOTH names (params) and type heads (paramTypes) for the DI graph.\n    // Pre-fix this used parseParamList (names only), so `@Service record Tx(Repo r)` got zero injects.\n    let params: string[] = [];\n    let paramTypes: string[] | undefined;\n    if (kind === 'record' && this.isOp('(')) {\n      const typed = this.parseParamListTyped();\n      params = typed.map((p) => p.name);\n      paramTypes = typed.map((p) => p.type ?? '');\n    }\n    // extends / implements clauses (order: extends then implements)\n    while (!this.atEnd() && !this.isOp('{') && !this.isOp(';')) {\n      if (this.isName('extends')) {\n        this.next();\n        bases.push(...this.parseDottedNameList(['implements']));\n        continue;\n      }\n      if (this.isName('implements')) {\n        this.next();\n        impls.push(...this.parseDottedNameList([]));\n        continue;\n      }\n      this.next(); // tolerate stray tokens in the header\n    }\n\n    let body: JavaDef[] = [];\n    let endLine = startLine;\n    if (this.isOp('{')) {\n      this.next();\n      if (kind === 'enum') this.skipEnumConstants();\n      const res = this.parseDecls(false);\n      body = res.defs;\n      endLine = res.closeLine || this.peek().line;\n    } else if (this.isOp(';')) {\n      this.next();\n      endLine = this.peek().line;\n    }\n    endLine = Math.max(endLine, ...body.map((b) => b.endLine), startLine);\n    return {\n      kind,\n      name,\n      startLine,\n      endLine,\n      modifiers,\n      annotations,\n      annos,\n      bases,\n      implements: impls,\n      params,\n      ...(paramTypes ? { paramTypes } : {}),\n      body,\n      stmts: [],\n    };\n  }",
+    "truncated": false,
+    "totalLines": 71,
+    "startLine": 294
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecl@L263",
+      "confidence": 1,
+      "name": "parseDecl",
+      "qualifiedName": "Parser.parseDecl",
+      "signature": "parseDecl(): JavaDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 263
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.atEnd@L841",
+      "confidence": 1,
+      "name": "atEnd",
+      "qualifiedName": "Parser.atEnd",
+      "signature": "atEnd(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 841
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isName@L823",
+      "confidence": 1,
+      "name": "isName",
+      "qualifiedName": "Parser.isName",
+      "signature": "isName(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 823
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isNameToken@L830",
+      "confidence": 1,
+      "name": "isNameToken",
+      "qualifiedName": "Parser.isNameToken",
+      "signature": "isNameToken(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 830
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L816",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 816
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.next@L833",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 833
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecls@L228",
+      "confidence": 1,
+      "name": "parseDecls",
+      "qualifiedName": "Parser.parseDecls",
+      "signature": "parseDecls(topLevel: boolean): { defs: JavaDef[]; closeLine: number }",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 228
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDottedNameList@L635",
+      "confidence": 1,
+      "name": "parseDottedNameList",
+      "qualifiedName": "Parser.parseDottedNameList",
+      "signature": "parseDottedNameList(stopKeywords: string[], stopOps: string[] = ['{', ';']): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 635
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamListTyped@L521",
+      "confidence": 1,
+      "name": "parseParamListTyped",
+      "qualifiedName": "Parser.parseParamListTyped",
+      "signature": "parseParamListTyped(): Array<{ name: string; type?: string }>",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 521
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L838",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 838
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.skipEnumConstants@L693",
+      "confidence": 1,
+      "name": "skipEnumConstants",
+      "qualifiedName": "Parser.skipEnumConstants",
+      "signature": "skipEnumConstants(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 693
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L664",
+      "confidence": 1,
+      "name": "skipGenericAngle",
+      "qualifiedName": "Parser.skipGenericAngle",
+      "signature": "skipGenericAngle(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 664
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.ts@L293",
+      "snippet": "/** Parse a type declaration (class / interface / enum / record) + recurse into its body. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+    "procedureName": "Parser.parseType",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.ts@L338",
+      "cond:packages/parsers/src/java/parser.ts@L344",
+      "cond:packages/parsers/src/java/parser.ts@L303",
+      "cond:packages/parsers/src/java/parser.ts@L316",
+      "cond:packages/parsers/src/java/parser.ts@L322",
+      "cond:packages/parsers/src/java/parser.ts@L323",
+      "cond:packages/parsers/src/java/parser.ts@L328",
+      "cond:packages/parsers/src/java/parser.ts@L340"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L344",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L338",
+            "expr": "this.isOp('{')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L344",
+            "expr": "this.isOp(';')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:76898617901168d4a2847967f87a14154fb7b512d9f4bb71886ae4b59cfb1387",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L833",
+          "expr": "next",
+          "line": 301
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8db7203c756141faa0b491b838c684a7dc2de5c31b92bac73be9056832b08154",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L301",
+          "line": 301,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L303",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L303",
+            "expr": "!this.isNameToken() || HARD_KEYWORDS.has(this.peek().value)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cccceceed264aec2ef1d5d265024893cfb874ed92024b38a27e80aa27f6999c6",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L303",
+          "line": 303,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L344",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L338",
+            "expr": "this.isOp('{')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L344",
+            "expr": "this.isOp(';')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d872a85a5c91505e884f4906cbe4a6ec6421d32fa8fdd730d8da9102b5a00f17",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L838",
+          "expr": "peek",
+          "line": 304
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c3a0b69ad80b4766460dfbf1452541058cc6d890e56cfe57b1fcf14ab5d9c386",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L304",
+          "line": 304,
+          "expr": "const name = this.peek().value;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:48b9f76a2a27f7434131388dc68b5c63571d7ad872ae62503db9a5d9e3ae1f34",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L305",
+          "line": 305,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0e9a085502249a49a15a0f6fb214a21bf7fc6d6aeab55d02fc51a952e47bde95",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L664",
+          "expr": "skipGenericAngle",
+          "line": 306
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca292ddc7de1a6d5d62ef31151943cca35f7648f41a4afc0eed8c5357fafbade",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L306",
+          "line": 306,
+          "expr": "this.skipGenericAngle();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L316",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L316",
+            "expr": "kind === 'record' && this.isOp('(')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5949f1c98d661801ae6fa1ebdd92da337f3c53c24ef3a85c3e353c4181d4cad5",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamListTyped@L521",
+          "expr": "parseParamListTyped",
+          "line": 317
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L316",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L316",
+            "expr": "kind === 'record' && this.isOp('(')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3265947f50ae2ce28ea7617744ba47ecb856c5a43cd25f6c21263f4643d95158",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L317",
+          "line": 317,
+          "expr": "const typed = this.parseParamListTyped();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L316",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L316",
+            "expr": "kind === 'record' && this.isOp('(')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a9d27b445eb35edeb44bd0f2d13870fdd645a6d22caf582e87d07184cba57b59",
+          "target": "assign:packages/parsers/src/java/parser.ts@L318",
+          "line": 318,
+          "expr": "params = typed.map((p) => p.name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L316",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L316",
+            "expr": "kind === 'record' && this.isOp('(')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fe68b7df203443c18c83e7367aee8972d4d9f948e73bc8beca63346767b1fd41",
+          "target": "assign:packages/parsers/src/java/parser.ts@L319",
+          "line": 319,
+          "expr": "paramTypes = typed.map((p) => p.type ?? '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L323",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L322",
+            "expr": "!this.atEnd() && !this.isOp('{') && !this.isOp(';')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L323",
+            "expr": "this.isName('extends')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0786c6a5e4f45fa686d660e595886d60c3251f32288041833e6237a1fb31a84a",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L324",
+          "line": 324,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L328",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L322",
+            "expr": "!this.atEnd() && !this.isOp('{') && !this.isOp(';')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L328",
+            "expr": "this.isName('implements')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c0c6e1d0a34717004aadccc7e6490ab2ab8540371be61e7dcb35b2f3a605c45d",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.parseDottedNameList@L635",
+          "expr": "parseDottedNameList",
+          "line": 325
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L323",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L322",
+            "expr": "!this.atEnd() && !this.isOp('{') && !this.isOp(';')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L323",
+            "expr": "this.isName('extends')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:55d8c2819a493dbcb64cbadf55cb7599d15aad796f87fb181fa94c2de9009234",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L325",
+          "line": 325,
+          "expr": "bases.push(...this.parseDottedNameList(['implements']));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L328",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L322",
+            "expr": "!this.atEnd() && !this.isOp('{') && !this.isOp(';')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L328",
+            "expr": "this.isName('implements')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0a64cfe59e6b3c935d11d061f999e2bfd20a1cb62c86eda53d9f9cce1d773c2f",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L329",
+          "line": 329,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L328",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L322",
+            "expr": "!this.atEnd() && !this.isOp('{') && !this.isOp(';')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L328",
+            "expr": "this.isName('implements')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:87c718f281942e8ba2944462d83df250010b5decb4d56e89b056452745aee16a",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L330",
+          "line": 330,
+          "expr": "impls.push(...this.parseDottedNameList([]));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L322",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L322",
+            "expr": "!this.atEnd() && !this.isOp('{') && !this.isOp(';')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f9a8a6eaf1a20c2ee30f9966e7557fb1b102368b5c47144f47e6e493babb951",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L333",
+          "line": 333,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L338",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L338",
+            "expr": "this.isOp('{')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8a9819751945f70bf10f70b35b8ac851cbf1fe70eb59d92f84066055480d08f1",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L339",
+          "line": 339,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L340",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L338",
+            "expr": "this.isOp('{')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L340",
+            "expr": "kind === 'enum'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8f0bad451646c6676676274e4725cf4921a01ebfd834444c1abbc51cdee93cee",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.skipEnumConstants@L693",
+          "expr": "skipEnumConstants",
+          "line": 340
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L340",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L338",
+            "expr": "this.isOp('{')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L340",
+            "expr": "kind === 'enum'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:900b5a892408fed18226a8630728498b1b919e27d2a0413defb3e6f66d38a2a3",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L340",
+          "line": 340,
+          "expr": "this.skipEnumConstants();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L338",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L338",
+            "expr": "this.isOp('{')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dc540e483f422962cc1dca839422122ba86026f276cd9d22088d32ae72305ba4",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecls@L228",
+          "expr": "parseDecls",
+          "line": 341
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L338",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L338",
+            "expr": "this.isOp('{')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5b40a37a47d67c07099e5219007b5cb9c3bf3f365fe969a5d988128805cc1f03",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L341",
+          "line": 341,
+          "expr": "const res = this.parseDecls(false);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L338",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L338",
+            "expr": "this.isOp('{')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:911569813e69fb0d72e674ba3c2adf596aed89bf4ddf20aebc6d25e49070ead4",
+          "target": "assign:packages/parsers/src/java/parser.ts@L342",
+          "line": 342,
+          "expr": "body = res.defs;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L338",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L338",
+            "expr": "this.isOp('{')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2fb1e8138204d1d74bbda07039d7eb62c3d7c1a8bf5a66dbfd1f40db71b0e8fd",
+          "target": "assign:packages/parsers/src/java/parser.ts@L343",
+          "line": 343,
+          "expr": "endLine = res.closeLine || this.peek().line;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L344",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L338",
+            "expr": "this.isOp('{')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L344",
+            "expr": "this.isOp(';')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1ca451d5f47bc0979053619fdcda9ad921488a6954907523af885f45fc41e750",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L345",
+          "line": 345,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L344",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L338",
+            "expr": "this.isOp('{')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L344",
+            "expr": "this.isOp(';')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:268692c1208684f79a1fdc38e4702d6029d9a6f765be228c5e6a72e802459b31",
+          "target": "assign:packages/parsers/src/java/parser.ts@L346",
+          "line": 346,
+          "expr": "endLine = this.peek().line;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df389bf3dbc4e4fbd0794eda154c999e131591de505144ab39a2bb780cfd4551",
+          "target": "assign:packages/parsers/src/java/parser.ts@L348",
+          "line": 348,
+          "expr": "endLine = Math.max(endLine, ...body.map((b) => b.endLine), startLine);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:885faf6f00dc416b6ae6aa98223b4179dbb55579ba5bc289216af5eaa360e183",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L349",
+          "line": 349,
+          "expr": "return {\n      kind,\n      name,\n      startLine,\n      endLine,\n      modifiers,\n      annotations,\n      annos,\n      bases,\n      implements: impls,\n      params,\n      ...(paramTypes ? { paramTypes } : {}),\n      body,\n      stmts: [],\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:84a00636887d409c8009a4cab2888dcee7aff2c6190c54e95cf63e0afc49b4b0",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L816",
+          "expr": "isOp"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:208d45a6a10c3c658b6324e67745cfb3ebf683ce615d16121cf226a210e9bc36",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isName@L823",
+          "expr": "isName"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e9f12dbf2809bcf3fd7c39de1bbca11debe0bd9c9ace60763143b4c9f08832e1",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isNameToken@L830",
+          "expr": "isNameToken"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+        "procedureName": "Parser.parseType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ed5156403fb0f6950dc75098fe05a1a829537403e2310097b9110e53336b4677",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.atEnd@L841",
+          "expr": "atEnd"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 22,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 22,
+    "assignments": 6,
+    "conditions": 8,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 11,
+      "recorded": 22,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

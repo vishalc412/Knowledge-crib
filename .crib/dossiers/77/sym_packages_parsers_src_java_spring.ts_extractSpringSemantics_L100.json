@@ -1,0 +1,2854 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:54379ee97b79df85e0dee28d6903e04c93441dff3531676c90f8df235a34fbfe",
+  "builtAt": "2026-06-26T05:09:36.599Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+    "kind": "symbol",
+    "type": "function",
+    "name": "extractSpringSemantics",
+    "qualifiedName": "extractSpringSemantics",
+    "signature": "extractSpringSemantics(input: SpringPassInput): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 100,
+      "end": 328
+    },
+    "callSites": [
+      {
+        "callee": "map",
+        "line": 102
+      },
+      {
+        "callee": "set",
+        "line": 109
+      },
+      {
+        "callee": "stereotypeOf",
+        "line": 109
+      },
+      {
+        "callee": "get",
+        "line": 110
+      },
+      {
+        "callee": "get",
+        "line": 113
+      },
+      {
+        "callee": "get",
+        "line": 114
+      },
+      {
+        "callee": "classMappingPath",
+        "line": 120
+      },
+      {
+        "callee": "mappingAnno",
+        "line": 126
+      },
+      {
+        "callee": "requestMethodsOf",
+        "line": 132
+      },
+      {
+        "callee": "allQuoted",
+        "line": 135
+      },
+      {
+        "callee": "routeMetaOf",
+        "line": 138
+      },
+      {
+        "callee": "joinPath",
+        "line": 141
+      },
+      {
+        "callee": "idFor",
+        "line": 142
+      },
+      {
+        "callee": "push",
+        "line": 148
+      },
+      {
+        "callee": "keys",
+        "line": 158
+      },
+      {
+        "callee": "hash",
+        "line": 159
+      },
+      {
+        "callee": "get",
+        "line": 162
+      },
+      {
+        "callee": "push",
+        "line": 164
+      },
+      {
+        "callee": "edge",
+        "line": 164
+      },
+      {
+        "callee": "filter",
+        "line": 177
+      },
+      {
+        "callee": "find",
+        "line": 182
+      },
+      {
+        "callee": "includes",
+        "line": 182
+      },
+      {
+        "callee": "emitInject",
+        "line": 189
+      },
+      {
+        "callee": "emitInject",
+        "line": 196
+      },
+      {
+        "callee": "dedupe",
+        "line": 199
+      },
+      {
+        "callee": "get",
+        "line": 212
+      },
+      {
+        "callee": "get",
+        "line": 214
+      },
+      {
+        "callee": "push",
+        "line": 215
+      },
+      {
+        "callee": "edge",
+        "line": 215
+      },
+      {
+        "callee": "get",
+        "line": 216
+      },
+      {
+        "callee": "dedupe",
+        "line": 221
+      },
+      {
+        "callee": "get",
+        "line": 233
+      },
+      {
+        "callee": "find",
+        "line": 235
+      },
+      {
+        "callee": "exceptionTypesOf",
+        "line": 236
+      },
+      {
+        "callee": "idFor",
+        "line": 237
+      },
+      {
+        "callee": "push",
+        "line": 238
+      },
+      {
+        "callee": "hash",
+        "line": 247
+      },
+      {
+        "callee": "push",
+        "line": 249
+      },
+      {
+        "callee": "edge",
+        "line": 249
+      },
+      {
+        "callee": "get",
+        "line": 258
+      },
+      {
+        "callee": "get",
+        "line": 260
+      },
+      {
+        "callee": "find",
+        "line": 264
+      },
+      {
+        "callee": "scheduledAnnoKind",
+        "line": 265
+      },
+      {
+        "callee": "find",
+        "line": 266
+      },
+      {
+        "callee": "allQuoted",
+        "line": 269
+      },
+      {
+        "callee": "test",
+        "line": 270
+      },
+      {
+        "callee": "securityOf",
+        "line": 275
+      },
+      {
+        "callee": "get",
+        "line": 288
+      },
+      {
+        "callee": "emitInject",
+        "line": 290
+      },
+      {
+        "callee": "dedupe",
+        "line": 293
+      },
+      {
+        "callee": "get",
+        "line": 304
+      },
+      {
+        "callee": "find",
+        "line": 306
+      },
+      {
+        "callee": "has",
+        "line": 306
+      },
+      {
+        "callee": "relationMetaOf",
+        "line": 307
+      },
+      {
+        "callee": "edge",
+        "line": 312
+      },
+      {
+        "callee": "push",
+        "line": 314
+      },
+      {
+        "callee": "columnMetaOf",
+        "line": 321
+      },
+      {
+        "callee": "get",
+        "line": 323
+      }
+    ]
+  },
+  "source": {
+    "text": "export function extractSpringSemantics(input: SpringPassInput): void {\n  const { classDefs, fieldDefs, byKey, nodes, edges, ctx, path } = input;\n  const nodeById = new Map(nodes.map((n) => [n.id, n]));\n\n  // A class is a Spring-managed bean iff it carries a class-level stereotype annotation. DI and JPA\n  // edges are emitted ONLY for beans — a `@Autowired` field / `@ManyToOne` in a non-managed class is\n  // a no-op in Spring, and implicit constructor autowiring is a bean-only feature. Keeps the\n  // framework graph honest (no false DI/relation edges on plain POJOs).\n  const stereotypeById = new Map<string, string | undefined>();\n  for (const { def, id } of classDefs) stereotypeById.set(id, stereotypeOf(def));\n  const isBean = (cid: string): boolean => stereotypeById.get(cid) !== undefined;\n\n  for (const { def, id, qualifiedName } of classDefs) {\n    const stereotype = stereotypeById.get(id);\n    const classNode = nodeById.get(id);\n    if (stereotype && classNode) {\n      classNode.framework = 'spring';\n      classNode.stereotype = stereotype;\n    }\n    const isController = stereotype === 'controller';\n    const basePath = isController ? classMappingPath(def) : '';\n\n    // --- routes: one per mapping-annotated method (controllers only) ---\n    if (isController) {\n      for (const m of def.body) {\n        if (m.kind !== 'method') continue;\n        const mapping = mappingAnno(m);\n        if (!mapping) continue;\n        // HTTP verbs: a short-form mapping pins one verb; `@RequestMapping` is ANY unless\n        // `method=RequestMethod.X` pins it (which may list several verbs: `method={GET,POST}` → both).\n        const verbs =\n          mapping.http === 'ANY'\n            ? (requestMethodsOf(mapping.anno.args) ?? ['ANY'])\n            : [mapping.http];\n        // Paths: one or more (`@GetMapping(\"/x\")`, `@GetMapping({\"/a\",\"/b\"})`); pathless → base path.\n        const subs = allQuoted(mapping.anno.args);\n        const pathStrs = subs.length > 0 ? subs : [''];\n        // Route-param contract + security, derived once per handler (shared across its verbs/paths).\n        const routeMeta = routeMetaOf(m);\n        for (const verb of verbs) {\n          for (const sub of pathStrs) {\n            const routePath = joinPath(basePath, sub);\n            const routeId = ctx.idFor('route', {\n              httpMethod: verb,\n              routePath,\n              file: path,\n              line: m.startLine,\n            });\n            nodes.push({\n              id: routeId,\n              kind: 'route',\n              name: `${verb} ${routePath}`,\n              httpMethod: verb,\n              routePath,\n              framework: 'spring',\n              file: path,\n              span: { start: m.startLine, end: m.endLine },\n              lang: 'java',\n              ...(Object.keys(routeMeta).length ? { meta: routeMeta } : {}),\n              hash: ctx.hash(`${path}:route:${verb}:${routePath}`),\n            });\n            // exposes: the handler method symbol → the route it serves.\n            const handlerId = byKey.get(`${qualifiedName}.${m.name}`);\n            if (handlerId) {\n              edges.push(edge(handlerId, routeId, 'exposes', `${verb} ${routePath}`));\n            }\n          }\n        }\n      }\n    }\n\n    // --- DI: constructor-injected params → injects (beans only). Spring 4.3+ implicit autowire\n    // applies to a SINGLE ctor; with multiple ctors the @Autowired one is the injection point (if none\n    // is annotated, Spring uses a no-arg default ctor and injects via fields/setters — no ctor DI).\n    // Self-injection is skipped by emitInject. Records' compact header ctor is in `def.paramTypes`. ---\n    if (isBean(id)) {\n      const recordedInjects: string[] = [];\n      const ctors = def.body.filter((m) => m.kind === 'constructor');\n      let ctorTypes: string[] = [];\n      if (ctors.length === 1) {\n        ctorTypes = ctors[0]?.paramTypes ?? [];\n      } else if (ctors.length > 1) {",
+    "truncated": true,
+    "totalLines": 229,
+    "startLine": 100,
+    "nextLine": 182
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse@L68",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "JavaExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 68
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#allQuoted@L376",
+      "confidence": 1,
+      "name": "allQuoted",
+      "qualifiedName": "allQuoted",
+      "signature": "allQuoted(s?: string): string[]",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 376
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L360",
+      "confidence": 1,
+      "name": "classMappingPath",
+      "qualifiedName": "classMappingPath",
+      "signature": "classMappingPath(def: JavaDef): string",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 360
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L489",
+      "confidence": 1,
+      "name": "columnMetaOf",
+      "qualifiedName": "columnMetaOf",
+      "signature": "columnMetaOf(def: JavaDef): Record<string, unknown> | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 489
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#dedupe@L405",
+      "confidence": 1,
+      "name": "dedupe",
+      "qualifiedName": "dedupe",
+      "signature": "dedupe(xs: string[]): string[]",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 405
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#dedupe@L1314",
+      "confidence": 1,
+      "name": "dedupe",
+      "qualifiedName": "dedupe",
+      "signature": "dedupe(xs: string[]): string[]",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1314
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#edge@L528",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string): Edge",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 528
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#emitInject@L332",
+      "confidence": 1,
+      "name": "emitInject",
+      "qualifiedName": "emitInject",
+      "signature": "emitInject(consumerId: string, depType: string, byKey: Map<string, string>, edges: Edge[], recorded: string[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 332
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L454",
+      "confidence": 1,
+      "name": "exceptionTypesOf",
+      "qualifiedName": "exceptionTypesOf",
+      "signature": "exceptionTypesOf(s?: string): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 454
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics.isBean@L110",
+      "confidence": 1,
+      "name": "isBean",
+      "qualifiedName": "extractSpringSemantics.isBean",
+      "signature": "isBean(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 110
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 77
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#joinPath@L397",
+      "confidence": 1,
+      "name": "joinPath",
+      "qualifiedName": "joinPath",
+      "signature": "joinPath(base: string, sub: string): string",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 397
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#mappingAnno@L366",
+      "confidence": 1,
+      "name": "mappingAnno",
+      "qualifiedName": "mappingAnno",
+      "signature": "mappingAnno(m: JavaDef): { anno: JavaAnno; http: string } | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 366
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+      "confidence": 1,
+      "name": "relationMetaOf",
+      "qualifiedName": "relationMetaOf",
+      "signature": "relationMetaOf(s?: string): Record<string, string>",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 474
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#requestMethodsOf@L387",
+      "confidence": 1,
+      "name": "requestMethodsOf",
+      "qualifiedName": "requestMethodsOf",
+      "signature": "requestMethodsOf(s?: string): string[] | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 387
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L410",
+      "confidence": 1,
+      "name": "routeMetaOf",
+      "qualifiedName": "routeMetaOf",
+      "signature": "routeMetaOf(m: JavaDef): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 410
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L464",
+      "confidence": 1,
+      "name": "scheduledAnnoKind",
+      "qualifiedName": "scheduledAnnoKind",
+      "signature": "scheduledAnnoKind(s?: string): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 464
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#securityOf@L442",
+      "confidence": 1,
+      "name": "securityOf",
+      "qualifiedName": "securityOf",
+      "signature": "securityOf(m: JavaDef): Record<string, string> | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 442
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#stereotypeOf@L347",
+      "confidence": 1,
+      "name": "stereotypeOf",
+      "qualifiedName": "stereotypeOf",
+      "signature": "stereotypeOf(def: JavaDef): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 347
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+    "procedureName": "extractSpringSemantics",
+    "conditions": [
+      "cond:packages/parsers/src/java/spring.ts@L109",
+      "cond:packages/parsers/src/java/spring.ts@L112",
+      "cond:packages/parsers/src/java/spring.ts@L115",
+      "cond:packages/parsers/src/java/spring.ts@L123",
+      "cond:packages/parsers/src/java/spring.ts@L124",
+      "cond:packages/parsers/src/java/spring.ts@L256",
+      "cond:packages/parsers/src/java/spring.ts@L267",
+      "cond:packages/parsers/src/java/spring.ts@L139",
+      "cond:packages/parsers/src/java/spring.ts@L140",
+      "cond:packages/parsers/src/java/spring.ts@L282",
+      "cond:packages/parsers/src/java/spring.ts@L302",
+      "cond:packages/parsers/src/java/spring.ts@L305",
+      "cond:packages/parsers/src/java/spring.ts@L163",
+      "cond:packages/parsers/src/java/spring.ts@L175",
+      "cond:packages/parsers/src/java/spring.ts@L179",
+      "cond:packages/parsers/src/java/spring.ts@L181",
+      "cond:packages/parsers/src/java/spring.ts@L184",
+      "cond:packages/parsers/src/java/spring.ts@L287",
+      "cond:packages/parsers/src/java/spring.ts@L187",
+      "cond:packages/parsers/src/java/spring.ts@L193",
+      "cond:packages/parsers/src/java/spring.ts@L196",
+      "cond:packages/parsers/src/java/spring.ts@L291",
+      "cond:packages/parsers/src/java/spring.ts@L198",
+      "cond:packages/parsers/src/java/spring.ts@L207",
+      "cond:packages/parsers/src/java/spring.ts@L208",
+      "cond:packages/parsers/src/java/spring.ts@L215",
+      "cond:packages/parsers/src/java/spring.ts@L217",
+      "cond:packages/parsers/src/java/spring.ts@L230",
+      "cond:packages/parsers/src/java/spring.ts@L231",
+      "cond:packages/parsers/src/java/spring.ts@L263",
+      "cond:packages/parsers/src/java/spring.ts@L265",
+      "cond:packages/parsers/src/java/spring.ts@L273",
+      "cond:packages/parsers/src/java/spring.ts@L274",
+      "cond:packages/parsers/src/java/spring.ts@L276",
+      "cond:packages/parsers/src/java/spring.ts@L277",
+      "cond:packages/parsers/src/java/spring.ts@L311",
+      "cond:packages/parsers/src/java/spring.ts@L313",
+      "cond:packages/parsers/src/java/spring.ts@L320",
+      "cond:packages/parsers/src/java/spring.ts@L322",
+      "cond:packages/parsers/src/java/spring.ts@L324"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7ca7a7945bdaefce3d7560374a6690f726a76629441a3d5ebee1e0f7f01a4f34",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L102",
+          "line": 102,
+          "expr": "const nodeById = new Map(nodes.map((n) => [n.id, n]));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L109",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L109",
+            "expr": "classDefs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6be71eaaf5f0481b0ff639735e9e8bf2d73fe89b8ab71bcfefa5e2ca0995dd4c",
+          "target": "sym:packages/parsers/src/java/spring.ts#stereotypeOf@L347",
+          "expr": "stereotypeOf",
+          "line": 109
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L109",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L109",
+            "expr": "classDefs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aa79731d32e6a0a826da95bdf2d68f490c5cbf6a13f9579b72ab1bfefda7808f",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L109",
+          "line": 109,
+          "expr": "stereotypeById.set(id, stereotypeOf(def));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4ba92dbfb6cc89770c30f5433fcd47b3960e1cdcafc136e28059483ab5436a1a",
+          "target": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics.isBean@L110",
+          "expr": "isBean"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5be62f7630719e2a077deff96db9b432c960c6842f1a9945a981df43459025b4",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L110",
+          "line": 110,
+          "expr": "const isBean = (cid: string): boolean => stereotypeById.get(cid) !== undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L112",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1e32cf4071edd53ae8bc284d6da10b32c1e10e97677d12b7c1143d0d68bdffd3",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L113",
+          "line": 113,
+          "expr": "const stereotype = stereotypeById.get(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L112",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b7d9afe004d8f3a7283ab6c5e8bac40e2ae688bfa8736e2d9e8ba03f4f146f47",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L114",
+          "line": 114,
+          "expr": "const classNode = nodeById.get(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L115",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L115",
+            "expr": "stereotype && classNode",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f627a7d7e47f4c4f336e7929a4c1d0e124e8d1af29f2f958a7637ffd3c26bcd9",
+          "target": "assign:packages/parsers/src/java/spring.ts@L116",
+          "line": 116,
+          "expr": "classNode.framework = 'spring';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L115",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L115",
+            "expr": "stereotype && classNode",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f227631fe1a702f64e92c927de98c4ce93cd14a791dce22be9867cc7bb274999",
+          "target": "assign:packages/parsers/src/java/spring.ts@L117",
+          "line": 117,
+          "expr": "classNode.stereotype = stereotype;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L112",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dca449c31bd6d629efe7203c3637ca404f157aa76dc1112922b72b06bae14be0",
+          "target": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L360",
+          "expr": "classMappingPath",
+          "line": 120
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L112",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:24e48ac8cd77f55c8e610d5c5677bc58e605fce62e0aee0abc9dbf7e82a0f925",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L120",
+          "line": 120,
+          "expr": "const basePath = isController ? classMappingPath(def) : '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L124",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L123",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L124",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cc40c671ae333290360429a62988d2f4692f304c624c7fae5592a0a70d881017",
+          "target": "sym:packages/parsers/src/java/spring.ts#mappingAnno@L366",
+          "expr": "mappingAnno",
+          "line": 126
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L124",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L123",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L124",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a1fcb69dd3abe3931af97b0ecd0ab8d08f7c0b4448aa430e5488095fd5f7bf2",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L126",
+          "line": 126,
+          "expr": "const mapping = mappingAnno(m);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L124",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L123",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L124",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:08959dc92c7a6412606cc3a4cc77b47974e7bc57310de1e6ec81049f82e28adb",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L130",
+          "line": 130,
+          "expr": "const verbs =\n          mapping.http === 'ANY'\n            ? (requestMethodsOf(mapping.anno.args) ?? ['ANY'])\n            : [mapping.http];"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L124",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L123",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L124",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f8107186929e29e7205e8ec124a47a876958450ba47f433407264b7e266ff3c1",
+          "target": "sym:packages/parsers/src/java/spring.ts#requestMethodsOf@L387",
+          "expr": "requestMethodsOf",
+          "line": 132
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L267",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L267",
+            "expr": "query",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:57490a6a00d2a15fc9f09e98c4acda43f4975975edd175a3d61ade06ef1da5cc",
+          "target": "sym:packages/parsers/src/java/spring.ts#allQuoted@L376",
+          "expr": "allQuoted",
+          "line": 135
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L124",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L123",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L124",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7c73364696bd687afcec6b4ed1756f36146cde78282fbe46d0a4575c5d2d6b3e",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L135",
+          "line": 135,
+          "expr": "const subs = allQuoted(mapping.anno.args);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L124",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L123",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L124",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7421ca17ce961c441edd6bc4b30f31d0dd1582ff4c35f890eaacf8eb0f7f9db8",
+          "target": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L410",
+          "expr": "routeMetaOf",
+          "line": 138
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L124",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L123",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L124",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bdd4467c6eead0cbaeed6877de3a2d9720bbdd075ddadfcb8286902ea870d18c",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L138",
+          "line": 138,
+          "expr": "const routeMeta = routeMetaOf(m);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L140",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L123",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L124",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L139",
+            "expr": "verbs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L140",
+            "expr": "pathStrs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8131c18d62702c320efcdc996fa822b1692d1d1dca9178dff4485ce2b059f24f",
+          "target": "sym:packages/parsers/src/java/spring.ts#joinPath@L397",
+          "expr": "joinPath",
+          "line": 141
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L140",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L123",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L124",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L139",
+            "expr": "verbs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L140",
+            "expr": "pathStrs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0a770fd06a163f23d5b4627c569455e4498e91eb985a10e3bbcf4dfde7d7fdd3",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L141",
+          "line": 141,
+          "expr": "const routePath = joinPath(basePath, sub);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L140",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L123",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L124",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L139",
+            "expr": "verbs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L140",
+            "expr": "pathStrs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:40c802c959e6ed4d2b43d606aebeaacb65faed0fca3c0b75caadcabfff72577b",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L142",
+          "line": 142,
+          "expr": "const routeId = ctx.idFor('route', {\n              httpMethod: verb,\n              routePath,\n              file: path,\n              line: m.startLine,\n            });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7592c8e9bee9f1d718481804bc7e2264001bca45c5d99be139ebdcb224eb4636",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+          "expr": "idFor",
+          "line": 142
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L140",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L123",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L124",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L139",
+            "expr": "verbs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L140",
+            "expr": "pathStrs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c03a16959e95b620c157a20acd3ad3ee50f35e4b2f33bdfb533730754a5dc54",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L148",
+          "line": 148,
+          "expr": "nodes.push({\n              id: routeId,\n              kind: 'route',\n              name: `${verb} ${routePath}`,\n              httpMethod: verb,\n              routePath,\n              framework: 'spring',\n              file: path,\n              span: { start: m.startLine, end: m.endLine },\n              lang: 'java',\n              ...(Object.keys(routeMeta).length ? { meta: routeMeta } : {}),\n              hash: ctx.hash(`${path}:route:${verb}:${routePath}`),\n            });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fc8277c2f65249365f46103bcc375e64795fdca51aeb8ec923d5432d2e6d0a97",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 148
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L140",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L123",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L124",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L139",
+            "expr": "verbs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L140",
+            "expr": "pathStrs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:373de05b302bd363d8bf6eec9369be90fa0794b30abc64a0015888c612f76f8e",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L162",
+          "line": 162,
+          "expr": "const handlerId = byKey.get(`${qualifiedName}.${m.name}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L305",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L302",
+            "expr": "stereotypeById.get(ownerId) === 'entity' && annos.some((a) => RELATION_ANNOS.has(a))"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L305",
+            "expr": "targetId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fb9624d3408317b9fd3a107056a488c8438288c64a3db0612ce96ecd80ddbb21",
+          "target": "sym:packages/parsers/src/java/spring.ts#edge@L528",
+          "expr": "edge",
+          "line": 164
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L163",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L123",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L124",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L139",
+            "expr": "verbs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L140",
+            "expr": "pathStrs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L163",
+            "expr": "handlerId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:649194070792ee6268845e0bfae46e8b1cfe569aa3c274048c8cf55304326ba5",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L164",
+          "line": 164,
+          "expr": "edges.push(edge(handlerId, routeId, 'exposes', `${verb} ${routePath}`));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L175",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L175",
+            "expr": "isBean(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d52260a88ef5568accca6d0e48997d1f7781bed9d5b8a650567489d9f602d7fc",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L177",
+          "line": 177,
+          "expr": "const ctors = def.body.filter((m) => m.kind === 'constructor');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L179",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L175",
+            "expr": "isBean(id)"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L179",
+            "expr": "ctors.length === 1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:752845b54d53e70bfa1675de8d0f458ab31412fcc429757655e153764e64212c",
+          "target": "assign:packages/parsers/src/java/spring.ts@L180",
+          "line": 180,
+          "expr": "ctorTypes = ctors[0]?.paramTypes ?? [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L181",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L175",
+            "expr": "isBean(id)"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L179",
+            "expr": "ctors.length === 1"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L181",
+            "expr": "ctors.length > 1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:30ac89cdab9802c38bb64bdc3021ff0a5aea42a77dc6e4c798ed03793360892e",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L182",
+          "line": 182,
+          "expr": "const autowired = ctors.find((c) => c.annotations.includes('Autowired'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c69621b95fc947a7246477afc714fa6f82b0b92326943e5f3fc1a031f7703338",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 182
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L181",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L175",
+            "expr": "isBean(id)"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L179",
+            "expr": "ctors.length === 1"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L181",
+            "expr": "ctors.length > 1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b1a38a4d1a97ed7b1ec24731deae2d2da20a3f268675028af708974189ed2adf",
+          "target": "assign:packages/parsers/src/java/spring.ts@L183",
+          "line": 183,
+          "expr": "ctorTypes = autowired?.paramTypes ?? [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L184",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L175",
+            "expr": "isBean(id)"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L179",
+            "expr": "ctors.length === 1"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L181",
+            "expr": "ctors.length > 1"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L184",
+            "expr": "def.kind === 'record'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0cf678dd4bf196cca3dcac7e5fef513bd9307c6d5f7a2553f43d49593ca363f1",
+          "target": "assign:packages/parsers/src/java/spring.ts@L185",
+          "line": 185,
+          "expr": "ctorTypes = def.paramTypes ?? [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L287",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L287",
+            "expr": "annos.includes('Autowired') || annos.includes('Inject') || annos.includes('Resource')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:be3c1e3b0fe213bdaf1407311ee8689879e0bdb50b0145d2c7fbc72b965ea3e4",
+          "target": "sym:packages/parsers/src/java/spring.ts#emitInject@L332",
+          "expr": "emitInject",
+          "line": 189
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L187",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L175",
+            "expr": "isBean(id)"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L187",
+            "expr": "ctorTypes",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b695dce303df8551e2ecb8679540a3c3f41a504b506ed40bdf4e8d23a5a2a33d",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L189",
+          "line": 189,
+          "expr": "emitInject(id, depType, byKey, edges, recordedInjects);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L196",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L175",
+            "expr": "isBean(id)"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L193",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L196",
+            "expr": "setterType",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db0037dc3d576a45e609f0aaa711c503e8b4592d9b2972c82b09cd33d2c7e7a0",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L196",
+          "line": 196,
+          "expr": "emitInject(id, setterType, byKey, edges, recordedInjects);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L291",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L287",
+            "expr": "annos.includes('Autowired') || annos.includes('Inject') || annos.includes('Resource')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L291",
+            "expr": "recorded.length && owner",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:438376e8dd9b4b5a4781543dd652a0b5182d6577293b8dd51e77a2f77bbb711e",
+          "target": "sym:packages/parsers/src/java/spring.ts#dedupe@L405",
+          "expr": "dedupe",
+          "line": 199
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L198",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L175",
+            "expr": "isBean(id)"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L198",
+            "expr": "recordedInjects.length && classNode",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:188d73dde426bca8063b427c0eb5638027bdbb0eefcc40bfb1543c3646dec699",
+          "target": "assign:packages/parsers/src/java/spring.ts@L199",
+          "line": 199,
+          "expr": "classNode.meta = { ...(classNode.meta ?? {}), injects: dedupe(recordedInjects) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dc374f75cbf05f893b6cee351926da5653091bbcaaf363b77ae1c1df64f9831a",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#dedupe@L1314",
+          "expr": "dedupe",
+          "line": 199
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L208",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L207",
+            "expr": "stereotype === 'config'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L208",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dd397e5054135da0e9962aa2d36aff266dab64e2f1fb0da641a9f72ec46ef1dc",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L212",
+          "line": 212,
+          "expr": "const methodId = byKey.get(`${qualifiedName}.${m.name}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L208",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L207",
+            "expr": "stereotype === 'config'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L208",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e18258fe4c282d6daa0e25b3a403c2e8ca97e278a39048ac3f7f5860043a8813",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L214",
+          "line": 214,
+          "expr": "const targetId = byKey.get(producedType);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L215",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L207",
+            "expr": "stereotype === 'config'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L208",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L215",
+            "expr": "targetId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:945ae660b910c379c8f1581ce96d13b0df79fd43b6e47fdfd28fbab6c10c8d30",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L215",
+          "line": 215,
+          "expr": "edges.push(edge(methodId, targetId, 'produces', producedType));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L208",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L207",
+            "expr": "stereotype === 'config'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L208",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7e7b42cc100bca67865d7764b91e16fbd0abf792536f84791caed248ae74b96f",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L216",
+          "line": 216,
+          "expr": "const methodNode = nodeById.get(methodId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L217",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L207",
+            "expr": "stereotype === 'config'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L208",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L217",
+            "expr": "methodNode",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a4a6a2f8cce41fb9f08fa2476eeb0925d0d2915cbef389d6f832e488db6930bb",
+          "target": "assign:packages/parsers/src/java/spring.ts@L219",
+          "line": 219,
+          "expr": "methodNode.meta = {\n            ...(methodNode.meta ?? {}),\n            produces: dedupe([...prev, producedType]),\n          };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L231",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L230",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L231",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cbdf9ad24d0324ff5c078e479cdeceaaac3b24f67b373264a66f438493566f24",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L233",
+          "line": 233,
+          "expr": "const handlerId = byKey.get(`${qualifiedName}.${m.name}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L231",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L230",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L231",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:45e1720dcc5ff915e45b71a2d34409781e5c9a00032742a675caf995b70b827b",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L235",
+          "line": 235,
+          "expr": "const excAnno = m.annos?.find((a) => a.name === 'ExceptionHandler');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L231",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L230",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L231",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:788d1817e69864f4ce6f46c4682568b6a04f7d0f3157b1b07f08563b0aaf79a9",
+          "target": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L454",
+          "expr": "exceptionTypesOf",
+          "line": 236
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L231",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L230",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L231",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd34a0a6affb6602d6df2ef9072b99e5ad53f62ca02b3e6606ea73bf667a8689",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L236",
+          "line": 236,
+          "expr": "const whenSelector = exceptionTypesOf(excAnno?.args);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L231",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L230",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L231",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:53388f8049a7a7f295b49513eca9fc283e414668e7ef94477f87563f7306fa9a",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L237",
+          "line": 237,
+          "expr": "const excId = ctx.idFor('exception-handler', { file: path, line: m.startLine });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L231",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L230",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L231",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ebb5ccf1f585512d9a2d27842a53ad1316b61dcdb4483ac768e3af4748801461",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L238",
+          "line": 238,
+          "expr": "nodes.push({\n          id: excId,\n          kind: 'exception-handler',\n          name: whenSelector ? `@ExceptionHandler ${whenSelector}` : '@ExceptionHandler',\n          ...(whenSelector ? { whenSelector } : {}),\n          framework: 'spring',\n          file: path,\n          span: { start: m.startLine, end: m.endLine },\n          lang: 'java',\n          hash: ctx.hash(`${path}:exch:${m.startLine}:${whenSelector ?? '*'}`),\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L231",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L230",
+            "expr": "isController"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L231",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0a8a2c70452af97b6df2ca14e6006b3c37c296fd9c6f1b5d427af7ecd94283f5",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L249",
+          "line": 249,
+          "expr": "edges.push(edge(excId, handlerId, 'handles', whenSelector ?? 'ExceptionHandler'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L256",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:44a9006a12eec60aacc4dcc47c928d284fa012b9b24a8f061424b3f8966ea098",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L258",
+          "line": 258,
+          "expr": "const methodId = byKey.get(`${qualifiedName}.${m.name}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L256",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29095feaa4abd96c30a2ace563cc9b2358c0f3f9600eceacc86f21fc76f84447",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L260",
+          "line": 260,
+          "expr": "const methodNode = nodeById.get(methodId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L263",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L263",
+            "expr": "m.annotations.includes('Transactional')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7003c16f5d02e098e09a28a1a2a7004384f1f7f6691418fbda4a244d9355d5c9",
+          "target": "assign:packages/parsers/src/java/spring.ts@L263",
+          "line": 263,
+          "expr": "add.transactional = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L256",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4292a899c0f6e35032643c3bf16de85d20fede9eea4290864c308e8d917680d4",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L264",
+          "line": 264,
+          "expr": "const scheduled = m.annos?.find((a) => a.name === 'Scheduled');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L265",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L265",
+            "expr": "scheduled",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2fb3eda2cf6635b227ca760956721059c6ac0faa8369f23dde722c2d03ad76e0",
+          "target": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L464",
+          "expr": "scheduledAnnoKind",
+          "line": 265
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L265",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L265",
+            "expr": "scheduled",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:360c0c42e0f16a54bafede63bcb233c329cec4c40b16495f782772acf43b6ed9",
+          "target": "assign:packages/parsers/src/java/spring.ts@L265",
+          "line": 265,
+          "expr": "add.scheduled = scheduledAnnoKind(scheduled.args) ?? 'scheduled';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L256",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7882e531bffc710dbd319eef21c9eda087654baa7d861844c020ba7792de1f09",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L266",
+          "line": 266,
+          "expr": "const query = m.annos?.find((a) => a.name === 'Query');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L267",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L267",
+            "expr": "query",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:526b7df2717856bbc1349e434b567930eb44d565457bcbc0d7ed77ff2d00299d",
+          "target": "assign:packages/parsers/src/java/spring.ts@L268",
+          "line": 268,
+          "expr": "add.query = {\n          jpql: allQuoted(query.args)[0],\n          native: /\\bnativeQuery\\s*=\\s*true\\b/.test(query.args ?? ''),\n        };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L273",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L273",
+            "expr": "m.annotations.includes('Modifying')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:04d34adf5951a22b6ad5988de8bf2f0fd3241a4117006dc6b0fca1a0be0bd8e4",
+          "target": "assign:packages/parsers/src/java/spring.ts@L273",
+          "line": 273,
+          "expr": "add.modifying = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L274",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L274",
+            "expr": "m.annotations.includes('Procedure')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7bf10e229e2cecc7470509377033c17592eddde7e027140f1dbd10c9b4d04c8f",
+          "target": "assign:packages/parsers/src/java/spring.ts@L274",
+          "line": 274,
+          "expr": "add.storedProcedure = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L256",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8b11a6cb3638e56c9a519e87e34aef7a90efbc22fad5fed57018a7b44cbe66b6",
+          "target": "sym:packages/parsers/src/java/spring.ts#securityOf@L442",
+          "expr": "securityOf",
+          "line": 275
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L256",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5d5fbec6d513ab9023bb85c1fa6c42926b00f135d8bc9c68c3eb8c7529fe700b",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L275",
+          "line": 275,
+          "expr": "const sec = securityOf(m);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L276",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L276",
+            "expr": "sec",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:906fddf60e0e1ebb462a84c69ff890c67e118ac78259e6c643cc82a3ef8c1dc3",
+          "target": "assign:packages/parsers/src/java/spring.ts@L276",
+          "line": 276,
+          "expr": "add.security = sec;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L277",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L112",
+            "expr": "classDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L256",
+            "expr": "def.body"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L277",
+            "expr": "Object.keys(add).length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4244e46ef660927a2abfc6fac64ad5f7ddc4053db1efba38cc0162d8faec2206",
+          "target": "assign:packages/parsers/src/java/spring.ts@L277",
+          "line": 277,
+          "expr": "methodNode.meta = { ...(methodNode.meta ?? {}), ...add };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L287",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L287",
+            "expr": "annos.includes('Autowired') || annos.includes('Inject') || annos.includes('Resource')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0bcb99b2dec715a3b3f22701fa92f2239bd2d62398711196bbe332c409938f5b",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L288",
+          "line": 288,
+          "expr": "const owner = nodeById.get(ownerId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L287",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L287",
+            "expr": "annos.includes('Autowired') || annos.includes('Inject') || annos.includes('Resource')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e85a3c2e4bfd377ec053575f62e4f0d342f0bbeca73fda0afd261bad787e399f",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L290",
+          "line": 290,
+          "expr": "emitInject(ownerId, depType, byKey, edges, recorded);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L291",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L287",
+            "expr": "annos.includes('Autowired') || annos.includes('Inject') || annos.includes('Resource')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L291",
+            "expr": "recorded.length && owner",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3661717a3fe0e8ddc1a3afbae7b60f587b8f18e78b83469e514d0b1358c65b4a",
+          "target": "assign:packages/parsers/src/java/spring.ts@L293",
+          "line": 293,
+          "expr": "owner.meta = { ...(owner.meta ?? {}), injects: dedupe([...prev, ...recorded]) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L302",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L302",
+            "expr": "stereotypeById.get(ownerId) === 'entity' && annos.some((a) => RELATION_ANNOS.has(a))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c5d4137b7fc5db3d8a0cb9efeeaabab13ca25b8994f7a3eec340ff4067f73a7e",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L304",
+          "line": 304,
+          "expr": "const targetId = byKey.get(relatedType);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L305",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L302",
+            "expr": "stereotypeById.get(ownerId) === 'entity' && annos.some((a) => RELATION_ANNOS.has(a))"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L305",
+            "expr": "targetId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:69c5991895ed4f7ea8fdcca962e7068af7151ae4370f8e4211b011300821996e",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L306",
+          "line": 306,
+          "expr": "const relAnno = def.annos?.find((a) => RELATION_ANNOS.has(a.name));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L305",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L302",
+            "expr": "stereotypeById.get(ownerId) === 'entity' && annos.some((a) => RELATION_ANNOS.has(a))"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L305",
+            "expr": "targetId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7e0165b243226d997ef78f92a0316f1b6c4b710b5ce532b97f56a62f2d391db0",
+          "target": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+          "expr": "relationMetaOf",
+          "line": 307
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L305",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L302",
+            "expr": "stereotypeById.get(ownerId) === 'entity' && annos.some((a) => RELATION_ANNOS.has(a))"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L305",
+            "expr": "targetId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5923fe1d824816b2bd5d12fc994399cdf114ef9fbd52e880db5733536ba0d54e",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L307",
+          "line": 307,
+          "expr": "const relMeta = relationMetaOf(relAnno?.args);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L311",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L302",
+            "expr": "stereotypeById.get(ownerId) === 'entity' && annos.some((a) => RELATION_ANNOS.has(a))"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L305",
+            "expr": "targetId"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L311",
+            "expr": "relAnno",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:301e4879b0e0c980681afebe5e8bb2b833e039e26610b9491f6a76bca6f16826",
+          "target": "assign:packages/parsers/src/java/spring.ts@L311",
+          "line": 311,
+          "expr": "relMeta.cardinality = relAnno.name;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L305",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L302",
+            "expr": "stereotypeById.get(ownerId) === 'entity' && annos.some((a) => RELATION_ANNOS.has(a))"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L305",
+            "expr": "targetId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1bec2ea6e78fbe057275a661a25a1d85c08db6590ed815a79729394337e626b1",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L312",
+          "line": 312,
+          "expr": "const e = edge(id, targetId, 'references', relatedType);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L313",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L302",
+            "expr": "stereotypeById.get(ownerId) === 'entity' && annos.some((a) => RELATION_ANNOS.has(a))"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L305",
+            "expr": "targetId"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L313",
+            "expr": "Object.keys(relMeta).length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:81e75b99d248487be52ab6187dd63f71abf8e07df3bb4d2aaa5a14c3edd06ece",
+          "target": "assign:packages/parsers/src/java/spring.ts@L313",
+          "line": 313,
+          "expr": "e.meta = relMeta;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L305",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L302",
+            "expr": "stereotypeById.get(ownerId) === 'entity' && annos.some((a) => RELATION_ANNOS.has(a))"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L305",
+            "expr": "targetId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4d6801aa6a5d736180c7c427d383cbe3ad2e27b7e9a33b584f7ddd337b49c7aa",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L314",
+          "line": 314,
+          "expr": "edges.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L320",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L320",
+            "expr": "stereotypeById.get(ownerId) === 'entity'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6d0ada248d380dd5ce74daccc8e550caf63467542fdff5006b13f5e497837608",
+          "target": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L489",
+          "expr": "columnMetaOf",
+          "line": 321
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L320",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L320",
+            "expr": "stereotypeById.get(ownerId) === 'entity'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b0e8c5bc57cb3216328e035851dab38212006b234557dc8b88600f5989a791dc",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L321",
+          "line": 321,
+          "expr": "const col = columnMetaOf(def);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L322",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L320",
+            "expr": "stereotypeById.get(ownerId) === 'entity'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L322",
+            "expr": "col",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dc65c399acb5f47457b90e1026a78e5adc2f8afa573c2ad5fdc034678779cacf",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L323",
+          "line": 323,
+          "expr": "const fieldNode = nodeById.get(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L324",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L282",
+            "expr": "fieldDefs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L320",
+            "expr": "stereotypeById.get(ownerId) === 'entity'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L322",
+            "expr": "col"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L324",
+            "expr": "fieldNode",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cabda35745870f02ef224aa0f4989db082ad854c10933e25430fa26b361b79d6",
+          "target": "assign:packages/parsers/src/java/spring.ts@L324",
+          "line": 324,
+          "expr": "fieldNode.meta = { ...(fieldNode.meta ?? {}), column: col };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 61,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 61,
+    "assignments": 18,
+    "conditions": 34,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 20,
+      "recorded": 58,
+      "unresolved": 20
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "20 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

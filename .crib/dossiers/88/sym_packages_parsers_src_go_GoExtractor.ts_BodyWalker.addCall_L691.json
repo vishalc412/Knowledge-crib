@@ -1,0 +1,473 @@
+{
+  "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c1872db7ea5b3c61c7199516b4306c610743fa949a2df97ea54eaa331e750425",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+    "kind": "symbol",
+    "type": "method",
+    "name": "addCall",
+    "qualifiedName": "BodyWalker.addCall",
+    "signature": "addCall(callee: GoCallee, proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/GoExtractor.ts",
+    "span": {
+      "start": 691,
+      "end": 742
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 699
+      },
+      {
+        "callee": "get",
+        "line": 702
+      },
+      {
+        "callee": "get",
+        "line": 702
+      },
+      {
+        "callee": "edgeId",
+        "line": 704
+      },
+      {
+        "callee": "slice",
+        "line": 706
+      },
+      {
+        "callee": "get",
+        "line": 712
+      },
+      {
+        "callee": "set",
+        "line": 739
+      },
+      {
+        "callee": "push",
+        "line": 740
+      }
+    ]
+  },
+  "source": {
+    "text": "  private addCall(\n    callee: GoCallee,\n    proc: ProcCtx,\n    guardStack: string[],\n    branch: string | undefined,\n    inLoop: boolean,\n    inException: boolean,\n  ): void {\n    proc.callSites.push({ callee: callee.name, line: callee.line });\n    // intra-file resolution: bare calls only (dotted → resolver). Match collectCalls' stance.\n    if (callee.tail.length > 0) return;\n    const dstId = this.byKey.get(callee.name) ?? this.byKey.get(callee.head);\n    if (!dstId || dstId === proc.procId) return; // skip self-recursion\n    const id = edgeId(proc.procId, dstId, 'calls');\n    const gf: GuardFields = {\n      cfgPath: guardStack.slice(),\n      ...(guardStack.length > 0 ? { guard: guardStack[guardStack.length - 1] } : {}),\n      ...(guardStack.length > 0 && branch !== undefined ? { branch } : {}),\n      inLoop,\n      inException,\n    };\n    const existing = this.callsEdges.get(id);\n    if (existing) {\n      // last-wins: overwrite the guard-chain fields (a callee called in two branches keeps the\n      // last site's cfgPath — the documented lossy-but-honest behavior).\n      existing.cfgPath = gf.cfgPath;\n      if (gf.guard !== undefined) existing.guard = gf.guard;\n      else existing.guard = undefined;\n      if (gf.branch !== undefined) existing.branch = gf.branch;\n      else existing.branch = undefined;\n      existing.inLoop = gf.inLoop;\n      existing.inException = gf.inException;\n    } else {\n      const e: Edge = {\n        id,\n        src: proc.procId,\n        dst: dstId,\n        rel: 'calls',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: 'lang:go', snippet: callee.head },\n        cfgPath: gf.cfgPath,\n        ...(gf.guard !== undefined ? { guard: gf.guard } : {}),\n        ...(gf.branch !== undefined ? { branch: gf.branch } : {}),\n        inLoop: gf.inLoop,\n        inException: gf.inException,\n      };\n      this.callsEdges.set(id, e);\n      this.edges.push(e);\n    }\n  }",
+    "truncated": false,
+    "totalLines": 52,
+    "startLine": 691
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addAssignment@L860",
+      "confidence": 1,
+      "name": "addAssignment",
+      "qualifiedName": "BodyWalker.addAssignment",
+      "signature": "addAssignment(line: number, target: string, expr: string, proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean, callee?: GoCallee): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 860
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkStmt@L426",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: GoBodyStmt, proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 426
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/GoExtractor.ts@L686",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "heading": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "anchor": "4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "snippet": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+    "procedureName": "BodyWalker.addCall",
+    "conditions": [
+      "cond:packages/parsers/src/go/GoExtractor.ts@L701",
+      "cond:packages/parsers/src/go/GoExtractor.ts@L703",
+      "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+      "cond:packages/parsers/src/go/GoExtractor.ts@L717",
+      "cond:packages/parsers/src/go/GoExtractor.ts@L719"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:24cd99726645dcc91868a1157c81a4e9572d055c393215cdf68e96de74fb441d",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L699",
+          "line": 699,
+          "expr": "proc.callSites.push({ callee: callee.name, line: callee.line });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L701",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L701",
+            "expr": "callee.tail.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6a175f97cd31568eccb8d15682d827eaf0879e61e0481ca0ddd4588d1956bdb4",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L701",
+          "line": 701,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c27ce64f06e69e0e4631fa33200b46aed7578f376b9d7cbd62f34f4d68dd8dbf",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L702",
+          "line": 702,
+          "expr": "const dstId = this.byKey.get(callee.name) ?? this.byKey.get(callee.head);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L703",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L703",
+            "expr": "!dstId || dstId === proc.procId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1b077a34108c9e8c2ba24f7f5db4190fc26ca8f09e38dea2100321d02c7d77de",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L703",
+          "line": 703,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d9f7659d3d980ebc0bad01012f788b8b5c8371fac215da5e36113427a03a2f37",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L704",
+          "line": 704,
+          "expr": "const id = edgeId(proc.procId, dstId, 'calls');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:17f6e9d969f1e7458681d200edaa98cd0e4951fa58a50d39e774b85c44022e7b",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L705",
+          "line": 705,
+          "expr": "const gf: GuardFields = {\n      cfgPath: guardStack.slice(),\n      ...(guardStack.length > 0 ? { guard: guardStack[guardStack.length - 1] } : {}),\n      ...(guardStack.length > 0 && branch !== undefined ? { branch } : {}),\n      inLoop,\n      inException,\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:161b654eb99e93632b06ba569eef1e8a388b98678cc01bd3db50e19f7580d7ab",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L712",
+          "line": 712,
+          "expr": "const existing = this.callsEdges.get(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+            "expr": "existing",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:314a66174fe631a3556d1c33fabffe9f39354ece66ff1fd37731e3c72885b9f7",
+          "target": "assign:packages/parsers/src/go/GoExtractor.ts@L716",
+          "line": 716,
+          "expr": "existing.cfgPath = gf.cfgPath;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L717",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+            "expr": "existing"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L717",
+            "expr": "gf.guard !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d2e6bba6dd9607cdc4428e842a7e8fd3bfcd1fdfcd83ffd3df6260acd8f17e05",
+          "target": "assign:packages/parsers/src/go/GoExtractor.ts@L717",
+          "line": 717,
+          "expr": "existing.guard = gf.guard;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L717",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+            "expr": "existing"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L717",
+            "expr": "gf.guard !== undefined",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f39b2d932b93e8c4d2f33e452c496ae0660d2a3ab45c2a676fdb8f88a82103b",
+          "target": "assign:packages/parsers/src/go/GoExtractor.ts@L718",
+          "line": 718,
+          "expr": "existing.guard = undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L719",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+            "expr": "existing"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L719",
+            "expr": "gf.branch !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bf088ae74424eb27a090fb68214554926d11322678f0ae1a73e593034aca585a",
+          "target": "assign:packages/parsers/src/go/GoExtractor.ts@L719",
+          "line": 719,
+          "expr": "existing.branch = gf.branch;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L719",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+            "expr": "existing"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L719",
+            "expr": "gf.branch !== undefined",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e00fb65138ca5f3354337e9c1df3414656ddb17a27b4810e6cc8ad32284f2810",
+          "target": "assign:packages/parsers/src/go/GoExtractor.ts@L720",
+          "line": 720,
+          "expr": "existing.branch = undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+            "expr": "existing",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:430fdbd1f956a758d8ccf89d01d0c8c6a297c3b5f73e6b99b56d862d7f2bef4b",
+          "target": "assign:packages/parsers/src/go/GoExtractor.ts@L721",
+          "line": 721,
+          "expr": "existing.inLoop = gf.inLoop;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+            "expr": "existing",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6af40a9027cb922845fb84e703238179b8fafb25fa7438ed718ee18d6ae01761",
+          "target": "assign:packages/parsers/src/go/GoExtractor.ts@L722",
+          "line": 722,
+          "expr": "existing.inException = gf.inException;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+            "expr": "existing",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3bc418f47be0872f240d480407096cde928948fb02f6a00f7414152bbc59c9e2",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L739",
+          "line": 739,
+          "expr": "this.callsEdges.set(id, e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addCall@L691",
+        "procedureName": "BodyWalker.addCall",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L713",
+            "expr": "existing",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a969cb80094d52170bac0442a92b31d635d9a7820e03fcf50014a9240f7fb4fb",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L740",
+          "line": 740,
+          "expr": "this.edges.push(e);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 16,
+    "referencedByFiles": [
+      "packages/parsers/src/go/GoExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 16,
+    "assignments": 7,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 8,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

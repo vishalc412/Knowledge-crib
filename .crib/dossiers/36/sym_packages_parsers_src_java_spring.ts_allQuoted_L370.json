@@ -1,0 +1,194 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#allQuoted@L370",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:031a738d5471e4db7642227e0c16187e9ff1ec1c742a13e47a8881d73728eb09",
+  "builtAt": "2026-06-25T22:41:29.085Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#allQuoted@L370",
+    "kind": "symbol",
+    "type": "function",
+    "name": "allQuoted",
+    "qualifiedName": "allQuoted",
+    "signature": "allQuoted(s?: string): string[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 370,
+      "end": 377
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 375
+      }
+    ]
+  },
+  "source": {
+    "text": "function allQuoted(s?: string): string[] {\n  if (!s) return [];\n  const out: string[] = [];\n  const re = /\"([^\"]*)\"/g;\n  let m: RegExpExecArray | null;\n  while ((m = re.exec(s)) !== null) out.push(m[1]!);\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 370
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L354",
+      "confidence": 1,
+      "name": "classMappingPath",
+      "qualifiedName": "classMappingPath",
+      "signature": "classMappingPath(def: JavaDef): string",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 354
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#securityOf@L432",
+      "confidence": 1,
+      "name": "securityOf",
+      "qualifiedName": "securityOf",
+      "signature": "securityOf(m: JavaDef): Record<string, string> | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 432
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L368",
+      "snippet": "/** Every double-quoted literal in an annotation's args (the paths), unquoted, in order.",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#allQuoted@L370",
+    "procedureName": "allQuoted",
+    "conditions": [
+      "cond:packages/parsers/src/java/spring.ts@L371",
+      "cond:packages/parsers/src/java/spring.ts@L375"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#allQuoted@L370",
+        "procedureName": "allQuoted",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L371",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L371",
+            "expr": "!s",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5574fb292943a69be0f52a560f3cba221bf897e61e725087c597efcbd409a3bf",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L371",
+          "line": 371,
+          "expr": "return [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#allQuoted@L370",
+        "procedureName": "allQuoted",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L375",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L375",
+            "expr": "(m = re.exec(s)) !== null",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ff753d8df73de7c45c3d862971aabcc9b0135f8d1a7666f8277961c5ce199501",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L375",
+          "line": 375,
+          "expr": "out.push(m[1]!);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#allQuoted@L370",
+        "procedureName": "allQuoted",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:337261c07005c1a7ec6d0cc081aa819766044a0392ae5d6dd2757af339f5885d",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 375
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#allQuoted@L370",
+        "procedureName": "allQuoted",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1b36d76f9b1e00815044c2454e72fbe67eacc1c155eb2db88abe6944a37ae289",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L376",
+          "line": 376,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,324 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:8d9fca8c063af454fdc60b1f52c997519a1f3c2bfe445967d7dca74371616c10",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+    "kind": "symbol",
+    "type": "method",
+    "name": "addType",
+    "qualifiedName": "Builder.addType",
+    "signature": "addType(def: TypeDef): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 197,
+      "end": 229
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 199
+      },
+      {
+        "callee": "map",
+        "line": 210
+      },
+      {
+        "callee": "hash",
+        "line": 222
+      },
+      {
+        "callee": "push",
+        "line": 226
+      },
+      {
+        "callee": "push",
+        "line": 227
+      },
+      {
+        "callee": "memberOf",
+        "line": 227
+      },
+      {
+        "callee": "indexSymbol",
+        "line": 228
+      }
+    ]
+  },
+  "source": {
+    "text": "  private addType(def: TypeDef): void {\n    const qualifiedName = def.schema ? `${def.schema}.${def.name}` : def.name;\n    const id = this.ctx.idFor('symbol', {\n      path: this.path,\n      qualifiedName,\n      startLine: def.span.start,\n    });\n    const meta: Record<string, unknown> = {};\n    let signature: string;\n    if (def.collection) {\n      meta.collection = def.collection;\n      signature = `${qualifiedName} AS ${def.collection.kind === 'table' ? 'TABLE' : 'VARRAY'} OF ${def.collection.elementType}`;\n    } else {\n      meta.attributes = def.attributes.map((a) => ({ name: a.name, dataType: a.dataType }));\n      signature = `${qualifiedName} AS OBJECT (${def.attributes.length} attrs)`;\n    }\n    const node: Node = {\n      id,\n      kind: 'symbol',\n      type: 'type',\n      name: def.name,\n      qualifiedName,\n      file: this.path,\n      span: def.span,\n      lang: 'plsql',\n      hash: this.ctx.hash(qualifiedName),\n      signature,\n      meta,\n    };\n    this.nodes.push(node);\n    this.edges.push(this.memberOf(id, this.fileId));\n    this.indexSymbol(def.name, qualifiedName, id);\n  }",
+    "truncated": false,
+    "totalLines": 33,
+    "startLine": 197
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+      "confidence": 1,
+      "name": "addTop",
+      "qualifiedName": "Builder.addTop",
+      "signature": "addTop(top: TopLevel): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 132
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.indexSymbol@L736",
+      "confidence": 1,
+      "name": "indexSymbol",
+      "qualifiedName": "Builder.indexSymbol",
+      "signature": "indexSymbol(name: string, qualifiedName: string, id: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 736
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.memberOf@L753",
+      "confidence": 1,
+      "name": "memberOf",
+      "qualifiedName": "Builder.memberOf",
+      "signature": "memberOf(childId: string, parentId: string): Edge",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 753
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/PlSqlExtractor.ts@L191",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+    "procedureName": "Builder.addType",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L206"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+        "procedureName": "Builder.addType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:95ddad3c3fd6c00736153f4c05a39d6996b7a3076f8c31cf44f146feadbbe880",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L199",
+          "line": 199,
+          "expr": "const id = this.ctx.idFor('symbol', {\n      path: this.path,\n      qualifiedName,\n      startLine: def.span.start,\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+        "procedureName": "Builder.addType",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L206",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L206",
+            "expr": "def.collection",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5224366913927233c6cb762547c6c0c2e57f70dca45605e581fe77e81ea2f050",
+          "target": "assign:packages/parsers/src/plsql/PlSqlExtractor.ts@L207",
+          "line": 207,
+          "expr": "meta.collection = def.collection;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+        "procedureName": "Builder.addType",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L206",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L206",
+            "expr": "def.collection",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0e6cbaf0c6dfc14455b09b3786665019fc76140be7d01ef7d318d8903ef29008",
+          "target": "assign:packages/parsers/src/plsql/PlSqlExtractor.ts@L208",
+          "line": 208,
+          "expr": "signature = `${qualifiedName} AS ${def.collection.kind === 'table' ? 'TABLE' : 'VARRAY'} OF ${def.collection.elementType}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+        "procedureName": "Builder.addType",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L206",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L206",
+            "expr": "def.collection",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c917818c73f14a250e3084538851dc176b9f0dbea3eaffa00e591d8a59c2d57e",
+          "target": "assign:packages/parsers/src/plsql/PlSqlExtractor.ts@L210",
+          "line": 210,
+          "expr": "meta.attributes = def.attributes.map((a) => ({ name: a.name, dataType: a.dataType }));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+        "procedureName": "Builder.addType",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L206",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L206",
+            "expr": "def.collection",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c0ab56eb6058156b154a61987ea5d3766b82b0c594c5343acb56b4861c8a6b85",
+          "target": "assign:packages/parsers/src/plsql/PlSqlExtractor.ts@L211",
+          "line": 211,
+          "expr": "signature = `${qualifiedName} AS OBJECT (${def.attributes.length} attrs)`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+        "procedureName": "Builder.addType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1143421db43f5166ea8636f10ec77212e4ebaa4e6f3280d7d254dc2f1152959",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L213",
+          "line": 213,
+          "expr": "const node: Node = {\n      id,\n      kind: 'symbol',\n      type: 'type',\n      name: def.name,\n      qualifiedName,\n      file: this.path,\n      span: def.span,\n      lang: 'plsql',\n      hash: this.ctx.hash(qualifiedName),\n      signature,\n      meta,\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+        "procedureName": "Builder.addType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:450ea245a96f67eb240e315aa3ee9cb6943a3214fd641547e45c53ff3d1c2fe0",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L226",
+          "line": 226,
+          "expr": "this.nodes.push(node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+        "procedureName": "Builder.addType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d9ddca097018330f5b5f7c7a02c2d33dfebf7a1c115ce503d0fcf0e4998ff5c5",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.memberOf@L753",
+          "expr": "memberOf",
+          "line": 227
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+        "procedureName": "Builder.addType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca864bfd0985171b9a8bd54e458a995ebaf360439cc9ee5aaea3acdad6141b6d",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L227",
+          "line": 227,
+          "expr": "this.edges.push(this.memberOf(id, this.fileId));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+        "procedureName": "Builder.addType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a80453a3f507f3bbc93a9aee98c40ffe8b335c6e9383b69963c806d7298442dd",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.indexSymbol@L736",
+          "expr": "indexSymbol",
+          "line": 228
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+        "procedureName": "Builder.addType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d78bfa6c3794f87611ebae1a4a70d3590792dd07aa576e8d6f358f2caeec6668",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L228",
+          "line": 228,
+          "expr": "this.indexSymbol(def.name, qualifiedName, id);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 4,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 7,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L544",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:5bc1ef07336cc233435e7dc6351e409f50fd725ef1a7409a7f81608e379dc20c",
+  "builtAt": "2026-06-26T05:09:36.599Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L544",
+    "kind": "symbol",
+    "type": "function",
+    "name": "collectDependencies",
+    "qualifiedName": "collectDependencies",
+    "signature": "collectDependencies(ownerId: string, outgoing: Map<string, Edge[]>, keep: (e: Edge) => boolean, producerOf: Map<string, string>, soul: SoulStore, brief: (id: string, c: number) => AdjacentBrief, seen: Set<string>, out: DossierDependency[]): void",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 544,
+      "end": 560
+    },
+    "callSites": [
+      {
+        "callee": "add",
+        "line": 557
+      },
+      {
+        "callee": "pushDependency",
+        "line": 558
+      }
+    ]
+  },
+  "source": {
+    "text": "function collectDependencies(\n  ownerId: string,\n  outgoing: Map<string, Edge[]>,\n  keep: (e: Edge) => boolean,\n  producerOf: Map<string, string>,\n  soul: SoulStore,\n  brief: (id: string, c: number) => AdjacentBrief,\n  seen: Set<string>,\n  out: DossierDependency[],\n): void {\n  for (const e of outgoing.get(ownerId) ?? []) {\n    if (e.rel !== 'injects' || !keep(e)) continue;\n    if (seen.has(e.dst)) continue;\n    seen.add(e.dst);\n    pushDependency(e, soul, brief, producerOf, out);\n  }\n}",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 544
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L199",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 199
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#pushDependency@L563",
+      "confidence": 1,
+      "name": "pushDependency",
+      "qualifiedName": "pushDependency",
+      "signature": "pushDependency(e: Edge, soul: SoulStore, brief: (id: string, c: number) => AdjacentBrief, producerOf: Map<string, string>, out: DossierDependency[]): void",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 563
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/framework.ts@L543",
+      "snippet": "/** Collect forward injects from `ownerId` into `dependencies` (dedup by dst id). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L544",
+    "procedureName": "collectDependencies",
+    "conditions": [
+      "cond:packages/core/src/dossier/framework.ts@L554"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L544",
+        "procedureName": "collectDependencies",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L554",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L554",
+            "expr": "outgoing.get(ownerId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4889dbc5b8eb06d21d51d669390f798f8c9308ab494eb14c5e4cf2d849ca89bf",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L557",
+          "line": 557,
+          "expr": "seen.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L544",
+        "procedureName": "collectDependencies",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f60c3c873258c3d3c71fe19712b2c539470c328eaf1d98deb4382c1e17b24c52",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 557
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L544",
+        "procedureName": "collectDependencies",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L554",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L554",
+            "expr": "outgoing.get(ownerId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:50c4da834a707cc9e8f5353e93e7dc37552b678f4bde783d745dc4cde3f66afe",
+          "target": "sym:packages/core/src/dossier/framework.ts#pushDependency@L563",
+          "expr": "pushDependency",
+          "line": 558
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L544",
+        "procedureName": "collectDependencies",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L554",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L554",
+            "expr": "outgoing.get(ownerId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e5df0ced9008397821f0062bed6be6e87689c1cc5e25963fc06d5bced3c730cd",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L558",
+          "line": 558,
+          "expr": "pushDependency(e, soul, brief, producerOf, out);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

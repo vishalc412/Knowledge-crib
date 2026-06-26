@@ -1,0 +1,75 @@
+{
+  "id": "sym:packages/parsers/fixtures/go/auth.go#BaseController.TextBlock@L70",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:fdc58ebd1782a45349e5f5a5a32e25d6d1bf7475671e54c8575463ab9ecc3fdc",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/go/auth.go#BaseController.TextBlock@L70",
+    "kind": "symbol",
+    "type": "method",
+    "name": "TextBlock",
+    "qualifiedName": "BaseController.TextBlock",
+    "signature": "func (b BaseController) TextBlock()",
+    "lang": "go",
+    "file": "packages/parsers/fixtures/go/auth.go",
+    "span": {
+      "start": 70,
+      "end": 73
+    }
+  },
+  "source": {
+    "text": "func (b BaseController) TextBlock() string {\n\treturn `hello\nmultiline`\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 70
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/go/auth.go#BaseController.TextBlock@L70",
+    "procedureName": "BaseController.TextBlock",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/go/auth.go#BaseController.TextBlock@L70",
+        "procedureName": "BaseController.TextBlock",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7d32cd35131d90364a5ea1c1067a1e114aae899982c22594e8a69b0a42e2bd1c",
+          "target": "stmt:packages/parsers/fixtures/go/auth.go@L71",
+          "line": 71,
+          "expr": "`hello\nmultiline`"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

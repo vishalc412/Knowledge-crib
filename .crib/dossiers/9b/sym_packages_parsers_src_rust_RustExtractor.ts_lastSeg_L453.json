@@ -1,0 +1,109 @@
+{
+  "id": "sym:packages/parsers/src/rust/RustExtractor.ts#lastSeg@L453",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:bc538dd8b1d8b0da7602fa9271765e25c572052adadb2aa211bbf4bdc8902da7",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/RustExtractor.ts#lastSeg@L453",
+    "kind": "symbol",
+    "type": "function",
+    "name": "lastSeg",
+    "qualifiedName": "lastSeg",
+    "signature": "lastSeg(callee: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/RustExtractor.ts",
+    "span": {
+      "start": 453,
+      "end": 455
+    },
+    "callSites": [
+      {
+        "callee": "pop",
+        "line": 454
+      },
+      {
+        "callee": "split",
+        "line": 454
+      }
+    ]
+  },
+  "source": {
+    "text": "function lastSeg(callee: string): string {\n  return callee.split(/::|\\./).pop() ?? callee;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 453
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+      "confidence": 1,
+      "name": "collectCalls",
+      "qualifiedName": "RustExtractor.collectCalls",
+      "signature": "collectCalls(calls: RustCallSite[], symbols: LocalSymbol[], byKey: Map<string, string>, edges: Edge[], guardByCaller: Map<string, GuardedCallSite[]>): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 373
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/RustExtractor.ts@L452",
+      "snippet": "/** Last `::`/`.`-separated segment of a callee chain (lowercased comparison happens at call sites). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#lastSeg@L453",
+    "procedureName": "lastSeg",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#lastSeg@L453",
+        "procedureName": "lastSeg",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1cd3621dbc52a97a399844456b7634b2b50fb323ba8832eac2b0374ea37bccf",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L454",
+          "line": 454,
+          "expr": "return callee.split(/::|\\./).pop() ?? callee;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/RustExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -759,7 +759,11 @@
           <tr><td><strong>PL/SQL</strong></td><td><code>.sql .pkb .pks .pck .pls .pkh .typ</code></td><td>Procedures, tables, columns, executes, data-flow</td></tr>
           <tr><td><strong>Markdown</strong></td><td><code>.md .markdown</code></td><td>Doc-sections, linked to symbols (describes / references)</td></tr>
           <tr><td style="color:var(--text-faint)">JS / JSX</td><td><code>.js .jsx</code></td><td>File nodes only — no symbol extraction (use .ts/.tsx)</td></tr>
-          <tr><td style="color:var(--text-faint)">Java / Kotlin / Go / Rust</td><td>—</td><td>File nodes only — extractors not yet shipped</td></tr>
+          <tr><td><strong>Java</strong></td><td><code>.java</code></td><td>Symbols, member-of, intra-file calls (imports/cross-file via resolver)</td></tr>
+          <tr><td><strong>C#</strong></td><td><code>.cs</code></td><td>Symbols, member-of, intra-file calls (imports/cross-file via resolver)</td></tr>
+          <tr><td><strong>Go</strong></td><td><code>.go</code></td><td>Symbols, member-of, intra-file calls (imports/cross-file via resolver)</td></tr>
+          <tr><td><strong>Rust</strong></td><td><code>.rs</code></td><td>Symbols, member-of, intra-file calls (imports/cross-file via resolver)</td></tr>
+          <tr><td style="color:var(--text-faint)">Kotlin</td><td><code>.kt .kts</code></td><td>File nodes only — extractor not yet shipped</td></tr>
         </tbody>
       </table>
     </div>
@@ -856,7 +860,7 @@
         <tbody>
           <tr><td><code>--cwd &lt;path&gt;</code></td><td><span class="impl-badge">✅ Implemented</span></td><td>Highest-priority explicit root (see Root resolution). May appear before or after the command.</td></tr>
           <tr><td><code>--exclude a,b,…</code></td><td><span class="impl-badge">✅ Implemented</span></td><td>Discovery ignore set on top of <code>DEFAULT_IGNORES</code>. Repeatable.</td></tr>
-          <tr><td><code>--with-embeddings</code></td><td><span class="impl-badge">✅ Implemented</span></td><td>Build the vector index (else BM25-only).</td></tr>
+          <tr><td><code>--semantic</code></td><td><span class="impl-badge">✅ Implemented</span></td><td>Run the M7 INFERRED TF-IDF semantic linker (adds capped <code>references</code> edges, provenance INFERRED, conf ≤0.6). Zero-dep; off by default so <code>--extracted-only</code> stays deterministic.</td></tr>
           <tr><td><code>--port &lt;N&gt;</code></td><td><span class="impl-badge">✅ Implemented</span></td><td>Port for <code>crib viz</code>.</td></tr>
           <tr><td><code>--json</code></td><td><span class="plan-badge">planned</span></td><td>Machine-readable output (not yet wired).</td></tr>
           <tr><td><code>--quiet / --verbose</code></td><td><span class="plan-badge">planned</span></td><td>Log level (not yet wired).</td></tr>
@@ -870,14 +874,14 @@
     <div class="code-wrapper">
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
       <pre><code><span class="token-prompt">$</span> crib index .                               <span class="token-comment"># index + register</span>
-<span class="token-prompt">$</span> crib index . --with-embeddings              <span class="token-comment"># + build vector index</span>
+<span class="token-prompt">$</span> crib index . --semantic                       <span class="token-comment"># + run INFERRED TF-IDF semantic linker (references edges)</span>
 <span class="token-prompt">$</span> crib index . --exclude vendor,third_party   <span class="token-comment"># skip dirs</span></code></pre>
     </div>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Flag</th><th>Status</th><th>Meaning</th></tr></thead>
         <tbody>
-          <tr><td><code>--with-embeddings</code></td><td><span class="impl-badge">✅</span></td><td>Build vector index (else BM25-only)</td></tr>
+          <tr><td><code>--semantic</code></td><td><span class="impl-badge">✅</span></td><td>Run the INFERRED TF-IDF semantic linker (adds capped <code>references</code> edges)</td></tr>
           <tr><td><code>--exclude &lt;a,b,…&gt;</code></td><td><span class="impl-badge">✅</span></td><td>Add dirs to the discovery ignore set (repeatable)</td></tr>
           <tr><td><code>--include &lt;glob&gt;</code></td><td><span class="plan-badge">planned</span></td><td>Scope files (not yet wired)</td></tr>
           <tr><td><code>--lang &lt;a,b&gt;</code></td><td><span class="plan-badge">planned</span></td><td>Restrict languages (not yet wired)</td></tr>
@@ -1194,7 +1198,7 @@
         <h4>Verify</h4>
         <div class="code-wrapper">
           <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-          <pre><code>/mcp    <span class="token-comment"># lists connected servers + tools; knowledge-crib should show 9 tools</span></code></pre>
+          <pre><code>/mcp    <span class="token-comment"># lists connected servers + tools; knowledge-crib should show 11 tools</span></code></pre>
         </div>
 
         <div class="callout callout-info">
@@ -1371,8 +1375,8 @@ tool_timeout_sec = <span class="token-num">60</span></code></pre>
     <div class="code-wrapper">
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
       <pre><code><span class="token-comment"># 1313 java · 292 tsx · 225 sql · 58 ts · 46 js · 37 jsx · 14 kts · 11 kt · 5 md</span>
-<span class="token-comment"># Knowledge-crib extracts: TS/TSX, SQL, Markdown</span>
-<span class="token-comment"># Java/Kotlin → file nodes only</span></code></pre>
+<span class="token-comment"># Knowledge-crib extracts: TS/TSX, SQL, Markdown, Java (M14 extractor)</span>
+<span class="token-comment"># Kotlin → file nodes only (no Kotlin extractor yet)</span></code></pre>
     </div>
 
     <h3>First attempt — failure and root causes</h3>
@@ -1387,7 +1391,7 @@ tool_timeout_sec = <span class="token-num">60</span></code></pre>
       <div class="callout-body">
         <strong>Root causes identified</strong>
         <p><strong>Cause 1:</strong> Default discovery ignore set didn't include <code>.yarn</code> (9832 files / 261 MB) or <code>.gradle</code> (174 MB). Discovery read+hashed every cache file before reaching source.</p>
-        <p><strong>Cause 2:</strong> PL/SQL extractor has a pathological O(n²) path on SQL migration file shapes (<code>V*.sql</code>).</p>
+        <p><strong>Cause 2 (historical):</strong> PL/SQL extractor entered an <em>infinite loop</em> on stray <code>WHEN</code>/<code>ELSE</code>/<code>EXCEPTION</code> tokens at top level (<code>recover()</code> bailed on a BLOCK_END keyword without advancing) — not an O(n²) path. Fixed in commit <code>0961e5b</code> with a forward-progress guard + regression test; the extractor is now O(tokens)/file.</p>
       </div>
     </div>
 
@@ -1423,8 +1427,8 @@ tool_timeout_sec = <span class="token-num">60</span></code></pre>
     <div class="code-wrapper">
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
       <pre><code>initialize  → serverInfo { name: "knowledge-crib", version: "0.0.0" }
-tools/list  → 9 tools (status, context, impact, query, describes, neighbors,
-                        shortest_path, detect_changes, extract_rules)
+tools/list  → 11 tools (status, query, context, source, dossier, impact,
+                         describes, neighbors, shortest_path, detect_changes, extract_rules)
 status      → { nodes:1576, edges:1831, clusters:104, vcsHead:... }
 
 query "schedule"
@@ -1494,8 +1498,8 @@ impact(ScheduleFilterBar, up, depth 2)
           <tr><td><code>not indexed — run crib index first</code></td><td>No <code>.crib/</code> at that path. Run <code>crib index &lt;path&gt;</code>.</td></tr>
           <tr><td><code>crib serve</code> exits immediately</td><td>Old <code>dist/</code> — run <code>pnpm build</code> again. Fixed in current build.</td></tr>
           <tr><td>IDE says server failed to start / <code>crib</code> not found</td><td>IDE didn't inherit PATH. Use absolute path or run <code>crib mcp install</code> (it embeds the absolute path automatically).</td></tr>
-          <tr><td>Index hangs at 100% CPU</td><td>Cache dir not ignored, or PL/SQL extractor hit O(n²) path. Re-run with <code>--exclude &lt;dir&gt;</code> and/or exclude <code>resources</code> for SQL-heavy repos.</td></tr>
-          <tr><td><code>query</code> returns nothing</td><td>Symbol not extracted (e.g. <code>.js</code> / <code>.java</code>). Re-index as <code>.ts</code>/<code>.tsx</code> or extend the extractor registry.</td></tr>
+          <tr><td>Index hangs at 100% CPU</td><td>Cache dir not ignored (e.g. <code>.yarn</code>/<code>.gradle</code>). Re-run with <code>--exclude &lt;dir&gt;</code>. (A historical PL/SQL parser infinite-loop on <code>V*.sql</code> was fixed in commit <code>0961e5b</code> — no longer a cause.)</td></tr>
+          <tr><td><code>query</code> returns nothing</td><td>Symbol not extracted (e.g. <code>.js</code> / <code>.jsx</code> / <code>.cjs</code> / <code>.mjs</code>, or <code>.kt</code>). Re-index as <code>.ts</code>/<code>.tsx</code> or extend the extractor registry.</td></tr>
           <tr><td>Tools visible but agent doesn't use them</td><td>Copilot "Ask" mode — switch to <strong>Agent</strong> mode.</td></tr>
           <tr><td><code>.cursor</code> / <code>.vscode</code> MCP loads nothing</td><td>Wrong root key: Cursor uses <code>mcpServers</code>, Copilot uses <code>servers</code> + <code>type: "stdio"</code>.</td></tr>
           <tr><td>Codex ignores the server</td><td>Use snake_case <code>[mcp_servers.name]</code>, not <code>[mcpServers]</code> or <code>[mcp.servers]</code>.</td></tr>
@@ -1524,13 +1528,12 @@ impact(ScheduleFilterBar, up, depth 2)
       <table>
         <thead><tr><th>#</th><th>Limitation</th><th>Workaround</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>PL/SQL extractor — pathological O(n²) on large <code>V*.sql</code> migration sets</td><td><code>--exclude resources</code></td></tr>
-          <tr><td>2</td><td>No Java / Kotlin / Go / Rust symbol extraction — file nodes only</td><td>Registry is extensible; contribute extractors</td></tr>
-          <tr><td>3</td><td><code>.js</code> / <code>.jsx</code> not symbol-extracted — intentional</td><td>Convert to <code>.ts</code> / <code>.tsx</code></td></tr>
-          <tr><td>4</td><td>No embeddings by default</td><td><code>crib index --with-embeddings</code> enables sqlite-vec</td></tr>
-          <tr><td>5</td><td>Multimodal (PDF/image/audio) is opt-in</td><td><code>crib_worker</code> Python subprocess never spawned on default path</td></tr>
-          <tr><td>6</td><td>Codex: one global entry can't serve multiple projects path-lessly</td><td>Use per-project <code>.codex/config.toml</code> or one global entry per project</td></tr>
-          <tr><td>7</td><td>Several CLI flags are "planned" — accepted but no-op</td><td>See CLI spec flag status column</td></tr>
+          <tr><td>1</td><td>No Kotlin symbol extraction — file nodes only (Java, C#, Go, Rust shipped in M14)</td><td>Registry is extensible; contribute a Kotlin extractor</td></tr>
+          <tr><td>2</td><td><code>.js</code> / <code>.jsx</code> / <code>.cjs</code> / <code>.mjs</code> not symbol-extracted — intentional</td><td>Use <code>.ts</code> / <code>.tsx</code> / <code>.mts</code> / <code>.cts</code> (those <em>are</em> extracted)</td></tr>
+          <tr><td>3</td><td>No vector embeddings ship (no sqlite-vec; <code>capabilities().vector</code> hard-coded false)</td><td>Deterministic core is BM25 + FTS5 only. The INFERRED TF-IDF semantic linker is opt-in via <code>--semantic</code></td></tr>
+          <tr><td>4</td><td>Multimodal (PDF/image/audio) is opt-in</td><td><code>crib_worker</code> Python subprocess never spawned on default path; enablement is library-API only (no <code>--multimodal</code> CLI flag yet)</td></tr>
+          <tr><td>5</td><td>Codex: one global entry can't serve multiple projects path-lessly</td><td>Use per-project <code>.codex/config.toml</code> or one global entry per project</td></tr>
+          <tr><td>6</td><td>Several CLI flags are "planned" — accepted but no-op</td><td>See CLI spec flag status column</td></tr>
         </tbody>
       </table>
     </div>
@@ -1547,9 +1550,9 @@ impact(ScheduleFilterBar, up, depth 2)
   packages/
     <span class="arch-highlight">soul-schema/</span>   <span class="arch-comment"># JSON Schema + TS types (the contract)</span>
     <span class="arch-highlight">core/</span>          <span class="arch-comment"># GraphModel, SoulStore (chunked JSONL) + IndexStore (SQLite + FTS5)</span>
-    <span class="arch-highlight">parsers/</span>       <span class="arch-comment"># tree-sitter (WASM) wrappers — TS / Python / PL-SQL / Markdown</span>
+    <span class="arch-highlight">parsers/</span>       <span class="arch-comment"># hand-rolled recursive-descent — TS / Python / PL-SQL / Markdown / Java / C# / Go / Rust</span>
     <span class="arch-highlight">pipeline/</span>      <span class="arch-comment"># extract → resolve → link → cluster → index (phased)</span>
-    <span class="arch-highlight">mcp/</span>           <span class="arch-comment"># one MCP server (stdio) + 9 verbs (pure functions)</span>
+    <span class="arch-highlight">mcp/</span>           <span class="arch-comment"># one MCP server (stdio) + 11 verbs (pure functions)</span>
     <span class="arch-highlight">cli/</span>           <span class="arch-comment"># crib index|status|query|serve|mcp|update|export|viz|install-hooks</span>
     <span class="arch-highlight">ui/</span>            <span class="arch-comment"># offline web viz (vendored Cytoscape)</span>
     <span class="arch-new">soul-reader/</span>   <span class="arch-comment"># engine-free reader for SeeroFlow / external consumers</span>

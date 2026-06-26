@@ -1,0 +1,288 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L570",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d42c4513243b856093ed5b5771e17cacc934ec9d700d53505536273caa8a6b00",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L570",
+    "kind": "symbol",
+    "type": "function",
+    "name": "appendUnresolvedProduces",
+    "qualifiedName": "appendUnresolvedProduces",
+    "signature": "appendUnresolvedProduces(node: Node, outgoing: Map<string, Edge[]>, produces: DossierProduces[], seen: Set<string>): void",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 570,
+      "end": 597
+    },
+    "callSites": [
+      {
+        "callee": "isArray",
+        "line": 577
+      },
+      {
+        "callee": "add",
+        "line": 580
+      },
+      {
+        "callee": "some",
+        "line": 586
+      },
+      {
+        "callee": "includes",
+        "line": 586
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 586
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 586
+      },
+      {
+        "callee": "add",
+        "line": 589
+      },
+      {
+        "callee": "push",
+        "line": 590
+      }
+    ]
+  },
+  "source": {
+    "text": "function appendUnresolvedProduces(\n  node: Node,\n  outgoing: Map<string, Edge[]>,\n  produces: DossierProduces[],\n  seen: Set<string>,\n): void {\n  const m = (node.meta ?? {}) as Record<string, unknown>;\n  const list = Array.isArray(m.produces) ? (m.produces as unknown[]) : [];\n  const emitted = new Set<string>();\n  for (const e of outgoing.get(node.id) ?? []) {\n    if (e.rel === 'produces') emitted.add(e.dst);\n  }\n  for (const t of list) {\n    if (typeof t !== 'string') continue;\n    // unresolved iff NO produced-type symbol id matches this type name (best-effort: compare against\n    // emitted dst ids + the produced brief qualifiedName/name — a resolver-linked type has an edge).\n    const matches = [...emitted].some((id) => id.toLowerCase().includes(t.toLowerCase()));\n    if (matches) continue;\n    if (seen.has(`?${t}`)) continue;\n    seen.add(`?${t}`);\n    produces.push({\n      id: '?',\n      confidence: 0,\n      brief: { id: '?', confidence: 0, qualifiedName: t },\n      unresolved: true,\n    });\n  }\n}",
+    "truncated": false,
+    "totalLines": 28,
+    "startLine": 570
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L192",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 192
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/framework.ts@L569",
+      "snippet": "/** Append unresolved produces entries from a node's `meta.produces` type names with no emitted edge. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L570",
+    "procedureName": "appendUnresolvedProduces",
+    "conditions": [
+      "cond:packages/core/src/dossier/framework.ts@L579",
+      "cond:packages/core/src/dossier/framework.ts@L580",
+      "cond:packages/core/src/dossier/framework.ts@L582"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L570",
+        "procedureName": "appendUnresolvedProduces",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d7aa05df16c25746088cd81159b698a02c5d0924f3bdc80149aec58d6a70d912",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L577",
+          "line": 577,
+          "expr": "const list = Array.isArray(m.produces) ? (m.produces as unknown[]) : [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L570",
+        "procedureName": "appendUnresolvedProduces",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L580",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L579",
+            "expr": "outgoing.get(node.id) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L580",
+            "expr": "e.rel === 'produces'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:185b62a9e27a526f699455b351407f08a5bde003225d54552d8a496cd72a3ca9",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L580",
+          "line": 580,
+          "expr": "emitted.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L570",
+        "procedureName": "appendUnresolvedProduces",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4c184e9bab8b06ce218ec30ec84b76845b411424cc25eb37a1dac9d8f7484fdb",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 580
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L570",
+        "procedureName": "appendUnresolvedProduces",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L582",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L582",
+            "expr": "list",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:221ae4816d471ca24cbe3373612ba265d0726b9c88ee3d9bc3d01dbd8529a202",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L586",
+          "line": 586,
+          "expr": "const matches = [...emitted].some((id) => id.toLowerCase().includes(t.toLowerCase()));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L570",
+        "procedureName": "appendUnresolvedProduces",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L582",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L582",
+            "expr": "list",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:439849ece6d99f484bd7ef94024e01cd417756d03e7d3c79f656b0e89a2627ba",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L589",
+          "line": 589,
+          "expr": "seen.add(`?${t}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L570",
+        "procedureName": "appendUnresolvedProduces",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L582",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L582",
+            "expr": "list",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:77d414008a24b1b6e31bfca9cb64aa6188b4cbc831b47e8f279033d54159744a",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L590",
+          "line": 590,
+          "expr": "produces.push({\n      id: '?',\n      confidence: 0,\n      brief: { id: '?', confidence: 0, qualifiedName: t },\n      unresolved: true,\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L570",
+        "procedureName": "appendUnresolvedProduces",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:13e3ee35d061ec730f09232fbeb73b0bf45bbb8205a6f542ddca3853eb2ab0b5",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 590
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 8,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

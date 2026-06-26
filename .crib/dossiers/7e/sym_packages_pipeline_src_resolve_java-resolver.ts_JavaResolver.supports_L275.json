@@ -1,0 +1,137 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#JavaResolver.supports@L275",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:10f2292ba021a837fbbc44d4d87b0a182ce400b0ecc77dbe852e55f53bd7e295",
+  "builtAt": "2026-06-25T22:29:24.239Z",
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#JavaResolver.supports@L275",
+    "kind": "symbol",
+    "type": "method",
+    "name": "supports",
+    "qualifiedName": "JavaResolver.supports",
+    "signature": "supports(file: FileMeta): boolean",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/java-resolver.ts",
+    "span": {
+      "start": 275,
+      "end": 277
+    },
+    "callSites": [
+      {
+        "callee": "some",
+        "line": 276
+      },
+      {
+        "callee": "endsWith",
+        "line": 276
+      }
+    ]
+  },
+  "source": {
+    "text": "}\n\n/** Find a file whose path ends with the package-dir/type-name suffix (`a/b/C` → `.../a/b/C.java`). */",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 275
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a15a51dcb8460a247.md#evidence",
+      "heading": "Evidence",
+      "anchor": "evidence",
+      "snippet": "Evidence",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-7-deployment-lifecycle",
+      "heading": "2.7 Deployment & lifecycle",
+      "anchor": "2-7-deployment-lifecycle",
+      "snippet": "2.7 Deployment & lifecycle",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-4-mcp-ts-sdk-version",
+      "heading": "4.4 MCP TS SDK version",
+      "anchor": "4-4-mcp-ts-sdk-version",
+      "snippet": "4.4 MCP TS SDK version",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#6-github-copilot-vs-code-ghcp",
+      "heading": "6. GitHub Copilot (VS Code, \"ghcp\")",
+      "anchor": "6-github-copilot-vs-code-ghcp",
+      "snippet": "6. GitHub Copilot (VS Code, \"ghcp\")",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#cypher-optional-index-backend-dependent",
+      "heading": "`cypher` *(optional, index-backend-dependent)*",
+      "anchor": "cypher-optional-index-backend-dependent",
+      "snippet": "`cypher` *(optional, index-backend-dependent)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#JavaResolver.supports@L275",
+    "procedureName": "JavaResolver.supports",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#JavaResolver.supports@L275",
+        "procedureName": "JavaResolver.supports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d9e6a441d448f55c81078d2e3b77d9b34a39d78204d01c71c737a1d4e0da9f41",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L276",
+          "line": 276,
+          "expr": "return JAVA_EXTS.some((e) => file.path.endsWith(e));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

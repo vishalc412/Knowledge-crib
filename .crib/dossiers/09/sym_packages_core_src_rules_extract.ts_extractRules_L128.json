@@ -1,0 +1,490 @@
+{
+  "id": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:7cded3ef4b4a61c3c539317febc119070b45cef2c7045a0739a2699426566aa3",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+    "kind": "symbol",
+    "type": "function",
+    "name": "extractRules",
+    "qualifiedName": "extractRules",
+    "signature": "extractRules(soul: SoulStore, procedure: string, opts: ExtractRulesOpts = {}): RuleRecord[]",
+    "lang": "typescript",
+    "file": "packages/core/src/rules/extract.ts",
+    "span": {
+      "start": 128,
+      "end": 172
+    },
+    "callSites": [
+      {
+        "callee": "findProcedure",
+        "line": 133
+      },
+      {
+        "callee": "outgoingIndex",
+        "line": 135
+      },
+      {
+        "callee": "get",
+        "line": 136
+      },
+      {
+        "callee": "callLineIndex",
+        "line": 139
+      },
+      {
+        "callee": "sort",
+        "line": 142
+      },
+      {
+        "callee": "filter",
+        "line": 142
+      },
+      {
+        "callee": "lineOf",
+        "line": 144
+      },
+      {
+        "callee": "lineOf",
+        "line": 144
+      },
+      {
+        "callee": "map",
+        "line": 148
+      },
+      {
+        "callee": "getNode",
+        "line": 149
+      },
+      {
+        "callee": "push",
+        "line": 160
+      },
+      {
+        "callee": "actionFor",
+        "line": 168
+      }
+    ]
+  },
+  "source": {
+    "text": "export function extractRules(\n  soul: SoulStore,\n  procedure: string,\n  opts: ExtractRulesOpts = {},\n): RuleRecord[] {\n  const proc = findProcedure(soul, procedure);\n  if (!proc) return [];\n  const out = outgoingIndex(soul);\n  const procEdges = out.get(proc.id) ?? [];\n  // call-site line index: the `calls` edge's dst is the callee's DEFINITION, not the call site,\n  // so the call-site line is recovered from the caller's recorded call sites (meta.calls).\n  const callLines = callLineIndex(proc);\n\n  // only executes (→statement) and calls (→callee) carry the guard chain; sort by source line.\n  const actionEdges = procEdges\n    .filter((e) => e.rel === 'executes' || e.rel === 'calls')\n    .sort((a, b) => lineOf(soul, a, callLines) - lineOf(soul, b, callLines));\n\n  const rules: RuleRecord[] = [];\n  for (const e of actionEdges) {\n    const conditions = (e.cfgPath ?? []).map((condId) => {\n      const c = soul.getNode(condId);\n      const rc: RuleCondition = { id: condId };\n      if (c?.expr) rc.expr = c.expr;\n      return rc;\n    });\n    // polarity is recorded only for the innermost IF — tag the last condition.\n    const innermost = conditions[conditions.length - 1];\n    if (innermost && e.branch !== undefined) {\n      innermost.polarity = e.branch;\n    }\n\n    rules.push({\n      procedure: proc.id,\n      ...(proc.qualifiedName ? { procedureName: proc.qualifiedName } : {}),\n      ...(e.guard ? { guard: e.guard } : {}),\n      ...(e.branch ? { branch: e.branch } : {}),\n      conditions,\n      inLoop: e.inLoop ?? false,\n      inException: e.inException ?? false,\n      action: actionFor(soul, e, out, opts, callLines),\n    });\n  }\n  return rules;\n}",
+    "truncated": false,
+    "totalLines": 45,
+    "startLine": 128
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/server.ts#buildServer@L17",
+      "confidence": 1,
+      "name": "buildServer",
+      "qualifiedName": "buildServer",
+      "signature": "buildServer(verbs: Verbs, version = '0.0.0'): McpServer",
+      "type": "function",
+      "file": "packages/mcp/src/server.ts",
+      "line": 17
+    },
+    {
+      "id": "sym:packages/pipeline/src/parity/parity.ts#decisionParity@L190",
+      "confidence": 1,
+      "name": "decisionParity",
+      "qualifiedName": "decisionParity",
+      "signature": "decisionParity(opts: ParityOpts): Promise<ParityReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/parity/parity.ts",
+      "line": 190
+    },
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#decisionTable@L191",
+      "confidence": 1,
+      "name": "decisionTable",
+      "qualifiedName": "decisionTable",
+      "signature": "decisionTable(soul: SoulStore, procedure: string, opts: ExtractRulesOpts = {}): DecisionTable",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 191
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#actionFor@L215",
+      "confidence": 1,
+      "name": "actionFor",
+      "qualifiedName": "actionFor",
+      "signature": "actionFor(soul: SoulStore, e: Edge, out: Map<string, Edge[]>, opts: ExtractRulesOpts, callLines: Map<string, number>): RuleAction",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 215
+    },
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#callLineIndex@L179",
+      "confidence": 1,
+      "name": "callLineIndex",
+      "qualifiedName": "callLineIndex",
+      "signature": "callLineIndex(proc: Node): Map<string, number>",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 179
+    },
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#findProcedure@L98",
+      "confidence": 1,
+      "name": "findProcedure",
+      "qualifiedName": "findProcedure",
+      "signature": "findProcedure(soul: SoulStore, procedure: string): Node | undefined",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 98
+    },
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#lineOf@L259",
+      "confidence": 1,
+      "name": "lineOf",
+      "qualifiedName": "lineOf",
+      "signature": "lineOf(soul: SoulStore, e: Edge, callLines: Map<string, number>): number",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 259
+    },
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L117",
+      "confidence": 1,
+      "name": "outgoingIndex",
+      "qualifiedName": "outgoingIndex",
+      "signature": "outgoingIndex(soul: SoulStore): Map<string, Edge[]>",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 117
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/rules/extract.ts@L127",
+      "snippet": "/** Extract the rule records for one procedure, materializing each edge's inherited cfgPath. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+    "procedureName": "extractRules",
+    "conditions": [
+      "cond:packages/core/src/rules/extract.ts@L134",
+      "cond:packages/core/src/rules/extract.ts@L147",
+      "cond:packages/core/src/rules/extract.ts@L156"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6388d78f95d073a5921175e00c56e658e6e1db8c4d9656a35f1fe38be215a80c",
+          "target": "sym:packages/core/src/rules/extract.ts#findProcedure@L98",
+          "expr": "findProcedure",
+          "line": 133
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bcc9e062901ac07818c6969bdc9e61a9c3f4fc73b57a572061c8abbc317eb6bf",
+          "target": "stmt:packages/core/src/rules/extract.ts@L133",
+          "line": 133,
+          "expr": "const proc = findProcedure(soul, procedure);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "guard": "cond:packages/core/src/rules/extract.ts@L134",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L134",
+            "expr": "!proc",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8af6f8c1ba82ba4ed408adbda65e79d9a065b9f67991feca15c2c747a2bc7a15",
+          "target": "stmt:packages/core/src/rules/extract.ts@L134",
+          "line": 134,
+          "expr": "return [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:062d5dd6c41ece44c27de906a03a335dc7be2d0207adf591f524992e38d32790",
+          "target": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L117",
+          "expr": "outgoingIndex",
+          "line": 135
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:361689dca33897e4e0458ae43d9687b6c96140791b502cc1fcb26ccec72730ff",
+          "target": "stmt:packages/core/src/rules/extract.ts@L135",
+          "line": 135,
+          "expr": "const out = outgoingIndex(soul);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0f3815ca5306e0adf6aa35aec1ce6f0883ea06a161eeda26c65fb69c26c8831e",
+          "target": "stmt:packages/core/src/rules/extract.ts@L136",
+          "line": 136,
+          "expr": "const procEdges = out.get(proc.id) ?? [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b2cf3e4a3bb9d868721730663fd2db2b3f9c7dfc883bcd62420ca995cccb411a",
+          "target": "sym:packages/core/src/rules/extract.ts#callLineIndex@L179",
+          "expr": "callLineIndex",
+          "line": 139
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:57e9df7166268f1a7aefc1d197616eff38dde5efa1232958bfcb25c103c0cf79",
+          "target": "stmt:packages/core/src/rules/extract.ts@L139",
+          "line": 139,
+          "expr": "const callLines = callLineIndex(proc);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0954f35d5e5e2e29bc0a741951300a761a1be8225ed42919263de75e7cb2ada6",
+          "target": "stmt:packages/core/src/rules/extract.ts@L142",
+          "line": 142,
+          "expr": "const actionEdges = procEdges\n    .filter((e) => e.rel === 'executes' || e.rel === 'calls')\n    .sort((a, b) => lineOf(soul, a, callLines) - lineOf(soul, b, callLines));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2668c8282cef542f5118d1f854489a169f27b432a6b0942bee8535419e2d18b1",
+          "target": "sym:packages/core/src/rules/extract.ts#lineOf@L259",
+          "expr": "lineOf",
+          "line": 144
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "guard": "cond:packages/core/src/rules/extract.ts@L147",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L147",
+            "expr": "actionEdges",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5066b7adefeb0a2f76f61a12291c8bbfaae6ee75189be03318e440d072a4effc",
+          "target": "stmt:packages/core/src/rules/extract.ts@L148",
+          "line": 148,
+          "expr": "const conditions = (e.cfgPath ?? []).map((condId) => {\n      const c = soul.getNode(condId);\n      const rc: RuleCondition = { id: condId };\n      if (c?.expr) rc.expr = c.expr;\n      return rc;\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "guard": "cond:packages/core/src/rules/extract.ts@L156",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L147",
+            "expr": "actionEdges"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L156",
+            "expr": "innermost && e.branch !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1a553c641913abdd08715fd226c9992634121b2a82f0d499b98fa9d5b4076e87",
+          "target": "assign:packages/core/src/rules/extract.ts@L157",
+          "line": 157,
+          "expr": "innermost.polarity = e.branch;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "guard": "cond:packages/core/src/rules/extract.ts@L147",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L147",
+            "expr": "actionEdges",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ebfce5f4e9dadf27bee5c5bd4c3325cab1e09b6428faea6e0d86cf285123f2e7",
+          "target": "stmt:packages/core/src/rules/extract.ts@L160",
+          "line": 160,
+          "expr": "rules.push({\n      procedure: proc.id,\n      ...(proc.qualifiedName ? { procedureName: proc.qualifiedName } : {}),\n      ...(e.guard ? { guard: e.guard } : {}),\n      ...(e.branch ? { branch: e.branch } : {}),\n      conditions,\n      inLoop: e.inLoop ?? false,\n      inException: e.inException ?? false,\n      action: actionFor(soul, e, out, opts, callLines),\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3eaa54f65f643c9eb0dc67d25acd997421ab84f097df1d018c31486d1031ffbd",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 160
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "guard": "cond:packages/core/src/rules/extract.ts@L147",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L147",
+            "expr": "actionEdges",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:aaa8344212740708d0e85c64ad641bd4ea4057564c5e1f6ad142922c4848525d",
+          "target": "sym:packages/core/src/rules/extract.ts#actionFor@L215",
+          "expr": "actionFor",
+          "line": 168
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+        "procedureName": "extractRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:02504d1dfb7108665ecf2a9d67d6bfded8ab89d7a0d751c164a4ee90904b644d",
+          "target": "stmt:packages/core/src/rules/extract.ts@L171",
+          "line": 171,
+          "expr": "return rules;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/core/src/rules/extract.ts",
+      "packages/mcp/src/server.ts",
+      "packages/pipeline/src/parity/parity.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 1,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 12,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -26,7 +26,15 @@
         "table",
         "column",
         "statement",
-        "condition"
+        "condition",
+        "exception-handler",
+        "raise",
+        "cursor",
+        "assignment",
+        "case-branch",
+        "route",
+        "field",
+        "component"
       ]
     },
     "hash": {
@@ -110,6 +118,73 @@
     },
     "branch": {
       "type": "string"
+    },
+    "errorCode": {
+      "type": "string"
+    },
+    "errorMessage": {
+      "type": "string"
+    },
+    "whenSelector": {
+      "type": "string"
+    },
+    "assignTarget": {
+      "type": "string"
+    },
+    "cursorQuery": {
+      "type": "string"
+    },
+    "exprTruncated": {
+      "type": "boolean"
+    },
+    "httpMethod": {
+      "type": "string"
+    },
+    "routePath": {
+      "type": "string"
+    },
+    "framework": {
+      "type": "string"
+    },
+    "stereotype": {
+      "type": "string"
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "commentRef": {
+      "type": "object",
+      "required": [
+        "file",
+        "span"
+      ],
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "span": {
+          "type": "object",
+          "required": [
+            "start",
+            "end"
+          ],
+          "properties": {
+            "start": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "end": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
     },
     "meta": {
       "type": "object"

@@ -1,0 +1,142 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOpAnyOf@L845",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:df48ae9c3fbb28855f1f6a312f133fbb2987bcfb9edb54e963d6567b8804bfc3",
+  "builtAt": "2026-06-25T22:26:18.392Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOpAnyOf@L845",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isOpAnyOf",
+    "qualifiedName": "Parser.isOpAnyOf",
+    "signature": "isOpAnyOf(vs: string[]): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 845,
+      "end": 848
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 846
+      },
+      {
+        "callee": "peek",
+        "line": 847
+      },
+      {
+        "callee": "includes",
+        "line": 847
+      }
+    ]
+  },
+  "source": {
+    "text": "  private isOpAnyOf(vs: string[]): boolean {\n    const v = this.peek().value;\n    return this.peek().type === 'OP' && vs.includes(v);\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 845
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDottedNameList@L661",
+      "confidence": 1,
+      "name": "parseDottedNameList",
+      "qualifiedName": "Parser.parseDottedNameList",
+      "signature": "parseDottedNameList(stopKeywords: string[], stopOps: string[] = ['{', ';']): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 661
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L864",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 864
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.isOpAnyOf@L845",
+    "procedureName": "Parser.isOpAnyOf",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.isOpAnyOf@L845",
+        "procedureName": "Parser.isOpAnyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:160dd3254e20c80376444e5f3fca008e1dcf185324ab0dfa9be354c62fd88eca",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L864",
+          "expr": "peek",
+          "line": 846
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.isOpAnyOf@L845",
+        "procedureName": "Parser.isOpAnyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6d0653334a62f1f8bf54e1cc1301e83f9034e40d5e5868ed85977193b92a4f36",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L846",
+          "line": 846,
+          "expr": "const v = this.peek().value;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.isOpAnyOf@L845",
+        "procedureName": "Parser.isOpAnyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a07bfd6fb2d704f225c7228edcd254f92859b71250b51fb7bc45523b067e6681",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L847",
+          "line": 847,
+          "expr": "return this.peek().type === 'OP' && vs.includes(v);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

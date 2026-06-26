@@ -9,7 +9,6 @@ import type { Rel } from '@knowledge-crib/soul-schema';
  * community steward emerges. Constructing it throws, by design, so nothing silently depends on it.
  */
 import type {
-  BuildOpts,
   Dir,
   Hit,
   HybridQuery,
@@ -28,7 +27,7 @@ export class KuzuIndexStore implements IndexStore {
   constructor() {
     throw new Error(NOT_IMPLEMENTED);
   }
-  buildFromSoul(_soul: SoulStore, _opts?: BuildOpts): void {
+  buildFromSoul(_soul: SoulStore): void {
     throw new Error(NOT_IMPLEMENTED);
   }
   applyDelta(_changed: IndexDelta): void {

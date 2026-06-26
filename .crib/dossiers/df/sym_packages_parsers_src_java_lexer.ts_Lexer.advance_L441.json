@@ -1,0 +1,178 @@
+{
+  "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.advance@L441",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:99a047594a4312f51f91b1576138dd68b7e3553ad10ee5d6d31e744eeb6b28d4",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.advance@L441",
+    "kind": "symbol",
+    "type": "method",
+    "name": "advance",
+    "qualifiedName": "Lexer.advance",
+    "signature": "advance(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/lexer.ts",
+    "span": {
+      "start": 441,
+      "end": 450
+    }
+  },
+  "source": {
+    "text": "  private advance(): void {\n    const c = this.src[this.pos];\n    this.pos++;\n    if (c === '\\n') {\n      this.line++;\n      this.col = 1;\n    } else {\n      this.col++;\n    }\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 441
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanChar@L370",
+      "confidence": 1,
+      "name": "scanChar",
+      "qualifiedName": "Lexer.scanChar",
+      "signature": "scanChar(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 370
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanIdent@L295",
+      "confidence": 1,
+      "name": "scanIdent",
+      "qualifiedName": "Lexer.scanIdent",
+      "signature": "scanIdent(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 295
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanNumber@L303",
+      "confidence": 1,
+      "name": "scanNumber",
+      "qualifiedName": "Lexer.scanNumber",
+      "signature": "scanNumber(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 303
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanOp@L394",
+      "confidence": 1,
+      "name": "scanOp",
+      "qualifiedName": "Lexer.scanOp",
+      "signature": "scanOp(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 394
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanString@L312",
+      "confidence": 1,
+      "name": "scanString",
+      "qualifiedName": "Lexer.scanString",
+      "signature": "scanString(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 312
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+      "confidence": 1,
+      "name": "scanTextBlock",
+      "qualifiedName": "Lexer.scanTextBlock",
+      "signature": "scanTextBlock(sl: number, sc: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 342
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.skipBlockComment@L415",
+      "confidence": 1,
+      "name": "skipBlockComment",
+      "qualifiedName": "Lexer.skipBlockComment",
+      "signature": "skipBlockComment(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 415
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.skipLineComment@L410",
+      "confidence": 1,
+      "name": "skipLineComment",
+      "qualifiedName": "Lexer.skipLineComment",
+      "signature": "skipLineComment(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 410
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.tokens@L248",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 248
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.advance@L441",
+    "procedureName": "Lexer.advance",
+    "conditions": [
+      "cond:packages/parsers/src/java/lexer.ts@L444"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.advance@L441",
+        "procedureName": "Lexer.advance",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L444",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L444",
+            "expr": "c === '\\n'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5bdf6b6be6318cc1f383e862ddeecb68ca7cbf1601a78188fb27b323fcd50947",
+          "target": "assign:packages/parsers/src/java/lexer.ts@L446",
+          "line": 446,
+          "expr": "this.col = 1;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/java/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

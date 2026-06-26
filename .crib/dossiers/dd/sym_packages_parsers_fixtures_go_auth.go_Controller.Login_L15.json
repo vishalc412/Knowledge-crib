@@ -1,0 +1,102 @@
+{
+  "id": "sym:packages/parsers/fixtures/go/auth.go#Controller.Login@L15",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:b5c11ebfd5ae66e74408d7bf0244a8b6ef1a056a41bc7cbd421b5aee9c67bcc9",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/go/auth.go#Controller.Login@L15",
+    "kind": "symbol",
+    "type": "method",
+    "name": "Login",
+    "qualifiedName": "Controller.Login",
+    "signature": "func (c Controller) Login(user)",
+    "lang": "go",
+    "file": "packages/parsers/fixtures/go/auth.go",
+    "span": {
+      "start": 15,
+      "end": 18
+    },
+    "callSites": [
+      {
+        "callee": "Validate",
+        "line": 16
+      },
+      {
+        "callee": "Greet",
+        "line": 17
+      }
+    ],
+    "params": [
+      "user"
+    ]
+  },
+  "source": {
+    "text": "func (c *Controller) Login(user string) string {\n\tc.Validate(user)\n\treturn c.service.Greet(user)\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 15
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/go/auth.go#Controller.Login@L15",
+    "procedureName": "Controller.Login",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/go/auth.go#Controller.Login@L15",
+        "procedureName": "Controller.Login",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7469492f9c8e6578fc369bd4e7cad76b17ab0a4bbae494abea57480f838c4745",
+          "target": "stmt:packages/parsers/fixtures/go/auth.go@L16",
+          "line": 16,
+          "expr": "c.Validate(user)"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/go/auth.go#Controller.Login@L15",
+        "procedureName": "Controller.Login",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f04e7047716b444e3cb9689ed4a94b5a212a35ae42cd8bfd2ea1e9615c31686e",
+          "target": "stmt:packages/parsers/fixtures/go/auth.go@L17",
+          "line": 17,
+          "expr": "c.service.Greet(user)"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

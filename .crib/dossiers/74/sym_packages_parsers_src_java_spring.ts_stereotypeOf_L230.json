@@ -1,0 +1,125 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#stereotypeOf@L230",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:b059ff1611852c95a007b566d4b4cddc7768d816683cff5415a2f7ebf58f66ec",
+  "builtAt": "2026-06-25T22:29:24.239Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#stereotypeOf@L230",
+    "kind": "symbol",
+    "type": "function",
+    "name": "stereotypeOf",
+    "qualifiedName": "stereotypeOf",
+    "signature": "stereotypeOf(def: JavaDef): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 230,
+      "end": 236
+    }
+  },
+  "source": {
+    "text": "function stereotypeOf(def: JavaDef): string | undefined {\n  for (const a of def.annotations) {\n    const s = CLASS_STEREOTYPE[a];\n    if (s) return s;\n  }\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 230
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L64",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 64
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L229",
+      "snippet": "/** The architectural stereotype for a class from its annotations (first match wins). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#stereotypeOf@L230",
+    "procedureName": "stereotypeOf",
+    "conditions": [
+      "cond:packages/parsers/src/java/spring.ts@L231",
+      "cond:packages/parsers/src/java/spring.ts@L233"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#stereotypeOf@L230",
+        "procedureName": "stereotypeOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L233",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L231",
+            "expr": "def.annotations"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L233",
+            "expr": "s",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:acc0b618a3464fc156e9cec4e58f360a5959c1a7925850109d812928e2f06d36",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L233",
+          "line": 233,
+          "expr": "return s;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#stereotypeOf@L230",
+        "procedureName": "stereotypeOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e6c26b8d7fb93aaaa80eb87078f8ce76a536c9a9cb4c4d12a1e76c8a039001ac",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L235",
+          "line": 235,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

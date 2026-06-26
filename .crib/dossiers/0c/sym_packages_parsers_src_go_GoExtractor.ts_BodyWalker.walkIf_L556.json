@@ -1,0 +1,256 @@
+{
+  "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkIf@L556",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:f42127fc3769b989857c4ed84aaebb04c0129ae400c3e3fde915c35ac1439081",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkIf@L556",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkIf",
+    "qualifiedName": "BodyWalker.walkIf",
+    "signature": "walkIf(s: GoIfStmt, proc: ProcCtx, guardStack: string[], inLoop: boolean, inException: boolean): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/GoExtractor.ts",
+    "span": {
+      "start": 556,
+      "end": 577
+    },
+    "callSites": [
+      {
+        "callee": "condition",
+        "line": 566
+      },
+      {
+        "callee": "walkBody",
+        "line": 568
+      },
+      {
+        "callee": "walkBody",
+        "line": 571
+      },
+      {
+        "callee": "walkBody",
+        "line": 575
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkIf(\n    s: GoIfStmt,\n    proc: ProcCtx,\n    guardStack: string[],\n    inLoop: boolean,\n    inException: boolean,\n  ): void {\n    // Degraded `if {}` (empty predicate — malformed Go): the parser skipped the body; emit no\n    // condition and walk nothing. Valid Go always has a predicate, so this only fires on junk.\n    if (s.predicate === '') return;\n    const condId = this.condition(s.predicate, s.ifLine, 'THEN');\n    // THEN branch\n    this.walkBody(s.then, proc, [...guardStack, condId], 'THEN', inLoop, inException);\n    // ELSIF branches (same condId — one condition per IF chain)\n    for (const elif of s.elseIfs) {\n      this.walkBody(elif.body, proc, [...guardStack, condId], 'ELSIF', inLoop, inException);\n    }\n    // ELSE branch (same condId)\n    if (s.elseBody) {\n      this.walkBody(s.elseBody, proc, [...guardStack, condId], 'ELSE', inLoop, inException);\n    }\n  }",
+    "truncated": false,
+    "totalLines": 22,
+    "startLine": 556
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkStmt@L426",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: GoBodyStmt, proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 426
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.condition@L745",
+      "confidence": 1,
+      "name": "condition",
+      "qualifiedName": "BodyWalker.condition",
+      "signature": "condition(expr: string, line: number, branch: string): string",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 745
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkBody@L415",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "BodyWalker.walkBody",
+      "signature": "walkBody(stmts: GoBodyStmt[], proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 415
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/GoExtractor.ts@L552",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkIf@L556",
+    "procedureName": "BodyWalker.walkIf",
+    "conditions": [
+      "cond:packages/parsers/src/go/GoExtractor.ts@L565",
+      "cond:packages/parsers/src/go/GoExtractor.ts@L574",
+      "cond:packages/parsers/src/go/GoExtractor.ts@L570"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkIf@L556",
+        "procedureName": "BodyWalker.walkIf",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L565",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L565",
+            "expr": "s.predicate === ''",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bfb4ad5d82c58379b20124977f3484c8548f301727a880383ed44900bb96633b",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L565",
+          "line": 565,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkIf@L556",
+        "procedureName": "BodyWalker.walkIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5287023d87d5ad7e94db6ff5ace1fd2e4531d16cdc9f91d18087ab9345b90fbd",
+          "target": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.condition@L745",
+          "expr": "condition",
+          "line": 566
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkIf@L556",
+        "procedureName": "BodyWalker.walkIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5afb0de235e18dca170808975b14dda14bf2f3fc6de7c819627ad3220f345a77",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L566",
+          "line": 566,
+          "expr": "const condId = this.condition(s.predicate, s.ifLine, 'THEN');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkIf@L556",
+        "procedureName": "BodyWalker.walkIf",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L574",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L574",
+            "expr": "s.elseBody",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a0c54ba3bd5bf2f7dd91ae36181c8ea4d3e105cbecbd6ac43f16122413e16e74",
+          "target": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkBody@L415",
+          "expr": "walkBody",
+          "line": 568
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkIf@L556",
+        "procedureName": "BodyWalker.walkIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fc9418b0fb1ad799dcb10ec9d4e7a4d46836294ff534b5b0e224a9768afe09b7",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L568",
+          "line": 568,
+          "expr": "this.walkBody(s.then, proc, [...guardStack, condId], 'THEN', inLoop, inException);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkIf@L556",
+        "procedureName": "BodyWalker.walkIf",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L570",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L570",
+            "expr": "s.elseIfs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c50409af190f6d76ce39f650a55ebcb48ce411b10b7a83d06e06c000232eac4d",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L571",
+          "line": 571,
+          "expr": "this.walkBody(elif.body, proc, [...guardStack, condId], 'ELSIF', inLoop, inException);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkIf@L556",
+        "procedureName": "BodyWalker.walkIf",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L574",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L574",
+            "expr": "s.elseBody",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a45e896205a015fbe1a2b183cf34521d983db29f631129b07bd02ae08f267c20",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L575",
+          "line": 575,
+          "expr": "this.walkBody(s.elseBody, proc, [...guardStack, condId], 'ELSE', inLoop, inException);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/go/GoExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

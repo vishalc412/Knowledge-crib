@@ -11,7 +11,8 @@
 |---|-------|----|-----|------------|
 | 1 | Structure map | repo tree | `file` nodes | EXTRACTED |
 | 2 | Parse | files | `symbol` nodes + intra-file edges | EXTRACTED |
-| 3 | Resolve | symbols across files | `calls/imports/inherits/implements` edges | EXTRACTED |
+| 2b | Framework-semantics *(1.3, Spring)* | Java classes | `route`/`field` + `exposes`/`injects`/`references` + stereotypes | EXTRACTED |
+| 3 | Resolve | symbols across files | `calls/imports/inherits/implements` (+`injects` for Spring DI) edges | EXTRACTED |
 | 3b | Doc-extract | Markdown | `doc-section` nodes (+ `member-of`) | EXTRACTED |
 | 3c | SQL data-flow *(deep-extraction)* | SQL procs/DDL | `table`/`column`/`statement` + `reads`/`writes`/`executes` | EXTRACTED |
 | 3d | CFG / conditions *(deep-extraction)* | procedure bodies | `guard`/`cfgPath` on calls + `condition` nodes | EXTRACTED |
@@ -31,12 +32,33 @@ field/var) with `qualifiedName`, `span`, `signature`. Emit intra-file structural
 (`member-of`, local `calls`). One grammar per language; missing grammar → file indexed at
 file-level only (graceful degradation).
 
+## Phase 2b — Framework-semantics *(1.3, the "above SQL" tier for app frameworks)*
+On top of the syntactic symbol graph, a per-language framework pass derives the architectural
+artifacts a team reasons over — the same lift 1.1/1.2 did for SQL. **Java/Spring** is built + tested
+(`packages/parsers/src/java/spring.ts`, Pass 4 of the hand-rolled `JavaExtractor`):
+- **Stereotypes** — `@RestController`/`@Service`/`@Repository`/`@Component`/`@Configuration`/
+  `@Entity`/`@ControllerAdvice` → `framework:'spring'` + `stereotype:'<role>'` on the class symbol.
+- **Routes** — `@GetMapping`/`@PostMapping`/`@PutMapping`/`@DeleteMapping`/`@PatchMapping`/
+  `@RequestMapping` handlers → `route` nodes (class base path composed in), handler → route via
+  `exposes`. All five verbs + `method=RequestMethod.X` pinning; path normalization; pathless → base.
+- **DI graph** — constructor params (implicit autowire) + `@Autowired`/`@Inject`/`@Resource` fields →
+  `injects` edges; intra-file deps resolve here, cross-file deps recorded on `meta.injects` for Phase 3.
+  Gated on the bean stereotype; self-injection skipped.
+- **JPA relations** — `@ManyToOne`/`@OneToMany`/`@ManyToMany`/`@OneToOne` on `@Entity` fields →
+  `references` (field → related type); collection-valued (`List<Payment>`) targets the generic element
+  type. Gated on `@Entity`.
+Non-Spring code is a no-op. All edges `EXTRACTED`/`static`/`confidence 1`. Node/Express and
+React/Angular tracks reuse the same 1.3 kinds/rels (`route`/`field`/`component`, `exposes`/`injects`/
+`renders`) — planned, not yet built. See [soul-format §9](knowledge-crib-soul-format.md).
+
 ## Phase 3 — Resolve (the deep part)
 Cross-file resolution — the GitNexus-grade depth:
 - **imports/exports** → `imports` edges; build a module symbol table.
 - **calls** → resolve callee by scope + import table + receiver type → `calls` edges.
 - **inheritance/implements** → `inherits`/`implements` edges.
 - **receiver-type inference** → disambiguate method calls on typed receivers (best-effort per lang).
+- **Spring DI (1.3)** → each bean's `meta.injects` (recorded in Phase 2b) is resolved cross-file
+  (imports → same-package FQN) into `injects` edges; intra-file deps already edged are skipped.
 All `method:static, provenance:EXTRACTED, confidence:1.0`. Unresolved calls are dropped (not guessed)
 to keep the deterministic core trustworthy.
 
@@ -66,7 +88,7 @@ after symbols are resolved.
 | 1 | Explicit code-ref | `explicit` | 0.95 | fenced/inline-code token == symbol `qualifiedName` or `path#symbol` |
 | 2 | Identifier mention | `identifier` | 0.6–0.8 | symbol name at word boundary (camel/snake/kebab variants); boosted if module-siblings co-occur |
 | 3 | Path/link mention | `path` | 0.5 | MD link/text path → all symbols in that file (`references`) |
-| 4 | Semantic | `semantic` | ≤0.5 | ANN over vector index; standalone only as `references`, capped so it never outranks deterministic |
+| 4 | Semantic | `semantic` | ≤0.6 | pure-JS TF-IDF linker (`runSemanticLink`); standalone only as `references`, INFERRED, capped to [0.4, 0.6] so it never outranks deterministic — no vector index is involved |
 | 5 | Heading scope | — | — | a section's links bias its `member-of` subtree |
 
 **Scoring:** `conf = max(signalConf)` + small additive boost when signals agree (cap 0.99).
@@ -76,7 +98,7 @@ after symbols are resolved.
 
 **Complexity (never O(docs × symbols)):**
 - Build inverted index `symbolName → symbol[]` once → deterministic passes are O(doc tokens).
-- Semantic uses the ANN vector index for candidates only.
+- Semantic uses the pure-JS TF-IDF index for candidates only (no vector/ANN index exists). Gated by `IndexOpts.semantic` / the CLI `--semantic` flag; off by default so `--extracted-only` is the pure deterministic subset.
 - Name-collision disambiguation by module/file proximity.
 
 ```mermaid
@@ -88,7 +110,7 @@ flowchart TB
   s2 -- no --> s3{path/link?}
   s3 -- yes --> e5[references .5 EXTRACTED]
   s3 -- no --> s4{semantic ≥ τ?}
-  s4 -- yes --> e4[references ≤.5 INFERRED]
+  s4 -- yes --> e4[references ≤.6 INFERRED]
   s4 -- no --> drop[no edge]
 ```
 
@@ -98,8 +120,9 @@ with `member-of` edges. Optional cluster **naming** uses the host IDE's LLM via 
 (fallback Ollama/cloud; skippable) — enrichment only, tagged `INFERRED`.
 
 ## Phase 6 — Index build
-`IndexStore.buildFromSoul`: build BM25 over symbol/doc text + (optional) vector embeddings for
-hybrid search; materialize adjacency for fast `impact`/`neighbors` traversal. Fully derived —
+`IndexStore.buildFromSoul(soul)`: build BM25 over symbol/doc text; materialize adjacency for fast
+`impact`/`neighbors` traversal. No vector/ANN path ships (`capabilities().vector === false`); the
+optional semantic layer is the pure-JS TF-IDF linker (Phase 4), not a vector index. Fully derived —
 `crib reindex` rebuilds it from the soul anytime.
 
 ## Incremental update
@@ -109,6 +132,6 @@ hybrid search; materialize adjacency for fast `impact`/`neighbors` traversal. Fu
 4. Rebuild only the touched index slice; update manifest stats + `vcsHead`.
 
 ## Determinism & trust guarantees
-- Phases 1–3,3b,5 are fully deterministic and offline.
+- Phases 1–3,2b,3b,5 are fully deterministic and offline.
 - Only Phase 4 signal-4 and cluster-naming may use an LLM, always tagged `INFERRED` and filterable.
 - An `EXTRACTED`-only view is always available (trust mode).

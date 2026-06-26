@@ -35,6 +35,7 @@
 | M7 | clusters render in UI; semantic signal improves recall without dropping precision below M4 |
 | M8 | each new language ships with its golden + capability-honesty tests |
 | M9 | `soul-reader` reads `.crib/` engine-free and validates against schema (SeeroFlow Tier-1) |
+| M14 | framework-semantics: `framework.test.ts` + `validate.test.ts` + MCP Spring integration + viz 1.3 surfacing green; Spring parity (route.params/security, field.column, references cardinality) pinned |
 
 ## 4. Link-precision measurement (M4 — the trust gate)
 - Hand-label the true doc↔symbol links in `fixtures/docs-linked`.
@@ -56,7 +57,16 @@
 ## 7. CI
 - On PR: lint + typecheck + unit + golden + integration + contract.
 - Nightly: E2E + benchmark + perf on `fixtures/large`.
-- Schema changes require a `crib migrate` test (old soul → new schema, round-trip).
+- **DIST-REBUILD GATE:** `pnpm test` runs `pretest: pnpm -r run build` first (packages export from
+  `./dist`, so a stale dist silently masks bugs). `pnpm verify` = build + test + lint.
+- **Schema evolution (there is NO `crib migrate` command).** Migration is automatic and additive:
+  (1) every 1.0→1.3 field is OPTIONAL + `additionalProperties:true`, so an old soul loads verbatim;
+  (2) re-indexing stamps the new 1.3 fields onto the SAME node (id-stable, hash-stable, in-place);
+  (3) persisted dossiers rebuild on demand via the shapeVersion + schemaVersion staleness gate in
+      `readDossier` (shapeVersion undefined → stale → rebuilt). No rewrite, no data loss.
+  The migrate TEST lives in `packages/core/src/validate.test.ts`: 1.0/1.2 nodes validate under the 1.3
+  schema; a 1.2 node → stamps 1.3 fields → re-validates with id unchanged; closed-enum rejection
+  (bad `kind`/`rel`/`provenance`) prevents a typo from silently corrupting the soul.
 
 ## 8. Trust-mode test
 `--extracted-only` view returns zero `INFERRED` edges; agents can rely on a deterministic-only graph.

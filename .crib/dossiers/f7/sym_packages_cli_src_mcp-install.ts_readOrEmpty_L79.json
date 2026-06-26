@@ -1,0 +1,129 @@
+{
+  "id": "sym:packages/cli/src/mcp-install.ts#readOrEmpty@L79",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:da776d5ffdbbb8be434c067ae2e8eb75bbce89edf51edbe1403a01839cf2076e",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/mcp-install.ts#readOrEmpty@L79",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readOrEmpty",
+    "qualifiedName": "readOrEmpty",
+    "signature": "readOrEmpty(path: string): string",
+    "lang": "typescript",
+    "file": "packages/cli/src/mcp-install.ts",
+    "span": {
+      "start": 79,
+      "end": 81
+    },
+    "callSites": [
+      {
+        "callee": "existsSync",
+        "line": 80
+      },
+      {
+        "callee": "readFileSync",
+        "line": 80
+      }
+    ]
+  },
+  "source": {
+    "text": "function readOrEmpty(path: string): string {\n  return existsSync(path) ? readFileSync(path, 'utf8') : '';\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 79
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#installMcp@L171",
+      "confidence": 1,
+      "name": "installMcp",
+      "qualifiedName": "installMcp",
+      "signature": "installMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 171
+    },
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#listMcp@L256",
+      "confidence": 1,
+      "name": "listMcp",
+      "qualifiedName": "listMcp",
+      "signature": "listMcp(repoRoot: string, opts: { ide?: McpIde | 'all'; scope?: McpScope } = {}): McpListEntry[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 256
+    },
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
+      "confidence": 1,
+      "name": "removeMcp",
+      "qualifiedName": "removeMcp",
+      "signature": "removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 281
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/mcp-install.ts@L78",
+      "snippet": "/** Read a file as text, or `''` if absent. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/mcp-install.ts#readOrEmpty@L79",
+    "procedureName": "readOrEmpty",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#readOrEmpty@L79",
+        "procedureName": "readOrEmpty",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e272c0a8e25bb8074a83ca3e3801278b83b2bc5f575d20f09027f90f84d2a163",
+          "target": "stmt:packages/cli/src/mcp-install.ts@L80",
+          "line": 80,
+          "expr": "return existsSync(path) ? readFileSync(path, 'utf8') : '';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/cli/src/mcp-install.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

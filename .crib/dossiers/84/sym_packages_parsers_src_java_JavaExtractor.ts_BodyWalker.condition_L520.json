@@ -1,0 +1,422 @@
+{
+  "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.condition@L520",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:234678bb3dd12bca2188d282441b41f8c2b4eaf46ac46a388c1893b7a6e39193",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.condition@L520",
+    "kind": "symbol",
+    "type": "method",
+    "name": "condition",
+    "qualifiedName": "BodyWalker.condition",
+    "signature": "condition(expr: string | undefined, line: number, branch: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/JavaExtractor.ts",
+    "span": {
+      "start": 520,
+      "end": 536
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 521
+      },
+      {
+        "callee": "add",
+        "line": 523
+      },
+      {
+        "callee": "push",
+        "line": 524
+      },
+      {
+        "callee": "exprFields",
+        "line": 528
+      },
+      {
+        "callee": "hash",
+        "line": 532
+      }
+    ]
+  },
+  "source": {
+    "text": "  private condition(expr: string | undefined, line: number, branch: string): string {\n    const id = this.ctx.idFor('condition', { file: this.path, line });\n    if (!this.condSeen.has(id)) {\n      this.condSeen.add(id);\n      this.nodes.push({\n        id,\n        kind: 'condition',\n        branch,\n        ...exprFields(expr),\n        file: this.path,\n        span: { start: line, end: line },\n        lang: 'java',\n        hash: this.ctx.hash(`${this.path}:${line}:${expr ?? ''}`),\n      });\n    }\n    return id;\n  }",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 520
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkIf@L667",
+      "confidence": 1,
+      "name": "walkIf",
+      "qualifiedName": "BodyWalker.walkIf",
+      "signature": "walkIf(s: JavaStmt, procId: string, guardStack: string[], inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 667
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkLoop@L684",
+      "confidence": 1,
+      "name": "walkLoop",
+      "qualifiedName": "BodyWalker.walkLoop",
+      "signature": "walkLoop(s: JavaStmt, procId: string, guardStack: string[], inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 684
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#exprFields@L32",
+      "confidence": 1,
+      "name": "exprFields",
+      "qualifiedName": "exprFields",
+      "signature": "exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true }",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 32
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/JavaExtractor.ts@L519",
+      "snippet": "/** Emit one condition node keyed by (file,line), deduped — branch is the FIRST branch's label. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-6-migration-track-findings-from-the-migration-scope-run",
+      "heading": "4.6 Migration track findings (from the migration-scope run)",
+      "anchor": "4-6-migration-track-findings-from-the-migration-scope-run",
+      "snippet": "4.6 Migration track findings (from the migration-scope run)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-edge-relations-rel",
+      "heading": "2. Edge relations (`rel`)",
+      "anchor": "2-edge-relations-rel",
+      "snippet": "2. Edge relations (`rel`)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#4-id-grammar-stable-deterministic-critical-for-diffs-cross-tool-refs-seeroflow",
+      "heading": "4. ID grammar (stable, deterministic — critical for diffs + cross-tool refs + SeeroFlow)",
+      "anchor": "4-id-grammar-stable-deterministic-critical-for-diffs-cross-tool-refs-seeroflow",
+      "snippet": "4. ID grammar (stable, deterministic — critical for diffs + cross-tool refs + SeeroFlow)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#new-edge-relations",
+      "heading": "New edge relations",
+      "anchor": "new-edge-relations",
+      "snippet": "New edge relations",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "heading": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "anchor": "3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "snippet": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#0-the-mental-model-what-to-ask-for-when",
+      "heading": "0. The mental model — what to ask for, when",
+      "anchor": "0-the-mental-model-what-to-ask-for-when",
+      "snippet": "0. The mental model — what to ask for, when",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-1-what-each-model-can-answer-about-one-procedure",
+      "heading": "1.1 What each model can answer about ONE procedure",
+      "anchor": "1-1-what-each-model-can-answer-about-one-procedure",
+      "snippet": "1.1 What each model can answer about ONE procedure",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#track-3-statement-condition-cfg-extraction-for-all-parsers-design-spec",
+      "heading": "Track 3 — Statement/Condition/CFG extraction for all parsers (design spec)",
+      "anchor": "track-3-statement-condition-cfg-extraction-for-all-parsers-design-spec",
+      "snippet": "Track 3 — Statement/Condition/CFG extraction for all parsers (design spec)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#tests-each-language-add-to-the-existing-extractor-test-ts",
+      "heading": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "anchor": "tests-each-language-add-to-the-existing-extractor-test-ts",
+      "snippet": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#10-2-pipeline-phases-3c-3d-the-migration-wedge",
+      "heading": "10.2 Pipeline (Phases 3c + 3d, the migration wedge)",
+      "anchor": "10-2-pipeline-phases-3c-3d-the-migration-wedge",
+      "snippet": "10.2 Pipeline (Phases 3c + 3d, the migration wedge)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#new-metadata-on-calls-and-executes-writes-edges",
+      "heading": "New metadata on `calls` (and `executes`/`writes`) edges",
+      "anchor": "new-metadata-on-calls-and-executes-writes-edges",
+      "snippet": "New metadata on `calls` (and `executes`/`writes`) edges",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "heading": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "anchor": "4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "snippet": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#crib-export-format-rules",
+      "heading": "`crib export --format rules`",
+      "anchor": "crib-export-format-rules",
+      "snippet": "`crib export --format rules`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#crib-export-format-mermaid",
+      "heading": "`crib export --format mermaid`",
+      "anchor": "crib-export-format-mermaid",
+      "snippet": "`crib export --format mermaid`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m11-cfg-pass-guard-chain-condition-nodes",
+      "heading": "M11 — CFG pass + guard chain + condition nodes",
+      "anchor": "m11-cfg-pass-guard-chain-condition-nodes",
+      "snippet": "M11 — CFG pass + guard chain + condition nodes",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#knowledge-crib-refined-vs-existing-detailed-level-analysis-assessment",
+      "heading": "Knowledge-crib — Refined vs Existing: Detailed-Level Analysis Assessment",
+      "anchor": "knowledge-crib-refined-vs-existing-detailed-level-analysis-assessment",
+      "snippet": "Knowledge-crib — Refined vs Existing: Detailed-Level Analysis Assessment",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-4-technical-architect",
+      "heading": "2.4 Technical Architect",
+      "anchor": "2-4-technical-architect",
+      "snippet": "2.4 Technical Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#wiring-minimal",
+      "heading": "Wiring (minimal)",
+      "anchor": "wiring-minimal",
+      "snippet": "Wiring (minimal)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.condition@L520",
+    "procedureName": "BodyWalker.condition",
+    "conditions": [
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L522"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.condition@L520",
+        "procedureName": "BodyWalker.condition",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:267991ccaf12202ded3410a0c416416f1f58e3a52f2b16c14ce9beca4caa24f7",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L521",
+          "line": 521,
+          "expr": "const id = this.ctx.idFor('condition', { file: this.path, line });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.condition@L520",
+        "procedureName": "BodyWalker.condition",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L522",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L522",
+            "expr": "!this.condSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8b3b3b29fc44f57281fc3a10bf507c1d55a45d0aa0bb6e1c468304acb3782e99",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L523",
+          "line": 523,
+          "expr": "this.condSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.condition@L520",
+        "procedureName": "BodyWalker.condition",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L522",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L522",
+            "expr": "!this.condSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:864df1561d7f38d305a301f6fde105b41339c8421c056c28736ea725941eed3c",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L524",
+          "line": 524,
+          "expr": "this.nodes.push({\n        id,\n        kind: 'condition',\n        branch,\n        ...exprFields(expr),\n        file: this.path,\n        span: { start: line, end: line },\n        lang: 'java',\n        hash: this.ctx.hash(`${this.path}:${line}:${expr ?? ''}`),\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.condition@L520",
+        "procedureName": "BodyWalker.condition",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L522",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L522",
+            "expr": "!this.condSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:257cefb78fe3161b7507883b418f51129b399cc82c8709fcdaed6815ccbc5c65",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#exprFields@L32",
+          "expr": "exprFields",
+          "line": 528
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.condition@L520",
+        "procedureName": "BodyWalker.condition",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9538c89f1c257e048439409eb4e5607dcbd8097eccc25099ea20158db02929da",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L535",
+          "line": 535,
+          "expr": "return id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 5,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

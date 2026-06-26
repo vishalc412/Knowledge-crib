@@ -1,0 +1,126 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.capabilities@L161",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:147768865c9fa44be702ea839109a12b3c2d348cd02d8a0dd83723a63a736f6c",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.capabilities@L161",
+    "kind": "symbol",
+    "type": "method",
+    "name": "capabilities",
+    "qualifiedName": "SqliteIndexStore.capabilities",
+    "signature": "capabilities(): IndexCapabilities",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 161,
+      "end": 163
+    }
+  },
+  "source": {
+    "text": "  capabilities(): IndexCapabilities {\n    return { cypher: false, vector: false };\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 161
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-status-path",
+      "heading": "`crib status [path]`",
+      "anchor": "crib-status-path",
+      "snippet": "`crib status [path]`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#4-adding-a-language-worked-rust",
+      "heading": "4. Adding a language (worked: Rust)",
+      "anchor": "4-adding-a-language-worked-rust",
+      "snippet": "4. Adding a language (worked: Rust)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#5-testing-a-plugin-required-for-merge",
+      "heading": "5. Testing a plugin (required for merge)",
+      "anchor": "5-testing-a-plugin-required-for-merge",
+      "snippet": "5. Testing a plugin (required for merge)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#synthesis-plan",
+      "heading": "Synthesis plan",
+      "anchor": "synthesis-plan",
+      "snippet": "Synthesis plan",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#2-indexstore-derived-fast-swappable",
+      "heading": "2. IndexStore (derived, fast, swappable)",
+      "anchor": "2-indexstore-derived-fast-swappable",
+      "snippet": "2. IndexStore (derived, fast, swappable)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.capabilities@L161",
+    "procedureName": "SqliteIndexStore.capabilities",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.capabilities@L161",
+        "procedureName": "SqliteIndexStore.capabilities",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bf1fb964a7d68bbf11430e348e0ad639c9c34ee3f7e24f4ce722827ae85f067e",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L162",
+          "line": 162,
+          "expr": "return { cypher: false, vector: false };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

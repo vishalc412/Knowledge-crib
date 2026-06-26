@@ -1,0 +1,223 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L112",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d13967f1e994f2c6ea3e6786308657eaa23f23392f3806ca8ceebe6c6374da7a",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L112",
+    "kind": "symbol",
+    "type": "method",
+    "name": "resetForRebuild",
+    "qualifiedName": "SoulStore.resetForRebuild",
+    "signature": "resetForRebuild(): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 112,
+      "end": 125
+    },
+    "callSites": [
+      {
+        "callee": "clear",
+        "line": 113
+      },
+      {
+        "callee": "clear",
+        "line": 114
+      },
+      {
+        "callee": "join",
+        "line": 115
+      },
+      {
+        "callee": "add",
+        "line": 116
+      },
+      {
+        "callee": "join",
+        "line": 117
+      },
+      {
+        "callee": "add",
+        "line": 118
+      }
+    ]
+  },
+  "source": {
+    "text": "  resetForRebuild(): void {\n    this.nodes.clear();\n    this.edges.clear();\n    const nodesRoot = join(this.cribDirPrivate, 'nodes');\n    if (existsSync(nodesRoot)) for (const s of readdirSync(nodesRoot)) this.dirtyNodeShards.add(s);\n    const edgesRoot = join(this.cribDirPrivate, 'edges');\n    if (existsSync(edgesRoot)) for (const s of readdirSync(edgesRoot)) this.dirtyEdgeShards.add(s);\n    this.clustersDirty = true;\n    // NOTE: the dossiers cache is intentionally left in place — runDossiers skips fresh (hash-anchored)\n    // dossiers so an unchanged repo re-indexes WITHOUT rewriting the dossier store (byte-stable).\n    // Clearing it here would regenerate every dossier with a new `builtAt` on each rebuild, breaking\n    // determinism. Orphan dossiers for deleted nodes persist (harmless — served only on a hash match),\n    // matching the original load()-based rebuild behavior.\n  }",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 112
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/soul-store.ts@L104",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L112",
+    "procedureName": "SoulStore.resetForRebuild",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L116",
+      "cond:packages/core/src/soul-store.ts@L118"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L112",
+        "procedureName": "SoulStore.resetForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2ceed16b173c201df7ad7b7f287d09743782c7fedda3e786fb1d6d6f1628a325",
+          "target": "stmt:packages/core/src/soul-store.ts@L113",
+          "line": 113,
+          "expr": "this.nodes.clear();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L112",
+        "procedureName": "SoulStore.resetForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:480d3b1a1c68e3d3006cb959e7c3cf9ad48f60aac74b55beaf69c59fc201ea84",
+          "target": "stmt:packages/core/src/soul-store.ts@L114",
+          "line": 114,
+          "expr": "this.edges.clear();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L112",
+        "procedureName": "SoulStore.resetForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b3a87a84cdc9679ca2ec895a8b27479f447afa8532f215fa630073e594b24700",
+          "target": "stmt:packages/core/src/soul-store.ts@L115",
+          "line": 115,
+          "expr": "const nodesRoot = join(this.cribDirPrivate, 'nodes');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L112",
+        "procedureName": "SoulStore.resetForRebuild",
+        "guard": "cond:packages/core/src/soul-store.ts@L116",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L116",
+            "expr": "existsSync(nodesRoot)"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L116",
+            "expr": "existsSync(nodesRoot)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:30c7d5512e76b12521852fc3af71658916fec5eaebaaadc6bf2b18bd836e490b",
+          "target": "stmt:packages/core/src/soul-store.ts@L116",
+          "line": 116,
+          "expr": "this.dirtyNodeShards.add(s);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L112",
+        "procedureName": "SoulStore.resetForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f0e71062418184f8f02e26c1332e95862940cc83986926cfde61777252447a8d",
+          "target": "stmt:packages/core/src/soul-store.ts@L117",
+          "line": 117,
+          "expr": "const edgesRoot = join(this.cribDirPrivate, 'edges');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L112",
+        "procedureName": "SoulStore.resetForRebuild",
+        "guard": "cond:packages/core/src/soul-store.ts@L118",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L118",
+            "expr": "existsSync(edgesRoot)"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L118",
+            "expr": "existsSync(edgesRoot)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31c83b708734f49751d7b59ab58dd33436b72afa16c53b71cfd6f5d7f93e181e",
+          "target": "stmt:packages/core/src/soul-store.ts@L118",
+          "line": 118,
+          "expr": "this.dirtyEdgeShards.add(s);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L112",
+        "procedureName": "SoulStore.resetForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca7dc2059db59d4e09df2e074736c01378546f2092d7beb0d6fa49b7aaa3e9a2",
+          "target": "assign:packages/core/src/soul-store.ts@L119",
+          "line": 119,
+          "expr": "this.clustersDirty = true;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 6,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

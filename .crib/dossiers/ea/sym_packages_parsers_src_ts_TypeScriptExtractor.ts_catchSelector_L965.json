@@ -1,0 +1,152 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#catchSelector@L965",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9d56fb67a07b3d477bc86ed7eed50325852d55af3589267e2b58c4a5a6a81587",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#catchSelector@L965",
+    "kind": "symbol",
+    "type": "function",
+    "name": "catchSelector",
+    "qualifiedName": "catchSelector",
+    "signature": "catchSelector(cc: ts.CatchClause): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 965,
+      "end": 970
+    },
+    "callSites": [
+      {
+        "callee": "getText",
+        "line": 968
+      }
+    ]
+  },
+  "source": {
+    "text": "function catchSelector(cc: ts.CatchClause): string | undefined {\n  const p = cc.variableDeclaration;\n  if (!p || !p.type) return undefined;\n  if (ts.isTypeReferenceNode(p.type)) return p.type.typeName.getText();\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 965
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L397",
+      "confidence": 1,
+      "name": "walkTry",
+      "qualifiedName": "TypeScriptExtractor.walkTry",
+      "signature": "walkTry(stmt: ts.TryStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 397
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L964",
+      "snippet": "/** The caught type's name for `catch (e: FooError)` → \"FooError\"; untyped `catch (e)`/`catch {` → undefined. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#catchSelector@L965",
+    "procedureName": "catchSelector",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L967",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L968"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#catchSelector@L965",
+        "procedureName": "catchSelector",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L967",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L967",
+            "expr": "!p || !p.type",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1dfb734a739ca8ad21405f4a752c15075a43776a1eae701071608e4f7678efe8",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L967",
+          "line": 967,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#catchSelector@L965",
+        "procedureName": "catchSelector",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L968",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L968",
+            "expr": "ts.isTypeReferenceNode(p.type)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2ce53d9b2b15b04374a5669768e3f4eceb09db2c2db36a9ca44bf0553697baca",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L968",
+          "line": 968,
+          "expr": "return p.type.typeName.getText();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#catchSelector@L965",
+        "procedureName": "catchSelector",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fbb8518159f9de3a0d0e14f415c2215cb7e688fc3c0dcc3101bebe29791162f0",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L969",
+          "line": 969,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

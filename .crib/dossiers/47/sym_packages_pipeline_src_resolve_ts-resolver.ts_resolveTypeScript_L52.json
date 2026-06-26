@@ -1,0 +1,740 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ef49e47e5f88ab8d200c06311045d97e1486e6a4999e32d40cfbff51f3d3a9a5",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+    "kind": "symbol",
+    "type": "function",
+    "name": "resolveTypeScript",
+    "qualifiedName": "resolveTypeScript",
+    "signature": "resolveTypeScript(table: SymbolTable, root: string, files: FileMeta[]): ResolveResult",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+    "span": {
+      "start": 52,
+      "end": 135
+    },
+    "callSites": [
+      {
+        "callee": "edgeId",
+        "line": 62
+      },
+      {
+        "callee": "has",
+        "line": 63
+      },
+      {
+        "callee": "add",
+        "line": 64
+      },
+      {
+        "callee": "push",
+        "line": 65
+      },
+      {
+        "callee": "safeRead",
+        "line": 79
+      },
+      {
+        "callee": "join",
+        "line": 79
+      },
+      {
+        "callee": "createSourceFile",
+        "line": 81
+      },
+      {
+        "callee": "collectImports",
+        "line": 82
+      },
+      {
+        "callee": "getLineAndCharacterOfPosition",
+        "line": 83
+      },
+      {
+        "callee": "topLevelSymbol",
+        "line": 87
+      },
+      {
+        "callee": "push",
+        "line": 89
+      },
+      {
+        "callee": "fileId",
+        "line": 89
+      },
+      {
+        "callee": "walk",
+        "line": 96
+      },
+      {
+        "callee": "isCallExpression",
+        "line": 98
+      },
+      {
+        "callee": "isIdentifier",
+        "line": 98
+      },
+      {
+        "callee": "get",
+        "line": 99
+      },
+      {
+        "callee": "topLevelSymbol",
+        "line": 101
+      },
+      {
+        "callee": "enclosingSymbolId",
+        "line": 102
+      },
+      {
+        "callee": "lineOf",
+        "line": 102
+      },
+      {
+        "callee": "getStart",
+        "line": 102
+      },
+      {
+        "callee": "push",
+        "line": 104
+      },
+      {
+        "callee": "getText",
+        "line": 104
+      },
+      {
+        "callee": "isClassDeclaration",
+        "line": 112
+      },
+      {
+        "callee": "topLevelSymbol",
+        "line": 113
+      },
+      {
+        "callee": "isIdentifier",
+        "line": 118
+      },
+      {
+        "callee": "resolveTypeName",
+        "line": 120
+      },
+      {
+        "callee": "push",
+        "line": 122
+      }
+    ]
+  },
+  "source": {
+    "text": "export function resolveTypeScript(\n  table: SymbolTable,\n  root: string,\n  files: FileMeta[],\n): ResolveResult {\n  const edges: Edge[] = [];\n  const stats: ResolveStats = { imports: 0, calls: 0, inherits: 0, implements: 0, dropped: 0 };\n  const seen = new Set<string>();\n\n  const push = (src: string, dst: string, rel: Rel, snippet: string): void => {\n    const id = edgeId(src, dst, rel);\n    if (seen.has(id)) return;\n    seen.add(id);\n    edges.push({\n      id,\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'ts-resolver', snippet },\n    });\n  };\n\n  for (const file of files) {\n    if (!TS_EXTS.some((e) => file.path.endsWith(e))) continue;\n    const text = safeRead(join(root, file.path));\n    if (text === undefined) continue;\n    const sf = ts.createSourceFile(file.path, text, ts.ScriptTarget.Latest, true);\n    const imports = collectImports(sf, file.path, table);\n    const lineOf = (pos: number): number => sf.getLineAndCharacterOfPosition(pos).line + 1;\n\n    // imports edges: file → imported symbol\n    for (const [, binding] of imports) {\n      const target = table.topLevelSymbol(binding.file, binding.name);\n      if (target) {\n        push(table.fileId(file.path), target.id, 'imports', `import ${binding.name}`);\n        stats.imports++;\n      } else {\n        stats.dropped++;\n      }\n    }\n\n    walk(sf, (node) => {\n      // cross-file calls\n      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {\n        const binding = imports.get(node.expression.text);\n        if (binding) {\n          const target = table.topLevelSymbol(binding.file, binding.name);\n          const caller = table.enclosingSymbolId(file.path, lineOf(node.getStart()));\n          if (target && caller && caller !== target.id) {\n            push(caller, target.id, 'calls', node.expression.getText());\n            stats.calls++;\n          } else if (!target) {\n            stats.dropped++;\n          }\n        }\n      }\n      // inheritance / implements\n      if (ts.isClassDeclaration(node) && node.name && node.heritageClauses) {\n        const classSym = table.topLevelSymbol(file.path, node.name.text);\n        for (const clause of node.heritageClauses) {\n          const rel: Rel =\n            clause.token === ts.SyntaxKind.ExtendsKeyword ? 'inherits' : 'implements';\n          for (const t of clause.types) {\n            const baseName = ts.isIdentifier(t.expression) ? t.expression.text : undefined;\n            if (!classSym || !baseName) continue;\n            const target = resolveTypeName(baseName, file.path, imports, table);\n            if (target) {\n              push(classSym.id, target, rel, `${rel} ${baseName}`);\n              if (rel === 'inherits') stats.inherits++;\n              else stats.implements++;\n            } else {\n              stats.dropped++;\n            }\n          }\n        }\n      }\n    });\n  }\n\n  return { edges, stats };\n}",
+    "truncated": false,
+    "totalLines": 84,
+    "startLine": 52
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#TypeScriptResolver.resolve@L222",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "TypeScriptResolver.resolve",
+      "signature": "resolve(ctx: ResolveContext): { edges: Edge[]; stats: ResolveStats }",
+      "type": "method",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 222
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
+      "confidence": 1,
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(sf: ts.SourceFile, fromPath: string, table: SymbolTable): Map<string, ImportBinding>",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 150
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 122
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
+      "confidence": 1,
+      "name": "enclosingSymbolId",
+      "qualifiedName": "enclosingSymbolId",
+      "signature": "enclosingSymbolId(line: number, symbols: LocalSymbol[]): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 438
+    },
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#lineOf@L259",
+      "confidence": 1,
+      "name": "lineOf",
+      "qualifiedName": "lineOf",
+      "signature": "lineOf(soul: SoulStore, e: Edge, callLines: Map<string, number>): number",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 259
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeName@L138",
+      "confidence": 1,
+      "name": "resolveTypeName",
+      "qualifiedName": "resolveTypeName",
+      "signature": "resolveTypeName(name: string, file: string, imports: Map<string, ImportBinding>, table: SymbolTable): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 138
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript.lineOf@L83",
+      "confidence": 1,
+      "name": "lineOf",
+      "qualifiedName": "resolveTypeScript.lineOf",
+      "signature": "lineOf(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 83
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript.push@L61",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "resolveTypeScript.push",
+      "signature": "push(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 61
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#safeRead@L205",
+      "confidence": 1,
+      "name": "safeRead",
+      "qualifiedName": "safeRead",
+      "signature": "safeRead(abs: string): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 205
+    },
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#safeRead@L174",
+      "confidence": 1,
+      "name": "safeRead",
+      "qualifiedName": "safeRead",
+      "signature": "safeRead(abs: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 174
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "walk",
+      "signature": "walk(node: ts.Node, fn: (n: ts.Node) => void): void",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 200
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/resolve/ts-resolver.ts@L51",
+      "snippet": "/** Resolve cross-file edges for all TS files. Pure: returns edges; the caller persists them. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#0-verified-facts-judge-conflict-reconciliations",
+      "heading": "0. Verified facts & judge-conflict reconciliations",
+      "anchor": "0-verified-facts-judge-conflict-reconciliations",
+      "snippet": "0. Verified facts & judge-conflict reconciliations",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+    "procedureName": "resolveTypeScript",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+      "cond:packages/pipeline/src/resolve/ts-resolver.ts@L86",
+      "cond:packages/pipeline/src/resolve/ts-resolver.ts@L88"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b354412dea73ee3fda9958e356dc919038ae819cd3582dc2463183be3add6380",
+          "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L61",
+          "line": 61,
+          "expr": "const push = (src: string, dst: string, rel: Rel, snippet: string): void => {\n    const id = edgeId(src, dst, rel);\n    if (seen.has(id)) return;\n    seen.add(id);\n    edges.push({\n      id,\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'ts-resolver', snippet },\n    });\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:18f2445b29b005b6ec3b8156f7c80277c174e87de997a9309cf4d8a1d404c046",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "expr": "edgeId",
+          "line": 62
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d21b65b1775085322b036852b91734ffd6709dd407118b582b8e396e4860775a",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 64
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:997f544922761812f904c39a3c07702815cc54954fc290bc596d70f7e0f0b5fc",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript.push@L61",
+          "expr": "push",
+          "line": 65
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3d1089da22ad6d275e7907da55195371002a662ce04ee4c478d17c69feaa4871",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 65
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3042a60f0e80089900dc70981f1ee48b86f76d55ca401173b54d38d2c5cddb03",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#safeRead@L205",
+          "expr": "safeRead",
+          "line": 79
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f0e407177ca64e8ef17f633a964bf0d8eb1bf7cf58af0019681e890dcfe3218a",
+          "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L79",
+          "line": 79,
+          "expr": "const text = safeRead(join(root, file.path));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2f8baf5c179c4b9016f77eee7e506d61b240288c98f4c114da414677b70329f2",
+          "target": "sym:packages/pipeline/src/structure.ts#safeRead@L174",
+          "expr": "safeRead",
+          "line": 79
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e599ed74268ccc48be5eb7442d4bc0e47b33185f7f9e43b3dbf4a58850d224e9",
+          "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L81",
+          "line": 81,
+          "expr": "const sf = ts.createSourceFile(file.path, text, ts.ScriptTarget.Latest, true);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4df2a1146c2ed5e2cf4e482a28d61ef039994416391a1d1c6a4df844e3608982",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
+          "expr": "collectImports",
+          "line": 82
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d119a6579212e1b9be8062b5a1a2f3673630a6f9c77d9be0be041db532411232",
+          "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L82",
+          "line": 82,
+          "expr": "const imports = collectImports(sf, file.path, table);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7367341dfc2aa4b06eb510f91b61a863080c34d7002ad2a96c807bdd04ecc0ee",
+          "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L83",
+          "line": 83,
+          "expr": "const lineOf = (pos: number): number => sf.getLineAndCharacterOfPosition(pos).line + 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L86",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L86",
+            "expr": "imports",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7dff724862677f96e01ed836ea9632ae0343269b946cf7e841551e1134c465d7",
+          "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L87",
+          "line": 87,
+          "expr": "const target = table.topLevelSymbol(binding.file, binding.name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L88",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L86",
+            "expr": "imports"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L88",
+            "expr": "target",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce39f6262ce1ad97e305679bbc3a8be5349033f3539d9adfc8365838edfce98f",
+          "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L89",
+          "line": 89,
+          "expr": "push(table.fileId(file.path), target.id, 'imports', `import ${binding.name}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c57a9d77c4293ccec1d965d204976f0d1c8c2c29720598a1cfe11f92fde21a8c",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
+          "expr": "walk",
+          "line": 96
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8065c74fbded42fb0e94741e2c1d7ea1cd14ff8a66520f4760354d1945de6bca",
+          "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L96",
+          "line": 96,
+          "expr": "walk(sf, (node) => {\n      // cross-file calls\n      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {\n        const binding = imports.get(node.expression.text);\n        if (binding) {\n          const target = table.topLevelSymbol(binding.file, binding.name);\n          const caller = table.enclosingSymbolId(file.path, lineOf(node.getStart()));\n          if (target && caller && caller !== target.id) {\n            push(caller, target.id, 'calls', node.expression.getText());\n            stats.calls++;\n          } else if (!target) {\n            stats.dropped++;\n          }\n        }\n      }\n      // inheritance / implements\n      if (ts.isClassDeclaration(node) && node.name && node.heritageClauses) {\n        const classSym = table.topLevelSymbol(file.path, node.name.text);\n        for (const clause of node.heritageClauses) {\n          const rel: Rel =\n            clause.token === ts.SyntaxKind.ExtendsKeyword ? 'inherits' : 'implements';\n          for (const t of clause.types) {\n            const baseName = ts.isIdentifier(t.expression) ? t.expression.text : undefined;\n            if (!classSym || !baseName) continue;\n            const target = resolveTypeName(baseName, file.path, imports, table);\n            if (target) {\n              push(classSym.id, target, rel, `${rel} ${baseName}`);\n              if (rel === 'inherits') stats.inherits++;\n              else stats.implements++;\n            } else {\n              stats.dropped++;\n            }\n          }\n        }\n      }\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1dfff391209c7aece97a9c73a3e73530598b35f807d71dc10798f428805aa1ea",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript.lineOf@L83",
+          "expr": "lineOf",
+          "line": 102
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ceadac9e185de200d78a16cffa68e2220668b758b9be9954cd7aa68c9f382c2d",
+          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
+          "expr": "enclosingSymbolId",
+          "line": 102
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2e3df4947c2708eb8c22502b30e7830db218442422cbffd0c610e5abd1bb8724",
+          "target": "sym:packages/core/src/rules/extract.ts#lineOf@L259",
+          "expr": "lineOf",
+          "line": 102
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c00d5d4fcc201f5c6566a76881060c998daa48349b9f67a2ee718a558e87c7a7",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeName@L138",
+          "expr": "resolveTypeName",
+          "line": 120
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a44b6a7f1ad6e744ea285a1b1b4bff4e372b6ff585383ab5f28ed8be117b1f23",
+          "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L134",
+          "line": 134,
+          "expr": "return { edges, stats };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/ts-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 12,
+      "recorded": 27,
+      "unresolved": 11
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "11 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

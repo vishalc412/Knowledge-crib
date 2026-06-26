@@ -172,6 +172,197 @@ user-scope writes.
 
 ---
 
+## Schema 1.3 — framework-semantics layer (Spring track + surfacing)
+
+### The problem
+
+A framework codebase — a Spring Boot service, a React app, an Angular module — was a *flat
+symbol graph*: classes, methods, fields, and a `calls`/CFG graph. You could see that
+`LoanController` existed and called `LoanService`, but the graph carried **none** of the
+artifacts that make a framework service legible without reading it:
+
+- no notion that `LoanController` served `POST /api/loans/{id}` (the route table / API surface);
+- no notion that `LoanService` autowired `LoanRepository` (the DI graph), or that
+  `LoanRepository` was itself *produced* by a `@Bean` method in `LoanRepositoryConfig`
+  (the supply chain);
+- no notion that `Loan.applicant` was a `@ManyToOne` to `Applicant`, or that `Loan.payments`
+  was a `@OneToMany` mappedBy `loan` (the JPA relation model);
+- no notion of architectural role — a `@RestController`, a `@Service`, a `@Repository`, a
+  `@Configuration`, an `@Entity` were all just `class` symbols;
+- and the same gap awaited React/Angular components (no `component` node, no `renders` edge).
+
+Reading the graph still meant reading the code. The whole point of crib is to be *above* the
+code, and for a framework codebase the symbol graph alone is not above it.
+
+### What was built
+
+**Schema (additive kinds + rels, no rewrite).** `packages/soul-schema/src/enums.ts` adds three
+node kinds — `route`, `field`, `component` — and five rels: `exposes` (handler symbol → route),
+`injects` (consumer class → dependency symbol, CLASS-level outgoing), `produces` (producer
+method → produced type, `@Bean`/`@Factory`), `references` (field → related type, JPA
+`@ManyToOne`/`@OneToMany`/`@ManyToMany`/`@OneToOne`), `renders` (component → child component).
+`member-of` (child method/field → class, incoming to the class = its members) is reused for
+class-scope aggregation. `packages/soul-schema/src/id.ts` gives each a distinct prefix
+(`route:<httpMethod> <routePath>@<file>#L<line>`, `field:<path>#<qualifiedName>@L<startLine>`,
+`comp:<path>#<qualifiedName>@L<startLine>`). `Node` gains optional `httpMethod`, `routePath`,
+`framework`, `stereotype`, `whenSelector` strings, plus `meta.params`
+(`Array<{name, type?, in}>` with `in = path|query|body|header|cookie|part|form|matrix`),
+`meta.security` (`Record<string,string>`, e.g. `{PreAuthorize: "hasRole('X')"}`),
+`meta.injects` (`string[]`, cross-file DI type names awaiting resolution), `meta.produces`
+(`string[]`), and `meta.column` (`{id?, name?, nullable?, unique?, length?, joinColumn?,
+generated?}`). `field.dataType` is reused from schema 1.1 (the field's declared scalar type).
+
+**Spring extractor — Pass 4 of the Java pipeline** (`packages/parsers/src/java/spring.ts`,
+pure + additive; a non-Spring class is a no-op):
+
+1. **Stereotypes** — every `@RestController`/`@Controller`/`@Service`/`@Repository`/
+   `@Component`/`@Configuration`/`@Entity`/`@Embeddable`/`@ControllerAdvice` class is tagged
+   `framework:'spring'` + `stereotype:'<role>'` on its symbol node. A Spring Data repository
+   that carries *no* `@Repository` annotation (`interface LoanRepo extends JpaRepository<…>`)
+   is still tagged `repository` via the `REPOSITORY_BASES` fallback.
+2. **Routes** — every `@GetMapping`/`@PostMapping`/`@PutMapping`/`@DeleteMapping`/`@PatchMapping`/
+   `@RequestMapping` handler becomes a `route` node with the class-level base path composed in
+   (`joinPath` normalizes `/api` + `/{id}` → `/api/{id}`), all verbs honored (`@RequestMapping`
+   is `ANY` unless `method=RequestMethod.X` pins it; multi-verb `method={GET,POST}` yields
+   both), all paths honored (`@GetMapping({"/a","/b"})` → two routes). The route carries the
+   param contract (`@PathVariable`→path, `@RequestParam`→query, `@RequestBody`→body,
+   `@RequestHeader`→header, `@CookieValue`→cookie, `@RequestPart`→part, `@ModelAttribute`→form,
+   `@MatrixVariable`→matrix) and the security contract (`@PreAuthorize`/`@PostAuthorize`/
+   `@Secured`/`@RolesAllowed`). The handler method is linked to its route by an `exposes` edge.
+3. **DI graph** — constructor-injected params and `@Autowired`/`@Inject`/`@Resource` fields
+   become `injects` edges (consumer class → dependency). Spring 4.3+ implicit single-ctor
+   autowire is honored; with multiple ctors the `@Autowired` one is the injection point;
+   records' compact header ctor is read from `def.paramTypes`; `@Autowired` single-param
+   setter methods are injection points too. DI/relation edges are emitted **only for beans**
+   (a class carrying a stereotype) — an `@Autowired` field on a plain POJO is a no-op, so the
+   framework graph stays honest. Self-injection is skipped. Intra-file deps resolve here;
+   cross-file deps are recorded on `meta.injects` for the resolver (which widens to include
+   `injects`).
+4. **`@Bean` produces** — a `@Bean`-annotated method in a `@Configuration` class PRODUCES its
+   return type (the Spring container's produced beans, the dual of the `injects` DI graph). A
+   collection-returning bean (`List<Payment> payments()`) produces the element type. Intra-file
+   resolved here; cross-file recorded on the method's `meta.produces`.
+5. **JPA relations + columns** — `@ManyToOne`/`@OneToMany`/`@ManyToMany`/`@OneToOne` fields on an
+   `@Entity` emit a `references` edge (field → related type). A collection-valued association
+   targets the generic *element* type (`@OneToMany List<Payment>` → `Payment`), not the
+   collection head. The relation's `cardinality` is the annotation NAME itself (the
+   multiplicity) — without this the multiplicity was extracted then dropped — and
+   `cascade`/`fetch`/`mappedBy`/`orphanRemoval` ride on the edge `meta` verbatim (whitespace
+   preserved). `@Id`/`@Column`/`@GeneratedValue`/`@JoinColumn` on an `@Entity` field populate
+   `meta.column` (PK flag, column name, generation strategy, FK join column).
+6. **Per-method framework meta** — `@Transactional`, `@Scheduled` (cron/fixedRate/fixedDelay
+   kind), `@Query` (JPQL + native flag), `@Modifying`, `@Procedure`, and method-level security
+   are stamped on the method symbol node's `meta.*`.
+7. **`@ExceptionHandler` advice** — a `@ExceptionHandler` method in a `@Controller`/
+   `@ControllerAdvice` becomes an `exception-handler` node (`whenSelector` = the exception
+   class(es), `A|B` for multi) + a `handles` edge exception-handler → method symbol.
+
+Every framework edge is emitted with `method:'static'`, `provenance:'EXTRACTED'`,
+`confidence:1`, `evidence:{snippet, by:'lang:java/spring'}`.
+
+**Surfacing — the "above SQL" tier** (what makes a Java/Node/React/Angular graph *replace*
+reading the code):
+
+- **`context` verb (`packages/mcp/src/verbs.ts`)** — opt-in `withFramework:boolean` (matches
+  the `withRules`/`withSource` convention — NOT unconditional). Calls
+  `frameworkSemantics()` from `packages/core/src/dossier/framework.ts`, which is **pure over
+  the soul** (no IndexStore, no disk) so the pipeline-persisted dossier and the live MCP
+  `context` verb share one code path and are byte-identical in shape. It auto-scopes by node:
+  a CLASS symbol (framework class, class-like type, or anything with incoming `member-of`
+  children) → CLASS scope, aggregating the route table / bean inventory / DI graph / relation
+  model / renders across members; a callable / component / field / route → METHOD scope (direct
+  outgoing; dependencies lifted from the owning class for a callable). `lean:true` returns only
+  the `{routes, produces}` the node OWNS (the persisted-dossier subset); `lean:false` (default,
+  the `context` verb) additionally returns `dependencies`/`dependents`/`relations`/`renders`.
+  **Supply chain in one hop, no round-trip**: a dependency whose type is a `@Bean`-produced type
+  is surfaced with `kind:'produces'` + the producer method brief in the SAME object — a consumer
+  reads "LoanRepository is injected AND produced by LoanRepositoryConfig.loanRepository()" in
+  one trip (built from one soul-wide `produces` scan). **Unresolved honesty**: `meta.injects`/
+  `meta.produces` type names that have no emitted edge surface as entries with `unresolved:true`,
+  `id:'?'` — parity with the `gaps` verb's unresolved call-sites.
+
+- **`dossier` verb** — `buildDossier` attaches `framework` (lean) + `shapeVersion:2`
+  (`DOSSIER_SHAPE_VERSION`). `readDossier` reports `stale` when `shapeVersion !=
+  DOSSIER_SHAPE_VERSION` (so pre-2.0 persisted artifacts rebuild on demand; `shapeVersion`
+  undefined → stale → rebuilt) — independent of `schemaVersion`, and in addition to the existing
+  hash + schemaVersion staleness gate. The serializer (`packages/core/src/dossier/serializer.ts`)
+  emits `## Routes` / `## Produces` / `## Dependencies` / `## Dependents` / `## Relations` /
+  `## Renders` sections (each only when non-empty), in fixed order, grouped after `## Control
+  flow` and before `## Docs`.
+
+- **`gaps` verb** — two new anomaly arrays: `controllersWithoutRoutes` (a `controller`-stereotype
+  class with member methods but ZERO `exposes` edges — a `@Controller` whose handlers all lost
+  their `@GetMapping`, or one with no handlers) and `unresolvedInjects` (a class declaring a DI
+  type in `meta.injects` that the resolver never linked to a symbol — the dual of unresolved
+  call sites, a missing bean the consumer expects). Both added to the `summary` keys.
+
+- **`viz` (`packages/ui/src/viz.ts`)** — `buildVizGraph` surfaces `framework`/`stereotype`/
+  `httpMethod`/`routePath` on the node data so the detail panel can show the framework role
+  without re-querying the soul. `makeSummary` is richer for `route` (`POST /api/loans`, not
+  `route: POST /api/loans`), `field` (`Field applicant → column applicant_id`), `component`
+  (`react component LoanForm`), and `symbol` (`controller: LoanController`). All edges are
+  already emitted.
+
+**The `crib migrate` truth (canonical).** There is **no `crib migrate` command**. Schema
+evolution is automatic and additive: (1) every 1.0→1.3 field is OPTIONAL +
+`additionalProperties:true`, so an old soul loads verbatim; (2) re-indexing stamps the new 1.3
+fields onto the SAME node (id-stable, hash-stable, in-place); (3) persisted dossiers rebuild on
+demand via the `shapeVersion` + `schemaVersion` staleness gate in `readDossier`. No rewrite, no
+data loss. The `'crib migrate'` test referenced in `testing.md §7` IS the schema round-trip +
+forward-compat test in `packages/core/src/validate.test.ts` (a 1.0/1.2 node validates under the
+1.3 schema; a 1.2 node → stamp 1.3 fields → re-validate, id unchanged).
+
+**Dist gate.** `pnpm test` now runs `pretest: pnpm -r run build` first, so tests never run
+against stale `dist` — packages export from `./dist`, so a stale `dist` silently masks bugs.
+`pnpm verify` = build + test + lint.
+
+### Backward compatibility
+
+Schema evolution is additive and automatic (the migrate truth above):
+
+- Every 1.0→1.3 field is OPTIONAL + `additionalProperties:true`, so a 1.0-era soul (no 1.1/1.2/1.3
+  fields), a 1.2 soul (behavior fields, no framework fields), and a 1.3 soul all load verbatim
+  under the current 1.3 schema. `SUPPORTED_SCHEMA_VERSIONS` includes `1.0`/`1.1`/`1.2`/`1.3`;
+  `SCHEMA_VERSION === '1.3'`.
+- Re-indexing stamps the new 1.3 fields onto the SAME node — `id` and `hash` are unchanged, so no
+  edges are re-written and no clusters shift. A 1.2 service class becomes a 1.3
+  `framework:'spring'`/`stereotype:'service'` class in place.
+- Persisted dossiers rebuild on demand: `readDossier` flags `stale` when the dossier's
+  `shapeVersion` is missing or older than `DOSSIER_SHAPE_VERSION` (2), so pre-2.0 artifacts
+  rebuild the first time they are read, with no explicit migration step.
+- The Spring extractor is a no-op on non-Spring classes — a plain POJO with an `@Autowired`
+  field (not a bean) emits no DI/relation edge — so the framework graph only carries real
+  framework semantics.
+
+### Tests
+
+- **`packages/core/src/dossier/framework.test.ts` — 12**: class-scope `member-of` aggregation
+  (controller route table with owning handler, DI graph as `dependencies` + reverse-injects as
+  `dependents`, `@Entity` relation model with `cardinality`/`cascade`/`fetch`/`mappedBy` verbatim,
+  `@Configuration` bean inventory with the producing method) and method scope (`lean:true` →
+  only the routes/produces the callable owns; `lean:false` → dependencies lifted from the owning
+  class + dependents on produced types; supply-chain `kind:'produces'` + producer).
+- **`packages/core/src/validate.test.ts` — 22**: 1.3 round-trip (route/field/component/`@Bean`
+  method/references edge/produces edge each validate, plus a JSON serialize/parse round-trip
+  re-validates with no field lost), forward compatibility (a 1.0-era node, a 1.2 behavior node, a
+  1.0-era edge, and a manifest claiming `schemaVersion 1.0` all validate under the 1.3 schema),
+  the additive "crib migrate" case (a 1.2 node → stamps 1.3 fields → re-validates, `id` and
+  `hash` unchanged), `SUPPORTED_SCHEMA_VERSIONS` includes `1.0`→`1.3`, field-`dataType` reuse
+  guard, and closed-enum rejection (bad `kind`/`rel`/`provenance`/`confidence`/`hash`/`id` all
+  throw `SchemaValidationError`).
+- **`packages/mcp/src/verbs.test.ts` — 6 (framework-semantics integration)**:
+  `context(withFramework)` on a controller surfaces the route table + params + security + DI
+  graph (full set); the supply-chain case (a service injecting a `@Bean`-produced type →
+  `kind:'produces'` + producer); and the Spring `gaps` anomalies
+  (`controllersWithoutRoutes` for a controller with member methods but zero `exposes`,
+  `unresolvedInjects` for a class whose `meta.injects` names a type with no `injects` edge).
+- **`packages/cli/src/viz.test.ts` — 1 (framework-semantics 1.3 surfacing)**: `buildVizGraph`
+  surfaces route `httpMethod`/`routePath` + field column + component `framework` + symbol
+  `stereotype` on the node data.
+- **Full suite green.**
+
+---
+
 ## Tests + build + lint
 
 - **CLI tests: 40 pass** (registry 5, resolution 12, mcp-install 12, hooks 5, runtime 2, viz 4).

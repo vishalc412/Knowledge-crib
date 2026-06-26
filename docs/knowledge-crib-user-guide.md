@@ -16,7 +16,7 @@
 1. [What it is](#1-what-it-is)
 2. [Install](#2-install)
 3. [The per-project workflow](#3-the-per-project-workflow)
-4. [The MCP server + the 9 verbs](#4-the-mcp-server--the-9-verbs)
+4. [The MCP server + the 12 verbs](#4-the-mcp-server--the-12-verbs)
 5. [Worked example: indexing the FTC event-management repo](#5-worked-example-indexing-the-ftc-event-management-repo)
 6. [Keeping the soul fresh](#6-keeping-the-soul-fresh)
 7. [Exporting the graph](#7-exporting-the-graph)
@@ -87,7 +87,7 @@ crib status .                           # 2. health + stats
 
 | Command | Purpose |
 |---|---|
-| `crib index [path] [--with-embeddings] [--exclude a,b,…]` | Full index → `.crib` soul + derived SQLite index |
+| `crib index [path] [--semantic] [--exclude a,b,…]` | Full index → `.crib` soul + derived SQLite index (+ optional INFERRED TF-IDF semantic links) |
 | `crib status [path]` | Health + node/edge/cluster counts + VCS anchor |
 | `crib query <text>` | BM25 search over code + docs |
 | `crib serve [path]` | Run the MCP server on stdio (what IDEs connect to) |
@@ -144,7 +144,7 @@ config. See [`knowledge-crib-client-setup.md`](knowledge-crib-client-setup.md) �
 
 ---
 
-## 4. The MCP server + the 9 verbs
+## 4. The MCP server + the 12 verbs (status, context, source, dossier, impact, query, describes, neighbors, shortest_path, detect_changes, extract_rules, gaps)
 
 `crib serve <root>` starts one MCP server over stdio. Every verb is an MCP tool. All results are
 **token-bounded** (default `docLimit=3`, `limit=10`, with `truncated` + `cursor`) and
@@ -167,6 +167,31 @@ Health + whether indexed. `→ { indexed, schemaVersion, stats{nodes,edges,clust
 → { "node": { signature, file, span, clusterId }, "callers": […], "callees": […], "docs": […], "truncated": false }
 ```
 The cheapest "give me everything about this symbol" call. Start here.
+
+### `source` — paged source body for a symbol
+```jsonc
+{ "id": "sym:…#login@L42", "sourceStartLine": 42, "sourceMaxLines": 120 }
+→ { "id": "…", "source": "  login(userId) {\n    …", "startLine": 42, "totalLines": 87,
+    "truncated": false }
+```
+Rehydrates the symbol's source span from the repo on demand. Page a large body into a small model's
+window with `sourceStartLine` / `sourceMaxLines`.
+
+### `dossier` — one-call deep context (the migration verb)
+```jsonc
+{ "id": "sym:loan_engine.pkb#assess_application@L10", "format": "markdown" }
+→ { "id": "…", "dossier": "# loan_engine.assess_application\n## Decision table …\n
+     ## Raises\n- -20001 application rejected …\n## Exception handlers\n- WHEN NO_DATA_FOUND …\n
+     ## Iterates (cursors)\n- c_app …\n## Declares …\n## Source …" }
+```
+One call returns the **behavior** the refined model captures — decision table, raises (with error
+codes + the guard chain that fires them), exception handlers, cursors + their queries, assignment
+targets, per-symbol doc comments — folded with the structure. `format: "json" | "markdown"`. The
+artifact is **persisted** under `.crib/dossiers/` (sharded by node-id hash, hash-anchored to
+`node.hash`), so repeat calls are cache hits. This is the verb a migration analyst or a local LLM
+uses instead of `context` + `source` + `extract_rules` + re-reading source. Schema 1.3 (dossier
+`shapeVersion:2` carrying a lean framework block — routes/produces for Spring); works across
+all 7 languages with capability-honest skips.
 
 ### `impact` — blast radius (the wedge verb)
 ```jsonc
@@ -212,7 +237,8 @@ Read-only. For "what's the impact of this diff?" — review a PR by running it a
 → { "rules": [ { "action": "escalate_claim", "conditions": ["v_amt > 10000"],
                  "source": "claims.pkb@L12", "reads": ["CLAIMS.amount"] } ] }
 ```
-Flattens the M11 guard-annotated CFG into a decision table — the migration deliverable.
+Flattens the M11 guard-annotated CFG into a decision table — the migration deliverable. Works for
+all 7 languages (PL/SQL, TypeScript, Java, C#, Go, Rust, Python), not just PL/SQL.
 
 ### Error shape
 `{ "error": { "code": "NOT_FOUND" | "NOT_INDEXED" | "AMBIGUOUS" | "BAD_ARGS" | "INTERNAL", "message" } }`
@@ -242,7 +268,8 @@ cd /Users/vishalchawla/Documents/FTC/event_management_software
 #   1313 java · 292 tsx · 225 sql · 58 ts · 46 js · 37 jsx · 14 kts · 11 kt · 5 md
 ```
 
-Knowledge-crib extracts TS/TSX, SQL, and Markdown here; Java/Kotlin become file nodes only.
+Knowledge-crib extracts TS/TSX, SQL, Markdown, and Java here; Kotlin becomes file nodes only
+(no Kotlin extractor yet — the one language still without a plugin).
 
 ### 5.3 First attempt — full repo (failed: slow)
 
@@ -255,9 +282,13 @@ crib index .
 files / 261 MB) or `.gradle` (174 MB). Discovery read+hashed every cache file before reaching
 source.
 
-**Root cause #2:** after fixing the ignores, the **PL/SQL extractor hangs** on the repo's 192 SQL
-migration files (`FTCCloud/src/main/resources/db/migration/V*.sql`) — a pathological O(n²) path in
-the extractor that triggers on that file shape.
+**Root cause #2 (historical):** after fixing the ignores, the **PL/SQL extractor hung** on the
+repo's 192 SQL migration files (`FTCCloud/src/main/resources/db/migration/V*.sql`). The real bug
+was a parser **infinite loop** — `recover()` bailed on a stray `WHEN`/`ELSE`/`EXCEPTION` (a
+BLOCK_END keyword) at top level without advancing — **not** an O(n²) path. Fixed in commit
+`0961e5b` with a forward-progress guard (`if (this.pos === before) this.pos++` in `parser.ts`) plus
+a regression test; the extractor is now O(tokens)/file and the `SqlResolver` runs once over the
+soul. This is no longer reproducible.
 
 ### 5.4 Fixes applied to Knowledge-crib (so other projects work too)
 
@@ -274,8 +305,9 @@ All 165 tests still pass after these changes; `pnpm lint` is clean.
 
 ### 5.5 Successful index (the demo graph)
 
-Indexing the main TS app (`FTCCloud`) while excluding the pathological `resources` (SQL migrations)
-and `graphify-out` (stale graphify output):
+Indexing the main TS app (`FTCCloud`) while excluding `resources` (SQL migrations — kept out so the
+demo focuses on the TS app; no longer *required* after the parser fix) and `graphify-out` (stale
+graphify output):
 
 ```bash
 cd /Users/vishalchawla/Documents/FTC/event_management_software
@@ -324,8 +356,8 @@ Drove `crib serve FTCCloud` through a canonical MCP SDK client (`Client` +
 
 ```
 initialize  → serverInfo { name: "knowledge-crib", version: "0.0.0" }
-tools/list  → 11 tools (status, context, source, dossier, impact, query, describes, neighbors,
-                        shortest_path, detect_changes, extract_rules)
+tools/list  → 12 tools (status, context, source, dossier, impact, query, describes, neighbors,
+                        shortest_path, detect_changes, extract_rules, gaps)
 status      → { nodes:1576, edges:1831, clusters:104, vcsHead:… }
 query "schedule" → ScheduleFilterBar (score -4.01), ScheduleStatsCards, ScheduleItemRequest
 context(ScheduleFilterBar) → { signature, file, span {25..95} }
@@ -417,16 +449,37 @@ You should see two JSON-RPC responses (initialize + status).
 
 ## 9. Known issues & limits
 
-1. **PL/SQL extractor perf** — pathological O(n²) on large sets of SQL migration files
-   (`V*.sql`). Workaround: `crib index . --exclude resources` for SQL-migration-heavy repos. Fix is
-   upstream (not yet filed).
-2. **No Java/Kotlin/Go/Rust symbol extraction** — these are file nodes only. TS/Python/PL-SQL/MD
-   ship by default; the registry is extensible.
-3. **`.js`/`.jsx` not symbol-extracted** — intentionally; use `.ts`/`.tsx`.
-4. **No embeddings by default** — `--with-embeddings` enables sqlite-vec for semantic search; off by
-   default for zero-dep safety.
-5. **Multimodal (PDF/image/audio) is opt-in** — the `crib_worker` Python subprocess is never spawned
-   on the default index/serve path.
+1. **No Kotlin symbol extraction** — Kotlin is the one language still without a plugin; `.kt`/`.kts`
+   files are discovered as file nodes only (no symbol graph). Java, C#, Go, and Rust joined
+   TS/Python/PL-SQL/Markdown as first-class default extractors in M14 — each emits symbol nodes
+   (`qualifiedName`/`span`/`signature`) plus `member-of` and intra-file `calls` edges, with imports,
+   cross-file calls, and inheritance handled by their resolvers. The registry remains extensible;
+   contribute a Kotlin extractor.
+2. **`.js`/`.jsx`/`.cjs`/`.mjs` not symbol-extracted** — intentionally; only file nodes (`.js`/`.jsx`
+   get a `javascript` lang tag; `.cjs`/`.mjs` get a bare file node). Symbol extraction covers
+   `.ts`/`.tsx`/`.mts`/`.cts` — use those.
+3. **No vector embeddings ship** — the deterministic core is zero-embedding / zero-dep (BM25 + FTS5
+   only); `capabilities().vector` is hard-coded `false` and there is no `sqlite-vec` dependency. The
+   INFERRED "semantic search" layer is the M7 pure-JS **TF-IDF** linker
+   (`pipeline/src/linker/semantic.ts`), which emits capped `references` edges (provenance `INFERRED`,
+   confidence ≤0.6 — strictly below the `describes` threshold). It is opt-in via the **`--semantic`**
+   flag on `crib index` / `crib reindex`; off by default so `--extracted-only` is the pure
+   deterministic subset.
+4. **Multimodal (PDF/image/audio) is opt-in** — the `crib_worker` Python subprocess is never spawned
+   on the default `crib index`/`serve` path; it only runs when `indexRepo` is called with an
+   explicit `multimodal` option. No `crib` CLI flag exposes it yet (enablement is library-API only).
+5. **Framework semantics (schema 1.3) surface in `context`/`dossier`/`gaps`/`viz`** — the Spring
+   track is built (stereotypes, routes, DI `injects`, `@Bean` `produces`, JPA `references`/columns,
+   `@ExceptionHandler` handlers, `@PreAuthorize`/`@Transactional`/`@Scheduled`/`@Query` method
+   meta). `context` gains an opt-in `withFramework` flag (returns `routes`/`produces`/
+   `dependencies`/`dependents`/`relations`/`renders`); `dossier` attaches a lean framework block
+   (`shapeVersion:2`); `gaps` adds `controllersWithoutRoutes` + `unresolvedInjects`; `viz`
+   surfaces `framework`/`stereotype`/`httpMethod`/`routePath` on node data. The Node/NestJS/Express,
+   React (component + `renders` + field), and Angular (component/directive/pipe + `renders` +
+   `injects`) tracks are planned and reuse the same 1.3 kinds/rels — no schema change needed.
+   **There is no `crib migrate` command** — schema evolution is automatic and additive (re-index
+   stamps new optional 1.3 fields onto the same id-stable nodes; persisted dossiers rebuild via the
+   `shapeVersion`/`schemaVersion` staleness gate).
 
 ---
 
@@ -437,10 +490,10 @@ knowledge-crib/                 # pnpm monorepo
   packages/
     soul-schema/   # JSON Schema + TS types (the contract)
     core/          # SoulStore (chunked JSONL) + IndexStore (SQLite + FTS5)
-    parsers/       # TypeScript / Python / PL-SQL / Markdown extractors (registry)
+    parsers/       # TypeScript / Python / PL-SQL / Markdown / Java / C# / Go / Rust extractors (registry)
     pipeline/      # extract → resolve → link → cluster → index (phased)
-    mcp/           # the one MCP server (stdio) + 9 verbs (pure functions)
-    cli/           # crib index|status|query|serve|update|export|viz|install-hooks|merge-driver
+    mcp/           # the one MCP server (stdio) + 12 verbs (pure functions)
+    cli/           # crib index|status|query|serve|update|reindex|export|viz|install-hooks|merge-driver|mcp
     ui/            # offline web viz (vendored Cytoscape)
   docs/            # the spec + this guide
 ```

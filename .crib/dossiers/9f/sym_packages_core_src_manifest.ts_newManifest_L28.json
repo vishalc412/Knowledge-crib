@@ -1,0 +1,369 @@
+{
+  "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4825572e53f2a5ece4c648d2a43e6500a5ce4478a4145c6627f9199b8e8a35a2",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+    "kind": "symbol",
+    "type": "function",
+    "name": "newManifest",
+    "qualifiedName": "newManifest",
+    "signature": "newManifest(opts: NewManifestOpts = {}): Manifest",
+    "lang": "typescript",
+    "file": "packages/core/src/manifest.ts",
+    "span": {
+      "start": 28,
+      "end": 48
+    },
+    "callSites": [
+      {
+        "callee": "randomUUID",
+        "line": 33
+      },
+      {
+        "callee": "toISOString",
+        "line": 44
+      }
+    ]
+  },
+  "source": {
+    "text": "export function newManifest(opts: NewManifestOpts = {}): Manifest {\n  const backend: IndexBackend = opts.indexBackend ?? 'sqlite';\n  return {\n    cribFormatVersion: CRIB_FORMAT_VERSION,\n    schemaVersion: SCHEMA_VERSION,\n    repo: { id: opts.repoId ?? randomUUID(), root: opts.root ?? '.' },\n    generator: { tool: TOOL_NAME, version: opts.toolVersion ?? '0.0.0' },\n    chunking: opts.chunking ?? { ...DEFAULT_CHUNKING },\n    stores: {\n      soul: 'jsonl-chunked',\n      index: { backend, path: `.crib/index/crib.${backend === 'sqlite' ? 'sqlite' : 'kuzu'}` },\n    },\n    stats: {\n      nodes: 0,\n      edges: 0,\n      clusters: 0,\n      lastUpdated: opts.now ?? new Date().toISOString(),\n    },\n    capabilities: { embeddings: false, multimodal: false },\n  };\n}",
+    "truncated": false,
+    "totalLines": 21,
+    "startLine": 28
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore@L58",
+      "confidence": 1,
+      "name": "SoulStore",
+      "qualifiedName": "SoulStore",
+      "type": "class",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 58
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.test.ts#build@L82",
+      "confidence": 1,
+      "name": "build",
+      "qualifiedName": "build",
+      "signature": "build(…)",
+      "type": "function",
+      "file": "packages/core/src/soul-store.test.ts",
+      "line": 82
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.test.ts#freshSoul@L114",
+      "confidence": 1,
+      "name": "freshSoul",
+      "qualifiedName": "freshSoul",
+      "signature": "freshSoul(): SoulStore",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.test.ts",
+      "line": 114
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L191",
+      "confidence": 1,
+      "name": "freshSoulForRebuild",
+      "qualifiedName": "freshSoulForRebuild",
+      "signature": "freshSoulForRebuild(cribDir: string): SoulStore",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 191
+    },
+    {
+      "id": "sym:packages/pipeline/src/parity/parity.ts#indexRoot@L174",
+      "confidence": 1,
+      "name": "indexRoot",
+      "qualifiedName": "indexRoot",
+      "signature": "indexRoot(root: string, now: string): Promise<{ soul: SoulStore; cribDir: string }>",
+      "type": "function",
+      "file": "packages/pipeline/src/parity/parity.ts",
+      "line": 174
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.test.ts#open@L58",
+      "confidence": 1,
+      "name": "open",
+      "qualifiedName": "open",
+      "signature": "open(): SoulStore",
+      "type": "function",
+      "file": "packages/core/src/soul-store.test.ts",
+      "line": 58
+    },
+    {
+      "id": "sym:packages/pipeline/src/multimodal.test.ts#soulAt@L42",
+      "confidence": 1,
+      "name": "soulAt",
+      "qualifiedName": "soulAt",
+      "signature": "soulAt(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal.test.ts",
+      "line": 42
+    },
+    {
+      "id": "sym:packages/cli/src/viz.test.ts#soulFor@L25",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/cli/src/viz.test.ts",
+      "line": 25
+    },
+    {
+      "id": "sym:packages/pipeline/src/cfg.test.ts#soulFor@L23",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/cfg.test.ts",
+      "line": 23
+    },
+    {
+      "id": "sym:packages/pipeline/src/cluster.test.ts#soulFor@L11",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster.test.ts",
+      "line": 11
+    },
+    {
+      "id": "sym:packages/pipeline/src/dossier-e2e.test.ts#soulFor@L64",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/dossier-e2e.test.ts",
+      "line": 64
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/linker.test.ts#soulFor@L30",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/linker.test.ts",
+      "line": 30
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/semantic.test.ts#soulFor@L24",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/semantic.test.ts",
+      "line": 24
+    },
+    {
+      "id": "sym:packages/pipeline/src/pipeline.test.ts#soulFor@L34",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.test.ts",
+      "line": 34
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/csharp-resolver.test.ts#soulFor@L22",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/csharp-resolver.test.ts",
+      "line": 22
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#soulFor@L16",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.test.ts",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#soulFor@L30",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/java-resolver.test.ts",
+      "line": 30
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#soulFor@L37",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/python-resolver.test.ts",
+      "line": 37
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/resolve.test.ts#soulFor@L19",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/resolve.test.ts",
+      "line": 19
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#soulFor@L22",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/rust-resolver.test.ts",
+      "line": 22
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#soulFor@L23",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "line": 23
+    },
+    {
+      "id": "sym:packages/pipeline/src/rules.test.ts#soulFor@L24",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/rules.test.ts",
+      "line": 24
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.test.ts#soulFor@L32",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/update.test.ts",
+      "line": 32
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/semantic.test.ts#soulForAt@L128",
+      "confidence": 1,
+      "name": "soulForAt",
+      "qualifiedName": "soulForAt",
+      "signature": "soulForAt(dir: string): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/semantic.test.ts",
+      "line": 128
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/manifest.ts@L27",
+      "snippet": "/** A fresh manifest for a brand-new soul. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#0-verified-facts-judge-conflict-reconciliations",
+      "heading": "0. Verified facts & judge-conflict reconciliations",
+      "anchor": "0-verified-facts-judge-conflict-reconciliations",
+      "snippet": "0. Verified facts & judge-conflict reconciliations",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/manifest.ts#newManifest@L28",
+    "procedureName": "newManifest",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/manifest.ts#newManifest@L28",
+        "procedureName": "newManifest",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:32108a01a68b2e84e4a7d44fb9602a4803d9c60ff4a792288a47f453a7a025b6",
+          "target": "stmt:packages/core/src/manifest.ts@L30",
+          "line": 30,
+          "expr": "return {\n    cribFormatVersion: CRIB_FORMAT_VERSION,\n    schemaVersion: SCHEMA_VERSION,\n    repo: { id: opts.repoId ?? randomUUID(), root: opts.root ?? '.' },\n    generator: { tool: TOOL_NAME, version: opts.toolVersion ?? '0.0.0' },\n    chunking: opts.chunking ?? { ...DEFAULT_CHUNKING },\n    stores: {\n      soul: 'jsonl-chunked',\n      index: { backend, path: `.crib/index/crib.${backend === 'sqlite' ? 'sqlite' : 'kuzu'}` },\n    },\n    stats: {\n      nodes: 0,\n      edges: 0,\n      clusters: 0,\n      lastUpdated: opts.now ?? new Date().toISOString(),\n    },\n    capabilities: { embeddings: false, multimodal: false },\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts",
+      "packages/cli/src/viz.test.ts",
+      "packages/core/src/dossier/framework.test.ts",
+      "packages/core/src/soul-store.test.ts",
+      "packages/core/src/soul-store.ts",
+      "packages/pipeline/src/cfg.test.ts",
+      "packages/pipeline/src/cluster.test.ts",
+      "packages/pipeline/src/dossier-e2e.test.ts",
+      "packages/pipeline/src/linker/linker.test.ts",
+      "packages/pipeline/src/linker/semantic.test.ts",
+      "packages/pipeline/src/multimodal.test.ts",
+      "packages/pipeline/src/parity/parity.ts",
+      "packages/pipeline/src/pipeline.test.ts",
+      "packages/pipeline/src/resolve/csharp-resolver.test.ts",
+      "packages/pipeline/src/resolve/go-resolver.test.ts",
+      "packages/pipeline/src/resolve/java-resolver.test.ts",
+      "packages/pipeline/src/resolve/python-resolver.test.ts",
+      "packages/pipeline/src/resolve/resolve.test.ts",
+      "packages/pipeline/src/resolve/rust-resolver.test.ts",
+      "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "packages/pipeline/src/rules.test.ts",
+      "packages/pipeline/src/update.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -127,7 +127,10 @@ export function buildIndex(rt: Runtime): IndexStore {
   const path = resolveIndexPath(rel, rt.repoRoot, rt.cribDir);
   mkdirSync(dirname(path), { recursive: true });
   const index = openIndex(manifest.stores.index.backend, { path });
-  index.buildFromSoul(rt.soul, { withEmbeddings: manifest.capabilities.embeddings });
+  // The derived index is fully determined by the soul (FTS5 + adjacency); no vector/embedding build
+  // options exist today. `manifest.capabilities.embeddings` is a capability record (always false
+  // until a vector backend ships) and does not drive the build.
+  index.buildFromSoul(rt.soul);
   return index;
 }
 

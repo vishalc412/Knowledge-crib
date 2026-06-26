@@ -1,0 +1,138 @@
+{
+  "id": "sym:packages/core/src/shard.ts#shardKeyForNode@L50",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:f8c24b64d72a7cd0fdfae0bf958a2df7d0515e5eb917154bd5cf8c9ccb594272",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/shard.ts#shardKeyForNode@L50",
+    "kind": "symbol",
+    "type": "function",
+    "name": "shardKeyForNode",
+    "qualifiedName": "shardKeyForNode",
+    "signature": "shardKeyForNode(node: Node): string",
+    "lang": "typescript",
+    "file": "packages/core/src/shard.ts",
+    "span": {
+      "start": 50,
+      "end": 52
+    },
+    "callSites": [
+      {
+        "callee": "pathFromId",
+        "line": 51
+      }
+    ]
+  },
+  "source": {
+    "text": "export function shardKeyForNode(node: Node): string {\n  return node.file ?? pathFromId(node.id) ?? node.id;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 50
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.markNodeDirty@L280",
+      "confidence": 1,
+      "name": "markNodeDirty",
+      "qualifiedName": "SoulStore.markNodeDirty",
+      "signature": "markNodeDirty(node: Node): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 280
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeNodeShard@L356",
+      "confidence": 1,
+      "name": "writeNodeShard",
+      "qualifiedName": "SoulStore.writeNodeShard",
+      "signature": "writeNodeShard(shard: string): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 356
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/shard.ts#pathFromId@L16",
+      "confidence": 1,
+      "name": "pathFromId",
+      "qualifiedName": "pathFromId",
+      "signature": "pathFromId(id: string): string | undefined",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 16
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/shard.ts@L49",
+      "snippet": "/** The key a node hashes into a shard by: its source path, else its id. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/shard.ts#shardKeyForNode@L50",
+    "procedureName": "shardKeyForNode",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/shard.ts#shardKeyForNode@L50",
+        "procedureName": "shardKeyForNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3c5c680b8700f4155914b3fa5676a1a799225c820de8fa4df973ba6b855fb602",
+          "target": "sym:packages/core/src/shard.ts#pathFromId@L16",
+          "expr": "pathFromId",
+          "line": 51
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/shard.ts#shardKeyForNode@L50",
+        "procedureName": "shardKeyForNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:59d5e46aab521673cdb1badb72e6bae8e74de832ccf8a17a11d485f44c93092f",
+          "target": "stmt:packages/core/src/shard.ts@L51",
+          "line": 51,
+          "expr": "return node.file ?? pathFromId(node.id) ?? node.id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

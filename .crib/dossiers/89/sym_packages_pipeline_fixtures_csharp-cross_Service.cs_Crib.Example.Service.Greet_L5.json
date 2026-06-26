@@ -1,0 +1,78 @@
+{
+  "id": "sym:packages/pipeline/fixtures/csharp-cross/Service.cs#Crib.Example.Service.Greet@L5",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:838553fd3855723840cad39d6513db51e1ddc1bb5bf77f8464bef0c90405b42b",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/fixtures/csharp-cross/Service.cs#Crib.Example.Service.Greet@L5",
+    "kind": "symbol",
+    "type": "method",
+    "name": "Greet",
+    "qualifiedName": "Crib.Example.Service.Greet",
+    "signature": "Greet(user)",
+    "lang": "csharp",
+    "file": "packages/pipeline/fixtures/csharp-cross/Service.cs",
+    "span": {
+      "start": 5,
+      "end": 8
+    },
+    "params": [
+      "user"
+    ]
+  },
+  "source": {
+    "text": "    public string Greet(string user)\n    {\n        return \"hi \" + user;\n    }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 5
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/fixtures/csharp-cross/Service.cs#Crib.Example.Service.Greet@L5",
+    "procedureName": "Crib.Example.Service.Greet",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/fixtures/csharp-cross/Service.cs#Crib.Example.Service.Greet@L5",
+        "procedureName": "Crib.Example.Service.Greet",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:36f35723008fa4f3de3b5f11a0de924415a44b07a88cc82d5789c334ecd80c67",
+          "target": "stmt:packages/pipeline/fixtures/csharp-cross/Service.cs@L7",
+          "line": 7,
+          "expr": "return \"hi \" + user"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

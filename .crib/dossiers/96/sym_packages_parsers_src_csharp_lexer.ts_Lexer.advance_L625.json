@@ -1,0 +1,228 @@
+{
+  "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:99a047594a4312f51f91b1576138dd68b7e3553ad10ee5d6d31e744eeb6b28d4",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
+    "kind": "symbol",
+    "type": "method",
+    "name": "advance",
+    "qualifiedName": "Lexer.advance",
+    "signature": "advance(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/lexer.ts",
+    "span": {
+      "start": 625,
+      "end": 634
+    }
+  },
+  "source": {
+    "text": "  private advance(): void {\n    const c = this.src[this.pos];\n    this.pos++;\n    if (c === '\\n') {\n      this.line++;\n      this.col = 1;\n    } else {\n      this.col++;\n    }\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 625
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanChar@L554",
+      "confidence": 1,
+      "name": "scanChar",
+      "qualifiedName": "Lexer.scanChar",
+      "signature": "scanChar(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 554
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanIdent@L286",
+      "confidence": 1,
+      "name": "scanIdent",
+      "qualifiedName": "Lexer.scanIdent",
+      "signature": "scanIdent(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 286
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanInterpolatedString@L402",
+      "confidence": 1,
+      "name": "scanInterpolatedString",
+      "qualifiedName": "Lexer.scanInterpolatedString",
+      "signature": "scanInterpolatedString(prefixLen: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 402
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanInterpolationHole@L453",
+      "confidence": 1,
+      "name": "scanInterpolationHole",
+      "qualifiedName": "Lexer.scanInterpolationHole",
+      "signature": "scanInterpolationHole(): string",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 453
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanNumber@L297",
+      "confidence": 1,
+      "name": "scanNumber",
+      "qualifiedName": "Lexer.scanNumber",
+      "signature": "scanNumber(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 297
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanOp@L578",
+      "confidence": 1,
+      "name": "scanOp",
+      "qualifiedName": "Lexer.scanOp",
+      "signature": "scanOp(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 578
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRawStringBody@L523",
+      "confidence": 1,
+      "name": "scanRawStringBody",
+      "qualifiedName": "Lexer.scanRawStringBody",
+      "signature": "scanRawStringBody(quoteCount: number, sl: number, sc: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 523
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+      "confidence": 1,
+      "name": "scanRegularOrRawString",
+      "qualifiedName": "Lexer.scanRegularOrRawString",
+      "signature": "scanRegularOrRawString(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 307
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularStringBody@L329",
+      "confidence": 1,
+      "name": "scanRegularStringBody",
+      "qualifiedName": "Lexer.scanRegularStringBody",
+      "signature": "scanRegularStringBody(sl: number, sc: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 329
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanVerbatimString@L355",
+      "confidence": 1,
+      "name": "scanVerbatimString",
+      "qualifiedName": "Lexer.scanVerbatimString",
+      "signature": "scanVerbatimString(prefixLen: number, interpolated: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 355
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipBlockComment@L599",
+      "confidence": 1,
+      "name": "skipBlockComment",
+      "qualifiedName": "Lexer.skipBlockComment",
+      "signature": "skipBlockComment(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 599
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipLineComment@L594",
+      "confidence": 1,
+      "name": "skipLineComment",
+      "qualifiedName": "Lexer.skipLineComment",
+      "signature": "skipLineComment(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 594
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipStringInHole@L480",
+      "confidence": 1,
+      "name": "skipStringInHole",
+      "qualifiedName": "Lexer.skipStringInHole",
+      "signature": "skipStringInHole(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 480
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 223
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
+    "procedureName": "Lexer.advance",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/lexer.ts@L628"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
+        "procedureName": "Lexer.advance",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L628",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L628",
+            "expr": "c === '\\n'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:52b88e0d3e2aa6e30140efbed3489edeee2438f48ec87c21b13480c9c48fe181",
+          "target": "assign:packages/parsers/src/csharp/lexer.ts@L630",
+          "line": 630,
+          "expr": "this.col = 1;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

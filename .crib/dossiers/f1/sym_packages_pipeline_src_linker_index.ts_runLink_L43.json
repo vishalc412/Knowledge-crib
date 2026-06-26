@@ -1,0 +1,657 @@
+{
+  "id": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:634b3c4de2a2daac81b534195c2f44227d32958baeb454515ff6ec0ca20ebb28",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runLink",
+    "qualifiedName": "runLink",
+    "signature": "runLink(soul: SoulStore, root: string, threshold?: number, docFiles?: string[]): LinkStats",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/linker/index.ts",
+    "span": {
+      "start": 43,
+      "end": 103
+    },
+    "callSites": [
+      {
+        "callee": "set",
+        "line": 55
+      },
+      {
+        "callee": "readFileSync",
+        "line": 64
+      },
+      {
+        "callee": "join",
+        "line": 64
+      },
+      {
+        "callee": "idFor",
+        "line": 69
+      },
+      {
+        "callee": "explicitSignal",
+        "line": 73
+      },
+      {
+        "callee": "identifierSignal",
+        "line": 74
+      },
+      {
+        "callee": "pathSignal",
+        "line": 75
+      },
+      {
+        "callee": "get",
+        "line": 78
+      },
+      {
+        "callee": "push",
+        "line": 79
+      },
+      {
+        "callee": "set",
+        "line": 80
+      },
+      {
+        "callee": "scoreLink",
+        "line": 83
+      },
+      {
+        "callee": "push",
+        "line": 85
+      },
+      {
+        "callee": "edgeId",
+        "line": 86
+      },
+      {
+        "callee": "putEdges",
+        "line": 101
+      }
+    ]
+  },
+  "source": {
+    "text": "export function runLink(\n  soul: SoulStore,\n  root: string,\n  threshold?: number,\n  docFiles?: string[],\n): LinkStats {\n  const index = new InvertedIndex(soul);\n\n  // group doc-section nodes by file (optionally restricted to `docFiles`)\n  const scope = docFiles ? new Set(docFiles) : undefined;\n  const docFilesInScope = new Map<string, true>();\n  for (const node of soul.iterate('doc-section')) {\n    if (node.file && (!scope || scope.has(node.file))) docFilesInScope.set(node.file, true);\n  }\n\n  const edges: Edge[] = [];\n  const stats: LinkStats = { describes: 0, references: 0 };\n\n  for (const docFile of docFilesInScope.keys()) {\n    let text: string;\n    try {\n      text = readFileSync(join(root, docFile), 'utf8');\n    } catch {\n      continue;\n    }\n    for (const section of parseMarkdownSections(text)) {\n      const sectionId = idFor({ kind: 'doc-section', path: docFile, anchor: section.anchor });\n      // gather signals, grouped by target symbol id\n      const bySymbol = new Map<string, SignalHit[]>();\n      const allHits = [\n        ...explicitSignal(section, index),\n        ...identifierSignal(section, index),\n        ...pathSignal(section, docFile, index),\n      ];\n      for (const hit of allHits) {\n        const list = bySymbol.get(hit.symbol.id) ?? [];\n        list.push(hit);\n        bySymbol.set(hit.symbol.id, list);\n      }\n      for (const [symbolId, hits] of bySymbol) {\n        const scored = scoreLink(hits, threshold);\n        if (!scored) continue;\n        edges.push({\n          id: edgeId(sectionId, symbolId, scored.rel),\n          src: sectionId,\n          dst: symbolId,\n          rel: scored.rel,\n          method: scored.method,\n          provenance: 'EXTRACTED',\n          confidence: scored.confidence,\n          evidence: { by: 'deterministic-linker', snippet: section.heading },\n        });\n        if (scored.rel === 'describes') stats.describes++;\n        else stats.references++;\n      }\n    }\n  }\n\n  if (edges.length > 0) soul.putEdges(edges);\n  return stats;\n}",
+    "truncated": false,
+    "totalLines": 61,
+    "startLine": 43
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L104",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 104
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+      "confidence": 1,
+      "name": "updateRepo",
+      "qualifiedName": "updateRepo",
+      "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.ts",
+      "line": 86
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 122
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/signals.ts#explicitSignal@L23",
+      "confidence": 1,
+      "name": "explicitSignal",
+      "qualifiedName": "explicitSignal",
+      "signature": "explicitSignal(section: MdSection, index: InvertedIndex): SignalHit[]",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/signals.ts",
+      "line": 23
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 77
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/signals.ts#identifierSignal@L50",
+      "confidence": 1,
+      "name": "identifierSignal",
+      "qualifiedName": "identifierSignal",
+      "signature": "identifierSignal(section: MdSection, index: InvertedIndex): SignalHit[]",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/signals.ts",
+      "line": 50
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/signals.ts#pathSignal@L68",
+      "confidence": 1,
+      "name": "pathSignal",
+      "qualifiedName": "pathSignal",
+      "signature": "pathSignal(section: MdSection, docFile: string, index: InvertedIndex): SignalHit[]",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/signals.ts",
+      "line": 68
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/score.ts#scoreLink@L23",
+      "confidence": 1,
+      "name": "scoreLink",
+      "qualifiedName": "scoreLink",
+      "signature": "scoreLink(hits: SignalHit[], threshold = DEFAULT_LINK_THRESHOLD): ScoredLink | null",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/score.ts",
+      "line": 23
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/linker/index.ts@L36",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#0-verified-facts-judge-conflict-reconciliations",
+      "heading": "0. Verified facts & judge-conflict reconciliations",
+      "anchor": "0-verified-facts-judge-conflict-reconciliations",
+      "snippet": "0. Verified facts & judge-conflict reconciliations",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#10-architecture",
+      "heading": "10. Architecture",
+      "anchor": "10-architecture",
+      "snippet": "10. Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+    "procedureName": "runLink",
+    "conditions": [
+      "cond:packages/pipeline/src/linker/index.ts@L54",
+      "cond:packages/pipeline/src/linker/index.ts@L55",
+      "cond:packages/pipeline/src/linker/index.ts@L61",
+      "cond:packages/pipeline/src/linker/index.ts@L68",
+      "cond:packages/pipeline/src/linker/index.ts@L77",
+      "cond:packages/pipeline/src/linker/index.ts@L82",
+      "cond:packages/pipeline/src/linker/index.ts@L101"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "guard": "cond:packages/pipeline/src/linker/index.ts@L55",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L54",
+            "expr": "soul.iterate('doc-section')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L55",
+            "expr": "node.file && (!scope || scope.has(node.file))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e56917e6f25a6a435230c454334378703f441436a8ac3802a5e874037ee51794",
+          "target": "stmt:packages/pipeline/src/linker/index.ts@L55",
+          "line": 55,
+          "expr": "docFilesInScope.set(node.file, true);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "guard": "cond:packages/pipeline/src/linker/index.ts@L61",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L61",
+            "expr": "docFilesInScope.keys()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:607eba109f522d780581b9b9e9f88d3c980814e639d1b7ee1b2dc019d45e7070",
+          "target": "assign:packages/pipeline/src/linker/index.ts@L64",
+          "line": 64,
+          "expr": "text = readFileSync(join(root, docFile), 'utf8');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "guard": "cond:packages/pipeline/src/linker/index.ts@L68",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L61",
+            "expr": "docFilesInScope.keys()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L68",
+            "expr": "parseMarkdownSections(text)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d102a0f2e6b441271b1bb1a2fbb9334a9533148c22757904cc139ce5df693e1a",
+          "target": "stmt:packages/pipeline/src/linker/index.ts@L69",
+          "line": 69,
+          "expr": "const sectionId = idFor({ kind: 'doc-section', path: docFile, anchor: section.anchor });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:375282a7818424ae21aa266bbb87f973a8b2d1461897aafe4e828ff090b2bb03",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+          "expr": "idFor",
+          "line": 69
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "guard": "cond:packages/pipeline/src/linker/index.ts@L68",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L61",
+            "expr": "docFilesInScope.keys()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L68",
+            "expr": "parseMarkdownSections(text)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:77181503881fd4c295e1ea2144a24cb7cb4de4b16b3e28f9ffd5149b0b4ae858",
+          "target": "stmt:packages/pipeline/src/linker/index.ts@L72",
+          "line": 72,
+          "expr": "const allHits = [\n        ...explicitSignal(section, index),\n        ...identifierSignal(section, index),\n        ...pathSignal(section, docFile, index),\n      ];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:14280965ff44f8b12e4821698935a5552e5f0d64cc409179ddb50f74c430b608",
+          "target": "sym:packages/pipeline/src/linker/signals.ts#explicitSignal@L23",
+          "expr": "explicitSignal",
+          "line": 73
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f8139a45a65057db3e3c03947731d00d1262cd2cf6a89a66a76e7e87e4279bf9",
+          "target": "sym:packages/pipeline/src/linker/signals.ts#identifierSignal@L50",
+          "expr": "identifierSignal",
+          "line": 74
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f2cf6b226088447cc353decd2e97d1d26a4af1e047793a09b96e90110e89daec",
+          "target": "sym:packages/pipeline/src/linker/signals.ts#pathSignal@L68",
+          "expr": "pathSignal",
+          "line": 75
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "guard": "cond:packages/pipeline/src/linker/index.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L61",
+            "expr": "docFilesInScope.keys()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L68",
+            "expr": "parseMarkdownSections(text)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L77",
+            "expr": "allHits",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dd4fa16b58a439d63141c26cbc47c9a2961a2a1a8e75c6b575be3d1f774e7f2b",
+          "target": "stmt:packages/pipeline/src/linker/index.ts@L78",
+          "line": 78,
+          "expr": "const list = bySymbol.get(hit.symbol.id) ?? [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "guard": "cond:packages/pipeline/src/linker/index.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L61",
+            "expr": "docFilesInScope.keys()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L68",
+            "expr": "parseMarkdownSections(text)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L77",
+            "expr": "allHits",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:325e68b92c49ecb9defb78961b4dc7bc2939ee2ce83d648be8c922a735946a9c",
+          "target": "stmt:packages/pipeline/src/linker/index.ts@L79",
+          "line": 79,
+          "expr": "list.push(hit);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:eeb333855735306befbfcba1983abba82b5056ba13500af2d677d7be12f8391b",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 79
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "guard": "cond:packages/pipeline/src/linker/index.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L61",
+            "expr": "docFilesInScope.keys()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L68",
+            "expr": "parseMarkdownSections(text)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L77",
+            "expr": "allHits",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0537f011366053ae3eb26c1fe6d958c638843b41c402fcf7c308424383f4c884",
+          "target": "stmt:packages/pipeline/src/linker/index.ts@L80",
+          "line": 80,
+          "expr": "bySymbol.set(hit.symbol.id, list);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "guard": "cond:packages/pipeline/src/linker/index.ts@L82",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L61",
+            "expr": "docFilesInScope.keys()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L68",
+            "expr": "parseMarkdownSections(text)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L82",
+            "expr": "bySymbol",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:baab906b9276f0ceb9aa2422786b5a60d4fccbf118d3400990213d4ca7b68504",
+          "target": "stmt:packages/pipeline/src/linker/index.ts@L83",
+          "line": 83,
+          "expr": "const scored = scoreLink(hits, threshold);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fe08fdd44222f8c0d5655817bf567220631d2ca6adc0c8de7061f83cd3f2dbf4",
+          "target": "sym:packages/pipeline/src/linker/score.ts#scoreLink@L23",
+          "expr": "scoreLink",
+          "line": 83
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "guard": "cond:packages/pipeline/src/linker/index.ts@L82",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L61",
+            "expr": "docFilesInScope.keys()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L68",
+            "expr": "parseMarkdownSections(text)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L82",
+            "expr": "bySymbol",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0b3c6fc0f9004cdb77569db5e56eba42ea69525d1c80171f6e8d599803c5d243",
+          "target": "stmt:packages/pipeline/src/linker/index.ts@L85",
+          "line": 85,
+          "expr": "edges.push({\n          id: edgeId(sectionId, symbolId, scored.rel),\n          src: sectionId,\n          dst: symbolId,\n          rel: scored.rel,\n          method: scored.method,\n          provenance: 'EXTRACTED',\n          confidence: scored.confidence,\n          evidence: { by: 'deterministic-linker', snippet: section.heading },\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9d7176f7eceabefcc9fd88e25f46c8d9d8dc23940a49edceeab9521e4a8b3a9f",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "expr": "edgeId",
+          "line": 86
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "guard": "cond:packages/pipeline/src/linker/index.ts@L101",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/index.ts@L101",
+            "expr": "edges.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fc6c6151c3a2fdd78cf0b5b537f757456851bdac6260d2fdcd6e89551916291f",
+          "target": "stmt:packages/pipeline/src/linker/index.ts@L101",
+          "line": 101,
+          "expr": "soul.putEdges(edges);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+        "procedureName": "runLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6a26cbdbd640216785ba987c3bda314c18354528567df810324a53d73dff1b85",
+          "target": "stmt:packages/pipeline/src/linker/index.ts@L102",
+          "line": 102,
+          "expr": "return stats;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 11,
+    "referencedByFiles": [
+      "packages/pipeline/src/pipeline.ts",
+      "packages/pipeline/src/update.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 11,
+    "assignments": 1,
+    "conditions": 6,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 7,
+      "recorded": 14,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

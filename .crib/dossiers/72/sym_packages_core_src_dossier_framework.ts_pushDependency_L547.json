@@ -1,0 +1,242 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#pushDependency@L547",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d3c22a7d093106feaa8be9bd8fbe38329fedda8bfd1f0d01d2e7446fd9cc1401",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#pushDependency@L547",
+    "kind": "symbol",
+    "type": "function",
+    "name": "pushDependency",
+    "qualifiedName": "pushDependency",
+    "signature": "pushDependency(e: Edge, soul: SoulStore, brief: (id: string, c: number) => AdjacentBrief, producerOf: Map<string, string>, out: DossierDependency[]): void",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 547,
+      "end": 567
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 554
+      },
+      {
+        "callee": "get",
+        "line": 555
+      },
+      {
+        "callee": "push",
+        "line": 557
+      },
+      {
+        "callee": "brief",
+        "line": 560
+      },
+      {
+        "callee": "brief",
+        "line": 565
+      }
+    ]
+  },
+  "source": {
+    "text": "function pushDependency(\n  e: Edge,\n  soul: SoulStore,\n  brief: (id: string, c: number) => AdjacentBrief,\n  producerOf: Map<string, string>,\n  out: DossierDependency[],\n): void {\n  const dn = soul.getNode(e.dst);\n  const producerId = producerOf.get(e.dst);\n  const kind: 'injects' | 'produces' = producerId ? 'produces' : 'injects';\n  out.push({\n    id: e.dst,\n    confidence: e.confidence,\n    brief: brief(e.dst, e.confidence),\n    ...(dn?.stereotype ? { stereotype: dn.stereotype } : {}),\n    ...(dn?.framework ? { framework: dn.framework } : {}),\n    kind,\n    ...(e.evidence?.snippet ? { injectedAs: e.evidence.snippet } : {}),\n    ...(producerId ? { producer: brief(producerId, e.confidence) } : {}),\n  });\n}",
+    "truncated": false,
+    "totalLines": 21,
+    "startLine": 547
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L528",
+      "confidence": 1,
+      "name": "collectDependencies",
+      "qualifiedName": "collectDependencies",
+      "signature": "collectDependencies(ownerId: string, outgoing: Map<string, Edge[]>, keep: (e: Edge) => boolean, producerOf: Map<string, string>, soul: SoulStore, brief: (id: string, c: number) => AdjacentBrief, seen: Set<string>, out: DossierDependency[]): void",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 528
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L192",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 192
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#brief@L296",
+      "confidence": 1,
+      "name": "brief",
+      "qualifiedName": "brief",
+      "signature": "brief(soul: SoulStore, id: string, confidence: number): AdjacentBrief",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 296
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics.brief@L231",
+      "confidence": 1,
+      "name": "brief",
+      "qualifiedName": "frameworkSemantics.brief",
+      "signature": "brief(…)",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 231
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/framework.ts@L546",
+      "snippet": "/** Push one injects edge as a dependency, resolving the supply-chain kind (injects vs produces). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#pushDependency@L547",
+    "procedureName": "pushDependency",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#pushDependency@L547",
+        "procedureName": "pushDependency",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b044ba3c59dfa84ae2397b149eb519cce8ee6aea3335181d2455b25e33eccd68",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L554",
+          "line": 554,
+          "expr": "const dn = soul.getNode(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#pushDependency@L547",
+        "procedureName": "pushDependency",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5fcd829d94ea5b1089fa203a7921a8679b5a3debfd3451f06becf6f376d05bdf",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L555",
+          "line": 555,
+          "expr": "const producerId = producerOf.get(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#pushDependency@L547",
+        "procedureName": "pushDependency",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca734b3e8c3e3ae1e0301c42e3c256933aca3052dbdb61adb8308f72064a98ac",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L557",
+          "line": 557,
+          "expr": "out.push({\n    id: e.dst,\n    confidence: e.confidence,\n    brief: brief(e.dst, e.confidence),\n    ...(dn?.stereotype ? { stereotype: dn.stereotype } : {}),\n    ...(dn?.framework ? { framework: dn.framework } : {}),\n    kind,\n    ...(e.evidence?.snippet ? { injectedAs: e.evidence.snippet } : {}),\n    ...(producerId ? { producer: brief(producerId, e.confidence) } : {}),\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#pushDependency@L547",
+        "procedureName": "pushDependency",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:24637edc2484a8a33006545437b8764107587a30923bb7260b618d9ed4cbe1a7",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 557
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#pushDependency@L547",
+        "procedureName": "pushDependency",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:376d35fea751df3f1193b9a2e7842936c5435d004704b609066252a767c3418c",
+          "target": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics.brief@L231",
+          "expr": "brief",
+          "line": 560
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#pushDependency@L547",
+        "procedureName": "pushDependency",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f79e556a474e0d308f7b665fd5cd1e1e47309a440c253e6ba41405aae1ab36e5",
+          "target": "sym:packages/core/src/dossier/builder.ts#brief@L296",
+          "expr": "brief",
+          "line": 560
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 5,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipBraces@L1576",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:88ee3453ee76da81ffa3325f0247d14ec9c7b7b9e1f2a4b35a142f3a888a6b68",
+  "builtAt": "2026-06-26T05:09:36.599Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipBraces@L1576",
+    "kind": "symbol",
+    "type": "method",
+    "name": "skipBraces",
+    "qualifiedName": "BodyParser.skipBraces",
+    "signature": "skipBraces(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 1576,
+      "end": 1580
+    },
+    "callSites": [
+      {
+        "callee": "matchBrace",
+        "line": 1578
+      }
+    ]
+  },
+  "source": {
+    "text": "  private skipBraces(): void {\n    if (!this.isOp('{')) return;\n    const closeIdx = this.matchBrace(this.i, this.end);\n    this.i = closeIdx < 0 ? this.end : closeIdx + 1;\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 1576
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.matchBrace@L1614",
+      "confidence": 1,
+      "name": "matchBrace",
+      "qualifiedName": "BodyParser.matchBrace",
+      "signature": "matchBrace(openIdx: number, maxIdx: number = this.t.length): number",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1614
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L868",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 868
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.ts@L1575",
+      "snippet": "/** Skip a `{…}` block (advances past the matching `}`), bounded by `this.end`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipBraces@L1576",
+    "procedureName": "BodyParser.skipBraces",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.ts@L1577"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipBraces@L1576",
+        "procedureName": "BodyParser.skipBraces",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:121691dbd43203f3da5d73eb648dad464404b25d55d4695b0bdbe4707afc0fa2",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L868",
+          "expr": "isOp"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipBraces@L1576",
+        "procedureName": "BodyParser.skipBraces",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1577",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1577",
+            "expr": "!this.isOp('{')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c7f9f59768d2e7fec0c2b720d7540f27b6168dcf17124434bd9501cc6f2d6e35",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1577",
+          "line": 1577,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipBraces@L1576",
+        "procedureName": "BodyParser.skipBraces",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d929ecd3c3ec92fdd790efa91b9bd35de27b9d56f47d45521af0909666f6c1df",
+          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.matchBrace@L1614",
+          "expr": "matchBrace",
+          "line": 1578
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipBraces@L1576",
+        "procedureName": "BodyParser.skipBraces",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:38557d0d2ac1e9a62541652b71d27926c4fdd0d8cc0ef3ed6df06f0368e28b30",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1578",
+          "line": 1578,
+          "expr": "const closeIdx = this.matchBrace(this.i, this.end);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipBraces@L1576",
+        "procedureName": "BodyParser.skipBraces",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:66b291f2c8aa7738dc1d371b9bff5480a8f49e78a576a91e1281b0e57f1971d7",
+          "target": "assign:packages/parsers/src/java/parser.ts@L1579",
+          "line": 1579,
+          "expr": "this.i = closeIdx < 0 ? this.end : closeIdx + 1;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

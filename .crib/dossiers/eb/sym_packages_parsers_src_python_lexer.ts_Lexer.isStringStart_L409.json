@@ -1,0 +1,237 @@
+{
+  "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:82286c1bd0414f66888b4d5582dffa7c4c9935b35d47937e7ad72f7b11adc162",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isStringStart",
+    "qualifiedName": "Lexer.isStringStart",
+    "signature": "isStringStart(): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/lexer.ts",
+    "span": {
+      "start": 409,
+      "end": 420
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 410
+      },
+      {
+        "callee": "peek",
+        "line": 416
+      }
+    ]
+  },
+  "source": {
+    "text": "  private isStringStart(): boolean {\n    const c = this.peek();\n    if (c === '\"' || c === \"'\") return true;\n    // prefix + quote\n    if (isStringPrefix(c)) {\n      let i = 1;\n      while (isStringPrefix(this.peek(i))) i++;\n      const q = this.peek(i);\n      return q === '\"' || q === \"'\";\n    }\n    return false;\n  }",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 409
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 102
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 390
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#isStringPrefix@L474",
+      "confidence": 1,
+      "name": "isStringPrefix",
+      "qualifiedName": "isStringPrefix",
+      "signature": "isStringPrefix(c: string): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 474
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+    "procedureName": "Lexer.isStringStart",
+    "conditions": [
+      "cond:packages/parsers/src/python/lexer.ts@L413",
+      "cond:packages/parsers/src/python/lexer.ts@L411"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+        "procedureName": "Lexer.isStringStart",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L413",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L413",
+            "expr": "isStringPrefix(c)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a5412208c300576d93085f8658330831bba183a54e85218d428e0c5856f1823a",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
+          "expr": "peek",
+          "line": 410
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+        "procedureName": "Lexer.isStringStart",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:52cf4306be9d7863c848cee720fd65c58a1e688fa86f348d9aff8b9f893735cf",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L410",
+          "line": 410,
+          "expr": "const c = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+        "procedureName": "Lexer.isStringStart",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L411",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L411",
+            "expr": "c === '\"' || c === \"'\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ae68e2b05bf6423a1fd02214b1945cc8641e4743b830a3cd16b3b68c3047b505",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L411",
+          "line": 411,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+        "procedureName": "Lexer.isStringStart",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L413",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L413",
+            "expr": "isStringPrefix(c)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:648eb4da223dbccdffa02a3f56ffc0b3c843b84121c3116ae7f44d7299aaf371",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L416",
+          "line": 416,
+          "expr": "const q = this.peek(i);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+        "procedureName": "Lexer.isStringStart",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L413",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L413",
+            "expr": "isStringPrefix(c)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:208deb09276ad5431208bd06f9b5ab734adfe91d32c85e33f88c9209de55fd98",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L417",
+          "line": 417,
+          "expr": "return q === '\"' || q === \"'\";"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+        "procedureName": "Lexer.isStringStart",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:16f0688084fd28f6ff978836e8aa28233cc0cdfcf8bc8e3428188d6cf4ebb809",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L419",
+          "line": 419,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+        "procedureName": "Lexer.isStringStart",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:eea99f5ae911e346e729069fe62130d14c6f205c5614ac5f78eb12a456dbd986",
+          "target": "sym:packages/parsers/src/python/lexer.ts#isStringPrefix@L474",
+          "expr": "isStringPrefix"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/python/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

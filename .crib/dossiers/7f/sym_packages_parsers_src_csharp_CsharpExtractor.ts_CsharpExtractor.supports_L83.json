@@ -1,0 +1,138 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.supports@L83",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:1acc8a47627fe854a0bc46897ecca45fd2ddb08f8f1b190f7c8e6dc2eb5ef7f7",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.supports@L83",
+    "kind": "symbol",
+    "type": "method",
+    "name": "supports",
+    "qualifiedName": "CsharpExtractor.supports",
+    "signature": "supports(file: FileMeta): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 83,
+      "end": 85
+    },
+    "callSites": [
+      {
+        "callee": "some",
+        "line": 84
+      },
+      {
+        "callee": "endsWith",
+        "line": 84
+      }
+    ]
+  },
+  "source": {
+    "text": "  supports(file: FileMeta): boolean {\n    return CsharpExtractor.SUPPORTED.some((e) => file.path.endsWith(e));\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 83
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a15a51dcb8460a247.md#evidence",
+      "heading": "Evidence",
+      "anchor": "evidence",
+      "snippet": "Evidence",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-7-deployment-lifecycle",
+      "heading": "2.7 Deployment & lifecycle",
+      "anchor": "2-7-deployment-lifecycle",
+      "snippet": "2.7 Deployment & lifecycle",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-4-mcp-ts-sdk-version",
+      "heading": "4.4 MCP TS SDK version",
+      "anchor": "4-4-mcp-ts-sdk-version",
+      "snippet": "4.4 MCP TS SDK version",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#6-github-copilot-vs-code-ghcp",
+      "heading": "6. GitHub Copilot (VS Code, \"ghcp\")",
+      "anchor": "6-github-copilot-vs-code-ghcp",
+      "snippet": "6. GitHub Copilot (VS Code, \"ghcp\")",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#cypher-optional-index-backend-dependent",
+      "heading": "`cypher` *(optional, index-backend-dependent)*",
+      "anchor": "cypher-optional-index-backend-dependent",
+      "snippet": "`cypher` *(optional, index-backend-dependent)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.supports@L83",
+    "procedureName": "CsharpExtractor.supports",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.supports@L83",
+        "procedureName": "CsharpExtractor.supports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5b54cf5b8ecb92956dfa7fed6a0d631ac860d6fe15e64a19b06b17b3f8494730",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L84",
+          "line": 84,
+          "expr": "return CsharpExtractor.SUPPORTED.some((e) => file.path.endsWith(e));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

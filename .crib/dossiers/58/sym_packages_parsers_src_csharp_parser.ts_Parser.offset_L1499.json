@@ -1,0 +1,147 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.offset@L1499",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:21fe36160af20da11ddf5792779276246ca59f5a3934d8503b361af03f5f776d",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.offset@L1499",
+    "kind": "symbol",
+    "type": "method",
+    "name": "offset",
+    "qualifiedName": "Parser.offset",
+    "signature": "offset(tk: Token): number",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 1499,
+      "end": 1501
+    }
+  },
+  "source": {
+    "text": "  private offset(tk: Token): number {\n    return (this.lineStarts[tk.line - 1] ?? 0) + (tk.col - 1);\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1499
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.offsetAfter@L1504",
+      "confidence": 1,
+      "name": "offsetAfter",
+      "qualifiedName": "Parser.offsetAfter",
+      "signature": "offsetAfter(tk: Token): number",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1504
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafExpr@L1275",
+      "confidence": 1,
+      "name": "parseLeafExpr",
+      "qualifiedName": "Parser.parseLeafExpr",
+      "signature": "parseLeafExpr(startLine: number): CsharpStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1275
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1219",
+      "confidence": 1,
+      "name": "parseLeafReturn",
+      "qualifiedName": "Parser.parseLeafReturn",
+      "signature": "parseLeafReturn(kind: 'return' | 'throw', startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1219
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitch@L1141",
+      "confidence": 1,
+      "name": "parseSwitch",
+      "qualifiedName": "Parser.parseSwitch",
+      "signature": "parseSwitch(startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1141
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+      "confidence": 1,
+      "name": "parseSwitchExprArms",
+      "qualifiedName": "Parser.parseSwitchExprArms",
+      "signature": "parseSwitchExprArms(braceIdx: number): CsharpSwitchCase[]",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1390
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.readParenText@L1465",
+      "confidence": 1,
+      "name": "readParenText",
+      "qualifiedName": "Parser.readParenText",
+      "signature": "readParenText(): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1465
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/parser.ts@L1498",
+      "snippet": "/** char offset of a token's first character, from its 1-based line/col. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.offset@L1499",
+    "procedureName": "Parser.offset",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.offset@L1499",
+        "procedureName": "Parser.offset",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f781a3eec560a13877dc05772d0f477df5e47d8e1eda791d46444b380b6d0343",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1500",
+          "line": 1500,
+          "expr": "return (this.lineStarts[tk.line - 1] ?? 0) + (tk.col - 1);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -33,6 +33,17 @@ function sym(path: string, q: string, line: number, extra: Partial<Node> = {}): 
     ...extra,
   };
 }
+function stmt(path: string, line: number, lang = 'plsql'): Node {
+  return {
+    id: idFor({ kind: 'statement', file: path, line }),
+    kind: 'statement',
+    type: 'statement',
+    file: path,
+    span: { start: line, end: line },
+    lang,
+    hash: contentHash(`${path}:${line}:statement`),
+  };
+}
 function edge(src: string, dst: string, rel: Rel, over: Partial<Edge> = {}): Edge {
   return {
     id: edgeId(src, dst, rel),
@@ -201,5 +212,96 @@ describe('dossierToMarkdown — deterministic human/agent projection', () => {
     expect(md).toContain('## Raises');
     expect(md).toContain('-20001');
     expect(md).toContain('bad claim');
+  });
+});
+
+describe('implementation status — the universal "body missing" signal (all languages)', () => {
+  it('marks a callable with executes edges as implemented (PL/SQL) + counts body statements', () => {
+    const stmt11 = stmt('src/claims.pkb', 11);
+    const stmt13 = stmt('src/claims.pkb', 13);
+    soul.putNodes([proc, stmt11, stmt13]);
+    soul.putEdges([edge(proc.id, stmt11.id, 'executes'), edge(proc.id, stmt13.id, 'executes')]);
+    soul.commit(NOW);
+    const d = buildDossier(soul, repo, proc.id, NOW)!;
+    expect(d.implementation).toBeDefined();
+    expect(d.implementation!.status).toBe('implemented');
+    expect(d.implementation!.executesCount).toBe(2);
+    // markdown surfaces the implemented line, not the warning
+    const md = dossierToMarkdown(d);
+    expect(md).toContain('## Implementation status');
+    expect(md).toContain('Implemented — 2 body statement(s)');
+    expect(md).not.toContain('⚠ **Unimplemented**');
+  });
+
+  it('marks a spec-only callable (zero executes) unimplemented + emits the loud warning + "referenced everywhere"', () => {
+    // PL/SQL spec proc declared but no body file → no executes edges. Two cross-file callers reference
+    // it (the "referenced everywhere but missing" signal the loan-rule-engine feedback keys on).
+    const specProc = sym('db/PKG.pks', 'PKG.resolve_rules', 3);
+    const callerA = sym('db/caller_a.sql', 'caller_a', 5, { type: 'procedure' });
+    const callerB = sym('db/caller_b.sql', 'caller_b', 8, { type: 'procedure' });
+    soul.putNodes([specProc, callerA, callerB]);
+    soul.putEdges([edge(callerA.id, specProc.id, 'calls'), edge(callerB.id, specProc.id, 'calls')]);
+    soul.commit(NOW);
+    const d = buildDossier(soul, repo, specProc.id, NOW)!;
+    expect(d.implementation!.status).toBe('unimplemented');
+    expect(d.implementation!.executesCount).toBe(0);
+    expect(d.implementation!.referencedByFiles.sort()).toEqual([
+      'db/caller_a.sql',
+      'db/caller_b.sql',
+    ]);
+    const md = dossierToMarkdown(d);
+    expect(md).toContain('⚠ **Unimplemented**');
+    expect(md).toContain('missing file (e.g. a PL/SQL package body)');
+    expect(md).toContain('Referenced from 2 file(s): db/caller_a.sql, db/caller_b.sql');
+    // Phase 1 — the loud TOP banner gates a plan-building LLM before anything else.
+    expect(md).toContain('⛔ **ANALYSIS BLOCKED — body unavailable.**');
+    expect(md.indexOf('ANALYSIS BLOCKED')).toBeLessThan(md.indexOf('## Source'));
+    // Phase 4 — the coverage self-report reflects readiness=unimplemented with a caveat.
+    expect(d.coverage).toBeDefined();
+    expect(d.coverage!.readiness).toBe('unimplemented');
+    expect(d.coverage!.bodyPresent).toBe(false);
+    expect(d.coverage!.caveats.join(' ')).toContain('BODY UNAVAILABLE');
+  });
+
+  it('is language-agnostic: a TypeScript method with no body is flagged unimplemented', () => {
+    const tsMethod = sym('src/AuthService.ts', 'AuthService.login', 4, {
+      type: 'method',
+      lang: 'typescript',
+    });
+    soul.putNodes([tsMethod]);
+    soul.commit(NOW);
+    const d = buildDossier(soul, repo, tsMethod.id, NOW)!;
+    expect(d.implementation!.status).toBe('unimplemented');
+    expect(d.implementation!.executesCount).toBe(0);
+    expect(dossierToMarkdown(d)).toContain('⚠ **Unimplemented**');
+  });
+
+  it('is language-agnostic: a Java method with body statements is implemented', () => {
+    const javaMethod = sym('src/Svc.java', 'Svc.handle', 7, {
+      type: 'method',
+      lang: 'java',
+    });
+    const stmt9 = stmt('src/Svc.java', 9, 'java');
+    soul.putNodes([javaMethod, stmt9]);
+    soul.putEdges([edge(javaMethod.id, stmt9.id, 'executes')]);
+    soul.commit(NOW);
+    const d = buildDossier(soul, repo, javaMethod.id, NOW)!;
+    expect(d.implementation!.status).toBe('implemented');
+    expect(d.implementation!.executesCount).toBe(1);
+  });
+
+  it('omits the implementation field for a non-callable (doc-section) node', () => {
+    const doc: Node = {
+      id: idFor({ kind: 'doc-section', path: 'docs/a.md', anchor: 'x' }),
+      kind: 'doc-section',
+      file: 'docs/a.md',
+      heading: 'X',
+      anchor: 'x',
+      span: { start: 1, end: 2 },
+      hash: contentHash('doc-x'),
+    };
+    soul.putNodes([doc]);
+    soul.commit(NOW);
+    expect(buildDossier(soul, repo, doc.id, NOW)!.implementation).toBeUndefined();
   });
 });

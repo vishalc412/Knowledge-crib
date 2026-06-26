@@ -13,6 +13,7 @@
  * robust to arbitrary nesting: a `NAME (.NAME)* (` pattern is a call, attributed to the enclosing
  * declaration by line range (mirrors the TypeScript extractor's `enclosingSymbol`).
  */
+import { EXPR_MAX_CHARS } from '../types.js';
 import { isKeyword, tokenize } from './lexer.js';
 import type { Token } from './lexer.js';
 
@@ -611,7 +612,7 @@ class Parser {
     const calls = findAllCallChains(toks);
     const text = truncate(
       this.sliceSrc(first.line, first.col, last.line, last.col + last.value.length),
-      200,
+      EXPR_MAX_CHARS,
     );
     // shared shape for every action line; each branch spreads `base` + its action subtype + extras.
     const base = {

@@ -1,0 +1,139 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#fqnHas@L248",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4850ae6cfb7e967146c4c48e964bc94b54f38f95b69cde9e6f833636155a6315",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#fqnHas@L248",
+    "kind": "symbol",
+    "type": "function",
+    "name": "fqnHas",
+    "qualifiedName": "fqnHas",
+    "signature": "fqnHas(p: ParsedFile, fqn: string): boolean",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/rust-resolver.ts",
+    "span": {
+      "start": 248,
+      "end": 251
+    },
+    "callSites": [
+      {
+        "callee": "baseModule",
+        "line": 249
+      },
+      {
+        "callee": "some",
+        "line": 250
+      }
+    ]
+  },
+  "source": {
+    "text": "function fqnHas(p: ParsedFile, fqn: string): boolean {\n  const basename = baseModule(p.path);\n  return p.mod.defs.some((d) => d.kind !== 'impl' && `crate::${basename}::${d.name}` === fqn);\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 248
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#findFileByModule@L230",
+      "confidence": 1,
+      "name": "findFileByModule",
+      "qualifiedName": "findFileByModule",
+      "signature": "findFileByModule(module: string, name: string, parsed: readonly ParsedFile[]): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/rust-resolver.ts",
+      "line": 230
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#baseModule@L224",
+      "confidence": 1,
+      "name": "baseModule",
+      "qualifiedName": "baseModule",
+      "signature": "baseModule(path: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/rust-resolver.ts",
+      "line": 224
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#fqnHas@L248",
+    "procedureName": "fqnHas",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#fqnHas@L248",
+        "procedureName": "fqnHas",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:df486cc87d6e2174d033c9d35f3a29843527f64ead27ef2c5a7687702369fb96",
+          "target": "sym:packages/pipeline/src/resolve/rust-resolver.ts#baseModule@L224",
+          "expr": "baseModule",
+          "line": 249
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#fqnHas@L248",
+        "procedureName": "fqnHas",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d3e0f2a6c99fd0509ea813bdfb622619acdcd26e2024d3a7c4b88dc513de95cc",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L249",
+          "line": 249,
+          "expr": "const basename = baseModule(p.path);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#fqnHas@L248",
+        "procedureName": "fqnHas",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:019892a101698c5b97289856fd51ca0e79b3e57167be318e364e215a9c182e5b",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L250",
+          "line": 250,
+          "expr": "return p.mod.defs.some((d) => d.kind !== 'impl' && `crate::${basename}::${d.name}` === fqn);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/rust-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

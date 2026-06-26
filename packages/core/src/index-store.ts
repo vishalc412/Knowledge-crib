@@ -12,10 +12,12 @@ import type { SoulStore } from './soul-store.js';
 /** Traversal direction. `up` = follow incoming edges (dependents / blast-radius); `down` = outgoing (dependencies). */
 export type Dir = 'up' | 'down';
 
-export interface BuildOpts {
-  /** Build the optional vector table for semantic search. Default false (deterministic core needs none). */
-  withEmbeddings?: boolean;
-}
+/**
+ * The derived index (FTS5 BM25 + adjacency) is fully determined by the soul — `buildFromSoul` takes
+ * no build options. The INFERRED TF-IDF semantic pass is a pipeline-level concern
+ * (`IndexOpts.semantic` / CLI `--semantic`), not an index-build option, so there is no
+ * `withEmbeddings`/vector field anywhere.
+ */
 
 /** An incremental change set applied to the index after the soul is updated. */
 export interface IndexDelta {
@@ -62,12 +64,12 @@ export interface PathResult {
 export interface IndexCapabilities {
   /** Cypher pass-through (Kùzu only; false for sqlite — reconciliation #9). */
   cypher: boolean;
-  /** vector / ANN search available (requires withEmbeddings + a loaded vector extension). */
+  /** vector / ANN search available (requires a loaded vector extension; no vector path ships today, so always false). */
   vector: boolean;
 }
 
 export interface IndexStore {
-  buildFromSoul(soul: SoulStore, opts?: BuildOpts): void;
+  buildFromSoul(soul: SoulStore): void;
   applyDelta(changed: IndexDelta): void;
   query(q: HybridQuery): Hit[];
   impact(id: string, dir: Dir, depth?: number): ImpactResult;

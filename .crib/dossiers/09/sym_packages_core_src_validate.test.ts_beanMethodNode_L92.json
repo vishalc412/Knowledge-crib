@@ -1,0 +1,147 @@
+{
+  "id": "sym:packages/core/src/validate.test.ts#beanMethodNode@L92",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:97dcef67b13d23d6e76238736f894130452245066487015bc51e0c34efcfcaf9",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/validate.test.ts#beanMethodNode@L92",
+    "kind": "symbol",
+    "type": "function",
+    "name": "beanMethodNode",
+    "qualifiedName": "beanMethodNode",
+    "signature": "beanMethodNode(): Node",
+    "lang": "typescript",
+    "file": "packages/core/src/validate.test.ts",
+    "span": {
+      "start": 92,
+      "end": 112
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 94
+      },
+      {
+        "callee": "contentHash",
+        "line": 109
+      }
+    ]
+  },
+  "source": {
+    "text": "function beanMethodNode(): Node {\n  return {\n    id: idFor({\n      kind: 'symbol',\n      path: F,\n      qualifiedName: 'com.acme.Config.loanRepository',\n      startLine: 12,\n    }),\n    kind: 'symbol',\n    type: 'method',\n    name: 'loanRepository',\n    qualifiedName: 'com.acme.Config.loanRepository',\n    framework: 'spring',\n    stereotype: 'config',\n    file: F,\n    span: { start: 12, end: 14 },\n    lang: 'java',\n    hash: contentHash('bean:loanRepository'),\n    meta: { returnType: 'LoanRepository', produces: ['LoanRepository'], injects: ['DataSource'] },\n  };\n}",
+    "truncated": false,
+    "totalLines": 21,
+    "startLine": 92
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/validate.test.ts#producesEdge@L135",
+      "confidence": 1,
+      "name": "producesEdge",
+      "qualifiedName": "producesEdge",
+      "signature": "producesEdge(): Edge",
+      "type": "function",
+      "file": "packages/core/src/validate.test.ts",
+      "line": 135
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 77
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/validate.test.ts#beanMethodNode@L92",
+    "procedureName": "beanMethodNode",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/validate.test.ts#beanMethodNode@L92",
+        "procedureName": "beanMethodNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f2d95fbd58a694882c4629c21e07f463be14810089e6264cf94fceb58c7d0cf",
+          "target": "stmt:packages/core/src/validate.test.ts@L93",
+          "line": 93,
+          "expr": "return {\n    id: idFor({\n      kind: 'symbol',\n      path: F,\n      qualifiedName: 'com.acme.Config.loanRepository',\n      startLine: 12,\n    }),\n    kind: 'symbol',\n    type: 'method',\n    name: 'loanRepository',\n    qualifiedName: 'com.acme.Config.loanRepository',\n    framework: 'spring',\n    stereotype: 'config',\n    file: F,\n    span: { start: 12, end: 14 },\n    lang: 'java',\n    hash: contentHash('bean:loanRepository'),\n    meta: { returnType: 'LoanRepository', produces: ['LoanRepository'], injects: ['DataSource'] },\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/validate.test.ts#beanMethodNode@L92",
+        "procedureName": "beanMethodNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:364ab1fc01041a7dd067f53d92bc79171d9a36b26ac5aad655d2777111eedb3b",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+          "expr": "idFor",
+          "line": 94
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/validate.test.ts#beanMethodNode@L92",
+        "procedureName": "beanMethodNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e9511ac6f10c591db9a30223eed063bc4d02118ca45c35439158fc8ca93b7d97",
+          "target": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+          "expr": "contentHash",
+          "line": 109
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/validate.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

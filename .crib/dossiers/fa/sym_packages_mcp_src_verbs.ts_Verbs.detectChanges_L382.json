@@ -1,0 +1,396 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:bcdf44be8b36231619de89ae6ad81e983c776ec11e56d34de03a27e30f077fb6",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+    "kind": "symbol",
+    "type": "method",
+    "name": "detectChanges",
+    "qualifiedName": "Verbs.detectChanges",
+    "signature": "detectChanges(args: { since?: string }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 382,
+      "end": 436
+    },
+    "callSites": [
+      {
+        "callee": "getManifest",
+        "line": 384
+      },
+      {
+        "callee": "currentHead",
+        "line": 396
+      },
+      {
+        "callee": "changedFilesSince",
+        "line": 411
+      },
+      {
+        "callee": "pathFromId",
+        "line": 425
+      },
+      {
+        "callee": "push",
+        "line": 426
+      },
+      {
+        "callee": "pathFromId",
+        "line": 429
+      },
+      {
+        "callee": "pathFromId",
+        "line": 430
+      },
+      {
+        "callee": "push",
+        "line": 432
+      }
+    ]
+  },
+  "source": {
+    "text": "  detectChanges(args: { since?: string }): Record<string, unknown> {\n    const vcs = this.deps.vcs;\n    const manifest = this.deps.soul.getManifest();\n    const since = args.since ?? manifest.stats.incrementalSince ?? manifest.repo.vcsHead;\n    if (!vcs) {\n      return {\n        changedSymbols: [],\n        newEdges: [],\n        removedEdges: [],\n        note: 'vcs adapter not configured',\n      };\n    }\n    let head: string;\n    try {\n      head = vcs.currentHead(this.deps.repoRoot);\n    } catch {\n      return { changedSymbols: [], newEdges: [], removedEdges: [], note: 'not a git work tree' };\n    }\n    if (!since) {\n      return {\n        changedSymbols: [],\n        newEdges: [],\n        removedEdges: [],\n        head,\n        note: 'no incremental anchor — run `crib index` to establish one',\n      };\n    }\n    let changedPaths: string[];\n    try {\n      changedPaths = vcs.changedFilesSince(this.deps.repoRoot, since);\n    } catch {\n      return {\n        changedSymbols: [],\n        newEdges: [],\n        removedEdges: [],\n        head,\n        note: 'not a git work tree',\n      };\n    }\n    const changed = new Set(changedPaths);\n    const changedSymbols: string[] = [];\n    const removedEdges: Array<{ id: string; src: string; dst: string; rel: string }> = [];\n    for (const node of this.deps.soul.iterate()) {\n      const p = node.file ?? pathFromId(node.id);\n      if (p !== undefined && changed.has(p)) changedSymbols.push(node.id);\n    }\n    for (const edge of this.deps.soul.iterateEdges()) {\n      const s = pathFromId(edge.src);\n      const d = pathFromId(edge.dst);\n      if ((s !== undefined && changed.has(s)) || (d !== undefined && changed.has(d))) {\n        removedEdges.push({ id: edge.id, src: edge.src, dst: edge.dst, rel: edge.rel });\n      }\n    }\n    return { since, head, changedPaths, changedSymbols, removedEdges };\n  }",
+    "truncated": false,
+    "totalLines": 55,
+    "startLine": 382
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L377",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+    "procedureName": "Verbs.detectChanges",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L386",
+      "cond:packages/mcp/src/verbs.ts@L400",
+      "cond:packages/mcp/src/verbs.ts@L424",
+      "cond:packages/mcp/src/verbs.ts@L426",
+      "cond:packages/mcp/src/verbs.ts@L428",
+      "cond:packages/mcp/src/verbs.ts@L431"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+        "procedureName": "Verbs.detectChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7840c799c2e38f6e5b17e2709b32b5a66998c1407c7f3fbcc6bc188f57ff282b",
+          "target": "stmt:packages/mcp/src/verbs.ts@L384",
+          "line": 384,
+          "expr": "const manifest = this.deps.soul.getManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+        "procedureName": "Verbs.detectChanges",
+        "guard": "cond:packages/mcp/src/verbs.ts@L386",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L386",
+            "expr": "!vcs",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4d23f180a0c590a6153f0f4e3d6e42a816abf03be714bba5cb20da61d13c9398",
+          "target": "stmt:packages/mcp/src/verbs.ts@L387",
+          "line": 387,
+          "expr": "return {\n        changedSymbols: [],\n        newEdges: [],\n        removedEdges: [],\n        note: 'vcs adapter not configured',\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+        "procedureName": "Verbs.detectChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:05644fd7e579f07d8a86cd52b7c88f0f298cd105143446d724888be26030900f",
+          "target": "assign:packages/mcp/src/verbs.ts@L396",
+          "line": 396,
+          "expr": "head = vcs.currentHead(this.deps.repoRoot);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+        "procedureName": "Verbs.detectChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e426e0f943505def69694117ef22406e6a2a40799805eea638ec02741b9430d2",
+          "target": "stmt:packages/mcp/src/verbs.ts@L398",
+          "line": 398,
+          "expr": "return { changedSymbols: [], newEdges: [], removedEdges: [], note: 'not a git work tree' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+        "procedureName": "Verbs.detectChanges",
+        "guard": "cond:packages/mcp/src/verbs.ts@L400",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L400",
+            "expr": "!since",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1b2b21624b16a17d3474785ddc5de19cc79b52fe901942b8668bf435e266504a",
+          "target": "stmt:packages/mcp/src/verbs.ts@L401",
+          "line": 401,
+          "expr": "return {\n        changedSymbols: [],\n        newEdges: [],\n        removedEdges: [],\n        head,\n        note: 'no incremental anchor — run `crib index` to establish one',\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+        "procedureName": "Verbs.detectChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:852c6299418792a4a3d9adfe759ce2fd516cea5a5a977e2db127b1b22e2529b8",
+          "target": "assign:packages/mcp/src/verbs.ts@L411",
+          "line": 411,
+          "expr": "changedPaths = vcs.changedFilesSince(this.deps.repoRoot, since);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+        "procedureName": "Verbs.detectChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b828aec0228c3ecca5e35b23ec208c1c3a1e15d54430a75dbdd06f9c4cc5ae54",
+          "target": "stmt:packages/mcp/src/verbs.ts@L413",
+          "line": 413,
+          "expr": "return {\n        changedSymbols: [],\n        newEdges: [],\n        removedEdges: [],\n        head,\n        note: 'not a git work tree',\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+        "procedureName": "Verbs.detectChanges",
+        "guard": "cond:packages/mcp/src/verbs.ts@L424",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L424",
+            "expr": "this.deps.soul.iterate()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3455bfd75aaab6d97319a4246bcf7aae670ad5aeb4374dc9b839d40cbf1c9531",
+          "target": "stmt:packages/mcp/src/verbs.ts@L425",
+          "line": 425,
+          "expr": "const p = node.file ?? pathFromId(node.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+        "procedureName": "Verbs.detectChanges",
+        "guard": "cond:packages/mcp/src/verbs.ts@L426",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L424",
+            "expr": "this.deps.soul.iterate()"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L426",
+            "expr": "p !== undefined && changed.has(p)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:00fce139baf606a684ad85a1e9653703eff756ec97171b50a49abb959dbc4bd5",
+          "target": "stmt:packages/mcp/src/verbs.ts@L426",
+          "line": 426,
+          "expr": "changedSymbols.push(node.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+        "procedureName": "Verbs.detectChanges",
+        "guard": "cond:packages/mcp/src/verbs.ts@L428",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L428",
+            "expr": "this.deps.soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c52272a13918a22cab55a3572660127972820638fdd36f112088f67838d688cb",
+          "target": "stmt:packages/mcp/src/verbs.ts@L429",
+          "line": 429,
+          "expr": "const s = pathFromId(edge.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+        "procedureName": "Verbs.detectChanges",
+        "guard": "cond:packages/mcp/src/verbs.ts@L428",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L428",
+            "expr": "this.deps.soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cdc54d312ccc884e9fcbcd6b4329c9bd18c2bf421c0505e51d346c7deb196ba3",
+          "target": "stmt:packages/mcp/src/verbs.ts@L430",
+          "line": 430,
+          "expr": "const d = pathFromId(edge.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+        "procedureName": "Verbs.detectChanges",
+        "guard": "cond:packages/mcp/src/verbs.ts@L431",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L428",
+            "expr": "this.deps.soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L431",
+            "expr": "(s !== undefined && changed.has(s)) || (d !== undefined && changed.has(d))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4777196de62584858d397cfdd255f29474c7c24ae2f6dabe9e53d47d302dc435",
+          "target": "stmt:packages/mcp/src/verbs.ts@L432",
+          "line": 432,
+          "expr": "removedEdges.push({ id: edge.id, src: edge.src, dst: edge.dst, rel: edge.rel });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.detectChanges@L382",
+        "procedureName": "Verbs.detectChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b126273e3047782632dd3f6c389805615be2706b5815fc4298981d103cfa81c9",
+          "target": "stmt:packages/mcp/src/verbs.ts@L435",
+          "line": 435,
+          "expr": "return { since, head, changedPaths, changedSymbols, removedEdges };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/mcp/src/verbs.ts@L397",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/mcp/src/verbs.ts",
+        "span": {
+          "start": 397,
+          "end": 397
+        },
+        "confidence": 1
+      },
+      {
+        "id": "exc:packages/mcp/src/verbs.ts@L412",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/mcp/src/verbs.ts",
+        "span": {
+          "start": 412,
+          "end": 412
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 13,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 13,
+    "assignments": 2,
+    "conditions": 6,
+    "raises": 0,
+    "handlers": 2,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 8,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

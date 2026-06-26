@@ -1,0 +1,307 @@
+{
+  "id": "sym:packages/ui/src/viz.ts#makeSummary@L102",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:3f77bafd993f3a2978013b32339a6bb5c38b3c2e07d6c7e535250b010bd1c168",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/ui/src/viz.ts#makeSummary@L102",
+    "kind": "symbol",
+    "type": "function",
+    "name": "makeSummary",
+    "qualifiedName": "makeSummary",
+    "signature": "makeSummary(node: Node, kind: VizNodeKind): string",
+    "lang": "typescript",
+    "file": "packages/ui/src/viz.ts",
+    "span": {
+      "start": 102,
+      "end": 133
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 132
+      },
+      {
+        "callee": "filter",
+        "line": 132
+      }
+    ]
+  },
+  "source": {
+    "text": "function makeSummary(node: Node, kind: VizNodeKind): string {\n  if (node.signature) return node.signature;\n  if (kind === 'file') return node.file ? `Source file ${node.file}` : 'Source file';\n  if (kind === 'doc-section')\n    return node.heading ? `Section: ${node.heading}` : 'Documentation section';\n  if (kind === 'table')\n    return node.table\n      ? `Table: ${node.table}`\n      : node.schema\n        ? `Schema: ${node.schema}`\n        : 'Database table';\n  if (kind === 'column') {\n    return node.table ? `Column ${node.name ?? ''} in ${node.table}` : `Column ${node.name ?? ''}`;\n  }\n  if (kind === 'statement') {\n    return node.sqlKind\n      ? `${node.sqlKind} statement`\n      : node.expr\n        ? `SQL: ${node.expr}`\n        : 'SQL statement';\n  }\n  if (kind === 'condition') {\n    return node.expr\n      ? `Condition: ${node.expr}`\n      : node.branch\n        ? `Branch: ${node.branch}`\n        : 'Guard condition';\n  }\n  if (kind === 'media-seg') return 'Media segment';\n  if (kind === 'explanation') return node.textRef ? `Explanation: ${node.textRef}` : 'Explanation';\n  return [kind, node.name ?? node.label ?? node.id].filter(Boolean).join(': ');\n}",
+    "truncated": false,
+    "totalLines": 32,
+    "startLine": 102
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/src/viz.ts#buildVizGraph@L150",
+      "confidence": 1,
+      "name": "buildVizGraph",
+      "qualifiedName": "buildVizGraph",
+      "signature": "buildVizGraph(soul: SoulStore): VizGraph",
+      "type": "function",
+      "file": "packages/ui/src/viz.ts",
+      "line": 150
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/src/viz.ts#makeSummary@L102",
+    "procedureName": "makeSummary",
+    "conditions": [
+      "cond:packages/ui/src/viz.ts@L103",
+      "cond:packages/ui/src/viz.ts@L104",
+      "cond:packages/ui/src/viz.ts@L105",
+      "cond:packages/ui/src/viz.ts@L107",
+      "cond:packages/ui/src/viz.ts@L113",
+      "cond:packages/ui/src/viz.ts@L116",
+      "cond:packages/ui/src/viz.ts@L123",
+      "cond:packages/ui/src/viz.ts@L130",
+      "cond:packages/ui/src/viz.ts@L131"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#makeSummary@L102",
+        "procedureName": "makeSummary",
+        "guard": "cond:packages/ui/src/viz.ts@L103",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L103",
+            "expr": "node.signature",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cfc2bd178dd615ea028f1e5f7e8b150f2f05590bd55f58c76c1e24c2deff7274",
+          "target": "stmt:packages/ui/src/viz.ts@L103",
+          "line": 103,
+          "expr": "return node.signature;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#makeSummary@L102",
+        "procedureName": "makeSummary",
+        "guard": "cond:packages/ui/src/viz.ts@L104",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L104",
+            "expr": "kind === 'file'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:23ac9af4ffc2569461137c08a312de643b2e4b797c36c2bb1b7fc8773c3a632b",
+          "target": "stmt:packages/ui/src/viz.ts@L104",
+          "line": 104,
+          "expr": "return node.file ? `Source file ${node.file}` : 'Source file';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#makeSummary@L102",
+        "procedureName": "makeSummary",
+        "guard": "cond:packages/ui/src/viz.ts@L105",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L105",
+            "expr": "kind === 'doc-section'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f2c28a327045335cfb2e0d71bf29a8064bf457ec25734f1f01500ba6ba92d0dc",
+          "target": "stmt:packages/ui/src/viz.ts@L106",
+          "line": 106,
+          "expr": "return node.heading ? `Section: ${node.heading}` : 'Documentation section';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#makeSummary@L102",
+        "procedureName": "makeSummary",
+        "guard": "cond:packages/ui/src/viz.ts@L107",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L107",
+            "expr": "kind === 'table'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bccc4c5b9fc8cca7ab845d2ac14096594a5713c35fa9047867a6680791a4c65d",
+          "target": "stmt:packages/ui/src/viz.ts@L108",
+          "line": 108,
+          "expr": "return node.table\n      ? `Table: ${node.table}`\n      : node.schema\n        ? `Schema: ${node.schema}`\n        : 'Database table';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#makeSummary@L102",
+        "procedureName": "makeSummary",
+        "guard": "cond:packages/ui/src/viz.ts@L113",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L113",
+            "expr": "kind === 'column'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6cd7eff2c297c96a50811d6257f65fb8b83098ab7ec25b7e2341c0c3a7834c7c",
+          "target": "stmt:packages/ui/src/viz.ts@L114",
+          "line": 114,
+          "expr": "return node.table ? `Column ${node.name ?? ''} in ${node.table}` : `Column ${node.name ?? ''}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#makeSummary@L102",
+        "procedureName": "makeSummary",
+        "guard": "cond:packages/ui/src/viz.ts@L116",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L116",
+            "expr": "kind === 'statement'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8c7ceeb768dfc25530761516da068f6f3b32e27971733a38dd02a6f4d7546977",
+          "target": "stmt:packages/ui/src/viz.ts@L117",
+          "line": 117,
+          "expr": "return node.sqlKind\n      ? `${node.sqlKind} statement`\n      : node.expr\n        ? `SQL: ${node.expr}`\n        : 'SQL statement';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#makeSummary@L102",
+        "procedureName": "makeSummary",
+        "guard": "cond:packages/ui/src/viz.ts@L123",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L123",
+            "expr": "kind === 'condition'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ceb24071466dd4983f6f759bc9af76c45020a1985bee72b21338200f9345b403",
+          "target": "stmt:packages/ui/src/viz.ts@L124",
+          "line": 124,
+          "expr": "return node.expr\n      ? `Condition: ${node.expr}`\n      : node.branch\n        ? `Branch: ${node.branch}`\n        : 'Guard condition';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#makeSummary@L102",
+        "procedureName": "makeSummary",
+        "guard": "cond:packages/ui/src/viz.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L130",
+            "expr": "kind === 'media-seg'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6d62896d383a0132a574a89d17891081528382fffbeb3c562e3433df2ad720df",
+          "target": "stmt:packages/ui/src/viz.ts@L130",
+          "line": 130,
+          "expr": "return 'Media segment';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#makeSummary@L102",
+        "procedureName": "makeSummary",
+        "guard": "cond:packages/ui/src/viz.ts@L131",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L131",
+            "expr": "kind === 'explanation'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f498e48611d5886ff06c056802fd4b304cbf2be448215e76f3680fe58c5f672",
+          "target": "stmt:packages/ui/src/viz.ts@L131",
+          "line": 131,
+          "expr": "return node.textRef ? `Explanation: ${node.textRef}` : 'Explanation';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#makeSummary@L102",
+        "procedureName": "makeSummary",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3342057dc359085930488322e8d29cb058caecc1697471f0564eedd4f06859d4",
+          "target": "stmt:packages/ui/src/viz.ts@L132",
+          "line": 132,
+          "expr": "return [kind, node.name ?? node.label ?? node.id].filter(Boolean).join(': ');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/ui/src/viz.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 0,
+    "conditions": 9,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

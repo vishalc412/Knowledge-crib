@@ -1,0 +1,205 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#securityOf@L432",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:329d2bcd28d50a68153a7d7b9ce0162776f9be35da5d4dc27d205cd55ebc5e05",
+  "builtAt": "2026-06-25T22:41:29.085Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#securityOf@L432",
+    "kind": "symbol",
+    "type": "function",
+    "name": "securityOf",
+    "qualifiedName": "securityOf",
+    "signature": "securityOf(m: JavaDef): Record<string, string> | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 432,
+      "end": 440
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 436
+      },
+      {
+        "callee": "allQuoted",
+        "line": 436
+      },
+      {
+        "callee": "trim",
+        "line": 437
+      },
+      {
+        "callee": "keys",
+        "line": 439
+      }
+    ]
+  },
+  "source": {
+    "text": "function securityOf(m: JavaDef): Record<string, string> | undefined {\n  const out: Record<string, string> = {};\n  for (const a of m.annos ?? []) {\n    if (!SECURITY_ANNOS.has(a.name)) continue;\n    const v = allQuoted(a.args).join('|');\n    out[a.name] = v || (a.args?.trim() ?? '');\n  }\n  return Object.keys(out).length ? out : undefined;\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 432
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L404",
+      "confidence": 1,
+      "name": "routeMetaOf",
+      "qualifiedName": "routeMetaOf",
+      "signature": "routeMetaOf(m: JavaDef): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 404
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#allQuoted@L370",
+      "confidence": 1,
+      "name": "allQuoted",
+      "qualifiedName": "allQuoted",
+      "signature": "allQuoted(s?: string): string[]",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 370
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L430",
+      "snippet": "/** Security annotations on a method → `{ PreAuthorize: \"hasRole('ADMIN')\", Secured: \"ROLE_A|ROLE_B\" }`.",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#securityOf@L432",
+    "procedureName": "securityOf",
+    "conditions": [
+      "cond:packages/parsers/src/java/spring.ts@L434"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#securityOf@L432",
+        "procedureName": "securityOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L434",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L434",
+            "expr": "m.annos ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:da83e66b01b14131a1a87078779f28929d45b2aa5f53db55a7b60b412720158d",
+          "target": "sym:packages/parsers/src/java/spring.ts#allQuoted@L370",
+          "expr": "allQuoted",
+          "line": 436
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#securityOf@L432",
+        "procedureName": "securityOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L434",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L434",
+            "expr": "m.annos ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:33d7ca340535913abfea42b93181c659af8cb641ee9d72f25bdd2a84a47e1c65",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L436",
+          "line": 436,
+          "expr": "const v = allQuoted(a.args).join('|');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#securityOf@L432",
+        "procedureName": "securityOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L434",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L434",
+            "expr": "m.annos ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3572b90896de778c71ec43b749edcca8b46152dc6dac39f807188494248e4290",
+          "target": "assign:packages/parsers/src/java/spring.ts@L437",
+          "line": 437,
+          "expr": "out[a.name] = v || (a.args?.trim() ?? '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#securityOf@L432",
+        "procedureName": "securityOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd6b31df99b41a792fb39e1f5bfc9a21d72398e6b56b2e004bb44dac39aca5f9",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L439",
+          "line": 439,
+          "expr": "return Object.keys(out).length ? out : undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 4,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,211 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#emitInject@L217",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:3bb641ca5baa9b9b31123ab377035a41c93f74f168b7177618983e3da66f0b8e",
+  "builtAt": "2026-06-25T22:29:24.239Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#emitInject@L217",
+    "kind": "symbol",
+    "type": "function",
+    "name": "emitInject",
+    "qualifiedName": "emitInject",
+    "signature": "emitInject(consumerId: string, depType: string, byKey: Map<string, string>, edges: Edge[], recorded: string[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 217,
+      "end": 227
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 224
+      },
+      {
+        "callee": "get",
+        "line": 225
+      },
+      {
+        "callee": "push",
+        "line": 226
+      },
+      {
+        "callee": "edge",
+        "line": 226
+      }
+    ]
+  },
+  "source": {
+    "text": "function emitInject(\n  consumerId: string,\n  depType: string,\n  byKey: Map<string, string>,\n  edges: Edge[],\n  recorded: string[],\n): void {\n  recorded.push(depType);\n  const depId = byKey.get(depType);\n  if (depId && depId !== consumerId) edges.push(edge(consumerId, depId, 'injects', depType));\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 217
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L64",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 64
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#edge@L289",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string): Edge",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 289
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L215",
+      "snippet": "/** Emit an `injects` edge (consumer → dependency type) when the type resolves intra-file; always",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#emitInject@L217",
+    "procedureName": "emitInject",
+    "conditions": [
+      "cond:packages/parsers/src/java/spring.ts@L226"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#emitInject@L217",
+        "procedureName": "emitInject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1d3f046e85ae0431246520fb162cbe426a8a987cf11314292599798b9fad538c",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L224",
+          "line": 224,
+          "expr": "recorded.push(depType);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#emitInject@L217",
+        "procedureName": "emitInject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7c077a74f8bb34dd981cab956e4ff5698dd11185b9efa3109894d171ef65f5ab",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 224
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#emitInject@L217",
+        "procedureName": "emitInject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8ed67977cb90e965a564cd67bfec8d9ef8382f864390a7ba0e3eeebb0a513d6a",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L225",
+          "line": 225,
+          "expr": "const depId = byKey.get(depType);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#emitInject@L217",
+        "procedureName": "emitInject",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L226",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L226",
+            "expr": "depId && depId !== consumerId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:90b88038e51565a815026b06d34d31cf96ed6320809a68b7420abfd85ce9956b",
+          "target": "sym:packages/parsers/src/java/spring.ts#edge@L289",
+          "expr": "edge",
+          "line": 226
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#emitInject@L217",
+        "procedureName": "emitInject",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L226",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L226",
+            "expr": "depId && depId !== consumerId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6cda0430a20c6f51e3d4b24d42bddf882fab1591cf04df195d6c651e0a148ccc",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L226",
+          "line": 226,
+          "expr": "edges.push(edge(consumerId, depId, 'injects', depType));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

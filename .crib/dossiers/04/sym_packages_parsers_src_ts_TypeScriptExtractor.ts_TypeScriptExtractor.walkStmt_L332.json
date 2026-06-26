@@ -1,0 +1,1061 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9d54105034359a87484535ad8d54b632a839ce2c9253c097ed672566bccc04c3",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkStmt",
+    "qualifiedName": "TypeScriptExtractor.walkStmt",
+    "signature": "walkStmt(stmt: ts.Statement, env: BodyEnv): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 332,
+      "end": 363
+    },
+    "callSites": [
+      {
+        "callee": "walkIf",
+        "line": 335
+      },
+      {
+        "callee": "walkLoop",
+        "line": 337
+      },
+      {
+        "callee": "walkLoop",
+        "line": 339
+      },
+      {
+        "callee": "walkLoop",
+        "line": 341
+      },
+      {
+        "callee": "walkLoop",
+        "line": 343
+      },
+      {
+        "callee": "walkTry",
+        "line": 345
+      },
+      {
+        "callee": "walkSwitch",
+        "line": 347
+      },
+      {
+        "callee": "walkBody",
+        "line": 349
+      },
+      {
+        "callee": "addRaise",
+        "line": 352
+      },
+      {
+        "callee": "addAssignment",
+        "line": 356
+      },
+      {
+        "callee": "addStatement",
+        "line": 358
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkStmt(stmt: ts.Statement, env: BodyEnv): void {\n    try {\n      if (ts.isIfStatement(stmt)) {\n        this.walkIf(stmt, env);\n      } else if (ts.isForStatement(stmt)) {\n        this.walkLoop(stmt, env, stmt.condition);\n      } else if (ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)) {\n        this.walkLoop(stmt, env, stmt.expression);\n      } else if (ts.isWhileStatement(stmt)) {\n        this.walkLoop(stmt, env, stmt.expression);\n      } else if (ts.isDoStatement(stmt)) {\n        this.walkLoop(stmt, env, stmt.expression);\n      } else if (ts.isTryStatement(stmt)) {\n        this.walkTry(stmt, env);\n      } else if (ts.isSwitchStatement(stmt)) {\n        this.walkSwitch(stmt, env);\n      } else if (ts.isBlock(stmt)) {\n        this.walkBody([...stmt.statements], env);\n      } else if (ts.isThrowStatement(stmt)) {\n        // 1.2: a throw emits a `raise` node + `raises` edge (not a plain statement node).\n        this.addRaise(stmt, env);\n      } else if (isAssignmentStatement(stmt)) {\n        // 1.2: a binary assignment (`lhs = rhs`, `+=`, …) emits an `assignment` node. Variable\n        // declarations (`let x = …`) stay on the addStatement path (don't over-emit on inits).\n        this.addAssignment(stmt, env);\n      } else {\n        this.addStatement(stmt, env);\n      }\n    } catch {\n      // Tolerant + lossy: a malformed compound statement degrades to skipping its body, never throws.\n    }\n  }",
+    "truncated": false,
+    "totalLines": 32,
+    "startLine": 332
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L328",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "TypeScriptExtractor.walkBody",
+      "signature": "walkBody(stmts: readonly ts.Statement[], env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 328
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addAssignment@L571",
+      "confidence": 1,
+      "name": "addAssignment",
+      "qualifiedName": "TypeScriptExtractor.addAssignment",
+      "signature": "addAssignment(stmt: ts.ExpressionStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 571
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addRaise@L533",
+      "confidence": 1,
+      "name": "addRaise",
+      "qualifiedName": "TypeScriptExtractor.addRaise",
+      "signature": "addRaise(stmt: ts.ThrowStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 533
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L449",
+      "confidence": 1,
+      "name": "addStatement",
+      "qualifiedName": "TypeScriptExtractor.addStatement",
+      "signature": "addStatement(stmt: ts.Statement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 449
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L328",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "TypeScriptExtractor.walkBody",
+      "signature": "walkBody(stmts: readonly ts.Statement[], env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 328
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkIf@L365",
+      "confidence": 1,
+      "name": "walkIf",
+      "qualifiedName": "TypeScriptExtractor.walkIf",
+      "signature": "walkIf(stmt: ts.IfStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 365
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L382",
+      "confidence": 1,
+      "name": "walkLoop",
+      "qualifiedName": "TypeScriptExtractor.walkLoop",
+      "signature": "walkLoop(stmt: ts.Statement, env: BodyEnv, predicate: ts.Expression | undefined): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 382
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L432",
+      "confidence": 1,
+      "name": "walkSwitch",
+      "qualifiedName": "TypeScriptExtractor.walkSwitch",
+      "signature": "walkSwitch(stmt: ts.SwitchStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 432
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L397",
+      "confidence": 1,
+      "name": "walkTry",
+      "qualifiedName": "TypeScriptExtractor.walkTry",
+      "signature": "walkTry(stmt: ts.TryStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 397
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isAssignmentStatement@L980",
+      "confidence": 1,
+      "name": "isAssignmentStatement",
+      "qualifiedName": "isAssignmentStatement",
+      "signature": "isAssignmentStatement(stmt: ts.Statement): stmt is ts.ExpressionStatement",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 980
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+    "procedureName": "TypeScriptExtractor.walkStmt",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L346",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L348",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L350",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L353"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5531b0a0bd26fe6b2358f72901148b80f59bcd4fe008518a020f682aa2ef03f3",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkIf@L365",
+          "expr": "walkIf",
+          "line": 335
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e0165ec9a3cc45e232101ff2272041092edc05d8968b8f5f78691a4b9eaefbd6",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L335",
+          "line": 335,
+          "expr": "this.walkIf(stmt, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8a0a3b095f15472a3f977f129916d420e71eac7554dcc79577d09b70755a707d",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L382",
+          "expr": "walkLoop",
+          "line": 337
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0e89ee4951846faf6a70c458e0e99282ae95292a0a73c83cec26830d8ced99b8",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L337",
+          "line": 337,
+          "expr": "this.walkLoop(stmt, env, stmt.condition);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:62cf2bbf5ff3d9f5eb0e1fcc6d64e5b3322ed58cb8d31c78239af5110b288dfa",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L339",
+          "line": 339,
+          "expr": "this.walkLoop(stmt, env, stmt.expression);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:30e89d7e4dd09abdd78ad32d8bf4450dd6876a9d0a7c7607429974b82056e266",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L341",
+          "line": 341,
+          "expr": "this.walkLoop(stmt, env, stmt.expression);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db8c40d68684935df2928f242b8e4629acdea54b21fe3f989f079416b447b070",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L343",
+          "line": 343,
+          "expr": "this.walkLoop(stmt, env, stmt.expression);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+            "expr": "ts.isTryStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6c0ab91b8db19d4344316f4e573f3a501dafcc621ab3e390a4f5ed471b1981f3",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L397",
+          "expr": "walkTry",
+          "line": 345
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+            "expr": "ts.isTryStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a6266387c403248518e53d08af7b6c6546033e4f8ef9d7763038875150d0b1bd",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L345",
+          "line": 345,
+          "expr": "this.walkTry(stmt, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L346",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+            "expr": "ts.isTryStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L346",
+            "expr": "ts.isSwitchStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7863b380830a9eef8650eb17dc27f059797511fdc599aac391afdcbd2c502079",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L432",
+          "expr": "walkSwitch",
+          "line": 347
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L346",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+            "expr": "ts.isTryStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L346",
+            "expr": "ts.isSwitchStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:888d3f4a3681f1e5bb781597b729add4704c8b3c2af97d1c884a07bf49205332",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L347",
+          "line": 347,
+          "expr": "this.walkSwitch(stmt, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L348",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+            "expr": "ts.isTryStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L346",
+            "expr": "ts.isSwitchStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L348",
+            "expr": "ts.isBlock(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:341ba72190878816ed02e8c1dfec2160b165a073d84fe2ef3650763081c8a621",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L328",
+          "expr": "walkBody",
+          "line": 349
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L348",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+            "expr": "ts.isTryStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L346",
+            "expr": "ts.isSwitchStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L348",
+            "expr": "ts.isBlock(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4170df37dda8b016eee85b77650b24ce8806564fab5680186b00da792f21307b",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L349",
+          "line": 349,
+          "expr": "this.walkBody([...stmt.statements], env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L350",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+            "expr": "ts.isTryStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L346",
+            "expr": "ts.isSwitchStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L348",
+            "expr": "ts.isBlock(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L350",
+            "expr": "ts.isThrowStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2b2d8b0bfee250794f481e1871f035c9f5fbd3daf5870c7be55d7304839da013",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addRaise@L533",
+          "expr": "addRaise",
+          "line": 352
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L350",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+            "expr": "ts.isTryStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L346",
+            "expr": "ts.isSwitchStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L348",
+            "expr": "ts.isBlock(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L350",
+            "expr": "ts.isThrowStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5c6b59c0c3ef1ef682d6548517fd11bed442e716ba6eb6a17a21effef3e10b16",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L352",
+          "line": 352,
+          "expr": "this.addRaise(stmt, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L353",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+            "expr": "ts.isTryStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L346",
+            "expr": "ts.isSwitchStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L348",
+            "expr": "ts.isBlock(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L350",
+            "expr": "ts.isThrowStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L353",
+            "expr": "isAssignmentStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e4bd08d364af2467f199f53a29a9ff91a28152ce11084556789a3efcf2c99799",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addAssignment@L571",
+          "expr": "addAssignment",
+          "line": 356
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L353",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+            "expr": "ts.isTryStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L346",
+            "expr": "ts.isSwitchStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L348",
+            "expr": "ts.isBlock(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L350",
+            "expr": "ts.isThrowStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L353",
+            "expr": "isAssignmentStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29ebd1de1fd8492ebbfb15fd465ee000e6d016c622d53fdeddbcb1c72b5eb6e3",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L356",
+          "line": 356,
+          "expr": "this.addAssignment(stmt, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L353",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+            "expr": "ts.isTryStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L346",
+            "expr": "ts.isSwitchStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L348",
+            "expr": "ts.isBlock(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L350",
+            "expr": "ts.isThrowStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L353",
+            "expr": "isAssignmentStatement(stmt)",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c4bee0de47a99aeb4c50f8eb8a06868bfa2cf6245c6fbd531cd1e7bde469ffcc",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L449",
+          "expr": "addStatement",
+          "line": 358
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L353",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L334",
+            "expr": "ts.isIfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L336",
+            "expr": "ts.isForStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L338",
+            "expr": "ts.isForInStatement(stmt) || ts.isForOfStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L340",
+            "expr": "ts.isWhileStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L342",
+            "expr": "ts.isDoStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L344",
+            "expr": "ts.isTryStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L346",
+            "expr": "ts.isSwitchStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L348",
+            "expr": "ts.isBlock(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L350",
+            "expr": "ts.isThrowStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L353",
+            "expr": "isAssignmentStatement(stmt)",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5e6ac4b4231ab761eafff8f5dbdc2e01e7b2e359e9d4728cc243f69e3ac1d29a",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L358",
+          "line": 358,
+          "expr": "this.addStatement(stmt, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L332",
+        "procedureName": "TypeScriptExtractor.walkStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a979c1282a0d440123ccf454a612bad90654d77cfdbb2f1afd7e4663bbc7b510",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isAssignmentStatement@L980",
+          "expr": "isAssignmentStatement"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 11,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 11,
+    "assignments": 0,
+    "conditions": 10,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 9,
+      "recorded": 11,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

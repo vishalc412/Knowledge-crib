@@ -8,6 +8,30 @@
  */
 import type { Edge, Node, NodeKind } from '@knowledge-crib/soul-schema';
 
+/**
+ * Max chars retained for a captured expression snippet — an assignment RHS (scoring formula), a
+ * statement's source text, a condition predicate, or a cursor's SELECT. Generous on purpose: real
+ * risk-score formulas, multi-line cursor queries, and compound boolean guards all fit well under
+ * this, so the decision-table / behavior views read losslessly without rehydrating the body. The
+ * rare overflow (a machine-generated SQL blob) sets the node's `exprTruncated` flag — honest about
+ * the loss and pointing the consumer at `file`+`span` for the full text. Uniform across all 7
+ * languages so expression fidelity is identical PL/SQL → Java → C# → Go → Rust → Python → TS.
+ *
+ * Was 120 (PL/SQL) / 200 (others) — those caps silently clipped exactly the formulas/queries a
+ * migration needs, which is why a graph-only plan lost detail to a direct-source read.
+ */
+export const EXPR_MAX_CHARS = 2000;
+
+/**
+ * Clamp an expression snippet to {@link EXPR_MAX_CHARS}, reporting whether the cap was hit so the
+ * caller can stamp `exprTruncated` on the node. Single source of truth for expression fidelity —
+ * every extractor routes its `expr`/`cursorQuery`/`whenSelector`/`errorMessage` capture through here.
+ */
+export function clampExpr(s: string, max = EXPR_MAX_CHARS): { expr: string; truncated: boolean } {
+  if (s.length <= max) return { expr: s, truncated: false };
+  return { expr: s.slice(0, max), truncated: true };
+}
+
 export interface FileMeta {
   /** repo-relative path. */
   path: string;

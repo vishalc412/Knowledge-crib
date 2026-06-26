@@ -1,0 +1,346 @@
+{
+  "id": "sym:packages/core/src/dossier/persist.ts#readDossier@L56",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:b4382254b8b6ab50a303774a88f4095a6b026741c3b31d916f8efd5922ab70d8",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/persist.ts#readDossier@L56",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readDossier",
+    "qualifiedName": "readDossier",
+    "signature": "readDossier(cribDir: string, nodeId: string, live: { nodeHash?: string; schemaVersion: string }): DossierRead",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/persist.ts",
+    "span": {
+      "start": 56,
+      "end": 75
+    },
+    "callSites": [
+      {
+        "callee": "dossierPath",
+        "line": 61
+      },
+      {
+        "callee": "parse",
+        "line": 65
+      },
+      {
+        "callee": "readFileSync",
+        "line": 65
+      }
+    ]
+  },
+  "source": {
+    "text": "export function readDossier(\n  cribDir: string,\n  nodeId: string,\n  live: { nodeHash?: string; schemaVersion: string },\n): DossierRead {\n  const path = dossierPath(cribDir, nodeId);\n  if (!existsSync(path)) return { missing: true, stale: false };\n  let dossier: Dossier;\n  try {\n    dossier = JSON.parse(readFileSync(path, 'utf8')) as Dossier;\n  } catch {\n    return { missing: true, stale: false };\n  }\n  const hashStale = live.nodeHash !== undefined && dossier.nodeHash !== live.nodeHash;\n  const schemaStale = dossier.schemaVersion !== live.schemaVersion;\n  // shape staleness: a missing or older shapeVersion forces a rebuild even when schema is unchanged.\n  // `dossier.shapeVersion` is undefined on pre-2.0 artifacts → stale (rebuilt on demand).\n  const shapeStale = (dossier.shapeVersion ?? 1) !== DOSSIER_SHAPE_VERSION;\n  return { dossier, missing: false, stale: hashStale || schemaStale || shapeStale };\n}",
+    "truncated": false,
+    "totalLines": 20,
+    "startLine": 56
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+      "confidence": 1,
+      "name": "runDossiers",
+      "qualifiedName": "runDossiers",
+      "signature": "runDossiers(soul: SoulStore, repoRoot: string, now: string): DossierStats",
+      "type": "function",
+      "file": "packages/pipeline/src/dossiers.ts",
+      "line": 38
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#dossierPath@L25",
+      "confidence": 1,
+      "name": "dossierPath",
+      "qualifiedName": "dossierPath",
+      "signature": "dossierPath(cribDir: string, nodeId: string): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 25
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 35
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/persist.ts@L48",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "heading": "3.1 Framework-semantics tier (schema 1.3)",
+      "anchor": "3-1-framework-semantics-tier-schema-1-3",
+      "snippet": "3.1 Framework-semantics tier (schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#backward-compatibility-2",
+      "heading": "Backward compatibility",
+      "anchor": "backward-compatibility-2",
+      "snippet": "Backward compatibility",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#schema-evolution",
+      "heading": "Schema evolution",
+      "anchor": "schema-evolution",
+      "snippet": "Schema evolution",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#6-versioning",
+      "heading": "6. Versioning",
+      "anchor": "6-versioning",
+      "snippet": "6. Versioning",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#6-versioning-migration",
+      "heading": "6. Versioning & migration",
+      "anchor": "6-versioning-migration",
+      "snippet": "6. Versioning & migration",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "heading": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "anchor": "surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "snippet": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#7-ci",
+      "heading": "7. CI",
+      "anchor": "7-ci",
+      "snippet": "7. CI",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/persist.ts#readDossier@L56",
+    "procedureName": "readDossier",
+    "conditions": [
+      "cond:packages/core/src/dossier/persist.ts@L62"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#readDossier@L56",
+        "procedureName": "readDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d5b27b5d31607804fd8ff92c7f2304e3fc430a993b74d9ab365e6bd9cacb9f1d",
+          "target": "sym:packages/core/src/dossier/persist.ts#dossierPath@L25",
+          "expr": "dossierPath",
+          "line": 61
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#readDossier@L56",
+        "procedureName": "readDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:822c027cf789adbc81bedbfb59a0f10a2eff7b9c0bf8073e6a7eb3e8090eaae3",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L61",
+          "line": 61,
+          "expr": "const path = dossierPath(cribDir, nodeId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#readDossier@L56",
+        "procedureName": "readDossier",
+        "guard": "cond:packages/core/src/dossier/persist.ts@L62",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/persist.ts@L62",
+            "expr": "!existsSync(path)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:59d9863a68671ead6aaa922727611309e410ec5d9afbb0ff9412ea0596f6da81",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L62",
+          "line": 62,
+          "expr": "return { missing: true, stale: false };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#readDossier@L56",
+        "procedureName": "readDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a5e11c5f6ceae10ae765f16500c18ee39fa27237e4fba4acd7aaa87d992b83ab",
+          "target": "assign:packages/core/src/dossier/persist.ts@L65",
+          "line": 65,
+          "expr": "dossier = JSON.parse(readFileSync(path, 'utf8')) as Dossier;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#readDossier@L56",
+        "procedureName": "readDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9f35c83ab2416f03e04ff2d96c9c05d166356626dfad18b7d1f1623c4faeba1d",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+          "expr": "parse",
+          "line": 65
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#readDossier@L56",
+        "procedureName": "readDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:634fcd5814901115ffba56bdf562f5b90bf562f833f5bb9461406e5b0e8c2446",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L67",
+          "line": 67,
+          "expr": "return { missing: true, stale: false };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#readDossier@L56",
+        "procedureName": "readDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7f6f7a4b4c6c1eef341defd96028a3f6d0689684db2a552c9a53516ccc2f3f7a",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L74",
+          "line": 74,
+          "expr": "return { dossier, missing: false, stale: hashStale || schemaStale || shapeStale };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/core/src/dossier/persist.ts@L66",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/core/src/dossier/persist.ts",
+        "span": {
+          "start": 66,
+          "end": 66
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/pipeline/src/dossiers.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

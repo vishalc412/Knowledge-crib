@@ -24,7 +24,10 @@
         "raise",
         "cursor",
         "assignment",
-        "case-branch"
+        "case-branch",
+        "route",
+        "field",
+        "component"
       ]
     },
     "hash": { "type": "string", "pattern": "^blake3:[0-9a-f]+$" },
@@ -61,6 +64,11 @@
     "whenSelector": { "type": "string" },
     "assignTarget": { "type": "string" },
     "cursorQuery": { "type": "string" },
+    "exprTruncated": { "type": "boolean" },
+    "httpMethod": { "type": "string" },
+    "routePath": { "type": "string" },
+    "framework": { "type": "string" },
+    "stereotype": { "type": "string" },
     "constraints": { "type": "array", "items": { "type": "string" } },
     "commentRef": {
       "type": "object",

@@ -1,0 +1,183 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeVendoredSchemas@L408",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:505c5111f7c458c52c9ac93d1849ee70124f52afda643d85631f997ccf9e6ec1",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeVendoredSchemas@L408",
+    "kind": "symbol",
+    "type": "method",
+    "name": "writeVendoredSchemas",
+    "qualifiedName": "SoulStore.writeVendoredSchemas",
+    "signature": "writeVendoredSchemas(): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 408,
+      "end": 414
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 409
+      },
+      {
+        "callee": "mkdirSync",
+        "line": 410
+      },
+      {
+        "callee": "atomicWrite",
+        "line": 412
+      },
+      {
+        "callee": "join",
+        "line": 412
+      },
+      {
+        "callee": "stringify",
+        "line": 412
+      }
+    ]
+  },
+  "source": {
+    "text": "  private writeVendoredSchemas(): void {\n    const dir = join(this.cribDirPrivate, 'schema');\n    mkdirSync(dir, { recursive: true });\n    for (const [name, schema] of Object.entries(VENDORED_SCHEMAS)) {\n      this.atomicWrite(join(dir, name), `${JSON.stringify(schema, null, 2)}\\n`);\n    }\n  }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 408
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L221",
+      "confidence": 1,
+      "name": "commit",
+      "qualifiedName": "SoulStore.commit",
+      "signature": "commit(now = new Date().toISOString()): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 221
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L432",
+      "confidence": 1,
+      "name": "atomicWrite",
+      "qualifiedName": "SoulStore.atomicWrite",
+      "signature": "atomicWrite(path: string, content: string): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 432
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeVendoredSchemas@L408",
+    "procedureName": "SoulStore.writeVendoredSchemas",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L411"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeVendoredSchemas@L408",
+        "procedureName": "SoulStore.writeVendoredSchemas",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dc3a2e580b559a9be498481674fcf2d217e38ebb40b2e645cfdcfa3b8dbfcbae",
+          "target": "stmt:packages/core/src/soul-store.ts@L409",
+          "line": 409,
+          "expr": "const dir = join(this.cribDirPrivate, 'schema');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeVendoredSchemas@L408",
+        "procedureName": "SoulStore.writeVendoredSchemas",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e946deb513746d66f5743282cf1ef17ed47e433c7a891f7c33e7326c8dc10c3f",
+          "target": "stmt:packages/core/src/soul-store.ts@L410",
+          "line": 410,
+          "expr": "mkdirSync(dir, { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeVendoredSchemas@L408",
+        "procedureName": "SoulStore.writeVendoredSchemas",
+        "guard": "cond:packages/core/src/soul-store.ts@L411",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L411",
+            "expr": "Object.entries(VENDORED_SCHEMAS)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3ca01acf7d533f54d56a4d32128f29368e275bc037f4b0c69405e3daa0e081fa",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L432",
+          "expr": "atomicWrite",
+          "line": 412
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeVendoredSchemas@L408",
+        "procedureName": "SoulStore.writeVendoredSchemas",
+        "guard": "cond:packages/core/src/soul-store.ts@L411",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L411",
+            "expr": "Object.entries(VENDORED_SCHEMAS)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7d9b74726ee108ee8c5db347ece4d3c6353495b5068de403e2bfa45be39b0d87",
+          "target": "stmt:packages/core/src/soul-store.ts@L412",
+          "line": 412,
+          "expr": "this.atomicWrite(join(dir, name), `${JSON.stringify(schema, null, 2)}\\n`);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 5,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

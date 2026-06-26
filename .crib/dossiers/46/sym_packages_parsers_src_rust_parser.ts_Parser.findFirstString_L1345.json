@@ -1,0 +1,175 @@
+{
+  "id": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstString@L1345",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ca6fde593c96374d50cd7c849c4c1412ec3a196e309b2f2a1b63e8bd4791deb4",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstString@L1345",
+    "kind": "symbol",
+    "type": "method",
+    "name": "findFirstString",
+    "qualifiedName": "Parser.findFirstString",
+    "signature": "findFirstString(start: number, end: number): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/parser.ts",
+    "span": {
+      "start": 1345,
+      "end": 1356
+    },
+    "callSites": [
+      {
+        "callee": "slice",
+        "line": 1351
+      }
+    ]
+  },
+  "source": {
+    "text": "  private findFirstString(start: number, end: number): string | undefined {\n    for (let k = start; k < end; k++) {\n      const tk = this.t[k]!;\n      if (tk.type === 'STRING') {\n        const v = tk.value;\n        // the lexer emits string tokens whose value starts and ends with `\"` (raw bodies too)\n        if (v.length >= 2 && v.startsWith('\"') && v.endsWith('\"')) return v.slice(1, -1);\n        return v;\n      }\n    }\n    return undefined;\n  }",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 1345
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.exprToAction@L1268",
+      "confidence": 1,
+      "name": "exprToAction",
+      "qualifiedName": "Parser.exprToAction",
+      "signature": "exprToAction(line: number, start: number, end: number): RustStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1268
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseReturn@L1182",
+      "confidence": 1,
+      "name": "parseReturn",
+      "qualifiedName": "Parser.parseReturn",
+      "signature": "parseReturn(line: number): RustStmt",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1182
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/parser.ts@L1343",
+      "snippet": "/** 1.2: the first string literal in tokens [start, end), with surrounding quotes stripped. Used",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstString@L1345",
+    "procedureName": "Parser.findFirstString",
+    "conditions": [
+      "cond:packages/parsers/src/rust/parser.ts@L1346",
+      "cond:packages/parsers/src/rust/parser.ts@L1348",
+      "cond:packages/parsers/src/rust/parser.ts@L1351"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstString@L1345",
+        "procedureName": "Parser.findFirstString",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1351",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1346",
+            "expr": "k < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1348",
+            "expr": "tk.type === 'STRING'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1351",
+            "expr": "v.length >= 2 && v.startsWith('\"') && v.endsWith('\"')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4768e6c0768f328e0bd9cf1c7454bb26ab55b01e1e8017dade11243328a53329",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1351",
+          "line": 1351,
+          "expr": "return v.slice(1, -1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstString@L1345",
+        "procedureName": "Parser.findFirstString",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1348",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1346",
+            "expr": "k < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1348",
+            "expr": "tk.type === 'STRING'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2c35353d3682479c17444c8cf96e8f319a1a28a169141370d31278d239b3306d",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1352",
+          "line": 1352,
+          "expr": "return v;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstString@L1345",
+        "procedureName": "Parser.findFirstString",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:63868cef545d391c88783fd141333da9ec1349e2967ec99ed7b2badaeffc986a",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1355",
+          "line": 1355,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

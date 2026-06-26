@@ -175,6 +175,18 @@ export function buildServer(verbs: Verbs, version = '0.0.0'): McpServer {
     async (a) => TOOL_RESULT(verbs.extractRules(a)),
   );
 
+  server.registerTool(
+    'gaps',
+    {
+      description:
+        'Missing-asset + unimplemented-symbol detection over the soul. Returns unimplemented procedures (declared, no body / no executes edges), package specs with no body file (e.g. a .pks present but .pkb absent — the migration-critical "body is missing" signal), and unresolved call sites (calls into symbols that do not exist in the crib; Oracle built-ins flagged). Use this to confirm whether a package body or implementation is actually present before trusting the graph for line-level migration.',
+      inputSchema: {
+        extractedOnly: z.boolean().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.gaps(a)),
+  );
+
   return server;
 }
 

@@ -12,6 +12,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync 
 import { dirname, join } from 'node:path';
 import { blake3Hex } from '@knowledge-crib/soul-schema';
 import type { Dossier } from './builder.js';
+import { DOSSIER_SHAPE_VERSION } from './framework.js';
 
 const SHARD_HEX = 2;
 
@@ -46,8 +47,11 @@ export interface DossierRead {
 
 /**
  * Read a dossier from disk and flag staleness against the live node's `hash` + the soul's
- * `schemaVersion`. A missing file ⇒ `{ missing: true, stale: false }`. A present file whose
- * `nodeHash` matches the live hash and whose `schemaVersion` matches is fresh.
+ * `schemaVersion` + the dossier `shapeVersion`. A missing file ⇒ `{ missing: true, stale: false }`.
+ * A present file is fresh iff `nodeHash` matches the live hash, `schemaVersion` matches the soul's
+ * schema version, AND `shapeVersion` matches {@link DOSSIER_SHAPE_VERSION}. The shape gate is the
+ * critical one: a pre-change persisted dossier carries `schemaVersion: '1.3'` (unchanged) but no
+ * `framework` section, so without this bump it would be served fresh-and-incomplete forever.
  */
 export function readDossier(
   cribDir: string,
@@ -64,7 +68,10 @@ export function readDossier(
   }
   const hashStale = live.nodeHash !== undefined && dossier.nodeHash !== live.nodeHash;
   const schemaStale = dossier.schemaVersion !== live.schemaVersion;
-  return { dossier, missing: false, stale: hashStale || schemaStale };
+  // shape staleness: a missing or older shapeVersion forces a rebuild even when schema is unchanged.
+  // `dossier.shapeVersion` is undefined on pre-2.0 artifacts → stale (rebuilt on demand).
+  const shapeStale = (dossier.shapeVersion ?? 1) !== DOSSIER_SHAPE_VERSION;
+  return { dossier, missing: false, stale: hashStale || schemaStale || shapeStale };
 }
 
 /** Remove a dossier (used when a symbol disappears from the soul). No-op if absent. */

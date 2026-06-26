@@ -1,0 +1,250 @@
+{
+  "id": "sym:packages/parsers/fixtures/python/behavior.py#process@L4",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c81d29ef21021c7b2d45dbdf52f5c02307daabe3f604c34f09b978931c9c9650",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/python/behavior.py#process@L4",
+    "kind": "symbol",
+    "type": "function",
+    "name": "process",
+    "qualifiedName": "process",
+    "signature": "process(value)",
+    "lang": "python",
+    "file": "packages/parsers/fixtures/python/behavior.py",
+    "span": {
+      "start": 4,
+      "end": 14
+    },
+    "callSites": [
+      {
+        "callee": "ValueError",
+        "line": 9
+      }
+    ],
+    "params": [
+      "value"
+    ]
+  },
+  "source": {
+    "text": "def process(value):\n    \"\"\"Process a value, raising on invalid input.\"\"\"\n    result = value * 2\n    try:\n        if result < 0:\n            raise ValueError(\"negative result\")\n        return result\n    except ValueError as e:\n        return -1\n    except (TypeError, KeyError) as e:\n        return -2",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 4
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/fixtures/python/behavior.py@L5",
+      "snippet": "\"\"\"Process a value, raising on invalid input.\"\"\"",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#locked-decisions-from-clarifying-questions-spec-research",
+      "heading": "Locked decisions (from clarifying questions + spec + research)",
+      "anchor": "locked-decisions-from-clarifying-questions-spec-research",
+      "snippet": "Locked decisions (from clarifying questions + spec + research)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-2-ladybugdb-k-zu-but-k-zu-is-archived-sqlite-default-reinforced",
+      "heading": "4.2 ⚠ \"LadybugDB\" = Kùzu, but Kùzu is archived → sqlite default reinforced",
+      "anchor": "4-2-ladybugdb-k-zu-but-k-zu-is-archived-sqlite-default-reinforced",
+      "snippet": "4.2 ⚠ \"LadybugDB\" = Kùzu, but Kùzu is archived → sqlite default reinforced",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#format-extractor-docs-data",
+      "heading": "Format extractor (docs/data)",
+      "anchor": "format-extractor-docs-data",
+      "snippet": "Format extractor (docs/data)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#query-hybrid",
+      "heading": "`query(hybrid)`",
+      "anchor": "query-hybrid",
+      "snippet": "`query(hybrid)`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#0-the-mental-model-what-to-ask-for-when",
+      "heading": "0. The mental model — what to ask for, when",
+      "anchor": "0-the-mental-model-what-to-ask-for-when",
+      "snippet": "0. The mental model — what to ask for, when",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#5-concurrency-safety",
+      "heading": "5. Concurrency & safety",
+      "anchor": "5-concurrency-safety",
+      "snippet": "5. Concurrency & safety",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/python/behavior.py#process@L4",
+    "procedureName": "process",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/behavior.py#process@L4",
+        "procedureName": "process",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b0ab6a74e2ec036cab23077a4c280ba46a38c8452b178dc42be9468ab16b0eb2",
+          "target": "assign:packages/parsers/fixtures/python/behavior.py@L6",
+          "line": 6,
+          "expr": "result = value * 2"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/behavior.py#process@L4",
+        "procedureName": "process",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce8cf770e827156c21141671073d5b4356a718a33542e27d691dff0f881fd53c",
+          "target": "stmt:packages/parsers/fixtures/python/behavior.py@L10",
+          "line": 10,
+          "expr": "return result"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/behavior.py#process@L4",
+        "procedureName": "process",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9ca3e551d7869b874e8094f3ada06110b3234f1759071b1f68c4fc5495f764d8",
+          "target": "stmt:packages/parsers/fixtures/python/behavior.py@L12",
+          "line": 12,
+          "expr": "return -1"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/behavior.py#process@L4",
+        "procedureName": "process",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5e14c3cc98e935f0c180ef2c50e3728a7225507dd01e417b00cd7b6a3373248f",
+          "target": "stmt:packages/parsers/fixtures/python/behavior.py@L14",
+          "line": 14,
+          "expr": "return -2"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:packages/parsers/fixtures/python/behavior.py@L9",
+        "kind": "raise",
+        "name": "ValueError",
+        "lang": "python",
+        "file": "packages/parsers/fixtures/python/behavior.py",
+        "span": {
+          "start": 9,
+          "end": 9
+        },
+        "errorMessage": "negative result",
+        "confidence": 1
+      }
+    ],
+    "handles": [
+      {
+        "id": "exc:packages/parsers/fixtures/python/behavior.py@L11",
+        "kind": "exception-handler",
+        "lang": "python",
+        "file": "packages/parsers/fixtures/python/behavior.py",
+        "span": {
+          "start": 11,
+          "end": 11
+        },
+        "whenSelector": "ValueError",
+        "confidence": 1
+      },
+      {
+        "id": "exc:packages/parsers/fixtures/python/behavior.py@L13",
+        "kind": "exception-handler",
+        "lang": "python",
+        "file": "packages/parsers/fixtures/python/behavior.py",
+        "span": {
+          "start": 13,
+          "end": 13
+        },
+        "whenSelector": "TypeError|KeyError",
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 1,
+    "handlers": 2,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -21,14 +21,14 @@ Health + whether the project is indexed.
 ```jsonc
 // req: {}
 // res:
-{ "indexed": true, "schemaVersion":"1.2", "stats":{"nodes":12044,"edges":31188,"clusters":37},
+{ "indexed": true, "schemaVersion":"1.3", "stats":{"nodes":12044,"edges":31188,"clusters":37},
   "vcsHead":"a1b2c3", "incrementalSince":"a1b2c3", "capabilities":{"embeddings":false} }
 ```
 
 ## `index`
 Full index of the current repo (writes soul + builds index).
 ```jsonc
-// req: { "path":".", "include?":["src/**"], "exclude?":["**/*.test.ts"], "withEmbeddings?":false }
+// req: { "path":".", "include?":["src/**"], "exclude?":["**/*.test.ts"], "semantic?":false }
 // res: { "ok":true, "stats":{...}, "durationMs": 18230 }
 ```
 
@@ -51,11 +51,20 @@ are included, so the shape stays honest per node kind.
 
 Set `withSource` to fold in the **full source body** of the node's span, rehydrated from disk and
 budgeted (`sourceMaxChars`/`sourceMaxLines`); set `withRules` to fold in the decision table for a
-procedure/function (delegates to `extract_rules`, omitted for other node types).
+procedure/function (delegates to `extract_rules`, omitted for other node types). Set
+`withFramework` (schema 1.3, opt-in) to fold in the **framework-semantics** relationships the node
+participates in — the resolved complement to a symbol's header. Auto-scopes by node: a class
+(`@Controller`/`@Configuration`/`@Entity`, or any class/interface/record/struct with incoming
+`member-of` children) aggregates its members' route table / bean inventory / DI graph / relation
+model; a callable/component/field returns its own direct edges. Returns `framework` only when the
+node has framework edges (omitted for a non-Spring method, so the shape stays honest). A
+`@Bean`-supplied dependency surfaces as `kind:'produces'` + the producer brief in the **same**
+object (one-hop supply chain, no round-trip). Unresolved `meta.injects`/`meta.produces` type names
+surface as `⚠ unresolved` entries (parity with `gaps`).
 
 ```jsonc
 // req: { "id":"sym:src/auth/AuthService.ts#AuthService.login@L42", "docLimit?":3,
-//        "withSource?":true, "withRules?":true,
+//        "withSource?":true, "withRules?":true, "withFramework?":true,
 //        "sourceMaxChars?":4000, "sourceMaxLines?":200 }
 // res:
 { "node": { "id":"…","name":"login","qualifiedName":"AuthService.login","signature":"…","type":"method",
@@ -74,6 +83,19 @@ procedure/function (delegates to `extract_rules`, omitted for other node types).
   "rules": { "rules":[ { "action":{ "kind":"executes","sqlKind":"insert" },
                          "guard":"cond:…@L7","branch":"THEN",
                          "conditions":[ { "polarity":"THEN" } ] } ] },
+  // withFramework only — the resolved framework relationships (schema 1.3; Spring track built):
+  "framework": { "routes":[ { "id":"route:POST /api/auth/login@src/auth.ts#L42",
+                               "httpMethod":"POST","routePath":"/api/auth/login",
+                               "handler":"sym:…#AuthService.login@L42",
+                               "params":[ {"name":"dto","in":"body"} ],
+                               "security":{ "PreAuthorize":"isAuthenticated()" } } ],
+                  "produces":[ { "id":"…","name":"SessionToken","producer":"sym:…#TokenService.issue@L88" } ],
+                  "dependencies":[ { "id":"sym:…#UserRepository","name":"UserRepository",
+                                      "kind":"injects" } ],
+                  "dependents":[ { "id":"sym:…#AuthController","name":"AuthController" } ],
+                  "relations":[ { "field":"applicant","type":"Loan",
+                                  "cardinality":"ManyToOne","fetch":"FetchType.LAZY" } ],
+                  "renders":[ { "id":"comp:…#LoanForm","name":"LoanForm" } ] },
   "truncated": false }
 ```
 
@@ -113,7 +135,7 @@ fresh; the cache holds the default page only.
 //        "includeTables?":true, "sourceMaxChars?":4000, "sourceMaxLines?":200,
 //        "sourceStartLine?":120, "extractedOnly?":true, "format?":"json"|"markdown" }
 // res (format=json):
-{ "id":"…","schemaVersion":"1.2","nodeHash":"blake3:…","builtAt":"2026-06-25T…",
+{ "id":"…","schemaVersion":"1.3","nodeHash":"blake3:…","builtAt":"2026-06-25T…",
   "node": { "id":"…","name":"login","type":"method","signature":"…","file":"…","span":{…} },
   "source": { "text":"login(user,pass){…}","truncated":false,"totalLines":17 },
   "callers":[ {…} ], "callees":[ {…} ], "docs":[ {…} ],
@@ -186,6 +208,50 @@ it. The migration deliverable [Q39, Q40].
 // req: { "proc?":"sym:claims.pkb#process_claim@L10" }   // omit → whole system
 // res: { "rules":[ { "action":"escalate_claim","conditions":["v_amt > 10000"],
 //                    "source":"claims.pkb@L12","reads":["CLAIMS.amount"] } ] }
+```
+
+## `gaps` *(missing-asset detection)*
+Surface what an LLM otherwise misses by reading the graph alone: declarations without bodies,
+package specs with no body file, call sites that resolve to no symbol, plus the schema-1.3
+framework-semantics anomalies. Pure over the soul + index; deterministic. The migration-analyst
+answer to "is the package body missing?" — the crib says so explicitly instead of letting the
+analyst infer it from silence.
+
+Five signals (each omitted when empty):
+- `unimplemented` — a callable whose qualified-name group owns zero `executes` edges (a declaration
+  with no body anywhere).
+- `packageSpecsWithoutBody` — a `package` symbol whose member callables are ALL unimplemented AND
+  none live in a body file (`.pkb`/`.pck`/`.pls`/`.pkh`).
+- `unresolvedCallSites` — a recorded call site whose callee simple-name matches no symbol. Oracle
+  built-in packages (`DBMS_*`/`UTL_*`/`APEX_*`/…) are flagged `builtin:true`, never silently hidden.
+- `controllersWithoutRoutes` *(1.3)* — a `controller`-stereotype class whose member methods expose
+  ZERO routes (a `@Controller` with no handler methods, or whose handlers all lost their
+  `@GetMapping`). Members are resolved via incoming `member-of` edges.
+- `unresolvedInjects` *(1.3)* — a class declares a DI type in `meta.injects` that the resolver never
+  linked to a symbol (no `injects` edge from the class). The dual of unresolved call sites: a
+  missing bean the consumer expects. Built-in/framework type names are flagged, not dropped.
+
+`summary` carries a count per array plus `analysisReadiness` (`incomplete` iff any body-missing gap
+exists — an unimplemented callable or a package spec with no body — else `complete`).
+
+```jsonc
+// req: { "extractedOnly?": false }
+// res:
+{ "unimplemented":[ { "id":"sym:…#PKG_LOAN_RULE_ENGINE.RESOLVE_AND_EVALUATE_RULES@L10",
+                      "qualifiedName":"…","implemented":false,"referencedBy":["claims.pkb"] } ],
+  "packageSpecsWithoutBody":[ { "id":"sym:…#PKG_LOAN_RULE_ENGINE","qualifiedName":"…",
+                                "declaredCount":7,"implementedCount":0,
+                                "expectedBodyFile":"pkg_loan_rule_engine.pkb",
+                                "referencedBy":["claims.pkb","…"] } ],
+  "unresolvedCallSites":[ { "caller":"sym:…#process_claim@L12","callerName":"…",
+                            "callee":"PKG_MISSING.do_it","line":12,"builtin":false } ],
+  "controllersWithoutRoutes":[ { "id":"sym:…#EmptyController","qualifiedName":"…",
+                                 "memberCount":3,"routeCount":0 } ],
+  "unresolvedInjects":[ { "id":"sym:…#LoanService","qualifiedName":"…","stereotype":"service",
+                          "unresolved":["com.example.MissingBean"] } ],
+  "summary": { "unimplemented":1, "packageSpecsWithoutBody":1, "unresolvedCallSites":1,
+               "controllersWithoutRoutes":1, "unresolvedInjects":1,
+               "analysisReadiness":"incomplete" } }
 ```
 
 ## `cypher` *(optional, index-backend-dependent)*

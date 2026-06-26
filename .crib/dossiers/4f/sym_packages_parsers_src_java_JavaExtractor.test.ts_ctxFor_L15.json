@@ -1,0 +1,139 @@
+{
+  "id": "sym:packages/parsers/src/java/JavaExtractor.test.ts#ctxFor@L15",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:24d530aa684424d432509af3c2657cd67dfa2a6edae4c8c9fa08ef429b35d357",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/JavaExtractor.test.ts#ctxFor@L15",
+    "kind": "symbol",
+    "type": "function",
+    "name": "ctxFor",
+    "qualifiedName": "ctxFor",
+    "signature": "ctxFor(text: string): ExtractCtx",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/JavaExtractor.test.ts",
+    "span": {
+      "start": 15,
+      "end": 26
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 24
+      }
+    ]
+  },
+  "source": {
+    "text": "function ctxFor(text: string): ExtractCtx {\n  return {\n    async readText() {\n      return text;\n    },\n    treeSitter() {\n      throw new Error('not used — Java is hand-rolled, no tree-sitter');\n    },\n    hash: contentHash,\n    idFor: (kind: NodeKind, parts) => idFor({ kind, ...parts } as IdSpec),\n  };\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 15
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.test.ts#run@L28",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.test.ts",
+      "line": 28
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.test.ts#runBehavior@L503",
+      "confidence": 1,
+      "name": "runBehavior",
+      "qualifiedName": "runBehavior",
+      "signature": "runBehavior(): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.test.ts",
+      "line": 503
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.test.ts#runGuarded@L231",
+      "confidence": 1,
+      "name": "runGuarded",
+      "qualifiedName": "runGuarded",
+      "signature": "runGuarded(): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.test.ts",
+      "line": 231
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 77
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/JavaExtractor.test.ts#ctxFor@L15",
+    "procedureName": "ctxFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.test.ts#ctxFor@L15",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:786c2698e8861a4975820785ea2fbc12e48731c5e64f47d1157fc42c09b378c2",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.test.ts@L16",
+          "line": 16,
+          "expr": "return {\n    async readText() {\n      return text;\n    },\n    treeSitter() {\n      throw new Error('not used — Java is hand-rolled, no tree-sitter');\n    },\n    hash: contentHash,\n    idFor: (kind: NodeKind, parts) => idFor({ kind, ...parts } as IdSpec),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.test.ts#ctxFor@L15",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1fea571751153db3f5fdf28436d35cc2cace8af6b4ad63a1fb39ff65b65253f2",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+          "expr": "idFor",
+          "line": 24
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

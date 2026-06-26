@@ -1,0 +1,147 @@
+{
+  "id": "sym:packages/pipeline/fixtures/mixed/schema.sql#event_pkg.record@L8",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:12da985412c2176104ba8ebe2f6e563eb1dbefa756daa168c388e91c9918a8e3",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/fixtures/mixed/schema.sql#event_pkg.record@L8",
+    "kind": "symbol",
+    "type": "procedure",
+    "name": "record",
+    "qualifiedName": "event_pkg.record",
+    "signature": "recordp_name VARCHAR2",
+    "lang": "plsql",
+    "file": "packages/pipeline/fixtures/mixed/schema.sql",
+    "span": {
+      "start": 8,
+      "end": 12
+    }
+  },
+  "source": {
+    "text": "  PROCEDURE record(p_name VARCHAR2) IS\n  BEGIN\n    INSERT INTO events (id, name) VALUES (1, p_name);\n  END record;\nEND event_pkg;",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 8
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#warm-up-5-min-rapport-framing",
+      "heading": "Warm-up (5 min) — rapport, framing",
+      "anchor": "warm-up-5-min-rapport-framing",
+      "snippet": "Warm-up (5 min) — rapport, framing",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#1-design-goals-choices",
+      "heading": "1. Design goals → choices",
+      "anchor": "1-design-goals-choices",
+      "snippet": "1. Design goals → choices",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#6-versioning-migration",
+      "heading": "6. Versioning & migration",
+      "anchor": "6-versioning-migration",
+      "snippet": "6. Versioning & migration",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#1-soulstore-source-of-truth",
+      "heading": "1. SoulStore (source of truth)",
+      "anchor": "1-soulstore-source-of-truth",
+      "snippet": "1. SoulStore (source of truth)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/fixtures/mixed/schema.sql#event_pkg.record@L8",
+    "procedureName": "event_pkg.record",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/fixtures/mixed/schema.sql#event_pkg.record@L8",
+        "procedureName": "event_pkg.record",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6ac41ab6c48e3042fcec2084ec5dcce03b6d302953042af176a307281c64033b",
+          "target": "stmt:packages/pipeline/fixtures/mixed/schema.sql@L10",
+          "line": 10,
+          "sqlKind": "insert",
+          "expr": "INSERT INTO events (id, name) VALUES (1, p_name);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

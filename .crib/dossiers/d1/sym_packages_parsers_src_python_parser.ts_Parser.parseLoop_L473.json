@@ -1,0 +1,396 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:6599b0605fdc63af7e9c021a8572137848e5ee616ba1eaebb7768755549bb823",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseLoop",
+    "qualifiedName": "Parser.parseLoop",
+    "signature": "parseLoop(): PyStmt | null",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 473,
+      "end": 491
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 474
+      },
+      {
+        "callee": "peek",
+        "line": 475
+      },
+      {
+        "callee": "next",
+        "line": 476
+      },
+      {
+        "callee": "capturePredicate",
+        "line": 477
+      },
+      {
+        "callee": "skipToNewline",
+        "line": 479
+      },
+      {
+        "callee": "parseSuite",
+        "line": 482
+      },
+      {
+        "callee": "stmtsEnd",
+        "line": 486
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseLoop(): PyStmt | null {\n    const loopKind = this.peek().value === 'for' ? 'for' : 'while';\n    const line = this.peek().line;\n    this.next(); // 'for'/'while'\n    const pred = this.capturePredicate();\n    if (!pred.ok) {\n      this.skipToNewline();\n      return null;\n    }\n    const body = this.parseSuite();\n    return {\n      kind: 'loop',\n      line,\n      endLine: stmtsEnd(body, this.lastContentLine, line),\n      loopKind,\n      predicate: pred.text,\n      body,\n    };\n  }",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 473
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseStatement@L236",
+      "confidence": 1,
+      "name": "parseStatement",
+      "qualifiedName": "Parser.parseStatement",
+      "signature": "parseStatement(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 236
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.capturePredicate@L684",
+      "confidence": 1,
+      "name": "capturePredicate",
+      "qualifiedName": "Parser.capturePredicate",
+      "signature": "capturePredicate(): { text: string; ok: boolean }",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 684
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.next@L781",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 781
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseSuite@L415",
+      "confidence": 1,
+      "name": "parseSuite",
+      "qualifiedName": "Parser.parseSuite",
+      "signature": "parseSuite(): PyStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 415
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(offset = 0): Token",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 801
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.skipToNewline@L776",
+      "confidence": 1,
+      "name": "skipToNewline",
+      "qualifiedName": "Parser.skipToNewline",
+      "signature": "skipToNewline(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 776
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#stmtsEnd@L814",
+      "confidence": 1,
+      "name": "stmtsEnd",
+      "qualifiedName": "stmtsEnd",
+      "signature": "stmtsEnd(stmts: PyStmt[], lastContentLine: number, startLine: number): number",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 814
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/parser.ts@L472",
+      "snippet": "/** Parse `for … :` / `while … :` into a loop statement node (predicate → one LOOP condition). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+    "procedureName": "Parser.parseLoop",
+    "conditions": [
+      "cond:packages/parsers/src/python/parser.ts@L478"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b83f628d85cfa19508ea65059b82fa7d17c64f74fbec0a1e94a615b3e957e0a1",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+          "expr": "peek",
+          "line": 474
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3e3df12b9b40970697f82f3dfbfda89bef26dc9b69686690db72194ce8376c99",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L474",
+          "line": 474,
+          "expr": "const loopKind = this.peek().value === 'for' ? 'for' : 'while';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db2793ca275d0cc61735219cd24a26da09fc7ec19db3b7ef01011d1b1b1e71a0",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L475",
+          "line": 475,
+          "expr": "const line = this.peek().line;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e20b9bc8f5cd411ec490c2b8275a295dafc264af20f751697fd94258972741d8",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.next@L781",
+          "expr": "next",
+          "line": 476
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f1943ff8586aea50391e5f8982d122f0a3e3fbc0db75b6a1ce10c23c2367e421",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L476",
+          "line": 476,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a65d1bb5e844ec35a82d8ada9be5a24e4c2bfd35fc6b633f6b82fe42b69670b2",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.capturePredicate@L684",
+          "expr": "capturePredicate",
+          "line": 477
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0fa13cf18ee5278798886812402df55539447b477d9c0b4a01d6003fd7f88f03",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L477",
+          "line": 477,
+          "expr": "const pred = this.capturePredicate();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L478",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L478",
+            "expr": "!pred.ok",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c4c648a0faf2f385ba530057a8561e999ccb8259e664357a52b99c7a0e09bd4c",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.skipToNewline@L776",
+          "expr": "skipToNewline",
+          "line": 479
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L478",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L478",
+            "expr": "!pred.ok",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2c7b1fb8c9e1b8b8aed4b4e9ade1d7f60cd433da7f8b6d05619d8aed8ca771c5",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L479",
+          "line": 479,
+          "expr": "this.skipToNewline();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L478",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L478",
+            "expr": "!pred.ok",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e08ef51c75e6a62bfbdd67b9aea42243327ac2a1208346792c35fa4fd59f4fec",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L480",
+          "line": 480,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:16c41be66334bf92c5ccf7659736249f33f8fa429d9c66197860c83d82a00d80",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseSuite@L415",
+          "expr": "parseSuite",
+          "line": 482
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:858621870f7c7bf2b3444e65194c50261c17e2ad696e0ba3ed28170634aa0eee",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L482",
+          "line": 482,
+          "expr": "const body = this.parseSuite();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:895db986ae3e125baacbb1bf234ff8bafc5402dfa6709f32a391db476bc28412",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L483",
+          "line": 483,
+          "expr": "return {\n      kind: 'loop',\n      line,\n      endLine: stmtsEnd(body, this.lastContentLine, line),\n      loopKind,\n      predicate: pred.text,\n      body,\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+        "procedureName": "Parser.parseLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:819e65edf2211187f1135bef5abd5d9010df4b98b68dcbe976a60a5d729d9546",
+          "target": "sym:packages/parsers/src/python/parser.ts#stmtsEnd@L814",
+          "expr": "stmtsEnd",
+          "line": 486
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 8,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 8,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 7,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

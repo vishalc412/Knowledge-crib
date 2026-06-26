@@ -1,0 +1,216 @@
+{
+  "id": "sym:packages/core/src/dossier/builder.ts#buildDossier.keep@L154",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d3d461fd6f6be85aa58ae3e9e3f4cdc63885bb24329f746b43ca98cc0092a2ed",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/builder.ts#buildDossier.keep@L154",
+    "kind": "symbol",
+    "type": "function",
+    "name": "keep",
+    "qualifiedName": "buildDossier.keep",
+    "signature": "keep(…)",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/builder.ts",
+    "span": {
+      "start": 154,
+      "end": 154
+    }
+  },
+  "source": {
+    "text": "  const keep = (e: Edge): boolean => !opts.extractedOnly || e.provenance === 'EXTRACTED';",
+    "truncated": false,
+    "totalLines": 1,
+    "startLine": 154
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+      "confidence": 1,
+      "name": "buildDossier",
+      "qualifiedName": "buildDossier",
+      "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 134
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+      "confidence": 1,
+      "name": "controlFlow",
+      "qualifiedName": "controlFlow",
+      "signature": "controlFlow(soul: SoulStore, nodeId: string, outgoing: Map<string, Edge[]>, incoming: Map<string, Edge[]>, keep: (e: Edge) => boolean): DossierControlFlow",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 323
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#controlFlow.push@L339",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "controlFlow.push",
+      "signature": "push(…)",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 339
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-5-data-model-ontology-summary-full-grammar-in-data-model-4-merge-11-ids-here",
+      "heading": "2.5 Data model (ontology) — summary; full grammar in data-model §4 (merge 11 ids here)",
+      "anchor": "2-5-data-model-ontology-summary-full-grammar-in-data-model-4-merge-11-ids-here",
+      "snippet": "2.5 Data model (ontology) — summary; full grammar in data-model §4 (merge 11 ids here)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-6-migration-track-findings-from-the-migration-scope-run",
+      "heading": "4.6 Migration track findings (from the migration-scope run)",
+      "anchor": "4-6-migration-track-findings-from-the-migration-scope-run",
+      "snippet": "4.6 Migration track findings (from the migration-scope run)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#backward-compatibility",
+      "heading": "Backward compatibility",
+      "anchor": "backward-compatibility",
+      "snippet": "Backward compatibility",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#root-resolution-one-entry-every-project",
+      "heading": "Root resolution — one entry, every project",
+      "anchor": "root-resolution-one-entry-every-project",
+      "snippet": "Root resolution — one entry, every project",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-3-resolve-the-deep-part",
+      "heading": "Phase 3 — Resolve (the deep part)",
+      "anchor": "phase-3-resolve-the-deep-part",
+      "snippet": "Phase 3 — Resolve (the deep part)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#0-the-mental-model-what-to-ask-for-when",
+      "heading": "0. The mental model — what to ask for, when",
+      "anchor": "0-the-mental-model-what-to-ask-for-when",
+      "snippet": "0. The mental model — what to ask for, when",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-6-interface-output-surface",
+      "heading": "Branch 6 — Interface & Output Surface",
+      "anchor": "branch-6-interface-output-surface",
+      "snippet": "Branch 6 — Interface & Output Surface",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#clarifications-i-need-answer-alongside-some-are-blockers",
+      "heading": "Clarifications I need (answer alongside — some are blockers)",
+      "anchor": "clarifications-i-need-answer-alongside-some-are-blockers",
+      "snippet": "Clarifications I need (answer alongside — some are blockers)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "heading": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "anchor": "2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "snippet": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commit-the-soul",
+      "heading": "Commit the soul",
+      "anchor": "commit-the-soul",
+      "snippet": "Commit the soul",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier.keep@L154",
+    "procedureName": "buildDossier.keep",
+    "conditions": [],
+    "rules": []
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": [
+      "packages/core/src/dossier/builder.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

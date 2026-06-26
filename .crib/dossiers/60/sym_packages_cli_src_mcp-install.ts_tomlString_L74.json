@@ -1,0 +1,109 @@
+{
+  "id": "sym:packages/cli/src/mcp-install.ts#tomlString@L74",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:da74eeea646db50e995b8fac6f907614b16e13a4c8f73264c07d3675a85c97df",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/mcp-install.ts#tomlString@L74",
+    "kind": "symbol",
+    "type": "function",
+    "name": "tomlString",
+    "qualifiedName": "tomlString",
+    "signature": "tomlString(s: string): string",
+    "lang": "typescript",
+    "file": "packages/cli/src/mcp-install.ts",
+    "span": {
+      "start": 74,
+      "end": 76
+    },
+    "callSites": [
+      {
+        "callee": "replace",
+        "line": 75
+      },
+      {
+        "callee": "replace",
+        "line": 75
+      }
+    ]
+  },
+  "source": {
+    "text": "function tomlString(s: string): string {\n  return `\"${s.replace(/\\\\/g, '\\\\\\\\').replace(/\"/g, '\\\\\"')}\"`;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 74
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#installMcp@L171",
+      "confidence": 1,
+      "name": "installMcp",
+      "qualifiedName": "installMcp",
+      "signature": "installMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 171
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/mcp-install.ts@L73",
+      "snippet": "/** Quote a path for embedding in a TOML string value (Codex `command = \"…\"`). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/mcp-install.ts#tomlString@L74",
+    "procedureName": "tomlString",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#tomlString@L74",
+        "procedureName": "tomlString",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:88e1ea61c39998891241de96dd2030ad4ed6e90b7f1ae6a8e61dccc449e722a8",
+          "target": "stmt:packages/cli/src/mcp-install.ts@L75",
+          "line": 75,
+          "expr": "return `\"${s.replace(/\\\\/g, '\\\\\\\\').replace(/\"/g, '\\\\\"')}\"`;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/cli/src/mcp-install.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

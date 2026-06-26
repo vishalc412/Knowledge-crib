@@ -1,0 +1,203 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseSimple@L1421",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:2b8b4de8687414e44b6a337b603031f01fad196e7fc25765bd07a24da2771a41",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseSimple@L1421",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseSimple",
+    "qualifiedName": "BodyParser.parseSimple",
+    "signature": "parseSimple(startLine: number): JavaStmt | null",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 1421,
+      "end": 1443
+    },
+    "callSites": [
+      {
+        "callee": "scanSimple",
+        "line": 1423
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseSimple(startLine: number): JavaStmt | null {\n    const startIdx = this.i;\n    const scan = this.scanSimple(startIdx);\n    this.i = scan.endIdx + 1; // past `;` (or end)\n    const endLine = scan.lastLine ?? startLine;\n    if (scan.assignOp && !scan.callChain) {\n      return {\n        kind: 'assign',\n        startLine,\n        endLine,\n        text: scan.text,\n        assignTarget: scan.assignTarget,\n      };\n    }\n    if (!scan.callChain) return null; // no call + no assignment → skip (declaration / plain expression)\n    return {\n      kind: 'call',\n      startLine,\n      endLine,\n      text: scan.text,\n      callChain: scan.callChain,\n    };\n  }",
+    "truncated": false,
+    "totalLines": 23,
+    "startLine": 1421
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseStmt@L1189",
+      "confidence": 1,
+      "name": "parseStmt",
+      "qualifiedName": "BodyParser.parseStmt",
+      "signature": "parseStmt(): JavaStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1189
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.scanSimple@L1454",
+      "confidence": 1,
+      "name": "scanSimple",
+      "qualifiedName": "BodyParser.scanSimple",
+      "signature": "scanSimple(startIdx: number): {\n    endIdx: number;\n    text: string;\n    lastLine: number | undefined;\n    callChain: string[] | undefined;\n    assignOp: boolean;\n    assignTarget: string | undefined;\n  }",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1454
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.ts@L1413",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseSimple@L1421",
+    "procedureName": "BodyParser.parseSimple",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.ts@L1426",
+      "cond:packages/parsers/src/java/parser.ts@L1435"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseSimple@L1421",
+        "procedureName": "BodyParser.parseSimple",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:981108194fab0aa84c08bc1e60f815ab46b54d5b0bb71e70d29d374bea6b71aa",
+          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.scanSimple@L1454",
+          "expr": "scanSimple",
+          "line": 1423
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseSimple@L1421",
+        "procedureName": "BodyParser.parseSimple",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7df6f67fef8b94dea61e1509e6b24205d968c20cf84120bc2e9b82cf9845634b",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1423",
+          "line": 1423,
+          "expr": "const scan = this.scanSimple(startIdx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseSimple@L1421",
+        "procedureName": "BodyParser.parseSimple",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:41b50d67a73a814be267f056413e5437dbcf8c2c944667161b603f2246c89250",
+          "target": "assign:packages/parsers/src/java/parser.ts@L1424",
+          "line": 1424,
+          "expr": "this.i = scan.endIdx + 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseSimple@L1421",
+        "procedureName": "BodyParser.parseSimple",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1426",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1426",
+            "expr": "scan.assignOp && !scan.callChain",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2a46b4d557f30c27656823f5bc7ac40bcaa164f347f35b97d51d14a46433dd1e",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1427",
+          "line": 1427,
+          "expr": "return {\n        kind: 'assign',\n        startLine,\n        endLine,\n        text: scan.text,\n        assignTarget: scan.assignTarget,\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseSimple@L1421",
+        "procedureName": "BodyParser.parseSimple",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1435",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1435",
+            "expr": "!scan.callChain",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f3178910ba8f6cd6bd52ac281a73f743573bf437e57fc26d38092ab665415b4",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1435",
+          "line": 1435,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseSimple@L1421",
+        "procedureName": "BodyParser.parseSimple",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:52170f6e137e6dfe7d2be8b39f40222f5392c070f5a2260d781c25b04e58bfd4",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1436",
+          "line": 1436,
+          "expr": "return {\n      kind: 'call',\n      startLine,\n      endLine,\n      text: scan.text,\n      callChain: scan.callChain,\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

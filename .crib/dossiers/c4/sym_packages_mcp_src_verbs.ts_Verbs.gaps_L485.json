@@ -1,0 +1,1224 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:73177b9d0a3a8643f02b31edc1a6931b55ed1c0ee34adaa37f7bd08bf61f34ed",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+    "kind": "symbol",
+    "type": "method",
+    "name": "gaps",
+    "qualifiedName": "Verbs.gaps",
+    "signature": "gaps(args: { extractedOnly?: boolean } = {}): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 485,
+      "end": 682
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 492
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 499
+      },
+      {
+        "callee": "get",
+        "line": 500
+      },
+      {
+        "callee": "push",
+        "line": 501
+      },
+      {
+        "callee": "set",
+        "line": 502
+      },
+      {
+        "callee": "some",
+        "line": 504
+      },
+      {
+        "callee": "neighbors",
+        "line": 504
+      },
+      {
+        "callee": "neighbors",
+        "line": 513
+      },
+      {
+        "callee": "keep",
+        "line": 514
+      },
+      {
+        "callee": "getNode",
+        "line": 516
+      },
+      {
+        "callee": "add",
+        "line": 517
+      },
+      {
+        "callee": "sort",
+        "line": 520
+      },
+      {
+        "callee": "add",
+        "line": 527
+      },
+      {
+        "callee": "referencedBy",
+        "line": 532
+      },
+      {
+        "callee": "push",
+        "line": 533
+      },
+      {
+        "callee": "filter",
+        "line": 540
+      },
+      {
+        "callee": "map",
+        "line": 540
+      },
+      {
+        "callee": "filter",
+        "line": 551
+      },
+      {
+        "callee": "map",
+        "line": 551
+      },
+      {
+        "callee": "neighbors",
+        "line": 551
+      },
+      {
+        "callee": "getNode",
+        "line": 553
+      },
+      {
+        "callee": "has",
+        "line": 554
+      },
+      {
+        "callee": "filter",
+        "line": 556
+      },
+      {
+        "callee": "has",
+        "line": 557
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 557
+      },
+      {
+        "callee": "some",
+        "line": 560
+      },
+      {
+        "callee": "test",
+        "line": 560
+      },
+      {
+        "callee": "push",
+        "line": 563
+      },
+      {
+        "callee": "expectedBodyFile",
+        "line": 570
+      },
+      {
+        "callee": "referencedBy",
+        "line": 571
+      },
+      {
+        "callee": "add",
+        "line": 580
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 580
+      },
+      {
+        "callee": "add",
+        "line": 582
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 582
+      },
+      {
+        "callee": "add",
+        "line": 583
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 583
+      },
+      {
+        "callee": "pop",
+        "line": 583
+      },
+      {
+        "callee": "split",
+        "line": 583
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 591
+      },
+      {
+        "callee": "pop",
+        "line": 591
+      },
+      {
+        "callee": "split",
+        "line": 591
+      },
+      {
+        "callee": "push",
+        "line": 593
+      },
+      {
+        "callee": "test",
+        "line": 599
+      },
+      {
+        "callee": "filter",
+        "line": 611
+      },
+      {
+        "callee": "map",
+        "line": 611
+      },
+      {
+        "callee": "neighbors",
+        "line": 611
+      },
+      {
+        "callee": "getNode",
+        "line": 613
+      },
+      {
+        "callee": "has",
+        "line": 614
+      },
+      {
+        "callee": "filter",
+        "line": 615
+      },
+      {
+        "callee": "some",
+        "line": 616
+      },
+      {
+        "callee": "neighbors",
+        "line": 616
+      },
+      {
+        "callee": "push",
+        "line": 619
+      },
+      {
+        "callee": "map",
+        "line": 638
+      },
+      {
+        "callee": "filter",
+        "line": 638
+      },
+      {
+        "callee": "neighbors",
+        "line": 638
+      },
+      {
+        "callee": "some",
+        "line": 646
+      },
+      {
+        "callee": "includes",
+        "line": 646
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 646
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 646
+      },
+      {
+        "callee": "push",
+        "line": 647
+      },
+      {
+        "callee": "push",
+        "line": 650
+      }
+    ]
+  },
+  "source": {
+    "text": "  gaps(args: { extractedOnly?: boolean } = {}): Record<string, unknown> {\n    const soul = this.deps.soul;\n    const idx = this.deps.index;\n    const keep = (e: Edge): boolean => !args.extractedOnly || e.provenance === 'EXTRACTED';\n\n    const callables: Node[] = [];\n    for (const n of soul.iterate('symbol')) {\n      if (n.type && CALLABLE_SYMBOL_TYPES.has(n.type)) callables.push(n);\n    }\n\n    // Group callables by lowercased qualified-name (or simple name) so a spec declaration + a body\n    // definition collapse to one logical procedure: \"implemented\" iff some member has an executes edge.\n    const byName = new Map<string, Node[]>();\n    for (const c of callables) {\n      const key = (c.qualifiedName ?? c.name ?? c.id).toLowerCase();\n      const arr = byName.get(key);\n      if (arr) arr.push(c);\n      else byName.set(key, [c]);\n    }\n    const hasExecutes = (id: string): boolean => idx.neighbors(id, 'executes', 'down').some(keep);\n\n    // Incoming `calls` edges across a whole qualified-name group → \"referenced everywhere but\n    // missing\" files. Pure over the index; surfaces the loan-rule-engine signal (\"the body is\n    // referenced from N files\") without a separate lookup.\n    const referencedBy = (group: Node[]): { count: number; files: string[] } => {\n      const files = new Set<string>();\n      let count = 0;\n      for (const c of group) {\n        for (const e of idx.neighbors(c.id, 'calls', 'up')) {\n          if (!keep(e)) continue;\n          count++;\n          const caller = soul.getNode(e.src);\n          if (caller?.file) files.add(caller.file);\n        }\n      }\n      return { count, files: [...files].sort() };\n    };\n\n    const unimplemented: Array<Record<string, unknown>> = [];\n    const implementedNames = new Set<string>();\n    for (const [key, group] of byName) {\n      if (group.some((c) => hasExecutes(c.id))) {\n        implementedNames.add(key);\n        continue;\n      }\n      const rep = group[0];\n      if (!rep) continue;\n      const refs = referencedBy(group);\n      unimplemented.push({\n        id: rep.id,\n        ...(rep.name ? { name: rep.name } : {}),\n        ...(rep.qualifiedName ? { qualifiedName: rep.qualifiedName } : {}),\n        type: rep.type,\n        ...(rep.file ? { file: rep.file } : {}),\n        ...(rep.span ? { line: rep.span.start } : {}),\n        ...(group.length > 1 ? { declaredIn: group.map((c) => c.file).filter(Boolean) } : {}),\n        referencedBy: refs,\n      });\n    }\n\n    // Package specs without a body: a `package` whose member callables are all unimplemented AND\n    // none of them live in a body file. `member-of` edges point child→parent, so members are the\n    // incoming `member-of` sources of the package node.\n    const packageSpecsWithoutBody: Array<Record<string, unknown>> = [];\n    for (const n of soul.iterate('symbol')) {\n      if (n.type !== 'package') continue;\n      const members = idx\n        .neighbors(n.id, 'member-of', 'up')\n        .map((e) => soul.getNode(e.src))\n        .filter((m): m is Node => !!m && !!m.type && CALLABLE_SYMBOL_TYPES.has(m.type));\n      if (members.length === 0) continue;\n      const implemented = members.filter((m) =>\n        implementedNames.has((m.qualifiedName ?? m.name ?? m.id).toLowerCase()),\n      ).length;\n      if (implemented > 0) continue;\n      const hasBodyFile = members.some((m) => /\\.(pkb|pck|pls|pkh)$/i.test(m.file ?? ''));\n      if (hasBodyFile) continue;\n      const specFile = n.file ?? members[0]?.file;\n      packageSpecsWithoutBody.push({\n        id: n.id,\n        ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),\n        ...(n.name ? { name: n.name } : {}),\n        ...(n.file ? { file: n.file } : {}),\n        declaredCount: members.length,\n        implementedCount: 0,\n        ...(specFile ? { expectedBodyFile: expectedBodyFile(specFile) } : {}),\n        referencedBy: referencedBy(members),\n      });\n    }\n\n    // Unresolved call sites: callee simple-name matches no symbol. Built-in Oracle packages are",
+    "truncated": true,
+    "totalLines": 198,
+    "startLine": 485,
+    "nextLine": 576
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.hasExecutes@L504",
+      "confidence": 1,
+      "name": "hasExecutes",
+      "qualifiedName": "Verbs.gaps.hasExecutes",
+      "signature": "hasExecutes(…)",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 504
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.referencedBy@L509",
+      "confidence": 1,
+      "name": "referencedBy",
+      "qualifiedName": "Verbs.gaps.referencedBy",
+      "signature": "referencedBy(…)",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 509
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L353",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "Verbs.neighbors",
+      "signature": "neighbors(args: {\n    id: string;\n    rel?: string;\n    dir?: ApiDir;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 353
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#expectedBodyFile@L35",
+      "confidence": 1,
+      "name": "expectedBodyFile",
+      "qualifiedName": "expectedBodyFile",
+      "signature": "expectedBodyFile(specFile: string): string | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 35
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L468",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "heading": "3.1 Framework-semantics tier (schema 1.3)",
+      "anchor": "3-1-framework-semantics-tier-schema-1-3",
+      "snippet": "3.1 Framework-semantics tier (schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests-3",
+      "heading": "Tests",
+      "anchor": "tests-3",
+      "snippet": "Tests",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "heading": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "anchor": "surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "snippet": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-7-mcp-server-verification-the-real-test",
+      "heading": "5.7 MCP server verification (the real test)",
+      "anchor": "5-7-mcp-server-verification-the-real-test",
+      "snippet": "5.7 MCP server verification (the real test)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#what-this-is",
+      "heading": "What this is",
+      "anchor": "what-this-is",
+      "snippet": "What this is",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#9-user-research-plan-q27-q30",
+      "heading": "9. User Research Plan [Q27–Q30]",
+      "anchor": "9-user-research-plan-q27-q30",
+      "snippet": "9. User Research Plan [Q27–Q30]",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#table-of-contents",
+      "heading": "Table of contents",
+      "anchor": "table-of-contents",
+      "snippet": "Table of contents",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#participants-screener-q30",
+      "heading": "Participants & screener [Q30]",
+      "anchor": "participants-screener-q30",
+      "snippet": "Participants & screener [Q30]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+    "procedureName": "Verbs.gaps",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L491",
+      "cond:packages/mcp/src/verbs.ts@L492",
+      "cond:packages/mcp/src/verbs.ts@L498",
+      "cond:packages/mcp/src/verbs.ts@L501",
+      "cond:packages/mcp/src/verbs.ts@L634",
+      "cond:packages/mcp/src/verbs.ts@L525",
+      "cond:packages/mcp/src/verbs.ts@L526",
+      "cond:packages/mcp/src/verbs.ts@L549",
+      "cond:packages/mcp/src/verbs.ts@L579",
+      "cond:packages/mcp/src/verbs.ts@L580",
+      "cond:packages/mcp/src/verbs.ts@L581",
+      "cond:packages/mcp/src/verbs.ts@L587",
+      "cond:packages/mcp/src/verbs.ts@L590",
+      "cond:packages/mcp/src/verbs.ts@L609",
+      "cond:packages/mcp/src/verbs.ts@L618",
+      "cond:packages/mcp/src/verbs.ts@L645",
+      "cond:packages/mcp/src/verbs.ts@L647",
+      "cond:packages/mcp/src/verbs.ts@L649"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L492",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L491",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L492",
+            "expr": "n.type && CALLABLE_SYMBOL_TYPES.has(n.type)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6e5a7fc71b03fbecd4215e0b0df4155bb8e2d9379cea1b1722c24d8da4ee30f9",
+          "target": "stmt:packages/mcp/src/verbs.ts@L492",
+          "line": 492,
+          "expr": "callables.push(n);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L498",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L498",
+            "expr": "callables",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ba3e6244891eee0375fdb751848b9fd07d707a8b58803cdf02830e60d31afb28",
+          "target": "stmt:packages/mcp/src/verbs.ts@L499",
+          "line": 499,
+          "expr": "const key = (c.qualifiedName ?? c.name ?? c.id).toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L498",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L498",
+            "expr": "callables",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b4b4d4fdbef3bd6dbef0400bd58e08b663f80a8a43da8312149df99b5a955c4b",
+          "target": "stmt:packages/mcp/src/verbs.ts@L500",
+          "line": 500,
+          "expr": "const arr = byName.get(key);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L501",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L498",
+            "expr": "callables"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L501",
+            "expr": "arr",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fcfd9193c7cd328be367e6a43f54283f571662deb670cc25673cd257da666e1d",
+          "target": "stmt:packages/mcp/src/verbs.ts@L501",
+          "line": 501,
+          "expr": "arr.push(c);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L501",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L498",
+            "expr": "callables"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L501",
+            "expr": "arr",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e44fabdc00ead4479d797193f91fe215ef1dd6823022ada0bbb3fffd825cb590",
+          "target": "stmt:packages/mcp/src/verbs.ts@L502",
+          "line": 502,
+          "expr": "byName.set(key, [c]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5e45cd88f50adee4d163e95b4e859db2270dd994d5537b9e98ba6d74c473ba49",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.hasExecutes@L504",
+          "expr": "hasExecutes"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L634",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L634",
+            "expr": "soul.iterate('symbol')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5a8b6f3b34ec58e11e4d59e98e739c6ef914f263309d16e8b9fd61e40e101e49",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L353",
+          "expr": "neighbors",
+          "line": 504
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7ef16425408f132ff056a5ec5f0be13ec35369bd46c1ca9c7878a8040a94f154",
+          "target": "stmt:packages/mcp/src/verbs.ts@L504",
+          "line": 504,
+          "expr": "const hasExecutes = (id: string): boolean => idx.neighbors(id, 'executes', 'down').some(keep);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fd3e796c157b36a76e934c4bb6ca99c13df959088d64177f2012b2045fe58f5b",
+          "target": "stmt:packages/mcp/src/verbs.ts@L509",
+          "line": 509,
+          "expr": "const referencedBy = (group: Node[]): { count: number; files: string[] } => {\n      const files = new Set<string>();\n      let count = 0;\n      for (const c of group) {\n        for (const e of idx.neighbors(c.id, 'calls', 'up')) {\n          if (!keep(e)) continue;\n          count++;\n          const caller = soul.getNode(e.src);\n          if (caller?.file) files.add(caller.file);\n        }\n      }\n      return { count, files: [...files].sort() };\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L526",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L525",
+            "expr": "byName"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L526",
+            "expr": "group.some((c) => hasExecutes(c.id))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8658a1d3e0c4dbce35165099ae7442de35435b199e9546976586fde239dd8642",
+          "target": "stmt:packages/mcp/src/verbs.ts@L527",
+          "line": 527,
+          "expr": "implementedNames.add(key);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L549",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L549",
+            "expr": "soul.iterate('symbol')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6a60974576620978317b1c7ff337a5d1bb937db2bcd4c51114919d76d42a9e1d",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.referencedBy@L509",
+          "expr": "referencedBy",
+          "line": 532
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L525",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L525",
+            "expr": "byName",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:294fffb1d683cd1c61aab3b05dc9baa2e75a7c47f485aab79e767dd9de39c92f",
+          "target": "stmt:packages/mcp/src/verbs.ts@L532",
+          "line": 532,
+          "expr": "const refs = referencedBy(group);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L525",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L525",
+            "expr": "byName",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e7dfad2a4bc7b85200d48695ecb1fe337ae7a4e0f0e5b140feae2548029cd973",
+          "target": "stmt:packages/mcp/src/verbs.ts@L533",
+          "line": 533,
+          "expr": "unimplemented.push({\n        id: rep.id,\n        ...(rep.name ? { name: rep.name } : {}),\n        ...(rep.qualifiedName ? { qualifiedName: rep.qualifiedName } : {}),\n        type: rep.type,\n        ...(rep.file ? { file: rep.file } : {}),\n        ...(rep.span ? { line: rep.span.start } : {}),\n        ...(group.length > 1 ? { declaredIn: group.map((c) => c.file).filter(Boolean) } : {}),\n        referencedBy: refs,\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L549",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L549",
+            "expr": "soul.iterate('symbol')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5332ab9a4e9a9ff6fb3ca6818d11d433092333433e6ed1e1211495d618f0fb2c",
+          "target": "stmt:packages/mcp/src/verbs.ts@L551",
+          "line": 551,
+          "expr": "const members = idx\n        .neighbors(n.id, 'member-of', 'up')\n        .map((e) => soul.getNode(e.src))\n        .filter((m): m is Node => !!m && !!m.type && CALLABLE_SYMBOL_TYPES.has(m.type));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L549",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L549",
+            "expr": "soul.iterate('symbol')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fdfeff4301435eda50590f8310f58473a77a6ed2b7b6a7febbc6938ee447dbac",
+          "target": "stmt:packages/mcp/src/verbs.ts@L556",
+          "line": 556,
+          "expr": "const implemented = members.filter((m) =>\n        implementedNames.has((m.qualifiedName ?? m.name ?? m.id).toLowerCase()),\n      ).length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L549",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L549",
+            "expr": "soul.iterate('symbol')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cd322d20ccdc1f798ba939dc80516d3135476ea2742761850d35a27b18394d60",
+          "target": "stmt:packages/mcp/src/verbs.ts@L560",
+          "line": 560,
+          "expr": "const hasBodyFile = members.some((m) => /\\.(pkb|pck|pls|pkh)$/i.test(m.file ?? ''));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L549",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L549",
+            "expr": "soul.iterate('symbol')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31b8bfd3401b8a2245d955994a3ab41acab11b6ee7ebf1498a190239bea4a4b6",
+          "target": "stmt:packages/mcp/src/verbs.ts@L563",
+          "line": 563,
+          "expr": "packageSpecsWithoutBody.push({\n        id: n.id,\n        ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),\n        ...(n.name ? { name: n.name } : {}),\n        ...(n.file ? { file: n.file } : {}),\n        declaredCount: members.length,\n        implementedCount: 0,\n        ...(specFile ? { expectedBodyFile: expectedBodyFile(specFile) } : {}),\n        referencedBy: referencedBy(members),\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L549",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L549",
+            "expr": "soul.iterate('symbol')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:84842f794a491350ae6c87f83c521ad4afa97af9885ccf199bd7bc7e2bbc54b3",
+          "target": "sym:packages/mcp/src/verbs.ts#expectedBodyFile@L35",
+          "expr": "expectedBodyFile",
+          "line": 570
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L580",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L579",
+            "expr": "callables"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L580",
+            "expr": "c.name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:447e710e904178be28297940dd8b977f9e9b1c2610aae27012a2faf2c454bed0",
+          "target": "stmt:packages/mcp/src/verbs.ts@L580",
+          "line": 580,
+          "expr": "nameIndex.add(c.name.toLowerCase());"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L581",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L579",
+            "expr": "callables"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L581",
+            "expr": "c.qualifiedName",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b3504d38254237784ea5710442bad2af1c6b63ff2078cce6bbacb753140d4821",
+          "target": "stmt:packages/mcp/src/verbs.ts@L582",
+          "line": 582,
+          "expr": "nameIndex.add(c.qualifiedName.toLowerCase());"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L581",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L579",
+            "expr": "callables"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L581",
+            "expr": "c.qualifiedName",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a4231ffcef462b1645f9bdd73e801e9b89d4b37ee0e3ef56b43dd7f3c99aec27",
+          "target": "stmt:packages/mcp/src/verbs.ts@L583",
+          "line": 583,
+          "expr": "nameIndex.add((c.qualifiedName.split('.').pop() ?? '').toLowerCase());"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L590",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L587",
+            "expr": "callables"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L590",
+            "expr": "sites",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:951aa0650b5b08a683bd6bc45fd4a9d7c4b715fe8a2c6b6bce2ff68d390c856e",
+          "target": "stmt:packages/mcp/src/verbs.ts@L591",
+          "line": 591,
+          "expr": "const simple = (s.callee.split('.').pop() ?? s.callee).toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L590",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L587",
+            "expr": "callables"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L590",
+            "expr": "sites",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d045f164dfedbafef862d345e6511a02a9700875167aec57148900ff80f75e64",
+          "target": "stmt:packages/mcp/src/verbs.ts@L593",
+          "line": 593,
+          "expr": "unresolvedCallSites.push({\n          caller: c.id,\n          ...(c.qualifiedName ? { callerName: c.qualifiedName } : {}),\n          ...(c.file ? { callerFile: c.file } : {}),\n          callee: s.callee,\n          line: s.line,\n          builtin: BUILTIN.test(s.callee),\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L609",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L609",
+            "expr": "soul.iterate('symbol')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8942190dbc74d1fa7d3c8d7849115fa0f294206fd8f71cb5b1e6e2d58b4601e6",
+          "target": "stmt:packages/mcp/src/verbs.ts@L611",
+          "line": 611,
+          "expr": "const members = idx\n        .neighbors(n.id, 'member-of', 'up')\n        .map((e) => soul.getNode(e.src))\n        .filter((m): m is Node => !!m && !!m.type && CALLABLE_SYMBOL_TYPES.has(m.type));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L609",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L609",
+            "expr": "soul.iterate('symbol')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:23c643d593d165d8aa2dc5b479818f3cb66418d88940e85b717f344c31f2c4dc",
+          "target": "stmt:packages/mcp/src/verbs.ts@L615",
+          "line": 615,
+          "expr": "const routeCount = members.filter((m) =>\n        idx.neighbors(m.id, 'exposes', 'down').some(keep),\n      ).length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L618",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L609",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L618",
+            "expr": "routeCount === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f50d49272a21f092c337af35e81b66b7f802d55f3a9ea5b54236283a8edbd46",
+          "target": "stmt:packages/mcp/src/verbs.ts@L619",
+          "line": 619,
+          "expr": "controllersWithoutRoutes.push({\n          id: n.id,\n          ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),\n          ...(n.name ? { name: n.name } : {}),\n          ...(n.file ? { file: n.file } : {}),\n          memberCount: members.length,\n          routeCount: 0,\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L634",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L634",
+            "expr": "soul.iterate('symbol')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:be6946b148fd6b45c5791fe684a51698135196ee6f42262b98632fcad4a07be1",
+          "target": "stmt:packages/mcp/src/verbs.ts@L637",
+          "line": 637,
+          "expr": "const emitted = new Set(\n        idx\n          .neighbors(n.id, 'injects', 'down')\n          .filter(keep)\n          .map((e) => e.dst),\n      );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L645",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L634",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L645",
+            "expr": "injects",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ee5db791f3de4dd63e86a82ac880fa3f54c46180c66d478e060d8601920fb8ba",
+          "target": "stmt:packages/mcp/src/verbs.ts@L646",
+          "line": 646,
+          "expr": "const ok = [...emitted].some((id) => id.toLowerCase().includes(t.toLowerCase()));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L647",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L634",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L645",
+            "expr": "injects"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L647",
+            "expr": "!ok",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:34d24dda13478470319695bbebd1732720758f92817da65275bdb88eb4e77b41",
+          "target": "stmt:packages/mcp/src/verbs.ts@L647",
+          "line": 647,
+          "expr": "missing.push(t);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "guard": "cond:packages/mcp/src/verbs.ts@L649",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L634",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L649",
+            "expr": "missing.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af3b942e2a352bf8a41e30007a1160e6d4f653a62c8f8169ad6851ebd02dc7ac",
+          "target": "stmt:packages/mcp/src/verbs.ts@L650",
+          "line": 650,
+          "expr": "unresolvedInjects.push({\n          id: n.id,\n          ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),\n          ...(n.name ? { name: n.name } : {}),\n          ...(n.file ? { file: n.file } : {}),\n          ...(n.stereotype ? { stereotype: n.stereotype } : {}),\n          unresolved: missing,\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L485",
+        "procedureName": "Verbs.gaps",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6eb73d796d9e964ba208706f9c886f30079780c8072f1653fbff5937ac5f8186",
+          "target": "stmt:packages/mcp/src/verbs.ts@L661",
+          "line": 661,
+          "expr": "return {\n      unimplemented,\n      packageSpecsWithoutBody,\n      unresolvedCallSites,\n      controllersWithoutRoutes,\n      unresolvedInjects,\n      summary: {\n        unimplemented: unimplemented.length,\n        packageSpecsWithoutBody: packageSpecsWithoutBody.length,\n        unresolvedCallSites: unresolvedCallSites.length,\n        controllersWithoutRoutes: controllersWithoutRoutes.length,\n        unresolvedInjects: unresolvedInjects.length,\n        // `incomplete` iff the soul has any body-missing gap — an unimplemented callable or a\n        // package spec with no body. The headline the loan-rule-engine feedback wanted: the crib\n        // says up front \"you cannot trust behavior analysis here — a body is missing\".\n        analysisReadiness:\n          unimplemented.length > 0 || packageSpecsWithoutBody.length > 0\n            ? 'incomplete'\n            : 'complete',\n      },\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 27,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 27,
+    "assignments": 0,
+    "conditions": 15,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 61,
+      "unresolved": 35
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "35 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

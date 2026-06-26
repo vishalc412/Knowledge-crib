@@ -1,0 +1,154 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLikeSymbol@L769",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:45e4d0a389f42ada4383fcd9a4c620900b2a2ea72b0fa6ef5bd983e588b31836",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLikeSymbol@L769",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isFunctionLikeSymbol",
+    "qualifiedName": "isFunctionLikeSymbol",
+    "signature": "isFunctionLikeSymbol(node: ts.Node): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 769,
+      "end": 782
+    },
+    "callSites": [
+      {
+        "callee": "isFunctionDeclaration",
+        "line": 771
+      },
+      {
+        "callee": "isMethodDeclaration",
+        "line": 772
+      },
+      {
+        "callee": "isConstructorDeclaration",
+        "line": 773
+      },
+      {
+        "callee": "isGetAccessorDeclaration",
+        "line": 774
+      },
+      {
+        "callee": "isSetAccessorDeclaration",
+        "line": 775
+      },
+      {
+        "callee": "isVariableStatement",
+        "line": 776
+      },
+      {
+        "callee": "isFunctionLike",
+        "line": 779
+      }
+    ]
+  },
+  "source": {
+    "text": "function isFunctionLikeSymbol(node: ts.Node): boolean {\n  return (\n    ts.isFunctionDeclaration(node) ||\n    ts.isMethodDeclaration(node) ||\n    ts.isConstructorDeclaration(node) ||\n    ts.isGetAccessorDeclaration(node) ||\n    ts.isSetAccessorDeclaration(node) ||\n    (ts.isVariableStatement(node) &&\n      (() => {\n        const d = node.declarationList.declarations[0];\n        return !!(d?.initializer && isFunctionLike(d.initializer));\n      })())\n  );\n}",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 769
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBodies@L257",
+      "confidence": 1,
+      "name": "walkBodies",
+      "qualifiedName": "TypeScriptExtractor.walkBodies",
+      "signature": "walkBodies(path: string, ctx: ExtractCtx, symbols: LocalSymbol[], byKey: Map<string, string>, lineOf: (pos: number) => number, nodes: Node[], edges: Edge[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 257
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLike@L1053",
+      "confidence": 1,
+      "name": "isFunctionLike",
+      "qualifiedName": "isFunctionLike",
+      "signature": "isFunctionLike(node: ts.Node): node is ts.ArrowFunction | ts.FunctionExpression",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 1053
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L768",
+      "snippet": "/** Is this declaration a function-like symbol whose body we should walk for the decision table? */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLikeSymbol@L769",
+    "procedureName": "isFunctionLikeSymbol",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLikeSymbol@L769",
+        "procedureName": "isFunctionLikeSymbol",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6828514b758f40a886061e4adec96f6f6e9fc6870f81c8ef438266c79e13edb1",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L770",
+          "line": 770,
+          "expr": "return (\n    ts.isFunctionDeclaration(node) ||\n    ts.isMethodDeclaration(node) ||\n    ts.isConstructorDeclaration(node) ||\n    ts.isGetAccessorDeclaration(node) ||\n    ts.isSetAccessorDeclaration(node) ||\n    (ts.isVariableStatement(node) &&\n      (() => {\n        const d = node.declarationList.declarations[0];\n        return !!(d?.initializer && isFunctionLike(d.initializer));\n      })())\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLikeSymbol@L769",
+        "procedureName": "isFunctionLikeSymbol",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:61ad355f99f7fc6a7c2517297c7676ec1b90663d06c9275a6803fe54695b76bb",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLike@L1053",
+          "expr": "isFunctionLike",
+          "line": 779
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 7,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

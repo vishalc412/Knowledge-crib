@@ -1,0 +1,280 @@
+{
+  "id": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4a8b439ddf052aea0bd38234f044414325bd59e71f32014258c36887778d1285",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runDossiers",
+    "qualifiedName": "runDossiers",
+    "signature": "runDossiers(soul: SoulStore, repoRoot: string, now: string): DossierStats",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/dossiers.ts",
+    "span": {
+      "start": 38,
+      "end": 67
+    },
+    "callSites": [
+      {
+        "callee": "getManifest",
+        "line": 40
+      },
+      {
+        "callee": "buildDossier",
+        "line": 49
+      },
+      {
+        "callee": "readDossier",
+        "line": 54
+      },
+      {
+        "callee": "writeDossier",
+        "line": 62
+      }
+    ]
+  },
+  "source": {
+    "text": "export function runDossiers(soul: SoulStore, repoRoot: string, now: string): DossierStats {\n  const cribDir = soul.cribDir;\n  const schemaVersion = soul.getManifest().schemaVersion;\n  let candidates = 0;\n  let written = 0;\n  let fresh = 0;\n  let skipped = 0;\n\n  for (const node of soul.iterate()) {\n    if (node.kind !== 'symbol' || !node.type || !CALLABLE_SYMBOL_TYPES.has(node.type)) continue;\n    candidates++;\n    const dossier = buildDossier(soul, repoRoot, node.id, now);\n    if (!dossier) {\n      skipped++;\n      continue;\n    }\n    const existing = readDossier(cribDir, node.id, {\n      nodeHash: node.hash,\n      schemaVersion,\n    });\n    if (!existing.missing && !existing.stale) {\n      fresh++;\n      continue;\n    }\n    writeDossier(cribDir, dossier);\n    written++;\n  }\n\n  return { candidates, written, fresh, skipped };\n}",
+    "truncated": false,
+    "totalLines": 30,
+    "startLine": 38
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L104",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 104
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+      "confidence": 1,
+      "name": "buildDossier",
+      "qualifiedName": "buildDossier",
+      "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 134
+    },
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#readDossier@L56",
+      "confidence": 1,
+      "name": "readDossier",
+      "qualifiedName": "readDossier",
+      "signature": "readDossier(cribDir: string, nodeId: string, live: { nodeHash?: string; schemaVersion: string }): DossierRead",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 56
+    },
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#writeDossier@L31",
+      "confidence": 1,
+      "name": "writeDossier",
+      "qualifiedName": "writeDossier",
+      "signature": "writeDossier(cribDir: string, dossier: Dossier): void",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 31
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/dossiers.ts@L33",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4d-dossier-the-persisted-reusable-deep-context-workstream-d-e",
+      "heading": "4d. Dossier — the persisted reusable deep context (Workstream D/E)",
+      "anchor": "4d-dossier-the-persisted-reusable-deep-context-workstream-d-e",
+      "snippet": "4d. Dossier — the persisted reusable deep context (Workstream D/E)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+    "procedureName": "runDossiers",
+    "conditions": [
+      "cond:packages/pipeline/src/dossiers.ts@L46"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+        "procedureName": "runDossiers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:933b363422b9420aa32e50a347a6324d44033373cfe8d715534677510f8b4e87",
+          "target": "stmt:packages/pipeline/src/dossiers.ts@L40",
+          "line": 40,
+          "expr": "const schemaVersion = soul.getManifest().schemaVersion;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+        "procedureName": "runDossiers",
+        "guard": "cond:packages/pipeline/src/dossiers.ts@L46",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/dossiers.ts@L46",
+            "expr": "soul.iterate()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a4c085ddadcc5df58fd75ee42d27497754c72096f5ccbfbe90d2a32489e7c01d",
+          "target": "stmt:packages/pipeline/src/dossiers.ts@L49",
+          "line": 49,
+          "expr": "const dossier = buildDossier(soul, repoRoot, node.id, now);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+        "procedureName": "runDossiers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2010f9e6975e8198f1903a09e988957cd2a829b7003ced313badd9fbd80c6a2c",
+          "target": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+          "expr": "buildDossier",
+          "line": 49
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+        "procedureName": "runDossiers",
+        "guard": "cond:packages/pipeline/src/dossiers.ts@L46",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/dossiers.ts@L46",
+            "expr": "soul.iterate()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:071855a00d044b60ffc83793a47babacfb2adc9564d66e94c5e734c8ec0f98cc",
+          "target": "stmt:packages/pipeline/src/dossiers.ts@L54",
+          "line": 54,
+          "expr": "const existing = readDossier(cribDir, node.id, {\n      nodeHash: node.hash,\n      schemaVersion,\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+        "procedureName": "runDossiers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:abd7e6bb6633666fb0556c5f8bbd9429c15afaaf88240f12e04a24500382c8fe",
+          "target": "sym:packages/core/src/dossier/persist.ts#readDossier@L56",
+          "expr": "readDossier",
+          "line": 54
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+        "procedureName": "runDossiers",
+        "guard": "cond:packages/pipeline/src/dossiers.ts@L46",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/dossiers.ts@L46",
+            "expr": "soul.iterate()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f6e0dbc60b3b13afabdb5fbf5d94deb2f65e0a0bfee44079e949a9650d547d8b",
+          "target": "stmt:packages/pipeline/src/dossiers.ts@L62",
+          "line": 62,
+          "expr": "writeDossier(cribDir, dossier);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+        "procedureName": "runDossiers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1cb0a7012cdd2ebae523ec3eafe112248f9a01e5445cd88c716996e4f11ec951",
+          "target": "sym:packages/core/src/dossier/persist.ts#writeDossier@L31",
+          "expr": "writeDossier",
+          "line": 62
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+        "procedureName": "runDossiers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:449e97e2dc2401f12ad9ae558ca6b22b9b3445a23074db4da0361d759f194c01",
+          "target": "stmt:packages/pipeline/src/dossiers.ts@L66",
+          "line": 66,
+          "expr": "return { candidates, written, fresh, skipped };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/pipeline/src/pipeline.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

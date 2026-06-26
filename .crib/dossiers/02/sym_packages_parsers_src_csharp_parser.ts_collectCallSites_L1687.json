@@ -1,0 +1,261 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1687",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d60e3f6c775ddbcbabcc50776f48aff3cb10445ffd01c6c9abb020ed05b6c7e0",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1687",
+    "kind": "symbol",
+    "type": "function",
+    "name": "collectCallSites",
+    "qualifiedName": "collectCallSites",
+    "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): CsharpCallSite[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 1687,
+      "end": 1724
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 1706
+      },
+      {
+        "callee": "push",
+        "line": 1711
+      },
+      {
+        "callee": "slice",
+        "line": 1713
+      }
+    ]
+  },
+  "source": {
+    "text": "export function collectCallSites(tokens: Token[], excluded: Set<number>): CsharpCallSite[] {\n  const calls: CsharpCallSite[] = [];\n  let i = 0;\n  while (i < tokens.length) {\n    const tk = tokens[i]!;\n    if (tk.type !== 'NAME') {\n      i++;\n      continue;\n    }\n    const chain: string[] = [tk.value];\n    const line = tk.line;\n    let j = i + 1;\n    while (\n      j < tokens.length &&\n      tokens[j]!.type === 'OP' &&\n      tokens[j]!.value === '.' &&\n      tokens[j + 1] &&\n      tokens[j + 1]!.type === 'NAME'\n    ) {\n      chain.push(tokens[j + 1]!.value);\n      j += 2;\n    }\n    if (j < tokens.length && tokens[j]!.type === 'OP' && tokens[j]!.value === '(') {\n      if (!excluded.has(j)) {\n        calls.push({\n          head: chain[0]!,\n          tail: chain.slice(1),\n          name: chain[chain.length - 1]!,\n          line,\n        });\n      }\n      i = j + 1;\n      continue;\n    }\n    i++;\n  }\n  return calls;\n}",
+    "truncated": false,
+    "totalLines": 38,
+    "startLine": 1687
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.firstCallSiteFrom@L1348",
+      "confidence": 1,
+      "name": "firstCallSiteFrom",
+      "qualifiedName": "Parser.firstCallSiteFrom",
+      "signature": "firstCallSiteFrom(from: number): CsharpCallSite | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1348
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+      "confidence": 1,
+      "name": "parseCsharp",
+      "qualifiedName": "parseCsharp",
+      "signature": "parseCsharp(src: string): CsharpModule",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 176
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/parser.ts@L1682",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1687",
+    "procedureName": "collectCallSites",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/parser.ts@L1690",
+      "cond:packages/parsers/src/csharp/parser.ts@L1699",
+      "cond:packages/parsers/src/csharp/parser.ts@L1709",
+      "cond:packages/parsers/src/csharp/parser.ts@L1710"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1687",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1699",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1690",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1699",
+            "expr": "j < tokens.length &&\n      tokens[j]!.type === 'OP' &&\n      tokens[j]!.value === '.' &&\n      tokens[j + 1] &&\n      tokens[j + 1]!.type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2f11fc0ab1231c6ca52b8e4412b78775d137eae42b14921fae63b3ba8d42879b",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1706",
+          "line": 1706,
+          "expr": "chain.push(tokens[j + 1]!.value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1687",
+        "procedureName": "collectCallSites",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:408214d230ed4d4b94a2db5a267929f8af345b46d05f8deff173c8d2fbdfcdb7",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1706
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1687",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1699",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1690",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1699",
+            "expr": "j < tokens.length &&\n      tokens[j]!.type === 'OP' &&\n      tokens[j]!.value === '.' &&\n      tokens[j + 1] &&\n      tokens[j + 1]!.type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:42ced547b9b5398de309377f37a8e024f427ab2b742229f9cabc421650477a91",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1707",
+          "line": 1707,
+          "expr": "j += 2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1687",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1710",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1690",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1709",
+            "expr": "j < tokens.length && tokens[j]!.type === 'OP' && tokens[j]!.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1710",
+            "expr": "!excluded.has(j)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9373e3a650eaf82d33e61b9aea2d8edce07ffc4e5487a6832fe527888be60845",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1711",
+          "line": 1711,
+          "expr": "calls.push({\n          head: chain[0]!,\n          tail: chain.slice(1),\n          name: chain[chain.length - 1]!,\n          line,\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1687",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1709",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1690",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1709",
+            "expr": "j < tokens.length && tokens[j]!.type === 'OP' && tokens[j]!.value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2a9579ab41564fac60eadad5d7b7f923f0192afb345c383b3c6febe6e67adb9b",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1718",
+          "line": 1718,
+          "expr": "i = j + 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1687",
+        "procedureName": "collectCallSites",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c8b37858b07b5835cf0371142b2a7bb80277e55cf4d33cdaee8051f20b2bdba5",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1723",
+          "line": 1723,
+          "expr": "return calls;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 2,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

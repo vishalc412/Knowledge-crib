@@ -20,7 +20,12 @@ export type NodeKind =
   | 'raise' // RAISE_APPLICATION_ERROR(code,msg) / RAISE <ex>
   | 'cursor' // CURSOR c IS <query>
   | 'assignment' // target := expr  (provenance of a variable)
-  | 'case-branch'; // one per CASE WHEN <val> THEN …
+  | 'case-branch' // one per CASE WHEN <val> THEN …
+  // 1.3 (framework-semantics layer): the app-framework equivalents of SQL's data-model/data-flow —
+  // what makes a Java/Node/React/Angular graph REPLACE reading the code.
+  | 'route' // an HTTP endpoint: httpMethod + routePath (Spring @GetMapping, Express app.get, Nest @Get)
+  | 'field' // a class/entity/component field (JPA @Column, React prop/state, Angular @Input)
+  | 'component'; // a UI component (React function/class component, Angular @Component)
 
 export type Rel =
   | 'calls'
@@ -39,7 +44,12 @@ export type Rel =
   | 'raises' // action → raise node (the error this action can raise)
   | 'handles' // exception-handler → the statement(s)/block it guards
   | 'iterates' // loop/cursor-for → cursor (the row source a loop walks)
-  | 'declares'; // unit → cursor/variable/package-state it declares
+  | 'declares' // unit → cursor/variable/package-state it declares
+  // 1.3 (framework-semantics layer):
+  | 'exposes' // handler symbol → route (the endpoint a controller method serves)
+  | 'injects' // consumer symbol → injected dependency type (the DI graph)
+  | 'renders' // component → child component (the UI render tree)
+  | 'produces'; // producer symbol → produced type (a @Bean/@Factory method → its return type)
 
 /** HOW an edge was derived — also drives ranking: static > explicit > identifier > path > semantic > inferred */
 export type Method = 'static' | 'explicit' | 'identifier' | 'path' | 'semantic' | 'inferred';
@@ -62,6 +72,9 @@ export const NODE_KINDS: readonly NodeKind[] = [
   'cursor',
   'assignment',
   'case-branch',
+  'route',
+  'field',
+  'component',
 ];
 
 export const RELS: readonly Rel[] = [
@@ -81,6 +94,10 @@ export const RELS: readonly Rel[] = [
   'handles',
   'iterates',
   'declares',
+  'exposes',
+  'injects',
+  'renders',
+  'produces',
 ];
 
 export const METHODS: readonly Method[] = [

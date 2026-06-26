@@ -1,0 +1,669 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:03858f650de1406937075406924cc162884983d1fb3eba7acad204de53f28248",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+    "kind": "symbol",
+    "type": "method",
+    "name": "skipGenericAngle",
+    "qualifiedName": "Parser.skipGenericAngle",
+    "signature": "skipGenericAngle(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 649,
+      "end": 675
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 653
+      },
+      {
+        "callee": "next",
+        "line": 658
+      },
+      {
+        "callee": "next",
+        "line": 663
+      },
+      {
+        "callee": "next",
+        "line": 668
+      },
+      {
+        "callee": "next",
+        "line": 673
+      }
+    ]
+  },
+  "source": {
+    "text": "  private skipGenericAngle(): void {\n    if (!this.isOp('<')) return;\n    let depth = 0;\n    while (!this.atEnd()) {\n      const tk = this.peek();\n      if (tk.type === 'OP') {\n        if (tk.value === '<') depth++;\n        else if (tk.value === '>') {\n          depth--;\n          this.next();\n          if (depth <= 0) return;\n          continue;\n        } else if (tk.value === '>>') {\n          depth -= 2;\n          this.next();\n          if (depth <= 0) return;\n          continue;\n        } else if (tk.value === '>>>') {\n          depth -= 3;\n          this.next();\n          if (depth <= 0) return;\n          continue;\n        } else if (tk.value === ';' || tk.value === '{') return; // malformed; bail\n      }\n      this.next();\n    }\n  }",
+    "truncated": false,
+    "totalLines": 27,
+    "startLine": 649
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDottedNameList@L620",
+      "confidence": 1,
+      "name": "parseDottedNameList",
+      "qualifiedName": "Parser.parseDottedNameList",
+      "signature": "parseDottedNameList(stopKeywords: string[], stopOps: string[] = ['{', ';']): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 620
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L286",
+      "confidence": 1,
+      "name": "parseType",
+      "qualifiedName": "Parser.parseType",
+      "signature": "parseType(kind: 'class' | 'interface' | 'enum' | 'record', startLine: number, annotations: string[], modifiers: string[], annos: JavaAnno[] = []): JavaDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 286
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.atEnd@L826",
+      "confidence": 1,
+      "name": "atEnd",
+      "qualifiedName": "Parser.atEnd",
+      "signature": "atEnd(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 826
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L801",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 801
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.next@L818",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 818
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L823",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 823
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.ts@L648",
+      "snippet": "/** Skip a generic argument list `<...>` balanced on `<`/`>`/`>>`/`>>>` (the Java split rule). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+    "procedureName": "Parser.skipGenericAngle",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.ts@L650",
+      "cond:packages/parsers/src/java/parser.ts@L652",
+      "cond:packages/parsers/src/java/parser.ts@L654",
+      "cond:packages/parsers/src/java/parser.ts@L655",
+      "cond:packages/parsers/src/java/parser.ts@L656",
+      "cond:packages/parsers/src/java/parser.ts@L659",
+      "cond:packages/parsers/src/java/parser.ts@L661",
+      "cond:packages/parsers/src/java/parser.ts@L664",
+      "cond:packages/parsers/src/java/parser.ts@L666",
+      "cond:packages/parsers/src/java/parser.ts@L669",
+      "cond:packages/parsers/src/java/parser.ts@L671"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L650",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L650",
+            "expr": "!this.isOp('<')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa04eb446ede1454b61d3fa61b272e6b3cb6e35bfef2621245619bb881381fd6",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L650",
+          "line": 650,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L652",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L652",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e8972eec2c7f4a0dd4e19b256f9b05c1a861ef802163622a9db0d5cf6824663d",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L823",
+          "expr": "peek",
+          "line": 653
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L652",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L652",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7fc676ae253edd5dc05f482ef03cc4730173151ad91ffc0ab6fd0c117385226c",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L653",
+          "line": 653,
+          "expr": "const tk = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L652",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L652",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c203b7ca229c45a1a77c3a5af8503123ed1eb8cb0adba83109405d9fb8588e4e",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L818",
+          "expr": "next",
+          "line": 658
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L656",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L652",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L654",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L655",
+            "expr": "tk.value === '<'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L656",
+            "expr": "tk.value === '>'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2446cc44daf3321c9223dd7889420ca829085b90dadbccbfc4bde2fd0e8152c9",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L658",
+          "line": 658,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L659",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L652",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L654",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L655",
+            "expr": "tk.value === '<'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L656",
+            "expr": "tk.value === '>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L659",
+            "expr": "depth <= 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6e4437cb305528ee6c11825adf095a91a5ef2e345bababc3cf2c5a9fe82636b0",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L659",
+          "line": 659,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L661",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L652",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L654",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L655",
+            "expr": "tk.value === '<'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L656",
+            "expr": "tk.value === '>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L661",
+            "expr": "tk.value === '>>'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bfb43c41d62597a0031f86a40b8c7d5f764758e12fbc07a58e92a8a3ca6f37c7",
+          "target": "assign:packages/parsers/src/java/parser.ts@L662",
+          "line": 662,
+          "expr": "depth -= 2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L661",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L652",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L654",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L655",
+            "expr": "tk.value === '<'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L656",
+            "expr": "tk.value === '>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L661",
+            "expr": "tk.value === '>>'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e239db9e522f11dd34e221d68dcbdd2efbb8dbdecb5908926736df81f5ee64e",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L663",
+          "line": 663,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L664",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L652",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L654",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L655",
+            "expr": "tk.value === '<'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L656",
+            "expr": "tk.value === '>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L661",
+            "expr": "tk.value === '>>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L664",
+            "expr": "depth <= 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9e68df4f7d19171bcc3e592b9a17bdf4bffe8242d0475f5fae66c7af47705277",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L664",
+          "line": 664,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L666",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L652",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L654",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L655",
+            "expr": "tk.value === '<'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L656",
+            "expr": "tk.value === '>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L661",
+            "expr": "tk.value === '>>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L666",
+            "expr": "tk.value === '>>>'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2b6a28c1f8949d243b4a75b6908ac0de7b3de38e4538a73204123f7b0b03330b",
+          "target": "assign:packages/parsers/src/java/parser.ts@L667",
+          "line": 667,
+          "expr": "depth -= 3;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L666",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L652",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L654",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L655",
+            "expr": "tk.value === '<'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L656",
+            "expr": "tk.value === '>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L661",
+            "expr": "tk.value === '>>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L666",
+            "expr": "tk.value === '>>>'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb0afb13dd4f31b06a9ef6b409da96b8876bdcde4a4d6b17d667b3146792f369",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L668",
+          "line": 668,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L669",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L652",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L654",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L655",
+            "expr": "tk.value === '<'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L656",
+            "expr": "tk.value === '>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L661",
+            "expr": "tk.value === '>>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L666",
+            "expr": "tk.value === '>>>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L669",
+            "expr": "depth <= 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f7ce2d2237247eb7ac64fb663fb50ba8c1b35740a6eea7a71604a8d67f1a37c",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L669",
+          "line": 669,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L671",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L652",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L654",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L655",
+            "expr": "tk.value === '<'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L656",
+            "expr": "tk.value === '>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L661",
+            "expr": "tk.value === '>>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L666",
+            "expr": "tk.value === '>>>'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L671",
+            "expr": "tk.value === ';' || tk.value === '{'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5608871996c1006fcaf28ca0c412e0fc64d52179c27b5cbe9bc8dff59dc12f15",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L671",
+          "line": 671,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L652",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L652",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aa3f2354f301af05e0625914c6e4643e39416acaac502e0aa2fd882150e1e38a",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L673",
+          "line": 673,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:28b95c239e39b136c2919980a56d8e87f096e0ed2b57dde76a0c58ae3b37863f",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L801",
+          "expr": "isOp"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L649",
+        "procedureName": "Parser.skipGenericAngle",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9ff7b41fc7346fea8a1afae32c3f094d143b38e2c2da9e025d3d7104b6ac15c6",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.atEnd@L826",
+          "expr": "atEnd"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 2,
+    "conditions": 9,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 5,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

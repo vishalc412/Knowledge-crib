@@ -30,11 +30,13 @@ async function run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>
   return new JavaExtractor().extract(meta, ctxFor(text));
 }
 
-/** label a node id for readable assertions: the symbol's qualified name. */
+/** label a node id for readable assertions: the symbol/field's qualified name, else its kind. */
 function label(r: ExtractResult): (id: string) => string {
   return (id: string): string => {
     const n = r.nodes.find((x) => x.id === id);
-    return n?.kind === 'symbol' ? (n.qualifiedName ?? n.name ?? id) : (n?.kind ?? id);
+    // 1.3: `field` nodes carry a qualifiedName too (e.g. AuthController.service) — prefer it so the
+    // member-of assertions stay readable; fall back to kind for file/route/explanation nodes.
+    return n?.qualifiedName ?? n?.name ?? n?.kind ?? id;
   };
 }
 
@@ -111,6 +113,8 @@ describe('JavaExtractor — golden (Spring Boot gate)', () => {
         'AuthController.issue -> AuthController',
         'AuthController.log -> AuthController',
         'AuthController.login -> AuthController',
+        // 1.3: the constructor-injected `service` field is a `field` node, member-of its class.
+        'AuthController.service -> AuthController',
         'AuthController.validate -> AuthController',
         'BaseController -> file',
         'BaseController.textBlock -> BaseController',
@@ -157,11 +161,13 @@ describe('JavaExtractor — golden (Spring Boot gate)', () => {
     const { edges } = await run();
     const rels = new Set(edges.map((e) => e.rel));
     // Track 3 + schema 1.2 are strictly additive: executes / guarded-by from the body-walk, plus
-    // `raises` (validate throws) and `describes` (the comment above the class). Capability honesty
-    // here = NO inheritance/type edges (types:'none'; inherits/implements resolved by the
-    // JavaResolver, not emitted by this extractor).
+    // `raises` (validate throws) and `describes` (the comment above the class). Schema 1.3 adds the
+    // Spring framework-semantics pass (Pass 4): the two @GetMapping/@PostMapping handlers `exposes`
+    // their routes. Capability honesty here = NO inheritance/type edges (types:'none'; inherits/
+    // implements resolved by the JavaResolver, not emitted by this extractor). The fixture has no
+    // explicit constructor / no @Autowired field / no @Entity, so no injects/references here.
     expect(rels).toEqual(
-      new Set(['member-of', 'calls', 'executes', 'guarded-by', 'raises', 'describes']),
+      new Set(['member-of', 'calls', 'executes', 'guarded-by', 'raises', 'describes', 'exposes']),
     );
   });
 });

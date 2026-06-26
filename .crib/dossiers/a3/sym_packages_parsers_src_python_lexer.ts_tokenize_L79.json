@@ -1,0 +1,128 @@
+{
+  "id": "sym:packages/parsers/src/python/lexer.ts#tokenize@L79",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e034d03b985521bb6278640575d1e1344aa664b33698bfa7d8eee3f86f2f9784",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/lexer.ts#tokenize@L79",
+    "kind": "symbol",
+    "type": "function",
+    "name": "tokenize",
+    "qualifiedName": "tokenize",
+    "signature": "tokenize(src: string): Token[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/lexer.ts",
+    "span": {
+      "start": 79,
+      "end": 81
+    },
+    "callSites": [
+      {
+        "callee": "tokens",
+        "line": 80
+      }
+    ]
+  },
+  "source": {
+    "text": "export function tokenize(src: string): Token[] {\n  return new Lexer(src).tokens();\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 79
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#parsePython@L177",
+      "confidence": 1,
+      "name": "parsePython",
+      "qualifiedName": "parsePython",
+      "signature": "parsePython(src: string): PyModule",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 177
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 102
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/lexer.ts@L78",
+      "snippet": "/** Tokenize Python source → a flat token stream (never throws). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/lexer.ts#tokenize@L79",
+    "procedureName": "tokenize",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#tokenize@L79",
+        "procedureName": "tokenize",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:80c379ae2f7fde6f03d9f6ecdcf559907e2131da3c215f3096bd3cb2fb1a2a2a",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+          "expr": "tokens",
+          "line": 80
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#tokenize@L79",
+        "procedureName": "tokenize",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e88ff179139444776c30f327cdffebf737e7da694b290790629c4b23818737a5",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L80",
+          "line": 80,
+          "expr": "return new Lexer(src).tokens();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

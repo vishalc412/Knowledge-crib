@@ -24,6 +24,12 @@ import {
   rehydrateBody,
 } from '../source.js';
 import type { RehydratedBody } from '../source.js';
+import { type CallableCoverage, computeCoverage } from './coverage.js';
+import {
+  DOSSIER_SHAPE_VERSION,
+  type DossierFrameworkSemantics,
+  frameworkSemantics,
+} from './framework.js';
 
 const DOC_RELS = new Set(['describes', 'references']);
 
@@ -90,6 +96,34 @@ export interface Dossier {
   rules?: DecisionTable;
   /** present iff the callable owns schema-1.2 control-flow constructs */
   controlFlow?: DossierControlFlow;
+  /** present iff the node is a callable. `unimplemented` (zero `executes` body statements) is the
+   *  LOUD signal that the implementation is unavailable — the body may be in a missing file (e.g. a
+   *  PL/SQL package body), so the decision-table / control-flow fields are necessarily empty and an
+   *  analyst must not mistake "structure-only" for "complete". Universal across every language. */
+  implementation?: DossierImplementation;
+  /** present iff the node is a callable. The 360° self-report: what the graph knows about this
+   *  callable (body statements, formulas, conditions, raises, handlers, cursors, call resolution,
+   *  recursion, fidelity loss) rolled into a single `readiness` + named `caveats`. This is what an
+   *  LLM gates on so it never mistakes "structure-only" for "complete analysis". */
+  coverage?: CallableCoverage;
+  /** schema-1.3 framework-semantics relationships (the resolved complement to the node's own 1.3
+   *  identity). Present iff non-empty. The persisted dossier carries the LEAN method subset
+   *  (routes + produces the callable owns); the live `context` verb carries the full set
+   *  (dependencies / dependents / relations / renders via member-of aggregation for a class). */
+  framework?: DossierFrameworkSemantics;
+  /** dossier shape version — bumped on any Dossier interface change; independent of soul
+   *  schemaVersion so pre-change persisted artifacts are rebuilt even when schemaVersion is
+   *  unchanged (persist.readDossier ORs this into the staleness check). */
+  shapeVersion?: number;
+}
+
+/** Implementation completeness for a callable. `executesCount` = body statements the proc owns. */
+export interface DossierImplementation {
+  status: 'implemented' | 'unimplemented';
+  executesCount: number;
+  /** distinct files holding call sites that resolve to this callable (empty when nobody calls it).
+   *  Surfaces "referenced everywhere but missing" without a separate lookup. */
+  referencedByFiles: string[];
 }
 
 /**
@@ -156,6 +190,7 @@ export function buildDossier(
     schemaVersion: soul.getManifest().schemaVersion,
     nodeHash: node.hash,
     builtAt: now,
+    shapeVersion: DOSSIER_SHAPE_VERSION,
     node: publicNode(node),
     source,
     callers,
@@ -171,7 +206,30 @@ export function buildDossier(
     if (cf.raises.length || cf.handles.length || cf.iterates.length || cf.declares.length) {
       dossier.controlFlow = cf;
     }
+    // implementation completeness: counts the proc's OWN body statements (outgoing `executes`).
+    // Zero → the implementation is unavailable (body in a missing file / spec-only declaration);
+    // the decision table + controlFlow above are necessarily empty in that case, so this flag is what
+    // tells an analyst "do not expect behavior here — go find the body".
+    const execs = (outgoing.get(nodeId) ?? []).filter((e) => e.rel === 'executes' && keep(e));
+    const refFiles = new Set<string>();
+    for (const e of incoming.get(nodeId) ?? []) {
+      if (e.rel !== 'calls' || !keep(e)) continue;
+      const caller = soul.getNode(e.src);
+      if (caller?.file) refFiles.add(caller.file);
+    }
+    dossier.implementation = {
+      status: execs.length > 0 ? 'implemented' : 'unimplemented',
+      executesCount: execs.length,
+      referencedByFiles: [...refFiles].sort(),
+    };
+    // 360° self-report: reuse the adjacency we already built (no extra edge scan).
+    dossier.coverage = computeCoverage(soul, nodeId, { keep, outgoing, incoming });
   }
+  // schema-1.3 framework semantics: the LEAN method subset (routes + produces the callable owns).
+  // Reuses the single iterateEdges() adjacency already built above — no extra scan. Undefined for a
+  // non-Spring callable (no exposes/produces edges) → the key is omitted, keeping the shape honest.
+  const fw = frameworkSemantics(soul, nodeId, { keep, outgoing, incoming, lean: true });
+  if (fw) dossier.framework = fw;
   return dossier;
 }
 
@@ -199,12 +257,20 @@ export function publicNode(n: Node): Record<string, unknown> {
   if (n.whenSelector) out.whenSelector = n.whenSelector;
   if (n.assignTarget) out.assignTarget = n.assignTarget;
   if (n.cursorQuery) out.cursorQuery = n.cursorQuery;
+  if (n.exprTruncated) out.exprTruncated = n.exprTruncated;
   if (Array.isArray(n.constraints)) out.constraints = n.constraints;
   if (n.commentRef) out.commentRef = n.commentRef;
   // doc-section
   if (n.heading) out.heading = n.heading;
   if (n.level !== undefined) out.level = n.level;
   if (n.anchor) out.anchor = n.anchor;
+  // framework-semantics 1.3 identity — the handler's own route verb/path, the symbol's stereotype +
+  // framework. Without these the route section shows the route but hides the handler's own contract
+  // (e.g. its @PreAuthorize on the node), breaking the no-round-trip surfacing guarantee.
+  if (n.framework) out.framework = n.framework;
+  if (n.stereotype) out.stereotype = n.stereotype;
+  if (n.httpMethod) out.httpMethod = n.httpMethod;
+  if (n.routePath) out.routePath = n.routePath;
   // selective meta — surface the structured deep fields, not arbitrary blobs
   if (n.meta) {
     const m = n.meta as Record<string, unknown>;
@@ -214,6 +280,14 @@ export function publicNode(n: Node): Record<string, unknown> {
     if (Array.isArray(m.attributes)) out.attributes = m.attributes;
     if (m.collection !== undefined) out.collection = m.collection;
     if (m.kind !== undefined) out.kindMeta = m.kind;
+    if (m.recursive !== undefined) out.recursive = m.recursive;
+    if (Array.isArray(m.calls)) out.callSites = m.calls;
+    // framework-semantics 1.3 meta — route params/security, DI injects, @Bean produces, JPA column.
+    if (Array.isArray(m.params)) out.params = m.params;
+    if (m.security !== undefined) out.security = m.security;
+    if (Array.isArray(m.injects)) out.injects = m.injects;
+    if (Array.isArray(m.produces)) out.produces = m.produces;
+    if (m.column !== undefined) out.column = m.column;
   }
   return out;
 }

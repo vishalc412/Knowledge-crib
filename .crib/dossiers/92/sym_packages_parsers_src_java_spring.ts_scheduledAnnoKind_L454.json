@@ -1,0 +1,189 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L454",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:0bdc8d9d1b73b45481069d41f4a024700786eb1501a5d7bf8260760b75b248a9",
+  "builtAt": "2026-06-25T22:41:29.085Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L454",
+    "kind": "symbol",
+    "type": "function",
+    "name": "scheduledAnnoKind",
+    "qualifiedName": "scheduledAnnoKind",
+    "signature": "scheduledAnnoKind(s?: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 454,
+      "end": 460
+    }
+  },
+  "source": {
+    "text": "function scheduledAnnoKind(s?: string): string | undefined {\n  if (!s) return undefined;\n  if (/\\bcron\\s*=/.test(s)) return 'cron';\n  if (/\\bfixedRate\\b/.test(s)) return 'fixedRate';\n  if (/\\bfixedDelay\\b/.test(s)) return 'fixedDelay';\n  return 'scheduled';\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 454
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 100
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L453",
+      "snippet": "/** The kind of a `@Scheduled` trigger: `cron` / `fixedRate` / `fixedDelay` (else `'scheduled'`). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L454",
+    "procedureName": "scheduledAnnoKind",
+    "conditions": [
+      "cond:packages/parsers/src/java/spring.ts@L455",
+      "cond:packages/parsers/src/java/spring.ts@L456",
+      "cond:packages/parsers/src/java/spring.ts@L457",
+      "cond:packages/parsers/src/java/spring.ts@L458"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L454",
+        "procedureName": "scheduledAnnoKind",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L455",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L455",
+            "expr": "!s",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:104d601a40ce2bf23c986ec76d33a6633e51833797600fb9d3af3541c186b484",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L455",
+          "line": 455,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L454",
+        "procedureName": "scheduledAnnoKind",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L456",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L456",
+            "expr": "/\\bcron\\s*=/.test(s)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9d27c3e6478d9ada2a63cc672ed90701e97c71016eaa2513f5122a493ad71474",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L456",
+          "line": 456,
+          "expr": "return 'cron';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L454",
+        "procedureName": "scheduledAnnoKind",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L457",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L457",
+            "expr": "/\\bfixedRate\\b/.test(s)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8b3c5523a4935bf69c6b5e5a9ba3aa2a62d27fe5b3555605f6a901303accc2be",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L457",
+          "line": 457,
+          "expr": "return 'fixedRate';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L454",
+        "procedureName": "scheduledAnnoKind",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L458",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L458",
+            "expr": "/\\bfixedDelay\\b/.test(s)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a0cccaa75406d19362d20d209e2d414f76d91577984babc038c05db48e8a1c82",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L458",
+          "line": 458,
+          "expr": "return 'fixedDelay';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L454",
+        "procedureName": "scheduledAnnoKind",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c872dce887291e033ca74fd3ce9ef787a1232cbf386026fc5960c168317f3e5",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L459",
+          "line": 459,
+          "expr": "return 'scheduled';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

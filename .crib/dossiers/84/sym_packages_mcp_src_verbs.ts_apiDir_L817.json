@@ -1,0 +1,135 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#apiDir@L817",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:7a30fed5f098498a9474f7e141f6f5472e9a372d631b9ba5bb0aad6863939d77",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#apiDir@L817",
+    "kind": "symbol",
+    "type": "function",
+    "name": "apiDir",
+    "qualifiedName": "apiDir",
+    "signature": "apiDir(d?: ApiDir): Dir | 'both'",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 817,
+      "end": 821
+    }
+  },
+  "source": {
+    "text": "function apiDir(d?: ApiDir): Dir | 'both' {\n  if (d === 'in') return 'up';\n  if (d === 'out') return 'down';\n  return 'both';\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 817
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L353",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "Verbs.neighbors",
+      "signature": "neighbors(args: {\n    id: string;\n    rel?: string;\n    dir?: ApiDir;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 353
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#apiDir@L817",
+    "procedureName": "apiDir",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L818",
+      "cond:packages/mcp/src/verbs.ts@L819"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#apiDir@L817",
+        "procedureName": "apiDir",
+        "guard": "cond:packages/mcp/src/verbs.ts@L818",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L818",
+            "expr": "d === 'in'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cee9f9bf5ea3cfcb5a923f617228ce47ad2d0ed4469cb4aa6aaa5392d20b1049",
+          "target": "stmt:packages/mcp/src/verbs.ts@L818",
+          "line": 818,
+          "expr": "return 'up';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#apiDir@L817",
+        "procedureName": "apiDir",
+        "guard": "cond:packages/mcp/src/verbs.ts@L819",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L819",
+            "expr": "d === 'out'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:22f92c9e2db2163325f3c66890dd97110bfc479c72a0317031088e16109dfbf3",
+          "target": "stmt:packages/mcp/src/verbs.ts@L819",
+          "line": 819,
+          "expr": "return 'down';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#apiDir@L817",
+        "procedureName": "apiDir",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0199cd13a4ccfd9c09549574d2818a3752371c6406b23e42f1033c147e3a9d80",
+          "target": "stmt:packages/mcp/src/verbs.ts@L820",
+          "line": 820,
+          "expr": "return 'both';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

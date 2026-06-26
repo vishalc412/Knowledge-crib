@@ -1,0 +1,225 @@
+{
+  "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.attachComments@L251",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ac8bfc0d36ed0a1af23b5b76227d57421f17c03539c4e4c771232d4a650a932a",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.attachComments@L251",
+    "kind": "symbol",
+    "type": "method",
+    "name": "attachComments",
+    "qualifiedName": "JavaExtractor.attachComments",
+    "signature": "attachComments(symbols: LocalSymbol[], nodes: Node[], edges: Edge[], ctx: ExtractCtx, path: string, comments: CommentBlock[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/JavaExtractor.ts",
+    "span": {
+      "start": 251,
+      "end": 289
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 263
+      },
+      {
+        "callee": "idFor",
+        "line": 265
+      },
+      {
+        "callee": "add",
+        "line": 267
+      },
+      {
+        "callee": "push",
+        "line": 268
+      },
+      {
+        "callee": "hash",
+        "line": 275
+      },
+      {
+        "callee": "push",
+        "line": 278
+      },
+      {
+        "callee": "edgeId",
+        "line": 279
+      }
+    ]
+  },
+  "source": {
+    "text": "  private attachComments(\n    symbols: LocalSymbol[],\n    nodes: Node[],\n    edges: Edge[],\n    ctx: ExtractCtx,\n    path: string,\n    comments: CommentBlock[],\n  ): void {\n    const seen = new Set<string>();\n    for (const s of symbols) {\n      const startLine = s.node.span?.start;\n      if (!startLine) continue;\n      const block = comments.find((c) => c.end === startLine - 1);\n      if (!block || !block.text) continue;\n      const id = ctx.idFor('explanation', { path, startLine: block.start });\n      if (seen.has(id)) continue; // one explanation per comment block (dedupe by line)\n      seen.add(id);\n      nodes.push({\n        id,\n        kind: 'explanation',\n        commentRef: { file: path, span: { start: block.start, end: block.end } },\n        file: path,\n        span: { start: block.start, end: block.end },\n        lang: 'java',\n        hash: ctx.hash(`${path}:${block.start}:${block.text}`),\n        meta: { text: block.text, javadoc: block.javadoc },\n      });\n      edges.push({\n        id: edgeId(id, s.node.id, 'describes'),\n        src: id,\n        dst: s.node.id,\n        rel: 'describes',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet: 'COMMENT' },\n      });\n    }\n  }",
+    "truncated": false,
+    "totalLines": 39,
+    "startLine": 251
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse@L68",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "JavaExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 68
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/JavaExtractor.ts@L244",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.attachComments@L251",
+    "procedureName": "JavaExtractor.attachComments",
+    "conditions": [
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L260"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.attachComments@L251",
+        "procedureName": "JavaExtractor.attachComments",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L260",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L260",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:58a7a3e25304acbbd05bac0486b2ba0c81e1ae2349baaf48354b96e70a39d79b",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L263",
+          "line": 263,
+          "expr": "const block = comments.find((c) => c.end === startLine - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.attachComments@L251",
+        "procedureName": "JavaExtractor.attachComments",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L260",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L260",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb9fd1a23ecd5d873a786845ea22c9255e5c0771686f7fdcecc58cc0249ffae5",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L265",
+          "line": 265,
+          "expr": "const id = ctx.idFor('explanation', { path, startLine: block.start });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.attachComments@L251",
+        "procedureName": "JavaExtractor.attachComments",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L260",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L260",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:25bacf9a4fdc133c353ffdc779c52ba823e83bbb4e0bb45467c96d8ee86a5e5a",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L267",
+          "line": 267,
+          "expr": "seen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.attachComments@L251",
+        "procedureName": "JavaExtractor.attachComments",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L260",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L260",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:279f7423f72ad4ce9d979fd11fe82b2152e24f9e11fa48ef338e1fd55989070c",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L268",
+          "line": 268,
+          "expr": "nodes.push({\n        id,\n        kind: 'explanation',\n        commentRef: { file: path, span: { start: block.start, end: block.end } },\n        file: path,\n        span: { start: block.start, end: block.end },\n        lang: 'java',\n        hash: ctx.hash(`${path}:${block.start}:${block.text}`),\n        meta: { text: block.text, javadoc: block.javadoc },\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.attachComments@L251",
+        "procedureName": "JavaExtractor.attachComments",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L260",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L260",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dbe90b8856b5cf544241070014c835a0f5d696c41eb8e92d8dd3d21184573667",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L278",
+          "line": 278,
+          "expr": "edges.push({\n        id: edgeId(id, s.node.id, 'describes'),\n        src: id,\n        dst: s.node.id,\n        rel: 'describes',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet: 'COMMENT' },\n      });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 7,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

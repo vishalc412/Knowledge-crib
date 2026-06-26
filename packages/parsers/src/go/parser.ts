@@ -20,6 +20,7 @@
  *
  * Never throws: a parse error degrades to an empty module so the extractor falls back to a file node.
  */
+import { EXPR_MAX_CHARS } from '../types.js';
 import { tokenize } from './lexer.js';
 import type { Token } from './lexer.js';
 
@@ -1539,7 +1540,7 @@ class Parser {
       run.push(this.peek());
       this.next();
     }
-    const text = this.tokensText(run).slice(0, 200);
+    const text = this.tokensText(run).slice(0, EXPR_MAX_CHARS);
     const callee = isPanic ? undefined : this.findCallInRun(run);
     return { text, ...(callee ? { callee } : {}), hasAssign, isPanic, lhs };
   }

@@ -1,0 +1,165 @@
+{
+  "id": "sym:packages/core/src/dossier/dossier.test.ts#stmt@L36",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:6891f1532fc27894136b33231bd45e2956792f816c11b81b2b43e31ea399d468",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/dossier.test.ts#stmt@L36",
+    "kind": "symbol",
+    "type": "function",
+    "name": "stmt",
+    "qualifiedName": "stmt",
+    "signature": "stmt(path: string, line: number, lang = 'plsql'): Node",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/dossier.test.ts",
+    "span": {
+      "start": 36,
+      "end": 46
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 38
+      },
+      {
+        "callee": "contentHash",
+        "line": 44
+      }
+    ]
+  },
+  "source": {
+    "text": "function stmt(path: string, line: number, lang = 'plsql'): Node {\n  return {\n    id: idFor({ kind: 'statement', file: path, line }),\n    kind: 'statement',\n    type: 'statement',\n    file: path,\n    span: { start: line, end: line },\n    lang,\n    hash: contentHash(`${path}:${line}:statement`),\n  };\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 36
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 77
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#node",
+      "heading": "Node",
+      "anchor": "node",
+      "snippet": "Node",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#new-node-kinds",
+      "heading": "New node kinds",
+      "anchor": "new-node-kinds",
+      "snippet": "New node kinds",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "heading": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "anchor": "4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "snippet": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/dossier.test.ts#stmt@L36",
+    "procedureName": "stmt",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/dossier.test.ts#stmt@L36",
+        "procedureName": "stmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a15348c805a3e0c378b3f8580cf8a9a38de3e4e1722e1f7f8816d602e14f073e",
+          "target": "stmt:packages/core/src/dossier/dossier.test.ts@L37",
+          "line": 37,
+          "expr": "return {\n    id: idFor({ kind: 'statement', file: path, line }),\n    kind: 'statement',\n    type: 'statement',\n    file: path,\n    span: { start: line, end: line },\n    lang,\n    hash: contentHash(`${path}:${line}:statement`),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/dossier.test.ts#stmt@L36",
+        "procedureName": "stmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:56affe8b1b3ab66dfe6a2f23c36a7570697c48c3fa20b3ea1d1dac9f0fa796cf",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+          "expr": "idFor",
+          "line": 38
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/dossier.test.ts#stmt@L36",
+        "procedureName": "stmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fe7a0ca3f5878188909bffaf8600953cc812ac3af4b9a13c37c4e7a975d120e0",
+          "target": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+          "expr": "contentHash",
+          "line": 44
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

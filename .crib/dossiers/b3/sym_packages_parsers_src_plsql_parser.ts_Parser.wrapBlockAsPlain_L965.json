@@ -1,0 +1,161 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.wrapBlockAsPlain@L965",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:f9a72521e5ad754e390912d13f2a48ac3f2af37dfb783710a91c028a14dbbc9c",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.wrapBlockAsPlain@L965",
+    "kind": "symbol",
+    "type": "method",
+    "name": "wrapBlockAsPlain",
+    "qualifiedName": "Parser.wrapBlockAsPlain",
+    "signature": "wrapBlockAsPlain(_b: Block, startLine: number): Stmt",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 965,
+      "end": 971
+    },
+    "callSites": [
+      {
+        "callee": "eatPunct",
+        "line": 969
+      },
+      {
+        "callee": "lineOf",
+        "line": 970
+      }
+    ]
+  },
+  "source": {
+    "text": "  private wrapBlockAsPlain(_b: Block, startLine: number): Stmt {\n    // parseAnonymousBlock already consumed the nested block's terminating `;`; only eat one if it's\n    // still pending (a malformed nested block with no terminator). Never skip past a `;` that\n    // belongs to the NEXT statement — that would swallow a trailing top-level SELECT.\n    this.eatPunct(';');\n    return { kind: 'plain', head: 'BLOCK', span: { start: startLine, end: this.lineOf() } };\n  }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 965
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L678",
+      "confidence": 1,
+      "name": "parseStmt",
+      "qualifiedName": "Parser.parseStmt",
+      "signature": "parseStmt(): Stmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 678
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.eatPunct@L139",
+      "confidence": 1,
+      "name": "eatPunct",
+      "qualifiedName": "Parser.eatPunct",
+      "signature": "eatPunct(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 139
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.lineOf@L146",
+      "confidence": 1,
+      "name": "lineOf",
+      "qualifiedName": "Parser.lineOf",
+      "signature": "lineOf(): number",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 146
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.wrapBlockAsPlain@L965",
+    "procedureName": "Parser.wrapBlockAsPlain",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.wrapBlockAsPlain@L965",
+        "procedureName": "Parser.wrapBlockAsPlain",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e95716870f26b2ea65f01781578640dec6758e3ab68d67ea33022837a23d1e94",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.eatPunct@L139",
+          "expr": "eatPunct",
+          "line": 969
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.wrapBlockAsPlain@L965",
+        "procedureName": "Parser.wrapBlockAsPlain",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8386e79e169fad4c11c0e681c82b6b1126db933965c65a4d86c77197e040e570",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L969",
+          "line": 969,
+          "expr": "this.eatPunct(';');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.wrapBlockAsPlain@L965",
+        "procedureName": "Parser.wrapBlockAsPlain",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c515de616aaec733516b7874b2b445e649fddcd345ff200ed8bf9f9be5d7387e",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.lineOf@L146",
+          "expr": "lineOf",
+          "line": 970
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.wrapBlockAsPlain@L965",
+        "procedureName": "Parser.wrapBlockAsPlain",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ca17aa7e9bf92a77bd0189f3d17568bccfc38f9561d0da9aad7bfceae049149",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L970",
+          "line": 970,
+          "expr": "return { kind: 'plain', head: 'BLOCK', span: { start: startLine, end: this.lineOf() } };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

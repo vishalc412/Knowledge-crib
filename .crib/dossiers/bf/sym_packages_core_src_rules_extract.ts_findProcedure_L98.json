@@ -1,0 +1,248 @@
+{
+  "id": "sym:packages/core/src/rules/extract.ts#findProcedure@L98",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:6b772ece878e826a2dce2bea7021ad3be713878cda0c0da8425bd0a22c010b50",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/rules/extract.ts#findProcedure@L98",
+    "kind": "symbol",
+    "type": "function",
+    "name": "findProcedure",
+    "qualifiedName": "findProcedure",
+    "signature": "findProcedure(soul: SoulStore, procedure: string): Node | undefined",
+    "lang": "typescript",
+    "file": "packages/core/src/rules/extract.ts",
+    "span": {
+      "start": 98,
+      "end": 114
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 99
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 101
+      }
+    ]
+  },
+  "source": {
+    "text": "export function findProcedure(soul: SoulStore, procedure: string): Node | undefined {\n  const byId = soul.getNode(procedure);\n  if (byId) return byId;\n  const needle = procedure.toLowerCase();\n  for (const n of soul.iterate('symbol')) {\n    if (n.type && CALLABLE_SYMBOL_TYPES.has(n.type) && n.qualifiedName) {\n      if (n.qualifiedName.toLowerCase() === needle) return n;\n    }\n  }\n  // last resort: simple name match\n  for (const n of soul.iterate('symbol')) {\n    if (n.type && CALLABLE_SYMBOL_TYPES.has(n.type) && n.name) {\n      if (n.name.toLowerCase() === needle) return n;\n    }\n  }\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 98
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/parity/parity.ts#decisionParity@L190",
+      "confidence": 1,
+      "name": "decisionParity",
+      "qualifiedName": "decisionParity",
+      "signature": "decisionParity(opts: ParityOpts): Promise<ParityReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/parity/parity.ts",
+      "line": 190
+    },
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#decisionTable@L191",
+      "confidence": 1,
+      "name": "decisionTable",
+      "qualifiedName": "decisionTable",
+      "signature": "decisionTable(soul: SoulStore, procedure: string, opts: ExtractRulesOpts = {}): DecisionTable",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 191
+    },
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+      "confidence": 1,
+      "name": "extractRules",
+      "qualifiedName": "extractRules",
+      "signature": "extractRules(soul: SoulStore, procedure: string, opts: ExtractRulesOpts = {}): RuleRecord[]",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 128
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/rules/extract.ts@L97",
+      "snippet": "/** Locate a procedure node by id, qualified name, or simple name (case-insensitive). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/rules/extract.ts#findProcedure@L98",
+    "procedureName": "findProcedure",
+    "conditions": [
+      "cond:packages/core/src/rules/extract.ts@L100",
+      "cond:packages/core/src/rules/extract.ts@L102",
+      "cond:packages/core/src/rules/extract.ts@L103",
+      "cond:packages/core/src/rules/extract.ts@L104",
+      "cond:packages/core/src/rules/extract.ts@L108",
+      "cond:packages/core/src/rules/extract.ts@L109",
+      "cond:packages/core/src/rules/extract.ts@L110"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#findProcedure@L98",
+        "procedureName": "findProcedure",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c1ad9ea3ca500391a9f6b9392cd40367346960b097b425eeaf527fe5e84d483c",
+          "target": "stmt:packages/core/src/rules/extract.ts@L99",
+          "line": 99,
+          "expr": "const byId = soul.getNode(procedure);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#findProcedure@L98",
+        "procedureName": "findProcedure",
+        "guard": "cond:packages/core/src/rules/extract.ts@L100",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L100",
+            "expr": "byId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a6ef8878250bf7f8131efdffa8bd38802fc7dd95e649793b59233256a57af5ac",
+          "target": "stmt:packages/core/src/rules/extract.ts@L100",
+          "line": 100,
+          "expr": "return byId;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#findProcedure@L98",
+        "procedureName": "findProcedure",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3e106e476015dfa0c34b8ef93a5720f53d7d51d086ce23570778027ef63f89c5",
+          "target": "stmt:packages/core/src/rules/extract.ts@L101",
+          "line": 101,
+          "expr": "const needle = procedure.toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#findProcedure@L98",
+        "procedureName": "findProcedure",
+        "guard": "cond:packages/core/src/rules/extract.ts@L104",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L102",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L103",
+            "expr": "n.type && CALLABLE_SYMBOL_TYPES.has(n.type) && n.qualifiedName"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L104",
+            "expr": "n.qualifiedName.toLowerCase() === needle",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5ce64e602d3eb78d13b8de1e6a1384765a90a065b7262e1607ab992b73658ec5",
+          "target": "stmt:packages/core/src/rules/extract.ts@L104",
+          "line": 104,
+          "expr": "return n;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#findProcedure@L98",
+        "procedureName": "findProcedure",
+        "guard": "cond:packages/core/src/rules/extract.ts@L110",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L108",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L109",
+            "expr": "n.type && CALLABLE_SYMBOL_TYPES.has(n.type) && n.name"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L110",
+            "expr": "n.name.toLowerCase() === needle",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8e5c00983d4d8b5978bee4fae4f50b02405c4af80bc5cc0015b9c0d9d8a42b96",
+          "target": "stmt:packages/core/src/rules/extract.ts@L110",
+          "line": 110,
+          "expr": "return n;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#findProcedure@L98",
+        "procedureName": "findProcedure",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c1fff9cbd11aa88eb1eefde7aef86809d0203eb655b9709b4c40154c49106c9",
+          "target": "stmt:packages/core/src/rules/extract.ts@L113",
+          "line": 113,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/core/src/rules/extract.ts",
+      "packages/pipeline/src/parity/parity.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

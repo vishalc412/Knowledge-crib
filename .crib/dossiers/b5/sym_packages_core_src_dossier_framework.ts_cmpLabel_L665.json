@@ -1,0 +1,97 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#cmpLabel@L665",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:3f91f31ab1193f76e2df973a6a9512aadd1ac2abe40ef9407cf3df87d125edd1",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#cmpLabel@L665",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cmpLabel",
+    "qualifiedName": "cmpLabel",
+    "signature": "cmpLabel(a: string, b: string): number",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 665,
+      "end": 667
+    }
+  },
+  "source": {
+    "text": "function cmpLabel(a: string, b: string): number {\n  return a < b ? -1 : a > b ? 1 : 0;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 665
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L192",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 192
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/framework.ts@L664",
+      "snippet": "/** Numeric comparator for the sort calls. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#cmpLabel@L665",
+    "procedureName": "cmpLabel",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#cmpLabel@L665",
+        "procedureName": "cmpLabel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:49de50961bd50fa9eb3877ccf730a25f9757e298e384f92d6a1a50892a0237c1",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L666",
+          "line": 666,
+          "expr": "return a < b ? -1 : a > b ? 1 : 0;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

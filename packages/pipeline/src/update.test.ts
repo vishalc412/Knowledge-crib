@@ -155,6 +155,79 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     expect(h1).not.toBe(h2);
   });
 
+  it('regression (cc-update-java-extractor): a `crib update` on an edited .java controller re-emits ' +
+    'its Spring route + exposes edges — NOT silently dropped by a TS-only default fleet', async () => {
+    // A Spring controller fixture. Before the P0 fix, update.ts defaulted its extractor fleet to
+    // TypeScript + Markdown ONLY, so re-extracting an edited .java file produced zero Java symbols,
+    // zero routes, zero exposes — the whole Spring surface vanished into delta.removed. This test
+    // pins the shared `defaultExtractors()` fleet (Java + C# + Go + Rust + Python + PL/SQL + TS + MD)
+    // so an incremental update re-extracts the changed file's language.
+    mkdirSync(join(repo, 'src', 'main'), { recursive: true });
+    writeFileSync(
+      join(repo, 'src', 'main', 'LoansController.java'),
+      [
+        '@RestController',
+        '@RequestMapping("/api")',
+        'class LoansController {',
+        '  @GetMapping("/loans") String list() { return ""; }',
+        '}',
+        '',
+      ].join('\n'),
+    );
+    git(repo, ['add', '-A']);
+    git(repo, ['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'spring']);
+    await indexRepo(soulFor(), repo, { now: '2026-01-01T00:00:00.000Z' });
+
+    // The initial index carries the Spring route + the exposes edge (handler → route).
+    const afterIndex = soulFor();
+    const routeBefore = [...afterIndex.iterate('route')];
+    expect(routeBefore.map((n) => `${n.httpMethod} ${n.routePath}`).sort()).toEqual([
+      'GET /api/loans',
+    ]);
+    expect([...afterIndex.iterateEdges('exposes')].length).toBe(1);
+
+    // Body-only edit: append a second handler. Same line count for the existing handler keeps its
+    // ids stable; the new handler adds one route + one exposes. Commit advances HEAD.
+    writeFileSync(
+      join(repo, 'src', 'main', 'LoansController.java'),
+      [
+        '@RestController',
+        '@RequestMapping("/api")',
+        'class LoansController {',
+        '  @GetMapping("/loans") String list() { return ""; }',
+        '  @PostMapping("/loans") String create() { return ""; }',
+        '}',
+        '',
+      ].join('\n'),
+    );
+    git(repo, ['add', 'src/main/LoansController.java']);
+    git(repo, [
+      '-c',
+      'user.email=t@t.test',
+      '-c',
+      'user.name=T',
+      'commit',
+      '-q',
+      '-m',
+      'add-route',
+    ]);
+
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, { now: '2026-01-02T00:00:00.000Z' });
+    expect(result).not.toBeNull();
+    expect(result && 'noop' in result).toBe(false);
+    const report = result as UpdateReport;
+
+    // The P0 gate: no Spring artifact is silently dropped — the original route + exposes survive the
+    // re-extract (they are re-emitted, not lost to delta.removed).
+    expect(report.delta.removed).toEqual([]);
+    const reopened = soulFor();
+    expect(
+      [...reopened.iterate('route')].map((n) => `${n.httpMethod} ${n.routePath}`).sort(),
+    ).toEqual(['GET /api/loans', 'POST /api/loans']);
+    expect([...reopened.iterateEdges('exposes')].length).toBe(2);
+  });
+
   it('reports a noop and advances the anchor when nothing changed', async () => {
     await indexAndCommit();
     // An empty commit advances HEAD without touching any indexed file → true noop.

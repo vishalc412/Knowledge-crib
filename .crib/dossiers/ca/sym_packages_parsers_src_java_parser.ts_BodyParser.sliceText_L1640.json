@@ -1,0 +1,125 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.sliceText@L1640",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:1def3ebe5068b50c25d09f30045526a3779440a647fefef0c0e09387348728d3",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.sliceText@L1640",
+    "kind": "symbol",
+    "type": "method",
+    "name": "sliceText",
+    "qualifiedName": "BodyParser.sliceText",
+    "signature": "sliceText(startIdx: number, endIdx: number): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 1640,
+      "end": 1646
+    },
+    "callSites": [
+      {
+        "callee": "slice",
+        "line": 1645
+      }
+    ]
+  },
+  "source": {
+    "text": "  private sliceText(startIdx: number, endIdx: number): string {\n    const sTok = this.t[startIdx]!;\n    const eTok = this.t[endIdx]!;\n    const startOff = (this.lineStarts[sTok.line - 1] ?? 0) + (sTok.col - 1);\n    const endOff = (this.lineStarts[eTok.line - 1] ?? 0) + (eTok.col - 1) + eTok.value.length;\n    return this.src.slice(startOff, endOff);\n  }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 1640
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.readParenText@L1516",
+      "confidence": 1,
+      "name": "readParenText",
+      "qualifiedName": "BodyParser.readParenText",
+      "signature": "readParenText(): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1516
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.readUntilColon@L1530",
+      "confidence": 1,
+      "name": "readUntilColon",
+      "qualifiedName": "BodyParser.readUntilColon",
+      "signature": "readUntilColon(closeIdx: number): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1530
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.scanSimple@L1454",
+      "confidence": 1,
+      "name": "scanSimple",
+      "qualifiedName": "BodyParser.scanSimple",
+      "signature": "scanSimple(startIdx: number): {\n    endIdx: number;\n    text: string;\n    lastLine: number | undefined;\n    callChain: string[] | undefined;\n    assignOp: boolean;\n    assignTarget: string | undefined;\n  }",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1454
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.ts@L1639",
+      "snippet": "/** Source text spanning tokens [startIdx..endIdx] inclusive (via line/col → char offset). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.sliceText@L1640",
+    "procedureName": "BodyParser.sliceText",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.sliceText@L1640",
+        "procedureName": "BodyParser.sliceText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5ea9e9afa0cb7f8bf109c76f75cb6c7ee512ea3eaaef114b0e9f7c8223e91987",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1645",
+          "line": 1645,
+          "expr": "return this.src.slice(startOff, endOff);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

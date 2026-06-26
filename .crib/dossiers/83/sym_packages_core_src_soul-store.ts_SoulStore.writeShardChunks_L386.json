@@ -1,0 +1,364 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:a46ed942d90c19f104931593f8a4968731d02265d59bc29b3323903a8eb48627",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+    "kind": "symbol",
+    "type": "method",
+    "name": "writeShardChunks",
+    "qualifiedName": "SoulStore.writeShardChunks",
+    "signature": "writeShardChunks(shardDir: string, records: (Node | Edge)[]): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 386,
+      "end": 406
+    },
+    "callSites": [
+      {
+        "callee": "rmSync",
+        "line": 389
+      },
+      {
+        "callee": "mkdirSync",
+        "line": 392
+      },
+      {
+        "callee": "slice",
+        "line": 396
+      },
+      {
+        "callee": "padStart",
+        "line": 397
+      },
+      {
+        "callee": "String",
+        "line": 397
+      },
+      {
+        "callee": "atomicWrite",
+        "line": 398
+      },
+      {
+        "callee": "join",
+        "line": 398
+      },
+      {
+        "callee": "join",
+        "line": 398
+      },
+      {
+        "callee": "map",
+        "line": 398
+      },
+      {
+        "callee": "stringify",
+        "line": 398
+      },
+      {
+        "callee": "add",
+        "line": 399
+      },
+      {
+        "callee": "rmSync",
+        "line": 404
+      },
+      {
+        "callee": "join",
+        "line": 404
+      }
+    ]
+  },
+  "source": {
+    "text": "  private writeShardChunks(shardDir: string, records: (Node | Edge)[]): void {\n    // Remove the whole shard dir if it now holds nothing.\n    if (records.length === 0) {\n      if (existsSync(shardDir)) rmSync(shardDir, { recursive: true, force: true });\n      return;\n    }\n    mkdirSync(shardDir, { recursive: true });\n    const written = new Set<string>();\n    let chunkIndex = 0;\n    for (let i = 0; i < records.length; i += this.maxChunkLines) {\n      const slice = records.slice(i, i + this.maxChunkLines);\n      const name = `${String(chunkIndex).padStart(4, '0')}.jsonl`;\n      this.atomicWrite(join(shardDir, name), `${slice.map((r) => JSON.stringify(r)).join('\\n')}\\n`);\n      written.add(name);\n      chunkIndex++;\n    }\n    // Drop any leftover chunk files from a previous, larger generation.\n    for (const f of readdirSync(shardDir)) {\n      if (f.endsWith('.jsonl') && !written.has(f)) rmSync(join(shardDir, f));\n    }\n  }",
+    "truncated": false,
+    "totalLines": 21,
+    "startLine": 386
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeEdgeShard@L365",
+      "confidence": 1,
+      "name": "writeEdgeShard",
+      "qualifiedName": "SoulStore.writeEdgeShard",
+      "signature": "writeEdgeShard(shard: string): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 365
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeNodeShard@L356",
+      "confidence": 1,
+      "name": "writeNodeShard",
+      "qualifiedName": "SoulStore.writeNodeShard",
+      "signature": "writeNodeShard(shard: string): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 356
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L432",
+      "confidence": 1,
+      "name": "atomicWrite",
+      "qualifiedName": "SoulStore.atomicWrite",
+      "signature": "atomicWrite(path: string, content: string): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 432
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/soul-store.ts@L385",
+      "snippet": "/** Rewrite a shard directory into chunk files rolling at maxChunkLines; remove stale chunks. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+    "procedureName": "SoulStore.writeShardChunks",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L388",
+      "cond:packages/core/src/soul-store.ts@L389",
+      "cond:packages/core/src/soul-store.ts@L395",
+      "cond:packages/core/src/soul-store.ts@L403",
+      "cond:packages/core/src/soul-store.ts@L404"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+        "procedureName": "SoulStore.writeShardChunks",
+        "guard": "cond:packages/core/src/soul-store.ts@L389",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L388",
+            "expr": "records.length === 0"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L389",
+            "expr": "existsSync(shardDir)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:34939315db0e2957ca04ae6fa719270aaf792d2ff763884717542aa2b9484ebf",
+          "target": "stmt:packages/core/src/soul-store.ts@L389",
+          "line": 389,
+          "expr": "rmSync(shardDir, { recursive: true, force: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+        "procedureName": "SoulStore.writeShardChunks",
+        "guard": "cond:packages/core/src/soul-store.ts@L388",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L388",
+            "expr": "records.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bf019a842f0929570b9ee8db49050162ade2f7df8fbe9d4ae9ddd8797df30641",
+          "target": "stmt:packages/core/src/soul-store.ts@L390",
+          "line": 390,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+        "procedureName": "SoulStore.writeShardChunks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6ff0ceb09b8c693066343b72c243842e3feb0540830e0f39960dc1ed85dc609d",
+          "target": "stmt:packages/core/src/soul-store.ts@L392",
+          "line": 392,
+          "expr": "mkdirSync(shardDir, { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+        "procedureName": "SoulStore.writeShardChunks",
+        "guard": "cond:packages/core/src/soul-store.ts@L395",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L395",
+            "expr": "i < records.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:693622da21dd166c4b71ba5f662e9b15ca189b8bc4ce900c0580ac1a13e532d2",
+          "target": "stmt:packages/core/src/soul-store.ts@L396",
+          "line": 396,
+          "expr": "const slice = records.slice(i, i + this.maxChunkLines);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+        "procedureName": "SoulStore.writeShardChunks",
+        "guard": "cond:packages/core/src/soul-store.ts@L395",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L395",
+            "expr": "i < records.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6afaabd342af103c8b4f31473e55e5e9b16d9a1031261f278b23e6ff0dde5d23",
+          "target": "stmt:packages/core/src/soul-store.ts@L397",
+          "line": 397,
+          "expr": "const name = `${String(chunkIndex).padStart(4, '0')}.jsonl`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+        "procedureName": "SoulStore.writeShardChunks",
+        "guard": "cond:packages/core/src/soul-store.ts@L395",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L395",
+            "expr": "i < records.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:22c129fc2704df9912859f6030067c304b25906a0d1cdb88ebdd483cd9344fe4",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L432",
+          "expr": "atomicWrite",
+          "line": 398
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+        "procedureName": "SoulStore.writeShardChunks",
+        "guard": "cond:packages/core/src/soul-store.ts@L395",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L395",
+            "expr": "i < records.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:628eff9a12cc18a153687dc33d9c6cd1ea0ddf3b4068ece80661966c584f2678",
+          "target": "stmt:packages/core/src/soul-store.ts@L398",
+          "line": 398,
+          "expr": "this.atomicWrite(join(shardDir, name), `${slice.map((r) => JSON.stringify(r)).join('\\n')}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+        "procedureName": "SoulStore.writeShardChunks",
+        "guard": "cond:packages/core/src/soul-store.ts@L395",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L395",
+            "expr": "i < records.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:501d5816dc2167ecfd1720cb71122f61b8d3db3ee90666fbb21da3fdbe304494",
+          "target": "stmt:packages/core/src/soul-store.ts@L399",
+          "line": 399,
+          "expr": "written.add(name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+        "procedureName": "SoulStore.writeShardChunks",
+        "guard": "cond:packages/core/src/soul-store.ts@L404",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L403",
+            "expr": "readdirSync(shardDir)"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L404",
+            "expr": "f.endsWith('.jsonl') && !written.has(f)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4898de4898746b53643262cd0f3ccc8ee8e81a8c364635924976ea485b83379f",
+          "target": "stmt:packages/core/src/soul-store.ts@L404",
+          "line": 404,
+          "expr": "rmSync(join(shardDir, f));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 8,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 8,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 13,
+      "unresolved": 11
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "11 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

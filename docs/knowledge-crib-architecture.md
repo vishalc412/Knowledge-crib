@@ -57,6 +57,57 @@ flowchart TB
   mcp --> cli
 ```
 
+### 3.1 Framework-semantics tier (schema 1.3)
+
+Above the syntactic symbol/CFG graph sits a **framework-semantics tier** — an additive layer that
+makes a Java/Spring (and, planned, Node/React/Angular) graph replace reading the code. It is a
+first-class architectural tier, not a verb: a pure-over-soul module plus four surfacing paths that
+share one code path, all defined on schema-1.3 node kinds (`route`, `field`, `component`) and rels
+(`exposes`, `injects`, `renders`, `produces`, `references`, `member-of`). No new storage — it reuses
+the soul; old souls load and re-index in place (additive + optional fields).
+
+**Extraction (the edge source).** A language extractor derives the framework edges and stamps the
+1.3 identity fields onto existing nodes. The built track is `packages/parsers/src/java/spring.ts`
+(Pass 4 of the Java extractor): it tags `framework:'spring'` + `stereotype` on class symbols,
+emits `route` nodes + `exposes` edges for handler methods (composing the class-level base path),
+`injects` edges for constructor/`@Autowired` DI (cross-file type names recorded on `meta.injects` for
+the resolver), `references` edges for JPA `@ManyToOne`/`@OneToMany`/`@ManyToMany`/`@OneToOne` fields,
+`produces` edges for `@Bean` methods, `field` nodes with `meta.column`, and `@ExceptionHandler`→
+exception-handler nodes + `handles` edges. Node/React/Angular tracks are planned and reuse the same
+kinds/rels — no schema change.
+
+**The pure module — `frameworkSemantics` (`packages/core/src/dossier/framework.ts`).** Pure over the
+soul (no `IndexStore`, no disk) so the persisted dossier and the live `context` verb share one path
+and are byte-identical in shape. It auto-scopes by node: a **class** symbol (framework stereotype,
+class-like type, or any node with incoming `member-of` children) aggregates across members — the
+controller route table, the `@Configuration` bean inventory, the class DI graph, the entity relation
+model, the component render tree — via `member-of` edges; a **callable / component / field / route**
+returns its own direct outgoing edges (a callable lifts its dependencies from the owning class). A
+single soul-wide `produces` scan builds a supply-chain map so a dependency whose type is itself a
+`@Bean`-produced type surfaces as `kind:'produces'` **plus the producer brief in the same object** —
+one-hop, no round-trip (multi-hop DI stays the `impact` verb's job). **Unresolved honesty**:
+`meta.produces` / `meta.injects` type names with no emitted edge are appended as `unresolved:true`
+entries (`id:'?'`), parity with the `gaps` verb — a missing bean or unlinked `@Bean` is a visible gap,
+not silence.
+
+**Surfacing paths (the "above SQL" tier):**
+- **`context` verb (opt-in).** `withFramework:true` (same opt-in convention as `withRules`/`withSource`,
+  not unconditional) returns `framework = {routes, produces, dependencies, dependents, relations,
+  renders}`; auto-scoped per the module above; omitted entirely when the node has no framework edges.
+- **`dossier` verb (persisted).** `buildDossier` attaches the **lean** framework subset (the routes +
+  produces the callable owns) and stamps `shapeVersion:2`; `readDossier` treats a stale
+  `shapeVersion` as a rebuild trigger, so pre-2.0 artifacts rebuild on demand. The markdown serializer
+  emits `## Routes / ## Produces / ## Dependencies / ## Dependents / ## Relations / ## Renders`
+  sections, each only when non-empty, grouped after control flow and before docs.
+- **`gaps` verb.** Two new anomaly arrays: `controllersWithoutRoutes` (a `controller`-stereotype
+  class with member methods but zero `exposes` edges) and `unresolvedInjects` (a class declaring a
+  DI type in `meta.injects` with no emitted `injects` edge), plus their summary keys.
+- **`viz` (`buildVizGraph`).** Surfaces `framework` / `stereotype` / `httpMethod` / `routePath` on node
+  data so the detail panel shows the framework role without re-querying; `makeSummary` is richer for
+  the 1.3 kinds — a route reads `POST /api/loans`, a field reads `Field applicant → column
+  applicant_id`, a component reads `react component LoanForm`, a symbol prefixes its stereotype
+  (`controller: LoanController`). All framework edges are emitted as-is.
+
 ## 4. Data flow — indexing pipeline
 ```mermaid
 flowchart LR
@@ -114,7 +165,7 @@ parsers ──► pipeline
 | TypeScript/Node [Q36] | best MCP SDK, `npx` cross-IDE distribution, tree-sitter WASM, embeddable store |
 | tree-sitter WASM | one parser path for CLI + future browser UI; ~20 langs |
 | JSONL sharded soul | git-diffable, streamable, small incremental writes (see soul-format) |
-| `IndexStore` interface | swap LadybugDB ↔ sqlite+FTS5+sqlite-vec without touching soul or pipeline [C3] |
+| `IndexStore` interface | default `better-sqlite3 + FTS5` (shipped); LadybugDB + sqlite-vec remain planned/not-wired [C3] — swap backends without touching soul or pipeline |
 | MCP-first [Q22] | the agent is the primary consumer; UI is secondary |
 | Deterministic core [Q19] | fast, free, offline, trustworthy; LLM only enriches |
 | LLM via MCP **sampling** [Q18] | enrichment borrows the host IDE's model — no bundled provider/key, cross-IDE; fallback Ollama/cloud, else skip |

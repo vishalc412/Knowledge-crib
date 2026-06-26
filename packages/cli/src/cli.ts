@@ -13,8 +13,9 @@
  *
  * Exit codes (cli spec): 0 ok · 1 error · 2 bad args · 3 not indexed.
  */
+import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { SoulStore, newManifest } from '@knowledge-crib/core';
+import { MANIFEST_FILE, SoulStore, newManifest } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
 import { Verbs, serveStdio } from '@knowledge-crib/mcp';
 import type { VcsAdapter } from '@knowledge-crib/mcp';
@@ -157,14 +158,17 @@ function registerIndexed(repoRoot: string, cribDir: string, soul: SoulStore): vo
 async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   // index targets the exact given dir (no upward walk) — you index THIS, not a parent.
   const repoRoot = resolve(ctx?.cwdOverride ?? pathArg(args) ?? '.');
-  const withEmbeddings = args.includes('--with-embeddings');
+  const semantic = args.includes('--semantic');
   const ignores = parseExcludes(args);
   const cribDir = join(repoRoot, '.crib');
-  const soul = new SoulStore(cribDir, { manifest: newManifest({ root: '.' }) });
-  soul.load();
+  // Full rebuild: fresh manifest stamped with the current SCHEMA_VERSION (never inherit a stale
+  // one), repo.id preserved across rebuilds (stable committed soul + ~/.crib/registry mapping),
+  // resetForRebuild() so every on-disk shard is pruned-on-commit instead of layering new nodes over
+  // a stale older-schema soul. Do NOT load() — that hydrates stale nodes and overwrites the manifest.
+  const soul = freshSoulForRebuild(cribDir);
   const started = Date.now();
   const report = await indexRepo(soul, repoRoot, {
-    buildOpts: { withEmbeddings },
+    semantic,
     ignores,
   });
   registerIndexed(repoRoot, cribDir, soul);
@@ -174,6 +178,30 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
       `(${report.link.describes} describes, ${report.link.references} references) in ${Date.now() - started}ms\n`,
   );
   return EXIT.OK;
+}
+
+/**
+ * Build a fresh SoulStore for a full `crib index`/`reindex` over a (possibly existing) `.crib`:
+ * stamp the current SCHEMA_VERSION (never inherit a stale one from an older soul), preserve repo.id
+ * across rebuilds (so the committed soul + the ~/.crib/registry mapping stay stable), and
+ * resetForRebuild() so every on-disk shard is pruned-on-commit instead of layering new nodes over a
+ * stale older-schema soul. Deliberately does NOT call load() — that would hydrate stale nodes and
+ * overwrite the fresh manifest (the root cause of the additive-corrupt re-index bug).
+ */
+function freshSoulForRebuild(cribDir: string): SoulStore {
+  const manifestPath = join(cribDir, MANIFEST_FILE);
+  let repoId: string | undefined;
+  if (existsSync(manifestPath)) {
+    try {
+      repoId = (JSON.parse(readFileSync(manifestPath, 'utf8')) as { repo?: { id?: string } }).repo
+        ?.id;
+    } catch {
+      // corrupt or unreadable manifest — generate a fresh repo.id via newManifest below
+    }
+  }
+  const soul = new SoulStore(cribDir, { manifest: newManifest({ root: '.', repoId }) });
+  soul.resetForRebuild();
+  return soul;
 }
 
 async function cmdStatus(args: string[], ctx?: CmdCtx): Promise<number> {
@@ -281,14 +309,13 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
 async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
   // reindex targets the exact given dir (no upward walk), like index.
   const repoRoot = resolve(ctx?.cwdOverride ?? pathArg(args) ?? '.');
-  const withEmbeddings = args.includes('--with-embeddings');
+  const semantic = args.includes('--semantic');
   const ignores = parseExcludes(args);
   const cribDir = join(repoRoot, '.crib');
-  const soul = new SoulStore(cribDir, { manifest: newManifest({ root: '.' }) });
-  soul.load();
+  const soul = freshSoulForRebuild(cribDir);
   const started = Date.now();
   const report = await indexRepo(soul, repoRoot, {
-    buildOpts: { withEmbeddings },
+    semantic,
     ignores,
   });
   registerIndexed(repoRoot, cribDir, soul);
@@ -545,7 +572,7 @@ function printHelp(): void {
       'crib — Knowledge-crib CLI',
       '',
       'Usage:',
-      '  crib index [path] [--with-embeddings] [--exclude a,b,...]   full index → .crib soul + derived index',
+      '  crib index [path] [--semantic] [--exclude a,b,...]     full index → .crib soul + derived index (+ INFERRED TF-IDF semantic links)',
       '  crib status [path]                       health + stats',
       '  crib query <text>                        BM25 search over code + docs',
       '  crib serve [path]                        run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd)',

@@ -63,6 +63,8 @@ export interface Decl {
   dataType?: string;
   /** cursor: the SELECT query text (everything after IS), whitespace-collapsed. */
   cursorQuery?: string;
+  /** true iff `cursorQuery` was clipped at the fidelity cap. */
+  exprTruncated?: boolean;
   span: AstSpan;
   body?: Block;
   declarations?: Decl[];
@@ -97,8 +99,11 @@ export interface SqlStmt {
   tables: string[];
   /** referenced columns as written, e.g. ["status","amount"] (best-effort, may be empty). */
   columns: string[];
-  /** the action verb, e.g. "SELECT … FROM claims.claims WHERE id = :1" (truncated snippet). */
+  /** the action verb, e.g. "SELECT … FROM claims.claims WHERE id = :1" (whitespace-collapsed,
+   *  clipped only past the EXPR_MAX_CHARS fidelity cap). */
   expr?: string;
+  /** true iff `expr` was clipped at the fidelity cap. */
+  exprTruncated?: boolean;
   /** 1.2: SELECT … INTO <var> — the target variable (provenance), when present. */
   intoTarget?: string;
 }
@@ -155,7 +160,10 @@ export interface AssignStmt {
   span: AstSpan;
   /** the assignment target (LHS) as written, e.g. "v_status" / "self.amount". */
   target?: string;
+  /** the RHS expression as written (the scoring formula), clipped only past EXPR_MAX_CHARS. */
   expr?: string;
+  /** true iff `expr` was clipped at the fidelity cap. */
+  exprTruncated?: boolean;
 }
 
 /** A procedure/function call statement: `do_work(arg);` / `pkg.do_work(arg);`. */

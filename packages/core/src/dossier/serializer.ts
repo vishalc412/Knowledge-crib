@@ -19,6 +19,24 @@ export function dossierToMarkdown(d: Dossier): string {
 
   h(`# ${String(n.qualifiedName ?? n.name ?? d.id)}`);
   h('');
+
+  // TOP BANNER (Phase 1 — impossible to miss): when a callable's body is unavailable or fidelity is
+  // partial, say so BEFORE anything else, so an LLM building a migration plan gates on it instead of
+  // back-filling the gap with assumptions. This is the single most important honesty signal.
+  if (d.coverage) {
+    if (d.coverage.readiness === 'unimplemented') {
+      h(
+        '> ⛔ **ANALYSIS BLOCKED — body unavailable.** This callable has no indexed body statements; ' +
+          'its behavior, scoring formulas, and migration logic are NOT in this graph. Locate and index ' +
+          'the implementation (e.g. the PL/SQL package body) before planning any change against it.',
+      );
+      h('');
+    } else if (d.coverage.readiness === 'partial') {
+      h(`> ⚠ **PARTIAL FIDELITY.** ${d.coverage.caveats.join(' ')}`);
+      h('');
+    }
+  }
+
   h(`- kind: ${String(n.kind)}`);
   if (n.type) h(`- type: ${String(n.type)}`);
   if (n.lang) h(`- lang: ${String(n.lang)}`);
@@ -37,6 +55,11 @@ export function dossierToMarkdown(d: Dossier): string {
   if (n.whenSelector) h(`- whenSelector: ${String(n.whenSelector)}`);
   if (n.assignTarget) h(`- assignTarget: ${String(n.assignTarget)}`);
   if (n.cursorQuery) h(`- cursorQuery: \`${String(n.cursorQuery)}\``);
+  // framework-semantics 1.3 identity — the handler's own route verb/path + the symbol's framework role.
+  if (n.framework) h(`- framework: ${String(n.framework)}`);
+  if (n.stereotype) h(`- stereotype: ${String(n.stereotype)}`);
+  if (n.httpMethod) h(`- httpMethod: ${String(n.httpMethod)}`);
+  if (n.routePath) h(`- routePath: ${String(n.routePath)}`);
   h('');
 
   // source body (embedded; paging honored — only the returned page is rendered)
@@ -50,6 +73,51 @@ export function dossierToMarkdown(d: Dossier): string {
     );
   }
   h('');
+
+  // implementation completeness — the LOUD "body missing" signal. When unimplemented, the decision
+  // table + control-flow sections below are necessarily empty; this section says why, so an analyst
+  // never mistakes a spec-only skeleton for a complete analysis.
+  if (d.implementation) {
+    h('## Implementation status');
+    if (d.implementation.status === 'implemented') {
+      h(`Implemented — ${d.implementation.executesCount} body statement(s) indexed.`);
+    } else {
+      h(
+        '⚠ **Unimplemented** — no body statements found for this callable. The implementation may ' +
+          'live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. ' +
+          'Decision-table / control-flow fields are unavailable; locate the body before relying on ' +
+          'behavior here.',
+      );
+    }
+    if (d.implementation.referencedByFiles.length > 0) {
+      h(
+        `Referenced from ${d.implementation.referencedByFiles.length} file(s): ${d.implementation.referencedByFiles.join(', ')}`,
+      );
+    } else if (d.implementation.status === 'unimplemented') {
+      h('Not referenced by any indexed callable.');
+    }
+    h('');
+  }
+
+  // Coverage self-report (Phase 4) — the 360° inventory of what the graph knows about this callable,
+  // so the reader sees fidelity at a glance instead of inferring it from the presence/absence of
+  // later sections.
+  if (d.coverage) {
+    const c = d.coverage;
+    h('## Coverage');
+    h(`- readiness: **${c.readiness}**`);
+    h(
+      `- body statements: ${c.executes} · assignments: ${c.assignments} · conditions: ${c.conditions} · case-branches: ${c.caseBranches}`,
+    );
+    h(`- raises: ${c.raises} · handlers: ${c.handlers} · cursors: ${c.cursors}`);
+    h(
+      `- calls: ${c.calls.resolved} resolved / ${c.calls.recorded} recorded / ${c.calls.unresolved} unresolved${c.recursive ? ' · recursive' : ''}`,
+    );
+    if (c.exprTruncated > 0)
+      h(`- ⚠ ${c.exprTruncated} clipped expression(s) — rehydrate source for verbatim text`);
+    for (const cav of c.caveats) h(`- caveat: ${cav}`);
+    h('');
+  }
 
   if (d.callers.length > 0) {
     h('## Callers');
@@ -105,6 +173,101 @@ export function dossierToMarkdown(d: Dossier): string {
       for (const c of cf.declares) {
         h(
           `- ${String(c.kind)} ${String(c.name ?? '?')} ${c.cursorQuery ? `\`${String(c.cursorQuery)}\`` : ''} (@${loc(c)})`,
+        );
+      }
+      h('');
+    }
+  }
+
+  // Framework-semantics 1.3 — the resolved framework relationships. The method-scoped persisted
+  // dossier carries only the LEAN subset (Routes + Produces the callable owns); the context verb
+  // carries the full set (Dependencies/Dependents/Relations/Renders via member-of aggregation for a
+  // class). Fixed order Routes → Produces → Dependencies → Dependents → Relations → Renders; each
+  // subsection emitted ONLY when its array is non-empty (mirrors the Callers/Callees conditional style).
+  // Routes + Relations render as deterministic tables (diff-friendly for the parity harness); the
+  // rest as bullets. Unresolved entries carry a `⚠ unresolved` marker (parity with coverage caveats).
+  if (d.framework) {
+    const f = d.framework;
+    if (f.routes && f.routes.length > 0) {
+      h('## Routes');
+      h('| # | verb | path | params | security | handler |');
+      h('|---|------|------|--------|----------|---------|');
+      f.routes.forEach((r, i) => {
+        const params =
+          (r.params ?? [])
+            .map((p) => `${p.name}${p.type ? `:${p.type}` : ''}@${p.in}`)
+            .join(', ') || '—';
+        const sec =
+          r.security && Object.keys(r.security).length > 0
+            ? Object.entries(r.security)
+                .map(([k, v]) => `${k}=${String(v)}`)
+                .join(', ')
+            : '—';
+        const handler = r.handler ? label(r.handler) : '—';
+        h(
+          `| ${i + 1} | ${r.httpMethod ?? (r.unresolved ? '⚠' : '—')} | ${
+            r.routePath ?? r.name ?? (r.unresolved ? '⚠ unresolved' : '—')
+          } | ${params} | ${sec} | ${handler} |`,
+        );
+      });
+      h('');
+    }
+    if (f.produces && f.produces.length > 0) {
+      h('## Produces');
+      for (const p of f.produces) {
+        const rt = [p.returnType, p.returnElementType].filter(Boolean).join('<');
+        h(
+          `- ${label(p.brief)}${rt ? ` (returns ${rt})` : ''}${
+            p.producer ? ` — declared by ${label(p.producer)}` : ''
+          }${p.unresolved ? ' ⚠ unresolved' : ''} (confidence ${p.confidence})`,
+        );
+      }
+      h('');
+    }
+    if (f.dependencies && f.dependencies.length > 0) {
+      h('## Dependencies');
+      for (const dep of f.dependencies) {
+        h(
+          `- [${dep.kind}] ${label(dep.brief)}${
+            dep.injectedAs ? ` (as ${dep.injectedAs})` : ''
+          }${dep.producer ? ` — supplied by ${label(dep.producer)}` : ''}${
+            dep.unresolved ? ' ⚠ unresolved' : ''
+          } (confidence ${dep.confidence})`,
+        );
+      }
+      h('');
+    }
+    if (f.dependents && f.dependents.length > 0) {
+      h('## Dependents');
+      for (const dep of f.dependents) {
+        h(
+          `- ${label(dep.brief)}${dep.injectedAs ? ` (as ${dep.injectedAs})` : ''} (confidence ${
+            dep.confidence
+          })`,
+        );
+      }
+      h('');
+    }
+    if (f.relations && f.relations.length > 0) {
+      h('## Relations');
+      h('| # | field | type | cardinality | cascade | fetch | mappedBy | orphanRemoval |');
+      h('|---|-------|------|------------|--------|-------|---------|--------------|');
+      f.relations.forEach((r, i) => {
+        h(
+          `| ${i + 1} | ${r.field ?? '—'} | ${label(r.brief)} | ${
+            r.cardinality ?? '—'
+          } | ${r.cascade ?? '—'} | ${r.fetch ?? '—'} | ${r.mappedBy ?? '—'} | ${
+            r.orphanRemoval ?? '—'
+          } |`,
+        );
+      });
+      h('');
+    }
+    if (f.renders && f.renders.length > 0) {
+      h('## Renders');
+      for (const r of f.renders) {
+        h(
+          `- ${label(r.brief)}${r.framework ? ` (${r.framework})` : ''} (confidence ${r.confidence})`,
         );
       }
       h('');

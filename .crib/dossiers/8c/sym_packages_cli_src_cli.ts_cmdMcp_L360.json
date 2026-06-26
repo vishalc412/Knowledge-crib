@@ -1,0 +1,1004 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c7f98725669702e4c46b584e871f3775daa25f81b8e6bac8b8bbbe20ad0242a2",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cmdMcp",
+    "qualifiedName": "cmdMcp",
+    "signature": "cmdMcp(args: string[], ctx?: CmdCtx): number",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 360,
+      "end": 435
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 373
+      },
+      {
+        "callee": "resolve",
+        "line": 375
+      },
+      {
+        "callee": "write",
+        "line": 378
+      },
+      {
+        "callee": "join",
+        "line": 378
+      },
+      {
+        "callee": "installMcp",
+        "line": 384
+      },
+      {
+        "callee": "write",
+        "line": 388
+      },
+      {
+        "callee": "write",
+        "line": 390
+      },
+      {
+        "callee": "join",
+        "line": 391
+      },
+      {
+        "callee": "write",
+        "line": 394
+      },
+      {
+        "callee": "listMcp",
+        "line": 400
+      },
+      {
+        "callee": "write",
+        "line": 402
+      },
+      {
+        "callee": "write",
+        "line": 406
+      },
+      {
+        "callee": "removeMcp",
+        "line": 413
+      },
+      {
+        "callee": "write",
+        "line": 416
+      },
+      {
+        "callee": "write",
+        "line": 418
+      },
+      {
+        "callee": "write",
+        "line": 427
+      },
+      {
+        "callee": "write",
+        "line": 432
+      }
+    ]
+  },
+  "source": {
+    "text": "function cmdMcp(args: string[], ctx?: CmdCtx): number {\n  const [sub, ...rest] = args;\n  let ide: McpIde | 'all' = 'all';\n  let scope: McpScope = 'project';\n  let bin: string | undefined;\n  const positionals: string[] = [];\n  // Parse flags + collect positionals in ONE pass so a flag value (e.g. `--ide vscode`) is not\n  // mistaken for the project path. `pathArg` alone can't tell value-tokens from positionals.\n  for (let i = 0; i < rest.length; i++) {\n    const a = rest[i]!;\n    if (a === '--ide') ide = (rest[++i] as McpIde | 'all') ?? 'all';\n    else if (a === '--global') scope = 'global';\n    else if (a === '--bin') bin = rest[++i];\n    else if (!a.startsWith('-')) positionals.push(a);\n  }\n  const repoRoot = resolve(ctx?.cwdOverride ?? positionals[0] ?? '.');\n  const validIdes: Array<McpIde | 'all'> = ['all', 'claude', 'cursor', 'vscode', 'codex'];\n  if (!validIdes.includes(ide)) {\n    process.stderr.write(`unknown --ide: ${ide}\\nvalid: ${validIdes.join(', ')}\\n`);\n    return EXIT.BAD_ARGS;\n  }\n\n  switch (sub) {\n    case 'install': {\n      const results = installMcp(repoRoot, { ide, scope, bin });\n      for (const r of results) {\n        const tag = `${r.ide}/${r.scope}`;\n        if (r.note) {\n          process.stdout.write(`${tag}: ${r.note}\\n`);\n        } else if (r.written) {\n          process.stdout.write(\n            `${tag}: wrote ${r.configPath}\\n  command: ${r.command} ${r.args.join(' ')}\\n`,\n          );\n        } else {\n          process.stdout.write(`${tag}: already up to date at ${r.configPath}\\n`);\n        }\n      }\n      return EXIT.OK;\n    }\n    case 'list': {\n      const entries = listMcp(repoRoot, { ide, scope });\n      if (entries.length === 0) {\n        process.stdout.write('no matching IDE/scope combinations\\n');\n        return EXIT.OK;\n      }\n      for (const e of entries) {\n        process.stdout.write(\n          `${e.ide}/${e.scope}: ${e.present ? 'present' : 'absent'} → ${e.configPath}\\n`,\n        );\n      }\n      return EXIT.OK;\n    }\n    case 'remove': {\n      const results = removeMcp(repoRoot, { ide, scope, bin });\n      for (const r of results) {\n        const tag = `${r.ide}/${r.scope}`;\n        if (r.note) process.stdout.write(`${tag}: ${r.note}\\n`);\n        else\n          process.stdout.write(\n            `${tag}: ${r.written ? 'removed' : 'not present'} → ${r.configPath}\\n`,\n          );\n      }\n      return EXIT.OK;\n    }\n    case undefined:\n    case '-h':\n    case '--help':\n      process.stderr.write(\n        'usage: crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]\\n',\n      );\n      return EXIT.BAD_ARGS;\n    default:\n      process.stderr.write(`unknown mcp subcommand: ${sub}\\n`);\n      return EXIT.BAD_ARGS;\n  }\n}",
+    "truncated": false,
+    "totalLines": 76,
+    "startLine": 360
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#main@L99",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main(argvRaw: string[]): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 99
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#installMcp@L171",
+      "confidence": 1,
+      "name": "installMcp",
+      "qualifiedName": "installMcp",
+      "signature": "installMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 171
+    },
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#listMcp@L256",
+      "confidence": 1,
+      "name": "listMcp",
+      "qualifiedName": "listMcp",
+      "signature": "listMcp(repoRoot: string, opts: { ide?: McpIde | 'all'; scope?: McpScope } = {}): McpListEntry[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 256
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
+      "confidence": 1,
+      "name": "removeMcp",
+      "qualifiedName": "removeMcp",
+      "signature": "removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 281
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L356",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+    "procedureName": "cmdMcp",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L368",
+      "cond:packages/cli/src/cli.ts@L370",
+      "cond:packages/cli/src/cli.ts@L371",
+      "cond:packages/cli/src/cli.ts@L372",
+      "cond:packages/cli/src/cli.ts@L373",
+      "cond:packages/cli/src/cli.ts@L377",
+      "case:packages/cli/src/cli.ts@L383",
+      "cond:packages/cli/src/cli.ts@L385",
+      "cond:packages/cli/src/cli.ts@L387",
+      "cond:packages/cli/src/cli.ts@L389",
+      "case:packages/cli/src/cli.ts@L399",
+      "cond:packages/cli/src/cli.ts@L401",
+      "cond:packages/cli/src/cli.ts@L405",
+      "case:packages/cli/src/cli.ts@L412",
+      "cond:packages/cli/src/cli.ts@L414",
+      "cond:packages/cli/src/cli.ts@L416",
+      "case:packages/cli/src/cli.ts@L426"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L370",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L368",
+            "expr": "i < rest.length"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L370",
+            "expr": "a === '--ide'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9b4a96a035518ff4b04a0200e11f6e564a31ac6b2b7c3d14fc2fe12f7c896da8",
+          "target": "assign:packages/cli/src/cli.ts@L370",
+          "line": 370,
+          "expr": "ide = (rest[++i] as McpIde | 'all') ?? 'all';"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L371",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L368",
+            "expr": "i < rest.length"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L370",
+            "expr": "a === '--ide'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L371",
+            "expr": "a === '--global'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8ece2e74e57279b0ad30f21c03aad99bd7e7dff80a36feb28e4510295d3ff3de",
+          "target": "assign:packages/cli/src/cli.ts@L371",
+          "line": 371,
+          "expr": "scope = 'global';"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L372",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L368",
+            "expr": "i < rest.length"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L370",
+            "expr": "a === '--ide'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L371",
+            "expr": "a === '--global'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L372",
+            "expr": "a === '--bin'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:01f7edf6e043649b3c070a6c40cbede4829a9c3d4b91a13d325625d64ba4b4f7",
+          "target": "assign:packages/cli/src/cli.ts@L372",
+          "line": 372,
+          "expr": "bin = rest[++i];"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L373",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L368",
+            "expr": "i < rest.length"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L370",
+            "expr": "a === '--ide'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L371",
+            "expr": "a === '--global'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L372",
+            "expr": "a === '--bin'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L373",
+            "expr": "!a.startsWith('-')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5a0013fd73385c052feced27203916e5bf98d4270c91b7a6036227e6a3c65f0b",
+          "target": "stmt:packages/cli/src/cli.ts@L373",
+          "line": 373,
+          "expr": "positionals.push(a);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e39f58897d461a80618e8da4fe890bb57e5beefe055abc4412609105667910f9",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 373
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:733f78cadcb1dc70b0821d05c78a644a10718b85de12565245c32cb6581ba359",
+          "target": "stmt:packages/cli/src/cli.ts@L375",
+          "line": 375,
+          "expr": "const repoRoot = resolve(ctx?.cwdOverride ?? positionals[0] ?? '.');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L377",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L377",
+            "expr": "!validIdes.includes(ide)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:63926a981977266c15c707fc2914be5bcff5407c5423fef63328b8f4b96722cc",
+          "target": "stmt:packages/cli/src/cli.ts@L378",
+          "line": 378,
+          "expr": "process.stderr.write(`unknown --ide: ${ide}\\nvalid: ${validIdes.join(', ')}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ed22733f0756d671a9c046c42f6fc716dd2565a2eb301f11401afa47264227fc",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 378
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L377",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L377",
+            "expr": "!validIdes.includes(ide)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:76dcd529ee3cacf697a86e1664160a484fa0dd70ef3128ed0da8064c4f10673b",
+          "target": "stmt:packages/cli/src/cli.ts@L379",
+          "line": 379,
+          "expr": "return EXIT.BAD_ARGS;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5f85a74d9efce07c1e9c27e08932355bc9ac5e1dc227e35b66399304081752fb",
+          "target": "case:packages/cli/src/cli.ts@L383",
+          "line": 383,
+          "expr": "install"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "case:packages/cli/src/cli.ts@L383",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L383",
+            "expr": "install",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ea93085c81805078c33fda13887609bc586c2f96d906ad38f0493863014c5421",
+          "target": "stmt:packages/cli/src/cli.ts@L384",
+          "line": 384,
+          "expr": "const results = installMcp(repoRoot, { ide, scope, bin });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c61e2be004d39ad909264e0ab8f6eefbac49a7cfa17e5796562e678a0ead3d26",
+          "target": "sym:packages/cli/src/mcp-install.ts#installMcp@L171",
+          "expr": "installMcp",
+          "line": 384
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L387",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L383",
+            "expr": "install"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L385",
+            "expr": "results"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L387",
+            "expr": "r.note",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:52379b2e3a6eaab53feb7260491c7d4cdfae1d5a413bc2cbb3e2e91666f8d93b",
+          "target": "stmt:packages/cli/src/cli.ts@L388",
+          "line": 388,
+          "expr": "process.stdout.write(`${tag}: ${r.note}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L389",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L383",
+            "expr": "install"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L385",
+            "expr": "results"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L387",
+            "expr": "r.note"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L389",
+            "expr": "r.written",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e512a06e00df49f84914e97158655d34f62b63abb288e92331ea1433b7dde51",
+          "target": "stmt:packages/cli/src/cli.ts@L390",
+          "line": 390,
+          "expr": "process.stdout.write(\n            `${tag}: wrote ${r.configPath}\\n  command: ${r.command} ${r.args.join(' ')}\\n`,\n          );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L389",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L383",
+            "expr": "install"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L385",
+            "expr": "results"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L387",
+            "expr": "r.note"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L389",
+            "expr": "r.written",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a63ef7458d57afeddf74f0138d38ee8c3e1b54917c76ec2552711f63f5a1622",
+          "target": "stmt:packages/cli/src/cli.ts@L394",
+          "line": 394,
+          "expr": "process.stdout.write(`${tag}: already up to date at ${r.configPath}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "case:packages/cli/src/cli.ts@L383",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L383",
+            "expr": "install",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cd8a3108232c6dc8849293954c145fb3306114fa8d61bdd035005c27b0bcdb8c",
+          "target": "stmt:packages/cli/src/cli.ts@L397",
+          "line": 397,
+          "expr": "return EXIT.OK;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5fc235eeb93f17fb70149aa01c8fe17758a8e330fbe88da5ac8f6dba5fc2afc7",
+          "target": "case:packages/cli/src/cli.ts@L399",
+          "line": 399,
+          "expr": "list"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "case:packages/cli/src/cli.ts@L399",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L399",
+            "expr": "list",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f783e9d9ced6420e799a0c192815e6c9181b65969192c2af3d9c258c1ae79df9",
+          "target": "stmt:packages/cli/src/cli.ts@L400",
+          "line": 400,
+          "expr": "const entries = listMcp(repoRoot, { ide, scope });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4c1c1f35d43ac263684cf5a63352ef52c3bdc0ec201f8a92ccb81cbf78b08347",
+          "target": "sym:packages/cli/src/mcp-install.ts#listMcp@L256",
+          "expr": "listMcp",
+          "line": 400
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L401",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L399",
+            "expr": "list"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L401",
+            "expr": "entries.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a8464033025d1f42082c2fdb492c4247ff3f4f6d5a5e7f6c32415046345bd1a0",
+          "target": "stmt:packages/cli/src/cli.ts@L402",
+          "line": 402,
+          "expr": "process.stdout.write('no matching IDE/scope combinations\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L401",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L399",
+            "expr": "list"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L401",
+            "expr": "entries.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a5e700c4d324a324258e8c959167c67155c344dd264f7b397a5efed2820dffd9",
+          "target": "stmt:packages/cli/src/cli.ts@L403",
+          "line": 403,
+          "expr": "return EXIT.OK;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L405",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L399",
+            "expr": "list"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L405",
+            "expr": "entries",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:22a5acbed5e6d7eb757423fae59e15767c8686ae5cc19a5a1c8ca4ee4fba40ec",
+          "target": "stmt:packages/cli/src/cli.ts@L406",
+          "line": 406,
+          "expr": "process.stdout.write(\n          `${e.ide}/${e.scope}: ${e.present ? 'present' : 'absent'} → ${e.configPath}\\n`,\n        );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "case:packages/cli/src/cli.ts@L399",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L399",
+            "expr": "list",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fe4cc5d4368e232a1a713fe70bc5683949ceab2c028482407202d3c9f5db54aa",
+          "target": "stmt:packages/cli/src/cli.ts@L410",
+          "line": 410,
+          "expr": "return EXIT.OK;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3f3af9b44f57e11e38835189d0b941c317cdcf346a29b6125b140c8a87368368",
+          "target": "case:packages/cli/src/cli.ts@L412",
+          "line": 412,
+          "expr": "remove"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "case:packages/cli/src/cli.ts@L412",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L412",
+            "expr": "remove",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ed590dfeebfb72976715c83d9e8e058564a9dc8b114b7f5fcc5dd25092f022b8",
+          "target": "stmt:packages/cli/src/cli.ts@L413",
+          "line": 413,
+          "expr": "const results = removeMcp(repoRoot, { ide, scope, bin });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:349703a03c7cdc0535f21ae881ffc28369a6a02832c96e537ea168a168af2c12",
+          "target": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
+          "expr": "removeMcp",
+          "line": 413
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L416",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L412",
+            "expr": "remove"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L414",
+            "expr": "results"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L416",
+            "expr": "r.note",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f4482079834f48d39ae64bfb69893aef4418819c172d7f1b42203cb465e8e7d0",
+          "target": "stmt:packages/cli/src/cli.ts@L416",
+          "line": 416,
+          "expr": "process.stdout.write(`${tag}: ${r.note}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "cond:packages/cli/src/cli.ts@L416",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L412",
+            "expr": "remove"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L414",
+            "expr": "results"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L416",
+            "expr": "r.note",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb1c533e4b4f0f61e8328f3bc8fc7224750e1f25fc1140d53489fbabb95ccaa8",
+          "target": "stmt:packages/cli/src/cli.ts@L418",
+          "line": 418,
+          "expr": "process.stdout.write(\n            `${tag}: ${r.written ? 'removed' : 'not present'} → ${r.configPath}\\n`,\n          );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "case:packages/cli/src/cli.ts@L412",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L412",
+            "expr": "remove",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1c04347058265da802eb4d326055c2d50b69d451afe2c80e26456e5ad83f0009",
+          "target": "stmt:packages/cli/src/cli.ts@L422",
+          "line": 422,
+          "expr": "return EXIT.OK;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:45c795a149389d7e0c28f58f42c83b53805a2c9664a002cfa69e143f2b554d9d",
+          "target": "case:packages/cli/src/cli.ts@L424",
+          "line": 424,
+          "expr": "undefined"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:39f8ee46713b05544f4ce702941e74612268ed552acbce33387e25acb13fcfff",
+          "target": "case:packages/cli/src/cli.ts@L425",
+          "line": 425,
+          "expr": "-h"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c10112ae4395060db3892320bcedb41c99cc92ef8e5eecc1f335db0e3bc61e11",
+          "target": "case:packages/cli/src/cli.ts@L426",
+          "line": 426,
+          "expr": "--help"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "case:packages/cli/src/cli.ts@L426",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L426",
+            "expr": "--help",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df1d7774010db75553afbb7142777b2be80a0fb1973e672af5f16e567eeac943",
+          "target": "stmt:packages/cli/src/cli.ts@L427",
+          "line": 427,
+          "expr": "process.stderr.write(\n        'usage: crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]\\n',\n      );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "guard": "case:packages/cli/src/cli.ts@L426",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/cli.ts@L426",
+            "expr": "--help",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3d6ce24175a2aac7f2f2b75401be56849486b22d680d1728c59d3ed001831c1c",
+          "target": "stmt:packages/cli/src/cli.ts@L430",
+          "line": 430,
+          "expr": "return EXIT.BAD_ARGS;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:81dea8e5c2d3272aeec3d357a6ac9a748db6ba65eea0876515c3458ccd49076b",
+          "target": "stmt:packages/cli/src/cli.ts@L432",
+          "line": 432,
+          "expr": "process.stderr.write(`unknown mcp subcommand: ${sub}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMcp@L360",
+        "procedureName": "cmdMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29ec84f6bf95eb8d779ad59150913d4d67b6a85c3bf15672f0bb640d09e67cce",
+          "target": "stmt:packages/cli/src/cli.ts@L433",
+          "line": 433,
+          "expr": "return EXIT.BAD_ARGS;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 31,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 31,
+    "assignments": 3,
+    "conditions": 14,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 6,
+    "calls": {
+      "resolved": 5,
+      "recorded": 17,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

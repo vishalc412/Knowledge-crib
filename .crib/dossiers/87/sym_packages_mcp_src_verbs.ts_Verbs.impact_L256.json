@@ -1,0 +1,606 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9e4f9e19fb86a25cf21c365aeeaf3633e66ed93c04a1b99b39cd05fc6a230918",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+    "kind": "symbol",
+    "type": "method",
+    "name": "impact",
+    "qualifiedName": "Verbs.impact",
+    "signature": "impact(args: {\n    id: string;\n    dir: Dir;\n    depth?: number;\n    docLimit?: number;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 256,
+      "end": 304
+    },
+    "callSites": [
+      {
+        "callee": "notFound",
+        "line": 264
+      },
+      {
+        "callee": "add",
+        "line": 281
+      },
+      {
+        "callee": "push",
+        "line": 282
+      },
+      {
+        "callee": "push",
+        "line": 283
+      },
+      {
+        "callee": "bound",
+        "line": 288
+      },
+      {
+        "callee": "docsFor",
+        "line": 288
+      },
+      {
+        "callee": "bound",
+        "line": 295
+      },
+      {
+        "callee": "docsFor",
+        "line": 300
+      }
+    ]
+  },
+  "source": {
+    "text": "  impact(args: {\n    id: string;\n    dir: Dir;\n    depth?: number;\n    docLimit?: number;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown> {\n    if (!this.deps.soul.getNode(args.id)) return notFound(args.id);\n    const depth = args.depth ?? 2;\n    const visited = new Set<string>([args.id]);\n    const affected: Array<{\n      id: string;\n      rel: string;\n      distance: number;\n      risk: string;\n      docs: DocLink[];\n    }> = [];\n    let frontier = [args.id];\n    for (let d = 1; d <= depth && frontier.length > 0; d++) {\n      const next: string[] = [];\n      for (const cur of frontier) {\n        for (const e of this.adjacency(cur, args.dir, args.extractedOnly)) {\n          const nb = args.dir === 'up' ? e.src : e.dst;\n          if (visited.has(nb)) continue;\n          visited.add(nb);\n          next.push(nb);\n          affected.push({\n            id: nb,\n            rel: e.rel,\n            distance: d,\n            risk: d === 1 ? 'high' : d === 2 ? 'medium' : 'low',\n            docs: bound(this.docsFor(nb, 0, args.extractedOnly), args.docLimit ?? DEFAULT_DOC_LIMIT)\n              .items,\n          });\n        }\n      }\n      frontier = next;\n    }\n    const page = bound(affected, args.limit ?? DEFAULT_LIMIT);\n    return {\n      root: args.id,\n      dir: args.dir,\n      affected: page.items,\n      relatedDocs: this.docsFor(args.id, 0, args.extractedOnly),\n      truncated: page.truncated,\n      ...(page.cursor ? { cursor: page.cursor } : {}),\n    };\n  }",
+    "truncated": false,
+    "totalLines": 49,
+    "startLine": 256
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.adjacency@L609",
+      "confidence": 1,
+      "name": "adjacency",
+      "qualifiedName": "Verbs.adjacency",
+      "signature": "adjacency(id: string, dir: Dir | 'both', extractedOnly?: boolean): Edge[]",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 609
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L624",
+      "confidence": 1,
+      "name": "docsFor",
+      "qualifiedName": "Verbs.docsFor",
+      "signature": "docsFor(id: string, minConfidence: number, extractedOnly?: boolean): DocLink[]",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 624
+    },
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#bound@L15",
+      "confidence": 1,
+      "name": "bound",
+      "qualifiedName": "bound",
+      "signature": "bound(all: T[], limit: number, offset = 0): Bounded<T>",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 15
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#notFound@L743",
+      "confidence": 1,
+      "name": "notFound",
+      "qualifiedName": "notFound",
+      "signature": "notFound(id: string): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 743
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:README.md#architecture-dual-store",
+      "heading": "Architecture (dual store)",
+      "anchor": "architecture-dual-store",
+      "snippet": "Architecture (dual store)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#knowledge-crib-implementation-plan-detailed",
+      "heading": "Knowledge-crib — Implementation Plan (detailed)",
+      "anchor": "knowledge-crib-implementation-plan-detailed",
+      "snippet": "Knowledge-crib — Implementation Plan (detailed)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "heading": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "anchor": "2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "snippet": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#3-2-feature-by-feature",
+      "heading": "3.2 Feature-by-feature",
+      "anchor": "3-2-feature-by-feature",
+      "snippet": "3.2 Feature-by-feature",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#1-design-principles",
+      "heading": "1. Design principles",
+      "anchor": "1-design-principles",
+      "snippet": "1. Design principles",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#nexus-user-research-interview-guide",
+      "heading": "Nexus — User Research Interview Guide",
+      "anchor": "nexus-user-research-interview-guide",
+      "snippet": "Nexus — User Research Interview Guide",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#2-problem-user",
+      "heading": "2. Problem & User",
+      "anchor": "2-problem-user",
+      "snippet": "2. Problem & User",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#9-user-research-plan-q27-q30",
+      "heading": "9. User Research Plan [Q27–Q30]",
+      "anchor": "9-user-research-plan-q27-q30",
+      "snippet": "9. User Research Plan [Q27–Q30]",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#12-future-seeroflow-integration-q38",
+      "heading": "12. Future: SeeroFlow Integration [Q38]",
+      "anchor": "12-future-seeroflow-integration-q38",
+      "snippet": "12. Future: SeeroFlow Integration [Q38]",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#2-impact-analysis-before-a-change-the-canonical-crib-prompt",
+      "heading": "2. Impact analysis before a change — *the canonical crib prompt*",
+      "anchor": "2-impact-analysis-before-a-change-the-canonical-crib-prompt",
+      "snippet": "2. Impact analysis before a change — *the canonical crib prompt*",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "heading": "9. Prompt skeleton you can keep at the top of a session",
+      "anchor": "9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "snippet": "9. Prompt skeleton you can keep at the top of a session",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#5-the-example-fully-represented",
+      "heading": "5. The example, fully represented",
+      "anchor": "5-the-example-fully-represented",
+      "snippet": "5. The example, fully represented",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#detect-changes",
+      "heading": "`detect_changes`",
+      "anchor": "detect-changes",
+      "snippet": "`detect_changes`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#6-mvp-scope-q23",
+      "heading": "6. MVP Scope [Q23]",
+      "anchor": "6-mvp-scope-q23",
+      "snippet": "6. MVP Scope [Q23]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#6-code-review-pr-sizing",
+      "heading": "6. Code review / PR sizing",
+      "anchor": "6-code-review-pr-sizing",
+      "snippet": "6. Code review / PR sizing",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#my-standing-assumptions-correct-me-if-wrong",
+      "heading": "My standing assumptions (correct me if wrong)",
+      "anchor": "my-standing-assumptions-correct-me-if-wrong",
+      "snippet": "My standing assumptions (correct me if wrong)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#detect-changes-dry-run-delta-since-a-git-ref",
+      "heading": "`detect_changes` — dry-run delta since a git ref",
+      "anchor": "detect-changes-dry-run-delta-since-a-git-ref",
+      "snippet": "`detect_changes` — dry-run delta since a git ref",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+    "procedureName": "Verbs.impact",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L264",
+      "cond:packages/mcp/src/verbs.ts@L275",
+      "cond:packages/mcp/src/verbs.ts@L277",
+      "cond:packages/mcp/src/verbs.ts@L278"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+        "procedureName": "Verbs.impact",
+        "guard": "cond:packages/mcp/src/verbs.ts@L264",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L264",
+            "expr": "!this.deps.soul.getNode(args.id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6231529ada2fe570bd431ab59cf63ddf0ac3305f66b87630b40d6d33b4240493",
+          "target": "sym:packages/mcp/src/verbs.ts#notFound@L743",
+          "expr": "notFound",
+          "line": 264
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+        "procedureName": "Verbs.impact",
+        "guard": "cond:packages/mcp/src/verbs.ts@L264",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L264",
+            "expr": "!this.deps.soul.getNode(args.id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d542aa95ad2355e212a57f39ed48caf246bb9cf30c18f77b32b6b8a10e6626e0",
+          "target": "stmt:packages/mcp/src/verbs.ts@L264",
+          "line": 264,
+          "expr": "return notFound(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+        "procedureName": "Verbs.impact",
+        "guard": "cond:packages/mcp/src/verbs.ts@L278",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L275",
+            "expr": "d <= depth && frontier.length > 0"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L277",
+            "expr": "frontier"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L278",
+            "expr": "this.adjacency(cur, args.dir, args.extractedOnly)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:522bbd1439b7cc49efab07f910a8d7349d7cbbf8caa6dab141361cd79e6b7dba",
+          "target": "stmt:packages/mcp/src/verbs.ts@L281",
+          "line": 281,
+          "expr": "visited.add(nb);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+        "procedureName": "Verbs.impact",
+        "guard": "cond:packages/mcp/src/verbs.ts@L278",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L275",
+            "expr": "d <= depth && frontier.length > 0"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L277",
+            "expr": "frontier"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L278",
+            "expr": "this.adjacency(cur, args.dir, args.extractedOnly)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fe8ce6145ae0f0f146e785e07c95ef3e1834f739077b89a54216c28f308edeeb",
+          "target": "stmt:packages/mcp/src/verbs.ts@L282",
+          "line": 282,
+          "expr": "next.push(nb);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+        "procedureName": "Verbs.impact",
+        "guard": "cond:packages/mcp/src/verbs.ts@L278",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L275",
+            "expr": "d <= depth && frontier.length > 0"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L277",
+            "expr": "frontier"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L278",
+            "expr": "this.adjacency(cur, args.dir, args.extractedOnly)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d0309ee7693194f5f19b0d7134483b4bcde66a07143ac8ae2252f603c6f30d4c",
+          "target": "stmt:packages/mcp/src/verbs.ts@L283",
+          "line": 283,
+          "expr": "affected.push({\n            id: nb,\n            rel: e.rel,\n            distance: d,\n            risk: d === 1 ? 'high' : d === 2 ? 'medium' : 'low',\n            docs: bound(this.docsFor(nb, 0, args.extractedOnly), args.docLimit ?? DEFAULT_DOC_LIMIT)\n              .items,\n          });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+        "procedureName": "Verbs.impact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3dcd98130b83f59aa8a4ce5f898bc6e8c733f1e2dfacc1ea2b0b204afd1803e6",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L624",
+          "expr": "docsFor",
+          "line": 288
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+        "procedureName": "Verbs.impact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c209f8152ea80505300632fad062121fa9fcfddef3612da7167d260116c8c8b4",
+          "target": "sym:packages/mcp/src/token-budget.ts#bound@L15",
+          "expr": "bound",
+          "line": 288
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+        "procedureName": "Verbs.impact",
+        "guard": "cond:packages/mcp/src/verbs.ts@L275",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L275",
+            "expr": "d <= depth && frontier.length > 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8fc1024f733a0bb3f7d94fdddf784b9a4d729bd53424ea4be79662d5f139c56e",
+          "target": "assign:packages/mcp/src/verbs.ts@L293",
+          "line": 293,
+          "expr": "frontier = next;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+        "procedureName": "Verbs.impact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eca21efce6fca8258008c343967e4c67c412e54e6ab7a258b10827e4f382778d",
+          "target": "stmt:packages/mcp/src/verbs.ts@L295",
+          "line": 295,
+          "expr": "const page = bound(affected, args.limit ?? DEFAULT_LIMIT);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+        "procedureName": "Verbs.impact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:118e2123e51c5d8fa5d197e11d06053f87735c0f6b1dc31c4c41cf2afc750e6e",
+          "target": "stmt:packages/mcp/src/verbs.ts@L296",
+          "line": 296,
+          "expr": "return {\n      root: args.id,\n      dir: args.dir,\n      affected: page.items,\n      relatedDocs: this.docsFor(args.id, 0, args.extractedOnly),\n      truncated: page.truncated,\n      ...(page.cursor ? { cursor: page.cursor } : {}),\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+        "procedureName": "Verbs.impact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:da89fdf07ade2628a025dc8c2a620c6d62e42e845ad69b8980d40ad7786d6b07",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.adjacency@L609",
+          "expr": "adjacency"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 1,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 8,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -20,11 +20,20 @@
  */
 import { edgeId } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
+import { clampExpr } from '../types.js';
 import type { Capabilities, ExtractCtx, ExtractResult, Extractor, FileMeta } from '../types.js';
 import { collectComments } from './lexer.js';
 import type { CommentBlock } from './lexer.js';
 import type { JavaCallSite, JavaDef, JavaStmt } from './parser.js';
 import { parseJava } from './parser.js';
+import { extractSpringSemantics } from './spring.js';
+
+/** Spread an `expr` field plus its `exprTruncated` honesty flag from a raw expression string. */
+function exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true } {
+  if (!raw) return {};
+  const { expr, truncated } = clampExpr(raw);
+  return truncated ? { expr, exprTruncated: true } : { expr };
+}
 
 interface LocalSymbol {
   node: Node;
@@ -63,12 +72,45 @@ export class JavaExtractor implements Extractor {
     /** method/constructor defs whose body gets a Track-3 statement/condition/CFG walk. */
     const procDefs: { def: JavaDef; procId: string }[] = [];
 
+    // 1.3 framework-semantics: collect type defs + their field/member defs so the Spring pass can
+    // derive stereotypes, routes, DI edges, and entity columns after the symbol table is built.
+    const fieldNodes: Node[] = [];
+    const fieldEdges: Edge[] = [];
+    const classDefs: Array<{ def: JavaDef; id: string; qualifiedName: string }> = [];
+    const fieldDefs: Array<{ def: JavaDef; id: string; ownerId: string; ownerQ: string }> = [];
+
     // --- pass 1: declarations + member-of, walking the nesting tree ---
-    const visit = (defs: JavaDef[], qualifier: string[]): void => {
+    const visit = (defs: JavaDef[], qualifier: string[], ownerId?: string): void => {
       for (const d of defs) {
         const qualifiedName = [...qualifier, d.name].join('.');
-        const id = ctx.idFor('symbol', { path, qualifiedName, startLine: d.startLine });
         const parentQ = qualifier.join('.');
+        // 1.3: a field becomes a `field` NODE (kind:'field', dataType, member-of its class), NOT a
+        // call-resolvable `symbol` — so the entity model / DI graph is queryable without polluting
+        // the symbol table or shifting call resolution.
+        if (d.kind === 'field') {
+          const fid = ctx.idFor('field', { path, qualifiedName, startLine: d.startLine });
+          fieldNodes.push({
+            id: fid,
+            kind: 'field',
+            name: d.name,
+            qualifiedName,
+            file: path,
+            span: { start: d.startLine, end: d.endLine },
+            lang: 'java',
+            hash: ctx.hash(this.defText(d, text)),
+            ...(d.fieldType ? { dataType: d.fieldType } : {}),
+            signature: this.signature(d),
+            meta: {
+              parentQualifier: parentQ,
+              ...(d.modifiers.length ? { modifiers: d.modifiers } : {}),
+              ...(d.annotations.length ? { annotations: d.annotations } : {}),
+            },
+          });
+          if (ownerId) fieldEdges.push(this.memberOf({ id: fid } as Node, ownerId));
+          if (ownerId) fieldDefs.push({ def: d, id: fid, ownerId, ownerQ: parentQ });
+          continue;
+        }
+        const id = ctx.idFor('symbol', { path, qualifiedName, startLine: d.startLine });
         const node: Node = {
           id,
           kind: 'symbol',
@@ -97,8 +139,11 @@ export class JavaExtractor implements Extractor {
         });
         for (const k of [qualifiedName, d.name]) if (!byKey.has(k)) byKey.set(k, id);
         if (d.kind === 'method' || d.kind === 'constructor') procDefs.push({ def: d, procId: id });
-        // only TYPE declarations nest further (methods/constructors have empty body).
-        if (TYPE_KINDS.has(d.kind)) visit(d.body, [...qualifier, d.name]);
+        if (TYPE_KINDS.has(d.kind)) {
+          classDefs.push({ def: d, id, qualifiedName });
+          // only TYPE declarations nest further; pass this type's id as the owner for its fields.
+          visit(d.body, [...qualifier, d.name], id);
+        }
       }
     };
     visit(mod.defs, []);
@@ -107,6 +152,8 @@ export class JavaExtractor implements Extractor {
     const edges: Edge[] = symbols.map((s) =>
       this.memberOf(s.node, this.parentIdFor(s, byKey, fileId)),
     );
+    nodes.push(...fieldNodes);
+    edges.push(...fieldEdges);
 
     // --- pass 1.5 (schema 1.2): attach a preceding comment block to each class/method/field symbol
     // as an `explanation` node + `describes` edge so the symbol's intent survives into the graph. ---
@@ -140,6 +187,20 @@ export class JavaExtractor implements Extractor {
       }
     }
 
+    // --- pass 4 (schema 1.3): Spring framework semantics — stereotypes, HTTP routes, DI graph,
+    // and JPA entity columns. STRICTLY ADDITIVE: mutates class symbol nodes (stereotype/framework)
+    // and appends `route` nodes + `exposes`/`injects` edges. No-op for non-Spring code. ---
+    extractSpringSemantics({
+      classDefs,
+      fieldDefs,
+      symbols,
+      byKey,
+      nodes,
+      edges,
+      ctx,
+      path,
+    });
+
     return { nodes, edges };
   }
 
@@ -156,6 +217,8 @@ export class JavaExtractor implements Extractor {
       case 'method':
       case 'constructor':
         return `${d.name}(${d.params.join(', ')})`;
+      case 'field':
+        return `${d.fieldType ?? ''} ${d.name}`.trim();
     }
   }
 
@@ -310,6 +373,17 @@ function throwErrorMessage(text: string | undefined): string {
   return m ? m[1]! : expr;
 }
 
+/**
+ * 1.2: the thrown exception's type name from a `throw new <Type>(...)` (parity with the C# extractor's
+ * raise-node name). `throw new IllegalStateException("x")` → "IllegalStateException";
+ * `throw ex;` (rethrow of a variable) → "" (no static type). Capability-honest: no type resolution.
+ */
+function throwTypeName(text: string | undefined): string {
+  if (!text) return '';
+  const m = text.match(/throw\s+new\s+([A-Za-z_$][\w$.]*)/);
+  return m ? (m[1]!.split('.').pop() ?? '') : '';
+}
+
 /** Innermost symbol whose span contains `line`; the narrowest wins. */
 function enclosingSymbolId(line: number, symbols: LocalSymbol[]): string | undefined {
   let best: LocalSymbol | undefined;
@@ -451,7 +525,7 @@ class BodyWalker {
         id,
         kind: 'condition',
         branch,
-        ...(expr ? { expr } : {}),
+        ...exprFields(expr),
         file: this.path,
         span: { start: line, end: line },
         lang: 'java',
@@ -514,9 +588,11 @@ class BodyWalker {
     if (this.raiseSeen.has(id)) return;
     this.raiseSeen.add(id);
     const errorMessage = throwErrorMessage(s.text);
+    const name = throwTypeName(s.text);
     this.nodes.push({
       id,
       kind: 'raise',
+      ...(name ? { name } : {}),
       file: this.path,
       span: { start: s.startLine, end: s.endLine },
       lang: 'java',
@@ -552,7 +628,7 @@ class BodyWalker {
       lang: 'java',
       hash: this.ctx.hash(`${this.path}:${s.startLine}:assign`),
       ...(s.assignTarget ? { assignTarget: s.assignTarget } : {}),
-      ...(s.text ? { expr: s.text } : {}),
+      ...exprFields(s.text),
       meta: { inLoop, inException, ...(guardStack.length > 0 ? { branch: 'GUARDED' } : {}) },
     });
     this.edges.push({
@@ -681,7 +757,7 @@ class BodyWalker {
       id,
       kind: 'statement',
       type: s.kind,
-      ...(s.text ? { expr: s.text } : {}),
+      ...exprFields(s.text),
       file: this.path,
       span: { start: s.startLine, end: s.endLine },
       lang: 'java',

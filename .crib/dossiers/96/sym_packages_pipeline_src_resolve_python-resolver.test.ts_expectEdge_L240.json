@@ -1,0 +1,131 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#expectEdge@L240",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4fca8a4a5dd1313ab230b9f5fc9672a378374f0200e99af9544a5985f4bda7f9",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#expectEdge@L240",
+    "kind": "symbol",
+    "type": "function",
+    "name": "expectEdge",
+    "qualifiedName": "expectEdge",
+    "signature": "expectEdge(e: { provenance: string; method: string; confidence: number }): void",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/python-resolver.test.ts",
+    "span": {
+      "start": 240,
+      "end": 244
+    },
+    "callSites": [
+      {
+        "callee": "toBe",
+        "line": 241
+      },
+      {
+        "callee": "expect",
+        "line": 241
+      },
+      {
+        "callee": "toBe",
+        "line": 242
+      },
+      {
+        "callee": "expect",
+        "line": 242
+      },
+      {
+        "callee": "toBe",
+        "line": 243
+      },
+      {
+        "callee": "expect",
+        "line": 243
+      }
+    ]
+  },
+  "source": {
+    "text": "function expectEdge(e: { provenance: string; method: string; confidence: number }): void {\n  expect(e.provenance).toBe('EXTRACTED');\n  expect(e.method).toBe('static');\n  expect(e.confidence).toBe(1);\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 240
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#expectEdge@L240",
+    "procedureName": "expectEdge",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#expectEdge@L240",
+        "procedureName": "expectEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:26e714e54019d7ef92267c33f7e054463bf609acdfc9bfcd79febfd1a25e2c6d",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L241",
+          "line": 241,
+          "expr": "expect(e.provenance).toBe('EXTRACTED');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#expectEdge@L240",
+        "procedureName": "expectEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cb7b4840644dc7b31b8eee4b55a5f51b5f1c845c7727825b1328238c4faa91a5",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L242",
+          "line": 242,
+          "expr": "expect(e.method).toBe('static');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#expectEdge@L240",
+        "procedureName": "expectEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7c78217f1236d0d0c7f2faec41167368be2372a31097faa2efebd8c5db4418aa",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L243",
+          "line": 243,
+          "expr": "expect(e.confidence).toBe(1);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 6,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

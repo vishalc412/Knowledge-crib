@@ -1,0 +1,125 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#mappingAnno@L221",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:7b41c8b6194beca72173b7a9a7097aaad914b198468639e543d19e16c93d60a3",
+  "builtAt": "2026-06-25T22:26:18.392Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#mappingAnno@L221",
+    "kind": "symbol",
+    "type": "function",
+    "name": "mappingAnno",
+    "qualifiedName": "mappingAnno",
+    "signature": "mappingAnno(m: JavaDef): { anno: JavaAnno; http: string } | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 221,
+      "end": 227
+    }
+  },
+  "source": {
+    "text": "/** The method's mapping annotation + its HTTP verb, if any. */\nfunction mappingAnno(m: JavaDef): { anno: JavaAnno; http: string } | undefined {\n  for (const a of m.annos ?? []) {\n    const http = MAPPING_HTTP[a.name];\n    if (http) return { anno: a, http };\n  }\n  return undefined;",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 221
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L64",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 64
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L220",
+      "snippet": "",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#mappingAnno@L221",
+    "procedureName": "mappingAnno",
+    "conditions": [
+      "cond:packages/parsers/src/java/spring.ts@L222",
+      "cond:packages/parsers/src/java/spring.ts@L224"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#mappingAnno@L221",
+        "procedureName": "mappingAnno",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L224",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L222",
+            "expr": "m.annos ?? []"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L224",
+            "expr": "http",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:671086507f73a72bf3b5e0dae5262aa0251f5c7544b4c8d31c71b2fb74dd2517",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L224",
+          "line": 224,
+          "expr": "return { anno: a, http };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#mappingAnno@L221",
+        "procedureName": "mappingAnno",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:87454498809c4c05eabda28f6b8f6179cf905dca83535341aaeb20b8d45bec4c",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L226",
+          "line": 226,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

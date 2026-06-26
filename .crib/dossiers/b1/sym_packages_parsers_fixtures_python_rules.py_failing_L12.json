@@ -1,0 +1,88 @@
+{
+  "id": "sym:packages/parsers/fixtures/python/rules.py#failing@L12",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:aa4e56ddb278187b793e4df78abc7a666ac8e0d3cd30124ee899c0a62f7bb194",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/python/rules.py#failing@L12",
+    "kind": "symbol",
+    "type": "function",
+    "name": "failing",
+    "qualifiedName": "failing",
+    "signature": "failing()",
+    "lang": "python",
+    "file": "packages/parsers/fixtures/python/rules.py",
+    "span": {
+      "start": 12,
+      "end": 13
+    }
+  },
+  "source": {
+    "text": "def failing():\n    return \"F\"",
+    "truncated": false,
+    "totalLines": 2,
+    "startLine": 12
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#grade@L20",
+      "confidence": 1,
+      "name": "grade",
+      "qualifiedName": "grade",
+      "signature": "grade(score)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 20
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/python/rules.py#failing@L12",
+    "procedureName": "failing",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/rules.py#failing@L12",
+        "procedureName": "failing",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ae4bde0c6af320518d364d512e04b344921b9de6b7d87fb15a7e62d229e88ce0",
+          "target": "stmt:packages/parsers/fixtures/python/rules.py@L13",
+          "line": 13,
+          "expr": "return \"F\""
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/fixtures/python/rules.py"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

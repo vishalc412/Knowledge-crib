@@ -1,0 +1,159 @@
+{
+  "id": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L106",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9b9e3f77cea79970dbf5675c23f93061403b2c6f42b6ac6a3b0f4a755f4d930d",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L106",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isIndexedRoot",
+    "qualifiedName": "isIndexedRoot",
+    "signature": "isIndexedRoot(resolved: ResolvedRoot): boolean",
+    "lang": "typescript",
+    "file": "packages/cli/src/runtime.ts",
+    "span": {
+      "start": 106,
+      "end": 108
+    },
+    "callSites": [
+      {
+        "callee": "existsSync",
+        "line": 107
+      },
+      {
+        "callee": "join",
+        "line": 107
+      }
+    ]
+  },
+  "source": {
+    "text": "export function isIndexedRoot(resolved: ResolvedRoot): boolean {\n  return existsSync(join(resolved.cribDir, 'crib.json'));\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 106
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdExport@L442",
+      "confidence": 1,
+      "name": "cmdExport",
+      "qualifiedName": "cmdExport",
+      "signature": "cmdExport(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 442
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdQuery@L226",
+      "confidence": 1,
+      "name": "cmdQuery",
+      "qualifiedName": "cmdQuery",
+      "signature": "cmdQuery(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 226
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdServe@L247",
+      "confidence": 1,
+      "name": "cmdServe",
+      "qualifiedName": "cmdServe",
+      "signature": "cmdServe(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 247
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdStatus@L207",
+      "confidence": 1,
+      "name": "cmdStatus",
+      "qualifiedName": "cmdStatus",
+      "signature": "cmdStatus(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 207
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+      "confidence": 1,
+      "name": "cmdUpdate",
+      "qualifiedName": "cmdUpdate",
+      "signature": "cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 267
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+      "confidence": 1,
+      "name": "cmdViz",
+      "qualifiedName": "cmdViz",
+      "signature": "cmdViz(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 489
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/runtime.ts@L105",
+      "snippet": "/** True if the resolved soul has a manifest on disk. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L106",
+    "procedureName": "isIndexedRoot",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L106",
+        "procedureName": "isIndexedRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e4667ab5236abef9e0c32e09fa794df259ba44be111767843943a721c573d570",
+          "target": "stmt:packages/cli/src/runtime.ts@L107",
+          "line": 107,
+          "expr": "return existsSync(join(resolved.cribDir, 'crib.json'));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

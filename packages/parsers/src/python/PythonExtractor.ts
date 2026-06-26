@@ -15,11 +15,19 @@
  */
 import { edgeId } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
+import { clampExpr } from '../types.js';
 import type { Capabilities, ExtractCtx, ExtractResult, Extractor, FileMeta } from '../types.js';
 import { collectPythonComments } from './lexer.js';
 import type { CommentBlock } from './lexer.js';
 import { parsePython, stringLiteralInner } from './parser.js';
 import type { PyCallRef, PyCallSite, PyDef, PyStmt } from './parser.js';
+
+/** Spread an `expr` field plus its `exprTruncated` honesty flag from a raw expression string. */
+function exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true } {
+  if (!raw) return {};
+  const { expr, truncated } = clampExpr(raw);
+  return truncated ? { expr, exprTruncated: true } : { expr };
+}
 
 interface LocalSymbol {
   node: Node;
@@ -333,7 +341,7 @@ export class PythonExtractor implements Extractor {
       span: { start: line, end: s.endLine },
       lang: 'python',
       hash: w.ctx.hash(`${w.path}:${line}:${type}`),
-      ...(s.text ? { expr: s.text } : {}),
+      ...exprFields(s.text),
       meta: {
         ...(s.head ? { head: s.head } : {}),
         inLoop,
@@ -406,7 +414,7 @@ export class PythonExtractor implements Extractor {
         id,
         kind: 'condition',
         branch,
-        expr,
+        ...exprFields(expr),
         file: w.path,
         span: { start: line, end: line },
         lang: 'python',
@@ -489,7 +497,7 @@ export class PythonExtractor implements Extractor {
       lang: 'python',
       hash: w.ctx.hash(`${w.path}:${line}:assign`),
       ...(s.assignTarget ? { assignTarget: s.assignTarget } : {}),
-      ...(s.text ? { expr: s.text } : {}),
+      ...exprFields(s.text),
       meta: { inLoop, inException },
     };
     w.nodes.push(node);

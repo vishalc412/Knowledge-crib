@@ -1,0 +1,147 @@
+{
+  "id": "sym:packages/parsers/src/python/lexer.ts#isIdentPart@L460",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ccbe1b956b9f07256a57df7dec5bf1561f5c397fcd91f07dfa74bf0a7ae16e45",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/lexer.ts#isIdentPart@L460",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isIdentPart",
+    "qualifiedName": "isIdentPart",
+    "signature": "isIdentPart(c: string): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/lexer.ts",
+    "span": {
+      "start": 460,
+      "end": 462
+    },
+    "callSites": [
+      {
+        "callee": "isIdentStart",
+        "line": 461
+      },
+      {
+        "callee": "isDigit",
+        "line": 461
+      }
+    ]
+  },
+  "source": {
+    "text": "function isIdentPart(c: string): boolean {\n  return isIdentStart(c) || isDigit(c);\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 460
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanIdent@L222",
+      "confidence": 1,
+      "name": "scanIdent",
+      "qualifiedName": "Lexer.scanIdent",
+      "signature": "scanIdent(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 222
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#isDigit@L454",
+      "confidence": 1,
+      "name": "isDigit",
+      "qualifiedName": "isDigit",
+      "signature": "isDigit(c: string): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 454
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#isIdentStart@L457",
+      "confidence": 1,
+      "name": "isIdentStart",
+      "qualifiedName": "isIdentStart",
+      "signature": "isIdentStart(c: string): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 457
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/lexer.ts#isIdentPart@L460",
+    "procedureName": "isIdentPart",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#isIdentPart@L460",
+        "procedureName": "isIdentPart",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:33131b0fb9e02e49ff15dec0ce8488708556e7ecd1b090c57ac4257fe2073bdf",
+          "target": "sym:packages/parsers/src/python/lexer.ts#isIdentStart@L457",
+          "expr": "isIdentStart",
+          "line": 461
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#isIdentPart@L460",
+        "procedureName": "isIdentPart",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:787c17f2b07e6cf5d19cdccef448a97f74a65d5c03092e63dc2559ae7837c7de",
+          "target": "sym:packages/parsers/src/python/lexer.ts#isDigit@L454",
+          "expr": "isDigit",
+          "line": 461
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#isIdentPart@L460",
+        "procedureName": "isIdentPart",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0d6080f559f6f2639f5d9336e67a430b5305f5b07781b768c419fce416c6e69c",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L461",
+          "line": 461,
+          "expr": "return isIdentStart(c) || isDigit(c);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/python/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

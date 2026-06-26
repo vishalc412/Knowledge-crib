@@ -1,0 +1,539 @@
+{
+  "id": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:20f8aaaf512a8bc3bf743585f852e078e09611c5606193e8e1960ba5216702d1",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+    "kind": "symbol",
+    "type": "function",
+    "name": "controlFlow",
+    "qualifiedName": "controlFlow",
+    "signature": "controlFlow(soul: SoulStore, nodeId: string, outgoing: Map<string, Edge[]>, incoming: Map<string, Edge[]>, keep: (e: Edge) => boolean): DossierControlFlow",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/builder.ts",
+    "span": {
+      "start": 323,
+      "end": 377
+    },
+    "callSites": [
+      {
+        "callee": "keep",
+        "line": 340
+      },
+      {
+        "callee": "has",
+        "line": 341
+      },
+      {
+        "callee": "getNode",
+        "line": 342
+      },
+      {
+        "callee": "add",
+        "line": 344
+      },
+      {
+        "callee": "push",
+        "line": 345
+      },
+      {
+        "callee": "publicNode",
+        "line": 345
+      },
+      {
+        "callee": "get",
+        "line": 348
+      },
+      {
+        "callee": "push",
+        "line": 354
+      },
+      {
+        "callee": "push",
+        "line": 355
+      },
+      {
+        "callee": "add",
+        "line": 356
+      },
+      {
+        "callee": "push",
+        "line": 361
+      },
+      {
+        "callee": "add",
+        "line": 368
+      },
+      {
+        "callee": "push",
+        "line": 373
+      }
+    ]
+  },
+  "source": {
+    "text": "function controlFlow(\n  soul: SoulStore,\n  nodeId: string,\n  outgoing: Map<string, Edge[]>,\n  incoming: Map<string, Edge[]>,\n  keep: (e: Edge) => boolean,\n): DossierControlFlow {\n  const groups: DossierControlFlow = { raises: [], handles: [], iterates: [], declares: [] };\n  // dedup is PER GROUP: a cursor can be both declared (declares) and iterated (iterates) and must\n  // appear in both; only within-group duplicates (e.g. a cursor iterated by two loops) collapse.\n  const seen: Record<keyof DossierControlFlow, Set<string>> = {\n    raises: new Set(),\n    handles: new Set(),\n    iterates: new Set(),\n    declares: new Set(),\n  };\n  const push = (rel: keyof DossierControlFlow, e: Edge, behaviorNodeId: string): void => {\n    if (!keep(e)) return;\n    if (seen[rel].has(behaviorNodeId)) return;\n    const n = soul.getNode(behaviorNodeId);\n    if (!n) return;\n    seen[rel].add(behaviorNodeId);\n    groups[rel].push({ ...publicNode(n), confidence: e.confidence });\n  };\n\n  const out = outgoing.get(nodeId) ?? [];\n  // proc-direct: raises (proc → raise) + declares (proc → cursor). Collect every node the proc\n  // reaches via any outgoing edge as the \"body\" — an exception handler can `handles` a statement,\n  // an assignment, OR a raise inside its body, so executes-dsts alone would miss the raise case.\n  const bodyNodes = new Set<string>();\n  for (const e of out) {\n    if (e.rel === 'raises') push('raises', e, e.dst);\n    else if (e.rel === 'declares') push('declares', e, e.dst);\n    bodyNodes.add(e.dst);\n  }\n  // exception-handlers that handle a body node (handler → node; the proc is not the src)\n  for (const bn of bodyNodes) {\n    for (const e of incoming.get(bn) ?? []) {\n      if (e.rel === 'handles') push('handles', e, e.src);\n    }\n  }\n  // body conditions guarding body nodes (node → cond), then cursors iterated by them (cond → cursor)\n  const bodyConds = new Set<string>();\n  for (const bn of bodyNodes) {\n    for (const e of outgoing.get(bn) ?? []) {\n      if (e.rel === 'guarded-by') bodyConds.add(e.dst);\n    }\n  }\n  for (const cond of bodyConds) {\n    for (const e of outgoing.get(cond) ?? []) {\n      if (e.rel === 'iterates') push('iterates', e, e.dst);\n    }\n  }\n  return groups;\n}",
+    "truncated": false,
+    "totalLines": 55,
+    "startLine": 323
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+      "confidence": 1,
+      "name": "buildDossier",
+      "qualifiedName": "buildDossier",
+      "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 134
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier.keep@L154",
+      "confidence": 1,
+      "name": "keep",
+      "qualifiedName": "buildDossier.keep",
+      "signature": "keep(…)",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 154
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#controlFlow.push@L339",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "controlFlow.push",
+      "signature": "push(…)",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 339
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+      "confidence": 1,
+      "name": "publicNode",
+      "qualifiedName": "publicNode",
+      "signature": "publicNode(n: Node): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 237
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/builder.ts@L312",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#dossier-symbol-deep-context-persisted-workstream-d-e",
+      "heading": "`dossier(symbol)` *(deep-context, persisted — Workstream D/E)*",
+      "anchor": "dossier-symbol-deep-context-persisted-workstream-d-e",
+      "snippet": "`dossier(symbol)` *(deep-context, persisted — Workstream D/E)*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-1-principal-engineer",
+      "heading": "2.1 Principal Engineer",
+      "anchor": "2-1-principal-engineer",
+      "snippet": "2.1 Principal Engineer",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "heading": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "anchor": "surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "snippet": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+    "procedureName": "controlFlow",
+    "conditions": [
+      "cond:packages/core/src/dossier/builder.ts@L371",
+      "cond:packages/core/src/dossier/builder.ts@L372",
+      "cond:packages/core/src/dossier/builder.ts@L373",
+      "cond:packages/core/src/dossier/builder.ts@L353",
+      "cond:packages/core/src/dossier/builder.ts@L354",
+      "cond:packages/core/src/dossier/builder.ts@L355",
+      "cond:packages/core/src/dossier/builder.ts@L359",
+      "cond:packages/core/src/dossier/builder.ts@L360",
+      "cond:packages/core/src/dossier/builder.ts@L361",
+      "cond:packages/core/src/dossier/builder.ts@L366",
+      "cond:packages/core/src/dossier/builder.ts@L367",
+      "cond:packages/core/src/dossier/builder.ts@L368"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bde36625bf0ef60b408b967b15c39125ae16d911aa12b36f75482a1c3a54b7e1",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L339",
+          "line": 339,
+          "expr": "const push = (rel: keyof DossierControlFlow, e: Edge, behaviorNodeId: string): void => {\n    if (!keep(e)) return;\n    if (seen[rel].has(behaviorNodeId)) return;\n    const n = soul.getNode(behaviorNodeId);\n    if (!n) return;\n    seen[rel].add(behaviorNodeId);\n    groups[rel].push({ ...publicNode(n), confidence: e.confidence });\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:db67dbe1e8c62976476ce0b1763b157fe14b8a42bbc77a7afa51818c925dbc1b",
+          "target": "sym:packages/core/src/dossier/builder.ts#buildDossier.keep@L154",
+          "expr": "keep",
+          "line": 340
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a9810503887c5329cd673a2fec2230e88b03ab08d6813df3f77b5847ab4a2758",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 344
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L373",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L371",
+            "expr": "bodyConds"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L372",
+            "expr": "outgoing.get(cond) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L373",
+            "expr": "e.rel === 'iterates'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e670d158d0ae2ba0bcdc2c5842eba2385f64c6d229e65243ae277249bb3267d7",
+          "target": "sym:packages/core/src/dossier/builder.ts#controlFlow.push@L339",
+          "expr": "push",
+          "line": 345
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b3cdbe85ef80fa3a57880d25d8bf176b93664fecba8a37fd2af7704d9e44a6a7",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 345
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:17415c79cfa1eaacf45811f21be1105ea3b10eece3bef54dc97c50f727622741",
+          "target": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+          "expr": "publicNode",
+          "line": 345
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:42a8a30f16127b1720d84bf103b54c140df3d01e96c2dc8fb47154673bab588d",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L348",
+          "line": 348,
+          "expr": "const out = outgoing.get(nodeId) ?? [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L354",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L353",
+            "expr": "out"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L354",
+            "expr": "e.rel === 'raises'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:62cc008ee68f31d3b54a7afaa7d96dee18fc2cc7290c6df0a12b2b7b5608dc1f",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L354",
+          "line": 354,
+          "expr": "push('raises', e, e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L355",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L353",
+            "expr": "out"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L354",
+            "expr": "e.rel === 'raises'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L355",
+            "expr": "e.rel === 'declares'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31ba485a2da0959de8167424cdfdde65dad465097f15ee0f7a1584549aee97ac",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L355",
+          "line": 355,
+          "expr": "push('declares', e, e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L353",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L353",
+            "expr": "out",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c44a99420f76b715021e560794118fde00e2d887f4a5627eb1770f3bef39cb81",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L356",
+          "line": 356,
+          "expr": "bodyNodes.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L361",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L359",
+            "expr": "bodyNodes"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L360",
+            "expr": "incoming.get(bn) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L361",
+            "expr": "e.rel === 'handles'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:48368fa03f8afb4683ee545b95bcf2a95f0aa588ac96f2bec4de0d19f3f906af",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L361",
+          "line": 361,
+          "expr": "push('handles', e, e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L368",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L366",
+            "expr": "bodyNodes"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L367",
+            "expr": "outgoing.get(bn) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L368",
+            "expr": "e.rel === 'guarded-by'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7198db600ece10fb5e832c09968b8aa6ae568c3d28fa1570bd117baa9b99c588",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L368",
+          "line": 368,
+          "expr": "bodyConds.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L373",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L371",
+            "expr": "bodyConds"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L372",
+            "expr": "outgoing.get(cond) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L373",
+            "expr": "e.rel === 'iterates'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d4218d174be24f072110d0f39ea46ae8297b11eda0feaf696680c6627af357dd",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L373",
+          "line": 373,
+          "expr": "push('iterates', e, e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+        "procedureName": "controlFlow",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:70eb53436801d3489906ba4a71fbc1f20bea161693107a8228fa96fa18b67c91",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L376",
+          "line": 376,
+          "expr": "return groups;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/core/src/dossier/builder.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 0,
+    "conditions": 6,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 13,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

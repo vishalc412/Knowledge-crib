@@ -1,0 +1,355 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#run@L32",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:1ea5ab8c153ef6e7bec0e0d227ea5aff6636840aff8c48e87fd80cef1e6ce960",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#run@L32",
+    "kind": "symbol",
+    "type": "function",
+    "name": "run",
+    "qualifiedName": "run",
+    "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+    "span": {
+      "start": 32,
+      "end": 35
+    },
+    "callSites": [
+      {
+        "callee": "extract",
+        "line": 34
+      },
+      {
+        "callee": "ctxFor",
+        "line": 34
+      }
+    ]
+  },
+  "source": {
+    "text": "async function run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult> {\n  const meta: FileMeta = { path: PATH, lang: 'csharp', bytes: text.length, mtime: 0 };\n  return new CsharpExtractor().extract(meta, ctxFor(text));\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 32
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#ctxFor@L19",
+      "confidence": 1,
+      "name": "ctxFor",
+      "qualifiedName": "ctxFor",
+      "signature": "ctxFor(text: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+      "line": 19
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+      "confidence": 1,
+      "name": "ctxFor",
+      "qualifiedName": "ctxFor",
+      "signature": "ctxFor(text: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
+      "line": 15
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "heading": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "anchor": "2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "snippet": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-8-seeroflow-integration-downstream-consumer",
+      "heading": "2.8 SeeroFlow integration (downstream consumer)",
+      "anchor": "2-8-seeroflow-integration-downstream-consumer",
+      "snippet": "2.8 SeeroFlow integration (downstream consumer)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#3-differentiation-from-graphify-and-from-nexus-gitnexus",
+      "heading": "3. Differentiation from Graphify and from Nexus/GitNexus",
+      "anchor": "3-differentiation-from-graphify-and-from-nexus-gitnexus",
+      "snippet": "3. Differentiation from Graphify and from Nexus/GitNexus",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#3-3-the-three-things-neither-inspiration-has-that-define-knowledge-crib",
+      "heading": "3.3 The three things neither inspiration has, that define Knowledge-crib",
+      "anchor": "3-3-the-three-things-neither-inspiration-has-that-define-knowledge-crib",
+      "snippet": "3.3 The three things neither inspiration has, that define Knowledge-crib",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#13-open-questions-research-coverage-gaps",
+      "heading": "13. Open questions / research coverage gaps",
+      "anchor": "13-open-questions-research-coverage-gaps",
+      "snippet": "13. Open questions / research coverage gaps",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#schema-evolution",
+      "heading": "Schema evolution",
+      "anchor": "schema-evolution",
+      "snippet": "Schema evolution",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#exit-codes",
+      "heading": "Exit codes",
+      "anchor": "exit-codes",
+      "snippet": "Exit codes",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#crib-mcp-auto-wire-the-ide-configs-req-2",
+      "heading": "`crib mcp` — auto-wire the IDE configs (REQ-2)",
+      "anchor": "crib-mcp-auto-wire-the-ide-configs-req-2",
+      "snippet": "`crib mcp` — auto-wire the IDE configs (REQ-2)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#6-github-copilot-vs-code-ghcp",
+      "heading": "6. GitHub Copilot (VS Code, \"ghcp\")",
+      "anchor": "6-github-copilot-vs-code-ghcp",
+      "snippet": "6. GitHub Copilot (VS Code, \"ghcp\")",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#multimodal-worker-m13-shipped",
+      "heading": "Multimodal worker (M13 — shipped)",
+      "anchor": "multimodal-worker-m13-shipped",
+      "snippet": "Multimodal worker (M13 — shipped)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#5-testing-a-plugin-required-for-merge",
+      "heading": "5. Testing a plugin (required for merge)",
+      "anchor": "5-testing-a-plugin-required-for-merge",
+      "snippet": "5. Testing a plugin (required for merge)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m8-tree-sitter-wasm-plugin-languages-python-first",
+      "heading": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "anchor": "m8-tree-sitter-wasm-plugin-languages-python-first",
+      "snippet": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#incremental-update",
+      "heading": "Incremental update",
+      "anchor": "incremental-update",
+      "snippet": "Incremental update",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#3-positioning",
+      "heading": "3. Positioning",
+      "anchor": "3-positioning",
+      "snippet": "3. Positioning",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#12-future-seeroflow-integration-q38",
+      "heading": "12. Future: SeeroFlow Integration [Q38]",
+      "anchor": "12-future-seeroflow-integration-q38",
+      "snippet": "12. Future: SeeroFlow Integration [Q38]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-3-unified-graph-data-architecture",
+      "heading": "Branch 3 — Unified Graph & Data Architecture",
+      "anchor": "branch-3-unified-graph-data-architecture",
+      "snippet": "Branch 3 — Unified Graph & Data Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#6-versioning-migration",
+      "heading": "6. Versioning & migration",
+      "anchor": "6-versioning-migration",
+      "snippet": "6. Versioning & migration",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#tests-each-language-add-to-the-existing-extractor-test-ts",
+      "heading": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "anchor": "tests-each-language-add-to-the-existing-extractor-test-ts",
+      "snippet": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#8-troubleshooting",
+      "heading": "8. Troubleshooting",
+      "anchor": "8-troubleshooting",
+      "snippet": "8. Troubleshooting",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#run@L32",
+    "procedureName": "run",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#run@L32",
+        "procedureName": "run",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b9c6f068105b0afdc5220a44283794ec66004a5e4fe7e55ccdfd7547ea8177e8",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#ctxFor@L19",
+          "expr": "ctxFor",
+          "line": 34
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#run@L32",
+        "procedureName": "run",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d940934ad43122034504854574a8409c66b75d0602e12e911cf62802efc8fc0e",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.test.ts@L34",
+          "line": 34,
+          "expr": "return new CsharpExtractor().extract(meta, ctxFor(text));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#run@L32",
+        "procedureName": "run",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:05679078091daca07d94aa91fafebb91f98f50fb96f936730f87a6f1838f1f3e",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+          "expr": "ctxFor",
+          "line": 34
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

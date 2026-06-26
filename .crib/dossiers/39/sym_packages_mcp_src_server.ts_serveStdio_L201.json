@@ -1,0 +1,125 @@
+{
+  "id": "sym:packages/mcp/src/server.ts#serveStdio@L201",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c7f4467d4e37ddab8dbb99ca04be40cb3377d8cec5b81240a872fb1f21de2a76",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/server.ts#serveStdio@L201",
+    "kind": "symbol",
+    "type": "function",
+    "name": "serveStdio",
+    "qualifiedName": "serveStdio",
+    "signature": "serveStdio(verbs: Verbs, version = '0.0.0'): Promise<void>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/server.ts",
+    "span": {
+      "start": 201,
+      "end": 209
+    },
+    "callSites": [
+      {
+        "callee": "buildServer",
+        "line": 202
+      }
+    ]
+  },
+  "source": {
+    "text": "export async function serveStdio(verbs: Verbs, version = '0.0.0'): Promise<void> {\n  const server = buildServer(verbs, version);\n  const transport = new StdioServerTransport();\n  await server.connect(transport);\n  await new Promise<void>((resolve) => {\n    process.stdin.on('end', resolve);\n    process.stdin.on('close', resolve);\n  });\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 201
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/server.ts#buildServer@L17",
+      "confidence": 1,
+      "name": "buildServer",
+      "qualifiedName": "buildServer",
+      "signature": "buildServer(verbs: Verbs, version = '0.0.0'): McpServer",
+      "type": "function",
+      "file": "packages/mcp/src/server.ts",
+      "line": 17
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/server.ts@L193",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "heading": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "anchor": "5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "snippet": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/server.ts#serveStdio@L201",
+    "procedureName": "serveStdio",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#serveStdio@L201",
+        "procedureName": "serveStdio",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1cfb50de391a00da007d63f28d9d9cd4524edca12265926fb5bca514d6a73005",
+          "target": "sym:packages/mcp/src/server.ts#buildServer@L17",
+          "expr": "buildServer",
+          "line": 202
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#serveStdio@L201",
+        "procedureName": "serveStdio",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e63c5d4c7a662a5cc5d6d55362e5cbbf16708ff437be0887e3fbae4724d9c52b",
+          "target": "stmt:packages/mcp/src/server.ts@L202",
+          "line": 202,
+          "expr": "const server = buildServer(verbs, version);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,197 @@
+{
+  "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkBody@L415",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:436dca4505b8fb7119023e44f05237d12af52a342399d790e7aca2d76b712443",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkBody@L415",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkBody",
+    "qualifiedName": "BodyWalker.walkBody",
+    "signature": "walkBody(stmts: GoBodyStmt[], proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/GoExtractor.ts",
+    "span": {
+      "start": 415,
+      "end": 424
+    },
+    "callSites": [
+      {
+        "callee": "walkStmt",
+        "line": 423
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkBody(\n    stmts: GoBodyStmt[],\n    proc: ProcCtx,\n    guardStack: string[],\n    branch: string | undefined,\n    inLoop: boolean,\n    inException: boolean,\n  ): void {\n    for (const s of stmts) this.walkStmt(s, proc, guardStack, branch, inLoop, inException);\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 415
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkDefer@L924",
+      "confidence": 1,
+      "name": "walkDefer",
+      "qualifiedName": "BodyWalker.walkDefer",
+      "signature": "walkDefer(s: GoDeferStmt, proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 924
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkFor@L580",
+      "confidence": 1,
+      "name": "walkFor",
+      "qualifiedName": "BodyWalker.walkFor",
+      "signature": "walkFor(s: GoForStmt, proc: ProcCtx, guardStack: string[], inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 580
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkIf@L556",
+      "confidence": 1,
+      "name": "walkIf",
+      "qualifiedName": "BodyWalker.walkIf",
+      "signature": "walkIf(s: GoIfStmt, proc: ProcCtx, guardStack: string[], inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 556
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkProc@L404",
+      "confidence": 1,
+      "name": "walkProc",
+      "qualifiedName": "BodyWalker.walkProc",
+      "signature": "walkProc(def: GoDef, procId: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 404
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkSelect@L609",
+      "confidence": 1,
+      "name": "walkSelect",
+      "qualifiedName": "BodyWalker.walkSelect",
+      "signature": "walkSelect(s: GoSelectStmt, proc: ProcCtx, guardStack: string[], inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 609
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkStmt@L426",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: GoBodyStmt, proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 426
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkSwitch@L594",
+      "confidence": 1,
+      "name": "walkSwitch",
+      "qualifiedName": "BodyWalker.walkSwitch",
+      "signature": "walkSwitch(s: GoSwitchStmt, proc: ProcCtx, guardStack: string[], inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 594
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkStmt@L426",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: GoBodyStmt, proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 426
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkBody@L415",
+    "procedureName": "BodyWalker.walkBody",
+    "conditions": [
+      "cond:packages/parsers/src/go/GoExtractor.ts@L423"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkBody@L415",
+        "procedureName": "BodyWalker.walkBody",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L423",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L423",
+            "expr": "stmts",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f4c4a85c1097343251d02395ecd4ab34aeaadd6f3412bb263adcba964acc1c31",
+          "target": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkStmt@L426",
+          "expr": "walkStmt",
+          "line": 423
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkBody@L415",
+        "procedureName": "BodyWalker.walkBody",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L423",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L423",
+            "expr": "stmts",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3f1b486269bfcf2e3eeb22e83ddf094550b0693cd56a87e3990ffb4695300d56",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L423",
+          "line": 423,
+          "expr": "this.walkStmt(s, proc, guardStack, branch, inLoop, inException);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/go/GoExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

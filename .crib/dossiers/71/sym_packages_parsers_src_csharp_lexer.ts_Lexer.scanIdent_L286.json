@@ -1,0 +1,258 @@
+{
+  "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanIdent@L286",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:a45e15d2d50074de923fdd025f748168a22711fc95a4495ab9f7c9f8355dfbb5",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanIdent@L286",
+    "kind": "symbol",
+    "type": "method",
+    "name": "scanIdent",
+    "qualifiedName": "Lexer.scanIdent",
+    "signature": "scanIdent(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/lexer.ts",
+    "span": {
+      "start": 286,
+      "end": 295
+    },
+    "callSites": [
+      {
+        "callee": "advance",
+        "line": 292
+      },
+      {
+        "callee": "advance",
+        "line": 293
+      },
+      {
+        "callee": "emit",
+        "line": 294
+      },
+      {
+        "callee": "slice",
+        "line": 294
+      }
+    ]
+  },
+  "source": {
+    "text": "  private scanIdent(): void {\n    const start = this.pos;\n    const sl = this.line;\n    const sc = this.col;\n    // a leading `@` makes a verbatim identifier (`@class`); strip it from the NAME value so the\n    // parser can compare against keyword sets by bare name.\n    if (this.peek() === '@') this.advance();\n    while (this.pos < this.src.length && this.isIdentPart(this.peek())) this.advance();\n    this.emit('NAME', this.src.slice(start, this.pos), sl, sc);\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 286
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 223
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 625
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.emit@L636",
+      "confidence": 1,
+      "name": "emit",
+      "qualifiedName": "Lexer.emit",
+      "signature": "emit(type: TokenType, value: string, line: number, col: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 636
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.isIdentPart@L649",
+      "confidence": 1,
+      "name": "isIdentPart",
+      "qualifiedName": "Lexer.isIdentPart",
+      "signature": "isIdentPart(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 649
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.peek@L614",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 614
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanIdent@L286",
+    "procedureName": "Lexer.scanIdent",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/lexer.ts@L293",
+      "cond:packages/parsers/src/csharp/lexer.ts@L292"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanIdent@L286",
+        "procedureName": "Lexer.scanIdent",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L293",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L293",
+            "expr": "this.pos < this.src.length && this.isIdentPart(this.peek())",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0d5c5c6bba08a625ded5ce38b7af03e00afb0af935141b9ff1e2d40b5d1db90a",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
+          "expr": "advance",
+          "line": 292
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanIdent@L286",
+        "procedureName": "Lexer.scanIdent",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L292",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L292",
+            "expr": "this.peek() === '@'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6d117afcb98f7a06006b2c346a713ab4a9211fde7fe76c700ea15e171aee752c",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L292",
+          "line": 292,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanIdent@L286",
+        "procedureName": "Lexer.scanIdent",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L293",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L293",
+            "expr": "this.pos < this.src.length && this.isIdentPart(this.peek())",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d68ef7965a33f9e964133fdd8c242111f6fe24ccc26b78c7eaf99c362112a866",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L293",
+          "line": 293,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanIdent@L286",
+        "procedureName": "Lexer.scanIdent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ba653e91f620f7bfca89abbc518ced651a07d2b9c66d70afe8b1157b76133b56",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.emit@L636",
+          "expr": "emit",
+          "line": 294
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanIdent@L286",
+        "procedureName": "Lexer.scanIdent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b2e9e11bd7d903280d83165041e412296de18f63f97594a6a46d290a0cc86d53",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L294",
+          "line": 294,
+          "expr": "this.emit('NAME', this.src.slice(start, this.pos), sl, sc);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanIdent@L286",
+        "procedureName": "Lexer.scanIdent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f052a36acb5f0bf3f248ad7dafecbbe7de8cebbf5ee48f267b88f9387f3d0e7e",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.peek@L614",
+          "expr": "peek"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanIdent@L286",
+        "procedureName": "Lexer.scanIdent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:57798e1cef934fede1dc076716c6975fdc0532fc497c7d1245e46aca5969da60",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.isIdentPart@L649",
+          "expr": "isIdentPart"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 4,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

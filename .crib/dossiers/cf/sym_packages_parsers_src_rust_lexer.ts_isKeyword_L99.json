@@ -1,0 +1,83 @@
+{
+  "id": "sym:packages/parsers/src/rust/lexer.ts#isKeyword@L99",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:547d31cf1796286f0a5b5e5146442bd508cebe155bb0d1afb07073a4bab48269",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/lexer.ts#isKeyword@L99",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isKeyword",
+    "qualifiedName": "isKeyword",
+    "signature": "isKeyword(value: string): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/lexer.ts",
+    "span": {
+      "start": 99,
+      "end": 101
+    },
+    "callSites": [
+      {
+        "callee": "has",
+        "line": 100
+      }
+    ]
+  },
+  "source": {
+    "text": "export function isKeyword(value: string): boolean {\n  return KEYWORDS.has(value);\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 99
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/lexer.ts#isKeyword@L99",
+    "procedureName": "isKeyword",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#isKeyword@L99",
+        "procedureName": "isKeyword",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31a7b98f68604ad742dd75e8ac11e45ebc65d7e5883932f58c2aa9c44adf8b09",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L100",
+          "line": 100,
+          "expr": "return KEYWORDS.has(value);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,229 @@
+{
+  "id": "sym:packages/core/src/soul-store.test.ts#open@L58",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:0427f7e69268a3c2672ea1dd2cef06aae117e6c97cea44a374dcdc8fe9c95034",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.test.ts#open@L58",
+    "kind": "symbol",
+    "type": "function",
+    "name": "open",
+    "qualifiedName": "open",
+    "signature": "open(): SoulStore",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.test.ts",
+    "span": {
+      "start": 58,
+      "end": 62
+    },
+    "callSites": [
+      {
+        "callee": "newManifest",
+        "line": 59
+      },
+      {
+        "callee": "load",
+        "line": 60
+      }
+    ]
+  },
+  "source": {
+    "text": "function open(): SoulStore {\n  const store = new SoulStore(dir, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });\n  store.load();\n  return store;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 58
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+      "confidence": 1,
+      "name": "newManifest",
+      "qualifiedName": "newManifest",
+      "signature": "newManifest(opts: NewManifestOpts = {}): Manifest",
+      "type": "function",
+      "file": "packages/core/src/manifest.ts",
+      "line": 28
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#knowledge-crib-implementation-plan-detailed",
+      "heading": "Knowledge-crib — Implementation Plan (detailed)",
+      "anchor": "knowledge-crib-implementation-plan-detailed",
+      "snippet": "Knowledge-crib — Implementation Plan (detailed)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a5aca268aa0995cac.md#caveats-why-medium-not-high",
+      "heading": "Caveats (why medium, not high)",
+      "anchor": "caveats-why-medium-not-high",
+      "snippet": "Caveats (why medium, not high)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-viz-path-port-n",
+      "heading": "`crib viz [path] [--port <N>]`",
+      "anchor": "crib-viz-path-port-n",
+      "snippet": "`crib viz [path] [--port <N>]`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#unified-kg-platform-gitnexus-graphify-design-decisions",
+      "heading": "Unified KG Platform (GitNexus × Graphify) — Design Decisions",
+      "anchor": "unified-kg-platform-gitnexus-graphify-design-decisions",
+      "snippet": "Unified KG Platform (GitNexus × Graphify) — Design Decisions",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#key-divergences",
+      "heading": "Key Divergences",
+      "anchor": "key-divergences",
+      "snippet": "Key Divergences",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#8-license-open-source-q26-q37",
+      "heading": "8. License & Open Source [Q26, Q37]",
+      "anchor": "8-license-open-source-q26-q37",
+      "snippet": "8. License & Open Source [Q26, Q37]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-7-mvp-scope-roadmap",
+      "heading": "Branch 7 — MVP Scope & Roadmap",
+      "anchor": "branch-7-mvp-scope-roadmap",
+      "snippet": "Branch 7 — MVP Scope & Roadmap",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.test.ts#open@L58",
+    "procedureName": "open",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#open@L58",
+        "procedureName": "open",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9275bd7eb055d14cfe0f2db70e434379ae4aa590f080c48493606abbf5ba44bc",
+          "target": "stmt:packages/core/src/soul-store.test.ts@L59",
+          "line": 59,
+          "expr": "const store = new SoulStore(dir, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#open@L58",
+        "procedureName": "open",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7c20260ea6ec036ed4829a7484282e637e4488b251f9965ce727976981e32ea6",
+          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
+          "expr": "newManifest",
+          "line": 59
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#open@L58",
+        "procedureName": "open",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:96a7285e755a451bbe5d605e1b187d5a2c61ff6577c6cc43a764adfb631e50f9",
+          "target": "stmt:packages/core/src/soul-store.test.ts@L60",
+          "line": 60,
+          "expr": "store.load();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#open@L58",
+        "procedureName": "open",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:430a29bbde1990b28c23c06bd7eeb09491292c7fd9a11d4cef01b8ecf7936d1b",
+          "target": "stmt:packages/core/src/soul-store.test.ts@L61",
+          "line": 61,
+          "expr": "return store;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,238 @@
+{
+  "id": "sym:python/tests/test_worker.py#TestCli.test_cli_emits_valid_json_fake@L86",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:5f3997a27c99e088fc76b4016641360c16b96fd96adf5de6f5ead75277917d1d",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:python/tests/test_worker.py#TestCli.test_cli_emits_valid_json_fake@L86",
+    "kind": "symbol",
+    "type": "method",
+    "name": "test_cli_emits_valid_json_fake",
+    "qualifiedName": "TestCli.test_cli_emits_valid_json_fake",
+    "signature": "test_cli_emits_valid_json_fake(self)",
+    "lang": "python",
+    "file": "python/tests/test_worker.py",
+    "span": {
+      "start": 86,
+      "end": 95
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 87
+      },
+      {
+        "callee": "Path",
+        "line": 88
+      },
+      {
+        "callee": "write_bytes",
+        "line": 88
+      },
+      {
+        "callee": "Path",
+        "line": 89
+      },
+      {
+        "callee": "write_text",
+        "line": 89
+      },
+      {
+        "callee": "_run",
+        "line": 91
+      },
+      {
+        "callee": "loads",
+        "line": 92
+      },
+      {
+        "callee": "assertEqual",
+        "line": 93
+      },
+      {
+        "callee": "assertEqual",
+        "line": 94
+      },
+      {
+        "callee": "len",
+        "line": 94
+      },
+      {
+        "callee": "assertIn",
+        "line": 95
+      }
+    ],
+    "params": [
+      "self"
+    ]
+  },
+  "source": {
+    "text": "    def test_cli_emits_valid_json_fake(self):\n        media = os.path.join(self.dir, \"talk.wav\")\n        Path(media).write_bytes(b\"\\x00\")\n        Path(f\"{media}.txt\").write_text(\"AuthService.login rocks\\n\", encoding=\"utf-8\")\n        argv = [\"--backend\", \"fake\", media]\n        buf = self._run(argv)\n        payload = json.loads(buf)\n        self.assertEqual(payload[\"modality\"], \"audio\")\n        self.assertEqual(len(payload[\"segments\"]), 1)\n        self.assertIn(\"AuthService.login\", payload[\"segments\"][0][\"text\"])",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 86
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:python/tests/test_worker.py#TestCli.test_cli_emits_valid_json_fake@L86",
+    "procedureName": "TestCli.test_cli_emits_valid_json_fake",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:python/tests/test_worker.py#TestCli.test_cli_emits_valid_json_fake@L86",
+        "procedureName": "TestCli.test_cli_emits_valid_json_fake",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a2a72082c906fa60f0179a26c48f3497b5aab407a856fe08323a4b807d23ed22",
+          "target": "assign:python/tests/test_worker.py@L87",
+          "line": 87,
+          "expr": "media = os.path.join(self.dir, \"talk.wav\")"
+        }
+      },
+      {
+        "procedure": "sym:python/tests/test_worker.py#TestCli.test_cli_emits_valid_json_fake@L86",
+        "procedureName": "TestCli.test_cli_emits_valid_json_fake",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c4de30802962f29e5be56aa9668c0c98a6b3ba0d30ed85d047b3e5b1ba6800b",
+          "target": "stmt:python/tests/test_worker.py@L88",
+          "line": 88,
+          "expr": "Path(media).write_bytes(b\"\\x00\")"
+        }
+      },
+      {
+        "procedure": "sym:python/tests/test_worker.py#TestCli.test_cli_emits_valid_json_fake@L86",
+        "procedureName": "TestCli.test_cli_emits_valid_json_fake",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e1a1aae6e137bbdd8de20eec61fa660fbff6246c9eea82267f33ae0ca58d4e98",
+          "target": "stmt:python/tests/test_worker.py@L89",
+          "line": 89,
+          "expr": "Path(f\"{media}.txt\").write_text(\"AuthService.login rocks\\n\", encoding=\"utf-8\")"
+        }
+      },
+      {
+        "procedure": "sym:python/tests/test_worker.py#TestCli.test_cli_emits_valid_json_fake@L86",
+        "procedureName": "TestCli.test_cli_emits_valid_json_fake",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:311bc51a2556bb0caf91b83923681449e9528075335be57ab9554039e7cd7872",
+          "target": "assign:python/tests/test_worker.py@L90",
+          "line": 90,
+          "expr": "argv = [\"--backend\", \"fake\", media]"
+        }
+      },
+      {
+        "procedure": "sym:python/tests/test_worker.py#TestCli.test_cli_emits_valid_json_fake@L86",
+        "procedureName": "TestCli.test_cli_emits_valid_json_fake",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:145a7227e63817997f8955bc40451409b1e5533da083788749d75db00c9ff093",
+          "target": "assign:python/tests/test_worker.py@L91",
+          "line": 91,
+          "expr": "buf = self._run(argv)"
+        }
+      },
+      {
+        "procedure": "sym:python/tests/test_worker.py#TestCli.test_cli_emits_valid_json_fake@L86",
+        "procedureName": "TestCli.test_cli_emits_valid_json_fake",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0e5081ccd95f5d17140f830f016d6ac2a5e5099de29af3f73fa3baad4f997b64",
+          "target": "assign:python/tests/test_worker.py@L92",
+          "line": 92,
+          "expr": "payload = json.loads(buf)"
+        }
+      },
+      {
+        "procedure": "sym:python/tests/test_worker.py#TestCli.test_cli_emits_valid_json_fake@L86",
+        "procedureName": "TestCli.test_cli_emits_valid_json_fake",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d07267afe5635dd7ba8e96f4f29f73c0a7ccfec68d2ae186136dcb8aada8b2b5",
+          "target": "stmt:python/tests/test_worker.py@L93",
+          "line": 93,
+          "expr": "self.assertEqual(payload[\"modality\"], \"audio\")"
+        }
+      },
+      {
+        "procedure": "sym:python/tests/test_worker.py#TestCli.test_cli_emits_valid_json_fake@L86",
+        "procedureName": "TestCli.test_cli_emits_valid_json_fake",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c2b1eb1b38c5e890b8443f98b4e800756f8b411bd748e5c2205e04439c083720",
+          "target": "stmt:python/tests/test_worker.py@L94",
+          "line": 94,
+          "expr": "self.assertEqual(len(payload[\"segments\"]), 1)"
+        }
+      },
+      {
+        "procedure": "sym:python/tests/test_worker.py#TestCli.test_cli_emits_valid_json_fake@L86",
+        "procedureName": "TestCli.test_cli_emits_valid_json_fake",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e687ec550529332162461477f395d93eb0c2ddf62945fca515ba56178858b384",
+          "target": "stmt:python/tests/test_worker.py@L95",
+          "line": 95,
+          "expr": "self.assertIn(\"AuthService.login\", payload[\"segments\"][0][\"text\"])"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 4,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 11,
+      "unresolved": 11
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "11 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

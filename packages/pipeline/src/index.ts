@@ -2,6 +2,7 @@
  * @knowledge-crib/pipeline — the phased extract→graph→index pipeline.
  */
 export * from './structure.js';
+export * from './gitignore.js';
 export * from './parse.js';
 export * from './pipeline.js';
 export * from './resolve/index.js';

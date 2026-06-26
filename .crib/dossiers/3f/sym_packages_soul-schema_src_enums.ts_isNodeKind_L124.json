@@ -1,0 +1,83 @@
+{
+  "id": "sym:packages/soul-schema/src/enums.ts#isNodeKind@L124",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:3170ea5c0201eecf360991976bf16a407f93c9523efc33b17ed6c31c6fb7e331",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/soul-schema/src/enums.ts#isNodeKind@L124",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isNodeKind",
+    "qualifiedName": "isNodeKind",
+    "signature": "isNodeKind(v: unknown): v is NodeKind",
+    "lang": "typescript",
+    "file": "packages/soul-schema/src/enums.ts",
+    "span": {
+      "start": 124,
+      "end": 126
+    },
+    "callSites": [
+      {
+        "callee": "includes",
+        "line": 125
+      }
+    ]
+  },
+  "source": {
+    "text": "export function isNodeKind(v: unknown): v is NodeKind {\n  return typeof v === 'string' && (NODE_KINDS as readonly string[]).includes(v);\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 124
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/soul-schema/src/enums.ts#isNodeKind@L124",
+    "procedureName": "isNodeKind",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/soul-schema/src/enums.ts#isNodeKind@L124",
+        "procedureName": "isNodeKind",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:544288f4657e8d9f788d7df48efd3d9c4f95d2461d2b6927417efa3bdedad813",
+          "target": "stmt:packages/soul-schema/src/enums.ts@L125",
+          "line": 125,
+          "expr": "return typeof v === 'string' && (NODE_KINDS as readonly string[]).includes(v);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

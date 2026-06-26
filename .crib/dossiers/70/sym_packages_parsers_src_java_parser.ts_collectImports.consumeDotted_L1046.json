@@ -1,0 +1,228 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1046",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:880b0ed7acc0d0ad162c77abc2f1cab6a9ce750d4d168a20c90b794e7956c9eb",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1046",
+    "kind": "symbol",
+    "type": "function",
+    "name": "consumeDotted",
+    "qualifiedName": "collectImports.consumeDotted",
+    "signature": "consumeDotted(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 1046,
+      "end": 1066
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 1051
+      }
+    ]
+  },
+  "source": {
+    "text": "  const consumeDotted = (k: number): { parts: string[]; j: number; star: boolean } => {\n    const parts: string[] = [];\n    let j = k;\n    let star = false;\n    while (j < tokens.length && tokens[j]!.type === 'NAME') {\n      parts.push(tokens[j]!.value);\n      j++;\n      if (isOp(j, '.')) {\n        // `.*` wildcard: dot then `*` (OP)\n        if (tokens[j + 1]?.type === 'OP' && tokens[j + 1]?.value === '*') {\n          j += 2;\n          star = true;\n          break;\n        }\n        j++;\n        continue;\n      }\n      break;\n    }\n    return { parts, j, star };\n  };",
+    "truncated": false,
+    "totalLines": 21,
+    "startLine": 1046
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#collectImports@L1039",
+      "confidence": 1,
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(tokens: Token[]): { pkg: string; imports: JavaImport[] }",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1039
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L864",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 864
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1046",
+    "procedureName": "collectImports.consumeDotted",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.ts@L1050",
+      "cond:packages/parsers/src/java/parser.ts@L1053",
+      "cond:packages/parsers/src/java/parser.ts@L1055"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1046",
+        "procedureName": "collectImports.consumeDotted",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2aa2f5a098340d3f37b3535eaaeb78d774cf8f404adf6b45c3bf347fe3c17baa",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L864",
+          "expr": "isOp"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1046",
+        "procedureName": "collectImports.consumeDotted",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1050",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1050",
+            "expr": "j < tokens.length && tokens[j]!.type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5f3b101197ca2814eaf5c705de15cace1e7aaf1723c850d65ef5d26a71dce8c4",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1051",
+          "line": 1051,
+          "expr": "parts.push(tokens[j]!.value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1046",
+        "procedureName": "collectImports.consumeDotted",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6471fd1bc07b819f39f3766e5b1cf8be53f8a4b5f0fd98ad5109b5ab1c5d3cb7",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1051
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1046",
+        "procedureName": "collectImports.consumeDotted",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1055",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1050",
+            "expr": "j < tokens.length && tokens[j]!.type === 'NAME'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1053",
+            "expr": "isOp(j, '.')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1055",
+            "expr": "tokens[j + 1]?.type === 'OP' && tokens[j + 1]?.value === '*'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c8cf78e8a21d44f8b3ce22f94d7605db00ba0050b02cc13d4c0220364ea24773",
+          "target": "assign:packages/parsers/src/java/parser.ts@L1056",
+          "line": 1056,
+          "expr": "j += 2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1046",
+        "procedureName": "collectImports.consumeDotted",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1055",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1050",
+            "expr": "j < tokens.length && tokens[j]!.type === 'NAME'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1053",
+            "expr": "isOp(j, '.')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1055",
+            "expr": "tokens[j + 1]?.type === 'OP' && tokens[j + 1]?.value === '*'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aaa1afb70922b1912fde9564227acc344acbb651b5cc4d651d6548bbf44197fc",
+          "target": "assign:packages/parsers/src/java/parser.ts@L1057",
+          "line": 1057,
+          "expr": "star = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1046",
+        "procedureName": "collectImports.consumeDotted",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6562e0e03b35d8f75f4805745e1e83019e4a90d17370ed3b551667714dcf8773",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1065",
+          "line": 1065,
+          "expr": "return { parts, j, star };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 2,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

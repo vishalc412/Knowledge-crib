@@ -1,0 +1,903 @@
+{
+  "id": "sym:packages/mcp/src/server.ts#buildServer@L17",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:10166997d8985e0c1588e23609742f293c2e87699720af70adeea5e43db38b87",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/server.ts#buildServer@L17",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildServer",
+    "qualifiedName": "buildServer",
+    "signature": "buildServer(verbs: Verbs, version = '0.0.0'): McpServer",
+    "lang": "typescript",
+    "file": "packages/mcp/src/server.ts",
+    "span": {
+      "start": 17,
+      "end": 191
+    },
+    "callSites": [
+      {
+        "callee": "registerTool",
+        "line": 20
+      },
+      {
+        "callee": "TOOL_RESULT",
+        "line": 23
+      },
+      {
+        "callee": "status",
+        "line": 23
+      },
+      {
+        "callee": "registerTool",
+        "line": 26
+      },
+      {
+        "callee": "string",
+        "line": 32
+      },
+      {
+        "callee": "optional",
+        "line": 33
+      },
+      {
+        "callee": "positive",
+        "line": 33
+      },
+      {
+        "callee": "int",
+        "line": 33
+      },
+      {
+        "callee": "number",
+        "line": 33
+      },
+      {
+        "callee": "optional",
+        "line": 34
+      },
+      {
+        "callee": "boolean",
+        "line": 34
+      },
+      {
+        "callee": "optional",
+        "line": 35
+      },
+      {
+        "callee": "boolean",
+        "line": 35
+      },
+      {
+        "callee": "optional",
+        "line": 36
+      },
+      {
+        "callee": "boolean",
+        "line": 36
+      },
+      {
+        "callee": "optional",
+        "line": 37
+      },
+      {
+        "callee": "positive",
+        "line": 37
+      },
+      {
+        "callee": "int",
+        "line": 37
+      },
+      {
+        "callee": "number",
+        "line": 37
+      },
+      {
+        "callee": "optional",
+        "line": 38
+      },
+      {
+        "callee": "positive",
+        "line": 38
+      },
+      {
+        "callee": "int",
+        "line": 38
+      },
+      {
+        "callee": "number",
+        "line": 38
+      },
+      {
+        "callee": "optional",
+        "line": 39
+      },
+      {
+        "callee": "positive",
+        "line": 39
+      },
+      {
+        "callee": "int",
+        "line": 39
+      },
+      {
+        "callee": "number",
+        "line": 39
+      },
+      {
+        "callee": "TOOL_RESULT",
+        "line": 42
+      },
+      {
+        "callee": "context",
+        "line": 42
+      },
+      {
+        "callee": "registerTool",
+        "line": 45
+      },
+      {
+        "callee": "string",
+        "line": 51
+      },
+      {
+        "callee": "optional",
+        "line": 52
+      },
+      {
+        "callee": "positive",
+        "line": 52
+      },
+      {
+        "callee": "int",
+        "line": 52
+      },
+      {
+        "callee": "number",
+        "line": 52
+      },
+      {
+        "callee": "optional",
+        "line": 53
+      },
+      {
+        "callee": "positive",
+        "line": 53
+      },
+      {
+        "callee": "int",
+        "line": 53
+      },
+      {
+        "callee": "number",
+        "line": 53
+      },
+      {
+        "callee": "optional",
+        "line": 54
+      },
+      {
+        "callee": "positive",
+        "line": 54
+      },
+      {
+        "callee": "int",
+        "line": 54
+      },
+      {
+        "callee": "number",
+        "line": 54
+      },
+      {
+        "callee": "TOOL_RESULT",
+        "line": 57
+      },
+      {
+        "callee": "source",
+        "line": 57
+      },
+      {
+        "callee": "registerTool",
+        "line": 60
+      },
+      {
+        "callee": "string",
+        "line": 66
+      },
+      {
+        "callee": "optional",
+        "line": 67
+      },
+      {
+        "callee": "boolean",
+        "line": 67
+      },
+      {
+        "callee": "optional",
+        "line": 68
+      },
+      {
+        "callee": "positive",
+        "line": 68
+      },
+      {
+        "callee": "int",
+        "line": 68
+      },
+      {
+        "callee": "number",
+        "line": 68
+      },
+      {
+        "callee": "optional",
+        "line": 69
+      },
+      {
+        "callee": "positive",
+        "line": 69
+      },
+      {
+        "callee": "int",
+        "line": 69
+      },
+      {
+        "callee": "number",
+        "line": 69
+      },
+      {
+        "callee": "optional",
+        "line": 70
+      },
+      {
+        "callee": "positive",
+        "line": 70
+      },
+      {
+        "callee": "int",
+        "line": 70
+      },
+      {
+        "callee": "number",
+        "line": 70
+      },
+      {
+        "callee": "optional",
+        "line": 71
+      },
+      {
+        "callee": "boolean",
+        "line": 71
+      },
+      {
+        "callee": "optional",
+        "line": 72
+      },
+      {
+        "callee": "enum",
+        "line": 72
+      },
+      {
+        "callee": "TOOL_RESULT",
+        "line": 75
+      },
+      {
+        "callee": "dossier",
+        "line": 75
+      },
+      {
+        "callee": "registerTool",
+        "line": 78
+      },
+      {
+        "callee": "string",
+        "line": 84
+      },
+      {
+        "callee": "enum",
+        "line": 85
+      },
+      {
+        "callee": "optional",
+        "line": 86
+      },
+      {
+        "callee": "positive",
+        "line": 86
+      },
+      {
+        "callee": "int",
+        "line": 86
+      },
+      {
+        "callee": "number",
+        "line": 86
+      },
+      {
+        "callee": "optional",
+        "line": 87
+      },
+      {
+        "callee": "positive",
+        "line": 87
+      },
+      {
+        "callee": "int",
+        "line": 87
+      },
+      {
+        "callee": "number",
+        "line": 87
+      },
+      {
+        "callee": "optional",
+        "line": 88
+      },
+      {
+        "callee": "positive",
+        "line": 88
+      },
+      {
+        "callee": "int",
+        "line": 88
+      },
+      {
+        "callee": "number",
+        "line": 88
+      },
+      {
+        "callee": "optional",
+        "line": 89
+      },
+      {
+        "callee": "boolean",
+        "line": 89
+      },
+      {
+        "callee": "TOOL_RESULT",
+        "line": 92
+      },
+      {
+        "callee": "impact",
+        "line": 92
+      },
+      {
+        "callee": "registerTool",
+        "line": 95
+      },
+      {
+        "callee": "string",
+        "line": 100
+      },
+      {
+        "callee": "optional",
+        "line": 101
+      },
+      {
+        "callee": "array",
+        "line": 101
+      },
+      {
+        "callee": "string",
+        "line": 101
+      },
+      {
+        "callee": "optional",
+        "line": 102
+      },
+      {
+        "callee": "positive",
+        "line": 102
+      },
+      {
+        "callee": "int",
+        "line": 102
+      },
+      {
+        "callee": "number",
+        "line": 102
+      },
+      {
+        "callee": "TOOL_RESULT",
+        "line": 106
+      },
+      {
+        "callee": "query",
+        "line": 107
+      },
+      {
+        "callee": "registerTool",
+        "line": 115
+      },
+      {
+        "callee": "string",
+        "line": 120
+      },
+      {
+        "callee": "optional",
+        "line": 121
+      },
+      {
+        "callee": "max",
+        "line": 121
+      },
+      {
+        "callee": "min",
+        "line": 121
+      },
+      {
+        "callee": "number",
+        "line": 121
+      },
+      {
+        "callee": "optional",
+        "line": 122
+      },
+      {
+        "callee": "boolean",
+        "line": 122
+      },
+      {
+        "callee": "TOOL_RESULT",
+        "line": 125
+      },
+      {
+        "callee": "describes",
+        "line": 125
+      },
+      {
+        "callee": "registerTool",
+        "line": 128
+      },
+      {
+        "callee": "string",
+        "line": 133
+      },
+      {
+        "callee": "optional",
+        "line": 134
+      },
+      {
+        "callee": "string",
+        "line": 134
+      },
+      {
+        "callee": "optional",
+        "line": 135
+      },
+      {
+        "callee": "enum",
+        "line": 135
+      },
+      {
+        "callee": "optional",
+        "line": 136
+      },
+      {
+        "callee": "positive",
+        "line": 136
+      },
+      {
+        "callee": "int",
+        "line": 136
+      },
+      {
+        "callee": "number",
+        "line": 136
+      },
+      {
+        "callee": "optional",
+        "line": 137
+      },
+      {
+        "callee": "boolean",
+        "line": 137
+      },
+      {
+        "callee": "TOOL_RESULT",
+        "line": 140
+      },
+      {
+        "callee": "neighbors",
+        "line": 140
+      },
+      {
+        "callee": "registerTool",
+        "line": 143
+      },
+      {
+        "callee": "string",
+        "line": 148
+      },
+      {
+        "callee": "string",
+        "line": 149
+      },
+      {
+        "callee": "optional",
+        "line": 150
+      },
+      {
+        "callee": "positive",
+        "line": 150
+      },
+      {
+        "callee": "int",
+        "line": 150
+      },
+      {
+        "callee": "number",
+        "line": 150
+      },
+      {
+        "callee": "TOOL_RESULT",
+        "line": 153
+      },
+      {
+        "callee": "shortestPath",
+        "line": 153
+      },
+      {
+        "callee": "registerTool",
+        "line": 156
+      },
+      {
+        "callee": "optional",
+        "line": 160
+      },
+      {
+        "callee": "string",
+        "line": 160
+      },
+      {
+        "callee": "TOOL_RESULT",
+        "line": 162
+      },
+      {
+        "callee": "detectChanges",
+        "line": 162
+      },
+      {
+        "callee": "registerTool",
+        "line": 165
+      },
+      {
+        "callee": "string",
+        "line": 171
+      },
+      {
+        "callee": "optional",
+        "line": 172
+      },
+      {
+        "callee": "boolean",
+        "line": 172
+      },
+      {
+        "callee": "TOOL_RESULT",
+        "line": 175
+      },
+      {
+        "callee": "extractRules",
+        "line": 175
+      },
+      {
+        "callee": "registerTool",
+        "line": 178
+      },
+      {
+        "callee": "optional",
+        "line": 184
+      },
+      {
+        "callee": "boolean",
+        "line": 184
+      },
+      {
+        "callee": "TOOL_RESULT",
+        "line": 187
+      },
+      {
+        "callee": "gaps",
+        "line": 187
+      }
+    ]
+  },
+  "source": {
+    "text": "export function buildServer(verbs: Verbs, version = '0.0.0'): McpServer {\n  const server = new McpServer({ name: 'knowledge-crib', version });\n\n  server.registerTool(\n    'status',\n    { description: 'Health + whether the project is indexed.', inputSchema: {} },\n    async () => TOOL_RESULT(verbs.status()),\n  );\n\n  server.registerTool(\n    'context',\n    {\n      description:\n        '360° context for one symbol: deep fields, callers, callees, and linked docs. Set withSource to include the full source body (rehydrated from disk, budgeted) and withRules to fold in a procedure decision table (conditions/actions/reads/writes).',\n      inputSchema: {\n        id: z.string(),\n        docLimit: z.number().int().positive().optional(),\n        extractedOnly: z.boolean().optional(),\n        withSource: z.boolean().optional(),\n        withRules: z.boolean().optional(),\n        sourceMaxChars: z.number().int().positive().optional(),\n        sourceMaxLines: z.number().int().positive().optional(),\n        sourceStartLine: z.number().int().positive().optional(),\n      },\n    },\n    async (a) => TOOL_RESULT(verbs.context(a)),\n  );\n\n  server.registerTool(\n    'source',\n    {\n      description:\n        'Full source text of one node span, rehydrated from disk and char/line-budgeted. Use this to read the actual code body / DDL / statement / doc-section that the lean soul references but never copies. truncated=true means the on-disk span exceeded the budget.',\n      inputSchema: {\n        id: z.string(),\n        maxChars: z.number().int().positive().optional(),\n        maxLines: z.number().int().positive().optional(),\n        startLine: z.number().int().positive().optional(),\n      },\n    },\n    async (a) => TOOL_RESULT(verbs.source(a)),\n  );\n\n  server.registerTool(\n    'dossier',\n    {\n      description:\n        'One-shot deep reusable context for a symbol: deep node fields, paged rehydrated source body, callers, callees, linked docs, the decision table (callable), and the schema-1.2 control-flow constructs (raises / handles / iterates / declares). The artifact a migration analyst consumes in one call instead of orchestrating context + source + extract_rules. source.nextLine (when truncated) is the paging cursor — pass it back as sourceStartLine.',\n      inputSchema: {\n        id: z.string(),\n        includeTables: z.boolean().optional(),\n        sourceMaxChars: z.number().int().positive().optional(),\n        sourceMaxLines: z.number().int().positive().optional(),\n        sourceStartLine: z.number().int().positive().optional(),\n        extractedOnly: z.boolean().optional(),\n        format: z.enum(['json', 'markdown']).optional(),\n      },\n    },\n    async (a) => TOOL_RESULT(verbs.dossier(a)),\n  );\n\n  server.registerTool(\n    'impact',\n    {\n      description:\n        'Blast radius (up=dependents, down=dependencies) + docs describing affected nodes.',\n      inputSchema: {\n        id: z.string(),\n        dir: z.enum(['up', 'down']),\n        depth: z.number().int().positive().optional(),\n        docLimit: z.number().int().positive().optional(),\n        limit: z.number().int().positive().optional(),\n        extractedOnly: z.boolean().optional(),\n      },\n    },\n    async (a) => TOOL_RESULT(verbs.impact(a)),\n  );\n\n  server.registerTool(\n    'query',\n    {\n      description: 'Hybrid BM25 search over code + docs.',\n      inputSchema: {\n        q: z.string(),\n        kinds: z.array(z.string()).optional(),\n        limit: z.number().int().positive().optional(),\n      },\n    },\n    async (a) =>\n      TOOL_RESULT(\n        verbs.query({\n          q: a.q,\n          ...(a.kinds ? { kinds: a.kinds as NodeKind[] } : {}),\n          ...(a.limit ? { limit: a.limit } : {}),\n        }),\n      ),\n  );\n\n  server.registerTool(\n    'describes',\n    {\n      description: 'The doc-sections linked to a symbol (cheap, high value).',\n      inputSchema: {\n        id: z.string(),\n        minConfidence: z.number().min(0).max(1).optional(),",
+    "truncated": true,
+    "totalLines": 175,
+    "startLine": 17,
+    "nextLine": 122
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/server.ts#serveStdio@L201",
+      "confidence": 1,
+      "name": "serveStdio",
+      "qualifiedName": "serveStdio",
+      "signature": "serveStdio(verbs: Verbs, version = '0.0.0'): Promise<void>",
+      "type": "function",
+      "file": "packages/mcp/src/server.ts",
+      "line": 201
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/server.ts#TOOL_RESULT@L12",
+      "confidence": 1,
+      "name": "TOOL_RESULT",
+      "qualifiedName": "TOOL_RESULT",
+      "signature": "TOOL_RESULT(…)",
+      "type": "function",
+      "file": "packages/mcp/src/server.ts",
+      "line": 12
+    },
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+      "confidence": 1,
+      "name": "extractRules",
+      "qualifiedName": "extractRules",
+      "signature": "extractRules(soul: SoulStore, procedure: string, opts: ExtractRulesOpts = {}): RuleRecord[]",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 128
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/server.ts@L16",
+      "snippet": "/** Build (but do not connect) the MCP server with all verbs registered. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+    "procedureName": "buildServer",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8d8e2f8cd8c0018bbe5bfc9115fe6a08678e0965dbfb1347b0a4871d0afc8359",
+          "target": "stmt:packages/mcp/src/server.ts@L20",
+          "line": 20,
+          "expr": "server.registerTool(\n    'status',\n    { description: 'Health + whether the project is indexed.', inputSchema: {} },\n    async () => TOOL_RESULT(verbs.status()),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bb54427926ac6a6334260d720234bf8fa579ccfe4456adfe4dd48ff5aa93816e",
+          "target": "sym:packages/mcp/src/server.ts#TOOL_RESULT@L12",
+          "expr": "TOOL_RESULT",
+          "line": 23
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3f29d26163a343e96a599de122d90e07d9703ae909f58e9852e63d9285f310d3",
+          "target": "stmt:packages/mcp/src/server.ts@L26",
+          "line": 26,
+          "expr": "server.registerTool(\n    'context',\n    {\n      description:\n        '360° context for one symbol: deep fields, callers, callees, and linked docs. Set withSource to include the full source body (rehydrated from disk, budgeted) and withRules to fold in a procedure decision table (conditions/actions/reads/writes).',\n      inputSchema: {\n        id: z.string(),\n        docLimit: z.number().int().positive().optional(),\n        extractedOnly: z.boolean().optional(),\n        withSource: z.boolean().optional(),\n        withRules: z.boolean().optional(),\n        sourceMaxChars: z.number().int().positive().optional(),\n        sourceMaxLines: z.number().int().positive().optional(),\n        sourceStartLine: z.number().int().positive().optional(),\n      },\n    },\n    async (a) => TOOL_RESULT(verbs.context(a)),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb55fa156e73c9c45756ceb35eaeb1f0b698aae4fe314cfd9578203dc772dfd2",
+          "target": "stmt:packages/mcp/src/server.ts@L45",
+          "line": 45,
+          "expr": "server.registerTool(\n    'source',\n    {\n      description:\n        'Full source text of one node span, rehydrated from disk and char/line-budgeted. Use this to read the actual code body / DDL / statement / doc-section that the lean soul references but never copies. truncated=true means the on-disk span exceeded the budget.',\n      inputSchema: {\n        id: z.string(),\n        maxChars: z.number().int().positive().optional(),\n        maxLines: z.number().int().positive().optional(),\n        startLine: z.number().int().positive().optional(),\n      },\n    },\n    async (a) => TOOL_RESULT(verbs.source(a)),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e70b9d37cd4f4958b75125f89ef14bd8f08fb765b452741aa2aad7371ae9115a",
+          "target": "stmt:packages/mcp/src/server.ts@L60",
+          "line": 60,
+          "expr": "server.registerTool(\n    'dossier',\n    {\n      description:\n        'One-shot deep reusable context for a symbol: deep node fields, paged rehydrated source body, callers, callees, linked docs, the decision table (callable), and the schema-1.2 control-flow constructs (raises / handles / iterates / declares). The artifact a migration analyst consumes in one call instead of orchestrating context + source + extract_rules. source.nextLine (when truncated) is the paging cursor — pass it back as sourceStartLine.',\n      inputSchema: {\n        id: z.string(),\n        includeTables: z.boolean().optional(),\n        sourceMaxChars: z.number().int().positive().optional(),\n        sourceMaxLines: z.number().int().positive().optional(),\n        sourceStartLine: z.number().int().positive().optional(),\n        extractedOnly: z.boolean().optional(),\n        format: z.enum(['json', 'markdown']).optional(),\n      },\n    },\n    async (a) => TOOL_RESULT(verbs.dossier(a)),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:532e81d548ee69df5ee606d4178936e78e7a3fc56e8015ea133a90b3915c776b",
+          "target": "stmt:packages/mcp/src/server.ts@L78",
+          "line": 78,
+          "expr": "server.registerTool(\n    'impact',\n    {\n      description:\n        'Blast radius (up=dependents, down=dependencies) + docs describing affected nodes.',\n      inputSchema: {\n        id: z.string(),\n        dir: z.enum(['up', 'down']),\n        depth: z.number().int().positive().optional(),\n        docLimit: z.number().int().positive().optional(),\n        limit: z.number().int().positive().optional(),\n        extractedOnly: z.boolean().optional(),\n      },\n    },\n    async (a) => TOOL_RESULT(verbs.impact(a)),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c73db50101eecd985021339d77b103c9cbe96aad72d3679e97b09a8277bd21a",
+          "target": "stmt:packages/mcp/src/server.ts@L95",
+          "line": 95,
+          "expr": "server.registerTool(\n    'query',\n    {\n      description: 'Hybrid BM25 search over code + docs.',\n      inputSchema: {\n        q: z.string(),\n        kinds: z.array(z.string()).optional(),\n        limit: z.number().int().positive().optional(),\n      },\n    },\n    async (a) =>\n      TOOL_RESULT(\n        verbs.query({\n          q: a.q,\n          ...(a.kinds ? { kinds: a.kinds as NodeKind[] } : {}),\n          ...(a.limit ? { limit: a.limit } : {}),\n        }),\n      ),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:be53e7851f98d55b41e1719ca2938dedafbe80be2e9d168a888a3d24dc9d5ddf",
+          "target": "stmt:packages/mcp/src/server.ts@L115",
+          "line": 115,
+          "expr": "server.registerTool(\n    'describes',\n    {\n      description: 'The doc-sections linked to a symbol (cheap, high value).',\n      inputSchema: {\n        id: z.string(),\n        minConfidence: z.number().min(0).max(1).optional(),\n        extractedOnly: z.boolean().optional(),\n      },\n    },\n    async (a) => TOOL_RESULT(verbs.describes(a)),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:149f3cbad097ebdba098c95c6bf2dfc6e2efed625bbb795c512a2b31019aac05",
+          "target": "stmt:packages/mcp/src/server.ts@L128",
+          "line": 128,
+          "expr": "server.registerTool(\n    'neighbors',\n    {\n      description: 'Raw adjacency for a node (graph-walking primitive).',\n      inputSchema: {\n        id: z.string(),\n        rel: z.string().optional(),\n        dir: z.enum(['in', 'out', 'both']).optional(),\n        limit: z.number().int().positive().optional(),\n        extractedOnly: z.boolean().optional(),\n      },\n    },\n    async (a) => TOOL_RESULT(verbs.neighbors(a)),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cec60c87d80b898a0297964f3115b45917ace646b560ffa9b9105ee28430fa49",
+          "target": "stmt:packages/mcp/src/server.ts@L143",
+          "line": 143,
+          "expr": "server.registerTool(\n    'shortest_path',\n    {\n      description: 'Shortest directed path between two nodes.',\n      inputSchema: {\n        from: z.string(),\n        to: z.string(),\n        maxHops: z.number().int().positive().optional(),\n      },\n    },\n    async (a) => TOOL_RESULT(verbs.shortestPath(a)),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1863a4f04909de15ed15655fa3c6fa9afb2d6533015e7aa36018e03fb37f8da5",
+          "target": "stmt:packages/mcp/src/server.ts@L156",
+          "line": 156,
+          "expr": "server.registerTool(\n    'detect_changes',\n    {\n      description: 'Dry-run delta report since a git ref (completed at M6).',\n      inputSchema: { since: z.string().optional() },\n    },\n    async (a) => TOOL_RESULT(verbs.detectChanges(a)),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0d93643c54a22086a57cbe394b0181eaf04af3a19023e7067654281b4f6346e0",
+          "target": "stmt:packages/mcp/src/server.ts@L165",
+          "line": 165,
+          "expr": "server.registerTool(\n    'extract_rules',\n    {\n      description:\n        'Walk a procedure guard-annotated CFG (M11) and materialize its decision table / rule records.',\n      inputSchema: {\n        procedure: z.string(),\n        includeTables: z.boolean().optional(),\n      },\n    },\n    async (a) => TOOL_RESULT(verbs.extractRules(a)),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:804677baebb88e5253ba283d3cdfa6ca162a3db2a952dc34dd889e82f75e6f23",
+          "target": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+          "expr": "extractRules",
+          "line": 175
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ad5111d898fb75ed2976df837241ee4f1cfd07474a0d6f5fd683eea715ff7c5f",
+          "target": "stmt:packages/mcp/src/server.ts@L178",
+          "line": 178,
+          "expr": "server.registerTool(\n    'gaps',\n    {\n      description:\n        'Missing-asset + unimplemented-symbol detection over the soul. Returns unimplemented procedures (declared, no body / no executes edges), package specs with no body file (e.g. a .pks present but .pkb absent — the migration-critical \"body is missing\" signal), and unresolved call sites (calls into symbols that do not exist in the crib; Oracle built-ins flagged). Use this to confirm whether a package body or implementation is actually present before trusting the graph for line-level migration.',\n      inputSchema: {\n        extractedOnly: z.boolean().optional(),\n      },\n    },\n    async (a) => TOOL_RESULT(verbs.gaps(a)),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#buildServer@L17",
+        "procedureName": "buildServer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c96279041f2f76bbf42523178161bd8adbf3c789fcac6013a276965d2490825",
+          "target": "stmt:packages/mcp/src/server.ts@L190",
+          "line": 190,
+          "expr": "return server;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 13,
+    "referencedByFiles": [
+      "packages/mcp/src/server.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 13,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 146,
+      "unresolved": 122
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "122 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,159 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls@L198",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d0057adafe28d2c1a6911f028f42f45acf3ab2f873711ed4a6cb902ae84501e1",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls@L198",
+    "kind": "symbol",
+    "type": "method",
+    "name": "collectCalls",
+    "qualifiedName": "TypeScriptExtractor.collectCalls",
+    "signature": "collectCalls(sf: ts.SourceFile, symbols: LocalSymbol[], byKey: Map<string, string>, lineOf: (pos: number) => number, edges: Edge[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 198,
+      "end": 233
+    },
+    "callSites": [
+      {
+        "callee": "isCallExpression",
+        "line": 207
+      },
+      {
+        "callee": "calleeIdentifier",
+        "line": 208
+      },
+      {
+        "callee": "get",
+        "line": 210
+      },
+      {
+        "callee": "enclosingSymbol",
+        "line": 211
+      },
+      {
+        "callee": "edgeId",
+        "line": 214
+      },
+      {
+        "callee": "getText",
+        "line": 221
+      },
+      {
+        "callee": "has",
+        "line": 223
+      },
+      {
+        "callee": "add",
+        "line": 224
+      },
+      {
+        "callee": "push",
+        "line": 225
+      },
+      {
+        "callee": "forEachChild",
+        "line": 230
+      },
+      {
+        "callee": "forEachChild",
+        "line": 232
+      }
+    ]
+  },
+  "source": {
+    "text": "  private collectCalls(\n    sf: ts.SourceFile,\n    symbols: LocalSymbol[],\n    byKey: Map<string, string>,\n    lineOf: (pos: number) => number,\n    edges: Edge[],\n  ): void {\n    const seen = new Set<string>();\n    const walk = (node: ts.Node): void => {\n      if (ts.isCallExpression(node)) {\n        const calleeName = calleeIdentifier(node.expression);\n        if (calleeName) {\n          const dstId = byKey.get(calleeName);\n          const caller = enclosingSymbol(node, symbols, lineOf);\n          if (dstId && caller && caller !== dstId) {\n            const e = {\n              id: edgeId(caller, dstId, 'calls'),\n              src: caller,\n              dst: dstId,\n              rel: 'calls' as const,\n              method: 'static' as const,\n              provenance: 'EXTRACTED' as const,\n              confidence: 1,\n              evidence: { by: this.name, snippet: node.expression.getText() },\n            };\n            if (!seen.has(e.id)) {\n              seen.add(e.id);\n              edges.push(e);\n            }\n          }\n        }\n      }\n      ts.forEachChild(node, walk);\n    };\n    ts.forEachChild(sf, walk);\n  }",
+    "truncated": false,
+    "totalLines": 36,
+    "startLine": 198
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L47",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "TypeScriptExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 47
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L197",
+      "snippet": "/** Emit `calls` edges for call expressions whose callee resolves to a same-file symbol. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls@L198",
+    "procedureName": "TypeScriptExtractor.collectCalls",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls@L198",
+        "procedureName": "TypeScriptExtractor.collectCalls",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2803b9156f4ab37ce53689f3ef8ad6d782810eebc4bd239ec3fcec87c08ea044",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L206",
+          "line": 206,
+          "expr": "const walk = (node: ts.Node): void => {\n      if (ts.isCallExpression(node)) {\n        const calleeName = calleeIdentifier(node.expression);\n        if (calleeName) {\n          const dstId = byKey.get(calleeName);\n          const caller = enclosingSymbol(node, symbols, lineOf);\n          if (dstId && caller && caller !== dstId) {\n            const e = {\n              id: edgeId(caller, dstId, 'calls'),\n              src: caller,\n              dst: dstId,\n              rel: 'calls' as const,\n              method: 'static' as const,\n              provenance: 'EXTRACTED' as const,\n              confidence: 1,\n              evidence: { by: this.name, snippet: node.expression.getText() },\n            };\n            if (!seen.has(e.id)) {\n              seen.add(e.id);\n              edges.push(e);\n            }\n          }\n        }\n      }\n      ts.forEachChild(node, walk);\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls@L198",
+        "procedureName": "TypeScriptExtractor.collectCalls",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:845fdb9b4528d035ae5c3900f61ad6a15c4525aa7f34550dc2cd7e81d4d04266",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L232",
+          "line": 232,
+          "expr": "ts.forEachChild(sf, walk);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 11,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

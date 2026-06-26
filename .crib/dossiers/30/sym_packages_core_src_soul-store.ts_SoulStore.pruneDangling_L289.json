@@ -1,0 +1,207 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.pruneDangling@L289",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:f7c1cb6f0ad6dd4d2c5b341764fe587200f6cae20ecf502b816cbac7ef0261b6",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.pruneDangling@L289",
+    "kind": "symbol",
+    "type": "method",
+    "name": "pruneDangling",
+    "qualifiedName": "SoulStore.pruneDangling",
+    "signature": "pruneDangling(): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 289,
+      "end": 296
+    },
+    "callSites": [
+      {
+        "callee": "delete",
+        "line": 292
+      },
+      {
+        "callee": "add",
+        "line": 293
+      },
+      {
+        "callee": "shardOf",
+        "line": 293
+      },
+      {
+        "callee": "shardKeyForEdge",
+        "line": 293
+      }
+    ]
+  },
+  "source": {
+    "text": "  private pruneDangling(): void {\n    for (const edge of [...this.edges.values()]) {\n      if (!this.nodes.has(edge.src) || !this.nodes.has(edge.dst)) {\n        this.edges.delete(edge.id);\n        this.dirtyEdgeShards.add(shardOf(shardKeyForEdge(edge), this.shardDigits));\n      }\n    }\n  }",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 289
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L221",
+      "confidence": 1,
+      "name": "commit",
+      "qualifiedName": "SoulStore.commit",
+      "signature": "commit(now = new Date().toISOString()): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 221
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/shard.ts#shardKeyForEdge@L55",
+      "confidence": 1,
+      "name": "shardKeyForEdge",
+      "qualifiedName": "shardKeyForEdge",
+      "signature": "shardKeyForEdge(edge: Edge): string",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 55
+    },
+    {
+      "id": "sym:packages/core/src/shard.ts#shardOf@L60",
+      "confidence": 1,
+      "name": "shardOf",
+      "qualifiedName": "shardOf",
+      "signature": "shardOf(key: string, shardHexDigits: number): string",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 60
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/soul-store.ts@L288",
+      "snippet": "/** Enforce invariant #1: every edge endpoint resolves; drop danglers and dirty their shards. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.pruneDangling@L289",
+    "procedureName": "SoulStore.pruneDangling",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L290",
+      "cond:packages/core/src/soul-store.ts@L291"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.pruneDangling@L289",
+        "procedureName": "SoulStore.pruneDangling",
+        "guard": "cond:packages/core/src/soul-store.ts@L291",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L290",
+            "expr": "[...this.edges.values()]"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L291",
+            "expr": "!this.nodes.has(edge.src) || !this.nodes.has(edge.dst)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:98b3ba10826629210d5d9a79b35556081d4421aad9524801b338f4bb2f6623c0",
+          "target": "stmt:packages/core/src/soul-store.ts@L292",
+          "line": 292,
+          "expr": "this.edges.delete(edge.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.pruneDangling@L289",
+        "procedureName": "SoulStore.pruneDangling",
+        "guard": "cond:packages/core/src/soul-store.ts@L291",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L290",
+            "expr": "[...this.edges.values()]"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L291",
+            "expr": "!this.nodes.has(edge.src) || !this.nodes.has(edge.dst)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6bebf647c740048a116e3da60682695edee76c8bfca25c4850ac2902a85c04ca",
+          "target": "stmt:packages/core/src/soul-store.ts@L293",
+          "line": 293,
+          "expr": "this.dirtyEdgeShards.add(shardOf(shardKeyForEdge(edge), this.shardDigits));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.pruneDangling@L289",
+        "procedureName": "SoulStore.pruneDangling",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c9f1e318328614ddb21d801ee93d037b64495e5656ba0a734cd2962ab71dff71",
+          "target": "sym:packages/core/src/shard.ts#shardOf@L60",
+          "expr": "shardOf",
+          "line": 293
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.pruneDangling@L289",
+        "procedureName": "SoulStore.pruneDangling",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7b0e2484138a533d1d3c56c7dcdc27e3c005c92780953ad2416387240b0c45d0",
+          "target": "sym:packages/core/src/shard.ts#shardKeyForEdge@L55",
+          "expr": "shardKeyForEdge",
+          "line": 293
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

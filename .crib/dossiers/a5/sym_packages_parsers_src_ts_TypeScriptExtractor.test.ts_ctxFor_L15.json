@@ -1,0 +1,368 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:6c57f1fe77d951576b74f41623e418330c353aea3aa33f81ac1aa3920bfa6f39",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+    "kind": "symbol",
+    "type": "function",
+    "name": "ctxFor",
+    "qualifiedName": "ctxFor",
+    "signature": "ctxFor(text: string): ExtractCtx",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
+    "span": {
+      "start": 15,
+      "end": 26
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 24
+      }
+    ]
+  },
+  "source": {
+    "text": "function ctxFor(text: string): ExtractCtx {\n  return {\n    async readText() {\n      return text;\n    },\n    treeSitter() {\n      throw new Error('not used');\n    },\n    hash: contentHash,\n    idFor: (kind: NodeKind, parts) => idFor({ kind, ...parts } as IdSpec),\n  };\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 15
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#run@L28",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
+      "line": 28
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.loan-rule.test.ts#run@L30",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.loan-rule.test.ts",
+      "line": 30
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#run@L32",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+      "line": 32
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.test.ts#run@L32",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/go/GoExtractor.test.ts",
+      "line": 32
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.test.ts#run@L28",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.test.ts",
+      "line": 28
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.test.ts#run@L30",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(src: string): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.test.ts",
+      "line": 30
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#run@L25",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
+      "line": 25
+    },
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#run@L28",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/python/PythonExtractor.test.ts",
+      "line": 28
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.test.ts#run@L30",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.test.ts",
+      "line": 30
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runBehavior@L354",
+      "confidence": 1,
+      "name": "runBehavior",
+      "qualifiedName": "runBehavior",
+      "signature": "runBehavior(text: string = BEHAVIOR_SRC, path: string = BEHAVIOR_PATH): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
+      "line": 354
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#runBehavior@L44",
+      "confidence": 1,
+      "name": "runBehavior",
+      "qualifiedName": "runBehavior",
+      "signature": "runBehavior(text = readFileSync(BEHAVIOR, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+      "line": 44
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.test.ts#runBehavior@L503",
+      "confidence": 1,
+      "name": "runBehavior",
+      "qualifiedName": "runBehavior",
+      "signature": "runBehavior(): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.test.ts",
+      "line": 503
+    },
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#runBehavior@L392",
+      "confidence": 1,
+      "name": "runBehavior",
+      "qualifiedName": "runBehavior",
+      "signature": "runBehavior(): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/python/PythonExtractor.test.ts",
+      "line": 392
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.test.ts#runBehavior@L455",
+      "confidence": 1,
+      "name": "runBehavior",
+      "qualifiedName": "runBehavior",
+      "signature": "runBehavior(text = readFileSync(BEHAVIOR_FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.test.ts",
+      "line": 455
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.test.ts#runDeep@L42",
+      "confidence": 1,
+      "name": "runDeep",
+      "qualifiedName": "runDeep",
+      "signature": "runDeep(text = readFileSync(DEEP_FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/go/GoExtractor.test.ts",
+      "line": 42
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#runGuarded@L38",
+      "confidence": 1,
+      "name": "runGuarded",
+      "qualifiedName": "runGuarded",
+      "signature": "runGuarded(text = readFileSync(GUARDED, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.test.ts#runGuarded@L37",
+      "confidence": 1,
+      "name": "runGuarded",
+      "qualifiedName": "runGuarded",
+      "signature": "runGuarded(text = readFileSync(GUARDED_FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/go/GoExtractor.test.ts",
+      "line": 37
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.test.ts#runGuarded@L231",
+      "confidence": 1,
+      "name": "runGuarded",
+      "qualifiedName": "runGuarded",
+      "signature": "runGuarded(): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.test.ts",
+      "line": 231
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runLoan@L326",
+      "confidence": 1,
+      "name": "runLoan",
+      "qualifiedName": "runLoan",
+      "signature": "runLoan(): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
+      "line": 326
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runRules@L115",
+      "confidence": 1,
+      "name": "runRules",
+      "qualifiedName": "runRules",
+      "signature": "runRules(text: string = readFileSync(RULES_FIXTURE, 'utf8'), path: string = RULES_PATH): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
+      "line": 115
+    },
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#runRules@L186",
+      "confidence": 1,
+      "name": "runRules",
+      "qualifiedName": "runRules",
+      "signature": "runRules(): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/python/PythonExtractor.test.ts",
+      "line": 186
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.test.ts#runRules@L258",
+      "confidence": 1,
+      "name": "runRules",
+      "qualifiedName": "runRules",
+      "signature": "runRules(text = readFileSync(RULES_FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.test.ts",
+      "line": 258
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runText@L524",
+      "confidence": 1,
+      "name": "runText",
+      "qualifiedName": "runText",
+      "signature": "runText(text: string): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
+      "line": 524
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runTypes@L244",
+      "confidence": 1,
+      "name": "runTypes",
+      "qualifiedName": "runTypes",
+      "signature": "runTypes(): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
+      "line": 244
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 77
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#tests-each-language-add-to-the-existing-extractor-test-ts",
+      "heading": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "anchor": "tests-each-language-add-to-the-existing-extractor-test-ts",
+      "snippet": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+    "procedureName": "ctxFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5bd09f01748ea5c095b9503df458e7aebf254dcb9ed3089a71edfe556779cc48",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.test.ts@L16",
+          "line": 16,
+          "expr": "return {\n    async readText() {\n      return text;\n    },\n    treeSitter() {\n      throw new Error('not used');\n    },\n    hash: contentHash,\n    idFor: (kind: NodeKind, parts) => idFor({ kind, ...parts } as IdSpec),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:77c3247f0ab235b31c196d88bc41c4b78bb9661cbb1462bee046912e63e0d501",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+          "expr": "idFor",
+          "line": 24
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.loan-rule.test.ts",
+      "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+      "packages/parsers/src/go/GoExtractor.test.ts",
+      "packages/parsers/src/java/JavaExtractor.test.ts",
+      "packages/parsers/src/java/spring.test.ts",
+      "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
+      "packages/parsers/src/python/PythonExtractor.test.ts",
+      "packages/parsers/src/rust/RustExtractor.test.ts",
+      "packages/parsers/src/ts/TypeScriptExtractor.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

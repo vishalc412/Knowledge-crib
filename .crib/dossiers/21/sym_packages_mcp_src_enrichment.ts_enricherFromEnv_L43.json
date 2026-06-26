@@ -1,0 +1,154 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#enricherFromEnv@L43",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:bdd2a603f3d5ea410cfba7a1dd8bea3ff72a4caeda8325219ad3d2dc2ee4f780",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#enricherFromEnv@L43",
+    "kind": "symbol",
+    "type": "function",
+    "name": "enricherFromEnv",
+    "qualifiedName": "enricherFromEnv",
+    "signature": "enricherFromEnv(env: NodeJS.ProcessEnv = process.env): Enricher",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 43,
+      "end": 51
+    }
+  },
+  "source": {
+    "text": "export function enricherFromEnv(env: NodeJS.ProcessEnv = process.env): Enricher {\n  const cfg: EnricherConfig = {};\n  if (env.KCRIB_LLM_API_KEY) cfg.apiKey = env.KCRIB_LLM_API_KEY;\n  if (env.KCRIB_LLM_PROVIDER === 'anthropic' || env.KCRIB_LLM_PROVIDER === 'openai') {\n    cfg.provider = env.KCRIB_LLM_PROVIDER;\n  }\n  if (env.KCRIB_LLM_MODEL) cfg.model = env.KCRIB_LLM_MODEL;\n  return new Enricher(cfg);\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 43
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L42",
+      "snippet": "/** Build an Enricher from environment variables (KCRIB_LLM_API_KEY / KCRIB_LLM_PROVIDER / _MODEL). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#enricherFromEnv@L43",
+    "procedureName": "enricherFromEnv",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L45",
+      "cond:packages/mcp/src/enrichment.ts@L46",
+      "cond:packages/mcp/src/enrichment.ts@L49"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#enricherFromEnv@L43",
+        "procedureName": "enricherFromEnv",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L45",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L45",
+            "expr": "env.KCRIB_LLM_API_KEY",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1e7707d062c3c24f35e9c32f6279786af312af847220e359e27e139133519c16",
+          "target": "assign:packages/mcp/src/enrichment.ts@L45",
+          "line": 45,
+          "expr": "cfg.apiKey = env.KCRIB_LLM_API_KEY;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#enricherFromEnv@L43",
+        "procedureName": "enricherFromEnv",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L46",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L46",
+            "expr": "env.KCRIB_LLM_PROVIDER === 'anthropic' || env.KCRIB_LLM_PROVIDER === 'openai'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:beaba00ef0b4ba0029604d324881bb7be7fef9d6b722b1fd4a4db1974e659cf1",
+          "target": "assign:packages/mcp/src/enrichment.ts@L47",
+          "line": 47,
+          "expr": "cfg.provider = env.KCRIB_LLM_PROVIDER;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#enricherFromEnv@L43",
+        "procedureName": "enricherFromEnv",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L49",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L49",
+            "expr": "env.KCRIB_LLM_MODEL",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:222951e321e77b181a169888e894d4ab6e3029b43ff678774fdb57cdf0dca716",
+          "target": "assign:packages/mcp/src/enrichment.ts@L49",
+          "line": 49,
+          "expr": "cfg.model = env.KCRIB_LLM_MODEL;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#enricherFromEnv@L43",
+        "procedureName": "enricherFromEnv",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f07afd393c0bd620f5da609fdad3d06156e97fc2d9ee365b6ba117d98219c2a5",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L50",
+          "line": 50,
+          "expr": "return new Enricher(cfg);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 3,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

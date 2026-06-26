@@ -1,0 +1,429 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:21871640158bd56cd8257b27768f049ce6c939648c3d8419fd25cf50f97279e8",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseSqlStmt",
+    "qualifiedName": "Parser.parseSqlStmt",
+    "signature": "parseSqlStmt(): SqlStmt",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 844,
+      "end": 890
+    },
+    "callSites": [
+      {
+        "callee": "at",
+        "line": 845
+      },
+      {
+        "callee": "push",
+        "line": 857
+      },
+      {
+        "callee": "at",
+        "line": 857
+      },
+      {
+        "callee": "push",
+        "line": 863
+      },
+      {
+        "callee": "at",
+        "line": 863
+      },
+      {
+        "callee": "push",
+        "line": 871
+      },
+      {
+        "callee": "at",
+        "line": 871
+      },
+      {
+        "callee": "extractSqlRefs",
+        "line": 874
+      },
+      {
+        "callee": "at",
+        "line": 875
+      },
+      {
+        "callee": "at",
+        "line": 875
+      },
+      {
+        "callee": "clampExpr",
+        "line": 876
+      },
+      {
+        "callee": "trim",
+        "line": 877
+      },
+      {
+        "callee": "replace",
+        "line": 877
+      },
+      {
+        "callee": "slice",
+        "line": 877
+      },
+      {
+        "callee": "at",
+        "line": 886
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseSqlStmt(): SqlStmt {\n    const t = this.at();\n    const startOff = t.off;\n    const startLine = t.line;\n    const verb = t.text;\n    this.pos++;\n    const sqlKind = verb; // select/insert/update/delete/merge\n    // Collect tokens until the terminating `;` at paren depth 0.\n    const inner: Token[] = [];\n    let depth = 0;\n    while (this.at().type !== 'eof') {\n      if (this.isPunct('(')) {\n        depth++;\n        inner.push(this.at());\n        this.pos++;\n        continue;\n      }\n      if (this.isPunct(')')) {\n        depth--;\n        inner.push(this.at());\n        this.pos++;\n        continue;\n      }\n      if (this.isPunct(';') && depth === 0) {\n        this.pos++;\n        break;\n      }\n      inner.push(this.at());\n      this.pos++;\n    }\n    const { tables, columns, intoTarget } = extractSqlRefs(verb, inner);\n    const endOff = this.at().type !== 'eof' ? this.at().off : this.src.length;\n    const { expr, truncated } = clampExpr(\n      this.src.slice(startOff, endOff).replace(/\\s+/g, ' ').trim(),\n    );\n    const out: SqlStmt = {\n      kind: 'sql',\n      sqlKind,\n      tables,\n      columns,\n      expr,\n      ...(truncated ? { exprTruncated: true } : {}),\n      span: { start: startLine, end: this.at().line },\n    };\n    if (intoTarget) out.intoTarget = intoTarget;\n    return out;\n  }",
+    "truncated": false,
+    "totalLines": 47,
+    "startLine": 844
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseFile@L163",
+      "confidence": 1,
+      "name": "parseFile",
+      "qualifiedName": "Parser.parseFile",
+      "signature": "parseFile(): TopLevel[]",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 163
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L678",
+      "confidence": 1,
+      "name": "parseStmt",
+      "qualifiedName": "Parser.parseStmt",
+      "signature": "parseStmt(): Stmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 678
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L118",
+      "confidence": 1,
+      "name": "at",
+      "qualifiedName": "Parser.at",
+      "signature": "at(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 118
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L128",
+      "confidence": 1,
+      "name": "isPunct",
+      "qualifiedName": "Parser.isPunct",
+      "signature": "isPunct(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 128
+    },
+    {
+      "id": "sym:packages/parsers/src/types.ts#clampExpr@L30",
+      "confidence": 1,
+      "name": "clampExpr",
+      "qualifiedName": "clampExpr",
+      "signature": "clampExpr(s: string, max = EXPR_MAX_CHARS): { expr: string; truncated: boolean }",
+      "type": "function",
+      "file": "packages/parsers/src/types.ts",
+      "line": 30
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs@L1205",
+      "confidence": 1,
+      "name": "extractSqlRefs",
+      "qualifiedName": "extractSqlRefs",
+      "signature": "extractSqlRefs(verb: string, toks: Token[]): { tables: string[]; columns: string[]; intoTarget?: string }",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1205
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+    "procedureName": "Parser.parseSqlStmt",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/parser.ts@L854",
+      "cond:packages/parsers/src/plsql/parser.ts@L855",
+      "cond:packages/parsers/src/plsql/parser.ts@L861",
+      "cond:packages/parsers/src/plsql/parser.ts@L888"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:af6fd3272d7d94771d9017b1e91a2fdd6d1c6f48d7db2cafd2cfb6ff8a6b8592",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L128",
+          "expr": "isPunct"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:06b4ca90e59f6ea0bea5bf9027339451b4842494c7e3b85206fb2201806f76da",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L118",
+          "expr": "at",
+          "line": 845
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d114a5a4d1f48dcd473b61d0992653e62351b749d10e6dc61c577facd023c961",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L845",
+          "line": 845,
+          "expr": "const t = this.at();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L855",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L854",
+            "expr": "this.at().type !== 'eof'"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L855",
+            "expr": "this.isPunct('(')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6497ca64fb4287d5b6de3411a11f5c40c0b66821144a617c7c50d4898e2af564",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L857",
+          "line": 857,
+          "expr": "inner.push(this.at());"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L861",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L854",
+            "expr": "this.at().type !== 'eof'"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L861",
+            "expr": "this.isPunct(')')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5635d01e7812c410c5a4448854b2c548f894cd043d9251f96d13ae47d2ae3abe",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L863",
+          "line": 863,
+          "expr": "inner.push(this.at());"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L854",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L854",
+            "expr": "this.at().type !== 'eof'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2ab26fc03ffbd83c92557954801e00ef63e1a54ccd49f582130170fecb0ba836",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L871",
+          "line": 871,
+          "expr": "inner.push(this.at());"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:93f57df328ac69bbd442999bb130c9acdc8585a732c73ddd9f11098c5d5b785b",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs@L1205",
+          "expr": "extractSqlRefs",
+          "line": 874
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:19b44d450f1134fab73ed9c2e04e2523015c43bf9ac123c83b1363805aa83d10",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L874",
+          "line": 874,
+          "expr": "const { tables, columns, intoTarget } = extractSqlRefs(verb, inner);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:013ec6073e983dd2f98bea8c6e3109932685350bd882ec610c5803735dd483cd",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L875",
+          "line": 875,
+          "expr": "const endOff = this.at().type !== 'eof' ? this.at().off : this.src.length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1521430fc6b605288d2f1c0e3352685761d4e72ab4a1e1043b66d78787ee95bd",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L876",
+          "line": 876,
+          "expr": "const { expr, truncated } = clampExpr(\n      this.src.slice(startOff, endOff).replace(/\\s+/g, ' ').trim(),\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0bb9fc10f9ac874caea208a975f8d57900970b06ffe4dc94801b04698477185e",
+          "target": "sym:packages/parsers/src/types.ts#clampExpr@L30",
+          "expr": "clampExpr",
+          "line": 876
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bb1c4f339abc92c379f28a445dfef995276c36fd2ebe8f8cf3631d0d8f0c9316",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L879",
+          "line": 879,
+          "expr": "const out: SqlStmt = {\n      kind: 'sql',\n      sqlKind,\n      tables,\n      columns,\n      expr,\n      ...(truncated ? { exprTruncated: true } : {}),\n      span: { start: startLine, end: this.at().line },\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L888",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L888",
+            "expr": "intoTarget",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df413180f2ca807dd853ceb39ecf52a2e33dbad0067970ba08c6ac717619bfa7",
+          "target": "assign:packages/parsers/src/plsql/parser.ts@L888",
+          "line": 888,
+          "expr": "out.intoTarget = intoTarget;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+        "procedureName": "Parser.parseSqlStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2504826e32994361a6edce7bf2c7f6c96ef1dfbc6f242019dc0faebf54868019",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L889",
+          "line": 889,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 1,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 15,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

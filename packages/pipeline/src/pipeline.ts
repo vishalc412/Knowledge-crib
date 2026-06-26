@@ -4,7 +4,7 @@
  *   Phase 1 structure → 2 parse → 3 resolve → 3b doc-extract → 4 link → commit → build index.
  * Later phases (cluster, semantic link) slot in before/after commit as they land.
  */
-import type { BuildOpts, IndexStore, SoulStore } from '@knowledge-crib/core';
+import type { IndexStore, SoulStore } from '@knowledge-crib/core';
 import {
   CsharpExtractor,
   ExtractorRegistry,
@@ -48,7 +48,6 @@ export interface IndexOpts {
   now?: string;
   /** build the derived index after committing the soul. */
   index?: IndexStore;
-  buildOpts?: BuildOpts;
   /** link persist threshold (default 0.4). */
   linkThreshold?: number;
   /** dirs to skip during discovery; REPLACES the default ignore set (merge with DEFAULT_IGNORES at
@@ -82,17 +81,14 @@ export interface IndexReport {
   semantic: SemanticStats;
 }
 
-/** Full index of a repo through the deterministic linker, then (optional) index build. */
-export async function indexRepo(
-  soul: SoulStore,
-  root: string,
-  opts: IndexOpts = {},
-): Promise<IndexReport> {
-  const registry = new ExtractorRegistry();
-  // Markdown first so doc files never fall through to a code extractor; TypeScript + PL/SQL + Python
-  // + Java + C# + Go + Rust ship by default. Supports() are disjoint by extension, so order is only
-  // load-bearing for .md.
-  for (const e of opts.extractors ?? [
+/** The default extractor fleet shipped with a fresh index — Markdown first so doc files never fall
+ *  through to a code extractor, then every language extractor (TypeScript + PL/SQL + Python + Java +
+ *  C# + Go + Rust). The SINGLE source of truth shared by `indexRepo` (full) and `updateRepo`
+ *  (incremental): a `crib update` on an edited `.java`/`.cs`/`.go`/`.rs`/`.py`/`.sql` file re-extracts
+ *  that language's symbols + framework semantics (routes/DI/JPA) instead of silently dropping them.
+ *  `Supports()` are disjoint by extension, so the order is only load-bearing for `.md`. */
+export function defaultExtractors(): Extractor[] {
+  return [
     new MarkdownExtractor(),
     new TypeScriptExtractor(),
     new PlSqlExtractor(),
@@ -101,7 +97,17 @@ export async function indexRepo(
     new CsharpExtractor(),
     new GoExtractor(),
     new RustExtractor(),
-  ]) {
+  ];
+}
+
+/** Full index of a repo through the deterministic linker, then (optional) index build. */
+export async function indexRepo(
+  soul: SoulStore,
+  root: string,
+  opts: IndexOpts = {},
+): Promise<IndexReport> {
+  const registry = new ExtractorRegistry();
+  for (const e of opts.extractors ?? defaultExtractors()) {
     registry.register(e);
   }
 
@@ -137,7 +143,7 @@ export async function indexRepo(
       ? { candidates: 0, written: 0, fresh: 0, skipped: 0 }
       : runDossiers(soul, root, committedAt);
 
-  if (opts.index) opts.index.buildFromSoul(soul, opts.buildOpts);
+  if (opts.index) opts.index.buildFromSoul(soul);
 
   return {
     files: files.length,

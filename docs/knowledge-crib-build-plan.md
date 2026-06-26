@@ -16,11 +16,11 @@
   | `parsers` | tree-sitter wrappers (web-tree-sitter WASM; node bindings optional) |
   | `pipeline` | extract → resolve → link → cluster → index |
   | `mcp` | the MCP server (stdio), `npx knowledge-crib` |
-  | `cli` | `crib index|update|export|migrate|serve` |
+  | `cli` | `crib index\|status\|query\|serve\|update\|reindex\|merge-driver\|install-hooks\|export\|viz\|mcp` (no `migrate` command) |
   | `ui` | web graph viz (later milestone) |
   | `soul-reader` | tiny engine-free reader for SeeroFlow / external [Q38] |
 - **Parsing:** `web-tree-sitter` (WASM) for cross-platform; ~20 langs incrementally.
-- **Index store:** behind an `IndexStore` interface — default LadybugDB; **fallback `better-sqlite3` + FTS5 + sqlite-vec** if Ladybug isn't OSS-embeddable [C3]. Soul format is store-agnostic, so this swap is invisible upstream.
+- **Index store:** behind an `IndexStore` interface — shipped default `better-sqlite3 + FTS5` (no `sqlite-vec` dependency; no vector/ANN path wired). LadybugDB + sqlite-vec remain a planned/not-wired future swap [C3]. Soul format is store-agnostic, so this swap is invisible upstream.
 - **Apache-2.0** + `NOTICE` crediting GitNexus & Graphify as inspiration (no code reused).
 
 ## 1. Core seams (interfaces first — TDD around these)
@@ -78,6 +78,7 @@ interface Linker { link(soul: SoulStore): Edge[]; }               // cross-modal
 | **M10** ⭐ | PL/SQL extractor + SQL data-flow (`table`/`column`/`statement`, `reads`/`writes`/`executes`) | golden: package → expected procs/tables/edges |
 | **M11** ⭐ | CFG pass + `guard`/`cfgPath`/`branch` on calls + `condition` nodes | guard-chain correct on a branchy fixture proc |
 | **M12** ⭐ | `extract_rules` verb + `export --format rules` (the rule book) | decision-table matches hand-derived rules |
+| **M14** ⭐ | framework-semantics layer (schema 1.3): new kinds `route`/`field`/`component`, new rels `exposes`/`injects`/`renders`/`produces`; Spring track (stereotypes/routes/DI/JPA `references`/`@Bean` produces/columns/`@PreAuthorize` security/`@ExceptionHandler`→`exception-handler`+`handles`); surfacing tier (`context withFramework`, dossier framework+`shapeVersion:2`, `gaps` anomalies `controllersWithoutRoutes`+`unresolvedInjects`, viz 1.3 fields); cross-language parity (TS/Java/C#/Go/Rust/Python via `meta.recursive`) | Spring parity: `route.meta.params`/`security`, `field.meta.column`, `references` cardinality; `framework.test.ts` + `validate.test.ts` green |
 | later | optional Python offline worker (PDF/image/whisper) | multimodal fixtures [Q32] |
 
 **E2E wedge assertion (M5):** index a repo with `/docs`; agent calls `impact("AuthService","up")`

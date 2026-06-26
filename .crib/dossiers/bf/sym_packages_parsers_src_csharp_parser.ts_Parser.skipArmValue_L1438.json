@@ -1,0 +1,278 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipArmValue@L1438",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c3c256ea7e0f9b56558c5079675e9481691e05a383ffa77eaa9e3b572f67f334",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipArmValue@L1438",
+    "kind": "symbol",
+    "type": "method",
+    "name": "skipArmValue",
+    "qualifiedName": "Parser.skipArmValue",
+    "signature": "skipArmValue(j: number): number",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 1438,
+      "end": 1459
+    },
+    "callSites": [
+      {
+        "callee": "skipBalancedInSlice",
+        "line": 1450
+      }
+    ]
+  },
+  "source": {
+    "text": "  private skipArmValue(j: number): number {\n    const n = this.t.length;\n    let pos = j; // local cursor — never reassign the parameter\n    let depth = 1; // we are inside the switch-expression's `{ … }`\n    while (pos < n && depth > 0) {\n      const tk = this.t[pos]!;\n      if (tk.type === 'OP') {\n        if (tk.value === '{') depth++;\n        else if (tk.value === '}') {\n          depth--;\n          if (depth === 0) return pos; // closing '}' — leave for the outer loop to break\n        } else if (tk.value === '(' || tk.value === '[') {\n          pos = this.skipBalancedInSlice(pos);\n          continue;\n        } else if (tk.value === ',') {\n          return pos + 1; // past the comma → next arm start\n        }\n      }\n      pos++;\n    }\n    return pos;\n  }",
+    "truncated": false,
+    "totalLines": 22,
+    "startLine": 1438
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+      "confidence": 1,
+      "name": "parseSwitchExprArms",
+      "qualifiedName": "Parser.parseSwitchExprArms",
+      "signature": "parseSwitchExprArms(braceIdx: number): CsharpSwitchCase[]",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1390
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipBalancedInSlice@L1422",
+      "confidence": 1,
+      "name": "skipBalancedInSlice",
+      "qualifiedName": "Parser.skipBalancedInSlice",
+      "signature": "skipBalancedInSlice(openIdx: number): number",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1422
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/parser.ts@L1437",
+      "snippet": "/** Skip an arm's value expression from `j` up to the top-level `,` (arm separator) or `}` (close). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipArmValue@L1438",
+    "procedureName": "Parser.skipArmValue",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/parser.ts@L1442",
+      "cond:packages/parsers/src/csharp/parser.ts@L1444",
+      "cond:packages/parsers/src/csharp/parser.ts@L1445",
+      "cond:packages/parsers/src/csharp/parser.ts@L1446",
+      "cond:packages/parsers/src/csharp/parser.ts@L1448",
+      "cond:packages/parsers/src/csharp/parser.ts@L1449",
+      "cond:packages/parsers/src/csharp/parser.ts@L1452"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipArmValue@L1438",
+        "procedureName": "Parser.skipArmValue",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1448",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1442",
+            "expr": "pos < n && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1444",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1445",
+            "expr": "tk.value === '{'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1446",
+            "expr": "tk.value === '}'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1448",
+            "expr": "depth === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:636d4f6d88d599a07356c0d44163063abd60a686b902b0efa77c55b4f6a0d71e",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1448",
+          "line": 1448,
+          "expr": "return pos;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipArmValue@L1438",
+        "procedureName": "Parser.skipArmValue",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1449",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1442",
+            "expr": "pos < n && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1444",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1445",
+            "expr": "tk.value === '{'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1446",
+            "expr": "tk.value === '}'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1449",
+            "expr": "tk.value === '(' || tk.value === '['",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:aecb4ea23efa128d4dbf09df63088f404474473a95a3bbea53fc0c0c3a370b8a",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipBalancedInSlice@L1422",
+          "expr": "skipBalancedInSlice",
+          "line": 1450
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipArmValue@L1438",
+        "procedureName": "Parser.skipArmValue",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1449",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1442",
+            "expr": "pos < n && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1444",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1445",
+            "expr": "tk.value === '{'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1446",
+            "expr": "tk.value === '}'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1449",
+            "expr": "tk.value === '(' || tk.value === '['",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:72e7eb6f2446fb329e9e12aadcaf50d866da49844c5cd628077357ea02df8791",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1450",
+          "line": 1450,
+          "expr": "pos = this.skipBalancedInSlice(pos);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipArmValue@L1438",
+        "procedureName": "Parser.skipArmValue",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1452",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1442",
+            "expr": "pos < n && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1444",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1445",
+            "expr": "tk.value === '{'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1446",
+            "expr": "tk.value === '}'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1449",
+            "expr": "tk.value === '(' || tk.value === '['"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1452",
+            "expr": "tk.value === ','",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:926718fe6983b8e99787641df7317aba15ef5a84ece0c20ab73520bc4d1cbb33",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1453",
+          "line": 1453,
+          "expr": "return pos + 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipArmValue@L1438",
+        "procedureName": "Parser.skipArmValue",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ec946e98eab457f9761fcd57c5f69258246a0eb434605df39b6c9452de1d4ad4",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1458",
+          "line": 1458,
+          "expr": "return pos;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 1,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

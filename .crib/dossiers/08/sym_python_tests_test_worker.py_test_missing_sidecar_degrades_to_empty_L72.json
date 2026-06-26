@@ -1,0 +1,130 @@
+{
+  "id": "sym:python/tests/test_worker.py#test_missing_sidecar_degrades_to_empty@L72",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:968ca473a62c560f12139a81714bdd340dc879f04122af1f26c139ddf7d8af89",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:python/tests/test_worker.py#test_missing_sidecar_degrades_to_empty@L72",
+    "kind": "symbol",
+    "type": "function",
+    "name": "test_missing_sidecar_degrades_to_empty",
+    "qualifiedName": "test_missing_sidecar_degrades_to_empty",
+    "signature": "test_missing_sidecar_degrades_to_empty(self)",
+    "lang": "python",
+    "file": "python/tests/test_worker.py",
+    "span": {
+      "start": 72,
+      "end": 75
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 73
+      },
+      {
+        "callee": "Path",
+        "line": 74
+      },
+      {
+        "callee": "write_bytes",
+        "line": 74
+      },
+      {
+        "callee": "assertEqual",
+        "line": 75
+      },
+      {
+        "callee": "extract",
+        "line": 75
+      }
+    ],
+    "params": [
+      "self"
+    ]
+  },
+  "source": {
+    "text": "    def test_missing_sidecar_degrades_to_empty(self):\n        media = os.path.join(self.dir, \"corrupt.wav\")\n        Path(media).write_bytes(b\"\\xff\\xff\")  # media but no sidecar\n        self.assertEqual(fake.extract(media, \"audio\"), [])",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 72
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:python/tests/test_worker.py#test_missing_sidecar_degrades_to_empty@L72",
+    "procedureName": "test_missing_sidecar_degrades_to_empty",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:python/tests/test_worker.py#test_missing_sidecar_degrades_to_empty@L72",
+        "procedureName": "test_missing_sidecar_degrades_to_empty",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4fc27b441f99f83c74784b0addb62bcf3122e13dbbe36c3cf0f6042981f5d6f6",
+          "target": "assign:python/tests/test_worker.py@L73",
+          "line": 73,
+          "expr": "media = os.path.join(self.dir, \"corrupt.wav\")"
+        }
+      },
+      {
+        "procedure": "sym:python/tests/test_worker.py#test_missing_sidecar_degrades_to_empty@L72",
+        "procedureName": "test_missing_sidecar_degrades_to_empty",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:77db9c720f23a70abab4c9f37a4b0e889ddef809fba6be3e7cc3b85177e89192",
+          "target": "stmt:python/tests/test_worker.py@L74",
+          "line": 74,
+          "expr": "Path(media).write_bytes(b\"\\xff\\xff\")"
+        }
+      },
+      {
+        "procedure": "sym:python/tests/test_worker.py#test_missing_sidecar_degrades_to_empty@L72",
+        "procedureName": "test_missing_sidecar_degrades_to_empty",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b2bff90dbd439256010184642a0c98f86328624ca9ed342ecfb000b8152cf77f",
+          "target": "stmt:python/tests/test_worker.py@L75",
+          "line": 75,
+          "expr": "self.assertEqual(fake.extract(media, \"audio\"), [])"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 1,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 5,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

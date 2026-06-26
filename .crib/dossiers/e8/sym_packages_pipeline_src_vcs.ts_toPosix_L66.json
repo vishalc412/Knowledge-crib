@@ -1,0 +1,87 @@
+{
+  "id": "sym:packages/pipeline/src/vcs.ts#toPosix@L66",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e2d8af939329a3c3cf43b1d733e6180a57c3978f8b7892ddf7a61123c4c78573",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/vcs.ts#toPosix@L66",
+    "kind": "symbol",
+    "type": "function",
+    "name": "toPosix",
+    "qualifiedName": "toPosix",
+    "signature": "toPosix(p: string): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/vcs.ts",
+    "span": {
+      "start": 66,
+      "end": 68
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 67
+      },
+      {
+        "callee": "split",
+        "line": 67
+      }
+    ]
+  },
+  "source": {
+    "text": "function toPosix(p: string): string {\n  return sep === '/' ? p : p.split(sep).join('/');\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 66
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/vcs.ts#toPosix@L66",
+    "procedureName": "toPosix",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#toPosix@L66",
+        "procedureName": "toPosix",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e84eba9340afcf8f0df7655dcb3f0e3d9495b9ff906b27cb4742ee590dcd9353",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L67",
+          "line": 67,
+          "expr": "return sep === '/' ? p : p.split(sep).join('/');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

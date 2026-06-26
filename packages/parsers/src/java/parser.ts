@@ -17,7 +17,22 @@ import { isModifier } from './lexer.js';
 import { tokenize } from './lexer.js';
 import type { Token } from './lexer.js';
 
-export type JavaKind = 'class' | 'interface' | 'enum' | 'record' | 'method' | 'constructor';
+export type JavaKind =
+  | 'class'
+  | 'interface'
+  | 'enum'
+  | 'record'
+  | 'method'
+  | 'constructor'
+  | 'field';
+
+/** An annotation with its raw argument text (1.3 framework-semantics): `@GetMapping("/x")` →
+ *  {name:'GetMapping', args:'"/x"'}; `@RestController` → {name:'RestController'}. */
+export interface JavaAnno {
+  name: string;
+  /** raw text inside the annotation's `(...)`, trimmed; undefined for a marker annotation. */
+  args?: string;
+}
 
 export interface JavaDef {
   kind: JavaKind;
@@ -29,6 +44,32 @@ export interface JavaDef {
   modifiers: string[];
   /** annotation simple names preceding the declaration (`@RestController` → ["RestController"]). */
   annotations: string[];
+  /** 1.3: annotations WITH their argument text — the route paths / HTTP methods / DI qualifiers a
+   *  framework-semantics extractor needs. Parallel to `annotations` (same order). */
+  annos?: JavaAnno[];
+  /** 1.3: for a `field` def, the declared type head — the LAST dotted segment of the declared type
+   *  before the field name (`UserRepo userRepo` → "UserRepo"; `com.example.UserRepo r` → "UserRepo";
+   *  `java.util.List<User> users` → "List"). The DI layer keys on this (the injected bean type). */
+  fieldType?: string;
+  /** 1.3: for a `field` def whose declared type is a parameterized collection
+   *  (`List<User> users` → "User"; `Set<Tag> tags` → "Tag"; `Map<K,V> m` → "V" — last generic arg),
+   *  the generic element/value type — the related type for a JPA `@OneToMany`/`@ManyToMany` field.
+   *  Undefined for non-generic fields. */
+  fieldElementType?: string;
+  /** 1.3: parameter type heads, parallel to `params` (the DI graph reads constructor param types). */
+  paramTypes?: string[];
+  /** 1.3: per-parameter annotation simple names, parallel to `params`/`paramTypes`. The Spring
+   *  route-param contract reads these — `@PathVariable String id, @RequestBody Loan loan` →
+   *  [['PathVariable'], ['RequestBody']]. Empty arrays for unannotated params. */
+  paramAnnos?: string[][];
+  /** 1.3: for a `method` def, the declared return-type head — the LAST dotted segment of the return
+   *  type before the method name (`Payment make()` → "Payment"; `List<Payment> all()` → "List"). The
+   *  @Bean producer graph reads this — a `@Bean`-annotated method PRODUCES its return type. */
+  returnType?: string;
+  /** 1.3: for a `method` def whose return type is a parameterized collection
+   *  (`List<Payment> all()` → "Payment"; `Map<K,V> m()` → "V" — last generic arg), the generic element
+   *  type — the produced type for a collection-returning `@Bean`. Undefined for non-generic returns. */
+  returnElementType?: string;
   /** `extends` head names — INHERITS targets (`class C extends B` → ["B"]; interface `extends A,B`). */
   bases: string[];
   /** `implements` head names — IMPLEMENTS targets (`class C implements I1, I2`). */
@@ -206,6 +247,14 @@ class Parser {
         this.next(); // stray terminator
         continue;
       }
+      // `package a.b;` / `import [static] a.b.C [. *];` are NOT declarations — collectImports scans
+      // them separately. Skip to the terminating `;` so they never become spurious top-level `field`
+      // defs (which would pollute the resolver's FQN→file map and the extractor's byKey).
+      if (this.isName('package') || this.isName('import')) {
+        while (!this.atEnd() && !this.isOp(';')) this.next();
+        if (!this.atEnd()) this.next(); // consume `;`
+        continue;
+      }
       const before = this.i;
       const d = this.parseDecl();
       if (d) defs.push(d);
@@ -218,11 +267,12 @@ class Parser {
   private parseDecl(): JavaDef | null {
     const startLine = this.peek().line;
     const annotations: string[] = [];
+    const annos: JavaAnno[] = [];
     const modifiers: string[] = [];
     // consume leading annotations + modifiers (they may interleave)
     while (!this.atEnd()) {
       if (this.isOp('@')) {
-        this.consumeAnnotation(annotations);
+        this.consumeAnnotation(annotations, annos);
         continue;
       }
       if (this.isNameAnyOf(MODIFIER_NAMES)) {
@@ -233,13 +283,15 @@ class Parser {
       break;
     }
     if (this.atEnd()) return null;
-    const kw = this.peek().value;
-    if (this.isName('class')) return this.parseType('class', startLine, annotations, modifiers);
+    if (this.isName('class'))
+      return this.parseType('class', startLine, annotations, modifiers, annos);
     if (this.isName('interface'))
-      return this.parseType('interface', startLine, annotations, modifiers);
-    if (this.isName('enum')) return this.parseType('enum', startLine, annotations, modifiers);
-    if (this.isName('record')) return this.parseType('record', startLine, annotations, modifiers);
-    return this.parseMember(startLine, annotations, modifiers);
+      return this.parseType('interface', startLine, annotations, modifiers, annos);
+    if (this.isName('enum'))
+      return this.parseType('enum', startLine, annotations, modifiers, annos);
+    if (this.isName('record'))
+      return this.parseType('record', startLine, annotations, modifiers, annos);
+    return this.parseMember(startLine, annotations, modifiers, annos);
   }
 
   /** Parse a type declaration (class / interface / enum / record) + recurse into its body. */
@@ -248,6 +300,7 @@ class Parser {
     startLine: number,
     annotations: string[],
     modifiers: string[],
+    annos: JavaAnno[] = [],
   ): JavaDef | null {
     this.next(); // kind keyword
     // a type name must be a NAME that is NOT a hard-reserved keyword (`class void {` is malformed).
@@ -258,10 +311,16 @@ class Parser {
 
     const bases: string[] = [];
     const impls: string[] = [];
-    // record has params before extends/implements: `record Name(TYPE p) implements I {}`
-    const params: string[] = [];
+    // record has params before extends/implements: `record Name(TYPE p) implements I {}`. A record's
+    // header params ARE its canonical constructor — Spring treats a single-ctor bean's compact ctor as
+    // an autowire point — so capture BOTH names (params) and type heads (paramTypes) for the DI graph.
+    // Pre-fix this used parseParamList (names only), so `@Service record Tx(Repo r)` got zero injects.
+    let params: string[] = [];
+    let paramTypes: string[] | undefined;
     if (kind === 'record' && this.isOp('(')) {
-      params.push(...this.parseParamList());
+      const typed = this.parseParamListTyped();
+      params = typed.map((p) => p.name);
+      paramTypes = typed.map((p) => p.type ?? '');
     }
     // extends / implements clauses (order: extends then implements)
     while (!this.atEnd() && !this.isOp('{') && !this.isOp(';')) {
@@ -298,9 +357,11 @@ class Parser {
       endLine,
       modifiers,
       annotations,
+      annos,
       bases,
       implements: impls,
       params,
+      ...(paramTypes ? { paramTypes } : {}),
       body,
       stmts: [],
     };
@@ -315,12 +376,22 @@ class Parser {
     startLine: number,
     annotations: string[],
     modifiers: string[],
+    annos: JavaAnno[] = [],
   ): JavaDef | null {
     let gdepth = 0;
     let pdepth = 0;
     let bdepth = 0;
     let nameCount = 0;
+    let firstName: string | undefined;
     let lastName: string | undefined;
+    // 1.3: `prevLastName` is the depth-0 name immediately before the field name — the declared
+    // type's simple head (`UserService service` → "UserService"; `com.acme.X x` → "X"). More
+    // accurate than `firstName` (the FIRST name, which is `com` for a dotted type). `elementType`
+    // is the last NAME inside the type's generics (`List<Payment>` → "Payment") — the related type
+    // for a JPA collection-valued association. Both are captured during the type scan, before the
+    // field name (which is the final depth-0 name).
+    let prevLastName: string | undefined;
+    let elementType: string | undefined;
     let kind: 'method' | 'constructor' | 'field' | 'init' = 'field';
 
     while (!this.atEnd()) {
@@ -343,7 +414,11 @@ class Parser {
       if (tk.type === 'NAME') {
         if (pdepth === 0 && gdepth === 0 && bdepth === 0) {
           nameCount++;
+          if (firstName === undefined) firstName = tk.value;
+          prevLastName = lastName; // type-head candidate = the name before the field name
           lastName = tk.value;
+        } else if (pdepth === 0 && gdepth >= 1) {
+          elementType = tk.value; // last name inside the type's generics (the element / value type)
         }
         this.next();
         continue;
@@ -371,7 +446,32 @@ class Parser {
     }
 
     if (kind === 'field') {
+      const fieldLine = this.peek().line;
       this.consumeField();
+      // 1.3: emit the field as a def (type + name + annotations) so the framework-semantics layer can
+      // model entity columns (@Column/@Id), injected fields (@Autowired), and component props. A
+      // multi-declarator field (`int a, b;`) yields only the first name (tolerant, documented).
+      // `prevLastName` is the type head (last dotted segment before the field name), `lastName` the
+      // field name; require a distinct type+name pair. `elementType` carries the generic arg of a
+      // collection type (`List<Payment>` → "Payment") for JPA association resolution.
+      if (firstName && lastName && firstName !== lastName && !HARD_KEYWORDS.has(lastName)) {
+        return {
+          kind: 'field',
+          name: lastName,
+          startLine,
+          endLine: Math.max(fieldLine, startLine),
+          modifiers,
+          annotations,
+          annos,
+          fieldType: prevLastName,
+          ...(elementType ? { fieldElementType: elementType } : {}),
+          bases: [],
+          implements: [],
+          params: [],
+          body: [],
+          stmts: [],
+        };
+      }
       return null;
     }
     if (kind === 'init') {
@@ -382,7 +482,10 @@ class Parser {
     if (!lastName || HARD_KEYWORDS.has(lastName)) return null;
     // method / constructor — `this.i` is at the param-list `(`; record it so the call collector skips it.
     this.excluded.add(this.i);
-    const params = this.parseParamList();
+    const typedParams = this.parseParamListTyped();
+    const params = typedParams.map((p) => p.name);
+    const paramTypes = typedParams.map((p) => p.type ?? '');
+    const paramAnnos = typedParams.map((p) => p.annotations ?? []);
     // optional `throws X, Y` — skip a dotted-name list until `{` or `;`.
     if (this.isName('throws')) {
       this.next();
@@ -405,12 +508,112 @@ class Parser {
       endLine: Math.max(endLine, startLine),
       modifiers,
       annotations,
+      annos,
       bases: [],
       implements: [],
       params,
+      paramTypes,
+      paramAnnos,
+      // 1.3: for a method, `prevLastName` is the return-type head (the name before the method name)
+      // and `elementType` is its generic arg (`List<Payment> all()` → "List" / "Payment"). A @Bean
+      // producer method PRODUCES its return type — captured here so the @Bean pass can emit `produces`.
+      ...(kind === 'method'
+        ? {
+            returnType: prevLastName,
+            ...(elementType ? { returnElementType: elementType } : {}),
+          }
+        : {}),
       body: [],
       stmts,
     };
+  }
+
+  /**
+   * Like {@link parseParamList} but also captures each parameter's TYPE head (the first NAME of the
+   * parameter, before generics/array dims) AND its preceding annotations. `UserRepo repo` →
+   * {name:'repo', type:'UserRepo'}; `final List<User> us` → {name:'us', type:'List'};
+   * `@RequestBody Loan loan` → {name:'loan', type:'Loan', annotations:['RequestBody']}. The DI graph
+   * reads the types; the Spring route-param contract reads the annotations.
+   */
+  private parseParamListTyped(): Array<{
+    name: string;
+    type?: string;
+    annotations?: string[];
+  }> {
+    if (!this.isOp('(')) return [];
+    this.next(); // (
+    const out: Array<{ name: string; type?: string; annotations?: string[] }> = [];
+    let pdepth = 1;
+    let firstName: string | undefined;
+    let lastName: string | undefined;
+    let paramAnnos: string[] = [];
+    const flush = (): void => {
+      if (lastName)
+        out.push(
+          firstName && firstName !== lastName
+            ? {
+                name: lastName,
+                type: firstName,
+                ...(paramAnnos.length ? { annotations: paramAnnos } : {}),
+              }
+            : { name: lastName, ...(paramAnnos.length ? { annotations: paramAnnos } : {}) },
+        );
+      firstName = undefined;
+      lastName = undefined;
+      paramAnnos = [];
+    };
+    while (!this.atEnd() && pdepth > 0) {
+      const tk = this.peek();
+      if (tk.type === 'OP' && tk.value === '(') {
+        pdepth++;
+        this.next();
+        continue;
+      }
+      if (tk.type === 'OP' && tk.value === ')') {
+        pdepth--;
+        this.next();
+        if (pdepth === 0) flush();
+        continue;
+      }
+      if (pdepth === 1 && tk.type === 'OP' && tk.value === ',') {
+        flush();
+        this.next();
+        continue;
+      }
+      // parameter annotation (`@RequestBody`, `@PathVariable("id")`, `@Valid`): capture the annotation
+      // simple name (for the Spring route-param contract), skip the dotted qualifier + any `(...)`
+      // args, then reset firstName/lastName so the TYPE is the next plain NAME. Pre-fix
+      // `@RequestBody Loan loan` mis-captured the type as 'RequestBody'.
+      if (pdepth === 1 && tk.type === 'OP' && tk.value === '@') {
+        this.next(); // '@'
+        let annoName: string | undefined;
+        if (this.isNameToken()) {
+          annoName = this.peek().value;
+          this.next(); // annotation simple name
+        }
+        while (this.isOp('.')) {
+          // dotted qualifier (`@org.springframework...`)
+          this.next();
+          if (this.isNameToken()) {
+            annoName = this.peek().value;
+            this.next();
+          } else break;
+        }
+        if (this.isOp('(')) this.skipBalancedParens(); // annotation args
+        if (annoName) paramAnnos.push(annoName);
+        firstName = undefined;
+        lastName = undefined;
+        continue;
+      }
+      if (pdepth === 1 && tk.type === 'NAME' && !isModifier(tk.value)) {
+        if (firstName === undefined) firstName = tk.value;
+        lastName = tk.value;
+        this.next();
+        continue;
+      }
+      this.next();
+    }
+    return out;
   }
 
   /** Consume a field initializer up to the terminating `;` at depth 0 (handles lambdas/array inits). */
@@ -568,7 +771,7 @@ class Parser {
 
   // --- annotations --------------------------------------------------------------
 
-  private consumeAnnotation(out: string[]): void {
+  private consumeAnnotation(out: string[], rich?: JavaAnno[]): void {
     this.next(); // '@'
     let name: string | undefined;
     // dotted annotation name NAME (. NAME)*
@@ -583,11 +786,29 @@ class Parser {
         } else break;
       }
     }
-    out.push(name ?? '<anon>');
+    const simple = name ?? '<anon>';
+    out.push(simple);
+    let args: string | undefined;
     if (this.isOp('(')) {
       this.excluded.add(this.i);
+      // capture the raw argument text between the matching parens (1.3: route paths / HTTP methods /
+      // DI qualifiers live here). skipBalancedParens consumes THROUGH the matching `)`, so the open
+      // is the token at the current index and the close is the last consumed token.
+      const openTok = this.peek();
       this.skipBalancedParens();
+      const closeTok = this.t[this.i - 1];
+      if (openTok && closeTok) {
+        const from = this.offOf(openTok) + 1;
+        const to = this.offOf(closeTok);
+        args = from < to ? this.src.slice(from, to).trim() : '';
+      }
     }
+    rich?.push(args !== undefined ? { name: simple, args } : { name: simple });
+  }
+
+  /** Source byte offset of a token's first char, from its 1-based line/col + the lineStarts table. */
+  private offOf(tk: Token): number {
+    return (this.lineStarts[tk.line - 1] ?? 0) + (tk.col - 1);
   }
 
   private skipAnnotationNoCapture(): void {

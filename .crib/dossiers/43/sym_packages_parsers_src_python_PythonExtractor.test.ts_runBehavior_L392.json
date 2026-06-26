@@ -1,0 +1,154 @@
+{
+  "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#runBehavior@L392",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:a25bd6bb355ecb9059d2f675c8dcc102f8da58f46fc41830159e0bab2f753540",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#runBehavior@L392",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runBehavior",
+    "qualifiedName": "runBehavior",
+    "signature": "runBehavior(): Promise<ExtractResult>",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/PythonExtractor.test.ts",
+    "span": {
+      "start": 392,
+      "end": 396
+    },
+    "callSites": [
+      {
+        "callee": "readFileSync",
+        "line": 393
+      },
+      {
+        "callee": "extract",
+        "line": 395
+      },
+      {
+        "callee": "ctxFor",
+        "line": 395
+      }
+    ]
+  },
+  "source": {
+    "text": "async function runBehavior(): Promise<ExtractResult> {\n  const text = readFileSync(BEHAVIOR_FIX, 'utf8');\n  const meta: FileMeta = { path: BEHAVIOR_PATH, lang: 'python', bytes: text.length, mtime: 0 };\n  return new PythonExtractor().extract(meta, ctxFor(text));\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 392
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#ctxFor@L15",
+      "confidence": 1,
+      "name": "ctxFor",
+      "qualifiedName": "ctxFor",
+      "signature": "ctxFor(text: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/parsers/src/python/PythonExtractor.test.ts",
+      "line": 15
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+      "confidence": 1,
+      "name": "ctxFor",
+      "qualifiedName": "ctxFor",
+      "signature": "ctxFor(text: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
+      "line": 15
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/PythonExtractor.test.ts#runBehavior@L392",
+    "procedureName": "runBehavior",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.test.ts#runBehavior@L392",
+        "procedureName": "runBehavior",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1b35f7f544bebda99559405ff9d9e8dd9c9d43986e6080c572b88f4983071813",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.test.ts@L393",
+          "line": 393,
+          "expr": "const text = readFileSync(BEHAVIOR_FIX, 'utf8');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.test.ts#runBehavior@L392",
+        "procedureName": "runBehavior",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0a51c8afa5548ecfe5f178a151d2b37d1f29eb556de31b75d7ec0eae0c9fe8c2",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.test.ts#ctxFor@L15",
+          "expr": "ctxFor",
+          "line": 395
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.test.ts#runBehavior@L392",
+        "procedureName": "runBehavior",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:698a6db75d57620d1f672cd599dcefbc0fd448d1ce78df4a6fd85e9b9c05744c",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.test.ts@L395",
+          "line": 395,
+          "expr": "return new PythonExtractor().extract(meta, ctxFor(text));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.test.ts#runBehavior@L392",
+        "procedureName": "runBehavior",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:23558c366450b7bc54a5469f64bb01cf9db970580482a62fde7d748f1639df0e",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+          "expr": "ctxFor",
+          "line": 395
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

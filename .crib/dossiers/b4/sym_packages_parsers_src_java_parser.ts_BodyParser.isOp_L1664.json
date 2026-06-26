@@ -1,0 +1,110 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.isOp@L1664",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:547383066846ceed7560e5f5421d07d3bf236530baf1bebc25fe11598e4e7b3d",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.isOp@L1664",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isOp",
+    "qualifiedName": "BodyParser.isOp",
+    "signature": "isOp(v: string): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 1664,
+      "end": 1666
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 1665
+      },
+      {
+        "callee": "peek",
+        "line": 1665
+      }
+    ]
+  },
+  "source": {
+    "text": "  private isOp(v: string): boolean {\n    return this.peek().type === 'OP' && this.peek().value === v;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1664
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L886",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 886
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.isOp@L1664",
+    "procedureName": "BodyParser.isOp",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.isOp@L1664",
+        "procedureName": "BodyParser.isOp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:13e51ff8966e277525134e6d68382abaf3c3d1d7f344b22376a3dd22aff98f64",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L886",
+          "expr": "peek",
+          "line": 1665
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.isOp@L1664",
+        "procedureName": "BodyParser.isOp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9328d4601b0135ff0b67cd7f53145f562726c75b10f6924a81fee2e27061e74d",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1665",
+          "line": 1665,
+          "expr": "return this.peek().type === 'OP' && this.peek().value === v;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

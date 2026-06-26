@@ -1,0 +1,258 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:493d3e265db53fd1dca705b33be26b0121bfcadee9dd494a78e3e9f513b6d6ef",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+    "kind": "symbol",
+    "type": "method",
+    "name": "peek",
+    "qualifiedName": "Parser.peek",
+    "signature": "peek(offset = 0): Token",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 801,
+      "end": 803
+    }
+  },
+  "source": {
+    "text": "  private peek(offset = 0): Token {\n    return this.t[this.i + offset] ?? { type: 'ENDMARKER', value: '', line: 0, col: 0 };\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 801
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.atEnd@L808",
+      "confidence": 1,
+      "name": "atEnd",
+      "qualifiedName": "Parser.atEnd",
+      "signature": "atEnd(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 808
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.capturePredicate@L684",
+      "confidence": 1,
+      "name": "capturePredicate",
+      "qualifiedName": "Parser.capturePredicate",
+      "signature": "capturePredicate(): { text: string; ok: boolean }",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 684
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.collectLineTokens@L655",
+      "confidence": 1,
+      "name": "collectLineTokens",
+      "qualifiedName": "Parser.collectLineTokens",
+      "signature": "collectLineTokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 655
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+      "confidence": 1,
+      "name": "consumeColon",
+      "qualifiedName": "Parser.consumeColon",
+      "signature": "consumeColon(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 767
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+      "confidence": 1,
+      "name": "is",
+      "qualifiedName": "Parser.is",
+      "signature": "is(type: Token['type']): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 795
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.isName@L798",
+      "confidence": 1,
+      "name": "isName",
+      "qualifiedName": "Parser.isName",
+      "signature": "isName(value: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 798
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseBaseList@L338",
+      "confidence": 1,
+      "name": "parseBaseList",
+      "qualifiedName": "Parser.parseBaseList",
+      "signature": "parseBaseList(): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 338
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseClass@L276",
+      "confidence": 1,
+      "name": "parseClass",
+      "qualifiedName": "Parser.parseClass",
+      "signature": "parseClass(): PyDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 276
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+      "confidence": 1,
+      "name": "parseFunction",
+      "qualifiedName": "Parser.parseFunction",
+      "signature": "parseFunction(async: boolean): PyDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 307
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseIf@L435",
+      "confidence": 1,
+      "name": "parseIf",
+      "qualifiedName": "Parser.parseIf",
+      "signature": "parseIf(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 435
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseLoop@L473",
+      "confidence": 1,
+      "name": "parseLoop",
+      "qualifiedName": "Parser.parseLoop",
+      "signature": "parseLoop(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 473
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseMatch@L550",
+      "confidence": 1,
+      "name": "parseMatch",
+      "qualifiedName": "Parser.parseMatch",
+      "signature": "parseMatch(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 550
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseParamList@L369",
+      "confidence": 1,
+      "name": "parseParamList",
+      "qualifiedName": "Parser.parseParamList",
+      "signature": "parseParamList(): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 369
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseTry@L507",
+      "confidence": 1,
+      "name": "parseTry",
+      "qualifiedName": "Parser.parseTry",
+      "signature": "parseTry(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 507
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseWith@L494",
+      "confidence": 1,
+      "name": "parseWith",
+      "qualifiedName": "Parser.parseWith",
+      "signature": "parseWith(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 494
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.peekName@L804",
+      "confidence": 1,
+      "name": "peekName",
+      "qualifiedName": "Parser.peekName",
+      "signature": "peekName(offset: number): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 804
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.skipDecorators@L722",
+      "confidence": 1,
+      "name": "skipDecorators",
+      "qualifiedName": "Parser.skipDecorators",
+      "signature": "skipDecorators(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 722
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+      "confidence": 1,
+      "name": "skipParens",
+      "qualifiedName": "Parser.skipParens",
+      "signature": "skipParens(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 751
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+    "procedureName": "Parser.peek",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+        "procedureName": "Parser.peek",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce474424c4aa9878759ca6e62b8600e2dd053377fb8aa5b5dbd32375c1d483e5",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L802",
+          "line": 802,
+          "expr": "return this.t[this.i + offset] ?? { type: 'ENDMARKER', value: '', line: 0, col: 0 };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

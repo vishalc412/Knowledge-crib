@@ -1,0 +1,141 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parentIdFor@L177",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:3d39d71a85a3bf4bf897fa20be579f0d892c671645f15516296bf233c6ab98e3",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parentIdFor@L177",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parentIdFor",
+    "qualifiedName": "TypeScriptExtractor.parentIdFor",
+    "signature": "parentIdFor(sym: LocalSymbol, all: LocalSymbol[], fileId: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 177,
+      "end": 182
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 180
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parentIdFor(sym: LocalSymbol, all: LocalSymbol[], fileId: string): string {\n    const parentQualifier = (sym.node.meta?.parentQualifier as string) ?? '';\n    if (parentQualifier === '') return fileId;\n    const parent = all.find((s) => s.node.qualifiedName === parentQualifier);\n    return parent?.node.id ?? fileId;\n  }",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 177
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L47",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "TypeScriptExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 47
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L176",
+      "snippet": "/** Resolve a symbol's `member-of` parent id: the nearest enclosing symbol, else the file. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parentIdFor@L177",
+    "procedureName": "TypeScriptExtractor.parentIdFor",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L179"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parentIdFor@L177",
+        "procedureName": "TypeScriptExtractor.parentIdFor",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L179",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L179",
+            "expr": "parentQualifier === ''",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:995705c47411b41327b6ed6dc5b061a2cb7a3f686d880545a08d6ef2f28843bb",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L179",
+          "line": 179,
+          "expr": "return fileId;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parentIdFor@L177",
+        "procedureName": "TypeScriptExtractor.parentIdFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:97e46d896d02f8c5bf168011fbecf24872de700e7e316ed05c3aa16b4de919f8",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L180",
+          "line": 180,
+          "expr": "const parent = all.find((s) => s.node.qualifiedName === parentQualifier);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parentIdFor@L177",
+        "procedureName": "TypeScriptExtractor.parentIdFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9432307764f8159e56562fcba0f001c1c36b9ebd8e4e694f33adb198226e6a46",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L181",
+          "line": 181,
+          "expr": "return parent?.node.id ?? fileId;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

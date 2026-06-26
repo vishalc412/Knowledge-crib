@@ -1,0 +1,165 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.walkJsonl@L330",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:7749d98afc23cb1e582089471a36fbd94ca8ce14c3a8fdfd1041e182accff5f0",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.walkJsonl@L330",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkJsonl",
+    "qualifiedName": "SoulStore.walkJsonl",
+    "signature": "walkJsonl(root: string): Iterable<string>",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 330,
+      "end": 342
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 333
+      },
+      {
+        "callee": "readdirSync",
+        "line": 336
+      }
+    ]
+  },
+  "source": {
+    "text": "  private *walkJsonl(root: string): Iterable<string> {\n    if (!existsSync(root)) return;\n    for (const shard of readdirSync(root)) {\n      const shardDir = join(root, shard);\n      let entries: string[];\n      try {\n        entries = readdirSync(shardDir);\n      } catch {\n        continue; // not a directory\n      }\n      for (const f of entries) if (f.endsWith('.jsonl')) yield join(shardDir, f);\n    }\n  }",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 330
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateEdges@L323",
+      "confidence": 1,
+      "name": "hydrateEdges",
+      "qualifiedName": "SoulStore.hydrateEdges",
+      "signature": "hydrateEdges(): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 323
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateNodes@L312",
+      "confidence": 1,
+      "name": "hydrateNodes",
+      "qualifiedName": "SoulStore.hydrateNodes",
+      "signature": "hydrateNodes(): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 312
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.walkJsonl@L330",
+    "procedureName": "SoulStore.walkJsonl",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L331",
+      "cond:packages/core/src/soul-store.ts@L332"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.walkJsonl@L330",
+        "procedureName": "SoulStore.walkJsonl",
+        "guard": "cond:packages/core/src/soul-store.ts@L331",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L331",
+            "expr": "!existsSync(root)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bdb8aa7cfe1b5210174da016f0615d6714bfeed048d43e00961c359031ff40aa",
+          "target": "stmt:packages/core/src/soul-store.ts@L331",
+          "line": 331,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.walkJsonl@L330",
+        "procedureName": "SoulStore.walkJsonl",
+        "guard": "cond:packages/core/src/soul-store.ts@L332",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L332",
+            "expr": "readdirSync(root)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d5311c93e58c381123c1b02c5eae94fd50a47f5c5f2292949f21bccddc96efdb",
+          "target": "stmt:packages/core/src/soul-store.ts@L333",
+          "line": 333,
+          "expr": "const shardDir = join(root, shard);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.walkJsonl@L330",
+        "procedureName": "SoulStore.walkJsonl",
+        "guard": "cond:packages/core/src/soul-store.ts@L332",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L332",
+            "expr": "readdirSync(root)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d022da862c99283f3355f64251eeaf8b2262a3f14b8f75d62d8e97d8374aa89a",
+          "target": "assign:packages/core/src/soul-store.ts@L336",
+          "line": 336,
+          "expr": "entries = readdirSync(shardDir);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "id": "sym:packages/core/src/dossier/builder.ts#str@L346",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:7472d21929aaa4da8b7cf1a909092e89aa63412f205386ff418fcfa99c437fe1",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/core/src/dossier/builder.ts#str@L346",
+    "kind": "symbol",
+    "type": "function",
+    "name": "str",
+    "qualifiedName": "str",
+    "signature": "str(s: string): string",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/builder.ts",
+    "span": {
+      "start": 346,
+      "end": 348
+    }
+  },
+  "source": {
+    "text": "function str(s: string): string {\n  return s;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 346
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/fixtures/python-cross/util.py#format_token@L4",
+      "confidence": 1,
+      "name": "format_token",
+      "qualifiedName": "format_token",
+      "signature": "format_token(value)",
+      "type": "function",
+      "file": "packages/pipeline/fixtures/python-cross/util.py",
+      "line": 4
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/builder.ts#str@L346",
+    "procedureName": "str",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#str@L346",
+        "procedureName": "str",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9652607259b751355a05f18b2898fd3718950d1f059a7304002f3cd1baf83852",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L347",
+          "line": 347,
+          "expr": "return s;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/fixtures/python-cross/util.py"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

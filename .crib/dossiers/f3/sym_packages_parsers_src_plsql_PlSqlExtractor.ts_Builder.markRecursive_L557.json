@@ -1,0 +1,141 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.markRecursive@L557",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:eb0680821df7588cccb58687ff81fcc4b0c376ffcaaf9d79fb2e6c194fa166b8",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.markRecursive@L557",
+    "kind": "symbol",
+    "type": "method",
+    "name": "markRecursive",
+    "qualifiedName": "Builder.markRecursive",
+    "signature": "markRecursive(procId: string): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 557,
+      "end": 561
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 558
+      }
+    ]
+  },
+  "source": {
+    "text": "  private markRecursive(procId: string): void {\n    const sym = this.nodes.find((n) => n.id === procId);\n    if (!sym) return;\n    sym.meta = { ...(sym.meta ?? {}), recursive: true };\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 557
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addCall@L449",
+      "confidence": 1,
+      "name": "addCall",
+      "qualifiedName": "Builder.addCall",
+      "signature": "addCall(s: CallStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 449
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/PlSqlExtractor.ts@L555",
+      "snippet": "/** 1.2: stamp `meta.recursive:true` on a procedure that calls itself. The recursive call site is",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.markRecursive@L557",
+    "procedureName": "Builder.markRecursive",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L559"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.markRecursive@L557",
+        "procedureName": "Builder.markRecursive",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6b032f3e519b6db7c464751667a264de065a9f12b75c5e16084db5d80e513686",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L558",
+          "line": 558,
+          "expr": "const sym = this.nodes.find((n) => n.id === procId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.markRecursive@L557",
+        "procedureName": "Builder.markRecursive",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L559",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L559",
+            "expr": "!sym",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ecde4b593ce2da6d9a16bd3178d6e075292b4a9e52866696a3c5b18ffa4f3b38",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L559",
+          "line": 559,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.markRecursive@L557",
+        "procedureName": "Builder.markRecursive",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:64b915fbbff77542101c0fefb247626cbf7412eec7d0308ad1545b0e6d5f4b66",
+          "target": "assign:packages/parsers/src/plsql/PlSqlExtractor.ts@L560",
+          "line": 560,
+          "expr": "sym.meta = { ...(sym.meta ?? {}), recursive: true };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

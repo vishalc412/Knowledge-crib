@@ -29,6 +29,7 @@
  */
 import { edgeId } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
+import { clampExpr } from '../types.js';
 import type { Capabilities, ExtractCtx, ExtractResult, Extractor, FileMeta } from '../types.js';
 import { collectComments } from './lexer.js';
 import type {
@@ -43,6 +44,13 @@ import type {
   GoSwitchStmt,
 } from './parser.js';
 import { parseGo } from './parser.js';
+
+/** Spread an `expr` field plus its `exprTruncated` honesty flag from a raw expression string. */
+function exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true } {
+  if (!raw) return {};
+  const { expr, truncated } = clampExpr(raw);
+  return truncated ? { expr, exprTruncated: true } : { expr };
+}
 
 interface LocalSymbol {
   node: Node;
@@ -632,7 +640,7 @@ class BodyWalker {
       id,
       kind: 'statement',
       type,
-      ...(expr ? { expr: expr.slice(0, 200) } : {}),
+      ...exprFields(expr),
       file: this.path,
       span: { start: line, end: line },
       lang: 'go',
@@ -742,7 +750,7 @@ class BodyWalker {
         id,
         kind: 'condition',
         branch,
-        expr,
+        ...exprFields(expr),
         file: this.path,
         span: { start: line, end: line },
         lang: 'go',
@@ -865,7 +873,7 @@ class BodyWalker {
       id,
       kind: 'assignment',
       ...(target ? { assignTarget: target } : {}),
-      ...(expr ? { expr: expr.slice(0, 200) } : {}),
+      ...exprFields(expr),
       file: this.path,
       span: { start: line, end: line },
       lang: 'go',

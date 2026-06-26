@@ -57,6 +57,12 @@ export class SymbolTable {
     return idFor({ kind: 'file', path });
   }
 
+  /** The stored symbol node with `id` declared in `file` — to read its `meta` (e.g. 1.3
+   *  `meta.injects` recorded by a framework-semantics extractor), or undefined. Any nesting depth. */
+  nodeInFile(file: string, id: string): Node | undefined {
+    return this.byFile.get(file)?.find((s) => s.id === id);
+  }
+
   /** Innermost symbol in `file` whose span contains `line`, or undefined. */
   enclosingSymbolId(file: string, line: number): string | undefined {
     const syms = this.byFile.get(file);

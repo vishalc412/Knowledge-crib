@@ -1,7 +1,7 @@
 # Knowledge-crib — Storage Layer (SoulStore + IndexStore)
 
 > Dual role [Q9]: **SoulStore** = portable source of truth (chunked JSONL, committed); **IndexStore**
-> = fast derived cache (LadybugDB or sqlite, gitignored, rebuildable). On-disk format is in
+> = fast derived cache (shipped: `better-sqlite3 + FTS5`; LadybugDB planned/not-wired, gitignored, rebuildable). On-disk format is in
 > [soul-format](knowledge-crib-soul-format.md); this doc is the API + design.
 
 ---
@@ -31,20 +31,21 @@ interface SoulStore {
 ## 2. IndexStore (derived, fast, swappable)
 ```ts
 interface IndexStore {
-  buildFromSoul(soul: SoulStore, opts?: { withEmbeddings?: boolean }): void;  // full rebuild
+  buildFromSoul(soul: SoulStore): void;  // full rebuild; no options (no vector/ANN path ships)
   applyDelta(changed: { nodes: Node[]; edges: Edge[]; removed: string[] }): void; // incremental
-  query(q: HybridQuery): Hit[];             // BM25 (+ vector if built)
+  query(q: HybridQuery): Hit[];             // BM25 (no vector index wired; see `--semantic` for the TF-IDF linker)
   impact(id: string, dir: Dir, depth?: number): ImpactResult;  // reverse/forward edge traversal
   neighbors(id: string, rel?: Rel, dir?: Dir): Edge[];
   shortestPath(from: string, to: string, maxHops?: number): PathResult;
-  capabilities(): { cypher: boolean; vector: boolean };
+  capabilities(): { cypher: boolean; vector: boolean };  // shipped: vector=false (hard-coded)
 }
 ```
-**Two backends behind one interface [C3]:**
-| Backend | When | Notes |
-|---------|------|-------|
-| **LadybugDB** | default if OSS-embeddable | native graph + Cypher + vector; richest |
-| **better-sqlite3 + FTS5 + sqlite-vec** | fallback | pure-Node, zero native-binding risk; `capabilities.cypher=false` |
+**Backends behind one interface [C3]:**
+| Backend | Status | Notes |
+|---------|--------|-------|
+| **better-sqlite3 + FTS5** | **shipped (default)** | pure-Node, zero native-binding risk; `capabilities.cypher=false`, `capabilities.vector=false` |
+| **LadybugDB** | planned / not-wired | native graph + Cypher + vector; richest; original planned default, never shipped |
+| **sqlite-vec (vector/ANN)** | planned / not-wired | optional vector layer on the sqlite backend; no `sqlite-vec` dependency shipped today |
 
 The pipeline and MCP depend **only on `IndexStore`** — swapping backends touches nothing upstream.
 The soul format is backend-agnostic.
@@ -71,7 +72,7 @@ Cost ∝ change size. Manifest `stats` + `vcsHead` + `incrementalSince` updated 
 |------|---------|--------|
 | `shardHexDigits` | 2 (256 shards) | parallelism + diff granularity |
 | `maxChunkLines` | 5000 | chunk file size |
-| `withEmbeddings` | false | vector search on/off (cost/quality) |
+| `semantic` | false | pure-JS TF-IDF semantic linker on/off (emits INFERRED `references` edges; not a vector/ANN path) |
 
 ## 7. Open confirmations
 - **C3:** is LadybugDB embeddable under OSS terms for a TS product? If unresolved at M1, ship the

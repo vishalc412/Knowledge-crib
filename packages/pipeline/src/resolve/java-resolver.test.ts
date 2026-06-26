@@ -15,6 +15,14 @@ const JAVA_CROSS = join(
   'java-cross',
 );
 
+const JAVA_SPRING = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  'fixtures',
+  'java-spring',
+);
+
 const JAVA_EXTS = ['.java'];
 const NOW = '2026-01-01T00:00:00.000Z';
 
@@ -120,6 +128,73 @@ describe('JavaResolver — cross-file edges (gate)', () => {
     await indexRepo(b, JAVA_CROSS, { now: NOW, cluster: false, semantic: false });
     expect(JSON.stringify([...b.iterate()].sort(byId))).toBe(aNodes);
     expect(JSON.stringify([...b.iterateEdges()].sort(byEdgeId))).toBe(aEdges);
+  });
+});
+
+describe('JavaResolver — Spring DI cross-file (schema 1.3 gate)', () => {
+  it('resolves constructor + @Autowired field injection across files → injects edges', async () => {
+    const soul = soulFor();
+    const report = await indexRepo(soul, JAVA_SPRING, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+    });
+
+    // The Spring pass (Phase 2) records `meta.injects` on each bean for types it could NOT resolve
+    // intra-file; the resolver turns those into cross-file `injects` edges here:
+    //   LoanController --injects--> LoanService    (constructor-injected, imported)
+    //   LoanService    --injects--> LoanRepository (@Autowired field, imported)
+    const injects = [...soul.iterateEdges('injects')].map((e) => pair(soul, e.src, e.dst)).sort();
+    expect(injects).toEqual([
+      'sym:LoanController -> sym:LoanService',
+      'sym:LoanService -> sym:LoanRepository',
+    ]);
+
+    // every resolved injects edge is EXTRACTED/static/confidence 1 (no guessing).
+    for (const e of soul.iterateEdges('injects')) expectEdge(e);
+
+    // both bean dependencies resolved cross-file.
+    expect(report.resolve.injects).toBeGreaterThanOrEqual(2);
+
+    // stereotypes survived onto the class symbols (the Spring pass mutates the symbol node).
+    const stereotype = (q: string) =>
+      [...soul.iterate('symbol')].find((n) => n.qualifiedName === q)?.stereotype;
+    expect(stereotype('LoanController')).toBe('controller');
+    expect(stereotype('LoanService')).toBe('service');
+    expect(stereotype('LoanRepository')).toBe('repository');
+
+    // routes + exposes are intra-file artifacts from the Spring pass (Phase 2), present in the soul.
+    const routes = [...soul.iterate('route')].map((n) => `${n.httpMethod} ${n.routePath}`).sort();
+    expect(routes).toEqual(['GET /api/loans/{id}', 'POST /api/loans']);
+    expect([...soul.iterateEdges('exposes')].length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('resolves @Bean producer methods across files → produces edges (schema 1.3)', async () => {
+    const soul = soulFor();
+    const report = await indexRepo(soul, JAVA_SPRING, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+    });
+
+    // The Spring pass (Phase 2) records `meta.produces` on each @Bean method for return types it
+    // could NOT resolve intra-file; the resolver turns those into cross-file `produces` edges here:
+    //   LoanConfig.auditClient     --produces--> AuditClient     (imported)
+    //   LoanConfig.loanRepository  --produces--> LoanRepository  (imported)
+    const produces = [...soul.iterateEdges('produces')].map((e) => pair(soul, e.src, e.dst)).sort();
+    expect(produces).toEqual([
+      'sym:LoanConfig.auditClient -> sym:AuditClient',
+      'sym:LoanConfig.loanRepository -> sym:LoanRepository',
+    ]);
+
+    // every resolved produces edge is EXTRACTED/static/confidence 1 (no guessing).
+    for (const e of soul.iterateEdges('produces')) expectEdge(e);
+    expect(report.resolve.produces).toBeGreaterThanOrEqual(2);
+
+    // the @Configuration class carries the config stereotype; the @Bean methods are its producers.
+    const stereotype = (q: string) =>
+      [...soul.iterate('symbol')].find((n) => n.qualifiedName === q)?.stereotype;
+    expect(stereotype('LoanConfig')).toBe('config');
   });
 });
 

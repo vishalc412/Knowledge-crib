@@ -1,0 +1,207 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeEdgeShard@L365",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:a82aa87952a1b36561a7fe1c796982f62398e4f4c71a4f1ffe61da331d20cd11",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeEdgeShard@L365",
+    "kind": "symbol",
+    "type": "method",
+    "name": "writeEdgeShard",
+    "qualifiedName": "SoulStore.writeEdgeShard",
+    "signature": "writeEdgeShard(shard: string): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 365,
+      "end": 370
+    },
+    "callSites": [
+      {
+        "callee": "sort",
+        "line": 366
+      },
+      {
+        "callee": "filter",
+        "line": 366
+      },
+      {
+        "callee": "values",
+        "line": 366
+      },
+      {
+        "callee": "shardOf",
+        "line": 367
+      },
+      {
+        "callee": "shardKeyForEdge",
+        "line": 367
+      },
+      {
+        "callee": "writeShardChunks",
+        "line": 369
+      },
+      {
+        "callee": "join",
+        "line": 369
+      }
+    ]
+  },
+  "source": {
+    "text": "  private writeEdgeShard(shard: string): void {\n    const records = [...this.edges.values()]\n      .filter((e) => shardOf(shardKeyForEdge(e), this.shardDigits) === shard)\n      .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));\n    this.writeShardChunks(join(this.cribDirPrivate, 'edges', shard), records);\n  }",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 365
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L221",
+      "confidence": 1,
+      "name": "commit",
+      "qualifiedName": "SoulStore.commit",
+      "signature": "commit(now = new Date().toISOString()): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 221
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+      "confidence": 1,
+      "name": "writeShardChunks",
+      "qualifiedName": "SoulStore.writeShardChunks",
+      "signature": "writeShardChunks(shardDir: string, records: (Node | Edge)[]): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 386
+    },
+    {
+      "id": "sym:packages/core/src/shard.ts#shardKeyForEdge@L55",
+      "confidence": 1,
+      "name": "shardKeyForEdge",
+      "qualifiedName": "shardKeyForEdge",
+      "signature": "shardKeyForEdge(edge: Edge): string",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 55
+    },
+    {
+      "id": "sym:packages/core/src/shard.ts#shardOf@L60",
+      "confidence": 1,
+      "name": "shardOf",
+      "qualifiedName": "shardOf",
+      "signature": "shardOf(key: string, shardHexDigits: number): string",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 60
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeEdgeShard@L365",
+    "procedureName": "SoulStore.writeEdgeShard",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeEdgeShard@L365",
+        "procedureName": "SoulStore.writeEdgeShard",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7f4c5f93b9d7c5a5addb6c070d5ec140975f3c46ab2520336c8418ceac4b0566",
+          "target": "stmt:packages/core/src/soul-store.ts@L366",
+          "line": 366,
+          "expr": "const records = [...this.edges.values()]\n      .filter((e) => shardOf(shardKeyForEdge(e), this.shardDigits) === shard)\n      .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeEdgeShard@L365",
+        "procedureName": "SoulStore.writeEdgeShard",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9131d9502a4d6eed08f5fdafee56f30675fd7419b0fb5f7f2a97ff92d6a1d513",
+          "target": "sym:packages/core/src/shard.ts#shardOf@L60",
+          "expr": "shardOf",
+          "line": 367
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeEdgeShard@L365",
+        "procedureName": "SoulStore.writeEdgeShard",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bfb514a018c064cd00b80fff5250b09b9bd00436f376f61ae7600a44cdb8776a",
+          "target": "sym:packages/core/src/shard.ts#shardKeyForEdge@L55",
+          "expr": "shardKeyForEdge",
+          "line": 367
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeEdgeShard@L365",
+        "procedureName": "SoulStore.writeEdgeShard",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:24f42a75ecd603ab4bb387f3b31930c72a6ca5f69619f3d55c14e5e8b1389134",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L386",
+          "expr": "writeShardChunks",
+          "line": 369
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeEdgeShard@L365",
+        "procedureName": "SoulStore.writeEdgeShard",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8772642ad8ac647a1ba8676465705b57c593232f247e6ba2bebe0c35036929e7",
+          "target": "stmt:packages/core/src/soul-store.ts@L369",
+          "line": 369,
+          "expr": "this.writeShardChunks(join(this.cribDirPrivate, 'edges', shard), records);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 7,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -34,7 +34,7 @@ import { newManifest } from './manifest.js';
 import { pathFromId, shardKeyForEdge, shardKeyForNode, shardOf } from './shard.js';
 import { assertValidEdge, assertValidManifest, assertValidNode } from './validate.js';
 
-const MANIFEST_FILE = 'crib.json';
+export const MANIFEST_FILE = 'crib.json';
 const CLUSTERS_FILE = join('clusters', 'clusters.jsonl');
 
 export interface SoulStoreOpts {
@@ -99,6 +99,29 @@ export class SoulStore {
     this.dirtyEdgeShards.clear();
     this.clustersDirty = false;
     return this.manifest;
+  }
+
+  /**
+   * Prepare for a clean FULL rebuild over a possibly-stale `.crib`: drop in-memory state and
+   * schedule EVERY on-disk node/edge/cluster shard + the dossiers cache for rewrite-on-commit, so
+   * orphan shards from a previous (older-schema) soul are pruned instead of layered upon. The
+   * manifest is left untouched (the caller constructs a fresh one stamped with the current
+   * SCHEMA_VERSION). This is the fix for `crib index` over an existing `.crib` — `load()` would
+   * hydrate stale nodes AND overwrite the fresh manifest, so a full rebuild must NOT load().
+   */
+  resetForRebuild(): void {
+    this.nodes.clear();
+    this.edges.clear();
+    const nodesRoot = join(this.cribDirPrivate, 'nodes');
+    if (existsSync(nodesRoot)) for (const s of readdirSync(nodesRoot)) this.dirtyNodeShards.add(s);
+    const edgesRoot = join(this.cribDirPrivate, 'edges');
+    if (existsSync(edgesRoot)) for (const s of readdirSync(edgesRoot)) this.dirtyEdgeShards.add(s);
+    this.clustersDirty = true;
+    // NOTE: the dossiers cache is intentionally left in place — runDossiers skips fresh (hash-anchored)
+    // dossiers so an unchanged repo re-indexes WITHOUT rewriting the dossier store (byte-stable).
+    // Clearing it here would regenerate every dossier with a new `builtAt` on each rebuild, breaking
+    // determinism. Orphan dossiers for deleted nodes persist (harmless — served only on a hash match),
+    // matching the original load()-based rebuild behavior.
   }
 
   /** Upsert nodes by id. Routes each to its shard and marks that shard dirty. */

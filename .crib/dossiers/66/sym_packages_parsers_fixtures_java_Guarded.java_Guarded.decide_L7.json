@@ -1,0 +1,197 @@
+{
+  "id": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.decide@L7",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c730f61afea39f43d9be59f60580d2d35e3d36318370fde28d2274031c656da6",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.decide@L7",
+    "kind": "symbol",
+    "type": "method",
+    "name": "decide",
+    "qualifiedName": "Guarded.decide",
+    "signature": "decide(status, limit)",
+    "lang": "java",
+    "file": "packages/parsers/fixtures/java/Guarded.java",
+    "span": {
+      "start": 7,
+      "end": 13
+    },
+    "callSites": [
+      {
+        "callee": "approve",
+        "line": 9
+      },
+      {
+        "callee": "reject",
+        "line": 11
+      }
+    ],
+    "params": [
+      "status",
+      "limit"
+    ]
+  },
+  "source": {
+    "text": "    public String decide(int status, int limit) {\n        if (status > 0) {\n            return approve(status);\n        } else {\n            return reject(status);\n        }\n    }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 7
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.approve@L40",
+      "confidence": 1,
+      "name": "approve",
+      "qualifiedName": "Guarded.approve",
+      "signature": "approve(x)",
+      "type": "method",
+      "file": "packages/parsers/fixtures/java/Guarded.java",
+      "line": 40
+    },
+    {
+      "id": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.reject@L41",
+      "confidence": 1,
+      "name": "reject",
+      "qualifiedName": "Guarded.reject",
+      "signature": "reject(x)",
+      "type": "method",
+      "file": "packages/parsers/fixtures/java/Guarded.java",
+      "line": 41
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-1-what-each-model-can-answer-about-one-procedure",
+      "heading": "1.1 What each model can answer about ONE procedure",
+      "anchor": "1-1-what-each-model-can-answer-about-one-procedure",
+      "snippet": "1.1 What each model can answer about ONE procedure",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.decide@L7",
+    "procedureName": "Guarded.decide",
+    "conditions": [
+      "cond:packages/parsers/fixtures/java/Guarded.java@L8"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.decide@L7",
+        "procedureName": "Guarded.decide",
+        "guard": "cond:packages/parsers/fixtures/java/Guarded.java@L8",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/java/Guarded.java@L8",
+            "expr": "status > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4ef4cc2a74d16305bbc0344e14b074f7cf2563b4d14301039e3131dc24c693ac",
+          "target": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.approve@L40",
+          "expr": "approve",
+          "line": 9
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.decide@L7",
+        "procedureName": "Guarded.decide",
+        "guard": "cond:packages/parsers/fixtures/java/Guarded.java@L8",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/java/Guarded.java@L8",
+            "expr": "status > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f440cd1bc5b6fe597ddf21b54e52bc4008832a0f9c11865b66aef8ed83dae611",
+          "target": "stmt:packages/parsers/fixtures/java/Guarded.java@L9",
+          "line": 9,
+          "expr": "return approve(status)"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.decide@L7",
+        "procedureName": "Guarded.decide",
+        "guard": "cond:packages/parsers/fixtures/java/Guarded.java@L8",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/java/Guarded.java@L8",
+            "expr": "status > 0",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:784afd83ab52e79c101c175fd9bd17bc174933adc004e385f73660ba35a45af8",
+          "target": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.reject@L41",
+          "expr": "reject",
+          "line": 11
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.decide@L7",
+        "procedureName": "Guarded.decide",
+        "guard": "cond:packages/parsers/fixtures/java/Guarded.java@L8",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/java/Guarded.java@L8",
+            "expr": "status > 0",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df22098d9ba5cb7fba92244e718e70c2611d2e49b71d916b3b42e55f49112882",
+          "target": "stmt:packages/parsers/fixtures/java/Guarded.java@L11",
+          "line": 11,
+          "expr": "return reject(status)"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

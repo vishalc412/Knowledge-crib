@@ -1,0 +1,575 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:008cd43bf38b18d5a0d5dc7e09980ea08e43ee24cd25f230b6df6c9a022a307e",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+    "kind": "symbol",
+    "type": "function",
+    "name": "collectImports",
+    "qualifiedName": "collectImports",
+    "signature": "collectImports(tokens: Token[]): { pkg: string; imports: JavaImport[] }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 976,
+      "end": 1047
+    },
+    "callSites": [
+      {
+        "callee": "isOp",
+        "line": 982
+      },
+      {
+        "callee": "push",
+        "line": 988
+      },
+      {
+        "callee": "isOp",
+        "line": 990
+      },
+      {
+        "callee": "consumeDotted",
+        "line": 1012
+      },
+      {
+        "callee": "join",
+        "line": 1013
+      },
+      {
+        "callee": "atLineEnd",
+        "line": 1014
+      },
+      {
+        "callee": "isNameVal",
+        "line": 1020
+      },
+      {
+        "callee": "consumeDotted",
+        "line": 1022
+      },
+      {
+        "callee": "join",
+        "line": 1028
+      },
+      {
+        "callee": "join",
+        "line": 1030
+      },
+      {
+        "callee": "slice",
+        "line": 1030
+      },
+      {
+        "callee": "push",
+        "line": 1034
+      },
+      {
+        "callee": "atLineEnd",
+        "line": 1041
+      }
+    ]
+  },
+  "source": {
+    "text": "export function collectImports(tokens: Token[]): { pkg: string; imports: JavaImport[] } {\n  const imports: JavaImport[] = [];\n  let pkg = '';\n  let i = 0;\n  const isNameVal = (k: number, v: string) => tokens[k]?.type === 'NAME' && tokens[k]?.value === v;\n  const isOp = (k: number, v: string) => tokens[k]?.type === 'OP' && tokens[k]?.value === v;\n  const atLineEnd = (k: number) => !tokens[k] || isOp(k, ';');\n  const consumeDotted = (k: number): { parts: string[]; j: number; star: boolean } => {\n    const parts: string[] = [];\n    let j = k;\n    let star = false;\n    while (j < tokens.length && tokens[j]!.type === 'NAME') {\n      parts.push(tokens[j]!.value);\n      j++;\n      if (isOp(j, '.')) {\n        // `.*` wildcard: dot then `*` (OP)\n        if (tokens[j + 1]?.type === 'OP' && tokens[j + 1]?.value === '*') {\n          j += 2;\n          star = true;\n          break;\n        }\n        j++;\n        continue;\n      }\n      break;\n    }\n    return { parts, j, star };\n  };\n\n  while (i < tokens.length) {\n    const tk = tokens[i]!;\n    if (tk.type !== 'NAME') {\n      i++;\n      continue;\n    }\n    if (tk.value === 'package') {\n      const { parts, j } = consumeDotted(i + 1);\n      pkg = parts.join('.');\n      i = atLineEnd(j) ? j + 1 : j;\n      continue;\n    }\n    if (tk.value === 'import') {\n      const line = tk.line;\n      let j = i + 1;\n      const isStatic = isNameVal(j, 'static');\n      if (isStatic) j++;\n      const { parts, j: j2, star } = consumeDotted(j);\n      j = j2;\n      // For `.*` the last segment is part of the package, not a name; for a plain import the last\n      // segment is the bound name and the module is everything before it.\n      const last = parts[parts.length - 1] ?? '';\n      const module = star\n        ? parts.join('.')\n        : parts.length > 1\n          ? parts.slice(0, -1).join('.')\n          : isStatic\n            ? ''\n            : (parts[0] ?? '');\n      imports.push({\n        module,\n        name: star ? '' : last,\n        star,\n        static: isStatic,\n        line,\n      });\n      i = atLineEnd(j) ? j + 1 : j;\n      continue;\n    }\n    i++;\n  }\n  return { pkg, imports };\n}",
+    "truncated": false,
+    "totalLines": 72,
+    "startLine": 976
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#parseJava@L182",
+      "confidence": 1,
+      "name": "parseJava",
+      "qualifiedName": "parseJava",
+      "signature": "parseJava(src: string): JavaModule",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 182
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#collectImports.atLineEnd@L982",
+      "confidence": 1,
+      "name": "atLineEnd",
+      "qualifiedName": "collectImports.atLineEnd",
+      "signature": "atLineEnd(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 982
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L983",
+      "confidence": 1,
+      "name": "consumeDotted",
+      "qualifiedName": "collectImports.consumeDotted",
+      "signature": "consumeDotted(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 983
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#collectImports.isNameVal@L980",
+      "confidence": 1,
+      "name": "isNameVal",
+      "qualifiedName": "collectImports.isNameVal",
+      "signature": "isNameVal(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 980
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#collectImports.isOp@L981",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "collectImports.isOp",
+      "signature": "isOp(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 981
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.ts@L975",
+      "snippet": "/** Scan the token stream for `package a.b;` and `import [static] a.b.C [. *];` statements. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+    "procedureName": "collectImports",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.ts@L1005",
+      "cond:packages/parsers/src/java/parser.ts@L1017",
+      "cond:packages/parsers/src/java/parser.ts@L1011"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:71b480a605815081c5e23c083bfc9c01496d0b6686aefb13bc4e5d03b54e1ba0",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L982",
+          "line": 982,
+          "expr": "const atLineEnd = (k: number) => !tokens[k] || isOp(k, ';');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e3005f64baeef017d0e1b0034353a099543afba8cbb7ae924e812297814fc18c",
+          "target": "sym:packages/parsers/src/java/parser.ts#collectImports.isOp@L981",
+          "expr": "isOp",
+          "line": 982
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:add08f1ba59e2a9672cba52fd6f218eefe8a0681e7da4ceec08d2be6ff62a54b",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L983",
+          "line": 983,
+          "expr": "const consumeDotted = (k: number): { parts: string[]; j: number; star: boolean } => {\n    const parts: string[] = [];\n    let j = k;\n    let star = false;\n    while (j < tokens.length && tokens[j]!.type === 'NAME') {\n      parts.push(tokens[j]!.value);\n      j++;\n      if (isOp(j, '.')) {\n        // `.*` wildcard: dot then `*` (OP)\n        if (tokens[j + 1]?.type === 'OP' && tokens[j + 1]?.value === '*') {\n          j += 2;\n          star = true;\n          break;\n        }\n        j++;\n        continue;\n      }\n      break;\n    }\n    return { parts, j, star };\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:828fc10d7802ccbe92294993053646fc734758779563c1dfd9fec98429ffed17",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 988
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1017",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1017",
+            "expr": "tk.value === 'import'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4e42f7a49d12884af95767f4bfc9f59ca588c7635231ed7760b2c038d5825215",
+          "target": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L983",
+          "expr": "consumeDotted",
+          "line": 1012
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1011",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1011",
+            "expr": "tk.value === 'package'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a74aa6ceb5de592721b4c6efd5752f0109d73243605653b5b62b96d6e686f28a",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1012",
+          "line": 1012,
+          "expr": "const { parts, j } = consumeDotted(i + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1011",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1011",
+            "expr": "tk.value === 'package'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:91fdddcccf3e9672c38565fe8e6c2ddaa82c2f58b638e581e3aebaf42b8babf5",
+          "target": "assign:packages/parsers/src/java/parser.ts@L1013",
+          "line": 1013,
+          "expr": "pkg = parts.join('.');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1017",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1017",
+            "expr": "tk.value === 'import'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:69f79e0b01453b9a58634d2dbfd0580752c47ebed16224f15864543c657e2364",
+          "target": "sym:packages/parsers/src/java/parser.ts#collectImports.atLineEnd@L982",
+          "expr": "atLineEnd",
+          "line": 1014
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1011",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1011",
+            "expr": "tk.value === 'package'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f0e2f12e09d13c46f49d07ff084bf603c2513d691c5ae8a830527479c826709",
+          "target": "assign:packages/parsers/src/java/parser.ts@L1014",
+          "line": 1014,
+          "expr": "i = atLineEnd(j) ? j + 1 : j;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1017",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1017",
+            "expr": "tk.value === 'import'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e72661e394f24176ca7224d4256db1c67f4d523961522dae862fb3082ffd5556",
+          "target": "sym:packages/parsers/src/java/parser.ts#collectImports.isNameVal@L980",
+          "expr": "isNameVal",
+          "line": 1020
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1017",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1017",
+            "expr": "tk.value === 'import'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:14263f4dca62ee519f94c21e244c166a5559bce8312667ed910456c2cd9bb156",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1020",
+          "line": 1020,
+          "expr": "const isStatic = isNameVal(j, 'static');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1017",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1017",
+            "expr": "tk.value === 'import'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75b4cd6fff7a2d43565673efc4095e33ffbccface6b295977a45816b22845c38",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1022",
+          "line": 1022,
+          "expr": "const { parts, j: j2, star } = consumeDotted(j);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1017",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1017",
+            "expr": "tk.value === 'import'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7c6953e4ea02c6578a9b8d9b2cabfd7b6ed2336dc211407c4eadf13946a0eb25",
+          "target": "assign:packages/parsers/src/java/parser.ts@L1023",
+          "line": 1023,
+          "expr": "j = j2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1017",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1017",
+            "expr": "tk.value === 'import'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8dcccf2652df829fc513142d742f4e0650006d558a31e1047242f8bbde36dffa",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1027",
+          "line": 1027,
+          "expr": "const module = star\n        ? parts.join('.')\n        : parts.length > 1\n          ? parts.slice(0, -1).join('.')\n          : isStatic\n            ? ''\n            : (parts[0] ?? '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1017",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1017",
+            "expr": "tk.value === 'import'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:00572c73843e598ff3c6d6baa95346d926432188e94517a650e2007303819cef",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1034",
+          "line": 1034,
+          "expr": "imports.push({\n        module,\n        name: star ? '' : last,\n        star,\n        static: isStatic,\n        line,\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1017",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1017",
+            "expr": "tk.value === 'import'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9b2a99d79410fb6c8ed2d02820314827f2fcef055917cabfee8c717f3075884c",
+          "target": "assign:packages/parsers/src/java/parser.ts@L1041",
+          "line": 1041,
+          "expr": "i = atLineEnd(j) ? j + 1 : j;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports@L976",
+        "procedureName": "collectImports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:41436a22a4fe5750fa0f06931901fdb9f8cc162fb9e0c9c7261277ffda828e31",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1046",
+          "line": 1046,
+          "expr": "return { pkg, imports };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 4,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 13,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

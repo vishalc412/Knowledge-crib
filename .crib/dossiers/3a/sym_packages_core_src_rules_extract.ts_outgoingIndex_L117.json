@@ -1,0 +1,215 @@
+{
+  "id": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L117",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:740e9f64556c7296450404b8308ee87588b7a129003d4fd1711a23503a37bf9f",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L117",
+    "kind": "symbol",
+    "type": "function",
+    "name": "outgoingIndex",
+    "qualifiedName": "outgoingIndex",
+    "signature": "outgoingIndex(soul: SoulStore): Map<string, Edge[]>",
+    "lang": "typescript",
+    "file": "packages/core/src/rules/extract.ts",
+    "span": {
+      "start": 117,
+      "end": 125
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 120
+      },
+      {
+        "callee": "push",
+        "line": 121
+      },
+      {
+        "callee": "set",
+        "line": 122
+      }
+    ]
+  },
+  "source": {
+    "text": "function outgoingIndex(soul: SoulStore): Map<string, Edge[]> {\n  const idx = new Map<string, Edge[]>();\n  for (const e of soul.iterateEdges()) {\n    const list = idx.get(e.src);\n    if (list) list.push(e);\n    else idx.set(e.src, [e]);\n  }\n  return idx;\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 117
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#extractRules@L128",
+      "confidence": 1,
+      "name": "extractRules",
+      "qualifiedName": "extractRules",
+      "signature": "extractRules(soul: SoulStore, procedure: string, opts: ExtractRulesOpts = {}): RuleRecord[]",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 128
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/rules/extract.ts@L116",
+      "snippet": "/** Build outgoing-adjacency (src → edges) once, for O(1) per-procedure lookups. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L117",
+    "procedureName": "outgoingIndex",
+    "conditions": [
+      "cond:packages/core/src/rules/extract.ts@L119",
+      "cond:packages/core/src/rules/extract.ts@L121"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L117",
+        "procedureName": "outgoingIndex",
+        "guard": "cond:packages/core/src/rules/extract.ts@L119",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L119",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:861e4022f4d4401ce7fa29f0ee956e5e1f33bd14d720eb13a5e67224215027a4",
+          "target": "stmt:packages/core/src/rules/extract.ts@L120",
+          "line": 120,
+          "expr": "const list = idx.get(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L117",
+        "procedureName": "outgoingIndex",
+        "guard": "cond:packages/core/src/rules/extract.ts@L121",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L119",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L121",
+            "expr": "list",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f4650b423f6ec8931b3abe954c703bf5675e500692a7b24a55b8363df9b6800f",
+          "target": "stmt:packages/core/src/rules/extract.ts@L121",
+          "line": 121,
+          "expr": "list.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L117",
+        "procedureName": "outgoingIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d36a3f6825bc24851ed8a92e3ddf79a71b04f81a27712f9c028b82ba3e553882",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 121
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L117",
+        "procedureName": "outgoingIndex",
+        "guard": "cond:packages/core/src/rules/extract.ts@L121",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L119",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L121",
+            "expr": "list",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c1b505619ff7b793e70b1453ef26ffaa85708a5426a8acd37f2c7f18cb93708",
+          "target": "stmt:packages/core/src/rules/extract.ts@L122",
+          "line": 122,
+          "expr": "idx.set(e.src, [e]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L117",
+        "procedureName": "outgoingIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b32327d912128af4c5b095c39295240dea1c89006fbc59c0bc9a74d6c53574f0",
+          "target": "stmt:packages/core/src/rules/extract.ts@L124",
+          "line": 124,
+          "expr": "return idx;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/core/src/rules/extract.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

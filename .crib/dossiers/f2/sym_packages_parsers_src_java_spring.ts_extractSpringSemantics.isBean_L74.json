@@ -1,0 +1,74 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics.isBean@L74",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:fc9a4e047bab9c77618a5f1a3019790436d1e617613cf942f6dc5c996cb43c40",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics.isBean@L74",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isBean",
+    "qualifiedName": "extractSpringSemantics.isBean",
+    "signature": "isBean(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 74,
+      "end": 74
+    }
+  },
+  "source": {
+    "text": "  const isBean = (cid: string): boolean => stereotypeById.get(cid) !== undefined;",
+    "truncated": false,
+    "totalLines": 1,
+    "startLine": 74
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L64",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 64
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics.isBean@L74",
+    "procedureName": "extractSpringSemantics.isBean",
+    "conditions": [],
+    "rules": []
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

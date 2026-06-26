@@ -1,0 +1,462 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4cad541eb3b9770bc284cdb17612c24cab8ad8147676c7a3f35c4059fa08dbbf",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseSwitchExprArms",
+    "qualifiedName": "Parser.parseSwitchExprArms",
+    "signature": "parseSwitchExprArms(braceIdx: number): CsharpSwitchCase[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 1390,
+      "end": 1417
+    },
+    "callSites": [
+      {
+        "callee": "skipBalancedInSlice",
+        "line": 1403
+      },
+      {
+        "callee": "trim",
+        "line": 1407
+      },
+      {
+        "callee": "slice",
+        "line": 1407
+      },
+      {
+        "callee": "offset",
+        "line": 1407
+      },
+      {
+        "callee": "offset",
+        "line": 1407
+      },
+      {
+        "callee": "push",
+        "line": 1408
+      },
+      {
+        "callee": "skipArmValue",
+        "line": 1410
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseSwitchExprArms(braceIdx: number): CsharpSwitchCase[] {\n    const cases: CsharpSwitchCase[] = [];\n    const n = this.t.length;\n    let j = braceIdx + 1; // past the '{'\n    let depth = 1;\n    let armStart = j; // token index of the current arm's first token\n    while (j < n && depth > 0) {\n      const tk = this.t[j]!;\n      if (tk.type === 'OP' && tk.value === '{') depth++;\n      else if (tk.type === 'OP' && tk.value === '}') {\n        depth--;\n        if (depth === 0) break;\n      } else if (tk.type === 'OP' && (tk.value === '(' || tk.value === '[')) {\n        j = this.skipBalancedInSlice(j); // skip balanced (…) / […]\n        continue;\n      } else if (depth === 1 && tk.type === 'OP' && tk.value === '=>') {\n        const patStart = this.t[armStart]!;\n        const predicate = this.src.slice(this.offset(patStart), this.offset(tk)).trim();\n        cases.push({ predicate, condLine: patStart.line, body: [] });\n        j++;\n        j = this.skipArmValue(j); // skip the value expression to top-level ',' or closing '}'\n        armStart = j;\n        continue;\n      }\n      j++;\n    }\n    return cases;\n  }",
+    "truncated": false,
+    "totalLines": 28,
+    "startLine": 1390
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.extractSwitchArms@L1362",
+      "confidence": 1,
+      "name": "extractSwitchArms",
+      "qualifiedName": "Parser.extractSwitchArms",
+      "signature": "extractSwitchArms(from: number, to: number): CsharpSwitchCase[] | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1362
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.offset@L1499",
+      "confidence": 1,
+      "name": "offset",
+      "qualifiedName": "Parser.offset",
+      "signature": "offset(tk: Token): number",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1499
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipArmValue@L1438",
+      "confidence": 1,
+      "name": "skipArmValue",
+      "qualifiedName": "Parser.skipArmValue",
+      "signature": "skipArmValue(j: number): number",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1438
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipBalancedInSlice@L1422",
+      "confidence": 1,
+      "name": "skipBalancedInSlice",
+      "qualifiedName": "Parser.skipBalancedInSlice",
+      "signature": "skipBalancedInSlice(openIdx: number): number",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1422
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/parser.ts@L1383",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+    "procedureName": "Parser.parseSwitchExprArms",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/parser.ts@L1396",
+      "cond:packages/parsers/src/csharp/parser.ts@L1398",
+      "cond:packages/parsers/src/csharp/parser.ts@L1399",
+      "cond:packages/parsers/src/csharp/parser.ts@L1402",
+      "cond:packages/parsers/src/csharp/parser.ts@L1405"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+        "procedureName": "Parser.parseSwitchExprArms",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1402",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1396",
+            "expr": "j < n && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1398",
+            "expr": "tk.type === 'OP' && tk.value === '{'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1399",
+            "expr": "tk.type === 'OP' && tk.value === '}'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1402",
+            "expr": "tk.type === 'OP' && (tk.value === '(' || tk.value === '[')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0ae887ab6b56f172e121cb15d9c4150c93725659758903c611fec64b33f5478c",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipBalancedInSlice@L1422",
+          "expr": "skipBalancedInSlice",
+          "line": 1403
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+        "procedureName": "Parser.parseSwitchExprArms",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1402",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1396",
+            "expr": "j < n && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1398",
+            "expr": "tk.type === 'OP' && tk.value === '{'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1399",
+            "expr": "tk.type === 'OP' && tk.value === '}'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1402",
+            "expr": "tk.type === 'OP' && (tk.value === '(' || tk.value === '[')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d3396bc22b849d1cef9a6260b4b1624ca013ebb17ce2577c51d44991f0536d73",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1403",
+          "line": 1403,
+          "expr": "j = this.skipBalancedInSlice(j);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+        "procedureName": "Parser.parseSwitchExprArms",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1405",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1396",
+            "expr": "j < n && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1398",
+            "expr": "tk.type === 'OP' && tk.value === '{'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1399",
+            "expr": "tk.type === 'OP' && tk.value === '}'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1402",
+            "expr": "tk.type === 'OP' && (tk.value === '(' || tk.value === '[')"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1405",
+            "expr": "depth === 1 && tk.type === 'OP' && tk.value === '=>'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b3e1f8bd222fa60720ac26832fccea201e3bbb107e04ec79f505d3511e16b330",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.offset@L1499",
+          "expr": "offset",
+          "line": 1407
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+        "procedureName": "Parser.parseSwitchExprArms",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1405",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1396",
+            "expr": "j < n && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1398",
+            "expr": "tk.type === 'OP' && tk.value === '{'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1399",
+            "expr": "tk.type === 'OP' && tk.value === '}'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1402",
+            "expr": "tk.type === 'OP' && (tk.value === '(' || tk.value === '[')"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1405",
+            "expr": "depth === 1 && tk.type === 'OP' && tk.value === '=>'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9f55e63872650a50f8414a0ef6e14502370754f4ecd3d83374c64233689ecb28",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1407",
+          "line": 1407,
+          "expr": "const predicate = this.src.slice(this.offset(patStart), this.offset(tk)).trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+        "procedureName": "Parser.parseSwitchExprArms",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1405",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1396",
+            "expr": "j < n && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1398",
+            "expr": "tk.type === 'OP' && tk.value === '{'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1399",
+            "expr": "tk.type === 'OP' && tk.value === '}'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1402",
+            "expr": "tk.type === 'OP' && (tk.value === '(' || tk.value === '[')"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1405",
+            "expr": "depth === 1 && tk.type === 'OP' && tk.value === '=>'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7dbc5da4cef7a932ae5cf65249d6471dcb0b3979f6c1df92a90b6b89667051c0",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1408",
+          "line": 1408,
+          "expr": "cases.push({ predicate, condLine: patStart.line, body: [] });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+        "procedureName": "Parser.parseSwitchExprArms",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1405",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1396",
+            "expr": "j < n && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1398",
+            "expr": "tk.type === 'OP' && tk.value === '{'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1399",
+            "expr": "tk.type === 'OP' && tk.value === '}'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1402",
+            "expr": "tk.type === 'OP' && (tk.value === '(' || tk.value === '[')"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1405",
+            "expr": "depth === 1 && tk.type === 'OP' && tk.value === '=>'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:03704969e3dd128b8317b7185bd30e9a493198acc094acd14ebae27f6f5c68e6",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipArmValue@L1438",
+          "expr": "skipArmValue",
+          "line": 1410
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+        "procedureName": "Parser.parseSwitchExprArms",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1405",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1396",
+            "expr": "j < n && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1398",
+            "expr": "tk.type === 'OP' && tk.value === '{'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1399",
+            "expr": "tk.type === 'OP' && tk.value === '}'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1402",
+            "expr": "tk.type === 'OP' && (tk.value === '(' || tk.value === '[')"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1405",
+            "expr": "depth === 1 && tk.type === 'OP' && tk.value === '=>'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:34cedfc997c852b48c0b2c0be63e0958deb685124915ea8081f0c77feb512a96",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1410",
+          "line": 1410,
+          "expr": "j = this.skipArmValue(j);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+        "procedureName": "Parser.parseSwitchExprArms",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1405",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1396",
+            "expr": "j < n && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1398",
+            "expr": "tk.type === 'OP' && tk.value === '{'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1399",
+            "expr": "tk.type === 'OP' && tk.value === '}'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1402",
+            "expr": "tk.type === 'OP' && (tk.value === '(' || tk.value === '[')"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1405",
+            "expr": "depth === 1 && tk.type === 'OP' && tk.value === '=>'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3a0a6c4d08aba8897e9c886ba547a487f50256f0e8dacd48c9e71711aaf67d5d",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1411",
+          "line": 1411,
+          "expr": "armStart = j;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+        "procedureName": "Parser.parseSwitchExprArms",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:071b994ffd763309ea8cfd1bf6fdc308047d0b47158972042c4ff3a5a68c11fa",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1416",
+          "line": 1416,
+          "expr": "return cases;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 3,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 7,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

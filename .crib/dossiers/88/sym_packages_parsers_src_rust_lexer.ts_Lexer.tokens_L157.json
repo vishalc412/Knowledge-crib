@@ -1,0 +1,986 @@
+{
+  "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:eb839626e412bf1ba5350af60ff2cd9a90ed7cc2025bd4124ce1915218b42137",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+    "kind": "symbol",
+    "type": "method",
+    "name": "tokens",
+    "qualifiedName": "Lexer.tokens",
+    "signature": "tokens(): Token[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/lexer.ts",
+    "span": {
+      "start": 157,
+      "end": 199
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 159
+      },
+      {
+        "callee": "advance",
+        "line": 162
+      },
+      {
+        "callee": "skipLineComment",
+        "line": 167
+      },
+      {
+        "callee": "skipBlockComment",
+        "line": 172
+      },
+      {
+        "callee": "scanString",
+        "line": 177
+      },
+      {
+        "callee": "scanCharOrLifetime",
+        "line": 181
+      },
+      {
+        "callee": "scanNumber",
+        "line": 185
+      },
+      {
+        "callee": "scanIdent",
+        "line": 191
+      },
+      {
+        "callee": "scanOp",
+        "line": 195
+      },
+      {
+        "callee": "push",
+        "line": 197
+      }
+    ]
+  },
+  "source": {
+    "text": "  tokens(): Token[] {\n    while (this.pos < this.src.length) {\n      const ch = this.peek();\n      // whitespace\n      if (ch === ' ' || ch === '\\t' || ch === '\\r' || ch === '\\n' || ch === '\\f') {\n        this.advance();\n        continue;\n      }\n      // line comment: //, /// (doc), //! (inner doc) — all line comments to the lexer\n      if (ch === '/' && this.peek(1) === '/') {\n        this.skipLineComment();\n        continue;\n      }\n      // block comment — NESTED in Rust (depth-counted). `/*` opens, `*/` closes at depth 0.\n      if (ch === '/' && this.peek(1) === '*') {\n        this.skipBlockComment();\n        continue;\n      }\n      // string / char / raw string prefixes + regular string/char starts\n      if (ch === '\"') {\n        this.scanString();\n        continue;\n      }\n      if (ch === \"'\") {\n        this.scanCharOrLifetime();\n        continue;\n      }\n      if (this.isNumberStart(ch)) {\n        this.scanNumber();\n        continue;\n      }\n      if (this.isIdentStart(ch)) {\n        // raw / byte / c-string prefixes begin with an ident-start char (r, b, c)\n        if (this.tryScanStringish()) continue;\n        this.scanIdent();\n        continue;\n      }\n      // operator (longest match)\n      this.scanOp();\n    }\n    this.out.push({ type: 'EOF', value: '', line: this.line, col: this.col });\n    return this.out;\n  }",
+    "truncated": false,
+    "totalLines": 43,
+    "startLine": 157
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#tokenize@L111",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(src: string): Token[]",
+      "type": "function",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 111
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.advance@L466",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 466
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isIdentStart@L481",
+      "confidence": 1,
+      "name": "isIdentStart",
+      "qualifiedName": "Lexer.isIdentStart",
+      "signature": "isIdentStart(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 481
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isNumberStart@L487",
+      "confidence": 1,
+      "name": "isNumberStart",
+      "qualifiedName": "Lexer.isNumberStart",
+      "signature": "isNumberStart(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 487
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.peek@L455",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 455
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanCharOrLifetime@L287",
+      "confidence": 1,
+      "name": "scanCharOrLifetime",
+      "qualifiedName": "Lexer.scanCharOrLifetime",
+      "signature": "scanCharOrLifetime(byte = false): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 287
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanIdent@L203",
+      "confidence": 1,
+      "name": "scanIdent",
+      "qualifiedName": "Lexer.scanIdent",
+      "signature": "scanIdent(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 203
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanNumber@L211",
+      "confidence": 1,
+      "name": "scanNumber",
+      "qualifiedName": "Lexer.scanNumber",
+      "signature": "scanNumber(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 211
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+      "confidence": 1,
+      "name": "scanOp",
+      "qualifiedName": "Lexer.scanOp",
+      "signature": "scanOp(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 407
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanString@L221",
+      "confidence": 1,
+      "name": "scanString",
+      "qualifiedName": "Lexer.scanString",
+      "signature": "scanString(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 221
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+      "confidence": 1,
+      "name": "skipBlockComment",
+      "qualifiedName": "Lexer.skipBlockComment",
+      "signature": "skipBlockComment(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 432
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipLineComment@L423",
+      "confidence": 1,
+      "name": "skipLineComment",
+      "qualifiedName": "Lexer.skipLineComment",
+      "signature": "skipLineComment(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 423
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+      "confidence": 1,
+      "name": "tryScanStringish",
+      "qualifiedName": "Lexer.tryScanStringish",
+      "signature": "tryScanStringish(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 343
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#knowledge-crib-prompting-guide-how-to-talk-to-your-local-llm-so-crib-does-the-work",
+      "heading": "Knowledge-crib — Prompting Guide (how to talk to your local LLM so crib does the work)",
+      "anchor": "knowledge-crib-prompting-guide-how-to-talk-to-your-local-llm-so-crib-does-the-work",
+      "snippet": "Knowledge-crib — Prompting Guide (how to talk to your local LLM so crib does the work)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/README.md#document-index-read-in-order",
+      "heading": "Document index (read in order)",
+      "anchor": "document-index-read-in-order",
+      "snippet": "Document index (read in order)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#knowledge-crib-implementation-plan-detailed",
+      "heading": "Knowledge-crib — Implementation Plan (detailed)",
+      "anchor": "knowledge-crib-implementation-plan-detailed",
+      "snippet": "Knowledge-crib — Implementation Plan (detailed)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-research-driven-corrections-what-the-internet-forces-us-to-change",
+      "heading": "4. Research-driven corrections (what the internet forces us to change)",
+      "anchor": "4-research-driven-corrections-what-the-internet-forces-us-to-change",
+      "snippet": "4. Research-driven corrections (what the internet forces us to change)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m4-doc-extractor-markdown-deterministic-cross-modal-linker-headline-gate-1",
+      "heading": "M4 — doc-extractor (Markdown) + deterministic cross-modal linker ← HEADLINE GATE #1",
+      "anchor": "m4-doc-extractor-markdown-deterministic-cross-modal-linker-headline-gate-1",
+      "snippet": "M4 — doc-extractor (Markdown) + deterministic cross-modal linker ← HEADLINE GATE #1",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#6-token-cut-proof-headline-metric-q25",
+      "heading": "6. Token-cut proof (headline metric [Q25])",
+      "anchor": "6-token-cut-proof-headline-metric-q25",
+      "snippet": "6. Token-cut proof (headline metric [Q25])",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#knowledge-crib-mcp-client-setup-guide",
+      "heading": "Knowledge-crib — MCP Client Setup Guide",
+      "anchor": "knowledge-crib-mcp-client-setup-guide",
+      "snippet": "Knowledge-crib — MCP Client Setup Guide",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#reaction-10-min-the-mvp-concept",
+      "heading": "Reaction (10 min) — the MVP concept",
+      "anchor": "reaction-10-min-the-mvp-concept",
+      "snippet": "Reaction (10 min) — the MVP concept",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-4-cross-modal-linker-the-differentiator",
+      "heading": "Phase 4 — Cross-modal linker (the differentiator)",
+      "anchor": "phase-4-cross-modal-linker-the-differentiator",
+      "snippet": "Phase 4 — Cross-modal linker (the differentiator)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#1-one-liner",
+      "heading": "1. One-liner",
+      "anchor": "1-one-liner",
+      "snippet": "1. One-liner",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#7-success-metrics-q25",
+      "heading": "7. Success Metrics [Q25]",
+      "anchor": "7-success-metrics-q25",
+      "snippet": "7. Success Metrics [Q25]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "heading": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "anchor": "5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "snippet": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-7-mvp-scope-roadmap",
+      "heading": "Branch 7 — MVP Scope & Roadmap",
+      "anchor": "branch-7-mvp-scope-roadmap",
+      "snippet": "Branch 7 — MVP Scope & Roadmap",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-2-product-manager",
+      "heading": "2.2 Product Manager",
+      "anchor": "2-2-product-manager",
+      "snippet": "2.2 Product Manager",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-6-ai-engineer",
+      "heading": "2.6 AI Engineer",
+      "anchor": "2-6-ai-engineer",
+      "snippet": "2.6 AI Engineer",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#planned-tracks-not-yet-built",
+      "heading": "Planned tracks (not yet built)",
+      "anchor": "planned-tracks-not-yet-built",
+      "snippet": "Planned tracks (not yet built)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#5-token-cut-benchmark-m5-the-headline-metric-q25",
+      "heading": "5. Token-cut benchmark (M5 — the headline metric [Q25])",
+      "anchor": "5-token-cut-benchmark-m5-the-headline-metric-q25",
+      "snippet": "5. Token-cut benchmark (M5 — the headline metric [Q25])",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#knowledge-crib-user-guide",
+      "heading": "Knowledge-crib — User Guide",
+      "anchor": "knowledge-crib-user-guide",
+      "snippet": "Knowledge-crib — User Guide",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+    "procedureName": "Lexer.tokens",
+    "conditions": [
+      "cond:packages/parsers/src/rust/lexer.ts@L158",
+      "cond:packages/parsers/src/rust/lexer.ts@L161",
+      "cond:packages/parsers/src/rust/lexer.ts@L166",
+      "cond:packages/parsers/src/rust/lexer.ts@L171",
+      "cond:packages/parsers/src/rust/lexer.ts@L176",
+      "cond:packages/parsers/src/rust/lexer.ts@L180",
+      "cond:packages/parsers/src/rust/lexer.ts@L184",
+      "cond:packages/parsers/src/rust/lexer.ts@L188"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L158",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:689dfc64e8b4b4734a792d2ac61eb01328e4ea1dc0eeeb036a12efd74df6b217",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.peek@L455",
+          "expr": "peek",
+          "line": 159
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L158",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:891e7f7e08dabc2138e393f5757213a2bad70511ff477c3843c067c02fdb1203",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L159",
+          "line": 159,
+          "expr": "const ch = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L161",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L161",
+            "expr": "ch === ' ' || ch === '\\t' || ch === '\\r' || ch === '\\n' || ch === '\\f'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:aea8b1ee489256f20db7d83d8afc30a90c199aa161a327b889f754e60fbe6e1b",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.advance@L466",
+          "expr": "advance",
+          "line": 162
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L161",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L161",
+            "expr": "ch === ' ' || ch === '\\t' || ch === '\\r' || ch === '\\n' || ch === '\\f'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b43cfdea7c91b62655bc59c076891799594e72642a3b76cc6f2d722350779d18",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L162",
+          "line": 162,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L166",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L166",
+            "expr": "ch === '/' && this.peek(1) === '/'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3041d550b0fbb6fba5a8e81b30442269e8e0bfcf3c3aac47f4c7949afc04ffae",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipLineComment@L423",
+          "expr": "skipLineComment",
+          "line": 167
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L166",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L166",
+            "expr": "ch === '/' && this.peek(1) === '/'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:59bf6a3a573b25540bf92703c440f07ea8042ae0f516af609eb498914cff4b50",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L167",
+          "line": 167,
+          "expr": "this.skipLineComment();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L171",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L171",
+            "expr": "ch === '/' && this.peek(1) === '*'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:23800593290b9e98d3fe5ed981cb5c655ab42d7db7ed5fbc9e53f6b80da259a7",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+          "expr": "skipBlockComment",
+          "line": 172
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L171",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L171",
+            "expr": "ch === '/' && this.peek(1) === '*'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5f80679faaa4b935d0e32f9b95a463b71a51cb84c80c99423bdb24bcebaf6914",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L172",
+          "line": 172,
+          "expr": "this.skipBlockComment();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L176",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L176",
+            "expr": "ch === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:468fd6b74edf266b32b3f72c0c0f45cd4ad09513f225d375a4c9fab1abefb9cf",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanString@L221",
+          "expr": "scanString",
+          "line": 177
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L176",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L176",
+            "expr": "ch === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9f0a7987ef9b9390e8432961b9f4d227776b8346d86abcee96227643f6e07f26",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L177",
+          "line": 177,
+          "expr": "this.scanString();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L180",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L180",
+            "expr": "ch === \"'\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:213544d5b06b5ed40410563cfd94a27eeeee207587ad180dd4ab14dd57f26cfc",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanCharOrLifetime@L287",
+          "expr": "scanCharOrLifetime",
+          "line": 181
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L180",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L180",
+            "expr": "ch === \"'\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b986b1c5248cb1decfcdfd8cc7b9117fa98c4e06fe4132e016456b3262447603",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L181",
+          "line": 181,
+          "expr": "this.scanCharOrLifetime();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L184",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L184",
+            "expr": "this.isNumberStart(ch)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e8199b68c1ace2e899f936d6353feba3de0ace73e71b1d104672f37db9c90efd",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanNumber@L211",
+          "expr": "scanNumber",
+          "line": 185
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L184",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L184",
+            "expr": "this.isNumberStart(ch)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cae52be7f91d630ce44c297c9066da3909a039f8e9459213d97d6c8a77e0f7b7",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L185",
+          "line": 185,
+          "expr": "this.scanNumber();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L188",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L188",
+            "expr": "this.isIdentStart(ch)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8adbe99eab1119665b2ac934d994a699f4557bf005672110523335cf913e1c30",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanIdent@L203",
+          "expr": "scanIdent",
+          "line": 191
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L188",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L188",
+            "expr": "this.isIdentStart(ch)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5b5257b5b367bbf4d84d33766774437a613920641c86ef55c620a3ab024be151",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L191",
+          "line": 191,
+          "expr": "this.scanIdent();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L158",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6d9f3d75d9406bbf3279372b03c3ec975e390d5a86ada41cfdb99152c29b01b4",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanOp@L407",
+          "expr": "scanOp",
+          "line": 195
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L158",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L158",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:340b8c52ca75f05365d61bd6d6da61c65400bf20632d6edde2c7ee316301409e",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L195",
+          "line": 195,
+          "expr": "this.scanOp();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b6dd56b9fba28d678146c22552262aa987ab79df5676cbc20225dccbae7931bc",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L197",
+          "line": 197,
+          "expr": "this.out.push({ type: 'EOF', value: '', line: this.line, col: this.col });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:baf7139b632fd832e8a32c18aeb8938880568072138e355cc3918e760d180a16",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L198",
+          "line": 198,
+          "expr": "return this.out;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:73613fa65a143c1e18cd486ac7f85d480c07b039d683947c40eb3ed4eae9a070",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+          "expr": "tryScanStringish"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:503e800768fc7fb6383fa13cc05f9c3de2ffdd657cf127e49aab80ece6ef7c27",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isIdentStart@L481",
+          "expr": "isIdentStart"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:483c9833469f019f14edc7158c1819eb46a1cbd0305f6fc33a2dece62b706ca3",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isNumberStart@L487",
+          "expr": "isNumberStart"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 11,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 11,
+    "assignments": 0,
+    "conditions": 8,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 12,
+      "recorded": 10,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,173 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#functionBodyOf@L749",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:5301d51e0edf626eecb0117495c13ff1fa94c36aa84f8d6803718bb5c9eee66a",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#functionBodyOf@L749",
+    "kind": "symbol",
+    "type": "function",
+    "name": "functionBodyOf",
+    "qualifiedName": "functionBodyOf",
+    "signature": "functionBodyOf(node: ts.Node): ts.Node | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 749,
+      "end": 766
+    }
+  },
+  "source": {
+    "text": "function functionBodyOf(node: ts.Node): ts.Node | undefined {\n  if (\n    ts.isFunctionDeclaration(node) ||\n    ts.isMethodDeclaration(node) ||\n    ts.isConstructorDeclaration(node) ||\n    ts.isGetAccessorDeclaration(node) ||\n    ts.isSetAccessorDeclaration(node)\n  ) {\n    return node.body;\n  }\n  if (ts.isVariableStatement(node)) {\n    const d = node.declarationList.declarations[0];\n    if (d?.initializer && isFunctionLike(d.initializer)) {\n      return d.initializer.body;\n    }\n  }\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 749
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.declarationOf@L142",
+      "confidence": 1,
+      "name": "declarationOf",
+      "qualifiedName": "TypeScriptExtractor.declarationOf",
+      "signature": "declarationOf(node: ts.Node, qualifier: string[], path: string, _fileId: string, lineOf: (pos: number) => number, ctx: ExtractCtx): { local: LocalSymbol; childQualifier: string[] } | null",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 142
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLike@L1053",
+      "confidence": 1,
+      "name": "isFunctionLike",
+      "qualifiedName": "isFunctionLike",
+      "signature": "isFunctionLike(node: ts.Node): node is ts.ArrowFunction | ts.FunctionExpression",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 1053
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L748",
+      "snippet": "/** Return the function-like body to walk for a declaration node, or undefined if not function-like. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#functionBodyOf@L749",
+    "procedureName": "functionBodyOf",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L750",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L759",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L761"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#functionBodyOf@L749",
+        "procedureName": "functionBodyOf",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L750",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L750",
+            "expr": "ts.isFunctionDeclaration(node) ||\n    ts.isMethodDeclaration(node) ||\n    ts.isConstructorDeclaration(node) ||\n    ts.isGetAccessorDeclaration(node) ||\n    ts.isSetAccessorDeclaration(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3729dce90b8e521de4dfcdf62b0f5f719db5c620ec2c6d6b40d72696d9d8505f",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L757",
+          "line": 757,
+          "expr": "return node.body;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#functionBodyOf@L749",
+        "procedureName": "functionBodyOf",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L761",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L759",
+            "expr": "ts.isVariableStatement(node)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L761",
+            "expr": "d?.initializer && isFunctionLike(d.initializer)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1d6624f35dfdda3198ebbbb64c186eae5eff81cfe04f37019b842382442a41d7",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L762",
+          "line": 762,
+          "expr": "return d.initializer.body;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#functionBodyOf@L749",
+        "procedureName": "functionBodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:edb6bdcb634d61c2171ec0484cda7aca3bd775c0ae72ee5de2ef482be9c44cb2",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L765",
+          "line": 765,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#functionBodyOf@L749",
+        "procedureName": "functionBodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ccdeef077636e2dbc2c3ee1858834ff71bbbd2f890d7fa49aa4b7feb81e497b0",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLike@L1053",
+          "expr": "isFunctionLike"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.linkCursor@L550",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:066da9d7c068368bb5f61494507a8f59361d8b3c838152cd8a0b0feb5b25995f",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.linkCursor@L550",
+    "kind": "symbol",
+    "type": "method",
+    "name": "linkCursor",
+    "qualifiedName": "Builder.linkCursor",
+    "signature": "linkCursor(stmtId: string, name: string): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 550,
+      "end": 553
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 551
+      },
+      {
+        "callee": "push",
+        "line": 552
+      },
+      {
+        "callee": "edge",
+        "line": 552
+      }
+    ]
+  },
+  "source": {
+    "text": "  private linkCursor(stmtId: string, name: string): void {\n    const cursorId = this.cursors.get(name);\n    if (cursorId) this.edges.push(this.edge(stmtId, cursorId, 'iterates', name));\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 550
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addPlain@L478",
+      "confidence": 1,
+      "name": "addPlain",
+      "qualifiedName": "Builder.addPlain",
+      "signature": "addPlain(s: PlainStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 478
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkLoop@L581",
+      "confidence": 1,
+      "name": "walkLoop",
+      "qualifiedName": "Builder.walkLoop",
+      "signature": "walkLoop(s: LoopStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 581
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L757",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "Builder.edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string): Edge",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 757
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/PlSqlExtractor.ts@L549",
+      "snippet": "/** 1.2: resolve a cursor name locally and emit an `iterates` edge (stmt → cursor). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.linkCursor@L550",
+    "procedureName": "Builder.linkCursor",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L552"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.linkCursor@L550",
+        "procedureName": "Builder.linkCursor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:66c30842216bce9fe2156837fdbda053de940b9878619e447ea99814ba22b01d",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L551",
+          "line": 551,
+          "expr": "const cursorId = this.cursors.get(name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.linkCursor@L550",
+        "procedureName": "Builder.linkCursor",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L552",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L552",
+            "expr": "cursorId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5d7b4b074bcb859e2a553b10ab0d0b55bf99a4b9c25bb4316441811e6006a479",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L757",
+          "expr": "edge",
+          "line": 552
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.linkCursor@L550",
+        "procedureName": "Builder.linkCursor",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L552",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L552",
+            "expr": "cursorId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:860fa599a3f69135d064e7f81d671aea0acc1033dab3a85889d359fa8d8551c7",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L552",
+          "line": 552,
+          "expr": "this.edges.push(this.edge(stmtId, cursorId, 'iterates', name));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

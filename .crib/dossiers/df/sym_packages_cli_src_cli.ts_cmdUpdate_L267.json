@@ -1,0 +1,700 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:afef65974194b0309afa85ee3c73d0c5db87dce77f58fb1b4c45597f2f935aed",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cmdUpdate",
+    "qualifiedName": "cmdUpdate",
+    "signature": "cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number>",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 267,
+      "end": 307
+    },
+    "callSites": [
+      {
+        "callee": "resolveRoot",
+        "line": 268
+      },
+      {
+        "callee": "indexOf",
+        "line": 269
+      },
+      {
+        "callee": "write",
+        "line": 272
+      },
+      {
+        "callee": "openSoul",
+        "line": 275
+      },
+      {
+        "callee": "now",
+        "line": 276
+      },
+      {
+        "callee": "updateRepo",
+        "line": 277
+      },
+      {
+        "callee": "write",
+        "line": 280
+      },
+      {
+        "callee": "cmdIndex",
+        "line": 281
+      },
+      {
+        "callee": "write",
+        "line": 284
+      },
+      {
+        "callee": "slice",
+        "line": 285
+      },
+      {
+        "callee": "now",
+        "line": 285
+      },
+      {
+        "callee": "openIndexOnly",
+        "line": 293
+      },
+      {
+        "callee": "applyDelta",
+        "line": 294
+      },
+      {
+        "callee": "buildIndex",
+        "line": 296
+      },
+      {
+        "callee": "close",
+        "line": 298
+      },
+      {
+        "callee": "registerIndexed",
+        "line": 299
+      },
+      {
+        "callee": "write",
+        "line": 301
+      },
+      {
+        "callee": "now",
+        "line": 303
+      },
+      {
+        "callee": "join",
+        "line": 304
+      }
+    ]
+  },
+  "source": {
+    "text": "async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {\n  const resolved = resolveRoot(args, ctx);\n  const sinceIdx = args.indexOf('--since');\n  const since = sinceIdx >= 0 ? args[sinceIdx + 1] : undefined;\n  if (!isIndexedRoot(resolved)) {\n    process.stderr.write('not indexed — run `crib index` first\\n');\n    return EXIT.NOT_INDEXED;\n  }\n  const rt = openSoul(resolved);\n  const started = Date.now();\n  const result = await updateRepo(rt.soul, resolved.repoRoot, since ? { since } : {});\n  if (result === null) {\n    // No anchor / non-git → degrade to a full index.\n    process.stderr.write('no incremental anchor — falling back to full index\\n');\n    return cmdIndex(args, ctx);\n  }\n  if ('noop' in result) {\n    process.stdout.write(\n      `up to date (head ${result.head.slice(0, 12)}) in ${Date.now() - started}ms\\n`,\n    );\n    return EXIT.OK;\n  }\n  // Apply the delta to the existing derived index; if none exists yet, build it fresh from the\n  // (already-committed) updated soul — a delta applied to an empty index would be meaningless.\n  let index: IndexStore;\n  try {\n    index = openIndexOnly(rt);\n    index.applyDelta(result.delta);\n  } catch {\n    index = buildIndex(rt); // full buildFromSoul from the just-updated soul\n  }\n  index.close();\n  registerIndexed(resolved.repoRoot, resolved.cribDir, rt.soul);\n  const d = result.delta;\n  process.stdout.write(\n    `updated ${result.changedPaths.length} file(s) [scope ${result.scopeFiles.length}] → ` +\n      `+${d.nodes.length} nodes +${d.edges.length} edges −${d.removed.length} in ${Date.now() - started}ms\\n` +\n      `changed: ${result.changedPaths.join(', ')}\\n`,\n  );\n  return EXIT.OK;\n}",
+    "truncated": false,
+    "totalLines": 41,
+    "startLine": 267
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#main@L99",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main(argvRaw: string[]): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 99
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/runtime.ts#buildIndex@L124",
+      "confidence": 1,
+      "name": "buildIndex",
+      "qualifiedName": "buildIndex",
+      "signature": "buildIndex(rt: Runtime): IndexStore",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 124
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdIndex@L158",
+      "confidence": 1,
+      "name": "cmdIndex",
+      "qualifiedName": "cmdIndex",
+      "signature": "cmdIndex(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 158
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L106",
+      "confidence": 1,
+      "name": "isIndexedRoot",
+      "qualifiedName": "isIndexedRoot",
+      "signature": "isIndexedRoot(resolved: ResolvedRoot): boolean",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 106
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#openIndexOnly@L142",
+      "confidence": 1,
+      "name": "openIndexOnly",
+      "qualifiedName": "openIndexOnly",
+      "signature": "openIndexOnly(rt: Runtime): IndexStore",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 142
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#openSoul@L99",
+      "confidence": 1,
+      "name": "openSoul",
+      "qualifiedName": "openSoul",
+      "signature": "openSoul(resolved: ResolvedRoot): Runtime",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 99
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#registerIndexed@L149",
+      "confidence": 1,
+      "name": "registerIndexed",
+      "qualifiedName": "registerIndexed",
+      "signature": "registerIndexed(repoRoot: string, cribDir: string, soul: SoulStore): void",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 149
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#resolveRoot@L93",
+      "confidence": 1,
+      "name": "resolveRoot",
+      "qualifiedName": "resolveRoot",
+      "signature": "resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 93
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+      "confidence": 1,
+      "name": "updateRepo",
+      "qualifiedName": "updateRepo",
+      "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.ts",
+      "line": 86
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+    "procedureName": "cmdUpdate",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L271",
+      "cond:packages/cli/src/cli.ts@L278",
+      "cond:packages/cli/src/cli.ts@L283"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d3781724d660cb2d0b52c6f3b0a64961344c8d0c38d716f2b1c6262740573fe5",
+          "target": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L106",
+          "expr": "isIndexedRoot"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c9426da2dbf893d409c392e5a585f96dd45badf9499ecce2a5f4f3089193a65a",
+          "target": "sym:packages/cli/src/cli.ts#resolveRoot@L93",
+          "expr": "resolveRoot",
+          "line": 268
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6299f4773633bbd0cc592dc8cc9e62e758b862325ae1ef3603a4190c4ce00b7a",
+          "target": "stmt:packages/cli/src/cli.ts@L268",
+          "line": 268,
+          "expr": "const resolved = resolveRoot(args, ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca67a954ffac834f20a4fe72d383953a7cf83b74a4ec89c09af1bd8b92c973cd",
+          "target": "stmt:packages/cli/src/cli.ts@L269",
+          "line": 269,
+          "expr": "const sinceIdx = args.indexOf('--since');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "guard": "cond:packages/cli/src/cli.ts@L271",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L271",
+            "expr": "!isIndexedRoot(resolved)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2c308f9aed68f8a5108357df3a163366c91bd2dd2e802850205ccc11211f3126",
+          "target": "stmt:packages/cli/src/cli.ts@L272",
+          "line": 272,
+          "expr": "process.stderr.write('not indexed — run `crib index` first\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:adcb605239ee6d22398c9c5f97220dae1a4c3f0cba05dc72f7a1feec83471ad7",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 272
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "guard": "cond:packages/cli/src/cli.ts@L271",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L271",
+            "expr": "!isIndexedRoot(resolved)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9222776ad2d511de8ef579d5dd4162daf306f4b4b9259e383b2d075048d6d88d",
+          "target": "stmt:packages/cli/src/cli.ts@L273",
+          "line": 273,
+          "expr": "return EXIT.NOT_INDEXED;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ab6d331c6a49bf68ff61ad45518c7ce5c0cbd42ab59bfa1bd42859980988bb08",
+          "target": "stmt:packages/cli/src/cli.ts@L275",
+          "line": 275,
+          "expr": "const rt = openSoul(resolved);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:917a180400c7b4aaf251356f739e79a5f1c1336f951515c45897d60ea59e1f92",
+          "target": "sym:packages/cli/src/runtime.ts#openSoul@L99",
+          "expr": "openSoul",
+          "line": 275
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f5518640234927e0198b809d3cb257bcd7ff7314c6a05d7ddd6f4d006048aef",
+          "target": "stmt:packages/cli/src/cli.ts@L276",
+          "line": 276,
+          "expr": "const started = Date.now();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:782d82a81440b1e5bcc747a4976f19cce0c6b998d8ec9e50116860acd4aca81b",
+          "target": "stmt:packages/cli/src/cli.ts@L277",
+          "line": 277,
+          "expr": "const result = await updateRepo(rt.soul, resolved.repoRoot, since ? { since } : {});"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d9d4fb7468e901910901b3b1a0d0e722e8d8f7b636c33fe4d32b1a55d7262254",
+          "target": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+          "expr": "updateRepo",
+          "line": 277
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "guard": "cond:packages/cli/src/cli.ts@L278",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L278",
+            "expr": "result === null",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8927eb01bebd01494576010f2ba1bbc5dabf3918f6e0fec522c5cad35e5a6dba",
+          "target": "stmt:packages/cli/src/cli.ts@L280",
+          "line": 280,
+          "expr": "process.stderr.write('no incremental anchor — falling back to full index\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "guard": "cond:packages/cli/src/cli.ts@L278",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L278",
+            "expr": "result === null",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:84bf515c96ee5e04135de9aeb7f2a5077cf9877a7590663e8502d7fcb3459fb6",
+          "target": "sym:packages/cli/src/cli.ts#cmdIndex@L158",
+          "expr": "cmdIndex",
+          "line": 281
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "guard": "cond:packages/cli/src/cli.ts@L278",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L278",
+            "expr": "result === null",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:46cc53f89cdd1ee40cc4356e3eae8d7dfcf96eb1f607b0365e3c3908e4a18dc5",
+          "target": "stmt:packages/cli/src/cli.ts@L281",
+          "line": 281,
+          "expr": "return cmdIndex(args, ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "guard": "cond:packages/cli/src/cli.ts@L283",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L283",
+            "expr": "'noop' in result",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca0be1e46261a4f475e59ba17677d9c4de60718de6cf01158c97acf457295e2b",
+          "target": "stmt:packages/cli/src/cli.ts@L284",
+          "line": 284,
+          "expr": "process.stdout.write(\n      `up to date (head ${result.head.slice(0, 12)}) in ${Date.now() - started}ms\\n`,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "guard": "cond:packages/cli/src/cli.ts@L283",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L283",
+            "expr": "'noop' in result",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cba34fa483eadd76c4c84fa61adf2ba76c1ca07861da7f2b8e4616d0d217ddcf",
+          "target": "stmt:packages/cli/src/cli.ts@L287",
+          "line": 287,
+          "expr": "return EXIT.OK;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:02631ef7e1c85183e21402c20eb050e98cbff6e7b471e986fc5ef1dcd55d1a2a",
+          "target": "assign:packages/cli/src/cli.ts@L293",
+          "line": 293,
+          "expr": "index = openIndexOnly(rt);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2d7d4ec415ccc63af77d27fe0a466adf5aeb59b55bace424bd67c143d831cc0b",
+          "target": "sym:packages/cli/src/runtime.ts#openIndexOnly@L142",
+          "expr": "openIndexOnly",
+          "line": 293
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0f59e33c7fb325963e6ca6c7cf37b569f21b4803ce968570a120af60e75ae394",
+          "target": "stmt:packages/cli/src/cli.ts@L294",
+          "line": 294,
+          "expr": "index.applyDelta(result.delta);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9f70dcf1d7ea6f603bbd22faebb7465f64e91aef122f55a10a30f50fc7a6cccb",
+          "target": "assign:packages/cli/src/cli.ts@L296",
+          "line": 296,
+          "expr": "index = buildIndex(rt);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6babf410b5cce5486e913c0feeb26ce9c11b11f7d211bf0f54bf272b2ea4a15c",
+          "target": "sym:packages/cli/src/runtime.ts#buildIndex@L124",
+          "expr": "buildIndex",
+          "line": 296
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f3152f33abe83ed1187430ba6ef885d880b0049b6ec6c28b3fbead26e32ccf0",
+          "target": "stmt:packages/cli/src/cli.ts@L298",
+          "line": 298,
+          "expr": "index.close();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e9e4af37b134974ef9906ae0bbf0ab2fea2468785e2b21d03ee005e9fd884793",
+          "target": "sym:packages/cli/src/cli.ts#registerIndexed@L149",
+          "expr": "registerIndexed",
+          "line": 299
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9987d671b7cd65a5171e0aaec5d2af5797cd40c4ad58751d5a00201700c756c2",
+          "target": "stmt:packages/cli/src/cli.ts@L299",
+          "line": 299,
+          "expr": "registerIndexed(resolved.repoRoot, resolved.cribDir, rt.soul);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f834e36c8a966c3f0232dbd40aaa0757d92aec50669f37a03a0ae015cdf2fd3",
+          "target": "stmt:packages/cli/src/cli.ts@L301",
+          "line": 301,
+          "expr": "process.stdout.write(\n    `updated ${result.changedPaths.length} file(s) [scope ${result.scopeFiles.length}] → ` +\n      `+${d.nodes.length} nodes +${d.edges.length} edges −${d.removed.length} in ${Date.now() - started}ms\\n` +\n      `changed: ${result.changedPaths.join(', ')}\\n`,\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdUpdate@L267",
+        "procedureName": "cmdUpdate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cc923d428ae5468ea2bc5be1315e1c43c25052ccda2a209cd303dad02055c867",
+          "target": "stmt:packages/cli/src/cli.ts@L306",
+          "line": 306,
+          "expr": "return EXIT.OK;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/cli/src/cli.ts@L295",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/cli/src/cli.ts",
+        "span": {
+          "start": 295,
+          "end": 295
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 18,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 18,
+    "assignments": 2,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 9,
+      "recorded": 19,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

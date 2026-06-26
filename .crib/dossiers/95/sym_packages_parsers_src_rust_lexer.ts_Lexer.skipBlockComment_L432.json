@@ -1,0 +1,327 @@
+{
+  "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:2bc1d36ef75bfc1796e4e98f4ab635d17d7de9e71fdaf2a74b5410b1a0e97df4",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+    "kind": "symbol",
+    "type": "method",
+    "name": "skipBlockComment",
+    "qualifiedName": "Lexer.skipBlockComment",
+    "signature": "skipBlockComment(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/lexer.ts",
+    "span": {
+      "start": 432,
+      "end": 451
+    },
+    "callSites": [
+      {
+        "callee": "advance",
+        "line": 433
+      },
+      {
+        "callee": "advance",
+        "line": 434
+      },
+      {
+        "callee": "advance",
+        "line": 438
+      },
+      {
+        "callee": "advance",
+        "line": 439
+      },
+      {
+        "callee": "advance",
+        "line": 444
+      },
+      {
+        "callee": "advance",
+        "line": 445
+      },
+      {
+        "callee": "advance",
+        "line": 449
+      }
+    ]
+  },
+  "source": {
+    "text": "  private skipBlockComment(): void {\n    this.advance(); // /\n    this.advance(); // *\n    let depth = 1;\n    while (this.pos < this.src.length && depth > 0) {\n      if (this.peek() === '/' && this.peek(1) === '*') {\n        this.advance();\n        this.advance();\n        depth++;\n        continue;\n      }\n      if (this.peek() === '*' && this.peek(1) === '/') {\n        this.advance();\n        this.advance();\n        depth--;\n        continue;\n      }\n      this.advance();\n    }\n  }",
+    "truncated": false,
+    "totalLines": 20,
+    "startLine": 432
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 157
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.advance@L466",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 466
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.peek@L455",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 455
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/lexer.ts@L428",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+    "procedureName": "Lexer.skipBlockComment",
+    "conditions": [
+      "cond:packages/parsers/src/rust/lexer.ts@L436",
+      "cond:packages/parsers/src/rust/lexer.ts@L437",
+      "cond:packages/parsers/src/rust/lexer.ts@L443"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+        "procedureName": "Lexer.skipBlockComment",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L436",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L436",
+            "expr": "this.pos < this.src.length && depth > 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4d232d8eb4632cdb48ef28cbc8e9ef351b8390c417b89cacdc203778fbf697cc",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.advance@L466",
+          "expr": "advance",
+          "line": 433
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+        "procedureName": "Lexer.skipBlockComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:92dad117cd44e5d227247377cfac4f606076d6957b188490b3dbedcb662e8b05",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L433",
+          "line": 433,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+        "procedureName": "Lexer.skipBlockComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:48946cafb1ca9cfceb190bafcd1cd3271acb4b7ef91a8dc876e444cbd1b89036",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L434",
+          "line": 434,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+        "procedureName": "Lexer.skipBlockComment",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L437",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L436",
+            "expr": "this.pos < this.src.length && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L437",
+            "expr": "this.peek() === '/' && this.peek(1) === '*'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a1e4563b315df7457708b2599d525fd98b954d768c40618d25fdf590e374f984",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L438",
+          "line": 438,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+        "procedureName": "Lexer.skipBlockComment",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L437",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L436",
+            "expr": "this.pos < this.src.length && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L437",
+            "expr": "this.peek() === '/' && this.peek(1) === '*'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6cd68c8be7b151be212191575f555b23f68ad2f9fd061d78fb9b9654c5b76dce",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L439",
+          "line": 439,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+        "procedureName": "Lexer.skipBlockComment",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L443",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L436",
+            "expr": "this.pos < this.src.length && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L443",
+            "expr": "this.peek() === '*' && this.peek(1) === '/'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:78b738321f510fd105d4ee71ca29c58f007d1603dfe8045965c14d2875a06056",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L444",
+          "line": 444,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+        "procedureName": "Lexer.skipBlockComment",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L443",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L436",
+            "expr": "this.pos < this.src.length && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L443",
+            "expr": "this.peek() === '*' && this.peek(1) === '/'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f0c6296f16a700d2e93fba4b93d1b68bf8dded0e8dab29114cea7c1f95f763fe",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L445",
+          "line": 445,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+        "procedureName": "Lexer.skipBlockComment",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L436",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L436",
+            "expr": "this.pos < this.src.length && depth > 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0d7fe3e53419717d8a3117d28da18e84ce105d968bc42e9eac6efbb9d5044fcc",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L449",
+          "line": 449,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.skipBlockComment@L432",
+        "procedureName": "Lexer.skipBlockComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d40e093cd142ad493976fa30af78a6141f8ce023f0ff3f32090dee195ed69507",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.peek@L455",
+          "expr": "peek"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 7,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

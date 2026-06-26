@@ -1,0 +1,108 @@
+{
+  "id": "sym:packages/pipeline/src/pipeline.ts#defaultExtractors@L90",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:941c6a0862825c9be343c5ceae389de553560db396779076bbea60dba0e3d4e6",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/pipeline.ts#defaultExtractors@L90",
+    "kind": "symbol",
+    "type": "function",
+    "name": "defaultExtractors",
+    "qualifiedName": "defaultExtractors",
+    "signature": "defaultExtractors(): Extractor[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/pipeline.ts",
+    "span": {
+      "start": 90,
+      "end": 101
+    }
+  },
+  "source": {
+    "text": "export function defaultExtractors(): Extractor[] {\n  return [\n    new MarkdownExtractor(),\n    new TypeScriptExtractor(),\n    new PlSqlExtractor(),\n    new PythonExtractor(),\n    new JavaExtractor(),\n    new CsharpExtractor(),\n    new GoExtractor(),\n    new RustExtractor(),\n  ];\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 90
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L104",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 104
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+      "confidence": 1,
+      "name": "updateRepo",
+      "qualifiedName": "updateRepo",
+      "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.ts",
+      "line": 86
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/pipeline.ts@L84",
+      "snippet": "/** The default extractor fleet shipped with a fresh index — Markdown first so doc files never fall",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/pipeline.ts#defaultExtractors@L90",
+    "procedureName": "defaultExtractors",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#defaultExtractors@L90",
+        "procedureName": "defaultExtractors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:43805e56afd0b0bed50702e3eeb45516ae284d2dd05d40e53f3b97c7e225807d",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L91",
+          "line": 91,
+          "expr": "return [\n    new MarkdownExtractor(),\n    new TypeScriptExtractor(),\n    new PlSqlExtractor(),\n    new PythonExtractor(),\n    new JavaExtractor(),\n    new CsharpExtractor(),\n    new GoExtractor(),\n    new RustExtractor(),\n  ];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/pipeline.ts",
+      "packages/pipeline/src/update.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

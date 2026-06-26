@@ -1,0 +1,113 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.setCapabilities@L260",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:1f88ac8fcc1ba80c33fdd35074a1cd93ee99889b408ac7d24953c2fbbc7e8b92",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.setCapabilities@L260",
+    "kind": "symbol",
+    "type": "method",
+    "name": "setCapabilities",
+    "qualifiedName": "SoulStore.setCapabilities",
+    "signature": "setCapabilities(patch: Partial<ManifestCapabilities>): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 260,
+      "end": 262
+    }
+  },
+  "source": {
+    "text": "  setCapabilities(patch: Partial<ManifestCapabilities>): void {\n    this.manifest.capabilities = { ...this.manifest.capabilities, ...patch };\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 260
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/soul-store.ts@L254",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#multimodal-worker-m13-shipped",
+      "heading": "Multimodal worker (M13 — shipped)",
+      "anchor": "multimodal-worker-m13-shipped",
+      "snippet": "Multimodal worker (M13 — shipped)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#shared-file-chokepoints",
+      "heading": "Shared-file chokepoints",
+      "anchor": "shared-file-chokepoints",
+      "snippet": "Shared-file chokepoints",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "heading": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "anchor": "m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "snippet": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.setCapabilities@L260",
+    "procedureName": "SoulStore.setCapabilities",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.setCapabilities@L260",
+        "procedureName": "SoulStore.setCapabilities",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fc53da30f5bf8d57967d0b942af6af53b0db144faefeabb0634cced631734503",
+          "target": "assign:packages/core/src/soul-store.ts@L261",
+          "line": 261,
+          "expr": "this.manifest.capabilities = { ...this.manifest.capabilities, ...patch };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 1,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

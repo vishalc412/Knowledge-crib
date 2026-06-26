@@ -80,6 +80,22 @@ export interface Node {
   assignTarget?: string;
   /** `cursor` node: the cursor's SELECT query text. */
   cursorQuery?: string;
+  /** true iff a captured expression (`expr`/`cursorQuery`) was clipped at the fidelity cap
+   *  (EXPR_MAX_CHARS) — a fidelity caveat telling the consumer to rehydrate `file`+`span` for the
+   *  full text. Absent/false means the captured snippet IS the complete expression. */
+  exprTruncated?: boolean;
+
+  // --- framework-semantics 1.3 (routes / DI / components / fields) ---
+  /** `route` node: the HTTP verb, uppercased — "GET" / "POST" / "PUT" / "DELETE" / "PATCH" / "ANY". */
+  httpMethod?: string;
+  /** `route` node: the composed path — class base + method mapping, e.g. "/api/loans/{id}". */
+  routePath?: string;
+  /** symbol/component framework tag, e.g. "spring" / "express" / "nestjs" / "react" / "angular". */
+  framework?: string;
+  /** symbol semantic role within its framework: "controller"/"service"/"repository"/"entity"/
+   *  "config"/"component"/"module"/"directive"/"pipe"/"hook" — the stereotype, derived from
+   *  annotations/decorators/structure. Lets a consumer filter the graph by architectural role. */
+  stereotype?: string;
   /** `column` node: inline constraints as written, e.g. ["NOT NULL","DEFAULT 0","CHECK (…)"]. */
   constraints?: string[];
   /** `explanation` node: the source span of the comment block this explanation was derived from. */
@@ -174,16 +190,19 @@ export const CRIB_FORMAT_VERSION = '1.0';
  * `raise`, `cursor`, `assignment`, `case-branch`; Rels `raises`/`handles`/`iterates`/`declares`;
  * and optional Node fields `errorCode`/`errorMessage`/`whenSelector`/`assignTarget`/`cursorQuery`/
  * `constraints`/`commentRef`. ALL additions are optional, so a 1.0/1.1 soul still loads verbatim —
- * absent fields stay `undefined` (no widening) and are preserved on re-write.
+ * absent fields stay `undefined` (no widening) and are preserved on re-write. 1.3 (framework-
+ * semantics) adds NodeKinds `route`/`field`/`component`, Rels `exposes`/`injects`/`renders`, and
+ * optional Node fields `httpMethod`/`routePath`/`framework`/`stereotype`/`exprTruncated` — all
+ * additive + optional, so a 1.0–1.2 soul still loads verbatim.
  */
-export const SCHEMA_VERSION = '1.2';
+export const SCHEMA_VERSION = '1.3';
 export const TOOL_NAME = 'knowledge-crib';
 
 /**
  * Schema versions the loader will hydrate. A 1.0 soul (pre-M11) loads as-is; its edges have no
  * `cfgPath` and that is preserved on re-write (no widening). Unknown versions → load() refuses.
  */
-export const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2'] as const;
+export const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2', '1.3'] as const;
 
 /** Default chunking knobs (per spec storage §6 / C4). */
 export const DEFAULT_CHUNKING: ManifestChunking = {

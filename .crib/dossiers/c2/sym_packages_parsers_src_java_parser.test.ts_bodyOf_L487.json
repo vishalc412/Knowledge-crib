@@ -1,0 +1,189 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L487",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4a29cde49b988c75015ef907c14ca89a8fc0c474741a0eb9e0c452e65ab5b3e9",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L487",
+    "kind": "symbol",
+    "type": "function",
+    "name": "bodyOf",
+    "qualifiedName": "bodyOf",
+    "signature": "bodyOf(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.test.ts",
+    "span": {
+      "start": 487,
+      "end": 492
+    },
+    "callSites": [
+      {
+        "callee": "parse",
+        "line": 488
+      },
+      {
+        "callee": "find",
+        "line": 489
+      },
+      {
+        "callee": "find",
+        "line": 490
+      }
+    ]
+  },
+  "source": {
+    "text": "  const bodyOf = (src: string): JavaStmt[] => {\n    const m = parse(src);\n    const c = find(m.defs, 'C');\n    const meth = c!.body.find((d) => d.kind === 'method' || d.kind === 'constructor');\n    return meth?.stmts ?? [];\n  };",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 487
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 35
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.test.ts@L486",
+      "snippet": "/** Parse one method's body statements directly via parseBodyStmts. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L487",
+    "procedureName": "bodyOf",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L487",
+        "procedureName": "bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:15851e5435e7494f23d027b22d8545071f5147a260f51311d2942a6ab02edb0d",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+          "expr": "parse",
+          "line": 488
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L487",
+        "procedureName": "bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6520f81333732ac48d036747093e0d97eabc438cc8f2675295415bf67f86c3ec",
+          "target": "stmt:packages/parsers/src/java/parser.test.ts@L488",
+          "line": 488,
+          "expr": "const m = parse(src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L487",
+        "procedureName": "bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:35ad94a458e8632a9397463e687cb27dc7a9888d1e7a2790b43df7a753838a73",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 489
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L487",
+        "procedureName": "bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8bd695c1cd82589a7bd9297292a29a1ade23aea7522ef7de01116a2024cb89ed",
+          "target": "stmt:packages/parsers/src/java/parser.test.ts@L489",
+          "line": 489,
+          "expr": "const c = find(m.defs, 'C');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L487",
+        "procedureName": "bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2692b39352b091a34735056d690d898b9f6041f3706b260f732d3b20690b52d9",
+          "target": "stmt:packages/parsers/src/java/parser.test.ts@L490",
+          "line": 490,
+          "expr": "const meth = c!.body.find((d) => d.kind === 'method' || d.kind === 'constructor');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L487",
+        "procedureName": "bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:38f6132d59e4d41b02050c8d49f9eddf05c1c8337ba808450cfdd449f02c94ad",
+          "target": "stmt:packages/parsers/src/java/parser.test.ts@L491",
+          "line": 491,
+          "expr": "return meth?.stmts ?? [];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

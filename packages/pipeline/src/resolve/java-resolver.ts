@@ -7,6 +7,12 @@
  *   inherits    class/record → `extends` base (imported binding, same-package, or same-file top-level)
  *   implements  class/enum/record → `implements` interface
  *   calls       caller symbol → an imported type used as a constructor (`new C()` / bare `C()`)
+ *   injects     consumer class → injected dependency type (1.3 DI: a Spring bean's `meta.injects` —
+ *               the constructor-param / @Autowired-field types that did NOT resolve intra-file —
+ *               resolved here via imports / same-package, the cross-file DI graph)
+ *   produces    @Bean method → produced return type (1.3 producer graph: a `@Bean` method's
+ *               `meta.produces` — the return type that did NOT resolve intra-file — resolved here
+ *               via imports / same-package, the cross-file bean-production graph)
  *
  * Deterministic only: a reference that does not resolve to an indexed symbol is DROPPED, never
  * guessed. Star imports (`import a.b.*;`) and static imports (`import static a.b.C.m;`) bind no
@@ -29,6 +35,9 @@ import type { ResolveStats } from './ts-resolver.js';
 
 const JAVA_EXTS = ['.java'];
 
+/** Type symbol kinds — used to recognize an intra-file-satisfied injection (skip; extractor edge). */
+const TYPE_KINDS = new Set(['class', 'interface', 'enum', 'record']);
+
 /** A type brought in by `import a.b.C;`: local alias → (target file, type name). */
 interface NameBinding {
   file: string;
@@ -47,7 +56,15 @@ export function resolveJava(
   files: FileMeta[],
 ): { edges: Edge[]; stats: ResolveStats } {
   const edges: Edge[] = [];
-  const stats: ResolveStats = { imports: 0, calls: 0, inherits: 0, implements: 0, dropped: 0 };
+  const stats: ResolveStats = {
+    imports: 0,
+    calls: 0,
+    inherits: 0,
+    implements: 0,
+    injects: 0,
+    produces: 0,
+    dropped: 0,
+  };
   const seen = new Set<string>();
 
   const push = (src: string, dst: string, rel: Rel, snippet: string): void => {
@@ -116,7 +133,7 @@ export function resolveJava(
       }
     }
 
-    // --- inherits + implements: walk the whole declaration tree ---
+    // --- inherits + implements + injects: walk the whole declaration tree ---
     const visitDef = (d: JavaDef): void => {
       if (d.kind === 'class' || d.kind === 'record' || d.kind === 'enum') {
         const classId = table.enclosingSymbolId(path, d.startLine);
@@ -137,6 +154,50 @@ export function resolveJava(
               stats.implements++;
             } else {
               stats.dropped++;
+            }
+          }
+          // 1.3: cross-file DI — a Spring bean's `meta.injects` (dependency types the Spring pass
+          // could NOT resolve intra-file) resolved here via imports / same-package / same-file. An
+          // intra-file-satisfied injection is skipped: the Spring pass already emitted that edge.
+          const classNode = table.nodeInFile(path, classId);
+          const injects = (classNode?.meta?.injects as string[] | undefined) ?? [];
+          for (const depType of injects) {
+            if (!depType) continue;
+            if (table.symbolByKind(path, depType, TYPE_KINDS)) continue; // intra-file — already edged
+            const target = resolveTypeName(depType, path, pkgPrefix, nameBindings, fqnFile, table);
+            if (target) {
+              push(classId, target, 'injects', depType);
+              stats.injects = (stats.injects ?? 0) + 1;
+            } else {
+              stats.dropped++;
+            }
+          }
+          // 1.3: cross-file bean-production — a @Bean method's `meta.produces` (return types the
+          // Spring pass could NOT resolve intra-file) resolved here. Intra-file-satisfied produces
+          // is skipped (the Spring pass already emitted that edge).
+          for (const m of d.body) {
+            if (m.kind !== 'method') continue;
+            const methodId = table.enclosingSymbolId(path, m.startLine);
+            if (!methodId) continue;
+            const methodNode = table.nodeInFile(path, methodId);
+            const produces = (methodNode?.meta?.produces as string[] | undefined) ?? [];
+            for (const producedType of produces) {
+              if (!producedType) continue;
+              if (table.symbolByKind(path, producedType, TYPE_KINDS)) continue; // intra-file
+              const target = resolveTypeName(
+                producedType,
+                path,
+                pkgPrefix,
+                nameBindings,
+                fqnFile,
+                table,
+              );
+              if (target) {
+                push(methodId, target, 'produces', producedType);
+                stats.produces = (stats.produces ?? 0) + 1;
+              } else {
+                stats.dropped++;
+              }
             }
           }
         }

@@ -1,0 +1,147 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#notFound@L743",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:71219664828282e9a0c61ca93c8ebe4a1a2fc48eb78888a6c9430a9e543f362a",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#notFound@L743",
+    "kind": "symbol",
+    "type": "function",
+    "name": "notFound",
+    "qualifiedName": "notFound",
+    "signature": "notFound(id: string): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 743,
+      "end": 745
+    }
+  },
+  "source": {
+    "text": "function notFound(id: string): Record<string, unknown> {\n  return { error: { code: 'NOT_FOUND', message: `no node with id ${id}` } };\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 743
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.context@L92",
+      "confidence": 1,
+      "name": "context",
+      "qualifiedName": "Verbs.context",
+      "signature": "context(args: {\n    id: string;\n    docLimit?: number;\n    extractedOnly?: boolean;\n    /** include the full source text of the node's span (rehydrated from disk, budgeted) */\n    withSource?: boolean;\n    /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */\n    withRules?: boolean;\n    /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */\n    sourceMaxChars?: number;\n    /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 92
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.describes@L326",
+      "confidence": 1,
+      "name": "describes",
+      "qualifiedName": "Verbs.describes",
+      "signature": "describes(args: { id: string; minConfidence?: number; extractedOnly?: boolean }): Record<\n    string,\n    unknown\n  >",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 326
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L174",
+      "confidence": 1,
+      "name": "dossier",
+      "qualifiedName": "Verbs.dossier",
+      "signature": "dossier(args: {\n    id: string;\n    includeTables?: boolean;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n    extractedOnly?: boolean;\n    format?: 'json' | 'markdown';\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 174
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.extractRules@L426",
+      "confidence": 1,
+      "name": "extractRules",
+      "qualifiedName": "Verbs.extractRules",
+      "signature": "extractRules(args: {\n    procedure: string;\n    includeTables?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 426
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L256",
+      "confidence": 1,
+      "name": "impact",
+      "qualifiedName": "Verbs.impact",
+      "signature": "impact(args: {\n    id: string;\n    dir: Dir;\n    depth?: number;\n    docLimit?: number;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 256
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L335",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "Verbs.neighbors",
+      "signature": "neighbors(args: {\n    id: string;\n    rel?: string;\n    dir?: ApiDir;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 335
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.source@L147",
+      "confidence": 1,
+      "name": "source",
+      "qualifiedName": "Verbs.source",
+      "signature": "source(args: {\n    id: string;\n    maxChars?: number;\n    maxLines?: number;\n    /** absolute file line to start the page at (paging cursor; default = span start) */\n    startLine?: number;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 147
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#notFound@L743",
+    "procedureName": "notFound",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#notFound@L743",
+        "procedureName": "notFound",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d6f1f1936d41e9e6d8068fbc667e074311c0a57acc81c86b9e90e848769bcf06",
+          "target": "stmt:packages/mcp/src/verbs.ts@L744",
+          "line": 744,
+          "expr": "return { error: { code: 'NOT_FOUND', message: `no node with id ${id}` } };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,735 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4dd64e0e4b59d50cb5b3ad55237d06e36359e5312f9ce7f67256fab17ecee12e",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkStmt",
+    "qualifiedName": "Builder.walkStmt",
+    "signature": "walkStmt(s: Stmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 375,
+      "end": 410
+    },
+    "callSites": [
+      {
+        "callee": "addSql",
+        "line": 382
+      },
+      {
+        "callee": "addCall",
+        "line": 385
+      },
+      {
+        "callee": "addAssign",
+        "line": 388
+      },
+      {
+        "callee": "addRaise",
+        "line": 391
+      },
+      {
+        "callee": "addPlain",
+        "line": 394
+      },
+      {
+        "callee": "walkIf",
+        "line": 397
+      },
+      {
+        "callee": "walkLoop",
+        "line": 400
+      },
+      {
+        "callee": "walkCase",
+        "line": 403
+      },
+      {
+        "callee": "walkException",
+        "line": 406
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkStmt(\n    s: Stmt,\n    proc: ProcCtx,\n    env: { inLoop: boolean; inException: boolean; guard: string | undefined },\n  ): void {\n    switch (s.kind) {\n      case 'sql':\n        this.addSql(s, proc, env);\n        break;\n      case 'call':\n        this.addCall(s, proc, env);\n        break;\n      case 'assign':\n        this.addAssign(s, proc, env);\n        break;\n      case 'raise':\n        this.addRaise(s, proc, env);\n        break;\n      case 'plain':\n        this.addPlain(s, proc, env);\n        break;\n      case 'if':\n        this.walkIf(s, proc, env);\n        break;\n      case 'loop':\n        this.walkLoop(s, proc, env);\n        break;\n      case 'case':\n        this.walkCase(s, proc, env);\n        break;\n      case 'exception':\n        this.walkException(s, proc, env);\n        break;\n      // no other kinds (nested anonymous blocks are wrapped as 'plain')\n    }\n  }",
+    "truncated": false,
+    "totalLines": 36,
+    "startLine": 375
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkBlock@L367",
+      "confidence": 1,
+      "name": "walkBlock",
+      "qualifiedName": "Builder.walkBlock",
+      "signature": "walkBlock(block: Block, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 367
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addAssign@L501",
+      "confidence": 1,
+      "name": "addAssign",
+      "qualifiedName": "Builder.addAssign",
+      "signature": "addAssign(s: AssignStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 501
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addCall@L449",
+      "confidence": 1,
+      "name": "addCall",
+      "qualifiedName": "Builder.addCall",
+      "signature": "addCall(s: CallStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 449
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addPlain@L478",
+      "confidence": 1,
+      "name": "addPlain",
+      "qualifiedName": "Builder.addPlain",
+      "signature": "addPlain(s: PlainStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 478
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addRaise@L526",
+      "confidence": 1,
+      "name": "addRaise",
+      "qualifiedName": "Builder.addRaise",
+      "signature": "addRaise(s: RaiseStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 526
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L412",
+      "confidence": 1,
+      "name": "addSql",
+      "qualifiedName": "Builder.addSql",
+      "signature": "addSql(s: SqlStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 412
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkCase@L600",
+      "confidence": 1,
+      "name": "walkCase",
+      "qualifiedName": "Builder.walkCase",
+      "signature": "walkCase(s: CaseStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 600
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L618",
+      "confidence": 1,
+      "name": "walkException",
+      "qualifiedName": "Builder.walkException",
+      "signature": "walkException(s: ExceptionBlock, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 618
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkIf@L563",
+      "confidence": 1,
+      "name": "walkIf",
+      "qualifiedName": "Builder.walkIf",
+      "signature": "walkIf(s: IfStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 563
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkLoop@L581",
+      "confidence": 1,
+      "name": "walkLoop",
+      "qualifiedName": "Builder.walkLoop",
+      "signature": "walkLoop(s: LoopStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 581
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+    "procedureName": "Builder.walkStmt",
+    "conditions": [
+      "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L381",
+      "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L384",
+      "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L387",
+      "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L390",
+      "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L393",
+      "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L396",
+      "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L399",
+      "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L402",
+      "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L405"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7f8e26cc4ba271e46b346e991fcece9444531334cf1a1168c819b94148add550",
+          "target": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L381",
+          "line": 381,
+          "expr": "sql"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L381",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L381",
+            "expr": "sql",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:db77e87594e09dcb3e06982bab0f0fd51e83896bd82c4a04fe5e0f581513205b",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L412",
+          "expr": "addSql",
+          "line": 382
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L381",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L381",
+            "expr": "sql",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1fd3fdb7ce4c9a44aae8bc33388a2bc40355000e6f7ac6705bc14e4392946a35",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L382",
+          "line": 382,
+          "expr": "this.addSql(s, proc, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eac076784277530af88523d6b732413f642ec9ac31fce435210df67fefd4b237",
+          "target": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L384",
+          "line": 384,
+          "expr": "call"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L384",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L384",
+            "expr": "call",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a7cdc1b01dd8bdcaed77744c196f93bb25c7deb91a2f6a58b3455f328e9b2aec",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addCall@L449",
+          "expr": "addCall",
+          "line": 385
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L384",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L384",
+            "expr": "call",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b68a7179fa906982ed4dcdb088f4939555c797ee35bd5ccb8acee28fa59d9d6b",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L385",
+          "line": 385,
+          "expr": "this.addCall(s, proc, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d63ad1b2b30d0a47c98d2dcf292683aae781d3c6f1c05ac0fc9f3a546d902361",
+          "target": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L387",
+          "line": 387,
+          "expr": "assign"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L387",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L387",
+            "expr": "assign",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4639f3f56bfd2c2e4b9cbe63ed2e057e3121948624b13a7979e1d70a04826dfc",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addAssign@L501",
+          "expr": "addAssign",
+          "line": 388
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L387",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L387",
+            "expr": "assign",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b2348e7363e63983b5a100d6adb5f2560b3dd9bed24ba6cfbb7c0cb664270906",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L388",
+          "line": 388,
+          "expr": "this.addAssign(s, proc, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0f1f36f3f6e7c18315c98db6a0a29be84336376fafc136899425cb21347c1820",
+          "target": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L390",
+          "line": 390,
+          "expr": "raise"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L390",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L390",
+            "expr": "raise",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d75873dce7696f64d3cc3880912c9e6923c17ad36d56e6cdcb2acdb88885265e",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addRaise@L526",
+          "expr": "addRaise",
+          "line": 391
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L390",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L390",
+            "expr": "raise",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:21474f75127bec4d1aeacaab322e04b2b19839b2ea8fa26dc6cda28e3f69d760",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L391",
+          "line": 391,
+          "expr": "this.addRaise(s, proc, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:720c296404554640409855b305a4a207a59a639a17d428eea492fdd364fa1824",
+          "target": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L393",
+          "line": 393,
+          "expr": "plain"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L393",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L393",
+            "expr": "plain",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a69943e5901625bbbee4c7daee1fc4bf367fed0b8e7a7453cd754e545e9019da",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addPlain@L478",
+          "expr": "addPlain",
+          "line": 394
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L393",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L393",
+            "expr": "plain",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb553199be99c58648cc8a36cc683a067593402298aff19b6493eb8708625890",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L394",
+          "line": 394,
+          "expr": "this.addPlain(s, proc, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b0601bee59dff6e4fdb902be2cd9f424fe87fa340cdfa39a1f36b1119b59fda7",
+          "target": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L396",
+          "line": 396,
+          "expr": "if"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L396",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L396",
+            "expr": "if",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9b9120a75ecf18375caf8f24f9f26fee28fdf6dead27659f8f677039195ae221",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkIf@L563",
+          "expr": "walkIf",
+          "line": 397
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L396",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L396",
+            "expr": "if",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c03c415f8638346a8016a524e5630225945bad89798fe608bfb058f718c7a87",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L397",
+          "line": 397,
+          "expr": "this.walkIf(s, proc, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f4669bd86d904329248f8166ed7e950fdbd9b57da2dec405f5e3bb676ab7c37f",
+          "target": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L399",
+          "line": 399,
+          "expr": "loop"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L399",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L399",
+            "expr": "loop",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:08dbd3f0e891cd0a3fe643a95f6a852cc5bac787e73caa792c7998b4162ccdab",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkLoop@L581",
+          "expr": "walkLoop",
+          "line": 400
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L399",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L399",
+            "expr": "loop",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2174fcaf67b43b456899e566c1ccae952c8200cb086dec3f090e285a4dcab1f2",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L400",
+          "line": 400,
+          "expr": "this.walkLoop(s, proc, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7785da1dad17c9077353351f2c57183e4f12cd9fae9cba780bd1958dc18300d2",
+          "target": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L402",
+          "line": 402,
+          "expr": "case"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L402",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L402",
+            "expr": "case",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4f96697215834a750f184398060fc5a82ca4aa40a1ce2cbda69d0ea41903c5e5",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkCase@L600",
+          "expr": "walkCase",
+          "line": 403
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L402",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L402",
+            "expr": "case",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2be0abe8cfc39c52165178bf12fa71dbe04be476eeab1aed85db1bce618bbccb",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L403",
+          "line": 403,
+          "expr": "this.walkCase(s, proc, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4d27a40cf3605a56d7624512f2b170acdc2e0712af4ede2127d05f28654d9431",
+          "target": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L405",
+          "line": 405,
+          "expr": "exception"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L405",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L405",
+            "expr": "exception",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cd6c621ce20cedda9d9946c65a66c739e77fa82520b461e7981b1db547116f87",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L618",
+          "expr": "walkException",
+          "line": 406
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L375",
+        "procedureName": "Builder.walkStmt",
+        "guard": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L405",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/PlSqlExtractor.ts@L405",
+            "expr": "exception",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af3418e43827eeeb388df94dd33f37ae6e62881fd8a791c9d2c7248b3dc9fed1",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L406",
+          "line": 406,
+          "expr": "this.walkException(s, proc, env);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 18,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 18,
+    "assignments": 0,
+    "conditions": 9,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 9,
+    "calls": {
+      "resolved": 9,
+      "recorded": 9,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

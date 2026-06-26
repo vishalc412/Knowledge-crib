@@ -1,0 +1,96 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/symbol-table.ts#SymbolTable.nodeInFile@L62",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c3fe4ecc4dc1d7d5a1d168e7f876aee04eb927520115af798c9a338fb72e36a8",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/symbol-table.ts#SymbolTable.nodeInFile@L62",
+    "kind": "symbol",
+    "type": "method",
+    "name": "nodeInFile",
+    "qualifiedName": "SymbolTable.nodeInFile",
+    "signature": "nodeInFile(file: string, id: string): Node | undefined",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/symbol-table.ts",
+    "span": {
+      "start": 62,
+      "end": 64
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 63
+      },
+      {
+        "callee": "get",
+        "line": 63
+      }
+    ]
+  },
+  "source": {
+    "text": "  nodeInFile(file: string, id: string): Node | undefined {\n    return this.byFile.get(file)?.find((s) => s.id === id);\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 62
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/resolve/symbol-table.ts@L60",
+      "snippet": "/** The stored symbol node with `id` declared in `file` — to read its `meta` (e.g. 1.3",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/symbol-table.ts#SymbolTable.nodeInFile@L62",
+    "procedureName": "SymbolTable.nodeInFile",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/symbol-table.ts#SymbolTable.nodeInFile@L62",
+        "procedureName": "SymbolTable.nodeInFile",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4d0998563ad3786070c0425483795feb4ca3bc64bc849b57bf8a31e255aeb1da",
+          "target": "stmt:packages/pipeline/src/resolve/symbol-table.ts@L63",
+          "line": 63,
+          "expr": "return this.byFile.get(file)?.find((s) => s.id === id);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

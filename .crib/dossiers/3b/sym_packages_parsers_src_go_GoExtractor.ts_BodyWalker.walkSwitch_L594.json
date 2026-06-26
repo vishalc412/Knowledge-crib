@@ -1,0 +1,204 @@
+{
+  "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkSwitch@L594",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:115e19e063748381447875f6e07647fe486bbb5d2315f37fd502f2c94c39320c",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkSwitch@L594",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkSwitch",
+    "qualifiedName": "BodyWalker.walkSwitch",
+    "signature": "walkSwitch(s: GoSwitchStmt, proc: ProcCtx, guardStack: string[], inLoop: boolean, inException: boolean): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/GoExtractor.ts",
+    "span": {
+      "start": 594,
+      "end": 606
+    },
+    "callSites": [
+      {
+        "callee": "caseBranch",
+        "line": 602
+      },
+      {
+        "callee": "walkBody",
+        "line": 604
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkSwitch(\n    s: GoSwitchStmt,\n    proc: ProcCtx,\n    guardStack: string[],\n    inLoop: boolean,\n    inException: boolean,\n  ): void {\n    for (const c of s.cases) {\n      const condId = this.caseBranch(c.predicate ?? '', c.line, c.isDefault);\n      const label = c.isDefault ? 'DEFAULT' : 'CASE';\n      this.walkBody(c.body, proc, [...guardStack, condId], label, inLoop, inException);\n    }\n  }",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 594
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkStmt@L426",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: GoBodyStmt, proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 426
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.caseBranch@L765",
+      "confidence": 1,
+      "name": "caseBranch",
+      "qualifiedName": "BodyWalker.caseBranch",
+      "signature": "caseBranch(expr: string, line: number, isDefault: boolean): string",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 765
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkBody@L415",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "BodyWalker.walkBody",
+      "signature": "walkBody(stmts: GoBodyStmt[], proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 415
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/GoExtractor.ts@L591",
+      "snippet": "/** `switch` → one `case-branch` node per case (incl. default) — whenSelector = the case expr/type",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkSwitch@L594",
+    "procedureName": "BodyWalker.walkSwitch",
+    "conditions": [
+      "cond:packages/parsers/src/go/GoExtractor.ts@L601"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkSwitch@L594",
+        "procedureName": "BodyWalker.walkSwitch",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L601",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L601",
+            "expr": "s.cases",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6e154defeeb68ed482db72c101ad85eb71b4a58257883729af83e4fda68d6183",
+          "target": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.caseBranch@L765",
+          "expr": "caseBranch",
+          "line": 602
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkSwitch@L594",
+        "procedureName": "BodyWalker.walkSwitch",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L601",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L601",
+            "expr": "s.cases",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eef38117fb931a897ed259a1096e1047d10ce98b2a735dc4f1bbf28225d4a9fa",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L602",
+          "line": 602,
+          "expr": "const condId = this.caseBranch(c.predicate ?? '', c.line, c.isDefault);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkSwitch@L594",
+        "procedureName": "BodyWalker.walkSwitch",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L601",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L601",
+            "expr": "s.cases",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b0011beddd22ec62f15c30a4aa52bc7136bbea3878a8f02a995ad9d3144dab22",
+          "target": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkBody@L415",
+          "expr": "walkBody",
+          "line": 604
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkSwitch@L594",
+        "procedureName": "BodyWalker.walkSwitch",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L601",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L601",
+            "expr": "s.cases",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8a8b235802ecb67c1e70783cc2771c44977f46813f70b512f835bddcc5ea1d1c",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L604",
+          "line": 604,
+          "expr": "this.walkBody(c.body, proc, [...guardStack, condId], label, inLoop, inException);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/go/GoExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

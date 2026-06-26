@@ -1,0 +1,75 @@
+{
+  "id": "sym:packages/pipeline/fixtures/ts-cross/src/base.ts#Base.greet@L2",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:8e93f61a62461f8e3bf27db7a4cfe5ecbc30246fe09fb2f44ff464328a0156a2",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/fixtures/ts-cross/src/base.ts#Base.greet@L2",
+    "kind": "symbol",
+    "type": "method",
+    "name": "greet",
+    "qualifiedName": "Base.greet",
+    "signature": "greet(): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/fixtures/ts-cross/src/base.ts",
+    "span": {
+      "start": 2,
+      "end": 4
+    }
+  },
+  "source": {
+    "text": "  greet(): string {\n    return 'hi';\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 2
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/fixtures/ts-cross/src/base.ts#Base.greet@L2",
+    "procedureName": "Base.greet",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/fixtures/ts-cross/src/base.ts#Base.greet@L2",
+        "procedureName": "Base.greet",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5de875bf4224a5ea3dbdcfcfcf6146560af53f65ec4e5e3b1bb17d852234fbf4",
+          "target": "stmt:packages/pipeline/fixtures/ts-cross/src/base.ts@L3",
+          "line": 3,
+          "expr": "return 'hi';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

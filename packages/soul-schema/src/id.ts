@@ -45,7 +45,11 @@ export type IdSpec =
   | { kind: 'raise'; file: string; line: number }
   | { kind: 'cursor'; file: string; name: string; line: number }
   | { kind: 'assignment'; file: string; line: number }
-  | { kind: 'case-branch'; file: string; line: number };
+  | { kind: 'case-branch'; file: string; line: number }
+  // 1.3 framework-semantics
+  | { kind: 'field'; path: string; qualifiedName: string; startLine: number }
+  | { kind: 'route'; httpMethod: string; routePath: string; file: string; line: number }
+  | { kind: 'component'; path: string; qualifiedName: string; startLine: number };
 
 /** ID prefix per node kind. `column` deliberately uses `col:` (data-model reconciliation #6). */
 export const ID_PREFIX = {
@@ -64,6 +68,9 @@ export const ID_PREFIX = {
   cursor: 'cursor',
   assignment: 'assign',
   'case-branch': 'case',
+  field: 'field',
+  route: 'route',
+  component: 'comp',
 } as const;
 
 /** Build the deterministic id for a node from its identifying parts. */
@@ -99,6 +106,12 @@ export function idFor(spec: IdSpec): string {
       return `assign:${spec.file}@L${spec.line}`;
     case 'case-branch':
       return `case:${spec.file}@L${spec.line}`;
+    case 'field':
+      return `field:${spec.path}#${spec.qualifiedName}@L${spec.startLine}`;
+    case 'route':
+      return `route:${spec.httpMethod} ${spec.routePath}@${spec.file}#L${spec.line}`;
+    case 'component':
+      return `comp:${spec.path}#${spec.qualifiedName}@L${spec.startLine}`;
   }
 }
 

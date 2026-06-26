@@ -1,0 +1,165 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#foreachCollection@L890",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ac347a078ff0e7d18da0cbb0219da8a533f98db5746276fe9ad33b13cf279bf8",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#foreachCollection@L890",
+    "kind": "symbol",
+    "type": "function",
+    "name": "foreachCollection",
+    "qualifiedName": "foreachCollection",
+    "signature": "foreachCollection(predicate: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 890,
+      "end": 895
+    },
+    "callSites": [
+      {
+        "callee": "exec",
+        "line": 891
+      },
+      {
+        "callee": "trim",
+        "line": 893
+      },
+      {
+        "callee": "test",
+        "line": 894
+      }
+    ]
+  },
+  "source": {
+    "text": "function foreachCollection(predicate: string): string | undefined {\n  const m = /\\bin\\b\\s+(.+)$/.exec(predicate);\n  if (!m) return undefined;\n  const coll = (m[1] ?? '').trim();\n  return /^[A-Za-z_]\\w*$/.test(coll) ? coll : undefined;\n}",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 890
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkLoop@L539",
+      "confidence": 1,
+      "name": "walkLoop",
+      "qualifiedName": "BodyWalker.walkLoop",
+      "signature": "walkLoop(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 539
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/CsharpExtractor.ts@L885",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#foreachCollection@L890",
+    "procedureName": "foreachCollection",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L892"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#foreachCollection@L890",
+        "procedureName": "foreachCollection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c6a85c6ed982fc837ab203e3404f187733d100089e0a8ed9b5513c8ce207d432",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L891",
+          "line": 891,
+          "expr": "const m = /\\bin\\b\\s+(.+)$/.exec(predicate);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#foreachCollection@L890",
+        "procedureName": "foreachCollection",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L892",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L892",
+            "expr": "!m",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b354dad98aa7bacb097438bd521f1bcde7c5191c0454f6b4164bd38e877316af",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L892",
+          "line": 892,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#foreachCollection@L890",
+        "procedureName": "foreachCollection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:460609bd915f030d9b777f2cdb5a6a89adcc032cdb7b1f660063040ae0915fb6",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L893",
+          "line": 893,
+          "expr": "const coll = (m[1] ?? '').trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#foreachCollection@L890",
+        "procedureName": "foreachCollection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e74d56c67513de60884313acb9fa86401043659f75d000af9571372645e2b002",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L894",
+          "line": 894,
+          "expr": "return /^[A-Za-z_]\\w*$/.test(coll) ? coll : undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

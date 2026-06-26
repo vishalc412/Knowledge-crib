@@ -1,0 +1,74 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.shardDigits@L271",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:46078c485fcfda296f89e01176ec8e6ec1efca357c9b8d68603ae6ce4fa42eda",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.shardDigits@L271",
+    "kind": "symbol",
+    "type": "getter",
+    "name": "shardDigits",
+    "qualifiedName": "SoulStore.shardDigits",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 271,
+      "end": 273
+    }
+  },
+  "source": {
+    "text": "  private get shardDigits(): number {\n    return this.manifest.chunking.shardHexDigits;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 271
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.shardDigits@L271",
+    "procedureName": "SoulStore.shardDigits",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.shardDigits@L271",
+        "procedureName": "SoulStore.shardDigits",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b4d51537419354bd7b985ea1bb0cf16e3f4851031c2cce88091e74b53d28fc75",
+          "target": "stmt:packages/core/src/soul-store.ts@L272",
+          "line": 272,
+          "expr": "return this.manifest.chunking.shardHexDigits;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

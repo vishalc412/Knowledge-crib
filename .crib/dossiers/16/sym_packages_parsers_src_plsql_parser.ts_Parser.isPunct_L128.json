@@ -1,0 +1,313 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L128",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:1c8de791b47870b94c6f0f7c15e26de718e6ec107032c8075872a20c7874c0d9",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L128",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isPunct",
+    "qualifiedName": "Parser.isPunct",
+    "signature": "isPunct(c: string): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 128,
+      "end": 131
+    },
+    "callSites": [
+      {
+        "callee": "at",
+        "line": 129
+      }
+    ]
+  },
+  "source": {
+    "text": "  private isPunct(c: string): boolean {\n    const t = this.at();\n    return t.type === 'punct' && t.text === c;\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 128
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.eatPunct@L139",
+      "confidence": 1,
+      "name": "eatPunct",
+      "qualifiedName": "Parser.eatPunct",
+      "signature": "eatPunct(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 139
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateTable@L240",
+      "confidence": 1,
+      "name": "parseCreateTable",
+      "qualifiedName": "Parser.parseCreateTable",
+      "signature": "parseCreateTable(startLine: number): TableDef",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 240
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateType@L324",
+      "confidence": 1,
+      "name": "parseCreateType",
+      "qualifiedName": "Parser.parseCreateType",
+      "signature": "parseCreateType(startLine: number): TypeDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 324
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateView@L387",
+      "confidence": 1,
+      "name": "parseCreateView",
+      "qualifiedName": "Parser.parseCreateView",
+      "signature": "parseCreateView(startLine: number): ViewDef",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 387
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCursorDecl@L975",
+      "confidence": 1,
+      "name": "parseCursorDecl",
+      "qualifiedName": "Parser.parseCursorDecl",
+      "signature": "parseCursorDecl(): Decl",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 975
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseFile@L163",
+      "confidence": 1,
+      "name": "parseFile",
+      "qualifiedName": "Parser.parseFile",
+      "signature": "parseFile(): TopLevel[]",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 163
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseNameStmt@L913",
+      "confidence": 1,
+      "name": "parseNameStmt",
+      "qualifiedName": "Parser.parseNameStmt",
+      "signature": "parseNameStmt(): Stmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 913
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseNameTypeList@L410",
+      "confidence": 1,
+      "name": "parseNameTypeList",
+      "qualifiedName": "Parser.parseNameTypeList",
+      "signature": "parseNameTypeList(allowTypeless = false): ColumnDef[]",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 410
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseProcOrFunc@L555",
+      "confidence": 1,
+      "name": "parseProcOrFunc",
+      "qualifiedName": "Parser.parseProcOrFunc",
+      "signature": "parseProcOrFunc(kind: 'procedure' | 'function', startLine: number): Unit | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 555
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1035",
+      "confidence": 1,
+      "name": "parseQualifiedName",
+      "qualifiedName": "Parser.parseQualifiedName",
+      "signature": "parseQualifiedName(): { schema: string; name: string }",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1035
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L844",
+      "confidence": 1,
+      "name": "parseSqlStmt",
+      "qualifiedName": "Parser.parseSqlStmt",
+      "signature": "parseSqlStmt(): SqlStmt",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 844
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseVariableDecl@L1012",
+      "confidence": 1,
+      "name": "parseVariableDecl",
+      "qualifiedName": "Parser.parseVariableDecl",
+      "signature": "parseVariableDecl(): Decl",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1012
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.readBalancedParens@L1076",
+      "confidence": 1,
+      "name": "readBalancedParens",
+      "qualifiedName": "Parser.readBalancedParens",
+      "signature": "readBalancedParens(): string",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1076
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.readDottedName@L1050",
+      "confidence": 1,
+      "name": "readDottedName",
+      "qualifiedName": "Parser.readDottedName",
+      "signature": "readDottedName(): string | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1050
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.readTypeText@L471",
+      "confidence": 1,
+      "name": "readTypeText",
+      "qualifiedName": "Parser.readTypeText",
+      "signature": "readTypeText(): string",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 471
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.readUntilKeyword@L1062",
+      "confidence": 1,
+      "name": "readUntilKeyword",
+      "qualifiedName": "Parser.readUntilKeyword",
+      "signature": "readUntilKeyword(kw: string): string",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1062
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.recover@L151",
+      "confidence": 1,
+      "name": "recover",
+      "qualifiedName": "Parser.recover",
+      "signature": "recover(): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 151
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.skipToSemicolon@L1097",
+      "confidence": 1,
+      "name": "skipToSemicolon",
+      "qualifiedName": "Parser.skipToSemicolon",
+      "signature": "skipToSemicolon(): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1097
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.skipUntilDepthZero@L486",
+      "confidence": 1,
+      "name": "skipUntilDepthZero",
+      "qualifiedName": "Parser.skipUntilDepthZero",
+      "signature": "skipUntilDepthZero(): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 486
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L118",
+      "confidence": 1,
+      "name": "at",
+      "qualifiedName": "Parser.at",
+      "signature": "at(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 118
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L128",
+    "procedureName": "Parser.isPunct",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L128",
+        "procedureName": "Parser.isPunct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4b02664f2a564ec103c841f96a29a3befbc20bbb9fea908bb22a58d44204deb4",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L118",
+          "expr": "at",
+          "line": 129
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L128",
+        "procedureName": "Parser.isPunct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5714bd26bd34b0208835dc84633c57e22feb5570f9c01d875052e6b2ebc594c6",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L129",
+          "line": 129,
+          "expr": "const t = this.at();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L128",
+        "procedureName": "Parser.isPunct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1e271fd9a43c853889d11679716638af651988afc22d76d0afa4045349b73026",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L130",
+          "line": 130,
+          "expr": "return t.type === 'punct' && t.text === c;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

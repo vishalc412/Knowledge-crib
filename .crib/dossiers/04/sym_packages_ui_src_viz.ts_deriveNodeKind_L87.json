@@ -1,0 +1,340 @@
+{
+  "id": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ce4ecb3c2363f9ccd387bc8abd135e8bdd859fc966477c39c7746033801caa0f",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+    "kind": "symbol",
+    "type": "function",
+    "name": "deriveNodeKind",
+    "qualifiedName": "deriveNodeKind",
+    "signature": "deriveNodeKind(node: Node): VizNodeKind",
+    "lang": "typescript",
+    "file": "packages/ui/src/viz.ts",
+    "span": {
+      "start": 87,
+      "end": 100
+    },
+    "callSites": [
+      {
+        "callee": "toLowerCase",
+        "line": 89
+      }
+    ]
+  },
+  "source": {
+    "text": "function deriveNodeKind(node: Node): VizNodeKind {\n  if (node.kind !== 'symbol') return node.kind;\n  const t = (node.type ?? '').toLowerCase();\n  if (t.includes('class')) return 'class';\n  if (t.includes('method')) return 'method';\n  if (t.includes('function')) return 'function';\n  if (t.includes('interface')) return 'interface';\n  if (t.includes('enum')) return 'enum';\n  if (t.includes('type')) return 'type';\n  if (t.includes('getter')) return 'getter';\n  if (t.includes('setter')) return 'setter';\n  if (t.includes('property')) return 'property';\n  return 'symbol';\n}",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 87
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/src/viz.ts#buildVizGraph@L150",
+      "confidence": 1,
+      "name": "buildVizGraph",
+      "qualifiedName": "buildVizGraph",
+      "signature": "buildVizGraph(soul: SoulStore): VizGraph",
+      "type": "function",
+      "file": "packages/ui/src/viz.ts",
+      "line": 150
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+    "procedureName": "deriveNodeKind",
+    "conditions": [
+      "cond:packages/ui/src/viz.ts@L88",
+      "cond:packages/ui/src/viz.ts@L90",
+      "cond:packages/ui/src/viz.ts@L91",
+      "cond:packages/ui/src/viz.ts@L92",
+      "cond:packages/ui/src/viz.ts@L93",
+      "cond:packages/ui/src/viz.ts@L94",
+      "cond:packages/ui/src/viz.ts@L95",
+      "cond:packages/ui/src/viz.ts@L96",
+      "cond:packages/ui/src/viz.ts@L97",
+      "cond:packages/ui/src/viz.ts@L98"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/ui/src/viz.ts@L88",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L88",
+            "expr": "node.kind !== 'symbol'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:653e2570ad2939e343cf5b05b731c15289796570cd52bdaf645c62ced9dbd2b5",
+          "target": "stmt:packages/ui/src/viz.ts@L88",
+          "line": 88,
+          "expr": "return node.kind;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+        "procedureName": "deriveNodeKind",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:355ea277eebcf97a50b5782fc85433e40c10ad7a9e2cb0165200a59ae9071f8e",
+          "target": "stmt:packages/ui/src/viz.ts@L89",
+          "line": 89,
+          "expr": "const t = (node.type ?? '').toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/ui/src/viz.ts@L90",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L90",
+            "expr": "t.includes('class')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:84ca57e302006ddd564d8aa3836b53f2533caed197d837bcfdb727410695e727",
+          "target": "stmt:packages/ui/src/viz.ts@L90",
+          "line": 90,
+          "expr": "return 'class';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/ui/src/viz.ts@L91",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L91",
+            "expr": "t.includes('method')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a94d5379a0bb8a27049da6f465cfa0fe85925842c9a4b73f856f995e3cf5eee",
+          "target": "stmt:packages/ui/src/viz.ts@L91",
+          "line": 91,
+          "expr": "return 'method';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/ui/src/viz.ts@L92",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L92",
+            "expr": "t.includes('function')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c4886c3f70badc2f01278118a2f1446461d9b7ee1b0a0a3cc7de85d2995d097c",
+          "target": "stmt:packages/ui/src/viz.ts@L92",
+          "line": 92,
+          "expr": "return 'function';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/ui/src/viz.ts@L93",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L93",
+            "expr": "t.includes('interface')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:853e9ba8961ecb0ab3d5276d97276d2a6dbc791eeccd4404f8a5533903d6a379",
+          "target": "stmt:packages/ui/src/viz.ts@L93",
+          "line": 93,
+          "expr": "return 'interface';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/ui/src/viz.ts@L94",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L94",
+            "expr": "t.includes('enum')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:09ccbc2f749c3cd4be9a20296b3ca96baa9804be055c23c6d2a8927b129bc93c",
+          "target": "stmt:packages/ui/src/viz.ts@L94",
+          "line": 94,
+          "expr": "return 'enum';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/ui/src/viz.ts@L95",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L95",
+            "expr": "t.includes('type')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:84a897124dae2feece2883a8df07277e0cec06f12508f14914a1c8c329a088f2",
+          "target": "stmt:packages/ui/src/viz.ts@L95",
+          "line": 95,
+          "expr": "return 'type';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/ui/src/viz.ts@L96",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L96",
+            "expr": "t.includes('getter')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9da0de12b7593ea1607d5305907444dd4e47f1526a67c9077992306d14ee1fcd",
+          "target": "stmt:packages/ui/src/viz.ts@L96",
+          "line": 96,
+          "expr": "return 'getter';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/ui/src/viz.ts@L97",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L97",
+            "expr": "t.includes('setter')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db907f17f5c604bafb316fd83ad73857d0f130f249f721357ba500bf4ed32cf1",
+          "target": "stmt:packages/ui/src/viz.ts@L97",
+          "line": 97,
+          "expr": "return 'setter';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/ui/src/viz.ts@L98",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/src/viz.ts@L98",
+            "expr": "t.includes('property')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2ad4f23dea7a578b5fd32cd057d57f142cd93a3c6e8e7a6898d3097c92823b40",
+          "target": "stmt:packages/ui/src/viz.ts@L98",
+          "line": 98,
+          "expr": "return 'property';"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#deriveNodeKind@L87",
+        "procedureName": "deriveNodeKind",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5cac47f40d9b000cbc13ef92b96aab99c6c8f873dae3c6d118a7e4ba7571d54a",
+          "target": "stmt:packages/ui/src/viz.ts@L99",
+          "line": 99,
+          "expr": "return 'symbol';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": [
+      "packages/ui/src/viz.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 0,
+    "conditions": 10,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

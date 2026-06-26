@@ -1,0 +1,493 @@
+{
+  "id": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:be07685a83ff87a41049de7916f2d6ae5d59317bf6215ca3c71947a40b70f8d9",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+    "kind": "symbol",
+    "type": "function",
+    "name": "rehydrateBody",
+    "qualifiedName": "rehydrateBody",
+    "signature": "rehydrateBody(repoRoot: string, node: Node | undefined, opts: { maxChars?: number; maxLines?: number; startLine?: number } = {}): RehydratedBody",
+    "lang": "typescript",
+    "file": "packages/core/src/source.ts",
+    "span": {
+      "start": 64,
+      "end": 120
+    },
+    "callSites": [
+      {
+        "callee": "min",
+        "line": 76
+      },
+      {
+        "callee": "max",
+        "line": 76
+      },
+      {
+        "callee": "split",
+        "line": 78
+      },
+      {
+        "callee": "readFileSync",
+        "line": 78
+      },
+      {
+        "callee": "join",
+        "line": 78
+      },
+      {
+        "callee": "min",
+        "line": 81
+      },
+      {
+        "callee": "slice",
+        "line": 82
+      },
+      {
+        "callee": "join",
+        "line": 87
+      },
+      {
+        "callee": "slice",
+        "line": 93
+      },
+      {
+        "callee": "lastIndexOf",
+        "line": 94
+      },
+      {
+        "callee": "slice",
+        "line": 96
+      },
+      {
+        "callee": "split",
+        "line": 97
+      }
+    ]
+  },
+  "source": {
+    "text": "export function rehydrateBody(\n  repoRoot: string,\n  node: Node | undefined,\n  opts: { maxChars?: number; maxLines?: number; startLine?: number } = {},\n): RehydratedBody {\n  const empty: RehydratedBody = { text: '', truncated: false, totalLines: 0, startLine: 0 };\n  if (!node?.file || !node.span) return empty;\n  const maxChars = opts.maxChars ?? DEFAULT_BODY_MAX_CHARS;\n  const maxLines = opts.maxLines ?? DEFAULT_BODY_MAX_LINES;\n  const spanStart = node.span.start;\n  const spanEnd = node.span.end;\n  // page window start (1-based absolute), clamped into the span\n  const winStart = Math.min(Math.max(opts.startLine ?? spanStart, spanStart), spanEnd);\n  try {\n    const lines = readFileSync(join(repoRoot, node.file), 'utf8').split('\\n');\n    const totalLines = spanEnd - spanStart + 1; // whole on-disk span, independent of paging\n    // window end (1-based inclusive), bounded by the span end AND the line budget\n    const winEnd = Math.min(winStart + maxLines - 1, spanEnd);\n    const slice = lines.slice(winStart - 1, winEnd); // 0-based [winStart-1, winEnd)\n    if (slice.length === 0) {\n      return { text: '', truncated: false, totalLines, startLine: winStart };\n    }\n\n    let text = slice.join('\\n');\n    let truncated = winEnd < spanEnd; // more span lines lie beyond this page window\n    let linesReturned = slice.length;\n    if (text.length > maxChars) {\n      // char budget cuts within the window — trim at a line boundary so `nextLine` lands cleanly,\n      // unless even the first line exceeds the budget (then return the capped fragment of it).\n      const cut = text.slice(0, maxChars);\n      const lastNl = cut.lastIndexOf('\\n');\n      if (lastNl > 0) {\n        text = cut.slice(0, lastNl);\n        linesReturned = text.split('\\n').length;\n      } else {\n        text = cut;\n        linesReturned = 1;\n      }\n      truncated = true;\n    }\n    // nextLine: the absolute line after the last returned line, when more span remains to page.\n    let nextLine: number | undefined;\n    const lastReturnedAbs = winStart + linesReturned - 1;\n    if (truncated && lastReturnedAbs < spanEnd) {\n      nextLine = lastReturnedAbs + 1;\n    }\n    return {\n      text,\n      truncated,\n      totalLines,\n      startLine: winStart,\n      ...(nextLine !== undefined ? { nextLine } : {}),\n    };\n  } catch {\n    return empty;\n  }\n}",
+    "truncated": false,
+    "totalLines": 57,
+    "startLine": 64
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+      "confidence": 1,
+      "name": "buildDossier",
+      "qualifiedName": "buildDossier",
+      "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 134
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/source.ts@L56",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+    "procedureName": "rehydrateBody",
+    "conditions": [
+      "cond:packages/core/src/source.ts@L70",
+      "cond:packages/core/src/source.ts@L83",
+      "cond:packages/core/src/source.ts@L90",
+      "cond:packages/core/src/source.ts@L95",
+      "cond:packages/core/src/source.ts@L107"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "guard": "cond:packages/core/src/source.ts@L70",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/source.ts@L70",
+            "expr": "!node?.file || !node.span",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e67e79ffd0bb2cd9671b118d16846d6f2eb9d82bbbd3c5f2bb603de415a86aa4",
+          "target": "stmt:packages/core/src/source.ts@L70",
+          "line": 70,
+          "expr": "return empty;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:795000e7cdff571cc4ce2644328d5587efc66ba9528eb63160584c2ecd009d91",
+          "target": "stmt:packages/core/src/source.ts@L76",
+          "line": 76,
+          "expr": "const winStart = Math.min(Math.max(opts.startLine ?? spanStart, spanStart), spanEnd);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8e42cae44d19d230fde6154fb74abcfff6b006eb58bcd7aea3a2ca93db46150",
+          "target": "stmt:packages/core/src/source.ts@L78",
+          "line": 78,
+          "expr": "const lines = readFileSync(join(repoRoot, node.file), 'utf8').split('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4842f9006f8f8a0febf2c35312a6561661c217bda41ef97b5b6c93b73c746aaa",
+          "target": "stmt:packages/core/src/source.ts@L81",
+          "line": 81,
+          "expr": "const winEnd = Math.min(winStart + maxLines - 1, spanEnd);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b337b3847a16ef9ee15ba24f1f0c3e5ffcf1482d2a8404a2e14c692da649f0cc",
+          "target": "stmt:packages/core/src/source.ts@L82",
+          "line": 82,
+          "expr": "const slice = lines.slice(winStart - 1, winEnd);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "guard": "cond:packages/core/src/source.ts@L83",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/source.ts@L83",
+            "expr": "slice.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a693b7164bf768d054198b43991a632321863baefb6355d5dd0aa07fc9c11ee7",
+          "target": "stmt:packages/core/src/source.ts@L84",
+          "line": 84,
+          "expr": "return { text: '', truncated: false, totalLines, startLine: winStart };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6d0aa60ecd31359d5e579fbcdcf770ed2b847cd35a4caff8f97aae66d524ee81",
+          "target": "stmt:packages/core/src/source.ts@L87",
+          "line": 87,
+          "expr": "let text = slice.join('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "guard": "cond:packages/core/src/source.ts@L90",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/source.ts@L90",
+            "expr": "text.length > maxChars",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0bdee1377c1cfd38f97d6df510030e85b8c8b0ddc069ea6066b48f63b20314da",
+          "target": "stmt:packages/core/src/source.ts@L93",
+          "line": 93,
+          "expr": "const cut = text.slice(0, maxChars);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "guard": "cond:packages/core/src/source.ts@L90",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/source.ts@L90",
+            "expr": "text.length > maxChars",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:89dd25a38e7b1e7823545add895d0c7e6a949721dee2ffb3af74214447ae7233",
+          "target": "stmt:packages/core/src/source.ts@L94",
+          "line": 94,
+          "expr": "const lastNl = cut.lastIndexOf('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "guard": "cond:packages/core/src/source.ts@L95",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/source.ts@L90",
+            "expr": "text.length > maxChars"
+          },
+          {
+            "id": "cond:packages/core/src/source.ts@L95",
+            "expr": "lastNl > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ec9eb92337598d2d30671f19b975f7d15f6192927f9261385e63be82723ded57",
+          "target": "assign:packages/core/src/source.ts@L96",
+          "line": 96,
+          "expr": "text = cut.slice(0, lastNl);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "guard": "cond:packages/core/src/source.ts@L95",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/source.ts@L90",
+            "expr": "text.length > maxChars"
+          },
+          {
+            "id": "cond:packages/core/src/source.ts@L95",
+            "expr": "lastNl > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1e6e7e1d470b3384e24b3a6861b768663ad8d1adcc36974637c41b0425ceba79",
+          "target": "assign:packages/core/src/source.ts@L97",
+          "line": 97,
+          "expr": "linesReturned = text.split('\\n').length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "guard": "cond:packages/core/src/source.ts@L95",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/source.ts@L90",
+            "expr": "text.length > maxChars"
+          },
+          {
+            "id": "cond:packages/core/src/source.ts@L95",
+            "expr": "lastNl > 0",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e935c7322cf2f898daf9ccc1992846d338cc24aed36b719d4cf162385e84bab4",
+          "target": "assign:packages/core/src/source.ts@L99",
+          "line": 99,
+          "expr": "text = cut;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "guard": "cond:packages/core/src/source.ts@L95",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/source.ts@L90",
+            "expr": "text.length > maxChars"
+          },
+          {
+            "id": "cond:packages/core/src/source.ts@L95",
+            "expr": "lastNl > 0",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:932ec70c54a92b608a79e993ea9803b69edd17922f1b76377db06899da8c5992",
+          "target": "assign:packages/core/src/source.ts@L100",
+          "line": 100,
+          "expr": "linesReturned = 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "guard": "cond:packages/core/src/source.ts@L90",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/source.ts@L90",
+            "expr": "text.length > maxChars",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:00f6bec27ee2a90121c57b2459b773c81df07756e0d8d4061e6734dfedd3980d",
+          "target": "assign:packages/core/src/source.ts@L102",
+          "line": 102,
+          "expr": "truncated = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "guard": "cond:packages/core/src/source.ts@L107",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/source.ts@L107",
+            "expr": "truncated && lastReturnedAbs < spanEnd",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:49154a79f86afd24060aacba71e22df56e90fbfb1613b2b933e96e2b46b9e167",
+          "target": "assign:packages/core/src/source.ts@L108",
+          "line": 108,
+          "expr": "nextLine = lastReturnedAbs + 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce3197385d827d1d322cf23e6cf837d2f6e7a55599fbde905c6880840b696ffd",
+          "target": "stmt:packages/core/src/source.ts@L110",
+          "line": 110,
+          "expr": "return {\n      text,\n      truncated,\n      totalLines,\n      startLine: winStart,\n      ...(nextLine !== undefined ? { nextLine } : {}),\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+        "procedureName": "rehydrateBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cfec8217588a306cf6a96ed34794e3e1b067d5fcfdf1355fa828ec3c2d7d7474",
+          "target": "stmt:packages/core/src/source.ts@L118",
+          "line": 118,
+          "expr": "return empty;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/core/src/source.ts@L117",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/core/src/source.ts",
+        "span": {
+          "start": 117,
+          "end": 117
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 17,
+    "referencedByFiles": [
+      "packages/core/src/dossier/builder.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 17,
+    "assignments": 6,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 12,
+      "unresolved": 12
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "12 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

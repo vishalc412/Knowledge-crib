@@ -110,8 +110,16 @@ export class SqlResolver implements Resolver {
       const calls = (sym.meta?.calls as CallSite[] | undefined) ?? [];
       for (const site of calls) {
         const dst = resolveCallee(site.callee, sym.file ?? '', byQualified, bySimple);
-        if (dst && dst !== sym.id) emit(sym.id, dst, 'calls', site.callee, 'calls');
-        else if (!dst) dropped++;
+        if (dst && dst !== sym.id) {
+          emit(sym.id, dst, 'calls', site.callee, 'calls');
+        } else if (dst === sym.id) {
+          // self-recursion: no self-edge (cycle avoidance, same convention as the extractor); flag
+          // the proc so the dossier/context surface reports the recursion + the recursive call site.
+          if (!sym.meta) sym.meta = {};
+          if (!sym.meta.recursive) sym.meta.recursive = true;
+        } else {
+          dropped++;
+        }
       }
     }
 

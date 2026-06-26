@@ -1,0 +1,363 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:8bb66dbb983ca600945455f796697cd1d4d362c46a1472e3750e28498351c52b",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+    "kind": "symbol",
+    "type": "method",
+    "name": "addTop",
+    "qualifiedName": "Builder.addTop",
+    "signature": "addTop(top: TopLevel): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 132,
+      "end": 146
+    },
+    "callSites": [
+      {
+        "callee": "addTable",
+        "line": 134
+      },
+      {
+        "callee": "addView",
+        "line": 138
+      },
+      {
+        "callee": "addType",
+        "line": 142
+      },
+      {
+        "callee": "addUnit",
+        "line": 145
+      }
+    ]
+  },
+  "source": {
+    "text": "  addTop(top: TopLevel): void {\n    if (top.kind === 'table-ddl') {\n      this.addTable(top);\n      return;\n    }\n    if (top.kind === 'view-ddl') {\n      this.addView(top);\n      return;\n    }\n    if (top.kind === 'type-def') {\n      this.addType(top);\n      return;\n    }\n    this.addUnit(top, /*enclosingId*/ this.fileId, /*qualifier*/ '');\n  }",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 132
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#PlSqlExtractor.build@L85",
+      "confidence": 1,
+      "name": "build",
+      "qualifiedName": "PlSqlExtractor.build",
+      "signature": "build(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 85
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+      "confidence": 1,
+      "name": "addTable",
+      "qualifiedName": "Builder.addTable",
+      "signature": "addTable(def: TableDef): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 148
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+      "confidence": 1,
+      "name": "addType",
+      "qualifiedName": "Builder.addType",
+      "signature": "addType(def: TypeDef): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 197
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addUnit@L254",
+      "confidence": 1,
+      "name": "addUnit",
+      "qualifiedName": "Builder.addUnit",
+      "signature": "addUnit(u: Unit, enclosingId: string, qualifier: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 254
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L236",
+      "confidence": 1,
+      "name": "addView",
+      "qualifiedName": "Builder.addView",
+      "signature": "addView(def: ViewDef): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 236
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+    "procedureName": "Builder.addTop",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L133",
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L137",
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L141"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+        "procedureName": "Builder.addTop",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L133",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L133",
+            "expr": "top.kind === 'table-ddl'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ab50ad7a6c671f3b7670d996dd79ed543fbf9ccda571ea90e2bbf073dc93ca94",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+          "expr": "addTable",
+          "line": 134
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+        "procedureName": "Builder.addTop",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L133",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L133",
+            "expr": "top.kind === 'table-ddl'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a95740b26d3a4f614e5d04835bf9b130022af6016b5dd61d513e1a6a67eda025",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L134",
+          "line": 134,
+          "expr": "this.addTable(top);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+        "procedureName": "Builder.addTop",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L133",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L133",
+            "expr": "top.kind === 'table-ddl'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0fcc97af7d91cdead3d23cf23f9b93e2d4568e98ac2379d77282d4bb92cec826",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L135",
+          "line": 135,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+        "procedureName": "Builder.addTop",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L137",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L137",
+            "expr": "top.kind === 'view-ddl'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2a5555bc49fd949f18bbd9fa2e56b55b0fb2cb06002998ece1faabc9e1e5a620",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L236",
+          "expr": "addView",
+          "line": 138
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+        "procedureName": "Builder.addTop",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L137",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L137",
+            "expr": "top.kind === 'view-ddl'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8dd5d3f19bceeebdbffb7c53028e1ecd3aa6d6935d4862053445cc00345e5801",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L138",
+          "line": 138,
+          "expr": "this.addView(top);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+        "procedureName": "Builder.addTop",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L137",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L137",
+            "expr": "top.kind === 'view-ddl'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5146adc2ce628c6e5e57e6755056e348bf5125d397a7a271b4036b77e093359",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L139",
+          "line": 139,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+        "procedureName": "Builder.addTop",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L141",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L141",
+            "expr": "top.kind === 'type-def'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:73b84acdfcd8aaac0d0545a1ae510ff829ad2b9e36222b471079e47e3ce347e4",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L197",
+          "expr": "addType",
+          "line": 142
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+        "procedureName": "Builder.addTop",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L141",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L141",
+            "expr": "top.kind === 'type-def'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:60c21b57d403a9266173de8873d7f36af95fd0cf9f4e07a4d4727765a81f6589",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L142",
+          "line": 142,
+          "expr": "this.addType(top);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+        "procedureName": "Builder.addTop",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L141",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L141",
+            "expr": "top.kind === 'type-def'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f0e87c22bd59406f3597035d2ba5c3287cb3649f259b882f0248cb105c24a324",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L143",
+          "line": 143,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+        "procedureName": "Builder.addTop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8ccc62ceff4f6803a4e2fbca4333b98a6f70f97886d664842868e2d0f1040820",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addUnit@L254",
+          "expr": "addUnit",
+          "line": 145
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+        "procedureName": "Builder.addTop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:12530c660455dd3c3febf095ebfadf43440672a11c81e8658d15176fd3654984",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L145",
+          "line": 145,
+          "expr": "this.addUnit(top, /*enclosingId*/ this.fileId, /*qualifier*/ '');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseProgram@L210",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:8217a38bf5878623df102cf4dc4d94aa9edd3fe48fe39be072bd50e49aaa2fb7",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseProgram@L210",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseProgram",
+    "qualifiedName": "Parser.parseProgram",
+    "signature": "parseProgram(): { defs: JavaDef[]; excluded: Set<number> }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 210,
+      "end": 213
+    },
+    "callSites": [
+      {
+        "callee": "parseDecls",
+        "line": 211
+      }
+    ]
+  },
+  "source": {
+    "text": "  parseProgram(): { defs: JavaDef[]; excluded: Set<number> } {\n    const { defs } = this.parseDecls(true);\n    return { defs, excluded: this.excluded };\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 210
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#parseJava@L182",
+      "confidence": 1,
+      "name": "parseJava",
+      "qualifiedName": "parseJava",
+      "signature": "parseJava(src: string): JavaModule",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 182
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecls@L220",
+      "confidence": 1,
+      "name": "parseDecls",
+      "qualifiedName": "Parser.parseDecls",
+      "signature": "parseDecls(topLevel: boolean): { defs: JavaDef[]; closeLine: number }",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 220
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseProgram@L210",
+    "procedureName": "Parser.parseProgram",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseProgram@L210",
+        "procedureName": "Parser.parseProgram",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b719238d581e264d81f6fe3ef0f09481aad61cb70004c0543278f1828a724b71",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecls@L220",
+          "expr": "parseDecls",
+          "line": 211
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseProgram@L210",
+        "procedureName": "Parser.parseProgram",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a25678cfffe026124e839bbcb01b58d01d498d02cb6aae52f4574972d93351ae",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L211",
+          "line": 211,
+          "expr": "const { defs } = this.parseDecls(true);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseProgram@L210",
+        "procedureName": "Parser.parseProgram",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cfa2ac9cd658175bb63f699698c65f9f214b5fe93ec4889130b47001ad55b79b",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L212",
+          "line": 212,
+          "expr": "return { defs, excluded: this.excluded };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

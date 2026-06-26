@@ -1,0 +1,243 @@
+{
+  "id": "sym:packages/pipeline/src/structure.ts#metaForPaths@L142",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:8e56ea4f211d44d23e142a81b874c264c4e172b0a866ed2b647179dc036ab854",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/structure.ts#metaForPaths@L142",
+    "kind": "symbol",
+    "type": "function",
+    "name": "metaForPaths",
+    "qualifiedName": "metaForPaths",
+    "signature": "metaForPaths(root: string, paths: string[]): FileMeta[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/structure.ts",
+    "span": {
+      "start": 142,
+      "end": 155
+    },
+    "callSites": [
+      {
+        "callee": "statSync",
+        "line": 146
+      },
+      {
+        "callee": "join",
+        "line": 146
+      },
+      {
+        "callee": "push",
+        "line": 148
+      },
+      {
+        "callee": "langForPath",
+        "line": 148
+      },
+      {
+        "callee": "sort",
+        "line": 154
+      }
+    ]
+  },
+  "source": {
+    "text": "export function metaForPaths(root: string, paths: string[]): FileMeta[] {\n  const out: FileMeta[] = [];\n  for (const p of paths) {\n    try {\n      const st = statSync(join(root, p));\n      if (st.isFile()) {\n        out.push({ path: p, lang: langForPath(p), bytes: st.size, mtime: st.mtimeMs });\n      }\n    } catch {\n      // deleted file → no meta; its old soul records are already removed\n    }\n  }\n  return out.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));\n}",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 142
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+      "confidence": 1,
+      "name": "updateRepo",
+      "qualifiedName": "updateRepo",
+      "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.ts",
+      "line": 86
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#langForPath@L168",
+      "confidence": 1,
+      "name": "langForPath",
+      "qualifiedName": "langForPath",
+      "signature": "langForPath(path: string): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 168
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/structure.ts@L137",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/structure.ts#metaForPaths@L142",
+    "procedureName": "metaForPaths",
+    "conditions": [
+      "cond:packages/pipeline/src/structure.ts@L144",
+      "cond:packages/pipeline/src/structure.ts@L147"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#metaForPaths@L142",
+        "procedureName": "metaForPaths",
+        "guard": "cond:packages/pipeline/src/structure.ts@L144",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L144",
+            "expr": "paths",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d668a54653b9f4c2b3e9e024dc3f9a9508f42514a23ec9942b6317405c4d77f3",
+          "target": "stmt:packages/pipeline/src/structure.ts@L146",
+          "line": 146,
+          "expr": "const st = statSync(join(root, p));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#metaForPaths@L142",
+        "procedureName": "metaForPaths",
+        "guard": "cond:packages/pipeline/src/structure.ts@L147",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L144",
+            "expr": "paths"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L147",
+            "expr": "st.isFile()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:767fe04cdded19996bf4918933ea3da06f6e5efafd7cb096cdd999148a24d881",
+          "target": "sym:packages/pipeline/src/structure.ts#langForPath@L168",
+          "expr": "langForPath",
+          "line": 148
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#metaForPaths@L142",
+        "procedureName": "metaForPaths",
+        "guard": "cond:packages/pipeline/src/structure.ts@L147",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L144",
+            "expr": "paths"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L147",
+            "expr": "st.isFile()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8ff60b548b370b5b9311b80f03716df1789528d7f42377c549968cd35ecc5792",
+          "target": "stmt:packages/pipeline/src/structure.ts@L148",
+          "line": 148,
+          "expr": "out.push({ path: p, lang: langForPath(p), bytes: st.size, mtime: st.mtimeMs });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#metaForPaths@L142",
+        "procedureName": "metaForPaths",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c41ec48e4cff04762bb0651b112dee8e79b6e3fcea6c5dbb95c59093541ab635",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 148
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#metaForPaths@L142",
+        "procedureName": "metaForPaths",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bcc50f5b8e8160fbecba13a94cad3fb1e94f0c28cfacf992f0dbae88b0f607bf",
+          "target": "stmt:packages/pipeline/src/structure.ts@L154",
+          "line": 154,
+          "expr": "return out.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/pipeline/src/update.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 5,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

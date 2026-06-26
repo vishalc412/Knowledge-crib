@@ -19,6 +19,7 @@
  * captured as simple names (`#[derive(Debug)]` → ["derive"]) into `meta.attributes`, parity with Java
  * annotations.
  */
+import { EXPR_MAX_CHARS } from '../types.js';
 import { tokenize } from './lexer.js';
 import type { Token } from './lexer.js';
 
@@ -1191,7 +1192,7 @@ class Parser {
       return {
         kind: 'return',
         line,
-        text: text2.slice(0, 200),
+        text: text2.slice(0, EXPR_MAX_CHARS),
         ...(call ? { callee: call.callee } : {}),
         isErrReturn: true,
         ...(msg ? { errorMessage: msg } : {}),
@@ -1200,7 +1201,7 @@ class Parser {
     return {
       kind: 'return',
       line,
-      text: text2.slice(0, 200),
+      text: text2.slice(0, EXPR_MAX_CHARS),
       ...(call ? { callee: call.callee } : {}),
     };
   }
@@ -1233,7 +1234,7 @@ class Parser {
             kind: 'assign',
             line,
             target,
-            text: this.sliceTokens(startIdx, this.i).trim().slice(0, 200),
+            text: this.sliceTokens(startIdx, this.i).trim().slice(0, EXPR_MAX_CHARS),
             ...(action && 'callee' in action && action.callee ? { callee: action.callee } : {}),
           };
         }
@@ -1254,7 +1255,7 @@ class Parser {
         kind: 'assign',
         line,
         target,
-        text: this.sliceTokens(startIdx, this.i).trim().slice(0, 200),
+        text: this.sliceTokens(startIdx, this.i).trim().slice(0, EXPR_MAX_CHARS),
         ...(action && 'callee' in action && action.callee ? { callee: action.callee } : {}),
       };
     }
@@ -1275,12 +1276,14 @@ class Parser {
         {
           kind: 'throw',
           line: call.line,
-          text: text.slice(0, 200),
+          text: text.slice(0, EXPR_MAX_CHARS),
           ...(msg ? { errorMessage: msg } : {}),
         },
       ];
     }
-    return [{ kind: 'call', line: call.line, text: text.slice(0, 200), callee: call.callee }];
+    return [
+      { kind: 'call', line: call.line, text: text.slice(0, EXPR_MAX_CHARS), callee: call.callee },
+    ];
   }
 
   /**

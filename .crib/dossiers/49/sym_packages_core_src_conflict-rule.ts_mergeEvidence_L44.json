@@ -1,0 +1,172 @@
+{
+  "id": "sym:packages/core/src/conflict-rule.ts#mergeEvidence@L44",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:fbf8572cfe119324b0cad94c8cc519b65f7d1d8e5a84ad7b815b8e89d462d474",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/conflict-rule.ts#mergeEvidence@L44",
+    "kind": "symbol",
+    "type": "function",
+    "name": "mergeEvidence",
+    "qualifiedName": "mergeEvidence",
+    "signature": "mergeEvidence(x?: Evidence, y?: Evidence): Evidence | undefined",
+    "lang": "typescript",
+    "file": "packages/core/src/conflict-rule.ts",
+    "span": {
+      "start": 44,
+      "end": 52
+    }
+  },
+  "source": {
+    "text": "function mergeEvidence(x?: Evidence, y?: Evidence): Evidence | undefined {\n  if (!x) return y;\n  if (!y) return x;\n  const merged: Evidence = { ...x };\n  for (const [k, v] of Object.entries(y)) {\n    if (merged[k] === undefined) merged[k] = v;\n  }\n  return merged;\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 44
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/conflict-rule.ts#resolveEdgeConflict@L22",
+      "confidence": 1,
+      "name": "resolveEdgeConflict",
+      "qualifiedName": "resolveEdgeConflict",
+      "signature": "resolveEdgeConflict(a: Edge, b: Edge): Edge",
+      "type": "function",
+      "file": "packages/core/src/conflict-rule.ts",
+      "line": 22
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/conflict-rule.ts@L43",
+      "snippet": "/** Merge two optional evidence objects; snippets concatenated distinctly, `by` lists unioned. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/conflict-rule.ts#mergeEvidence@L44",
+    "procedureName": "mergeEvidence",
+    "conditions": [
+      "cond:packages/core/src/conflict-rule.ts@L45",
+      "cond:packages/core/src/conflict-rule.ts@L46",
+      "cond:packages/core/src/conflict-rule.ts@L48",
+      "cond:packages/core/src/conflict-rule.ts@L49"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/conflict-rule.ts#mergeEvidence@L44",
+        "procedureName": "mergeEvidence",
+        "guard": "cond:packages/core/src/conflict-rule.ts@L45",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/conflict-rule.ts@L45",
+            "expr": "!x",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2c1da7923e9f8fa96867b91c7ba53afe1f6f5b1478a243e62b1df1c84ea01b21",
+          "target": "stmt:packages/core/src/conflict-rule.ts@L45",
+          "line": 45,
+          "expr": "return y;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/conflict-rule.ts#mergeEvidence@L44",
+        "procedureName": "mergeEvidence",
+        "guard": "cond:packages/core/src/conflict-rule.ts@L46",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/conflict-rule.ts@L46",
+            "expr": "!y",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:59389db514dc6ef7a03b3996308e46d81733b8e40306f350388328f31e2ffaf3",
+          "target": "stmt:packages/core/src/conflict-rule.ts@L46",
+          "line": 46,
+          "expr": "return x;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/conflict-rule.ts#mergeEvidence@L44",
+        "procedureName": "mergeEvidence",
+        "guard": "cond:packages/core/src/conflict-rule.ts@L49",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/conflict-rule.ts@L48",
+            "expr": "Object.entries(y)"
+          },
+          {
+            "id": "cond:packages/core/src/conflict-rule.ts@L49",
+            "expr": "merged[k] === undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8faacc79579333e90ec5e81b1a7e4483a6b7bf35667edfcb2fc8edb7d7b5893a",
+          "target": "assign:packages/core/src/conflict-rule.ts@L49",
+          "line": 49,
+          "expr": "merged[k] = v;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/conflict-rule.ts#mergeEvidence@L44",
+        "procedureName": "mergeEvidence",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8eeaf3154ca0d17e256fac4cc01d5f0f2c18cfa826a1bb9b8e5002418e67957f",
+          "target": "stmt:packages/core/src/conflict-rule.ts@L51",
+          "line": 51,
+          "expr": "return merged;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/core/src/conflict-rule.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 1,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

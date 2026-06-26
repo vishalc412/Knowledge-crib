@@ -1,0 +1,157 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeGitignore@L416",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9e63dc4c0baf46f0f4c6d6394abab054a71bb97da3e4c3b0e4c011a0c51e09c9",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeGitignore@L416",
+    "kind": "symbol",
+    "type": "method",
+    "name": "writeGitignore",
+    "qualifiedName": "SoulStore.writeGitignore",
+    "signature": "writeGitignore(): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 416,
+      "end": 421
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 417
+      },
+      {
+        "callee": "atomicWrite",
+        "line": 419
+      }
+    ]
+  },
+  "source": {
+    "text": "  private writeGitignore(): void {\n    const path = join(this.cribDirPrivate, '.gitignore');\n    if (!existsSync(path)) {\n      this.atomicWrite(path, 'index/\\nembeddings/\\n');\n    }\n  }",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 416
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L221",
+      "confidence": 1,
+      "name": "commit",
+      "qualifiedName": "SoulStore.commit",
+      "signature": "commit(now = new Date().toISOString()): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 221
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L432",
+      "confidence": 1,
+      "name": "atomicWrite",
+      "qualifiedName": "SoulStore.atomicWrite",
+      "signature": "atomicWrite(path: string, content: string): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 432
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeGitignore@L416",
+    "procedureName": "SoulStore.writeGitignore",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L418"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeGitignore@L416",
+        "procedureName": "SoulStore.writeGitignore",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:225ef175c0eba3c7f0e78a51521dfd87878770562d0342073edaa1f98a4b84cd",
+          "target": "stmt:packages/core/src/soul-store.ts@L417",
+          "line": 417,
+          "expr": "const path = join(this.cribDirPrivate, '.gitignore');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeGitignore@L416",
+        "procedureName": "SoulStore.writeGitignore",
+        "guard": "cond:packages/core/src/soul-store.ts@L418",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L418",
+            "expr": "!existsSync(path)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:514bff6bf32ea4a86e9b44260b8002405abf806a01475e20c8380ef6dd14f23b",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L432",
+          "expr": "atomicWrite",
+          "line": 419
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeGitignore@L416",
+        "procedureName": "SoulStore.writeGitignore",
+        "guard": "cond:packages/core/src/soul-store.ts@L418",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L418",
+            "expr": "!existsSync(path)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:225ce3a242dcc860c8927eb456dbf2a41eb7397d8d09c387347868ab5a1b9ccd",
+          "target": "stmt:packages/core/src/soul-store.ts@L419",
+          "line": 419,
+          "expr": "this.atomicWrite(path, 'index/\\nembeddings/\\n');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

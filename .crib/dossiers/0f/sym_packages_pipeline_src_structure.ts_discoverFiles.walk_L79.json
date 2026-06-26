@@ -1,0 +1,543 @@
+{
+  "id": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L79",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:465e025e1f27dba8e55f10401da2aa79187a4380a7a488dbc3a1c49745d27ee7",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L79",
+    "kind": "symbol",
+    "type": "function",
+    "name": "walk",
+    "qualifiedName": "discoverFiles.walk",
+    "signature": "walk(…)",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/structure.ts",
+    "span": {
+      "start": 79,
+      "end": 91
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 82
+      },
+      {
+        "callee": "statSync",
+        "line": 83
+      },
+      {
+        "callee": "walk",
+        "line": 85
+      },
+      {
+        "callee": "toPosix",
+        "line": 87
+      },
+      {
+        "callee": "relative",
+        "line": 87
+      },
+      {
+        "callee": "push",
+        "line": 88
+      },
+      {
+        "callee": "langForPath",
+        "line": 88
+      }
+    ]
+  },
+  "source": {
+    "text": "  const walk = (dir: string): void => {\n    for (const entry of readdirSync(dir)) {\n      if (ignores.has(entry)) continue;\n      const abs = join(dir, entry);\n      const st = statSync(abs);\n      if (st.isDirectory()) {\n        walk(abs);\n      } else if (st.isFile()) {\n        const rel = toPosix(relative(root, abs));\n        out.push({ path: rel, lang: langForPath(rel), bytes: st.size, mtime: st.mtimeMs });\n      }\n    }\n  };",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 79
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles@L76",
+      "confidence": 1,
+      "name": "discoverFiles",
+      "qualifiedName": "discoverFiles",
+      "signature": "discoverFiles(root: string, opts: DiscoverOpts = {}): FileMeta[]",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 76
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#langForPath@L133",
+      "confidence": 1,
+      "name": "langForPath",
+      "qualifiedName": "langForPath",
+      "signature": "langForPath(path: string): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 133
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#toPosix@L147",
+      "confidence": 1,
+      "name": "toPosix",
+      "qualifiedName": "toPosix",
+      "signature": "toPosix(p: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 147
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#toPosix@L66",
+      "confidence": 1,
+      "name": "toPosix",
+      "qualifiedName": "toPosix",
+      "signature": "toPosix(p: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 66
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "walk",
+      "signature": "walk(node: ts.Node, fn: (n: ts.Node) => void): void",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 200
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests",
+      "heading": "Tests",
+      "anchor": "tests",
+      "snippet": "Tests",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
+      "heading": "What was built",
+      "anchor": "what-was-built-2",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#documents-updated",
+      "heading": "Documents updated",
+      "anchor": "documents-updated",
+      "snippet": "Documents updated",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#summary",
+      "heading": "Summary",
+      "anchor": "summary",
+      "snippet": "Summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#root-resolution-req-1",
+      "heading": "Root resolution (REQ-1)",
+      "anchor": "root-resolution-req-1",
+      "snippet": "Root resolution (REQ-1)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-index-path",
+      "heading": "`crib index [path]`",
+      "anchor": "crib-index-path",
+      "snippet": "`crib index [path]`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#root-resolution-one-entry-every-project",
+      "heading": "Root resolution — one entry, every project",
+      "anchor": "root-resolution-one-entry-every-project",
+      "snippet": "Root resolution — one entry, every project",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#4-claude-code",
+      "heading": "4. Claude Code",
+      "anchor": "4-claude-code",
+      "snippet": "4. Claude Code",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-1-principal-engineer",
+      "heading": "2.1 Principal Engineer",
+      "anchor": "2-1-principal-engineer",
+      "snippet": "2.1 Principal Engineer",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-3-solution-architect",
+      "heading": "2.3 Solution Architect",
+      "anchor": "2-3-solution-architect",
+      "snippet": "2.3 Solution Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-4-technical-architect",
+      "heading": "2.4 Technical Architect",
+      "anchor": "2-4-technical-architect",
+      "snippet": "2.4 Technical Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#what-each-language-extractor-must-emit-additive-keep-existing-symbol-member-of-calls-behavior",
+      "heading": "What each language extractor must emit (additive — keep existing symbol/member-of/calls behavior)",
+      "anchor": "what-each-language-extractor-must-emit-additive-keep-existing-symbol-member-of-calls-behavior",
+      "snippet": "What each language extractor must emit (additive — keep existing symbol/member-of/calls behavior)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#per-language-parser-work",
+      "heading": "Per-language parser work",
+      "anchor": "per-language-parser-work",
+      "snippet": "Per-language parser work",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#one-ide-entry-for-every-project-root-resolution",
+      "heading": "One IDE entry for every project (root resolution)",
+      "anchor": "one-ide-entry-for-every-project-root-resolution",
+      "snippet": "One IDE entry for every project (root resolution)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L79",
+    "procedureName": "discoverFiles.walk",
+    "conditions": [
+      "cond:packages/pipeline/src/structure.ts@L80",
+      "cond:packages/pipeline/src/structure.ts@L84",
+      "cond:packages/pipeline/src/structure.ts@L86"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L79",
+        "procedureName": "discoverFiles.walk",
+        "guard": "cond:packages/pipeline/src/structure.ts@L80",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L80",
+            "expr": "readdirSync(dir)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c050c1a9fc5741a8d19726d91b5cc63c9152a134366a1f77598b3cfb25c2365a",
+          "target": "stmt:packages/pipeline/src/structure.ts@L82",
+          "line": 82,
+          "expr": "const abs = join(dir, entry);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L79",
+        "procedureName": "discoverFiles.walk",
+        "guard": "cond:packages/pipeline/src/structure.ts@L80",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L80",
+            "expr": "readdirSync(dir)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:974bf5eb0801b6205e71a52aaf878b497aebb8815fced82f4da5d1d0a41c5d69",
+          "target": "stmt:packages/pipeline/src/structure.ts@L83",
+          "line": 83,
+          "expr": "const st = statSync(abs);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L79",
+        "procedureName": "discoverFiles.walk",
+        "guard": "cond:packages/pipeline/src/structure.ts@L84",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L80",
+            "expr": "readdirSync(dir)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L84",
+            "expr": "st.isDirectory()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:965cb04c69d5325a552c4368192e47238aa9bb0c991d3bc2855436d8cce5100a",
+          "target": "stmt:packages/pipeline/src/structure.ts@L85",
+          "line": 85,
+          "expr": "walk(abs);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L79",
+        "procedureName": "discoverFiles.walk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:865a0fa4381d9b01120de302b467ecb79f3702f9ac2d09faddf94b24c365ebf0",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
+          "expr": "walk",
+          "line": 85
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L79",
+        "procedureName": "discoverFiles.walk",
+        "guard": "cond:packages/pipeline/src/structure.ts@L86",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L80",
+            "expr": "readdirSync(dir)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L84",
+            "expr": "st.isDirectory()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L86",
+            "expr": "st.isFile()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9e615285eb2ad2415b6088c5afb3ea8bf2cf0224b1c4a5e595f6bdad99d9235d",
+          "target": "sym:packages/pipeline/src/structure.ts#toPosix@L147",
+          "expr": "toPosix",
+          "line": 87
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L79",
+        "procedureName": "discoverFiles.walk",
+        "guard": "cond:packages/pipeline/src/structure.ts@L86",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L80",
+            "expr": "readdirSync(dir)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L84",
+            "expr": "st.isDirectory()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L86",
+            "expr": "st.isFile()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e9261434e825b21f3d0aa8ed84ab1b4c86a18dd5d1940912dff4ace6f684731e",
+          "target": "stmt:packages/pipeline/src/structure.ts@L87",
+          "line": 87,
+          "expr": "const rel = toPosix(relative(root, abs));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L79",
+        "procedureName": "discoverFiles.walk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ee13f71c16f6bab3aad9b85aa8aa4ebcf3958dd93974dc0a41a43221cfea2fe4",
+          "target": "sym:packages/pipeline/src/vcs.ts#toPosix@L66",
+          "expr": "toPosix",
+          "line": 87
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L79",
+        "procedureName": "discoverFiles.walk",
+        "guard": "cond:packages/pipeline/src/structure.ts@L86",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L80",
+            "expr": "readdirSync(dir)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L84",
+            "expr": "st.isDirectory()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L86",
+            "expr": "st.isFile()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c91266aa897ca1907327dc57a93eae518151d6056eade2eee41099fecf5af92a",
+          "target": "sym:packages/pipeline/src/structure.ts#langForPath@L133",
+          "expr": "langForPath",
+          "line": 88
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L79",
+        "procedureName": "discoverFiles.walk",
+        "guard": "cond:packages/pipeline/src/structure.ts@L86",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L80",
+            "expr": "readdirSync(dir)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L84",
+            "expr": "st.isDirectory()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L86",
+            "expr": "st.isFile()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e52cdc9299bb182694ccb998d6af1e531b9364e7a21ffe5df61366226de0a80d",
+          "target": "stmt:packages/pipeline/src/structure.ts@L88",
+          "line": 88,
+          "expr": "out.push({ path: rel, lang: langForPath(rel), bytes: st.size, mtime: st.mtimeMs });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L79",
+        "procedureName": "discoverFiles.walk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:61c310786776bd36018fbe01ffcf645f98f6f69ae0d05c48216d5c8bc990fc4f",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 88
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/pipeline/src/structure.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 7,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

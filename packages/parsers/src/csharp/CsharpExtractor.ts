@@ -22,11 +22,19 @@
  */
 import { edgeId } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
+import { clampExpr } from '../types.js';
 import type { Capabilities, ExtractCtx, ExtractResult, Extractor, FileMeta } from '../types.js';
 import { collectComments } from './lexer.js';
 import type { CsCommentBlock } from './lexer.js';
 import type { CsharpCallSite, CsharpDef, CsharpStmt, CsharpSwitchCase } from './parser.js';
 import { parseCsharp } from './parser.js';
+
+/** Spread an `expr` field plus its `exprTruncated` honesty flag from a raw expression string. */
+function exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true } {
+  if (!raw) return {};
+  const { expr, truncated } = clampExpr(raw);
+  return truncated ? { expr, exprTruncated: true } : { expr };
+}
 
 interface LocalSymbol {
   node: Node;
@@ -490,11 +498,13 @@ class BodyWalker {
     const id = this.ctx.idFor('condition', { file: this.path, line });
     if (!this.condSeen.has(id)) {
       this.condSeen.add(id);
+      const c = clampExpr(expr);
       this.nodes.push({
         id,
         kind: 'condition',
         branch,
-        expr: expr.slice(0, 200),
+        expr: c.expr,
+        ...(c.truncated ? { exprTruncated: true } : {}),
         file: this.path,
         span: { start: line, end: line },
         lang: 'csharp',
@@ -593,7 +603,7 @@ class BodyWalker {
       id,
       kind: 'statement',
       type: s.kind,
-      ...(s.expr ? { expr: s.expr.slice(0, 200) } : {}),
+      ...exprFields(s.expr),
       file: this.path,
       span: { start: s.startLine, end: s.endLine },
       lang: 'csharp',
@@ -626,7 +636,7 @@ class BodyWalker {
       id,
       kind: 'statement',
       type: 'call',
-      ...(s.expr ? { expr: s.expr.slice(0, 200) } : {}),
+      ...exprFields(s.expr),
       file: this.path,
       span: { start: s.startLine, end: s.endLine },
       lang: 'csharp',
@@ -656,7 +666,7 @@ class BodyWalker {
       id,
       kind: 'assignment',
       ...(s.assignTarget ? { assignTarget: s.assignTarget } : {}),
-      ...(s.expr ? { expr: s.expr.slice(0, 200) } : {}),
+      ...exprFields(s.expr),
       file: this.path,
       span: { start: s.startLine, end: s.endLine },
       lang: 'csharp',
@@ -688,7 +698,7 @@ class BodyWalker {
       id,
       kind: 'raise',
       ...(name ? { name } : {}),
-      ...(errorMessage ? { errorMessage: errorMessage.slice(0, 200) } : {}),
+      ...(errorMessage ? { errorMessage: clampExpr(errorMessage).expr } : {}),
       file: this.path,
       span: { start: s.startLine, end: s.endLine },
       lang: 'csharp',

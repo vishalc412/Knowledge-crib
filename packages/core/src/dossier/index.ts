@@ -9,8 +9,23 @@ export type {
   AdjacentBrief,
   DossierDocLink,
   DossierControlFlow,
+  DossierImplementation,
 } from './builder.js';
 export { dossierToMarkdown } from './serializer.js';
+export { computeCoverage } from './coverage.js';
+export type { CallableCoverage, CoverageCalls } from './coverage.js';
+export { frameworkSemantics, DOSSIER_SHAPE_VERSION } from './framework.js';
+export type {
+  DossierFrameworkSemantics,
+  DossierRoute,
+  DossierProduces,
+  DossierDependency,
+  DossierDependent,
+  DossierRelation,
+  DossierRenders,
+  ParamLocation,
+  FrameworkSemanticsOpts,
+} from './framework.js';
 export {
   dossiersDir,
   dossierPath,

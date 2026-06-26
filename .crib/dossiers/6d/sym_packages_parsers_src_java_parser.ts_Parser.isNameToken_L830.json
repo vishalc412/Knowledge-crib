@@ -1,0 +1,148 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#Parser.isNameToken@L830",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:40e1acf0a2f11e5745257724fc29063039b76b10fc6750b6ae19e15ea0217a6b",
+  "builtAt": "2026-06-25T22:25:44.295Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#Parser.isNameToken@L830",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isNameToken",
+    "qualifiedName": "Parser.isNameToken",
+    "signature": "isNameToken(): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 830,
+      "end": 832
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 831
+      }
+    ]
+  },
+  "source": {
+    "text": "        depth--;\n        this.next();\n        if (depth === 0) return closeLine;",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 830
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+      "confidence": 1,
+      "name": "consumeAnnotation",
+      "qualifiedName": "Parser.consumeAnnotation",
+      "signature": "consumeAnnotation(out: string[], rich?: JavaAnno[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 722
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDottedNameList@L635",
+      "confidence": 1,
+      "name": "parseDottedNameList",
+      "qualifiedName": "Parser.parseDottedNameList",
+      "signature": "parseDottedNameList(stopKeywords: string[], stopOps: string[] = ['{', ';']): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 635
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseType@L294",
+      "confidence": 1,
+      "name": "parseType",
+      "qualifiedName": "Parser.parseType",
+      "signature": "parseType(kind: 'class' | 'interface' | 'enum' | 'record', startLine: number, annotations: string[], modifiers: string[], annos: JavaAnno[] = []): JavaDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 294
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.skipAnnotationNoCapture@L762",
+      "confidence": 1,
+      "name": "skipAnnotationNoCapture",
+      "qualifiedName": "Parser.skipAnnotationNoCapture",
+      "signature": "skipAnnotationNoCapture(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 762
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L838",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 838
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.isNameToken@L830",
+    "procedureName": "Parser.isNameToken",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.isNameToken@L830",
+        "procedureName": "Parser.isNameToken",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8f1f4a2f0ac71463804dc70ba375536607c5019e9be32ec9561d869b573a38db",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L838",
+          "expr": "peek",
+          "line": 831
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.isNameToken@L830",
+        "procedureName": "Parser.isNameToken",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1bdbebd55f2651dd6361ed382442ffbdce93b46d3e1036385214e68583aa1adc",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L831",
+          "line": 831,
+          "expr": "return this.peek().type === 'NAME';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

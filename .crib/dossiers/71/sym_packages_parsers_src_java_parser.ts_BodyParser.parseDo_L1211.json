@@ -1,0 +1,378 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ed8969289814340cf861a8768a6e9b4ff91b12ba21c04431e72c05beae03ca19",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseDo",
+    "qualifiedName": "BodyParser.parseDo",
+    "signature": "parseDo(startLine: number): JavaStmt",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 1211,
+      "end": 1228
+    },
+    "callSites": [
+      {
+        "callee": "next",
+        "line": 1212
+      },
+      {
+        "callee": "parseBlockOrStmt",
+        "line": 1213
+      },
+      {
+        "callee": "next",
+        "line": 1216
+      },
+      {
+        "callee": "readParenText",
+        "line": 1217
+      },
+      {
+        "callee": "next",
+        "line": 1219
+      },
+      {
+        "callee": "branchEnd",
+        "line": 1223
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseDo(startLine: number): JavaStmt {\n    this.next(); // do\n    const body = this.parseBlockOrStmt();\n    let predicate: string | undefined;\n    if (this.peek().type === 'NAME' && this.peek().value === 'while') {\n      this.next(); // while\n      predicate = this.readParenText();\n    }\n    if (this.isOp(';')) this.next();\n    return {\n      kind: 'do',\n      startLine,\n      endLine: this.branchEnd(body),\n      predicate,\n      predicateLine: startLine,\n      body,\n    };\n  }",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 1211
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseStmt@L1126",
+      "confidence": 1,
+      "name": "parseStmt",
+      "qualifiedName": "BodyParser.parseStmt",
+      "signature": "parseStmt(): JavaStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1126
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.branchEnd@L1586",
+      "confidence": 1,
+      "name": "branchEnd",
+      "qualifiedName": "BodyParser.branchEnd",
+      "signature": "branchEnd(body: JavaStmt[]): number",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1586
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseBlockOrStmt@L1488",
+      "confidence": 1,
+      "name": "parseBlockOrStmt",
+      "qualifiedName": "BodyParser.parseBlockOrStmt",
+      "signature": "parseBlockOrStmt(): JavaStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1488
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.readParenText@L1453",
+      "confidence": 1,
+      "name": "readParenText",
+      "qualifiedName": "BodyParser.readParenText",
+      "signature": "readParenText(): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1453
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L801",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 801
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.next@L818",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 818
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L823",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 823
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.ts@L1210",
+      "snippet": "/** Parse `do body while (cond);`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+    "procedureName": "BodyParser.parseDo",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.ts@L1219",
+      "cond:packages/parsers/src/java/parser.ts@L1215"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+        "procedureName": "BodyParser.parseDo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d6bd25f59882ecf89371634b0e7d694d242024c408ded2499596e5126b7aa70e",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L801",
+          "expr": "isOp"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+        "procedureName": "BodyParser.parseDo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ac1fdab6b00b73f3ce5a41c62464cd098c8cfaf79b63dc6c73f198fbd94ba8c0",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L823",
+          "expr": "peek"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+        "procedureName": "BodyParser.parseDo",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1219",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1219",
+            "expr": "this.isOp(';')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2e69f46a3ad48fb8bd3d0abb2c5aa577aed2daeda4b36831623d05423ee08284",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L818",
+          "expr": "next",
+          "line": 1212
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+        "procedureName": "BodyParser.parseDo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:65974b708886516a90133f06575e09960d3efaf8ad9c23eb052a58f71024266e",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1212",
+          "line": 1212,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+        "procedureName": "BodyParser.parseDo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:018d8912976e90237d31caa8ec3622d312da5cd458d82bf15c5e00f4f1814ca2",
+          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseBlockOrStmt@L1488",
+          "expr": "parseBlockOrStmt",
+          "line": 1213
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+        "procedureName": "BodyParser.parseDo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c44d51dc04eb955ec95cffb4dd6fe4ce6784e18587df61294536a89860203b01",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1213",
+          "line": 1213,
+          "expr": "const body = this.parseBlockOrStmt();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+        "procedureName": "BodyParser.parseDo",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1215",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1215",
+            "expr": "this.peek().type === 'NAME' && this.peek().value === 'while'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:88d12ba6f62add162e7e26fa8933c2de7ec6b15b556559b3216ec81aae4fe91d",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1216",
+          "line": 1216,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+        "procedureName": "BodyParser.parseDo",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1215",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1215",
+            "expr": "this.peek().type === 'NAME' && this.peek().value === 'while'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a7a30e5727e9ad25ba4ecdb184bd1d8f759f976b56d5367b5d2f449251f5c104",
+          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.readParenText@L1453",
+          "expr": "readParenText",
+          "line": 1217
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+        "procedureName": "BodyParser.parseDo",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1215",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1215",
+            "expr": "this.peek().type === 'NAME' && this.peek().value === 'while'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:043fdb3bfd12362e313efcb55895043f179962c14cd98536fbe562af465e1505",
+          "target": "assign:packages/parsers/src/java/parser.ts@L1217",
+          "line": 1217,
+          "expr": "predicate = this.readParenText();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+        "procedureName": "BodyParser.parseDo",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1219",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1219",
+            "expr": "this.isOp(';')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:625598627e4a74cc57c39a1b488a017898cf851351001be0d50045f414798cc9",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1219",
+          "line": 1219,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+        "procedureName": "BodyParser.parseDo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:78006689b9975b337b10d9de21e67923766348c251cdc3f069295512d6793407",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1220",
+          "line": 1220,
+          "expr": "return {\n      kind: 'do',\n      startLine,\n      endLine: this.branchEnd(body),\n      predicate,\n      predicateLine: startLine,\n      body,\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1211",
+        "procedureName": "BodyParser.parseDo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1160a53880c0316684b21e174874ae6f16f24495a9d4d65ba6df81782fd00554",
+          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.branchEnd@L1586",
+          "expr": "branchEnd",
+          "line": 1223
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 6,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

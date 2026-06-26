@@ -1,0 +1,567 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:5773b73fa24baadeb39c1f672c13ef8e4d24322f001472af7ae1089b5088d47d",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+    "kind": "symbol",
+    "type": "method",
+    "name": "signature",
+    "qualifiedName": "CsharpExtractor.signature",
+    "signature": "signature(d: CsharpDef): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 178,
+      "end": 204
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 189
+      },
+      {
+        "callee": "join",
+        "line": 193
+      },
+      {
+        "callee": "join",
+        "line": 197
+      },
+      {
+        "callee": "join",
+        "line": 202
+      }
+    ]
+  },
+  "source": {
+    "text": "  private signature(d: CsharpDef): string {\n    switch (d.kind) {\n      case 'namespace':\n        return `namespace ${d.name}`;\n      case 'class':\n        return `class ${d.name}`;\n      case 'interface':\n        return `interface ${d.name}`;\n      case 'struct':\n        return `struct ${d.name}`;\n      case 'record':\n        return `record ${d.name}(${d.params.join(', ')})`;\n      case 'enum':\n        return `enum ${d.name}`;\n      case 'delegate':\n        return `delegate ${d.name}(${d.params.join(', ')})`;\n      case 'property':\n        return d.name;\n      case 'indexer':\n        return `this[${d.params.join(', ')}]`;\n      case 'operator':\n        return d.name;\n      case 'method':\n      case 'constructor':\n        return `${d.name}(${d.params.join(', ')})`;\n    }\n  }",
+    "truncated": false,
+    "totalLines": 27,
+    "startLine": 178
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.parse.visit@L105",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "CsharpExtractor.parse.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 105
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#backward-compatibility",
+      "heading": "Backward compatibility",
+      "anchor": "backward-compatibility",
+      "snippet": "Backward compatibility",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#0-verified-facts-judge-conflict-reconciliations",
+      "heading": "0. Verified facts & judge-conflict reconciliations",
+      "anchor": "0-verified-facts-judge-conflict-reconciliations",
+      "snippet": "0. Verified facts & judge-conflict reconciliations",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#shared-file-chokepoints",
+      "heading": "Shared-file chokepoints",
+      "anchor": "shared-file-chokepoints",
+      "snippet": "Shared-file chokepoints",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+    "procedureName": "CsharpExtractor.signature",
+    "conditions": [
+      "case:packages/parsers/src/csharp/CsharpExtractor.ts@L180",
+      "case:packages/parsers/src/csharp/CsharpExtractor.ts@L182",
+      "case:packages/parsers/src/csharp/CsharpExtractor.ts@L184",
+      "case:packages/parsers/src/csharp/CsharpExtractor.ts@L186",
+      "case:packages/parsers/src/csharp/CsharpExtractor.ts@L188",
+      "case:packages/parsers/src/csharp/CsharpExtractor.ts@L190",
+      "case:packages/parsers/src/csharp/CsharpExtractor.ts@L192",
+      "case:packages/parsers/src/csharp/CsharpExtractor.ts@L194",
+      "case:packages/parsers/src/csharp/CsharpExtractor.ts@L196",
+      "case:packages/parsers/src/csharp/CsharpExtractor.ts@L198",
+      "case:packages/parsers/src/csharp/CsharpExtractor.ts@L201"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7220d891ae13ce0ecfaf3ac42f51bf6dd7c26fe4f208697cac059c16f62aa766",
+          "target": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L180",
+          "line": 180,
+          "expr": "namespace"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "guard": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L180",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L180",
+            "expr": "namespace",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f0d8092b6b2d4f1ef277419de76dc5bce2a569bd64e4646513e10e02a82755a4",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L181",
+          "line": 181,
+          "expr": "return `namespace ${d.name}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:01a38af486b5ac604851d35fb7a532bbbd479f0346f2e9d44bbd6ed0ed171a90",
+          "target": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L182",
+          "line": 182,
+          "expr": "class"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "guard": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L182",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L182",
+            "expr": "class",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9f345a2d60683f4a1e381946e74b81a2025474e312742d08e14e9d72727174e6",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L183",
+          "line": 183,
+          "expr": "return `class ${d.name}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2d2b8daf7e4185020be9d538c02a856d55a400043dd3dbad2ce4aa882f2f5613",
+          "target": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L184",
+          "line": 184,
+          "expr": "interface"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "guard": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L184",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L184",
+            "expr": "interface",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9db8fdb26485174a0b2f59a9ce7586b6c691b22b59c46e2db929b03eb6037a13",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L185",
+          "line": 185,
+          "expr": "return `interface ${d.name}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e9611db43d5a39fe0dd73b5607c04b0df0d64d702193c3b324452553fb3d38de",
+          "target": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L186",
+          "line": 186,
+          "expr": "struct"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "guard": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L186",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L186",
+            "expr": "struct",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:03411d43b4f23aa7fc0ebcc249c1f0ccb3000136c8b88ac597704a7407ba80a8",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L187",
+          "line": 187,
+          "expr": "return `struct ${d.name}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e5c76d3c80b0a8a01071037272e66e421d12bdca4fe9ea87a024ccc877e369d5",
+          "target": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L188",
+          "line": 188,
+          "expr": "record"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "guard": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L188",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L188",
+            "expr": "record",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:153ebff621898f153e11da81962c92a718dff75cd46f92f396ae9f53bdb5d9e8",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L189",
+          "line": 189,
+          "expr": "return `record ${d.name}(${d.params.join(', ')})`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4c41156b10fabc85bac8be9f2cd17d820a231b9a2f56e5743d13acf96cc35f4c",
+          "target": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L190",
+          "line": 190,
+          "expr": "enum"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "guard": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L190",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L190",
+            "expr": "enum",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9420c3d0220fe667528bff2e9a33b35b1e3603277780ebdadc578d3afc253221",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L191",
+          "line": 191,
+          "expr": "return `enum ${d.name}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4d4a98c5d2e79f64be683a1fbb4d97c281c2f6bf48750cc8a1eb022c5da5ba56",
+          "target": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L192",
+          "line": 192,
+          "expr": "delegate"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "guard": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L192",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L192",
+            "expr": "delegate",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a8a4513640f97a0ec191e7c1b590ccae68e4211822a35b4dab4759296a8eaf35",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L193",
+          "line": 193,
+          "expr": "return `delegate ${d.name}(${d.params.join(', ')})`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3af8801c1a515f3d263ac612cce496baf4cf8a0c303a29c2370ca5090aec7e15",
+          "target": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L194",
+          "line": 194,
+          "expr": "property"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "guard": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L194",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L194",
+            "expr": "property",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4a6ab43b1f2acfd2fab3ac3a934925b74541750c21e69f1bc46bc5d873da8981",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L195",
+          "line": 195,
+          "expr": "return d.name;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:76b1bdc68fcbc9fd51bfea405d45b225dfff7a678bbbf0a976927c834051cf96",
+          "target": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L196",
+          "line": 196,
+          "expr": "indexer"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "guard": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L196",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L196",
+            "expr": "indexer",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9d8eefe20daf96c2d8f1728a0b4071b1e1cb294a6a175bd24ff62827c4f820ec",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L197",
+          "line": 197,
+          "expr": "return `this[${d.params.join(', ')}]`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:01e1b1a2676e9462b65c133f9a13bafe12b8165d0c7ff2fe53273e8c064bff1e",
+          "target": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L198",
+          "line": 198,
+          "expr": "operator"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "guard": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L198",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L198",
+            "expr": "operator",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ef9c327b057abef55eb012f8d4bd4196b31c00946f4252e0465d1ecd3696bb3f",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L199",
+          "line": 199,
+          "expr": "return d.name;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a4e4eb33695dd8f24339d65f78c2f36c50f2fb78fccf85c8401b1bb3e96dd49b",
+          "target": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L200",
+          "line": 200,
+          "expr": "method"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9535f6f4d79c8264ca175af66f2fcd797f107f1a502e3f2b80a7340231f1cfd5",
+          "target": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L201",
+          "line": 201,
+          "expr": "constructor"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.signature@L178",
+        "procedureName": "CsharpExtractor.signature",
+        "guard": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L201",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/csharp/CsharpExtractor.ts@L201",
+            "expr": "constructor",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8d45aa889f4e6bdbe8d3042701363da65bc02ac043507f8e8487fe18c632f89f",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L202",
+          "line": 202,
+          "expr": "return `${d.name}(${d.params.join(', ')})`;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 23,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 23,
+    "assignments": 0,
+    "conditions": 11,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 12,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

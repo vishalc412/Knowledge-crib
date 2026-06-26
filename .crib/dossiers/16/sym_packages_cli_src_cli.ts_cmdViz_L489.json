@@ -1,0 +1,792 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:7e496484c9486447eb3bd652474906f475a94fb95d4a72e62493a7581d522726",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cmdViz",
+    "qualifiedName": "cmdViz",
+    "signature": "cmdViz(args: string[], ctx?: CmdCtx): Promise<number>",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 489,
+      "end": 567
+    },
+    "callSites": [
+      {
+        "callee": "Number",
+        "line": 494
+      },
+      {
+        "callee": "push",
+        "line": 495
+      },
+      {
+        "callee": "resolveProjectRoot",
+        "line": 497
+      },
+      {
+        "callee": "write",
+        "line": 502
+      },
+      {
+        "callee": "openSoul",
+        "line": 505
+      },
+      {
+        "callee": "buildVizGraph",
+        "line": 506
+      },
+      {
+        "callee": "vizAssetsDir",
+        "line": 507
+      },
+      {
+        "callee": "createServer",
+        "line": 519
+      },
+      {
+        "callee": "writeHead",
+        "line": 522
+      },
+      {
+        "callee": "end",
+        "line": 523
+      },
+      {
+        "callee": "stringify",
+        "line": 523
+      },
+      {
+        "callee": "replace",
+        "line": 526
+      },
+      {
+        "callee": "split",
+        "line": 526
+      },
+      {
+        "callee": "join",
+        "line": 527
+      },
+      {
+        "callee": "readFile",
+        "line": 528
+      },
+      {
+        "callee": "writeHead",
+        "line": 529
+      },
+      {
+        "callee": "extname",
+        "line": 529
+      },
+      {
+        "callee": "end",
+        "line": 530
+      },
+      {
+        "callee": "writeHead",
+        "line": 532
+      },
+      {
+        "callee": "end",
+        "line": 533
+      },
+      {
+        "callee": "String",
+        "line": 533
+      },
+      {
+        "callee": "address",
+        "line": 538
+      },
+      {
+        "callee": "write",
+        "line": 541
+      },
+      {
+        "callee": "unref",
+        "line": 559
+      },
+      {
+        "callee": "spawn",
+        "line": 559
+      }
+    ]
+  },
+  "source": {
+    "text": "async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {\n  const positional: string[] = [];\n  let port = 0;\n  for (let i = 0; i < args.length; i++) {\n    const a = args[i]!;\n    if (a === '--port') port = Number(args[++i] ?? 0);\n    else if (!a.startsWith('-')) positional.push(a);\n  }\n  const resolved = resolveProjectRoot({\n    explicitRoot:\n      ctx?.cwdOverride ?? (positional[0] && positional[0] !== '.' ? positional[0] : undefined),\n  });\n  if (!isIndexedRoot(resolved)) {\n    process.stderr.write('not indexed — run `crib index` first\\n');\n    return EXIT.NOT_INDEXED;\n  }\n  const rt = openSoul(resolved);\n  const graph = buildVizGraph(rt.soul);\n  const assets = vizAssetsDir();\n  const { createServer } = await import('node:http');\n  const { readFile } = await import('node:fs/promises');\n  const { join, extname } = await import('node:path');\n\n  const MIME: Record<string, string> = {\n    '.html': 'text/html; charset=utf-8',\n    '.js': 'text/javascript; charset=utf-8',\n    '.json': 'application/json; charset=utf-8',\n    '.svg': 'image/svg+xml',\n  };\n\n  const server = createServer(async (req, res) => {\n    try {\n      if (req.url === '/graph.json') {\n        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });\n        res.end(JSON.stringify(graph));\n        return;\n      }\n      const rel = (req.url ?? '/').split('?')[0]!.replace(/^\\//, '');\n      const path = join(assets, rel === '' ? 'index.html' : rel);\n      const body = await readFile(path);\n      res.writeHead(200, { 'content-type': MIME[extname(path)] ?? 'application/octet-stream' });\n      res.end(body);\n    } catch (err) {\n      res.writeHead(404, { 'content-type': 'text/plain' });\n      res.end(`not found: ${err instanceof Error ? err.message : String(err)}`);\n    }\n  });\n\n  await new Promise<void>((q) => server.listen(port, '127.0.0.1', q));\n  const addr = server.address();\n  const actualPort = typeof addr === 'object' && addr ? addr.port : port;\n  const url = `http://127.0.0.1:${actualPort}/`;\n  process.stderr.write(\n    `viz → ${url}  (${graph.stats.nodes} nodes · ${graph.stats.edges} edges · ${graph.stats.clusters} clusters)\\nCtrl-C to stop.\\n`,\n  );\n  // best-effort browser open (macOS/linux/windows); never fatal.\n  const { spawn } = await import('node:child_process');\n  let opener: string;\n  let openerArgs: string[];\n  if (process.platform === 'darwin') {\n    opener = 'open';\n    openerArgs = [url];\n  } else if (process.platform === 'win32') {\n    opener = 'cmd';\n    openerArgs = ['/c', 'start', '', url];\n  } else {\n    opener = 'xdg-open';\n    openerArgs = [url];\n  }\n  try {\n    spawn(opener, openerArgs, { stdio: 'ignore', detached: true }).unref();\n  } catch {\n    // ignore — the URL is printed above.\n  }\n  await new Promise<void>(() => {\n    // run until interrupted\n  });\n  return EXIT.OK;\n}",
+    "truncated": false,
+    "totalLines": 79,
+    "startLine": 489
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#main@L99",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main(argvRaw: string[]): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 99
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/src/viz.ts#buildVizGraph@L178",
+      "confidence": 1,
+      "name": "buildVizGraph",
+      "qualifiedName": "buildVizGraph",
+      "signature": "buildVizGraph(soul: SoulStore): VizGraph",
+      "type": "function",
+      "file": "packages/ui/src/viz.ts",
+      "line": 178
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L106",
+      "confidence": 1,
+      "name": "isIndexedRoot",
+      "qualifiedName": "isIndexedRoot",
+      "signature": "isIndexedRoot(resolved: ResolvedRoot): boolean",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 106
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#openSoul@L99",
+      "confidence": 1,
+      "name": "openSoul",
+      "qualifiedName": "openSoul",
+      "signature": "openSoul(resolved: ResolvedRoot): Runtime",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 99
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L52",
+      "confidence": 1,
+      "name": "resolveProjectRoot",
+      "qualifiedName": "resolveProjectRoot",
+      "signature": "resolveProjectRoot(opts: ResolveOpts): ResolvedRoot",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 52
+    },
+    {
+      "id": "sym:packages/ui/src/viz.ts#vizAssetsDir@L256",
+      "confidence": 1,
+      "name": "vizAssetsDir",
+      "qualifiedName": "vizAssetsDir",
+      "signature": "vizAssetsDir(): string",
+      "type": "function",
+      "file": "packages/ui/src/viz.ts",
+      "line": 256
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L488",
+      "snippet": "/** `crib viz` — serve the offline web UI (Claude Design DC runtime) over the soul graph and open a browser. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+    "procedureName": "cmdViz",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L492",
+      "cond:packages/cli/src/cli.ts@L494",
+      "cond:packages/cli/src/cli.ts@L495",
+      "cond:packages/cli/src/cli.ts@L501",
+      "cond:packages/cli/src/cli.ts@L548",
+      "cond:packages/cli/src/cli.ts@L551"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0d432ce337990859fd332064a016430d84fa65d71abd744f0171e19adf32a942",
+          "target": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L106",
+          "expr": "isIndexedRoot"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "guard": "cond:packages/cli/src/cli.ts@L494",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L492",
+            "expr": "i < args.length"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L494",
+            "expr": "a === '--port'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0703d4b13d7106a79721e2f508e339ee43856fff282a99f02ac28f306e2230d8",
+          "target": "assign:packages/cli/src/cli.ts@L494",
+          "line": 494,
+          "expr": "port = Number(args[++i] ?? 0);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "guard": "cond:packages/cli/src/cli.ts@L495",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L492",
+            "expr": "i < args.length"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L494",
+            "expr": "a === '--port'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L495",
+            "expr": "!a.startsWith('-')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a7cf91db9dbe263306670c9a502daacdcb5259f0b99870ff109cb9471f688845",
+          "target": "stmt:packages/cli/src/cli.ts@L495",
+          "line": 495,
+          "expr": "positional.push(a);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3341fe6dd8539aa1d267f16fa7c779e56e1b390c65951f4df4cb78ecc54d6296",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 495
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ed72c83310b568d559d228da2748ed815c49ec5a27b02883eb2b858a55217cf",
+          "target": "stmt:packages/cli/src/cli.ts@L497",
+          "line": 497,
+          "expr": "const resolved = resolveProjectRoot({\n    explicitRoot:\n      ctx?.cwdOverride ?? (positional[0] && positional[0] !== '.' ? positional[0] : undefined),\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:953d95468693419e85db5b29fefee38deea79f7b5e8436215cb19c4f69becf23",
+          "target": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L52",
+          "expr": "resolveProjectRoot",
+          "line": 497
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "guard": "cond:packages/cli/src/cli.ts@L501",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L501",
+            "expr": "!isIndexedRoot(resolved)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cbc6c58e8fa93198fc82ffa403265231d888634cbde18a7369a6a067a2d6ee63",
+          "target": "stmt:packages/cli/src/cli.ts@L502",
+          "line": 502,
+          "expr": "process.stderr.write('not indexed — run `crib index` first\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f7213c0a71a0ffdd416bcfd4c05a21118d0016ea64d7c95fb9fa9775407e0e64",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 502
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "guard": "cond:packages/cli/src/cli.ts@L501",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L501",
+            "expr": "!isIndexedRoot(resolved)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:10ee82bb0a60d31a4195a92e55ba58b9979daaedfda69d93c5ac1f97706c3d1b",
+          "target": "stmt:packages/cli/src/cli.ts@L503",
+          "line": 503,
+          "expr": "return EXIT.NOT_INDEXED;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:451510be33d8e05a06e03dd26fbc3a7af50181c7931fd72a8563698bb682ab9d",
+          "target": "stmt:packages/cli/src/cli.ts@L505",
+          "line": 505,
+          "expr": "const rt = openSoul(resolved);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2a9636d9628929f4d3e56f47c938ef8532ab050c80c4561098e714b9a8a80147",
+          "target": "sym:packages/cli/src/runtime.ts#openSoul@L99",
+          "expr": "openSoul",
+          "line": 505
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:39fb1b7d40c5e04510279a9f4b116228fa9b5e686b3612d870ec9c93421c7dcf",
+          "target": "stmt:packages/cli/src/cli.ts@L506",
+          "line": 506,
+          "expr": "const graph = buildVizGraph(rt.soul);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:919f112bd5feaa6a9681a419848f4b7b1cf9dad8c69de83c7c8085765e911392",
+          "target": "sym:packages/ui/src/viz.ts#buildVizGraph@L178",
+          "expr": "buildVizGraph",
+          "line": 506
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cfe690a81f9ebecfcb3458cebae42c255149ff9ca70596be557a94058cb5e41c",
+          "target": "stmt:packages/cli/src/cli.ts@L507",
+          "line": 507,
+          "expr": "const assets = vizAssetsDir();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:de95482296ce5807d25cfbafb396f1ecff4cda023f9a67cdda9bb1ca4dd4882b",
+          "target": "sym:packages/ui/src/viz.ts#vizAssetsDir@L256",
+          "expr": "vizAssetsDir",
+          "line": 507
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aa3a883bcb993f612e84df5703263c113684cfede04ec2d16aa72d0532c43101",
+          "target": "stmt:packages/cli/src/cli.ts@L508",
+          "line": 508,
+          "expr": "const { createServer } = await import('node:http');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8d24e6bd3a61206253cbe22b763ed03d5149cd46b50bb5b22528b205dd3c8063",
+          "target": "stmt:packages/cli/src/cli.ts@L509",
+          "line": 509,
+          "expr": "const { readFile } = await import('node:fs/promises');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9769029d74e6e1dbfbcf8d500b5101c90e718259fd5228e3c7ece8f49aeb5819",
+          "target": "stmt:packages/cli/src/cli.ts@L510",
+          "line": 510,
+          "expr": "const { join, extname } = await import('node:path');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b551713ed83603528487661ca665297d150586608ba62fffa14ab89a0a0d6589",
+          "target": "stmt:packages/cli/src/cli.ts@L519",
+          "line": 519,
+          "expr": "const server = createServer(async (req, res) => {\n    try {\n      if (req.url === '/graph.json') {\n        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });\n        res.end(JSON.stringify(graph));\n        return;\n      }\n      const rel = (req.url ?? '/').split('?')[0]!.replace(/^\\//, '');\n      const path = join(assets, rel === '' ? 'index.html' : rel);\n      const body = await readFile(path);\n      res.writeHead(200, { 'content-type': MIME[extname(path)] ?? 'application/octet-stream' });\n      res.end(body);\n    } catch (err) {\n      res.writeHead(404, { 'content-type': 'text/plain' });\n      res.end(`not found: ${err instanceof Error ? err.message : String(err)}`);\n    }\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:19350f448644dea59fdcef25326ca97adc2c96c82b1df29af7b5c84b60031c13",
+          "target": "stmt:packages/cli/src/cli.ts@L538",
+          "line": 538,
+          "expr": "const addr = server.address();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6ae65d452dffd7702484e522980e80949beeadeada8a2972ae0fef0cb70ad0fb",
+          "target": "stmt:packages/cli/src/cli.ts@L541",
+          "line": 541,
+          "expr": "process.stderr.write(\n    `viz → ${url}  (${graph.stats.nodes} nodes · ${graph.stats.edges} edges · ${graph.stats.clusters} clusters)\\nCtrl-C to stop.\\n`,\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bbcb21b233547ac0f56099f7cfc88b7594cac06257803d61cc7c45de902d1f3a",
+          "target": "stmt:packages/cli/src/cli.ts@L545",
+          "line": 545,
+          "expr": "const { spawn } = await import('node:child_process');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "guard": "cond:packages/cli/src/cli.ts@L548",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L548",
+            "expr": "process.platform === 'darwin'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c4f7e7105595981473efe1a66987120f842ddb8083d5cc877beb022c2483c57d",
+          "target": "assign:packages/cli/src/cli.ts@L549",
+          "line": 549,
+          "expr": "opener = 'open';"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "guard": "cond:packages/cli/src/cli.ts@L548",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L548",
+            "expr": "process.platform === 'darwin'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:418ddea6e1be7fc98bb9ae7cb0da09d79c9ca18f364acff415d63fd431e3044a",
+          "target": "assign:packages/cli/src/cli.ts@L550",
+          "line": 550,
+          "expr": "openerArgs = [url];"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "guard": "cond:packages/cli/src/cli.ts@L551",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L548",
+            "expr": "process.platform === 'darwin'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L551",
+            "expr": "process.platform === 'win32'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:02e1401771651f0182051e893bc98c5d7c5859bd87ed9ac41d6185af7651f4ea",
+          "target": "assign:packages/cli/src/cli.ts@L552",
+          "line": 552,
+          "expr": "opener = 'cmd';"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "guard": "cond:packages/cli/src/cli.ts@L551",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L548",
+            "expr": "process.platform === 'darwin'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L551",
+            "expr": "process.platform === 'win32'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:30c785c04bff3614dd37bb62c7a0dcfd68872fda714b0267302fdaad5efb3a42",
+          "target": "assign:packages/cli/src/cli.ts@L553",
+          "line": 553,
+          "expr": "openerArgs = ['/c', 'start', '', url];"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "guard": "cond:packages/cli/src/cli.ts@L551",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L548",
+            "expr": "process.platform === 'darwin'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L551",
+            "expr": "process.platform === 'win32'",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f31c7e1a6abdb870236fefafe09cbf012cba3a29a88a4a11e2629d6bdeb1691b",
+          "target": "assign:packages/cli/src/cli.ts@L555",
+          "line": 555,
+          "expr": "opener = 'xdg-open';"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "guard": "cond:packages/cli/src/cli.ts@L551",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L548",
+            "expr": "process.platform === 'darwin'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L551",
+            "expr": "process.platform === 'win32'",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b67a7074cf7ae28f3d9bd727c1c9e6265827ca8335fd2d5fd112f8821c364d1f",
+          "target": "assign:packages/cli/src/cli.ts@L556",
+          "line": 556,
+          "expr": "openerArgs = [url];"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d02e8d8675b1d9f7c78d27d4ceabb4ed65b8ab474c342a01d745627be19c5c61",
+          "target": "stmt:packages/cli/src/cli.ts@L559",
+          "line": 559,
+          "expr": "spawn(opener, openerArgs, { stdio: 'ignore', detached: true }).unref();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdViz@L489",
+        "procedureName": "cmdViz",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7dce7289bd7b70db03e488e86081d972a248237d32e971cf803ef4f77b4128c4",
+          "target": "stmt:packages/cli/src/cli.ts@L566",
+          "line": 566,
+          "expr": "return EXIT.OK;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 23,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 23,
+    "assignments": 7,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 7,
+      "recorded": 25,
+      "unresolved": 15
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "15 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,226 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L703",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4273906227c5c0cd22ec59036648e1a38fe858486b6b89f2b374323dcab7c645",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L703",
+    "kind": "symbol",
+    "type": "method",
+    "name": "docsFor",
+    "qualifiedName": "Verbs.docsFor",
+    "signature": "docsFor(id: string, minConfidence: number, extractedOnly?: boolean): DocLink[]",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 703,
+      "end": 723
+    },
+    "callSites": [
+      {
+        "callee": "neighbors",
+        "line": 704
+      },
+      {
+        "callee": "getNode",
+        "line": 710
+      },
+      {
+        "callee": "push",
+        "line": 711
+      },
+      {
+        "callee": "rehydrate",
+        "line": 715
+      },
+      {
+        "callee": "sort",
+        "line": 722
+      }
+    ]
+  },
+  "source": {
+    "text": "  private docsFor(id: string, minConfidence: number, extractedOnly?: boolean): DocLink[] {\n    const incoming = this.deps.index.neighbors(id, undefined, 'up');\n    const links: DocLink[] = [];\n    for (const e of incoming) {\n      if (!DOC_RELS.has(e.rel)) continue;\n      if (e.confidence < minConfidence) continue;\n      if (extractedOnly && e.provenance !== 'EXTRACTED') continue;\n      const section = this.deps.soul.getNode(e.src);\n      links.push({\n        sectionId: e.src,\n        ...(section?.heading ? { heading: section.heading } : {}),\n        ...(section?.anchor ? { anchor: section.anchor } : {}),\n        snippet: rehydrate(this.deps.repoRoot, section),\n        edgeType: e.rel as 'describes' | 'references',\n        method: e.method,\n        provenance: e.provenance,\n        confidence: e.confidence,\n      });\n    }\n    return links.sort((a, b) => b.confidence - a.confidence);\n  }",
+    "truncated": false,
+    "totalLines": 21,
+    "startLine": 703
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.context@L93",
+      "confidence": 1,
+      "name": "context",
+      "qualifiedName": "Verbs.context",
+      "signature": "context(args: {\n    id: string;\n    docLimit?: number;\n    extractedOnly?: boolean;\n    /** include the full source text of the node's span (rehydrated from disk, budgeted) */\n    withSource?: boolean;\n    /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */\n    withRules?: boolean;\n    /** fold in the schema-1.3 framework-semantics relationships: routes exposed, beans produced,\n     *  DI dependencies/dependents, JPA relations, component renders. Auto-scopes by node — a class\n     *  (controller/@Configuration/@Entity) aggregates its members' route table / bean inventory /\n     *  DI graph / relation model via `member-of`; a callable/component/field returns its own direct\n     *  edges. A @Bean-supplied dependency is surfaced with `kind: 'produces'` + the producer in one\n     *  trip (no round-trip). Unresolved `meta.injects`/`meta.produces` type names surface as\n     *  `⚠ unresolved` entries (parity with `gaps`). */\n    withFramework?: boolean;\n    /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */\n    sourceMaxChars?: number;\n    /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 93
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.describes@L344",
+      "confidence": 1,
+      "name": "describes",
+      "qualifiedName": "Verbs.describes",
+      "signature": "describes(args: { id: string; minConfidence?: number; extractedOnly?: boolean }): Record<\n    string,\n    unknown\n  >",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 344
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L274",
+      "confidence": 1,
+      "name": "impact",
+      "qualifiedName": "Verbs.impact",
+      "signature": "impact(args: {\n    id: string;\n    dir: Dir;\n    depth?: number;\n    docLimit?: number;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 274
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L353",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "Verbs.neighbors",
+      "signature": "neighbors(args: {\n    id: string;\n    rel?: string;\n    dir?: ApiDir;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 353
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L702",
+      "snippet": "/** Doc links pointing at `id` (incoming describes/references), filtered + sorted by confidence. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L703",
+    "procedureName": "Verbs.docsFor",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L706"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L703",
+        "procedureName": "Verbs.docsFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c85f12f0d766b03e7de48d46f3149fab64d20fa14e8c862a6671f13b98bafc35",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L353",
+          "expr": "neighbors",
+          "line": 704
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L703",
+        "procedureName": "Verbs.docsFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0d5ce621c8b8cf168fde70f195865ed2c6217b401acdfbd8a0b1dee0075dd174",
+          "target": "stmt:packages/mcp/src/verbs.ts@L704",
+          "line": 704,
+          "expr": "const incoming = this.deps.index.neighbors(id, undefined, 'up');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L703",
+        "procedureName": "Verbs.docsFor",
+        "guard": "cond:packages/mcp/src/verbs.ts@L706",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L706",
+            "expr": "incoming",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:761bdc71c61453723650f94c159920b6f8e4ceedef6407f4009cf698c99577b0",
+          "target": "stmt:packages/mcp/src/verbs.ts@L710",
+          "line": 710,
+          "expr": "const section = this.deps.soul.getNode(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L703",
+        "procedureName": "Verbs.docsFor",
+        "guard": "cond:packages/mcp/src/verbs.ts@L706",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L706",
+            "expr": "incoming",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:68198b327b7ead26dc5f37db84a7ae5e1ab92f2898219154be560f404813217c",
+          "target": "stmt:packages/mcp/src/verbs.ts@L711",
+          "line": 711,
+          "expr": "links.push({\n        sectionId: e.src,\n        ...(section?.heading ? { heading: section.heading } : {}),\n        ...(section?.anchor ? { anchor: section.anchor } : {}),\n        snippet: rehydrate(this.deps.repoRoot, section),\n        edgeType: e.rel as 'describes' | 'references',\n        method: e.method,\n        provenance: e.provenance,\n        confidence: e.confidence,\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L703",
+        "procedureName": "Verbs.docsFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f84da8fb92b3052c668911338b5802ae504af92eb78bd8a3f4999a4fb86b4f6a",
+          "target": "stmt:packages/mcp/src/verbs.ts@L722",
+          "line": 722,
+          "expr": "return links.sort((a, b) => b.confidence - a.confidence);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 5,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

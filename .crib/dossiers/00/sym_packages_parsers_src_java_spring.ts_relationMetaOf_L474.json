@@ -1,0 +1,294 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:69fab74d9ebe6ae050a8a549022009eae8dfed5f887687a644d5e71a20c61512",
+  "builtAt": "2026-06-26T05:09:36.599Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+    "kind": "symbol",
+    "type": "function",
+    "name": "relationMetaOf",
+    "qualifiedName": "relationMetaOf",
+    "signature": "relationMetaOf(s?: string): Record<string, string>",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 474,
+      "end": 485
+    },
+    "callSites": [
+      {
+        "callee": "matchKV",
+        "line": 477
+      },
+      {
+        "callee": "matchKV",
+        "line": 479
+      },
+      {
+        "callee": "matchKV",
+        "line": 481
+      }
+    ]
+  },
+  "source": {
+    "text": "  if (mappedBy) out.mappedBy = mappedBy;\n  const cascade = matchKV(s, 'cascade');\n  if (cascade) out.cascade = cascade;\n  const fetch = matchKV(s, 'fetch');\n  if (fetch) out.fetch = fetch;\n  if (/orphanRemoval\\s*=\\s*true/.test(s)) out.orphanRemoval = 'true';\n  return out;\n}\n\n/** Entity column metadata for a field: `@Id` (id flag), `@Column` (name/nullable/unique/length),\n *  `@GeneratedValue` (strategy), `@JoinColumn` (the FK column name). Undefined if none present. */\nfunction columnMetaOf(def: JavaDef): Record<string, unknown> | undefined {",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 474
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 100
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#matchKV@L522",
+      "confidence": 1,
+      "name": "matchKV",
+      "qualifiedName": "matchKV",
+      "signature": "matchKV(s: string, key: string): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 522
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L472",
+      "snippet": "if (!s) return out;",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+    "procedureName": "relationMetaOf",
+    "conditions": [
+      "cond:packages/parsers/src/java/spring.ts@L476",
+      "cond:packages/parsers/src/java/spring.ts@L478",
+      "cond:packages/parsers/src/java/spring.ts@L480",
+      "cond:packages/parsers/src/java/spring.ts@L482",
+      "cond:packages/parsers/src/java/spring.ts@L483"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+        "procedureName": "relationMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L476",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L476",
+            "expr": "!s",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d332367eadc96f854da73619d655c3709da2af27949cf8aed8871ab962846bea",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L476",
+          "line": 476,
+          "expr": "return out;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+        "procedureName": "relationMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4ebafa1361d67b5e4e8d9de93a3aa6b1c69a9e970935abcb997b6f3c7ff3d8f8",
+          "target": "sym:packages/parsers/src/java/spring.ts#matchKV@L522",
+          "expr": "matchKV",
+          "line": 477
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+        "procedureName": "relationMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:99378a62bea54299611380bd0b21916e0e8e69a1d0fdb7c1034d4f264b113068",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L477",
+          "line": 477,
+          "expr": "const mappedBy = matchKV(s, 'mappedBy');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+        "procedureName": "relationMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L478",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L478",
+            "expr": "mappedBy",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:77b474660a81a87b370a86cf8edf4913deac8a8d2a45a4b90cc3b2f0a5ce7f2e",
+          "target": "assign:packages/parsers/src/java/spring.ts@L478",
+          "line": 478,
+          "expr": "out.mappedBy = mappedBy;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+        "procedureName": "relationMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:826639ee990abe5ab0eda53571c1c3652f74173b80327be30a817d5f8576a1ec",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L479",
+          "line": 479,
+          "expr": "const cascade = matchKV(s, 'cascade');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+        "procedureName": "relationMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L480",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L480",
+            "expr": "cascade",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cd1afb5d60f91efdc78f4dec19c24e57eac828a1a04c63ec662baba6eb5ecb66",
+          "target": "assign:packages/parsers/src/java/spring.ts@L480",
+          "line": 480,
+          "expr": "out.cascade = cascade;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+        "procedureName": "relationMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8d77478d445f431201990c326d8fc7b4e500b209eba50075ebaaea7b4f3cdc2",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L481",
+          "line": 481,
+          "expr": "const fetch = matchKV(s, 'fetch');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+        "procedureName": "relationMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L482",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L482",
+            "expr": "fetch",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5af4c4cecbd09f61ad1945b5ec15f031f2d8b67eea1433cc0a5d436127ba8cff",
+          "target": "assign:packages/parsers/src/java/spring.ts@L482",
+          "line": 482,
+          "expr": "out.fetch = fetch;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+        "procedureName": "relationMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L483",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L483",
+            "expr": "/orphanRemoval\\s*=\\s*true/.test(s)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:701bd1af59fe87d99689eb01108e5186ac8229c65affd5faa970e08feefaf024",
+          "target": "assign:packages/parsers/src/java/spring.ts@L483",
+          "line": 483,
+          "expr": "out.orphanRemoval = 'true';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+        "procedureName": "relationMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:90e8d4663f46926886cf256fcb3a564c9914a1c8a2fefe4a648cb5e691ead4b3",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L484",
+          "line": 484,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 4,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

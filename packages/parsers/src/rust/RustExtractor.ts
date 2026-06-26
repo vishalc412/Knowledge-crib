@@ -36,11 +36,19 @@
  */
 import { edgeId } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
+import { clampExpr } from '../types.js';
 import type { Capabilities, ExtractCtx, ExtractResult, Extractor, FileMeta } from '../types.js';
 import { collectRustComments } from './lexer.js';
 import type { RustCommentBlock } from './lexer.js';
 import type { RustCallSite, RustDef, RustStmt } from './parser.js';
 import { parseRust } from './parser.js';
+
+/** Spread an `expr` field plus its `exprTruncated` honesty flag from a raw expression string. */
+function exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true } {
+  if (!raw) return {};
+  const { expr, truncated } = clampExpr(raw);
+  return truncated ? { expr, exprTruncated: true } : { expr };
+}
 
 interface LocalSymbol {
   node: Node;
@@ -624,7 +632,7 @@ class BodyWalker {
       id,
       kind: 'statement',
       type: s.kind,
-      ...(s.text ? { expr: s.text } : {}),
+      ...exprFields(s.text),
       file: this.path,
       span: { start: line, end: line },
       lang: 'rust',
@@ -688,7 +696,7 @@ class BodyWalker {
         id,
         kind: 'condition',
         branch,
-        expr,
+        ...exprFields(expr),
         file: this.path,
         span: { start: line, end: line },
         lang: 'rust',
@@ -745,7 +753,7 @@ class BodyWalker {
       lang: 'rust',
       hash: this.ctx.hash(`${this.path}:${line}:raise:${name}`),
       ...(s.errorMessage ? { errorMessage: s.errorMessage } : {}),
-      ...(s.text ? { expr: s.text } : {}),
+      ...exprFields(s.text),
       meta: { inLoop, inException, ...(last ? { branch: last.branch } : {}) },
     };
     this.nodes.push(node);
@@ -811,7 +819,7 @@ class BodyWalker {
       lang: 'rust',
       hash: this.ctx.hash(`${this.path}:${line}:assign`),
       ...(s.target ? { assignTarget: s.target } : {}),
-      ...(s.text ? { expr: s.text } : {}),
+      ...exprFields(s.text),
       meta: { inLoop, inException, ...(last ? { branch: last.branch } : {}) },
     };
     this.nodes.push(node);

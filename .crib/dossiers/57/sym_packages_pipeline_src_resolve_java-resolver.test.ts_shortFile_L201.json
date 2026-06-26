@@ -1,0 +1,99 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#shortFile@L201",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:a249d98ed14333e2dd46133728c10510db52466cac5e1f919192f7a3511a7418",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#shortFile@L201",
+    "kind": "symbol",
+    "type": "function",
+    "name": "shortFile",
+    "qualifiedName": "shortFile",
+    "signature": "shortFile(p: string | undefined): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/java-resolver.test.ts",
+    "span": {
+      "start": 201,
+      "end": 203
+    },
+    "callSites": [
+      {
+        "callee": "pop",
+        "line": 202
+      },
+      {
+        "callee": "split",
+        "line": 202
+      }
+    ]
+  },
+  "source": {
+    "text": "function shortFile(p: string | undefined): string {\n  return p ? (p.split('/').pop() ?? p) : '?';\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 201
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#label@L188",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(soul: SoulStore, id: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/java-resolver.test.ts",
+      "line": 188
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#shortFile@L201",
+    "procedureName": "shortFile",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#shortFile@L201",
+        "procedureName": "shortFile",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a9308768deac680251e7b79933a293ecc1679a684d79a26970d8cb1c1b567bef",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.test.ts@L202",
+          "line": 202,
+          "expr": "return p ? (p.split('/').pop() ?? p) : '?';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/java-resolver.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

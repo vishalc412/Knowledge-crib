@@ -77,10 +77,15 @@ gitignored; the soul itself stays committed and portable.
 | TypeScript | `.ts .tsx .mts .cts` | Full symbol graph: calls, imports, member-of |
 | Python | `.py .pyi` | Module imports, calls, classes |
 | PL/SQL | `.sql .pkb .pks .pck .pls .pkh .typ` | Procedures, tables, columns, data-flow |
+| Java | `.java` | Symbols, member-of, intra-file calls (imports/cross-file via resolver) |
+| C# | `.cs` | Symbols, member-of, intra-file calls (imports/cross-file via resolver) |
+| Go | `.go` | Symbols, member-of, intra-file calls (imports/cross-file via resolver) |
+| Rust | `.rs` | Symbols, member-of, intra-file calls (imports/cross-file via resolver) |
 | Markdown | `.md .markdown` | Doc sections, linked to symbols (describes/references) |
 
-`.js`/`.jsx` are discovered as file nodes but **not** symbol-extracted (use `.ts`/`.tsx`). Java,
-Kotlin, Go, Rust are discovered as file nodes only (extractors not yet shipped).
+`.js`/`.jsx`/`.cjs`/`.mjs` are discovered as file nodes but **not** symbol-extracted — use
+`.ts`/`.tsx`/`.mts`/`.cts` (those *are* extracted). Kotlin (`.kt`/`.kts`) is the one language still
+without a plugin — file nodes only; the registry is extensible.
 
 ### Excluding cache / non-source dirs
 
@@ -102,7 +107,7 @@ All four clients launch the same thing:
 crib serve <project-root>
 ```
 
-The server speaks MCP over stdio, reads the soul from `<project-root>/.crib/`, and exposes **9
+The server speaks MCP over stdio, reads the soul from `<project-root>/.crib/`, and exposes **11
 tools** (provenance-tagged + token-bounded so the agent never dumps the whole graph):
 
 | Tool | What it returns |
@@ -110,6 +115,8 @@ tools** (provenance-tagged + token-bounded so the agent never dumps the whole gr
 | `status` | Health + node/edge/cluster counts + VCS anchor |
 | `query` | Hybrid BM25 search over code + docs |
 | `context` | 360° for one symbol: signature, callers, callees, linked docs |
+| `source` | Paged source body for a symbol (span rehydration) |
+| `dossier` | One-call deep context for a symbol: decision table, raises, handlers, cursors, declares, docs (persisted under `.crib/dossiers/`) |
 | `impact` | Blast radius (up=dependents / down=dependencies) + docs |
 | `describes` | Doc-sections linked to a symbol (cheap, high value) |
 | `neighbors` | Raw adjacency (graph-walking primitive) |
@@ -201,7 +208,7 @@ project — no per-project config.
 Verify inside a Claude Code session:
 
 ```
-/mcp          # lists connected servers + tools; knowledge-crib should show 11 tools
+/mcp          # lists connected servers + tools; knowledge-crib should show 12 tools
 ```
 
 > The `.` in `args` is **not** resolved by Claude Code's CWD — Claude Code ignores the `cwd` field

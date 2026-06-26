@@ -1,0 +1,251 @@
+{
+  "id": "sym:packages/pipeline/src/linker/signals.ts#identifierSignal@L50",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:b1c5fdf0db4fcbf47848d90281147ff6d1f7ebfda850aeec80810a0fba39c259",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/linker/signals.ts#identifierSignal@L50",
+    "kind": "symbol",
+    "type": "function",
+    "name": "identifierSignal",
+    "qualifiedName": "identifierSignal",
+    "signature": "identifierSignal(section: MdSection, index: InvertedIndex): SignalHit[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/linker/signals.ts",
+    "span": {
+      "start": 50,
+      "end": 65
+    },
+    "callSites": [
+      {
+        "callee": "match",
+        "line": 51
+      },
+      {
+        "callee": "push",
+        "line": 55
+      },
+      {
+        "callee": "set",
+        "line": 59
+      },
+      {
+        "callee": "get",
+        "line": 59
+      },
+      {
+        "callee": "map",
+        "line": 60
+      },
+      {
+        "callee": "get",
+        "line": 61
+      }
+    ]
+  },
+  "source": {
+    "text": "export function identifierSignal(section: MdSection, index: InvertedIndex): SignalHit[] {\n  const words = new Set(section.prose.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? []);\n  const candidates: Node[] = [];\n  for (const w of words) {\n    if (w.length < MIN_IDENTIFIER_LEN) continue;\n    for (const sym of index.symbolsNamed(w)) candidates.push(sym);\n  }\n  // sibling boost: if 2+ candidate symbols share a file, that file's matches are stronger.\n  const perFile = new Map<string, number>();\n  for (const c of candidates) if (c.file) perFile.set(c.file, (perFile.get(c.file) ?? 0) + 1);\n  return candidates.map((sym) => {\n    const siblings = sym.file ? (perFile.get(sym.file) ?? 1) : 1;\n    const conf = siblings >= 2 ? 0.8 : 0.6;\n    return { symbol: sym, method: 'identifier' as Method, conf };\n  });\n}",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 50
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+      "confidence": 1,
+      "name": "runLink",
+      "qualifiedName": "runLink",
+      "signature": "runLink(soul: SoulStore, root: string, threshold?: number, docFiles?: string[]): LinkStats",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/index.ts",
+      "line": 43
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+      "confidence": 1,
+      "name": "runMediaLink",
+      "qualifiedName": "runMediaLink",
+      "signature": "runMediaLink(soul: SoulStore, threshold?: number, mediaFiles?: string[]): MediaLinkStats",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/media.ts",
+      "line": 42
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/linker/signals.ts@L49",
+      "snippet": "/** Signal 2 — identifier mention: a symbol name at a word boundary in prose; boosted by siblings. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#multimodal-worker-m13-shipped",
+      "heading": "Multimodal worker (M13 — shipped)",
+      "anchor": "multimodal-worker-m13-shipped",
+      "snippet": "Multimodal worker (M13 — shipped)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "heading": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "anchor": "m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "snippet": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/linker/signals.ts#identifierSignal@L50",
+    "procedureName": "identifierSignal",
+    "conditions": [
+      "cond:packages/pipeline/src/linker/signals.ts@L53",
+      "cond:packages/pipeline/src/linker/signals.ts@L55",
+      "cond:packages/pipeline/src/linker/signals.ts@L59"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#identifierSignal@L50",
+        "procedureName": "identifierSignal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2cc03fac522b9dc6651760fb3fa87ea9935b9c0d10ce8cf6afb17330b850370b",
+          "target": "stmt:packages/pipeline/src/linker/signals.ts@L51",
+          "line": 51,
+          "expr": "const words = new Set(section.prose.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? []);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#identifierSignal@L50",
+        "procedureName": "identifierSignal",
+        "guard": "cond:packages/pipeline/src/linker/signals.ts@L55",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/signals.ts@L53",
+            "expr": "words"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/signals.ts@L55",
+            "expr": "index.symbolsNamed(w)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:683d71a71f3dcccca5f4d33057df7f35268961cefd83431ad0e6545d54011299",
+          "target": "stmt:packages/pipeline/src/linker/signals.ts@L55",
+          "line": 55,
+          "expr": "candidates.push(sym);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#identifierSignal@L50",
+        "procedureName": "identifierSignal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fd283ef42cf8119f86bdac2bc6d37fed244d3165b4de2ee6099d0d8209b71bbe",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 55
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#identifierSignal@L50",
+        "procedureName": "identifierSignal",
+        "guard": "cond:packages/pipeline/src/linker/signals.ts@L59",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/signals.ts@L59",
+            "expr": "candidates"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/signals.ts@L59",
+            "expr": "candidates",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e836d3efe1d11c8d480bd8d6cecc4c48ae2ad8919f79e7fb5648ef5f3bd2a3d0",
+          "target": "stmt:packages/pipeline/src/linker/signals.ts@L59",
+          "line": 59,
+          "expr": "perFile.set(c.file, (perFile.get(c.file) ?? 0) + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/signals.ts#identifierSignal@L50",
+        "procedureName": "identifierSignal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:26151a59b3cd5885c116409f6f977982459d4ebee8d13b5a0ffec38f9a8aa707",
+          "target": "stmt:packages/pipeline/src/linker/signals.ts@L60",
+          "line": 60,
+          "expr": "return candidates.map((sym) => {\n    const siblings = sym.file ? (perFile.get(sym.file) ?? 1) : 1;\n    const conf = siblings >= 2 ? 0.8 : 0.6;\n    return { symbol: sym, method: 'identifier' as Method, conf };\n  });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/pipeline/src/linker/index.ts",
+      "packages/pipeline/src/linker/media.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 6,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "id": "sym:packages/core/src/dossier/persist.ts#safeName@L90",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e02358cd5d0d471da62b92bb5398e8b9a4741dde4b354cdf932883554fbdec3a",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/persist.ts#safeName@L90",
+    "kind": "symbol",
+    "type": "function",
+    "name": "safeName",
+    "qualifiedName": "safeName",
+    "signature": "safeName(nodeId: string): string",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/persist.ts",
+    "span": {
+      "start": 90,
+      "end": 92
+    },
+    "callSites": [
+      {
+        "callee": "replace",
+        "line": 91
+      }
+    ]
+  },
+  "source": {
+    "text": "function safeName(nodeId: string): string {\n  return nodeId.replace(/[^A-Za-z0-9._-]+/g, '_');\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 90
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#dossierPath@L25",
+      "confidence": 1,
+      "name": "dossierPath",
+      "qualifiedName": "dossierPath",
+      "signature": "dossierPath(cribDir: string, nodeId: string): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 25
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/persist.ts@L89",
+      "snippet": "/** Filesystem-safe name for a node id (replaces path separators / colons). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/persist.ts#safeName@L90",
+    "procedureName": "safeName",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#safeName@L90",
+        "procedureName": "safeName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ec2d74c248b272fbf8d8ae0aadb269994f5121ea714419027c2a793469f1a9c7",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L91",
+          "line": 91,
+          "expr": "return nodeId.replace(/[^A-Za-z0-9._-]+/g, '_');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/dossier/persist.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

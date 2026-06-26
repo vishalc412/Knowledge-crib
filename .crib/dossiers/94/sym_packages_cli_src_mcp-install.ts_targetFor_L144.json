@@ -1,0 +1,271 @@
+{
+  "id": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:62b936830b166c7ca0fc505f553400e143f80635dfa81fce1401b49985a96ecc",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
+    "kind": "symbol",
+    "type": "function",
+    "name": "targetFor",
+    "qualifiedName": "targetFor",
+    "signature": "targetFor(ide: McpIde, scope: McpScope, repoRoot: string): McpTarget | null",
+    "lang": "typescript",
+    "file": "packages/cli/src/mcp-install.ts",
+    "span": {
+      "start": 144,
+      "end": 168
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 150
+      },
+      {
+        "callee": "join",
+        "line": 154
+      },
+      {
+        "callee": "join",
+        "line": 155
+      },
+      {
+        "callee": "join",
+        "line": 160
+      },
+      {
+        "callee": "join",
+        "line": 165
+      },
+      {
+        "callee": "join",
+        "line": 166
+      }
+    ]
+  },
+  "source": {
+    "text": "function targetFor(ide: McpIde, scope: McpScope, repoRoot: string): McpTarget | null {\n  const home = process.env.HOME ?? '';\n  switch (ide) {\n    case 'claude':\n      // Project: committable .mcp.json (root key `mcpServers`). Global: `claude mcp add -s user`.\n      return scope === 'project'\n        ? { configPath: join(repoRoot, '.mcp.json'), format: 'json-mcpServers' }\n        : { configPath: '<claude mcp add -s user>', format: 'claude-cli' };\n    case 'cursor':\n      return scope === 'project'\n        ? { configPath: join(repoRoot, '.cursor', 'mcp.json'), format: 'json-mcpServers' }\n        : { configPath: join(home, '.cursor', 'mcp.json'), format: 'json-mcpServers' };\n    case 'vscode':\n      // VS Code/Copilot: root key is `servers` (NOT `mcpServers`) + `type:\"stdio\"` is required.\n      // User-scoped MCP config is not documented upstream → project-scope only.\n      return scope === 'project'\n        ? { configPath: join(repoRoot, '.vscode', 'mcp.json'), format: 'json-servers' }\n        : null;\n    case 'codex':\n      // snake_case `[mcp_servers.<name>]`; no ${workspaceFolder} → absolute path required.\n      return scope === 'project'\n        ? { configPath: join(repoRoot, '.codex', 'config.toml'), format: 'toml' }\n        : { configPath: join(home, '.codex', 'config.toml'), format: 'toml' };\n  }\n}",
+    "truncated": false,
+    "totalLines": 25,
+    "startLine": 144
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#installMcp@L171",
+      "confidence": 1,
+      "name": "installMcp",
+      "qualifiedName": "installMcp",
+      "signature": "installMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 171
+    },
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#listMcp@L256",
+      "confidence": 1,
+      "name": "listMcp",
+      "qualifiedName": "listMcp",
+      "signature": "listMcp(repoRoot: string, opts: { ide?: McpIde | 'all'; scope?: McpScope } = {}): McpListEntry[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 256
+    },
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
+      "confidence": 1,
+      "name": "removeMcp",
+      "qualifiedName": "removeMcp",
+      "signature": "removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 281
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
+    "procedureName": "targetFor",
+    "conditions": [
+      "case:packages/cli/src/mcp-install.ts@L147",
+      "case:packages/cli/src/mcp-install.ts@L152",
+      "case:packages/cli/src/mcp-install.ts@L156",
+      "case:packages/cli/src/mcp-install.ts@L162"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
+        "procedureName": "targetFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1e355eaf765d57f91faeee3d76bbf54db6355e1687b63a824301d8b16256ef21",
+          "target": "case:packages/cli/src/mcp-install.ts@L147",
+          "line": 147,
+          "expr": "claude"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
+        "procedureName": "targetFor",
+        "guard": "case:packages/cli/src/mcp-install.ts@L147",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/mcp-install.ts@L147",
+            "expr": "claude",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7d0514f13ec8c37c27d6ea3cba725da28a562840ec3c26ecb3f7e26864821b7f",
+          "target": "stmt:packages/cli/src/mcp-install.ts@L149",
+          "line": 149,
+          "expr": "return scope === 'project'\n        ? { configPath: join(repoRoot, '.mcp.json'), format: 'json-mcpServers' }\n        : { configPath: '<claude mcp add -s user>', format: 'claude-cli' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
+        "procedureName": "targetFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:493af1814ee3b801ca7236cbb33fe219094b2affacf031782a744c50bf670716",
+          "target": "case:packages/cli/src/mcp-install.ts@L152",
+          "line": 152,
+          "expr": "cursor"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
+        "procedureName": "targetFor",
+        "guard": "case:packages/cli/src/mcp-install.ts@L152",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/mcp-install.ts@L152",
+            "expr": "cursor",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ef273011490cd4d112f39d29f917d6338734a96cd631b64045dc2dd21756d56f",
+          "target": "stmt:packages/cli/src/mcp-install.ts@L153",
+          "line": 153,
+          "expr": "return scope === 'project'\n        ? { configPath: join(repoRoot, '.cursor', 'mcp.json'), format: 'json-mcpServers' }\n        : { configPath: join(home, '.cursor', 'mcp.json'), format: 'json-mcpServers' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
+        "procedureName": "targetFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c59a1ae0470a01bdc0a52039471c54a8401fde8829dc1548ed6f2712eda65338",
+          "target": "case:packages/cli/src/mcp-install.ts@L156",
+          "line": 156,
+          "expr": "vscode"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
+        "procedureName": "targetFor",
+        "guard": "case:packages/cli/src/mcp-install.ts@L156",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/mcp-install.ts@L156",
+            "expr": "vscode",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5576f85974566b6df3d3e3fbe67a14ce4f182480b44982e86a85c53f3a053bad",
+          "target": "stmt:packages/cli/src/mcp-install.ts@L159",
+          "line": 159,
+          "expr": "return scope === 'project'\n        ? { configPath: join(repoRoot, '.vscode', 'mcp.json'), format: 'json-servers' }\n        : null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
+        "procedureName": "targetFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0848d52635e7c46b91d9f6a6575599482e7a3e7dff9ce344102d10f170432378",
+          "target": "case:packages/cli/src/mcp-install.ts@L162",
+          "line": 162,
+          "expr": "codex"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
+        "procedureName": "targetFor",
+        "guard": "case:packages/cli/src/mcp-install.ts@L162",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/cli/src/mcp-install.ts@L162",
+            "expr": "codex",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b756576e86ef52d14080b59bf1ecf97fe55fc4fd4ef464697ca77276eecf7429",
+          "target": "stmt:packages/cli/src/mcp-install.ts@L164",
+          "line": 164,
+          "expr": "return scope === 'project'\n        ? { configPath: join(repoRoot, '.codex', 'config.toml'), format: 'toml' }\n        : { configPath: join(home, '.codex', 'config.toml'), format: 'toml' };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 8,
+    "referencedByFiles": [
+      "packages/cli/src/mcp-install.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 8,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 4,
+    "calls": {
+      "resolved": 0,
+      "recorded": 6,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

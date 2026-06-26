@@ -1,0 +1,151 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveTypeName@L229",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c4bca2fede306050502c7d0892cc7a6832a4da80f86849e0a32314a8546c4050",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveTypeName@L229",
+    "kind": "symbol",
+    "type": "function",
+    "name": "resolveTypeName",
+    "qualifiedName": "resolveTypeName",
+    "signature": "resolveTypeName(name: string, file: string, imports: Map<string, NameBinding>, table: SymbolTable): string | undefined",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/python-resolver.ts",
+    "span": {
+      "start": 229,
+      "end": 238
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 235
+      },
+      {
+        "callee": "topLevelSymbol",
+        "line": 236
+      },
+      {
+        "callee": "topLevelSymbol",
+        "line": 237
+      }
+    ]
+  },
+  "source": {
+    "text": "function resolveTypeName(\n  name: string,\n  file: string,\n  imports: Map<string, NameBinding>,\n  table: SymbolTable,\n): string | undefined {\n  const b = imports.get(name);\n  if (b) return table.topLevelSymbol(b.file, b.name)?.id;\n  return table.topLevelSymbol(file, name)?.id;\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 229
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython.visitDef@L205",
+      "confidence": 1,
+      "name": "visitDef",
+      "qualifiedName": "resolvePython.visitDef",
+      "signature": "visitDef(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/python-resolver.ts",
+      "line": 205
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/resolve/python-resolver.ts@L228",
+      "snippet": "/** Resolve a base name to a symbol id: imported name binding first, then a top-level local. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveTypeName@L229",
+    "procedureName": "resolveTypeName",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/python-resolver.ts@L236"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveTypeName@L229",
+        "procedureName": "resolveTypeName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2933f12b2c8ff5d0ca2402770321a39d417369efb05d6d63a2c3cd35c5440427",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.ts@L235",
+          "line": 235,
+          "expr": "const b = imports.get(name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveTypeName@L229",
+        "procedureName": "resolveTypeName",
+        "guard": "cond:packages/pipeline/src/resolve/python-resolver.ts@L236",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L236",
+            "expr": "b",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e05db67b2feecd68196a6fd39a244ae02afb9bfbfa5b6271109ed42f786086c0",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.ts@L236",
+          "line": 236,
+          "expr": "return table.topLevelSymbol(b.file, b.name)?.id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveTypeName@L229",
+        "procedureName": "resolveTypeName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6112d3d4027c5de8375c7776f123099b0ace9764146d46f929e8785349358684",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.ts@L237",
+          "line": 237,
+          "expr": "return table.topLevelSymbol(file, name)?.id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/python-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

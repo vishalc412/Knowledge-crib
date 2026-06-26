@@ -10,13 +10,17 @@
 |------|---------|---------|
 | `--cwd <path>` | (unset) | **Implemented.** Highest-priority explicit root for any command (see Root resolution). May appear before or after the command. |
 | `--exclude a,b,…` | (defaults) | Discovery ignore set on top of `DEFAULT_IGNORES`. Repeatable. |
-| `--with-embeddings` | off | Build the vector index (else BM25-only). |
+| `--semantic` | off | Run the M7 INFERRED TF-IDF semantic linker after the deterministic linker (adds capped `references` edges, provenance `INFERRED`, confidence ≤0.6). Zero-dep, pure JS. Off by default so `--extracted-only` stays the pure deterministic subset. |
 | `--port <N>` | (viz default) | Port for `crib viz`. |
 
 > Flags shown as **planned** below (`--json`, `--quiet/--verbose`, `--link-threshold`,
-> `--include`, `--lang`, `--worker-timeout`, `--transport`, `--extracted-only`, `migrate`) are in the
+> `--include`, `--lang`, `--worker-timeout`, `--transport`, `--extracted-only`) are in the
 > spec but **not yet wired** in `cli.ts`. They are accepted where noted but may be no-ops. This section
 > is reconciled with the implemented `printHelp` in `packages/cli/src/cli.ts`.
+>
+> **No `crib migrate` command exists** (nor is one planned) — see [Schema evolution](#schema-evolution)
+> below. Schema evolution is automatic and additive; an old soul loads verbatim and is brought up to
+> the current shape by re-indexing.
 
 ## Root resolution (REQ-1)
 Path-taking commands (`serve`, `status`, `update`, `export`, `viz`, `query`) resolve the project
@@ -32,12 +36,12 @@ Full index → writes soul + builds the derived index. Targets the exact given d
 Registers the project in `~/.crib/registry.json`.
 ```
 crib index .                      # index current repo
-crib index . --with-embeddings    # also build vectors (semantic search)
+crib index . --semantic            # also run the INFERRED TF-IDF semantic linker (references edges)
 crib index . --exclude vendor,third_party,generated
 ```
 | Flag | Status | Meaning |
 |------|--------|---------|
-| `--with-embeddings` | ✅ | build vector index (else BM25-only) |
+| `--semantic` | ✅ | run the INFERRED TF-IDF semantic linker (adds capped `references` edges) |
 | `--exclude <a,b,…>` | ✅ | add dirs to the discovery ignore set (repeatable) |
 | `--include <glob>` | planned | scope files (not yet wired) |
 | `--lang <a,b>` | planned | restrict languages (not yet wired) |
@@ -115,14 +119,29 @@ chunk conflicts via the deterministic conflict rule).
 ## `crib merge-driver %O %A %B %P`
 Git custom merge driver for one `.crib` JSONL chunk.
 
-## `crib migrate`  (planned)
-Upgrade an older soul to the current `schemaVersion`/`cribFormatVersion` (round-trip safe). Spec'd,
-not yet wired.
+## Schema evolution
+
+There is **no `crib migrate` command**. The implemented command set is exactly: `index | status |
+query | serve | update | reindex | merge-driver | install-hooks | export | viz | mcp` (see
+`printHelp` in `packages/cli/src/cli.ts`). Schema evolution is automatic and additive:
+
+> There is NO 'crib migrate' command. Schema evolution is automatic and additive:
+>   (1) every 1.0→1.3 field is OPTIONAL + `additionalProperties:true`, so an old soul loads verbatim;
+>   (2) re-indexing stamps the new 1.3 fields onto the SAME node (id-stable, hash-stable, in-place);
+>   (3) persisted dossiers rebuild on demand via the `shapeVersion` + `schemaVersion` staleness gate in
+>       `readDossier` (`shapeVersion` undefined → stale → rebuilt). No rewrite, no data loss.
+
+In practice: run `crib reindex .` (or `crib index .`) to stamp the current `schemaVersion` (`1.3`)
+and the 1.3 framework-semantics fields onto the existing nodes; stale persisted dossiers rebuild on
+the next `dossier` call. The `'crib migrate'` test referenced in `docs/knowledge-crib-testing.md` §7
+is the schema round-trip + forward-compat test in `packages/core/src/validate.test.ts` (1.0/1.2
+nodes validate under the 1.3 schema; a 1.2 node → stamped with 1.3 fields → re-validated, id
+unchanged) — not a CLI command.
 
 ---
 
 ## Exit codes
-`0` ok · `1` generic error · `2` bad args · `3` not indexed (run `crib index`) · `4` migration required.
+`0` ok · `1` generic error · `2` bad args · `3` not indexed (run `crib index`).
 
 ## Typical lifecycle
 ```

@@ -1,0 +1,114 @@
+{
+  "id": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.validate_claim@L10",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9976f8b6ce168495176743fa22d5c314df53adedc978e3b9b6d3dc707f260873",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.validate_claim@L10",
+    "kind": "symbol",
+    "type": "procedure",
+    "name": "validate_claim",
+    "qualifiedName": "claim_pkg.validate_claim",
+    "signature": "validate_claimp_id NUMBER",
+    "lang": "plsql",
+    "file": "packages/parsers/fixtures/plsql/claims.pkb",
+    "span": {
+      "start": 10,
+      "end": 19
+    }
+  },
+  "source": {
+    "text": "  PROCEDURE validate_claim(p_id NUMBER) IS\n    v_status VARCHAR2(20);\n  BEGIN\n    SELECT status INTO v_status FROM claims WHERE id = p_id;\n    IF v_status = 'OPEN' THEN\n      UPDATE claims SET status = 'REVIEW' WHERE id = p_id;\n    END IF;\n  END validate_claim;\n\n  PROCEDURE process_claim(p_id NUMBER) IS",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 10
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.process_claim@L19",
+      "confidence": 1,
+      "name": "process_claim",
+      "qualifiedName": "claim_pkg.process_claim",
+      "signature": "process_claimp_id NUMBER",
+      "type": "procedure",
+      "file": "packages/parsers/fixtures/plsql/claims.pkb",
+      "line": 19
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.validate_claim@L10",
+    "procedureName": "claim_pkg.validate_claim",
+    "conditions": [
+      "cond:packages/parsers/fixtures/plsql/claims.pkb@L14"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.validate_claim@L10",
+        "procedureName": "claim_pkg.validate_claim",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:571d8c0f20f39ec3be654f0a1dddfa53a14106452769e4751dedca8d968db3c4",
+          "target": "stmt:packages/parsers/fixtures/plsql/claims.pkb@L13",
+          "line": 13,
+          "sqlKind": "select",
+          "expr": "SELECT status INTO v_status FROM claims WHERE id = p_id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.validate_claim@L10",
+        "procedureName": "claim_pkg.validate_claim",
+        "guard": "cond:packages/parsers/fixtures/plsql/claims.pkb@L14",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/plsql/claims.pkb@L14",
+            "expr": "v_status = 'OPEN'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:137fff9d60e95ea6d5d5e92b415989eb3696873e1b5839b25e4237e3635e08f0",
+          "target": "stmt:packages/parsers/fixtures/plsql/claims.pkb@L15",
+          "line": 15,
+          "sqlKind": "update",
+          "expr": "UPDATE claims SET status = 'REVIEW' WHERE id = p_id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/fixtures/plsql/claims.pkb"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

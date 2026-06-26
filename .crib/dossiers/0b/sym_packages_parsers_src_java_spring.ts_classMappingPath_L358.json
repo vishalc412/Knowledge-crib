@@ -1,0 +1,170 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L358",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e69aa5f2bce85d23bf6e86f12f0d70193e6ac3deb6d3e9c84bd02a6e094dccc6",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L358",
+    "kind": "symbol",
+    "type": "function",
+    "name": "classMappingPath",
+    "qualifiedName": "classMappingPath",
+    "signature": "classMappingPath(def: JavaDef): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 358,
+      "end": 361
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 359
+      },
+      {
+        "callee": "allQuoted",
+        "line": 360
+      }
+    ]
+  },
+  "source": {
+    "text": "function classMappingPath(def: JavaDef): string {\n  const anno = (def.annos ?? []).find((a) => a.name === 'RequestMapping');\n  return anno ? (allQuoted(anno.args)[0] ?? '') : '';\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 358
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 100
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#allQuoted@L374",
+      "confidence": 1,
+      "name": "allQuoted",
+      "qualifiedName": "allQuoted",
+      "signature": "allQuoted(s?: string): string[]",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 374
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L356",
+      "snippet": "/** Class-level base path from `@RequestMapping(\"/api\")` / `@RequestMapping(value=\"/api\")`. A",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L358",
+    "procedureName": "classMappingPath",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L358",
+        "procedureName": "classMappingPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b6856789d099e10c565f0d1546fa3765779091559190b2ffe8a188a06901d849",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L359",
+          "line": 359,
+          "expr": "const anno = (def.annos ?? []).find((a) => a.name === 'RequestMapping');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L358",
+        "procedureName": "classMappingPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5692a8f95f56d8d37117b688c1e776e30bb83ea882f60af85db8770f4e211c72",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 359
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L358",
+        "procedureName": "classMappingPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:662f468c4b71237dc028ef43a4ef6e585978e639adca92acdaaf1539cd86e0a1",
+          "target": "sym:packages/parsers/src/java/spring.ts#allQuoted@L374",
+          "expr": "allQuoted",
+          "line": 360
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L358",
+        "procedureName": "classMappingPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8c722d3367e2897696cf1848b825f6a59aa0677fd5e487f1f13de28521f8e26b",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L360",
+          "line": 360,
+          "expr": "return anno ? (allQuoted(anno.args)[0] ?? '') : '';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

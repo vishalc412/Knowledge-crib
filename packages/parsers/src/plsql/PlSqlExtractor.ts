@@ -333,6 +333,7 @@ class Builder {
       lang: 'plsql',
       hash: this.ctx.hash(`${this.path}:${d.name}:${d.span.start}`),
       ...(d.cursorQuery ? { cursorQuery: d.cursorQuery } : {}),
+      ...(d.exprTruncated ? { exprTruncated: true } : {}),
     };
     this.nodes.push(node);
     this.edges.push(this.edge(ownerId, id, 'declares', d.name));
@@ -423,6 +424,7 @@ class Builder {
       lang: 'plsql',
       hash: this.ctx.hash(`${this.path}:${s.span.start}:${s.sqlKind}`),
       ...(s.expr ? { expr: s.expr } : {}),
+      ...(s.exprTruncated ? { exprTruncated: true } : {}),
       meta: {
         tables: s.tables,
         columns: s.columns,
@@ -455,6 +457,14 @@ class Builder {
     const calleeId = this.resolveLocalSymbol(s.callee);
     if (calleeId && calleeId !== proc.procId) {
       this.edges.push(this.edge(proc.procId, calleeId, 'calls', s.callee));
+    } else if (calleeId === proc.procId) {
+      // self-recursion: by convention we do NOT emit a self-call edge — it would be a graph cycle,
+      // and the cross-file SqlResolver skips self-calls for the same reason. Instead flag the proc
+      // `meta.recursive` so the dossier/context surface can report that this procedure recurses
+      // (the recursive call site is already recorded in `meta.calls`). This is what makes a
+      // recursive resolver like RESOLVE_AND_EVALUATE_RULES visible in the graph without inventing a
+      // cycle: the flag + the rehydrated body (base case + recursive call) carry the algorithm.
+      this.markRecursive(proc.procId);
     }
     if (env.guard) {
       // a call inside a guarded branch is itself guarded-by the condition.
@@ -503,6 +513,7 @@ class Builder {
       hash: this.ctx.hash(`${this.path}:${s.span.start}:assign`),
       ...(s.target ? { assignTarget: s.target } : {}),
       ...(s.expr ? { expr: s.expr } : {}),
+      ...(s.exprTruncated ? { exprTruncated: true } : {}),
       meta: { inLoop: env.inLoop, inException: env.inException },
     };
     this.nodes.push(node);
@@ -539,6 +550,14 @@ class Builder {
   private linkCursor(stmtId: string, name: string): void {
     const cursorId = this.cursors.get(name);
     if (cursorId) this.edges.push(this.edge(stmtId, cursorId, 'iterates', name));
+  }
+
+  /** 1.2: stamp `meta.recursive:true` on a procedure that calls itself. The recursive call site is
+   *  already in `meta.calls`; no self-edge is emitted (cycle avoidance, matching the SqlResolver). */
+  private markRecursive(procId: string): void {
+    const sym = this.nodes.find((n) => n.id === procId);
+    if (!sym) return;
+    sym.meta = { ...(sym.meta ?? {}), recursive: true };
   }
 
   private walkIf(

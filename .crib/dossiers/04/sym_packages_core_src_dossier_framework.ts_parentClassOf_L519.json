@@ -1,0 +1,121 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#parentClassOf@L519",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c77bd493f70e8f5542b3292d7181b2a638bf553ff07931ca641c85509bb1fb7c",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#parentClassOf@L519",
+    "kind": "symbol",
+    "type": "function",
+    "name": "parentClassOf",
+    "qualifiedName": "parentClassOf",
+    "signature": "parentClassOf(method: Node, outgoing: Map<string, Edge[]>): string | undefined",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 519,
+      "end": 525
+    }
+  },
+  "source": {
+    "text": "function parentClassOf(method: Node, outgoing: Map<string, Edge[]>): string | undefined {\n  for (const e of outgoing.get(method.id) ?? []) {\n    if (e.rel !== 'member-of') continue;\n    return e.dst;\n  }\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 519
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L192",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 192
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/framework.ts@L518",
+      "snippet": "/** The parent class of a method: the dst of its outgoing member-of edge that lands on a class-like symbol. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#parentClassOf@L519",
+    "procedureName": "parentClassOf",
+    "conditions": [
+      "cond:packages/core/src/dossier/framework.ts@L520"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#parentClassOf@L519",
+        "procedureName": "parentClassOf",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L520",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L520",
+            "expr": "outgoing.get(method.id) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bf373657398be5fbc77e5e720da8f11cdd7dcd124e5e5bb83e2a4007fc16ee51",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L522",
+          "line": 522,
+          "expr": "return e.dst;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#parentClassOf@L519",
+        "procedureName": "parentClassOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d68945aa50385f366a002759e43ed5c53ac20358d2fa008d9fa8aa91ac7decc2",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L524",
+          "line": 524,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

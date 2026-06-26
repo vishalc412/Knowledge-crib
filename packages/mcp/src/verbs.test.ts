@@ -13,12 +13,39 @@ interface ImpactResult {
   relatedDocs: Array<{ edgeType: string; provenance: string; confidence: number; snippet: string }>;
 }
 interface ContextResult {
-  node: { name?: string; signature?: string; file?: string; line?: number; qualifiedName?: string };
+  node: {
+    name?: string;
+    signature?: string;
+    file?: string;
+    line?: number;
+    qualifiedName?: string;
+    stereotype?: string;
+    framework?: string;
+    httpMethod?: string;
+    routePath?: string;
+  };
   callers: Array<{ id: string; signature?: string; file?: string; line?: number }>;
   callees: Array<{ id: string; signature?: string; file?: string; line?: number }>;
   docs: Array<{ edgeType: string }>;
   source?: { text: string; truncated: boolean; totalLines: number };
   rules?: { rules: Array<{ action: { kind: string } }> };
+  framework?: {
+    routes?: Array<{
+      httpMethod?: string;
+      routePath?: string;
+      params?: Array<{ name: string; type?: string; in: string }>;
+      security?: Record<string, string>;
+      handler?: { qualifiedName?: string };
+    }>;
+    produces?: Array<{ brief: { qualifiedName?: string }; producer?: { qualifiedName?: string } }>;
+    dependencies?: Array<{
+      kind: string;
+      brief: { qualifiedName?: string };
+      producer?: { qualifiedName?: string };
+    }>;
+    dependents?: Array<{ brief: { qualifiedName?: string } }>;
+    relations?: Array<{ field?: string; cardinality?: string; fetch?: string; mappedBy?: string }>;
+  };
 }
 interface SourceResult {
   node: { id: string; file?: string };
@@ -485,5 +512,422 @@ describe('dossier verb (Workstream D — one-shot deep reusable context)', () =>
     expect(page2.source.text).toContain('return issue(user, pass)');
     expect(page2.source.truncated).toBe(false);
     expect(page2.source.nextLine).toBeUndefined();
+  });
+});
+
+interface GapsResult {
+  unimplemented: Array<{
+    id: string;
+    qualifiedName?: string;
+    type?: string;
+    file?: string;
+    referencedBy?: { count: number; files: string[] };
+  }>;
+  packageSpecsWithoutBody: Array<{
+    id: string;
+    qualifiedName?: string;
+    file?: string;
+    declaredCount: number;
+    implementedCount: number;
+    expectedBodyFile?: string;
+    referencedBy?: { count: number; files: string[] };
+  }>;
+  unresolvedCallSites: Array<{ caller: string; callee: string; line: number; builtin: boolean }>;
+  controllersWithoutRoutes: Array<{
+    id: string;
+    qualifiedName?: string;
+    name?: string;
+    file?: string;
+    memberCount: number;
+    routeCount: number;
+  }>;
+  unresolvedInjects: Array<{
+    id: string;
+    qualifiedName?: string;
+    name?: string;
+    file?: string;
+    stereotype?: string;
+    unresolved: string[];
+  }>;
+  summary: {
+    unimplemented: number;
+    packageSpecsWithoutBody: number;
+    unresolvedCallSites: number;
+    controllersWithoutRoutes: number;
+    unresolvedInjects: number;
+    analysisReadiness: 'complete' | 'incomplete';
+  };
+}
+
+describe('gaps verb — missing-asset + unimplemented detection', () => {
+  const PKS = 'db/PKG_LOAN_RULE_ENGINE.pks';
+  const PKB = 'db/PKG_LOAN_RULE_ENGINE.pkb';
+  let pkgSpec: Node;
+  let pkgBody: Node;
+  let specResolve: Node;
+  let specEval: Node;
+  let bodyDoWork: Node;
+  let caller: Node;
+  let callerB: Node;
+
+  function stmt(path: string, line: number, sqlKind = 'select'): Node {
+    return {
+      id: idFor({ kind: 'statement', file: path, line }),
+      kind: 'statement',
+      sqlKind,
+      file: path,
+      span: { start: line, end: line },
+      lang: 'plsql',
+      hash: contentHash(`${path}:${line}:${sqlKind}`),
+    };
+  }
+
+  beforeEach(() => {
+    index.close(); // release the auth index built by the outer beforeEach
+    soul = new SoulStore(join(repo, '.gaps-crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soul.load();
+
+    // one PL/SQL package: spec (.pks) declares two procs, body (.pkb) implements a different one.
+    // mirrors the user's case: PKG_LOAN_RULE_ENGINE_spec present, _body absent for the spec procs.
+    pkgSpec = sym(PKS, 'PKG_LOAN_RULE_ENGINE', 1, { type: 'package', lang: 'plsql' });
+    pkgBody = sym(PKB, 'PKG_LOAN_RULE_ENGINE', 1, { type: 'package', lang: 'plsql' });
+    specResolve = sym(PKS, 'PKG_LOAN_RULE_ENGINE.RESOLVE_AND_EVALUATE_RULES', 3, {
+      type: 'procedure',
+      lang: 'plsql',
+    });
+    specEval = sym(PKS, 'PKG_LOAN_RULE_ENGINE.EVAL_CREDIT', 5, {
+      type: 'procedure',
+      lang: 'plsql',
+    });
+    bodyDoWork = sym(PKB, 'PKG_LOAN_RULE_ENGINE.DO_WORK', 10, {
+      type: 'procedure',
+      lang: 'plsql',
+    });
+    const bodyStmt = stmt(PKB, 12, 'select');
+    caller = sym('db/caller.sql', 'caller_proc', 20, {
+      type: 'procedure',
+      lang: 'plsql',
+      meta: {
+        calls: [
+          { callee: 'MISSING_PROC', line: 22 },
+          { callee: 'DBMS_OUTPUT.PUT_LINE', line: 23 },
+          { callee: 'PKG_LOAN_RULE_ENGINE.DO_WORK', line: 24 },
+        ],
+      },
+    });
+    const callerStmt = stmt('db/caller.sql', 26, 'update');
+    // a SECOND caller in a different file invokes the spec-only RESOLVE_AND_EVALUATE_RULES — the
+    // "referenced everywhere but the body is missing" signal: referencedBy must list both files.
+    callerB = sym('db/caller_b.sql', 'caller_b_proc', 30, {
+      type: 'procedure',
+      lang: 'plsql',
+    });
+    const callerBStmt = stmt('db/caller_b.sql', 32, 'insert');
+
+    soul.putNodes([
+      fileNode(PKS),
+      fileNode(PKB),
+      fileNode('db/caller.sql'),
+      fileNode('db/caller_b.sql'),
+      pkgSpec,
+      pkgBody,
+      specResolve,
+      specEval,
+      bodyDoWork,
+      bodyStmt,
+      caller,
+      callerStmt,
+      callerB,
+      callerBStmt,
+    ]);
+    soul.putEdges([
+      edge(specResolve.id, pkgSpec.id, 'member-of'),
+      edge(specEval.id, pkgSpec.id, 'member-of'),
+      edge(bodyDoWork.id, pkgBody.id, 'member-of'),
+      edge(bodyDoWork.id, bodyStmt.id, 'executes'),
+      edge(caller.id, callerStmt.id, 'executes'),
+      edge(callerB.id, callerBStmt.id, 'executes'),
+      // two cross-file callers of the spec-only proc → "referenced everywhere"
+      edge(caller.id, specResolve.id, 'calls'),
+      edge(callerB.id, specResolve.id, 'calls'),
+    ]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+
+    index = new SqliteIndexStore();
+    index.buildFromSoul(soul);
+    verbs = new Verbs({ soul, index, repoRoot: repo });
+  });
+
+  it('reports unimplemented procedures (spec declarations with no body anywhere)', () => {
+    const res = verbs.gaps() as unknown as GapsResult;
+    const names = res.unimplemented.map((u) => u.qualifiedName).sort();
+    expect(names).toContain('PKG_LOAN_RULE_ENGINE.RESOLVE_AND_EVALUATE_RULES');
+    expect(names).toContain('PKG_LOAN_RULE_ENGINE.EVAL_CREDIT');
+    // an implemented body procedure is NOT unimplemented
+    expect(names).not.toContain('PKG_LOAN_RULE_ENGINE.DO_WORK');
+  });
+
+  it('reports package specs whose body file is absent (declaredCount, zero implemented)', () => {
+    const res = verbs.gaps() as unknown as GapsResult;
+    expect(res.packageSpecsWithoutBody.length).toBe(1);
+    const pkg = res.packageSpecsWithoutBody[0]!;
+    expect(pkg.file).toBe(PKS);
+    expect(pkg.declaredCount).toBe(2);
+    expect(pkg.implementedCount).toBe(0);
+  });
+
+  it('reports unresolved call sites, flags Oracle built-ins, skips resolved callees', () => {
+    const res = verbs.gaps() as unknown as GapsResult;
+    const sites = res.unresolvedCallSites;
+    expect(sites.find((s) => s.callee === 'MISSING_PROC' && s.builtin === false)).toBeDefined();
+    expect(
+      sites.find((s) => s.callee === 'DBMS_OUTPUT.PUT_LINE' && s.builtin === true),
+    ).toBeDefined();
+    // a call to an IMPLEMENTED procedure resolves and is not reported
+    expect(sites.find((s) => s.callee === 'PKG_LOAN_RULE_ENGINE.DO_WORK')).toBeUndefined();
+    expect(res.summary.unresolvedCallSites).toBe(2);
+  });
+
+  it('infers the expected body file from the spec path (.pks → .pkb)', () => {
+    const res = verbs.gaps() as unknown as GapsResult;
+    expect(res.packageSpecsWithoutBody.length).toBe(1);
+    expect(res.packageSpecsWithoutBody[0]!.expectedBodyFile).toBe(PKB);
+  });
+
+  it('surfaces "referenced everywhere but missing" on unimplemented + package entries', () => {
+    const res = verbs.gaps() as unknown as GapsResult;
+    const specResolveRow = res.unimplemented.find(
+      (u) => u.qualifiedName === 'PKG_LOAN_RULE_ENGINE.RESOLVE_AND_EVALUATE_RULES',
+    );
+    expect(specResolveRow).toBeDefined();
+    // two cross-file callers reference the spec-only proc
+    expect(specResolveRow!.referencedBy).toEqual({
+      count: 2,
+      files: ['db/caller.sql', 'db/caller_b.sql'],
+    });
+    // the package aggregates the same signal across its members
+    const pkg = res.packageSpecsWithoutBody[0]!;
+    expect(pkg.referencedBy).toEqual({
+      count: 2,
+      files: ['db/caller.sql', 'db/caller_b.sql'],
+    });
+  });
+
+  it('reports analysisReadiness incomplete when a body is missing, complete when nothing gaps', () => {
+    const res = verbs.gaps() as unknown as GapsResult;
+    expect(res.summary.analysisReadiness).toBe('incomplete');
+
+    // a soul with no gaps (one fully-implemented proc, no spec-only decls) → complete
+    const cleanSoul = new SoulStore(join(repo, '.gaps-crib-clean'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    cleanSoul.load();
+    const impl = sym('src/svc.pkb', 'svc.work', 5, { type: 'procedure', lang: 'plsql' });
+    const implStmt = stmt('src/svc.pkb', 7, 'select');
+    cleanSoul.putNodes([fileNode('src/svc.pkb'), impl, implStmt]);
+    cleanSoul.putEdges([edge(impl.id, implStmt.id, 'executes')]);
+    cleanSoul.commit('2026-01-01T00:00:00.000Z');
+    const cleanIndex = new SqliteIndexStore();
+    cleanIndex.buildFromSoul(cleanSoul);
+    const cleanVerbs = new Verbs({ soul: cleanSoul, index: cleanIndex, repoRoot: repo });
+    const cleanRes = cleanVerbs.gaps() as unknown as GapsResult;
+    expect(cleanRes.summary.analysisReadiness).toBe('complete');
+    expect(cleanRes.unimplemented.length).toBe(0);
+    cleanIndex.close();
+  });
+});
+
+describe('framework-semantics integration — context withFramework + Spring gaps anomalies', () => {
+  const F = 'src/com/acme/Loan.java';
+  let ctl: Node;
+  let apply: Node;
+  let route: Node;
+  let svc: Node;
+  let repoIface: Node;
+  let cfg: Node;
+  let bean: Node;
+  let bareCtl: Node; // controller with no routes → anomaly
+  let unresolvedCtl: Node; // controller whose injects never resolve → anomaly
+
+  beforeEach(() => {
+    index.close(); // release the auth index built by the outer beforeEach
+    soul = new SoulStore(join(repo, '.fw-crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soul.load();
+
+    ctl = sym(F, 'com.acme.LoanController', 1, {
+      type: 'class',
+      lang: 'java',
+      stereotype: 'controller',
+      framework: 'spring',
+      meta: { injects: ['com.acme.LoanService'] },
+    });
+    apply = sym(F, 'com.acme.LoanController.apply', 5, {
+      type: 'method',
+      lang: 'java',
+      framework: 'spring',
+      meta: { security: { PreAuthorize: "hasRole('LENDER')" } },
+    });
+    route = {
+      id: idFor({ kind: 'route', httpMethod: 'POST', routePath: '/api/loans', file: F, line: 5 }),
+      kind: 'route',
+      name: 'POST /api/loans',
+      httpMethod: 'POST',
+      routePath: '/api/loans',
+      framework: 'spring',
+      file: F,
+      span: { start: 5, end: 5 },
+      lang: 'java',
+      meta: {
+        params: [{ name: 'loan', type: 'Loan', in: 'body' }],
+        security: { PreAuthorize: "hasRole('LENDER')" },
+      },
+      hash: contentHash('route:POST:/api/loans'),
+    };
+    svc = sym(F, 'com.acme.LoanService', 30, {
+      type: 'class',
+      lang: 'java',
+      stereotype: 'service',
+      framework: 'spring',
+      meta: { injects: ['com.acme.LoanRepository'] },
+    });
+    repoIface = sym(F, 'com.acme.LoanRepository', 50, {
+      type: 'class',
+      lang: 'java',
+      stereotype: 'repository',
+      framework: 'spring',
+    });
+    cfg = sym(F, 'com.acme.LoanRepositoryConfig', 60, {
+      type: 'class',
+      lang: 'java',
+      stereotype: 'config',
+      framework: 'spring',
+    });
+    bean = sym(F, 'com.acme.LoanRepositoryConfig.loanRepository', 62, {
+      type: 'method',
+      lang: 'java',
+      framework: 'spring',
+      meta: { returnType: 'LoanRepository' },
+    });
+    // a SECOND controller with member methods but ZERO exposes edges → controllersWithoutRoutes
+    bareCtl = sym(F, 'com.acme.BareController', 70, {
+      type: 'class',
+      lang: 'java',
+      stereotype: 'controller',
+      framework: 'spring',
+    });
+    const bareMethod = sym(F, 'com.acme.BareController.helper', 72, {
+      type: 'method',
+      lang: 'java',
+    });
+    // a controller whose meta.injects names a type for which NO injects edge exists → unresolvedInjects
+    unresolvedCtl = sym(F, 'com.acme.UnresolvedController', 80, {
+      type: 'class',
+      lang: 'java',
+      stereotype: 'controller',
+      framework: 'spring',
+      meta: { injects: ['com.acme.MissingService'] },
+    });
+
+    soul.putNodes([
+      fileNode(F),
+      ctl,
+      apply,
+      route,
+      svc,
+      repoIface,
+      cfg,
+      bean,
+      bareCtl,
+      bareMethod,
+      unresolvedCtl,
+    ]);
+    soul.putEdges([
+      edge(apply.id, ctl.id, 'member-of'),
+      edge(bean.id, cfg.id, 'member-of'),
+      edge(bareMethod.id, bareCtl.id, 'member-of'),
+      edge(apply.id, route.id, 'exposes', { evidence: { snippet: 'POST /api/loans' } }),
+      edge(ctl.id, svc.id, 'injects', { evidence: { snippet: 'com.acme.LoanService' } }),
+      edge(svc.id, repoIface.id, 'injects', { evidence: { snippet: 'com.acme.LoanRepository' } }),
+      edge(bean.id, repoIface.id, 'produces', { evidence: { snippet: 'LoanRepository' } }),
+    ]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+
+    index = new SqliteIndexStore();
+    index.buildFromSoul(soul);
+    verbs = new Verbs({ soul, index, repoRoot: repo });
+  });
+
+  it('context(withFramework) on a controller surfaces the route table + DI graph (full set)', () => {
+    const res = verbs.context({ id: ctl.id, withFramework: true }) as unknown as ContextResult;
+    expect(res.framework).toBeDefined();
+    // class scope aggregates member routes + injects + produces across members
+    expect(res.framework!.routes).toHaveLength(1);
+    expect(res.framework!.routes![0]!.httpMethod).toBe('POST');
+    expect(res.framework!.routes![0]!.routePath).toBe('/api/loans');
+    expect(res.framework!.routes![0]!.params![0]).toMatchObject({ name: 'loan', in: 'body' });
+    expect(res.framework!.routes![0]!.security).toEqual({ PreAuthorize: "hasRole('LENDER')" });
+    expect(res.framework!.dependencies).toBeDefined();
+    expect(res.framework!.dependencies!.some((d) => d.kind === 'injects')).toBe(true);
+  });
+
+  it('context(withFramework) supply-chain: a service injecting a @Bean-produced type → kind=produces + producer', () => {
+    const res = verbs.context({ id: svc.id, withFramework: true }) as unknown as ContextResult;
+    expect(res.framework!.dependencies).toBeDefined();
+    const dep = res.framework!.dependencies!.find(
+      (d) => d.brief.qualifiedName === 'com.acme.LoanRepository',
+    );
+    expect(dep).toBeDefined();
+    expect(dep!.kind).toBe('produces');
+    expect(dep!.producer?.qualifiedName).toBe('com.acme.LoanRepositoryConfig.loanRepository');
+  });
+
+  it('context(withFramework) on the @Configuration surfaces the @Bean inventory with producer', () => {
+    const res = verbs.context({ id: cfg.id, withFramework: true }) as unknown as ContextResult;
+    expect(res.framework!.produces).toBeDefined();
+    expect(res.framework!.produces!.length).toBe(1);
+    expect(res.framework!.produces![0]!.producer?.qualifiedName).toBe(
+      'com.acme.LoanRepositoryConfig.loanRepository',
+    );
+  });
+
+  it('context WITHOUT withFramework omits the framework section (opt-in, matching withRules/withSource)', () => {
+    const res = verbs.context({ id: ctl.id }) as unknown as ContextResult;
+    expect(res.framework).toBeUndefined();
+    // but the 1.3 identity fields still surface via publicNode (no-round-trip)
+    expect(res.node.stereotype).toBe('controller');
+    expect(res.node.framework).toBe('spring');
+  });
+
+  it('gaps reports a controller with member methods but ZERO routes (controllersWithoutRoutes)', () => {
+    const res = verbs.gaps() as unknown as GapsResult;
+    const row = res.controllersWithoutRoutes.find(
+      (c) => c.qualifiedName === 'com.acme.BareController',
+    );
+    expect(row).toBeDefined();
+    expect(row!.memberCount).toBe(1);
+    expect(row!.routeCount).toBe(0);
+    // the wired controller (apply → route) is NOT reported
+    expect(
+      res.controllersWithoutRoutes.find((c) => c.qualifiedName === 'com.acme.LoanController'),
+    ).toBeUndefined();
+    expect(res.summary.controllersWithoutRoutes).toBeGreaterThanOrEqual(1);
+  });
+
+  it('gaps reports a controller whose meta.injects name has no emitted injects edge (unresolvedInjects)', () => {
+    const res = verbs.gaps() as unknown as GapsResult;
+    const row = res.unresolvedInjects.find(
+      (c) => c.qualifiedName === 'com.acme.UnresolvedController',
+    );
+    expect(row).toBeDefined();
+    expect(row!.unresolved).toContain('com.acme.MissingService');
+    expect(row!.stereotype).toBe('controller');
+    // the wired controller (ctl → svc) is NOT reported
+    expect(
+      res.unresolvedInjects.find((c) => c.qualifiedName === 'com.acme.LoanController'),
+    ).toBeUndefined();
   });
 });

@@ -1,0 +1,193 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitExecutes@L779",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:74d324935d3d7744b60b35605625d11544ca65f098470726c9341fe7d1ba9a6b",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitExecutes@L779",
+    "kind": "symbol",
+    "type": "method",
+    "name": "emitExecutes",
+    "qualifiedName": "BodyWalker.emitExecutes",
+    "signature": "emitExecutes(procId: string, stmtId: string, s: CsharpStmt, env: WalkEnv): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 779,
+      "end": 798
+    },
+    "callSites": [
+      {
+        "callee": "edgeId",
+        "line": 781
+      },
+      {
+        "callee": "slice",
+        "line": 789
+      },
+      {
+        "callee": "set",
+        "line": 797
+      }
+    ]
+  },
+  "source": {
+    "text": "  private emitExecutes(procId: string, stmtId: string, s: CsharpStmt, env: WalkEnv): void {\n    const e: Edge = {\n      id: edgeId(procId, stmtId, 'executes'),\n      src: procId,\n      dst: stmtId,\n      rel: 'executes',\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'lang:csharp', snippet: s.head ?? s.kind },\n      cfgPath: env.guardStack.slice(),\n      inLoop: env.inLoop,\n      inException: env.inException,\n    };\n    if (env.guardStack.length) {\n      e.guard = env.guardStack[env.guardStack.length - 1];\n      e.branch = env.branch;\n    }\n    this.edgeById.set(e.id, e);\n  }",
+    "truncated": false,
+    "totalLines": 20,
+    "startLine": 779
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addAssignStatement@L663",
+      "confidence": 1,
+      "name": "addAssignStatement",
+      "qualifiedName": "BodyWalker.addAssignStatement",
+      "signature": "addAssignStatement(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 663
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+      "confidence": 1,
+      "name": "addCallStatement",
+      "qualifiedName": "BodyWalker.addCallStatement",
+      "signature": "addCallStatement(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 633
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addStatement@L600",
+      "confidence": 1,
+      "name": "addStatement",
+      "qualifiedName": "BodyWalker.addStatement",
+      "signature": "addStatement(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 600
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/CsharpExtractor.ts@L778",
+      "snippet": "/** executes edge proc→stmt with cfgPath (always the array) + guard/branch when guarded. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitExecutes@L779",
+    "procedureName": "BodyWalker.emitExecutes",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L793"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitExecutes@L779",
+        "procedureName": "BodyWalker.emitExecutes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b567e67d7ca6a28a10acd078cf808bb34d0f74e3ec6e26eabb1e08a08d2a9a2a",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L780",
+          "line": 780,
+          "expr": "const e: Edge = {\n      id: edgeId(procId, stmtId, 'executes'),\n      src: procId,\n      dst: stmtId,\n      rel: 'executes',\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'lang:csharp', snippet: s.head ?? s.kind },\n      cfgPath: env.guardStack.slice(),\n      inLoop: env.inLoop,\n      inException: env.inException,\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitExecutes@L779",
+        "procedureName": "BodyWalker.emitExecutes",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L793",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L793",
+            "expr": "env.guardStack.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:68f880555c96c51a1d4ccf33d464c66be3352336b209b0b77799d37d754c6d86",
+          "target": "assign:packages/parsers/src/csharp/CsharpExtractor.ts@L794",
+          "line": 794,
+          "expr": "e.guard = env.guardStack[env.guardStack.length - 1];"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitExecutes@L779",
+        "procedureName": "BodyWalker.emitExecutes",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L793",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L793",
+            "expr": "env.guardStack.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:05b884bf22c394a99df7a21faf69086d4dbaaea6d55dfd4b3520da0624fa2566",
+          "target": "assign:packages/parsers/src/csharp/CsharpExtractor.ts@L795",
+          "line": 795,
+          "expr": "e.branch = env.branch;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitExecutes@L779",
+        "procedureName": "BodyWalker.emitExecutes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5f5120609d33925888665e425c6f401ecb3eb1599e1ff8de4a55071affd84962",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L797",
+          "line": 797,
+          "expr": "this.edgeById.set(e.id, e);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 2,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

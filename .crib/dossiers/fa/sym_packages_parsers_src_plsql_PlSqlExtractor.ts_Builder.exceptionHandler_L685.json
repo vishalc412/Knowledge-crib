@@ -1,0 +1,175 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.exceptionHandler@L685",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ae357dc279a9672cc265955b4cfa4a1928a83b6a8c4534354049379c16632964",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.exceptionHandler@L685",
+    "kind": "symbol",
+    "type": "method",
+    "name": "exceptionHandler",
+    "qualifiedName": "Builder.exceptionHandler",
+    "signature": "exceptionHandler(selector: string, line: number): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 685,
+      "end": 700
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 686
+      },
+      {
+        "callee": "add",
+        "line": 688
+      },
+      {
+        "callee": "push",
+        "line": 689
+      },
+      {
+        "callee": "hash",
+        "line": 696
+      }
+    ]
+  },
+  "source": {
+    "text": "  private exceptionHandler(selector: string, line: number): string {\n    const id = this.ctx.idFor('exception-handler', { file: this.path, line });\n    if (!this.excSeen.has(id)) {\n      this.excSeen.add(id);\n      this.nodes.push({\n        id,\n        kind: 'exception-handler',\n        whenSelector: selector,\n        file: this.path,\n        span: { start: line, end: line },\n        lang: 'plsql',\n        hash: this.ctx.hash(`${this.path}:exc:${line}:${selector}`),\n      });\n    }\n    return id;\n  }",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 685
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L618",
+      "confidence": 1,
+      "name": "walkException",
+      "qualifiedName": "Builder.walkException",
+      "signature": "walkException(s: ExceptionBlock, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 618
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/PlSqlExtractor.ts@L684",
+      "snippet": "/** 1.2: emit an `exception-handler` node (deduped by file+line) and return its id. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.exceptionHandler@L685",
+    "procedureName": "Builder.exceptionHandler",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L687"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.exceptionHandler@L685",
+        "procedureName": "Builder.exceptionHandler",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9df32cbe9a27bf23a0476883a4d445464c01b296ffd18887b54641e03acc94af",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L686",
+          "line": 686,
+          "expr": "const id = this.ctx.idFor('exception-handler', { file: this.path, line });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.exceptionHandler@L685",
+        "procedureName": "Builder.exceptionHandler",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L687",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L687",
+            "expr": "!this.excSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df37aff747ead118eef8298202547ed6cbc51947cd8930ab16d8239cf685a1f1",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L688",
+          "line": 688,
+          "expr": "this.excSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.exceptionHandler@L685",
+        "procedureName": "Builder.exceptionHandler",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L687",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L687",
+            "expr": "!this.excSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:54833899d69a210d5e871bf16590a54a1fcdde7a97cbcdbb52d2416423c41fdf",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L689",
+          "line": 689,
+          "expr": "this.nodes.push({\n        id,\n        kind: 'exception-handler',\n        whenSelector: selector,\n        file: this.path,\n        span: { start: line, end: line },\n        lang: 'plsql',\n        hash: this.ctx.hash(`${this.path}:exc:${line}:${selector}`),\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.exceptionHandler@L685",
+        "procedureName": "Builder.exceptionHandler",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b538b01d0315a5e5e7861eba6010eaca5255bd11a7a723b19bbe209ec10afef1",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L699",
+          "line": 699,
+          "expr": "return id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

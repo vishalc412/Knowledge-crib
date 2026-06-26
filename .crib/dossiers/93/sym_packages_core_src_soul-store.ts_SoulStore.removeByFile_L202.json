@@ -1,0 +1,344 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.removeByFile@L202",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:f0359aee6c39e9cc46f09bd3c0968d0c95c033eb9ae0baac9e3bd4ea94b7eec5",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.removeByFile@L202",
+    "kind": "symbol",
+    "type": "method",
+    "name": "removeByFile",
+    "qualifiedName": "SoulStore.removeByFile",
+    "signature": "removeByFile(path: string): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 202,
+      "end": 215
+    },
+    "callSites": [
+      {
+        "callee": "delete",
+        "line": 205
+      },
+      {
+        "callee": "markNodeDirty",
+        "line": 206
+      },
+      {
+        "callee": "delete",
+        "line": 211
+      },
+      {
+        "callee": "add",
+        "line": 212
+      },
+      {
+        "callee": "shardOf",
+        "line": 212
+      },
+      {
+        "callee": "shardKeyForEdge",
+        "line": 212
+      }
+    ]
+  },
+  "source": {
+    "text": "  removeByFile(path: string): void {\n    for (const node of [...this.nodes.values()]) {\n      if (node.file === path || pathFromId(node.id) === path) {\n        this.nodes.delete(node.id);\n        this.markNodeDirty(node);\n      }\n    }\n    for (const edge of [...this.edges.values()]) {\n      if (pathFromId(edge.src) === path || pathFromId(edge.dst) === path) {\n        this.edges.delete(edge.id);\n        this.dirtyEdgeShards.add(shardOf(shardKeyForEdge(edge), this.shardDigits));\n      }\n    }\n  }",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 202
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.markNodeDirty@L277",
+      "confidence": 1,
+      "name": "markNodeDirty",
+      "qualifiedName": "SoulStore.markNodeDirty",
+      "signature": "markNodeDirty(node: Node): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 277
+    },
+    {
+      "id": "sym:packages/core/src/shard.ts#pathFromId@L16",
+      "confidence": 1,
+      "name": "pathFromId",
+      "qualifiedName": "pathFromId",
+      "signature": "pathFromId(id: string): string | undefined",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/core/src/shard.ts#shardKeyForEdge@L55",
+      "confidence": 1,
+      "name": "shardKeyForEdge",
+      "qualifiedName": "shardKeyForEdge",
+      "signature": "shardKeyForEdge(edge: Edge): string",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 55
+    },
+    {
+      "id": "sym:packages/core/src/shard.ts#shardOf@L60",
+      "confidence": 1,
+      "name": "shardOf",
+      "qualifiedName": "shardOf",
+      "signature": "shardOf(key: string, shardHexDigits: number): string",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 60
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/soul-store.ts@L201",
+      "snippet": "/** Drop a file's nodes and any edge that touches the file (incremental re-extraction). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#7-canonical-interfaces-to-define-first-cite-don-t-re-invent",
+      "heading": "7. Canonical interfaces to define first (cite, don't re-invent)",
+      "anchor": "7-canonical-interfaces-to-define-first-cite-don-t-re-invent",
+      "snippet": "7. Canonical interfaces to define first (cite, don't re-invent)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#1-soulstore-source-of-truth",
+      "heading": "1. SoulStore (source of truth)",
+      "anchor": "1-soulstore-source-of-truth",
+      "snippet": "1. SoulStore (source of truth)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.removeByFile@L202",
+    "procedureName": "SoulStore.removeByFile",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L203",
+      "cond:packages/core/src/soul-store.ts@L204",
+      "cond:packages/core/src/soul-store.ts@L209",
+      "cond:packages/core/src/soul-store.ts@L210"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.removeByFile@L202",
+        "procedureName": "SoulStore.removeByFile",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:96ade184c8b916103475e15c09a4fd636017a4ebf63e3f611b86b70ac5f10bd3",
+          "target": "sym:packages/core/src/shard.ts#pathFromId@L16",
+          "expr": "pathFromId"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.removeByFile@L202",
+        "procedureName": "SoulStore.removeByFile",
+        "guard": "cond:packages/core/src/soul-store.ts@L204",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L203",
+            "expr": "[...this.nodes.values()]"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L204",
+            "expr": "node.file === path || pathFromId(node.id) === path",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7c92c8e5e453741f059897628afe335044fbb8b2d10939c6f5cccc7ff336b38f",
+          "target": "stmt:packages/core/src/soul-store.ts@L205",
+          "line": 205,
+          "expr": "this.nodes.delete(node.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.removeByFile@L202",
+        "procedureName": "SoulStore.removeByFile",
+        "guard": "cond:packages/core/src/soul-store.ts@L204",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L203",
+            "expr": "[...this.nodes.values()]"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L204",
+            "expr": "node.file === path || pathFromId(node.id) === path",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b0eeda500ea212470e8d8cdea7e6adea7848458fc4a5fe42e38d72c83edf1a7c",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.markNodeDirty@L277",
+          "expr": "markNodeDirty",
+          "line": 206
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.removeByFile@L202",
+        "procedureName": "SoulStore.removeByFile",
+        "guard": "cond:packages/core/src/soul-store.ts@L204",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L203",
+            "expr": "[...this.nodes.values()]"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L204",
+            "expr": "node.file === path || pathFromId(node.id) === path",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2edfa6af2396b4ffca9f8c5145f891342aefa7026a121c7d6501230db4d7aded",
+          "target": "stmt:packages/core/src/soul-store.ts@L206",
+          "line": 206,
+          "expr": "this.markNodeDirty(node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.removeByFile@L202",
+        "procedureName": "SoulStore.removeByFile",
+        "guard": "cond:packages/core/src/soul-store.ts@L210",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L209",
+            "expr": "[...this.edges.values()]"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L210",
+            "expr": "pathFromId(edge.src) === path || pathFromId(edge.dst) === path",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8debbd29cede643a4451e254832f4c2708b5a68b4d0c34fefea742ce90a6ade9",
+          "target": "stmt:packages/core/src/soul-store.ts@L211",
+          "line": 211,
+          "expr": "this.edges.delete(edge.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.removeByFile@L202",
+        "procedureName": "SoulStore.removeByFile",
+        "guard": "cond:packages/core/src/soul-store.ts@L210",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L209",
+            "expr": "[...this.edges.values()]"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L210",
+            "expr": "pathFromId(edge.src) === path || pathFromId(edge.dst) === path",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e7fece8caaa8e805c0f937aeaee9a87387a3b78506f583f78e2fb3c7975b0644",
+          "target": "stmt:packages/core/src/soul-store.ts@L212",
+          "line": 212,
+          "expr": "this.dirtyEdgeShards.add(shardOf(shardKeyForEdge(edge), this.shardDigits));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.removeByFile@L202",
+        "procedureName": "SoulStore.removeByFile",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a6b7b6d7370a2acb1a243cedc491523eb12b0c5df28442ae4e90737c5ff3c149",
+          "target": "sym:packages/core/src/shard.ts#shardOf@L60",
+          "expr": "shardOf",
+          "line": 212
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.removeByFile@L202",
+        "procedureName": "SoulStore.removeByFile",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4e5955bbaba802f9eb1a970d5f193be90a5e00dee4d445f4aff6ea29c83100e4",
+          "target": "sym:packages/core/src/shard.ts#shardKeyForEdge@L55",
+          "expr": "shardKeyForEdge",
+          "line": 212
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 6,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

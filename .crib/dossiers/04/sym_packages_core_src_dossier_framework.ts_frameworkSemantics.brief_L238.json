@@ -1,0 +1,221 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics.brief@L238",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:b7b3aa3a859f0ffbb165c3144430c31548d76a28a75e8020599a271d3cbec257",
+  "builtAt": "2026-06-26T05:09:36.599Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics.brief@L238",
+    "kind": "symbol",
+    "type": "function",
+    "name": "brief",
+    "qualifiedName": "frameworkSemantics.brief",
+    "signature": "brief(…)",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 238,
+      "end": 251
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 239
+      }
+    ]
+  },
+  "source": {
+    "text": "  const brief = (id: string, confidence: number): AdjacentBrief => {\n    const n = soul.getNode(id);\n    if (!n) return { id, confidence };\n    return {\n      id,\n      confidence,\n      ...(n.name ? { name: n.name } : {}),\n      ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),\n      ...(n.signature ? { signature: n.signature } : {}),\n      ...(n.type ? { type: n.type } : {}),\n      ...(n.file ? { file: n.file } : {}),\n      ...(n.span ? { line: n.span.start } : {}),\n    };\n  };",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 238
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#collectRenders@L646",
+      "confidence": 1,
+      "name": "collectRenders",
+      "qualifiedName": "collectRenders",
+      "signature": "collectRenders(ownerId: string, outgoing: Map<string, Edge[]>, keep: (e: Edge) => boolean, soul: SoulStore, brief: (id: string, c: number) => AdjacentBrief, seen: Set<string>, out: DossierRenders[]): void",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 646
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L199",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 199
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#pushDependency@L563",
+      "confidence": 1,
+      "name": "pushDependency",
+      "qualifiedName": "pushDependency",
+      "signature": "pushDependency(e: Edge, soul: SoulStore, brief: (id: string, c: number) => AdjacentBrief, producerOf: Map<string, string>, out: DossierDependency[]): void",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 563
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/framework.ts@L237",
+      "snippet": "/** brief of a node id (the AdjacentBrief shape — enough to locate + identify). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "heading": "3.1 Framework-semantics tier (schema 1.3)",
+      "anchor": "3-1-framework-semantics-tier-schema-1-3",
+      "snippet": "3.1 Framework-semantics tier (schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "heading": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "anchor": "surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "snippet": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics.brief@L238",
+    "procedureName": "frameworkSemantics.brief",
+    "conditions": [
+      "cond:packages/core/src/dossier/framework.ts@L240"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics.brief@L238",
+        "procedureName": "frameworkSemantics.brief",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75dfab794e75a2d7041054e2c657070979f9260bd37de69b73ac4c4b227a604a",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L239",
+          "line": 239,
+          "expr": "const n = soul.getNode(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics.brief@L238",
+        "procedureName": "frameworkSemantics.brief",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L240",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L240",
+            "expr": "!n",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0f7968eb30391866ab9fd550946f4638e2ba83c58f8150894fa16e2d41e6b9a7",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L240",
+          "line": 240,
+          "expr": "return { id, confidence };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics.brief@L238",
+        "procedureName": "frameworkSemantics.brief",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29fa9a0d7f8ff9b2ac5fb80db50c9b7b076ec0e2926a648acb1d8ea82747c3ca",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L241",
+          "line": 241,
+          "expr": "return {\n      id,\n      confidence,\n      ...(n.name ? { name: n.name } : {}),\n      ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),\n      ...(n.signature ? { signature: n.signature } : {}),\n      ...(n.type ? { type: n.type } : {}),\n      ...(n.file ? { file: n.file } : {}),\n      ...(n.span ? { line: n.span.start } : {}),\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "id": "sym:packages/pipeline/src/cfg.test.ts#soulFor@L23",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4e89a41098733845b91d916d248652dc46dfc9fc3d34fcad731c3effa2c3f8e2",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/cfg.test.ts#soulFor@L23",
+    "kind": "symbol",
+    "type": "function",
+    "name": "soulFor",
+    "qualifiedName": "soulFor",
+    "signature": "soulFor(): SoulStore",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/cfg.test.ts",
+    "span": {
+      "start": 23,
+      "end": 27
+    },
+    "callSites": [
+      {
+        "callee": "newManifest",
+        "line": 24
+      },
+      {
+        "callee": "load",
+        "line": 25
+      }
+    ]
+  },
+  "source": {
+    "text": "function soulFor(): SoulStore {\n  const s = new SoulStore(cribDir, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });\n  s.load();\n  return s;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 23
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+      "confidence": 1,
+      "name": "newManifest",
+      "qualifiedName": "newManifest",
+      "signature": "newManifest(opts: NewManifestOpts = {}): Manifest",
+      "type": "function",
+      "file": "packages/core/src/manifest.ts",
+      "line": 28
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/cfg.test.ts#soulFor@L23",
+    "procedureName": "soulFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/cfg.test.ts#soulFor@L23",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29e4e182a6a87812b7b252492b507ed8b7c70434f64e36749cbccc0a1dd548e7",
+          "target": "stmt:packages/pipeline/src/cfg.test.ts@L24",
+          "line": 24,
+          "expr": "const s = new SoulStore(cribDir, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cfg.test.ts#soulFor@L23",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:64e8909bc92828cfbbbb77b5c79b2b446697cf849d7860db4a194db191594d4a",
+          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
+          "expr": "newManifest",
+          "line": 24
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cfg.test.ts#soulFor@L23",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f069720fde9b15bcfcf7234fa50c706d30a8da8687400c77accf6034ff0d9ff4",
+          "target": "stmt:packages/pipeline/src/cfg.test.ts@L25",
+          "line": 25,
+          "expr": "s.load();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cfg.test.ts#soulFor@L23",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8b2c8919b5dc495230e51e074e4de4b1c4f7b1439af765422b68450cf917e8cc",
+          "target": "stmt:packages/pipeline/src/cfg.test.ts@L26",
+          "line": 26,
+          "expr": "return s;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

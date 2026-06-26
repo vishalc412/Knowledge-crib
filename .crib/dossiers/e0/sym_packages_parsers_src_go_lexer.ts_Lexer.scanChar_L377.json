@@ -1,0 +1,411 @@
+{
+  "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:de7761036e8a364a7bde31c593f35c1cb0bf70c7aacbb3cbdaee81ce1af8dc4b",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+    "kind": "symbol",
+    "type": "method",
+    "name": "scanChar",
+    "qualifiedName": "Lexer.scanChar",
+    "signature": "scanChar(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/lexer.ts",
+    "span": {
+      "start": 377,
+      "end": 399
+    },
+    "callSites": [
+      {
+        "callee": "advance",
+        "line": 380
+      },
+      {
+        "callee": "peek",
+        "line": 383
+      },
+      {
+        "callee": "advance",
+        "line": 386
+      },
+      {
+        "callee": "peek",
+        "line": 388
+      },
+      {
+        "callee": "advance",
+        "line": 389
+      },
+      {
+        "callee": "advance",
+        "line": 395
+      },
+      {
+        "callee": "emit",
+        "line": 398
+      }
+    ]
+  },
+  "source": {
+    "text": "  private scanChar(): void {\n    const sl = this.line;\n    const sc = this.col;\n    this.advance(); // opening '\n    let value = \"'\";\n    while (this.pos < this.src.length) {\n      const c = this.peek();\n      if (c === '\\\\') {\n        value += c;\n        this.advance();\n        if (this.pos < this.src.length) {\n          value += this.peek();\n          this.advance();\n        }\n        continue;\n      }\n      if (c === '\\n' || c === '\\r') break; // unterminated — tolerate\n      value += c;\n      this.advance();\n      if (c === \"'\") break;\n    }\n    this.emit('CHAR', value, sl, sc);\n  }",
+    "truncated": false,
+    "totalLines": 23,
+    "startLine": 377
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.tokens@L257",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 257
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.advance@L448",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 448
+    },
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.emit@L459",
+      "confidence": 1,
+      "name": "emit",
+      "qualifiedName": "Lexer.emit",
+      "signature": "emit(type: TokenType, value: string, line: number, col: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 459
+    },
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.peek@L437",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 437
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+    "procedureName": "Lexer.scanChar",
+    "conditions": [
+      "cond:packages/parsers/src/go/lexer.ts@L382",
+      "cond:packages/parsers/src/go/lexer.ts@L384",
+      "cond:packages/parsers/src/go/lexer.ts@L387"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+        "procedureName": "Lexer.scanChar",
+        "guard": "cond:packages/parsers/src/go/lexer.ts@L382",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L382",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5762d80b078612d917aff4c1af57a13e777350c11f432dfe8e64cfb63b2ad481",
+          "target": "sym:packages/parsers/src/go/lexer.ts#Lexer.advance@L448",
+          "expr": "advance",
+          "line": 380
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+        "procedureName": "Lexer.scanChar",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a532135e611a558928a010e85ec7afad83b6e4250984550a46415a24aa5c9cd",
+          "target": "stmt:packages/parsers/src/go/lexer.ts@L380",
+          "line": 380,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+        "procedureName": "Lexer.scanChar",
+        "guard": "cond:packages/parsers/src/go/lexer.ts@L387",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L382",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L384",
+            "expr": "c === '\\\\'"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L387",
+            "expr": "this.pos < this.src.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9138849edac84f5828b88b46f9f0bc2a72651fd71fab61e55edbcce96b657f43",
+          "target": "sym:packages/parsers/src/go/lexer.ts#Lexer.peek@L437",
+          "expr": "peek",
+          "line": 383
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+        "procedureName": "Lexer.scanChar",
+        "guard": "cond:packages/parsers/src/go/lexer.ts@L382",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L382",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:10e244389eee4d1c1810f6317990fb6e3ae0e7628157eef8039a9a66f6604272",
+          "target": "stmt:packages/parsers/src/go/lexer.ts@L383",
+          "line": 383,
+          "expr": "const c = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+        "procedureName": "Lexer.scanChar",
+        "guard": "cond:packages/parsers/src/go/lexer.ts@L384",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L382",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L384",
+            "expr": "c === '\\\\'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:85f93c5ff6c49e0878dd447f733f337498ce3c602e065d5c8887a0152b3d7a5a",
+          "target": "assign:packages/parsers/src/go/lexer.ts@L385",
+          "line": 385,
+          "expr": "value += c;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+        "procedureName": "Lexer.scanChar",
+        "guard": "cond:packages/parsers/src/go/lexer.ts@L384",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L382",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L384",
+            "expr": "c === '\\\\'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:13bfc824298ff1e23e1de2e69d13884cf97cd1938560b5bd1f7c05867cd435f9",
+          "target": "stmt:packages/parsers/src/go/lexer.ts@L386",
+          "line": 386,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+        "procedureName": "Lexer.scanChar",
+        "guard": "cond:packages/parsers/src/go/lexer.ts@L387",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L382",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L384",
+            "expr": "c === '\\\\'"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L387",
+            "expr": "this.pos < this.src.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:226eec41097b9ba8cc77308cc090d18f4f835f019d422def32e77e9dfe90e14a",
+          "target": "assign:packages/parsers/src/go/lexer.ts@L388",
+          "line": 388,
+          "expr": "value += this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+        "procedureName": "Lexer.scanChar",
+        "guard": "cond:packages/parsers/src/go/lexer.ts@L387",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L382",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L384",
+            "expr": "c === '\\\\'"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L387",
+            "expr": "this.pos < this.src.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af0cf24834706a3aef7e3ac87abe957d8efe122ed725047592a871517dfe076f",
+          "target": "stmt:packages/parsers/src/go/lexer.ts@L389",
+          "line": 389,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+        "procedureName": "Lexer.scanChar",
+        "guard": "cond:packages/parsers/src/go/lexer.ts@L382",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L382",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b3f10dff1bf05458333cfa3ba2b0cad7d1ec93e6374710d278810943a8a08e73",
+          "target": "assign:packages/parsers/src/go/lexer.ts@L394",
+          "line": 394,
+          "expr": "value += c;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+        "procedureName": "Lexer.scanChar",
+        "guard": "cond:packages/parsers/src/go/lexer.ts@L382",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/lexer.ts@L382",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ac8905e577194be15167e2828cc5d3f2b432873d7c361f81cee7e725037ebefe",
+          "target": "stmt:packages/parsers/src/go/lexer.ts@L395",
+          "line": 395,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+        "procedureName": "Lexer.scanChar",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7484587555da9d3c0ba8ff4440528811918b9dd9fe885c781c37ff13e3c4cc8a",
+          "target": "sym:packages/parsers/src/go/lexer.ts#Lexer.emit@L459",
+          "expr": "emit",
+          "line": 398
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+        "procedureName": "Lexer.scanChar",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:972b73b06069f632c1ce8b29e594f0a7db1ad88df5c1108822a1ec8f16398aa8",
+          "target": "stmt:packages/parsers/src/go/lexer.ts@L398",
+          "line": 398,
+          "expr": "this.emit('CHAR', value, sl, sc);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/parsers/src/go/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 3,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 7,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

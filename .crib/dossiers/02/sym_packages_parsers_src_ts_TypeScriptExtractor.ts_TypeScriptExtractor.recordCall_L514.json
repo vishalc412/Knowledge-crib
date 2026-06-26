@@ -1,0 +1,273 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.recordCall@L514",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:26999aed3195e9f67c0eab945b3919d417db775a03dd17df3f4dd41852d514e0",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.recordCall@L514",
+    "kind": "symbol",
+    "type": "method",
+    "name": "recordCall",
+    "qualifiedName": "TypeScriptExtractor.recordCall",
+    "signature": "recordCall(call: ts.CallExpression, env: BodyEnv, gf: GuardFields): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 514,
+      "end": 524
+    },
+    "callSites": [
+      {
+        "callee": "calleeIdentifier",
+        "line": 515
+      },
+      {
+        "callee": "lineOf",
+        "line": 517
+      },
+      {
+        "callee": "getStart",
+        "line": 517
+      },
+      {
+        "callee": "push",
+        "line": 518
+      },
+      {
+        "callee": "get",
+        "line": 519
+      },
+      {
+        "callee": "set",
+        "line": 522
+      }
+    ]
+  },
+  "source": {
+    "text": "  private recordCall(call: ts.CallExpression, env: BodyEnv, gf: GuardFields): void {\n    const calleeName = calleeIdentifier(call.expression);\n    if (!calleeName) return;\n    const line = env.lineOf(call.getStart());\n    env.sites.push({ callee: calleeName, line });\n    const calleeId = env.byKey.get(calleeName);\n    if (calleeId && calleeId !== env.procId) {\n      // last-wins: a callee called in two branches keeps the last site's guard fields.\n      env.calls.set(calleeId, gf);\n    }\n  }",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 514
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addAssignment@L571",
+      "confidence": 1,
+      "name": "addAssignment",
+      "qualifiedName": "TypeScriptExtractor.addAssignment",
+      "signature": "addAssignment(stmt: ts.ExpressionStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 571
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L449",
+      "confidence": 1,
+      "name": "addStatement",
+      "qualifiedName": "TypeScriptExtractor.addStatement",
+      "signature": "addStatement(stmt: ts.Statement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 449
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.lineOf@L60",
+      "confidence": 1,
+      "name": "lineOf",
+      "qualifiedName": "TypeScriptExtractor.parse.lineOf",
+      "signature": "lineOf(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 60
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#calleeIdentifier@L1070",
+      "confidence": 1,
+      "name": "calleeIdentifier",
+      "qualifiedName": "calleeIdentifier",
+      "signature": "calleeIdentifier(expr: ts.Expression): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 1070
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L513",
+      "snippet": "/** Record a call site on the proc's meta.calls + annotate the (proc→callee) calls edge. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.recordCall@L514",
+    "procedureName": "TypeScriptExtractor.recordCall",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L516",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L520"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.recordCall@L514",
+        "procedureName": "TypeScriptExtractor.recordCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8fcd11cd494033c7629c31d5b168f5821d9646a1520dfa36d83c8ab41ca0aa20",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#calleeIdentifier@L1070",
+          "expr": "calleeIdentifier",
+          "line": 515
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.recordCall@L514",
+        "procedureName": "TypeScriptExtractor.recordCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:446f53dbbf26e1f2304fb7192ea8eacca98f453ca2001a3dd46473177e84cfcb",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L515",
+          "line": 515,
+          "expr": "const calleeName = calleeIdentifier(call.expression);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.recordCall@L514",
+        "procedureName": "TypeScriptExtractor.recordCall",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L516",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L516",
+            "expr": "!calleeName",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a4873f4af72e2f9b0c53b1de6ebf0874c290014d5e5028b7829d2216bfb786fb",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L516",
+          "line": 516,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.recordCall@L514",
+        "procedureName": "TypeScriptExtractor.recordCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1ee5111d957b05a24aaca7270ea317e8a6b0be8e2c723fa960cca93ab9dedb42",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.lineOf@L60",
+          "expr": "lineOf",
+          "line": 517
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.recordCall@L514",
+        "procedureName": "TypeScriptExtractor.recordCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:014342ebbcfa177d450db6b39da627fc81ed412d9ae103a141c779b36cd3a6aa",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L517",
+          "line": 517,
+          "expr": "const line = env.lineOf(call.getStart());"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.recordCall@L514",
+        "procedureName": "TypeScriptExtractor.recordCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:28b4e15dd604be2a8104dd4cefe87c1767a7c21df688a46a541eafd7d6f9c901",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L518",
+          "line": 518,
+          "expr": "env.sites.push({ callee: calleeName, line });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.recordCall@L514",
+        "procedureName": "TypeScriptExtractor.recordCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5d25b56665b5e3eb4808c0eaad5736d704fc266566573415162875cdb1ced545",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L519",
+          "line": 519,
+          "expr": "const calleeId = env.byKey.get(calleeName);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.recordCall@L514",
+        "procedureName": "TypeScriptExtractor.recordCall",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L520",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L520",
+            "expr": "calleeId && calleeId !== env.procId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:24aa5ea7d492fcaff5166d1ec234d1d4d7032fce66e15ecd406933e8098d86fe",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L522",
+          "line": 522,
+          "expr": "env.calls.set(calleeId, gf);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 6,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

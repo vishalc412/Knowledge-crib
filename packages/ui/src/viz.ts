@@ -39,6 +39,12 @@ export interface VizNodeData {
   summary?: string;
   clusterId?: string;
   type?: string;
+  /** Framework-semantics 1.3 identity — surfaced so the detail panel can show the framework role
+   *  (controller/service/entity, spring/express/react) without re-querying the soul. */
+  framework?: string;
+  stereotype?: string;
+  httpMethod?: string;
+  routePath?: string;
 }
 
 export interface VizEdgeData {
@@ -129,6 +135,28 @@ function makeSummary(node: Node, kind: VizNodeKind): string {
   }
   if (kind === 'media-seg') return 'Media segment';
   if (kind === 'explanation') return node.textRef ? `Explanation: ${node.textRef}` : 'Explanation';
+  // framework-semantics 1.3 — richer summaries for the API/DI/component surface so a route reads
+  // as `POST /api/loans` (not `route: POST /api/loans`), an entity field names its column, and a
+  // component names its framework. Symbols prefix their stereotype when present
+  // (`controller: LoanController`) so the graph distinguishes a controller from a plain class.
+  if (kind === 'route') {
+    return node.httpMethod && node.routePath
+      ? `${node.httpMethod} ${node.routePath}`
+      : (node.name ?? node.label ?? node.id);
+  }
+  if (kind === 'field') {
+    const col = (node.meta as { column?: { name?: string } } | undefined)?.column;
+    return col?.name ? `Field ${node.name ?? ''} → column ${col.name}` : `Field ${node.name ?? ''}`;
+  }
+  if (kind === 'component') {
+    return node.framework
+      ? `${node.framework} component ${node.name ?? ''}`
+      : `Component ${node.name ?? ''}`;
+  }
+  if (kind === 'symbol' || kind === 'class' || kind === 'method' || kind === 'function') {
+    const role = node.stereotype ? `${node.stereotype}: ` : '';
+    return `${role}${node.name ?? node.qualifiedName ?? node.label ?? node.id}`;
+  }
   return [kind, node.name ?? node.label ?? node.id].filter(Boolean).join(': ');
 }
 
@@ -185,6 +213,11 @@ export function buildVizGraph(soul: SoulStore): VizGraph {
       if (node.lang) data.lang = node.lang;
       if (node.signature) data.signature = node.signature;
       if (node.type) data.type = node.type;
+      // framework-semantics 1.3 identity — surfaced for the detail panel (no re-query needed).
+      if (node.framework) data.framework = node.framework;
+      if (node.stereotype) data.stereotype = node.stereotype;
+      if (node.httpMethod) data.httpMethod = node.httpMethod;
+      if (node.routePath) data.routePath = node.routePath;
       const clusterId = parentOf.get(node.id);
       if (clusterId) data.clusterId = clusterId;
       return { data };

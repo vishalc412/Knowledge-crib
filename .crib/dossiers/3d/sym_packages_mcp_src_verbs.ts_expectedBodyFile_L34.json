@@ -1,0 +1,209 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#expectedBodyFile@L34",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:f60af74c4fafc4724d5024fb81c954f0ca6b2962a7b6d8023b34d9d2699a1d73",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#expectedBodyFile@L34",
+    "kind": "symbol",
+    "type": "function",
+    "name": "expectedBodyFile",
+    "qualifiedName": "expectedBodyFile",
+    "signature": "expectedBodyFile(specFile: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 34,
+      "end": 42
+    },
+    "callSites": [
+      {
+        "callee": "replace",
+        "line": 35
+      },
+      {
+        "callee": "replace",
+        "line": 36
+      },
+      {
+        "callee": "replace",
+        "line": 37
+      },
+      {
+        "callee": "replace",
+        "line": 39
+      }
+    ]
+  },
+  "source": {
+    "text": "function expectedBodyFile(specFile: string): string | undefined {\n  if (/\\.pks$/i.test(specFile)) return specFile.replace(/\\.pks$/i, '.pkb');\n  if (/_spec\\.sql$/i.test(specFile)) return specFile.replace(/_spec\\.sql$/i, '_body.sql');\n  if (/spec\\.sql$/i.test(specFile)) return specFile.replace(/spec\\.sql$/i, 'body.sql');\n  if (/\\.sql$/i.test(specFile) && /spec/i.test(specFile)) {\n    return specFile.replace(/spec/i, 'body');\n  }\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 34
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L467",
+      "confidence": 1,
+      "name": "gaps",
+      "qualifiedName": "Verbs.gaps",
+      "signature": "gaps(args: { extractedOnly?: boolean } = {}): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 467
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L28",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#expectedBodyFile@L34",
+    "procedureName": "expectedBodyFile",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L35",
+      "cond:packages/mcp/src/verbs.ts@L36",
+      "cond:packages/mcp/src/verbs.ts@L37",
+      "cond:packages/mcp/src/verbs.ts@L38"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#expectedBodyFile@L34",
+        "procedureName": "expectedBodyFile",
+        "guard": "cond:packages/mcp/src/verbs.ts@L35",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L35",
+            "expr": "/\\.pks$/i.test(specFile)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e32caa7d49b31fd0c80388a53b43d8e2b379d2e569e84d27c45e91c43b311280",
+          "target": "stmt:packages/mcp/src/verbs.ts@L35",
+          "line": 35,
+          "expr": "return specFile.replace(/\\.pks$/i, '.pkb');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#expectedBodyFile@L34",
+        "procedureName": "expectedBodyFile",
+        "guard": "cond:packages/mcp/src/verbs.ts@L36",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L36",
+            "expr": "/_spec\\.sql$/i.test(specFile)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bb1f6cc7fa47e7e073b00b78d7f0bfcedc481a7e4fae45249aa5a75c3220210e",
+          "target": "stmt:packages/mcp/src/verbs.ts@L36",
+          "line": 36,
+          "expr": "return specFile.replace(/_spec\\.sql$/i, '_body.sql');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#expectedBodyFile@L34",
+        "procedureName": "expectedBodyFile",
+        "guard": "cond:packages/mcp/src/verbs.ts@L37",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L37",
+            "expr": "/spec\\.sql$/i.test(specFile)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5b585691a3b53ff47b6e6d750d39c2d0d1a8d83f7788114fb620cb671e9df6a6",
+          "target": "stmt:packages/mcp/src/verbs.ts@L37",
+          "line": 37,
+          "expr": "return specFile.replace(/spec\\.sql$/i, 'body.sql');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#expectedBodyFile@L34",
+        "procedureName": "expectedBodyFile",
+        "guard": "cond:packages/mcp/src/verbs.ts@L38",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L38",
+            "expr": "/\\.sql$/i.test(specFile) && /spec/i.test(specFile)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c773b3506f187d8256bd7a6dde32bb97fd5c28a8051460489ce9d9821ca990b7",
+          "target": "stmt:packages/mcp/src/verbs.ts@L39",
+          "line": 39,
+          "expr": "return specFile.replace(/spec/i, 'body');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#expectedBodyFile@L34",
+        "procedureName": "expectedBodyFile",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7631a8f44d0c4e71fc6701b989411763b4beb9adc5d7b8bf233480dee5d44b10",
+          "target": "stmt:packages/mcp/src/verbs.ts@L41",
+          "line": 41,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

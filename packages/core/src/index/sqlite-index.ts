@@ -3,17 +3,15 @@ import type { Edge, Node, NodeKind, Rel } from '@knowledge-crib/soul-schema';
  * SqliteIndexStore — the default IndexStore backend (M1).
  *
  * better-sqlite3 + FTS5 (BM25 ranking) + materialized adjacency, so `impact`/`neighbors`/
- * `shortestPath` are O(degree) graph walks over indexed `edges(src)` / `edges(dst)`. Vectors are
- * out of scope for the deterministic core — `withEmbeddings` provisions an (empty) vector table but
- * ANN search lands with the semantic linker at M7; until then `capabilities().vector=false`.
- *
- * sqlite-vec ceiling (research §4.3): brute-force exact KNN is impractical above ~100k vectors, so
- * vectors are opt-in and never on the deterministic query hot path.
+ * `shortestPath` are O(degree) graph walks over indexed `edges(src)` / `edges(dst)`. No vector
+ * index ships — `capabilities().vector=false` unconditionally. The INFERRED "semantic" layer is the
+ * M7 pure-JS TF-IDF linker (pipeline `runSemanticLink`, gated by `IndexOpts.semantic` / CLI
+ * `--semantic`), which emits capped `references` edges — it is not a vector ANN path and stays off
+ * the deterministic query hot path.
  */
 import Database from 'better-sqlite3';
 import type { Database as DB } from 'better-sqlite3';
 import type {
-  BuildOpts,
   Dir,
   Hit,
   HybridQuery,
@@ -30,7 +28,6 @@ const FTS_COLUMNS = 'name, qualifiedName, signature, heading, file';
 
 export class SqliteIndexStore implements IndexStore {
   private readonly db: DB;
-  private withEmbeddings = false;
 
   /**
    * @param path file path for the sqlite db, or ':memory:' for an ephemeral index.
@@ -42,8 +39,7 @@ export class SqliteIndexStore implements IndexStore {
     this.createSchema();
   }
 
-  buildFromSoul(soul: SoulStore, opts: BuildOpts = {}): void {
-    this.withEmbeddings = opts.withEmbeddings ?? false;
+  buildFromSoul(soul: SoulStore): void {
     this.reset();
     const insertMany = this.db.transaction(() => {
       for (const node of soul.iterate()) this.insertNode(node);

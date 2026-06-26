@@ -1,0 +1,144 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#returnTypesOf@L526",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:bf496566c1b331d7ad959af9fe7ac5bb802b3b72036936e8a4574d75d32ec4fd",
+  "builtAt": "2026-06-26T05:09:36.599Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#returnTypesOf@L526",
+    "kind": "symbol",
+    "type": "function",
+    "name": "returnTypesOf",
+    "qualifiedName": "returnTypesOf",
+    "signature": "returnTypesOf(method: Node): { returnType?: string; returnElementType?: string }",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 526,
+      "end": 532
+    }
+  },
+  "source": {
+    "text": "function returnTypesOf(method: Node): { returnType?: string; returnElementType?: string } {\n  const m = (method.meta ?? {}) as Record<string, unknown>;\n  const out: { returnType?: string; returnElementType?: string } = {};\n  if (typeof m.returnType === 'string') out.returnType = m.returnType;\n  if (typeof m.returnElementType === 'string') out.returnElementType = m.returnElementType;\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 526
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L199",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 199
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/framework.ts@L525",
+      "snippet": "/** A method's own return types from its meta (NOT the produced type's meta). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#returnTypesOf@L526",
+    "procedureName": "returnTypesOf",
+    "conditions": [
+      "cond:packages/core/src/dossier/framework.ts@L529",
+      "cond:packages/core/src/dossier/framework.ts@L530"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#returnTypesOf@L526",
+        "procedureName": "returnTypesOf",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L529",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L529",
+            "expr": "typeof m.returnType === 'string'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cd84104d50ccfc292d10e725d84a8ba588452bf4b88e23c3a8697d9532331b96",
+          "target": "assign:packages/core/src/dossier/framework.ts@L529",
+          "line": 529,
+          "expr": "out.returnType = m.returnType;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#returnTypesOf@L526",
+        "procedureName": "returnTypesOf",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L530",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L530",
+            "expr": "typeof m.returnElementType === 'string'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:194e83b16d7e0bfd615861937b4cb6d3e1882ac916af6a881617df7cd2097ce8",
+          "target": "assign:packages/core/src/dossier/framework.ts@L530",
+          "line": 530,
+          "expr": "out.returnElementType = m.returnElementType;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#returnTypesOf@L526",
+        "procedureName": "returnTypesOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:47c0cdc1e04891670ca1eb7c6ae80f6829343424f4e9bc4df306a5c1ca33d486",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L531",
+          "line": 531,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 2,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

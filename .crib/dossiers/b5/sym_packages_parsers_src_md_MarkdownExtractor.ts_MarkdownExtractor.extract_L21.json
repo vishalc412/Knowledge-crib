@@ -1,0 +1,389 @@
+{
+  "id": "sym:packages/parsers/src/md/MarkdownExtractor.ts#MarkdownExtractor.extract@L21",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9985ba1786e1e866fd913a450bbc40e522b1e76f57d285a7368c29bdce37da6a",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/md/MarkdownExtractor.ts#MarkdownExtractor.extract@L21",
+    "kind": "symbol",
+    "type": "method",
+    "name": "extract",
+    "qualifiedName": "MarkdownExtractor.extract",
+    "signature": "extract(file: FileMeta, ctx: ExtractCtx): Promise<ExtractResult>",
+    "lang": "typescript",
+    "file": "packages/parsers/src/md/MarkdownExtractor.ts",
+    "span": {
+      "start": 21,
+      "end": 64
+    },
+    "callSites": [
+      {
+        "callee": "readText",
+        "line": 22
+      },
+      {
+        "callee": "idFor",
+        "line": 23
+      },
+      {
+        "callee": "parseMarkdownSections",
+        "line": 24
+      },
+      {
+        "callee": "idFor",
+        "line": 30
+      },
+      {
+        "callee": "push",
+        "line": 31
+      },
+      {
+        "callee": "push",
+        "line": 32
+      },
+      {
+        "callee": "hash",
+        "line": 41
+      },
+      {
+        "callee": "forEach",
+        "line": 46
+      },
+      {
+        "callee": "push",
+        "line": 51
+      },
+      {
+        "callee": "edgeId",
+        "line": 52
+      }
+    ]
+  },
+  "source": {
+    "text": "  async extract(file: FileMeta, ctx: ExtractCtx): Promise<ExtractResult> {\n    const text = await ctx.readText();\n    const fileId = ctx.idFor('file', { path: file.path });\n    const sections = parseMarkdownSections(text);\n    const nodes: Node[] = [];\n    const edges: Edge[] = [];\n    const idByIndex: string[] = [];\n\n    for (const s of sections) {\n      const id = ctx.idFor('doc-section', { path: file.path, anchor: s.anchor });\n      idByIndex.push(id);\n      nodes.push({\n        id,\n        kind: 'doc-section',\n        file: file.path,\n        heading: s.heading,\n        level: s.level,\n        anchor: s.anchor,\n        span: { start: s.startLine, end: s.endLine },\n        lang: 'markdown',\n        hash: ctx.hash(`${s.heading}@${s.startLine}-${s.endLine}`),\n        meta: { codeRefs: s.codeRefs, links: s.links },\n      });\n    }\n\n    sections.forEach((s, i) => {\n      const childId = idByIndex[i];\n      if (!childId) return;\n      const parentId = s.parent >= 0 ? idByIndex[s.parent] : fileId;\n      if (!parentId) return;\n      edges.push({\n        id: edgeId(childId, parentId, 'member-of'),\n        src: childId,\n        dst: parentId,\n        rel: 'member-of',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name },\n      });\n    });\n\n    return { nodes, edges };\n  }",
+    "truncated": false,
+    "totalLines": 44,
+    "startLine": 21
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/md/markdown.ts#parseMarkdownSections@L36",
+      "confidence": 1,
+      "name": "parseMarkdownSections",
+      "qualifiedName": "parseMarkdownSections",
+      "signature": "parseMarkdownSections(text: string): MdSection[]",
+      "type": "function",
+      "file": "packages/parsers/src/md/markdown.ts",
+      "line": 36
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m4-doc-extractor-markdown-deterministic-cross-modal-linker-headline-gate-1",
+      "heading": "M4 — doc-extractor (Markdown) + deterministic cross-modal linker ← HEADLINE GATE #1",
+      "anchor": "m4-doc-extractor-markdown-deterministic-cross-modal-linker-headline-gate-1",
+      "snippet": "M4 — doc-extractor (Markdown) + deterministic cross-modal linker ← HEADLINE GATE #1",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
+      "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "anchor": "java-spring-boot-track-built-tested-schema-1-3",
+      "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#10-migration-track-widened-first-class-deterministic-no-llm-in-the-rule-path",
+      "heading": "10. Migration track (widened) — first-class, deterministic, no-LLM in the rule path",
+      "anchor": "10-migration-track-widened-first-class-deterministic-no-llm-in-the-rule-path",
+      "snippet": "10. Migration track (widened) — first-class, deterministic, no-LLM in the rule path",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#0-repo-stack",
+      "heading": "0. Repo & stack",
+      "anchor": "0-repo-stack",
+      "snippet": "0. Repo & stack",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "heading": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
+      "anchor": "2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "snippet": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#4-incremental-git",
+      "heading": "4. Incremental + git",
+      "anchor": "4-incremental-git",
+      "snippet": "4. Incremental + git",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#knowledge-crib-deep-extraction-migration-first-class-wedge",
+      "heading": "Knowledge-crib — Deep Extraction & Migration (first-class wedge)",
+      "anchor": "knowledge-crib-deep-extraction-migration-first-class-wedge",
+      "snippet": "Knowledge-crib — Deep Extraction & Migration (first-class wedge)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-overview",
+      "heading": "Phase overview",
+      "anchor": "phase-overview",
+      "snippet": "Phase overview",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#5-incremental-update-protocol-the-upgrades-as-project-evolves-part",
+      "heading": "5. Incremental update protocol (the \"upgrades as project evolves\" part)",
+      "anchor": "5-incremental-update-protocol-the-upgrades-as-project-evolves-part",
+      "snippet": "5. Incremental update protocol (the \"upgrades as project evolves\" part)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#3-executes-edges-procedure-symbol-each-statement-node-in-its-body",
+      "heading": "3. `executes` edges — procedure symbol → each statement node in its body",
+      "anchor": "3-executes-edges-procedure-symbol-each-statement-node-in-its-body",
+      "snippet": "3. `executes` edges — procedure symbol → each statement node in its body",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/md/MarkdownExtractor.ts#MarkdownExtractor.extract@L21",
+    "procedureName": "MarkdownExtractor.extract",
+    "conditions": [
+      "cond:packages/parsers/src/md/MarkdownExtractor.ts@L29"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/md/MarkdownExtractor.ts#MarkdownExtractor.extract@L21",
+        "procedureName": "MarkdownExtractor.extract",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bdd1dd64dbe0d60dfac9371bc5915eb93b053eb726764b940fe891705885eaec",
+          "target": "stmt:packages/parsers/src/md/MarkdownExtractor.ts@L22",
+          "line": 22,
+          "expr": "const text = await ctx.readText();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/MarkdownExtractor.ts#MarkdownExtractor.extract@L21",
+        "procedureName": "MarkdownExtractor.extract",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9e55669d29c7655ab3c6e123f534f7f6f19a52afaf2efd8de4b97d2afdc350da",
+          "target": "stmt:packages/parsers/src/md/MarkdownExtractor.ts@L23",
+          "line": 23,
+          "expr": "const fileId = ctx.idFor('file', { path: file.path });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/MarkdownExtractor.ts#MarkdownExtractor.extract@L21",
+        "procedureName": "MarkdownExtractor.extract",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5fd8dedb5bb130696b532872b1291a1c8e0ff42cd8c06f4c3dfd604f1ee3e1b7",
+          "target": "stmt:packages/parsers/src/md/MarkdownExtractor.ts@L24",
+          "line": 24,
+          "expr": "const sections = parseMarkdownSections(text);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/MarkdownExtractor.ts#MarkdownExtractor.extract@L21",
+        "procedureName": "MarkdownExtractor.extract",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:025c44ee5fd651ee5de3c9779dc07e749d5109fdec4fabd7d0fb1ac545e47f0e",
+          "target": "sym:packages/parsers/src/md/markdown.ts#parseMarkdownSections@L36",
+          "expr": "parseMarkdownSections",
+          "line": 24
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/MarkdownExtractor.ts#MarkdownExtractor.extract@L21",
+        "procedureName": "MarkdownExtractor.extract",
+        "guard": "cond:packages/parsers/src/md/MarkdownExtractor.ts@L29",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/md/MarkdownExtractor.ts@L29",
+            "expr": "sections",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:68eb6c3966b500c55318b525f641b2f6c186109d4df2009c7c9a32fed6266383",
+          "target": "stmt:packages/parsers/src/md/MarkdownExtractor.ts@L30",
+          "line": 30,
+          "expr": "const id = ctx.idFor('doc-section', { path: file.path, anchor: s.anchor });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/MarkdownExtractor.ts#MarkdownExtractor.extract@L21",
+        "procedureName": "MarkdownExtractor.extract",
+        "guard": "cond:packages/parsers/src/md/MarkdownExtractor.ts@L29",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/md/MarkdownExtractor.ts@L29",
+            "expr": "sections",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6b52774532b8240ff05f6b567106b430005b0a0d01d0b1b0ff9215a9f7df8199",
+          "target": "stmt:packages/parsers/src/md/MarkdownExtractor.ts@L31",
+          "line": 31,
+          "expr": "idByIndex.push(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/MarkdownExtractor.ts#MarkdownExtractor.extract@L21",
+        "procedureName": "MarkdownExtractor.extract",
+        "guard": "cond:packages/parsers/src/md/MarkdownExtractor.ts@L29",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/md/MarkdownExtractor.ts@L29",
+            "expr": "sections",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:873b0386a2f1e53644eb27ee78105e83110ba8ddd278ee8c3f6a2b38874f5fc5",
+          "target": "stmt:packages/parsers/src/md/MarkdownExtractor.ts@L32",
+          "line": 32,
+          "expr": "nodes.push({\n        id,\n        kind: 'doc-section',\n        file: file.path,\n        heading: s.heading,\n        level: s.level,\n        anchor: s.anchor,\n        span: { start: s.startLine, end: s.endLine },\n        lang: 'markdown',\n        hash: ctx.hash(`${s.heading}@${s.startLine}-${s.endLine}`),\n        meta: { codeRefs: s.codeRefs, links: s.links },\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/MarkdownExtractor.ts#MarkdownExtractor.extract@L21",
+        "procedureName": "MarkdownExtractor.extract",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e5e3b6bf3a22bc482aac786088b86ebe0ed113c46900a219039e703c6087055d",
+          "target": "stmt:packages/parsers/src/md/MarkdownExtractor.ts@L46",
+          "line": 46,
+          "expr": "sections.forEach((s, i) => {\n      const childId = idByIndex[i];\n      if (!childId) return;\n      const parentId = s.parent >= 0 ? idByIndex[s.parent] : fileId;\n      if (!parentId) return;\n      edges.push({\n        id: edgeId(childId, parentId, 'member-of'),\n        src: childId,\n        dst: parentId,\n        rel: 'member-of',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name },\n      });\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/MarkdownExtractor.ts#MarkdownExtractor.extract@L21",
+        "procedureName": "MarkdownExtractor.extract",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6d805fac037a0a0e43e0168edcb2a9f77251e7158870c677ce88cbc2dec14d93",
+          "target": "stmt:packages/parsers/src/md/MarkdownExtractor.ts@L63",
+          "line": 63,
+          "expr": "return { nodes, edges };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 8,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 8,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 10,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

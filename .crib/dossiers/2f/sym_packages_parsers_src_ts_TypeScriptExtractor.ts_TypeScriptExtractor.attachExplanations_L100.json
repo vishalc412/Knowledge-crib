@@ -1,0 +1,225 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.attachExplanations@L100",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:3c3cb04727d5dd92caccb3f24eb5defabd23ebef637b821894c5dfab904b9a83",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.attachExplanations@L100",
+    "kind": "symbol",
+    "type": "method",
+    "name": "attachExplanations",
+    "qualifiedName": "TypeScriptExtractor.attachExplanations",
+    "signature": "attachExplanations(path: string, ctx: ExtractCtx, comments: CommentBlock[], symbols: LocalSymbol[], lineOf: (pos: number) => number, nodes: Node[], edges: Edge[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 100,
+      "end": 139
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 113
+      },
+      {
+        "callee": "idFor",
+        "line": 115
+      },
+      {
+        "callee": "add",
+        "line": 117
+      },
+      {
+        "callee": "push",
+        "line": 118
+      },
+      {
+        "callee": "hash",
+        "line": 125
+      },
+      {
+        "callee": "push",
+        "line": 128
+      },
+      {
+        "callee": "edgeId",
+        "line": 129
+      }
+    ]
+  },
+  "source": {
+    "text": "  private attachExplanations(\n    path: string,\n    ctx: ExtractCtx,\n    comments: CommentBlock[],\n    symbols: LocalSymbol[],\n    lineOf: (pos: number) => number,\n    nodes: Node[],\n    edges: Edge[],\n  ): void {\n    const seen = new Set<string>();\n    for (const s of symbols) {\n      const startLine = s.node.span?.start;\n      if (startLine === undefined) continue;\n      const block = comments.find((c) => c.end === startLine - 1);\n      if (!block || !block.text) continue;\n      const id = ctx.idFor('explanation', { path, startLine: block.start });\n      if (seen.has(id)) continue;\n      seen.add(id);\n      nodes.push({\n        id,\n        kind: 'explanation',\n        commentRef: { file: path, span: { start: block.start, end: block.end } },\n        file: path,\n        span: { start: block.start, end: block.end },\n        lang: 'typescript',\n        hash: ctx.hash(`${path}:${block.start}:${block.text}`),\n        meta: { text: block.text }, // the comment text is carried inline (a doc, not code ref)\n      });\n      edges.push({\n        id: edgeId(id, s.node.id, 'describes'),\n        src: id,\n        dst: s.node.id,\n        rel: 'describes',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet: 'COMMENT' },\n      });\n    }\n  }",
+    "truncated": false,
+    "totalLines": 40,
+    "startLine": 100
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L47",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "TypeScriptExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 47
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L53",
+      "snippet": "/*setParentNodes*/ true,",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.attachExplanations@L100",
+    "procedureName": "TypeScriptExtractor.attachExplanations",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L110"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.attachExplanations@L100",
+        "procedureName": "TypeScriptExtractor.attachExplanations",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L110",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L110",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dcc030c5735f4ac23b3c35f6c8d8422b8a1d135c37ae2e6cbcdedb8ddcfcba59",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L113",
+          "line": 113,
+          "expr": "const block = comments.find((c) => c.end === startLine - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.attachExplanations@L100",
+        "procedureName": "TypeScriptExtractor.attachExplanations",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L110",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L110",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ba0ef21b8faebb5995e87abbd040ed21784da548aac7ac89252005771573ea7f",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L115",
+          "line": 115,
+          "expr": "const id = ctx.idFor('explanation', { path, startLine: block.start });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.attachExplanations@L100",
+        "procedureName": "TypeScriptExtractor.attachExplanations",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L110",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L110",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c8a04e566f85dec8dd6d5b97156e02b79b61f1ed7986241ef90547d67e1e820a",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L117",
+          "line": 117,
+          "expr": "seen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.attachExplanations@L100",
+        "procedureName": "TypeScriptExtractor.attachExplanations",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L110",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L110",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:256ffb0b458f8a630978a0fbd28a2a226251f8f1808d74e436dcad525f370e9a",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L118",
+          "line": 118,
+          "expr": "nodes.push({\n        id,\n        kind: 'explanation',\n        commentRef: { file: path, span: { start: block.start, end: block.end } },\n        file: path,\n        span: { start: block.start, end: block.end },\n        lang: 'typescript',\n        hash: ctx.hash(`${path}:${block.start}:${block.text}`),\n        meta: { text: block.text }, // the comment text is carried inline (a doc, not code ref)\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.attachExplanations@L100",
+        "procedureName": "TypeScriptExtractor.attachExplanations",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L110",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L110",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c386a881c4c432d82f06bf94c71fdb382a9b4c2bacbfcf2641d14cd71cc8c274",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L128",
+          "line": 128,
+          "expr": "edges.push({\n        id: edgeId(id, s.node.id, 'describes'),\n        src: id,\n        dst: s.node.id,\n        rel: 'describes',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet: 'COMMENT' },\n      });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 7,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

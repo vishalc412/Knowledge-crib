@@ -1,0 +1,147 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L240",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e69aa5f2bce85d23bf6e86f12f0d70193e6ac3deb6d3e9c84bd02a6e094dccc6",
+  "builtAt": "2026-06-25T22:29:24.239Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L240",
+    "kind": "symbol",
+    "type": "function",
+    "name": "classMappingPath",
+    "qualifiedName": "classMappingPath",
+    "signature": "classMappingPath(def: JavaDef): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 240,
+      "end": 243
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 241
+      },
+      {
+        "callee": "allQuoted",
+        "line": 242
+      }
+    ]
+  },
+  "source": {
+    "text": "function classMappingPath(def: JavaDef): string {\n  const anno = (def.annos ?? []).find((a) => a.name === 'RequestMapping');\n  return anno ? (allQuoted(anno.args)[0] ?? '') : '';\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 240
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L64",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 64
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#allQuoted@L256",
+      "confidence": 1,
+      "name": "allQuoted",
+      "qualifiedName": "allQuoted",
+      "signature": "allQuoted(s?: string): string[]",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 256
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L238",
+      "snippet": "/** Class-level base path from `@RequestMapping(\"/api\")` / `@RequestMapping(value=\"/api\")`. A",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L240",
+    "procedureName": "classMappingPath",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L240",
+        "procedureName": "classMappingPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:27b8c7307536877fe4fc0dd37585716210e43162b5ee7421015957840c7c28f5",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L241",
+          "line": 241,
+          "expr": "const anno = (def.annos ?? []).find((a) => a.name === 'RequestMapping');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L240",
+        "procedureName": "classMappingPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2f133b780d533909f35ecca6f5d6f06f1d32e53062ada64e8ca447ab295eca85",
+          "target": "sym:packages/parsers/src/java/spring.ts#allQuoted@L256",
+          "expr": "allQuoted",
+          "line": 242
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L240",
+        "procedureName": "classMappingPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c99c69ad0312bc16126e9fc81a084c5355fbfeff1601edd56324aa0974de8aa",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L242",
+          "line": 242,
+          "expr": "return anno ? (allQuoted(anno.args)[0] ?? '') : '';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

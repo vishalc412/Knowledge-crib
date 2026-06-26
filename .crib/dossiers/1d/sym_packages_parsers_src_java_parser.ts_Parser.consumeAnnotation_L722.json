@@ -1,0 +1,646 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:96ac4d42a2b70aefc212739619353554732c7d22651988cfa694d493b5001ac4",
+  "builtAt": "2026-06-25T22:25:44.295Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+    "kind": "symbol",
+    "type": "method",
+    "name": "consumeAnnotation",
+    "qualifiedName": "Parser.consumeAnnotation",
+    "signature": "consumeAnnotation(out: string[], rich?: JavaAnno[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 722,
+      "end": 755
+    },
+    "callSites": [
+      {
+        "callee": "next",
+        "line": 723
+      },
+      {
+        "callee": "peek",
+        "line": 727
+      },
+      {
+        "callee": "next",
+        "line": 728
+      },
+      {
+        "callee": "next",
+        "line": 730
+      },
+      {
+        "callee": "peek",
+        "line": 732
+      },
+      {
+        "callee": "next",
+        "line": 733
+      },
+      {
+        "callee": "push",
+        "line": 738
+      },
+      {
+        "callee": "add",
+        "line": 741
+      },
+      {
+        "callee": "peek",
+        "line": 745
+      },
+      {
+        "callee": "skipBalancedParens",
+        "line": 746
+      },
+      {
+        "callee": "offOf",
+        "line": 749
+      },
+      {
+        "callee": "offOf",
+        "line": 750
+      },
+      {
+        "callee": "trim",
+        "line": 751
+      },
+      {
+        "callee": "slice",
+        "line": 751
+      },
+      {
+        "callee": "push",
+        "line": 754
+      }
+    ]
+  },
+  "source": {
+    "text": "        this.skipAnnotationNoCapture();\n        continue;\n      }\n      if (this.isOp(';')) {\n        this.next();\n        return;\n      }\n      if (this.isOp('}')) return; // constants only — leave `}` for parseDecls\n      if (this.isOp('(')) {\n        this.skipBalancedParens();\n        continue;\n      }\n      if (this.isOp('{')) {\n        this.skipBraces();\n        continue;\n      }\n      if (this.isOp(',')) {\n        this.next();\n        continue;\n      }\n      this.next(); // constant name or stray token\n    }\n  }\n\n  // --- annotations --------------------------------------------------------------\n\n  private consumeAnnotation(out: string[], rich?: JavaAnno[]): void {\n    this.next(); // '@'\n    let name: string | undefined;\n    // dotted annotation name NAME (. NAME)*\n    if (this.isNameToken()) {\n      name = this.peek().value;\n      this.next();\n      while (this.isOp('.')) {",
+    "truncated": false,
+    "totalLines": 34,
+    "startLine": 722
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecl@L263",
+      "confidence": 1,
+      "name": "parseDecl",
+      "qualifiedName": "Parser.parseDecl",
+      "signature": "parseDecl(): JavaDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 263
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isNameToken@L830",
+      "confidence": 1,
+      "name": "isNameToken",
+      "qualifiedName": "Parser.isNameToken",
+      "signature": "isNameToken(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 830
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L816",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 816
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.next@L833",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 833
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.offOf@L758",
+      "confidence": 1,
+      "name": "offOf",
+      "qualifiedName": "Parser.offOf",
+      "signature": "offOf(tk: Token): number",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 758
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L838",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 838
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.skipBalancedParens@L778",
+      "confidence": 1,
+      "name": "skipBalancedParens",
+      "qualifiedName": "Parser.skipBalancedParens",
+      "signature": "skipBalancedParens(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 778
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+    "procedureName": "Parser.consumeAnnotation",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.ts@L726",
+      "cond:packages/parsers/src/java/parser.ts@L729",
+      "cond:packages/parsers/src/java/parser.ts@L731",
+      "cond:packages/parsers/src/java/parser.ts@L740",
+      "cond:packages/parsers/src/java/parser.ts@L748"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L731",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L726",
+            "expr": "this.isNameToken()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L729",
+            "expr": "this.isOp('.')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L731",
+            "expr": "this.isNameToken()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:70bb0c5c2e5a9ff0ccbbb7efd9087f47d6d46ee51d30904c6e380d26d232a303",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L833",
+          "expr": "next",
+          "line": 723
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:20b142053a7573acd9458672ad4c35cae15274bbb1c82da4e7b6d8b5b50a4f7e",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L723",
+          "line": 723,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L740",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L740",
+            "expr": "this.isOp('(')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:67073ead3970a2bea278cb83c6119c6823982f92c0d5a770f809fd456b6749db",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L838",
+          "expr": "peek",
+          "line": 727
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L726",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L726",
+            "expr": "this.isNameToken()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7987c391fa74d00b23c4e67b77b46846978c9247cbc75fec61f5f98fde23cd12",
+          "target": "assign:packages/parsers/src/java/parser.ts@L727",
+          "line": 727,
+          "expr": "name = this.peek().value;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L726",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L726",
+            "expr": "this.isNameToken()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:830a37f1eabb461f9492eef15c598e1b6b1eefb09ab241d944feb50e8af3b3d7",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L728",
+          "line": 728,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L729",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L726",
+            "expr": "this.isNameToken()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L729",
+            "expr": "this.isOp('.')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7fd5e94e2fa7bd25136e379379b343ed65108ed554c0ac865bbc60e08d354725",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L730",
+          "line": 730,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L731",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L726",
+            "expr": "this.isNameToken()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L729",
+            "expr": "this.isOp('.')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L731",
+            "expr": "this.isNameToken()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8861b34d693bc3c6cbcc5e1cbc4a457330a8f5629f5a71bc653a4eb33af15a25",
+          "target": "assign:packages/parsers/src/java/parser.ts@L732",
+          "line": 732,
+          "expr": "name = this.peek().value;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L731",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L726",
+            "expr": "this.isNameToken()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L729",
+            "expr": "this.isOp('.')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L731",
+            "expr": "this.isNameToken()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:11cb786305a9d2b05fa8a6f97adf874e0b806f1c98ad71a0937090ad33f7bc72",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L733",
+          "line": 733,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c7290484661444190b3ae7ffe38835e57d8385f5888817d4bcd2b4d2841a839e",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L738",
+          "line": 738,
+          "expr": "out.push(simple);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L740",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L740",
+            "expr": "this.isOp('(')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:30b975927f315795560f9b7567718bab88342a035ec5976118bd2b42bceab88c",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L741",
+          "line": 741,
+          "expr": "this.excluded.add(this.i);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L740",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L740",
+            "expr": "this.isOp('(')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:69abde68e7ce9faa44d167153f740591e98db550e5b8fcfa46871f490f93d300",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L745",
+          "line": 745,
+          "expr": "const openTok = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L740",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L740",
+            "expr": "this.isOp('(')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:782127319bd3d15fbb3892cec5b35c8a51e5ce8823ed99142191c3f9518dcaf4",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.skipBalancedParens@L778",
+          "expr": "skipBalancedParens",
+          "line": 746
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L740",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L740",
+            "expr": "this.isOp('(')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b0f6d0605c96937c57d2c77aa617f3e525fa878a2b64f38a590d30b2ea05fd3d",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L746",
+          "line": 746,
+          "expr": "this.skipBalancedParens();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L748",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L740",
+            "expr": "this.isOp('(')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L748",
+            "expr": "openTok && closeTok",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:edf4185a18dfd56bd315b123d286dccf8b3d823c91882c9903cd524762cbd177",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.offOf@L758",
+          "expr": "offOf",
+          "line": 749
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L748",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L740",
+            "expr": "this.isOp('(')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L748",
+            "expr": "openTok && closeTok",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8277b439550d9202a1dfab51ed8aced34e608a03b75bc52999ca6ac471fd0bc5",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L749",
+          "line": 749,
+          "expr": "const from = this.offOf(openTok) + 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L748",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L740",
+            "expr": "this.isOp('(')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L748",
+            "expr": "openTok && closeTok",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:434803de12addd4f2693fb261c8b078e56446e4d02b6a47982850c4ee67c1f74",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L750",
+          "line": 750,
+          "expr": "const to = this.offOf(closeTok);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L748",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L740",
+            "expr": "this.isOp('(')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L748",
+            "expr": "openTok && closeTok",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0f979fe7ad9e506de74d47f80d50b366e4ca3488dc4fc18f8271de54fd44960e",
+          "target": "assign:packages/parsers/src/java/parser.ts@L751",
+          "line": 751,
+          "expr": "args = from < to ? this.src.slice(from, to).trim() : '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8ffcdf39f06795382f71a66f0bd183cdff3880c7097f0f4a078e33a5591b53f0",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L754",
+          "line": 754,
+          "expr": "rich?.push(args !== undefined ? { name: simple, args } : { name: simple });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:095b098c884a56d5b1f2115f6d1557c60fd12f743a4369e899412b258157e66f",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L816",
+          "expr": "isOp"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L722",
+        "procedureName": "Parser.consumeAnnotation",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f59e611238af46824407b994e00201926c44f55be22b2fc9442253530904727b",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isNameToken@L830",
+          "expr": "isNameToken"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 14,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 14,
+    "assignments": 3,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 15,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,1143 @@
+{
+  "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ac87c61389963c0cb918b52ae09f977b784f24daad329f117eebbc4018446904",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildDossier",
+    "qualifiedName": "buildDossier",
+    "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/builder.ts",
+    "span": {
+      "start": 134,
+      "end": 234
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 141
+      },
+      {
+        "callee": "get",
+        "line": 147
+      },
+      {
+        "callee": "push",
+        "line": 148
+      },
+      {
+        "callee": "set",
+        "line": 149
+      },
+      {
+        "callee": "get",
+        "line": 150
+      },
+      {
+        "callee": "push",
+        "line": 151
+      },
+      {
+        "callee": "set",
+        "line": 152
+      },
+      {
+        "callee": "sort",
+        "line": 156
+      },
+      {
+        "callee": "map",
+        "line": 156
+      },
+      {
+        "callee": "filter",
+        "line": 156
+      },
+      {
+        "callee": "get",
+        "line": 156
+      },
+      {
+        "callee": "keep",
+        "line": 157
+      },
+      {
+        "callee": "brief",
+        "line": 158
+      },
+      {
+        "callee": "byLabel",
+        "line": 159
+      },
+      {
+        "callee": "sort",
+        "line": 160
+      },
+      {
+        "callee": "map",
+        "line": 160
+      },
+      {
+        "callee": "filter",
+        "line": 160
+      },
+      {
+        "callee": "get",
+        "line": 160
+      },
+      {
+        "callee": "keep",
+        "line": 161
+      },
+      {
+        "callee": "brief",
+        "line": 162
+      },
+      {
+        "callee": "byLabel",
+        "line": 163
+      },
+      {
+        "callee": "sort",
+        "line": 165
+      },
+      {
+        "callee": "map",
+        "line": 165
+      },
+      {
+        "callee": "filter",
+        "line": 165
+      },
+      {
+        "callee": "get",
+        "line": 165
+      },
+      {
+        "callee": "has",
+        "line": 166
+      },
+      {
+        "callee": "keep",
+        "line": 166
+      },
+      {
+        "callee": "getNode",
+        "line": 168
+      },
+      {
+        "callee": "rehydrate",
+        "line": 173
+      },
+      {
+        "callee": "rehydrateBody",
+        "line": 182
+      },
+      {
+        "callee": "getManifest",
+        "line": 190
+      },
+      {
+        "callee": "publicNode",
+        "line": 194
+      },
+      {
+        "callee": "decisionTable",
+        "line": 202
+      },
+      {
+        "callee": "controlFlow",
+        "line": 205
+      },
+      {
+        "callee": "filter",
+        "line": 213
+      },
+      {
+        "callee": "get",
+        "line": 213
+      },
+      {
+        "callee": "keep",
+        "line": 213
+      },
+      {
+        "callee": "getNode",
+        "line": 217
+      },
+      {
+        "callee": "add",
+        "line": 218
+      },
+      {
+        "callee": "sort",
+        "line": 223
+      },
+      {
+        "callee": "computeCoverage",
+        "line": 226
+      },
+      {
+        "callee": "frameworkSemantics",
+        "line": 231
+      }
+    ]
+  },
+  "source": {
+    "text": "export function buildDossier(\n  soul: SoulStore,\n  repoRoot: string,\n  nodeId: string,\n  now: string,\n  opts: DossierOpts = {},\n): Dossier | undefined {\n  const node = soul.getNode(nodeId);\n  if (!node) return undefined;\n\n  const outgoing = new Map<string, Edge[]>();\n  const incoming = new Map<string, Edge[]>();\n  for (const e of soul.iterateEdges()) {\n    const o = outgoing.get(e.src);\n    if (o) o.push(e);\n    else outgoing.set(e.src, [e]);\n    const i = incoming.get(e.dst);\n    if (i) i.push(e);\n    else incoming.set(e.dst, [e]);\n  }\n  const keep = (e: Edge): boolean => !opts.extractedOnly || e.provenance === 'EXTRACTED';\n\n  const callers = (incoming.get(nodeId) ?? [])\n    .filter((e) => e.rel === 'calls' && keep(e))\n    .map((e) => brief(soul, e.src, e.confidence))\n    .sort((a, b) => byLabel(a, b));\n  const callees = (outgoing.get(nodeId) ?? [])\n    .filter((e) => e.rel === 'calls' && keep(e))\n    .map((e) => brief(soul, e.dst, e.confidence))\n    .sort((a, b) => byLabel(a, b));\n\n  const docs = (incoming.get(nodeId) ?? [])\n    .filter((e) => DOC_RELS.has(e.rel) && keep(e) && e.confidence >= 0)\n    .map((e): DossierDocLink => {\n      const section = soul.getNode(e.src);\n      return {\n        sectionId: e.src,\n        ...(section?.heading ? { heading: section.heading } : {}),\n        ...(section?.anchor ? { anchor: section.anchor } : {}),\n        snippet: rehydrate(repoRoot, section),\n        edgeType: e.rel as 'describes' | 'references',\n        method: e.method,\n        provenance: e.provenance,\n        confidence: e.confidence,\n      };\n    })\n    .sort((a, b) => b.confidence - a.confidence);\n\n  const source: RehydratedBody = rehydrateBody(repoRoot, node, {\n    maxChars: opts.sourceMaxChars ?? DEFAULT_BODY_MAX_CHARS,\n    maxLines: opts.sourceMaxLines ?? DEFAULT_BODY_MAX_LINES,\n    ...(opts.sourceStartLine !== undefined ? { startLine: opts.sourceStartLine } : {}),\n  });\n\n  const dossier: Dossier = {\n    id: nodeId,\n    schemaVersion: soul.getManifest().schemaVersion,\n    nodeHash: node.hash,\n    builtAt: now,\n    shapeVersion: DOSSIER_SHAPE_VERSION,\n    node: publicNode(node),\n    source,\n    callers,\n    callees,\n    docs,\n  };\n\n  if (node.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {\n    dossier.rules = decisionTable(soul, nodeId, {\n      ...(opts.includeTables ? { includeTables: true } : {}),\n    });\n    const cf = controlFlow(soul, nodeId, outgoing, incoming, keep);\n    if (cf.raises.length || cf.handles.length || cf.iterates.length || cf.declares.length) {\n      dossier.controlFlow = cf;\n    }\n    // implementation completeness: counts the proc's OWN body statements (outgoing `executes`).\n    // Zero → the implementation is unavailable (body in a missing file / spec-only declaration);\n    // the decision table + controlFlow above are necessarily empty in that case, so this flag is what\n    // tells an analyst \"do not expect behavior here — go find the body\".\n    const execs = (outgoing.get(nodeId) ?? []).filter((e) => e.rel === 'executes' && keep(e));\n    const refFiles = new Set<string>();\n    for (const e of incoming.get(nodeId) ?? []) {\n      if (e.rel !== 'calls' || !keep(e)) continue;\n      const caller = soul.getNode(e.src);\n      if (caller?.file) refFiles.add(caller.file);\n    }\n    dossier.implementation = {\n      status: execs.length > 0 ? 'implemented' : 'unimplemented',\n      executesCount: execs.length,\n      referencedByFiles: [...refFiles].sort(),\n    };\n    // 360° self-report: reuse the adjacency we already built (no extra edge scan).\n    dossier.coverage = computeCoverage(soul, nodeId, { keep, outgoing, incoming });\n  }\n  // schema-1.3 framework semantics: the LEAN method subset (routes + produces the callable owns).\n  // Reuses the single iterateEdges() adjacency already built above — no extra scan. Undefined for a\n  // non-Spring callable (no exposes/produces edges) → the key is omitted, keeping the shape honest.",
+    "truncated": true,
+    "totalLines": 101,
+    "startLine": 134,
+    "nextLine": 231
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+      "confidence": 1,
+      "name": "runDossiers",
+      "qualifiedName": "runDossiers",
+      "signature": "runDossiers(soul: SoulStore, repoRoot: string, now: string): DossierStats",
+      "type": "function",
+      "file": "packages/pipeline/src/dossiers.ts",
+      "line": 38
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#brief@L296",
+      "confidence": 1,
+      "name": "brief",
+      "qualifiedName": "brief",
+      "signature": "brief(soul: SoulStore, id: string, confidence: number): AdjacentBrief",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 296
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier.keep@L154",
+      "confidence": 1,
+      "name": "keep",
+      "qualifiedName": "buildDossier.keep",
+      "signature": "keep(…)",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 154
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#byLabel@L384",
+      "confidence": 1,
+      "name": "byLabel",
+      "qualifiedName": "byLabel",
+      "signature": "byLabel(a: AdjacentBrief, b: AdjacentBrief): number",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 384
+    },
+    {
+      "id": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+      "confidence": 1,
+      "name": "computeCoverage",
+      "qualifiedName": "computeCoverage",
+      "signature": "computeCoverage(soul: SoulStore, nodeId: string, opts: {\n    keep?: (e: Edge) => boolean;\n    outgoing?: Map<string, Edge[]>;\n    incoming?: Map<string, Edge[]>;\n  } = {}): CallableCoverage",
+      "type": "function",
+      "file": "packages/core/src/dossier/coverage.ts",
+      "line": 63
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+      "confidence": 1,
+      "name": "controlFlow",
+      "qualifiedName": "controlFlow",
+      "signature": "controlFlow(soul: SoulStore, nodeId: string, outgoing: Map<string, Edge[]>, incoming: Map<string, Edge[]>, keep: (e: Edge) => boolean): DossierControlFlow",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 323
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#controlFlow.push@L339",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "controlFlow.push",
+      "signature": "push(…)",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 339
+    },
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#decisionTable@L191",
+      "confidence": 1,
+      "name": "decisionTable",
+      "qualifiedName": "decisionTable",
+      "signature": "decisionTable(soul: SoulStore, procedure: string, opts: ExtractRulesOpts = {}): DecisionTable",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 191
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L192",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 192
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+      "confidence": 1,
+      "name": "publicNode",
+      "qualifiedName": "publicNode",
+      "signature": "publicNode(n: Node): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 237
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/core/src/source.ts#rehydrate@L42",
+      "confidence": 1,
+      "name": "rehydrate",
+      "qualifiedName": "rehydrate",
+      "signature": "rehydrate(repoRoot: string, node: Node | undefined): string",
+      "type": "function",
+      "file": "packages/core/src/source.ts",
+      "line": 42
+    },
+    {
+      "id": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+      "confidence": 1,
+      "name": "rehydrateBody",
+      "qualifiedName": "rehydrateBody",
+      "signature": "rehydrateBody(repoRoot: string, node: Node | undefined, opts: { maxChars?: number; maxLines?: number; startLine?: number } = {}): RehydratedBody",
+      "type": "function",
+      "file": "packages/core/src/source.ts",
+      "line": 64
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/builder.ts@L129",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "heading": "3.1 Framework-semantics tier (schema 1.3)",
+      "anchor": "3-1-framework-semantics-tier-schema-1-3",
+      "snippet": "3.1 Framework-semantics tier (schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "heading": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "anchor": "surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "snippet": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+    "procedureName": "buildDossier",
+    "conditions": [
+      "cond:packages/core/src/dossier/builder.ts@L142",
+      "cond:packages/core/src/dossier/builder.ts@L146",
+      "cond:packages/core/src/dossier/builder.ts@L151",
+      "cond:packages/core/src/dossier/builder.ts@L148",
+      "cond:packages/core/src/dossier/builder.ts@L201",
+      "cond:packages/core/src/dossier/builder.ts@L206",
+      "cond:packages/core/src/dossier/builder.ts@L215",
+      "cond:packages/core/src/dossier/builder.ts@L218",
+      "cond:packages/core/src/dossier/builder.ts@L232"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5157e1f05c5ad0114988c58fd19d48c59ae382590bcb10826fdbd15092a99bb5",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L141",
+          "line": 141,
+          "expr": "const node = soul.getNode(nodeId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L142",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L142",
+            "expr": "!node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a2ec1fff6f8060e97159fe08e50f02241b8deee1b8167af604c5d5f38fa83b7c",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L142",
+          "line": 142,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L146",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L146",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:15a7ab77017154553cea80bd4b6e0e5315b73624d8dd473a84c19e034f711cd5",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L147",
+          "line": 147,
+          "expr": "const o = outgoing.get(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L151",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L146",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L151",
+            "expr": "i",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5bfd0c567beb92369a1a624c48022a2bae9cfafa8433e8adc4aba2efbb799dd7",
+          "target": "sym:packages/core/src/dossier/builder.ts#controlFlow.push@L339",
+          "expr": "push",
+          "line": 148
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L148",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L146",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L148",
+            "expr": "o",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8a4fed92c68e1006abf8997dba50511ac1f58e748f119873c748febfb9b90754",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L148",
+          "line": 148,
+          "expr": "o.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3060b5bdc933c20f9a1ab9ac3f452c657f592de87140c2f9940c828f45d96f76",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 148
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L148",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L146",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L148",
+            "expr": "o",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5181d9cf2b10c6eca16ca1e62ccf45e87b1df7e22ea50c3dd50c123a878d06e",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L149",
+          "line": 149,
+          "expr": "outgoing.set(e.src, [e]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L146",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L146",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f8ce98312533c5f630c2e08c3357d71130d04a7d6e3d4757f687d6d8876a8985",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L150",
+          "line": 150,
+          "expr": "const i = incoming.get(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L151",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L146",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L151",
+            "expr": "i",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb2ac426ac9e568700a4fccb97ef02d94cbc308ec641fda6d3d9d30a2cd0c586",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L151",
+          "line": 151,
+          "expr": "i.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L151",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L146",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L151",
+            "expr": "i",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:479bca6fd8917ddab478f7091b77575359ff8bd20753066dd38c15a33dcd9176",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L152",
+          "line": 152,
+          "expr": "incoming.set(e.dst, [e]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3bd5e2058e00432f4a6feb6486e959fc582ec4a6ca03c4dd3db0cd886bd180b0",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L156",
+          "line": 156,
+          "expr": "const callers = (incoming.get(nodeId) ?? [])\n    .filter((e) => e.rel === 'calls' && keep(e))\n    .map((e) => brief(soul, e.src, e.confidence))\n    .sort((a, b) => byLabel(a, b));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L201",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L201",
+            "expr": "node.type && CALLABLE_SYMBOL_TYPES.has(node.type)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cd5eef095e5778c50605946512547e39907347168476a48136f31c7cdb786f2f",
+          "target": "sym:packages/core/src/dossier/builder.ts#buildDossier.keep@L154",
+          "expr": "keep",
+          "line": 157
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6755811fd14379e0b8291dbfa457e590a4982ed3b272e7db72de54eeb9fa123e",
+          "target": "sym:packages/core/src/dossier/builder.ts#brief@L296",
+          "expr": "brief",
+          "line": 158
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9452c061406108204ed21ca6ec9ea50bd7f660985d7b9f58d3c91f86aac9a480",
+          "target": "sym:packages/core/src/dossier/builder.ts#byLabel@L384",
+          "expr": "byLabel",
+          "line": 159
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c8eb1aeb97531aefc0d667fe7d9f723d21709bb979a0379c51f82d2544b6e17f",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L160",
+          "line": 160,
+          "expr": "const callees = (outgoing.get(nodeId) ?? [])\n    .filter((e) => e.rel === 'calls' && keep(e))\n    .map((e) => brief(soul, e.dst, e.confidence))\n    .sort((a, b) => byLabel(a, b));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0c3f1b80f9efe35711d74951d542ae5f6fe7cdd6ab74bc822c338dc76265fb26",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L165",
+          "line": 165,
+          "expr": "const docs = (incoming.get(nodeId) ?? [])\n    .filter((e) => DOC_RELS.has(e.rel) && keep(e) && e.confidence >= 0)\n    .map((e): DossierDocLink => {\n      const section = soul.getNode(e.src);\n      return {\n        sectionId: e.src,\n        ...(section?.heading ? { heading: section.heading } : {}),\n        ...(section?.anchor ? { anchor: section.anchor } : {}),\n        snippet: rehydrate(repoRoot, section),\n        edgeType: e.rel as 'describes' | 'references',\n        method: e.method,\n        provenance: e.provenance,\n        confidence: e.confidence,\n      };\n    })\n    .sort((a, b) => b.confidence - a.confidence);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:02500b6ae2c13a6bf730f9e7af78f3660306c6a036ce9b5a38b6ccbf8c981e6f",
+          "target": "sym:packages/core/src/source.ts#rehydrate@L42",
+          "expr": "rehydrate",
+          "line": 173
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4ff21a947e716db0c11df6a523037877133405230de9a43e1710c3515a4c3660",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L182",
+          "line": 182,
+          "expr": "const source: RehydratedBody = rehydrateBody(repoRoot, node, {\n    maxChars: opts.sourceMaxChars ?? DEFAULT_BODY_MAX_CHARS,\n    maxLines: opts.sourceMaxLines ?? DEFAULT_BODY_MAX_LINES,\n    ...(opts.sourceStartLine !== undefined ? { startLine: opts.sourceStartLine } : {}),\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6f125d1c3e9a35b2f3edc7ecea5c8bd49a7e12879c54d156b6ea8cb7f9fc63cd",
+          "target": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+          "expr": "rehydrateBody",
+          "line": 182
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c1987f50695d7a55ba0a12e860062b87726f97302c32410009cbd9e1d8b85c1a",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L188",
+          "line": 188,
+          "expr": "const dossier: Dossier = {\n    id: nodeId,\n    schemaVersion: soul.getManifest().schemaVersion,\n    nodeHash: node.hash,\n    builtAt: now,\n    shapeVersion: DOSSIER_SHAPE_VERSION,\n    node: publicNode(node),\n    source,\n    callers,\n    callees,\n    docs,\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5341809fe0d06c11de59a10430480578bbab76f65bb2aa5e26824f79d57df649",
+          "target": "sym:packages/core/src/dossier/builder.ts#publicNode@L237",
+          "expr": "publicNode",
+          "line": 194
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L201",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L201",
+            "expr": "node.type && CALLABLE_SYMBOL_TYPES.has(node.type)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:02d61a572d74818bc947c07e11f7d5587b478191454661d5ea0a0ad357ab86ef",
+          "target": "assign:packages/core/src/dossier/builder.ts@L202",
+          "line": 202,
+          "expr": "dossier.rules = decisionTable(soul, nodeId, {\n      ...(opts.includeTables ? { includeTables: true } : {}),\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:afe9b2e3d1e8b2731815c5b4dbf7069563fcdf400e5b8487ddc2d58b0d2074ad",
+          "target": "sym:packages/core/src/rules/extract.ts#decisionTable@L191",
+          "expr": "decisionTable",
+          "line": 202
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L201",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L201",
+            "expr": "node.type && CALLABLE_SYMBOL_TYPES.has(node.type)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b6b4065d203ba27604019b487a2ab4dc68c6bce8938108f62a3d669b1b4bb6ad",
+          "target": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+          "expr": "controlFlow",
+          "line": 205
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L201",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L201",
+            "expr": "node.type && CALLABLE_SYMBOL_TYPES.has(node.type)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:40aaddaa37eda4165f135b8418c15dd8bbe78dbb21ae6ce6bd1615efd8052ace",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L205",
+          "line": 205,
+          "expr": "const cf = controlFlow(soul, nodeId, outgoing, incoming, keep);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L206",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L201",
+            "expr": "node.type && CALLABLE_SYMBOL_TYPES.has(node.type)"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L206",
+            "expr": "cf.raises.length || cf.handles.length || cf.iterates.length || cf.declares.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:441fde52c5b57f7dc87eea3a049678ad262b87b4a70d3ac800c8d71ccc464593",
+          "target": "assign:packages/core/src/dossier/builder.ts@L207",
+          "line": 207,
+          "expr": "dossier.controlFlow = cf;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L201",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L201",
+            "expr": "node.type && CALLABLE_SYMBOL_TYPES.has(node.type)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4cb4f6c37a9ee3e597fbf47b99f52515d3621842b8e3db72f88a377eb4fcc8f2",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L213",
+          "line": 213,
+          "expr": "const execs = (outgoing.get(nodeId) ?? []).filter((e) => e.rel === 'executes' && keep(e));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L215",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L201",
+            "expr": "node.type && CALLABLE_SYMBOL_TYPES.has(node.type)"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L215",
+            "expr": "incoming.get(nodeId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:903f80633d8a6785bc1881d5c73d6ad1176807fadf7beb46be94315f6709b3cc",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L217",
+          "line": 217,
+          "expr": "const caller = soul.getNode(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L218",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L201",
+            "expr": "node.type && CALLABLE_SYMBOL_TYPES.has(node.type)"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L215",
+            "expr": "incoming.get(nodeId) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L218",
+            "expr": "caller?.file",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df0b3763079c138c7a4b26d7fbdccd4604cdaa06e4134d0c957359e5382e35aa",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L218",
+          "line": 218,
+          "expr": "refFiles.add(caller.file);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9d91e112edb8231512c347671196e78397cf99d1af6d6659ec4c61769505b70b",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 218
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L201",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L201",
+            "expr": "node.type && CALLABLE_SYMBOL_TYPES.has(node.type)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:032858de163ebed040cd6a682163346c34d08afe678188c240eabb6381e6b1c4",
+          "target": "assign:packages/core/src/dossier/builder.ts@L220",
+          "line": 220,
+          "expr": "dossier.implementation = {\n      status: execs.length > 0 ? 'implemented' : 'unimplemented',\n      executesCount: execs.length,\n      referencedByFiles: [...refFiles].sort(),\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L201",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L201",
+            "expr": "node.type && CALLABLE_SYMBOL_TYPES.has(node.type)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8a5c151d701731bd5e8387b44f8743a71f4239811f1a37e694e1bf136624460c",
+          "target": "assign:packages/core/src/dossier/builder.ts@L226",
+          "line": 226,
+          "expr": "dossier.coverage = computeCoverage(soul, nodeId, { keep, outgoing, incoming });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7339560af3199ffdf2b491a9ef0ae45339fb67295054e477d653a3e924cf9a79",
+          "target": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+          "expr": "computeCoverage",
+          "line": 226
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d226d56ee4d5f2f68a4f49b1e5da1d73fbbced142bcc935e3ca83b989a1dde95",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L231",
+          "line": 231,
+          "expr": "const fw = frameworkSemantics(soul, nodeId, { keep, outgoing, incoming, lean: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a3024f0d12118a251d926ef4061eb6c27d7d5d44720961dc4901b040b210fc30",
+          "target": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L192",
+          "expr": "frameworkSemantics",
+          "line": 231
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L232",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L232",
+            "expr": "fw",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4a51b4e49384567b4add1fe08a7c25b3271f214d9713da1d448796f6d2792ba6",
+          "target": "assign:packages/core/src/dossier/builder.ts@L232",
+          "line": 232,
+          "expr": "dossier.framework = fw;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+        "procedureName": "buildDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1654577d90568320178c2fdb86268cf321810e03895a7550dc6e67635d952f67",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L233",
+          "line": 233,
+          "expr": "return dossier;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 24,
+    "referencedByFiles": [
+      "packages/pipeline/src/dossiers.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 24,
+    "assignments": 5,
+    "conditions": 9,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 13,
+      "recorded": 42,
+      "unresolved": 20
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "20 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

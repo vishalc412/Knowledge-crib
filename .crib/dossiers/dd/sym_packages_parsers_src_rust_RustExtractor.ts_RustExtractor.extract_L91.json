@@ -1,0 +1,295 @@
+{
+  "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.extract@L91",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:85178c13cb6c8570bdee8fb2612bf55cfbc66271ac4f7a04f784074ce21f2251",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.extract@L91",
+    "kind": "symbol",
+    "type": "method",
+    "name": "extract",
+    "qualifiedName": "RustExtractor.extract",
+    "signature": "extract(file: FileMeta, ctx: ExtractCtx): Promise<ExtractResult>",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/RustExtractor.ts",
+    "span": {
+      "start": 91,
+      "end": 99
+    },
+    "callSites": [
+      {
+        "callee": "readText",
+        "line": 93
+      },
+      {
+        "callee": "idFor",
+        "line": 94
+      },
+      {
+        "callee": "parse",
+        "line": 95
+      }
+    ]
+  },
+  "source": {
+    "text": "  async extract(file: FileMeta, ctx: ExtractCtx): Promise<ExtractResult> {\n    try {\n      const text = await ctx.readText();\n      const fileId = ctx.idFor('file', { path: file.path });\n      return this.parse(file.path, fileId, text, ctx);\n    } catch {\n      return { nodes: [], edges: [] };\n    }\n  }",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 91
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse@L101",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "RustExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 101
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
+      "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "anchor": "java-spring-boot-track-built-tested-schema-1-3",
+      "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m4-doc-extractor-markdown-deterministic-cross-modal-linker-headline-gate-1",
+      "heading": "M4 — doc-extractor (Markdown) + deterministic cross-modal linker ← HEADLINE GATE #1",
+      "anchor": "m4-doc-extractor-markdown-deterministic-cross-modal-linker-headline-gate-1",
+      "snippet": "M4 — doc-extractor (Markdown) + deterministic cross-modal linker ← HEADLINE GATE #1",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#10-migration-track-widened-first-class-deterministic-no-llm-in-the-rule-path",
+      "heading": "10. Migration track (widened) — first-class, deterministic, no-LLM in the rule path",
+      "anchor": "10-migration-track-widened-first-class-deterministic-no-llm-in-the-rule-path",
+      "snippet": "10. Migration track (widened) — first-class, deterministic, no-LLM in the rule path",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#0-repo-stack",
+      "heading": "0. Repo & stack",
+      "anchor": "0-repo-stack",
+      "snippet": "0. Repo & stack",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "heading": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
+      "anchor": "2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "snippet": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#4-incremental-git",
+      "heading": "4. Incremental + git",
+      "anchor": "4-incremental-git",
+      "snippet": "4. Incremental + git",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#knowledge-crib-deep-extraction-migration-first-class-wedge",
+      "heading": "Knowledge-crib — Deep Extraction & Migration (first-class wedge)",
+      "anchor": "knowledge-crib-deep-extraction-migration-first-class-wedge",
+      "snippet": "Knowledge-crib — Deep Extraction & Migration (first-class wedge)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-overview",
+      "heading": "Phase overview",
+      "anchor": "phase-overview",
+      "snippet": "Phase overview",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#5-incremental-update-protocol-the-upgrades-as-project-evolves-part",
+      "heading": "5. Incremental update protocol (the \"upgrades as project evolves\" part)",
+      "anchor": "5-incremental-update-protocol-the-upgrades-as-project-evolves-part",
+      "snippet": "5. Incremental update protocol (the \"upgrades as project evolves\" part)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#3-executes-edges-procedure-symbol-each-statement-node-in-its-body",
+      "heading": "3. `executes` edges — procedure symbol → each statement node in its body",
+      "anchor": "3-executes-edges-procedure-symbol-each-statement-node-in-its-body",
+      "snippet": "3. `executes` edges — procedure symbol → each statement node in its body",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.extract@L91",
+    "procedureName": "RustExtractor.extract",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.extract@L91",
+        "procedureName": "RustExtractor.extract",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f33c18634efdeb2e7bbf2b0ef1abf084c9a9829e901e269574f3cb007adefce",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L93",
+          "line": 93,
+          "expr": "const text = await ctx.readText();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.extract@L91",
+        "procedureName": "RustExtractor.extract",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f922c856c10006222bba7b0d1a677fce01828feec37bbd017a8dece59d3ec5c7",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L94",
+          "line": 94,
+          "expr": "const fileId = ctx.idFor('file', { path: file.path });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.extract@L91",
+        "procedureName": "RustExtractor.extract",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a7993dad07b85de65ae255fc5f0570b091f87e4ff6f4b3664f2a58559a397e4f",
+          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse@L101",
+          "expr": "parse",
+          "line": 95
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.extract@L91",
+        "procedureName": "RustExtractor.extract",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8d62a7e22cd522a170a2cf1f53ec8017374434a6dfa5ee48aefbdff4d2a2219a",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L95",
+          "line": 95,
+          "expr": "return this.parse(file.path, fileId, text, ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.extract@L91",
+        "procedureName": "RustExtractor.extract",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b25f5025b19d311033b2d4b00b4a76f5f111be77b6c00bb196a418153d26d204",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L97",
+          "line": 97,
+          "expr": "return { nodes: [], edges: [] };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/parsers/src/rust/RustExtractor.ts@L96",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/parsers/src/rust/RustExtractor.ts",
+        "span": {
+          "start": 96,
+          "end": 96
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

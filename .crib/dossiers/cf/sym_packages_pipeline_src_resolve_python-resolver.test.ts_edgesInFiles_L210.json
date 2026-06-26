@@ -1,0 +1,129 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#edgesInFiles@L210",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:83e3bf1a997bc45fb2320813d5f019f217dfafa686a1783d6038d30b0c6e59ee",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#edgesInFiles@L210",
+    "kind": "symbol",
+    "type": "function",
+    "name": "edgesInFiles",
+    "qualifiedName": "edgesInFiles",
+    "signature": "edgesInFiles(soul: SoulStore, exts: string[]): Edge[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/python-resolver.test.ts",
+    "span": {
+      "start": 210,
+      "end": 217
+    },
+    "callSites": [
+      {
+        "callee": "map",
+        "line": 212
+      },
+      {
+        "callee": "filter",
+        "line": 212
+      },
+      {
+        "callee": "iterate",
+        "line": 212
+      },
+      {
+        "callee": "some",
+        "line": 213
+      },
+      {
+        "callee": "endsWith",
+        "line": 213
+      },
+      {
+        "callee": "filter",
+        "line": 216
+      },
+      {
+        "callee": "iterateEdges",
+        "line": 216
+      },
+      {
+        "callee": "has",
+        "line": 216
+      },
+      {
+        "callee": "has",
+        "line": 216
+      }
+    ]
+  },
+  "source": {
+    "text": "function edgesInFiles(soul: SoulStore, exts: string[]): Edge[] {\n  const files = new Set(\n    [...soul.iterate()]\n      .filter((n) => n.file && exts.some((e) => n.file!.endsWith(e)))\n      .map((n) => n.id),\n  );\n  return [...soul.iterateEdges()].filter((e) => files.has(e.src) || files.has(e.dst));\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 210
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#edgesInFiles@L210",
+    "procedureName": "edgesInFiles",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#edgesInFiles@L210",
+        "procedureName": "edgesInFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7cdcc1db1d5752928f0bb46d1af13c20a694759336bc12af74240a405d98b7a9",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L211",
+          "line": 211,
+          "expr": "const files = new Set(\n    [...soul.iterate()]\n      .filter((n) => n.file && exts.some((e) => n.file!.endsWith(e)))\n      .map((n) => n.id),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#edgesInFiles@L210",
+        "procedureName": "edgesInFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:379ad355720f61fcee279139255a3e9a497b07f6ca235d7310813f508fe0ac07",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L216",
+          "line": 216,
+          "expr": "return [...soul.iterateEdges()].filter((e) => files.has(e.src) || files.has(e.dst));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 9,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

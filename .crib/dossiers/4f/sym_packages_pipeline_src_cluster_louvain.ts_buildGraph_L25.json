@@ -1,0 +1,325 @@
+{
+  "id": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:fe49727af5e7ce08aa63a4a6ef60d26d878b7e19ff2aee6b60405e403c4cf82c",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildGraph",
+    "qualifiedName": "buildGraph",
+    "signature": "buildGraph(n: number, edges: ReadonlyArray<[number, number, number]>): LouvainGraph",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/cluster/louvain.ts",
+    "span": {
+      "start": 25,
+      "end": 46
+    },
+    "callSites": [
+      {
+        "callee": "from",
+        "line": 29
+      },
+      {
+        "callee": "set",
+        "line": 34
+      },
+      {
+        "callee": "get",
+        "line": 34
+      },
+      {
+        "callee": "set",
+        "line": 37
+      },
+      {
+        "callee": "get",
+        "line": 37
+      },
+      {
+        "callee": "set",
+        "line": 38
+      },
+      {
+        "callee": "get",
+        "line": 38
+      }
+    ]
+  },
+  "source": {
+    "text": "export function buildGraph(\n  n: number,\n  edges: ReadonlyArray<[number, number, number]>,\n): LouvainGraph {\n  const adj: Map<number, number>[] = Array.from({ length: n }, () => new Map<number, number>());\n  const degrees = new Float64Array(n);\n  for (const [a, b, w] of edges) {\n    if (a === b) {\n      // self-loop: contributes 2w to the degree, w to the adjacency (once)\n      adj[a]!.set(a, (adj[a]!.get(a) ?? 0) + w);\n      degrees[a] = degrees[a]! + 2 * w;\n    } else {\n      adj[a]!.set(b, (adj[a]!.get(b) ?? 0) + w);\n      adj[b]!.set(a, (adj[b]!.get(a) ?? 0) + w);\n      degrees[a] = degrees[a]! + w;\n      degrees[b] = degrees[b]! + w;\n    }\n  }\n  let m2 = 0;\n  for (let i = 0; i < n; i++) m2 += degrees[i]!;\n  return { n, degrees, adj, m2 };\n}",
+    "truncated": false,
+    "totalLines": 22,
+    "startLine": 25
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L39",
+      "confidence": 1,
+      "name": "runCluster",
+      "qualifiedName": "runCluster",
+      "signature": "runCluster(soul: SoulStore): ClusterStats",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/cluster.ts",
+      "line": 39
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/cluster/louvain.ts@L24",
+      "snippet": "/** Build an undirected weighted graph from weighted edges [a, b, weight]. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+    "procedureName": "buildGraph",
+    "conditions": [
+      "cond:packages/pipeline/src/cluster/louvain.ts@L31",
+      "cond:packages/pipeline/src/cluster/louvain.ts@L32",
+      "cond:packages/pipeline/src/cluster/louvain.ts@L44"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+        "procedureName": "buildGraph",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:06973177a34852308eca6c1c8aca7eca8cd04c870b53b16fe509bdf8725ad2ec",
+          "target": "stmt:packages/pipeline/src/cluster/louvain.ts@L29",
+          "line": 29,
+          "expr": "const adj: Map<number, number>[] = Array.from({ length: n }, () => new Map<number, number>());"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+        "procedureName": "buildGraph",
+        "guard": "cond:packages/pipeline/src/cluster/louvain.ts@L32",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L31",
+            "expr": "edges"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L32",
+            "expr": "a === b",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:01aae6a2793d66bdaa9d370521dcf3899aa6256f8103966532cec06d52839010",
+          "target": "stmt:packages/pipeline/src/cluster/louvain.ts@L34",
+          "line": 34,
+          "expr": "adj[a]!.set(a, (adj[a]!.get(a) ?? 0) + w);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+        "procedureName": "buildGraph",
+        "guard": "cond:packages/pipeline/src/cluster/louvain.ts@L32",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L31",
+            "expr": "edges"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L32",
+            "expr": "a === b",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:763529c39ce3ceae978a27ab67e670212f9da7dfa9aef2feb7eeba2bed38ffb1",
+          "target": "assign:packages/pipeline/src/cluster/louvain.ts@L35",
+          "line": 35,
+          "expr": "degrees[a] = degrees[a]! + 2 * w;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+        "procedureName": "buildGraph",
+        "guard": "cond:packages/pipeline/src/cluster/louvain.ts@L32",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L31",
+            "expr": "edges"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L32",
+            "expr": "a === b",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:34312b06e1242303618c8c426db9580dfd341913689ba071b04b3b825ef9e62a",
+          "target": "stmt:packages/pipeline/src/cluster/louvain.ts@L37",
+          "line": 37,
+          "expr": "adj[a]!.set(b, (adj[a]!.get(b) ?? 0) + w);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+        "procedureName": "buildGraph",
+        "guard": "cond:packages/pipeline/src/cluster/louvain.ts@L32",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L31",
+            "expr": "edges"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L32",
+            "expr": "a === b",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c3e8c54341559a68be514ea7785cb11dbe596bd13ad91fc53e73ed44c776ec5c",
+          "target": "stmt:packages/pipeline/src/cluster/louvain.ts@L38",
+          "line": 38,
+          "expr": "adj[b]!.set(a, (adj[b]!.get(a) ?? 0) + w);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+        "procedureName": "buildGraph",
+        "guard": "cond:packages/pipeline/src/cluster/louvain.ts@L32",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L31",
+            "expr": "edges"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L32",
+            "expr": "a === b",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6ee3a2eb7cd00f8df6229c1429325b9fb6f13d94b6a921c9160ba7651f8d1ea5",
+          "target": "assign:packages/pipeline/src/cluster/louvain.ts@L39",
+          "line": 39,
+          "expr": "degrees[a] = degrees[a]! + w;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+        "procedureName": "buildGraph",
+        "guard": "cond:packages/pipeline/src/cluster/louvain.ts@L32",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L31",
+            "expr": "edges"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L32",
+            "expr": "a === b",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9de9803c68ec5061f374227b99413684c6198763b4d9b22b35c44ce6f5ed9438",
+          "target": "assign:packages/pipeline/src/cluster/louvain.ts@L40",
+          "line": 40,
+          "expr": "degrees[b] = degrees[b]! + w;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+        "procedureName": "buildGraph",
+        "guard": "cond:packages/pipeline/src/cluster/louvain.ts@L44",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L44",
+            "expr": "i < n",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7b8988d64dad5238b8e148179c03729072fafae29f43d46ffc6715f216843641",
+          "target": "assign:packages/pipeline/src/cluster/louvain.ts@L44",
+          "line": 44,
+          "expr": "m2 += degrees[i]!;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+        "procedureName": "buildGraph",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fdc4bc2c1129f0f4c5cd4a87098838ea9412fc13e48c932bdcdac4835444c69b",
+          "target": "stmt:packages/pipeline/src/cluster/louvain.ts@L45",
+          "line": 45,
+          "expr": "return { n, degrees, adj, m2 };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/pipeline/src/cluster/cluster.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 4,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 7,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

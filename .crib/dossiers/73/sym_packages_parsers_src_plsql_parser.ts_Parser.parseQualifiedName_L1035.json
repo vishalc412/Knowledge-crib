@@ -1,0 +1,334 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1035",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ba4fa4389ad9a385462cbf9c04d1c23f22e0a9c70a19e45ecc9ece31b889a7ae",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1035",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseQualifiedName",
+    "qualifiedName": "Parser.parseQualifiedName",
+    "signature": "parseQualifiedName(): { schema: string; name: string }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 1035,
+      "end": 1047
+    },
+    "callSites": [
+      {
+        "callee": "next",
+        "line": 1037
+      },
+      {
+        "callee": "next",
+        "line": 1041
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseQualifiedName(): { schema: string; name: string } {\n    if (this.at().type !== 'word') return { schema: '', name: '' };\n    const first = this.next().raw;\n    if (this.isPunct('.')) {\n      this.pos++;\n      if (this.at().type === 'word') {\n        const second = this.next().raw;\n        return { schema: first, name: second };\n      }\n      return { schema: '', name: first };\n    }\n    return { schema: '', name: first };\n  }",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 1035
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateTable@L240",
+      "confidence": 1,
+      "name": "parseCreateTable",
+      "qualifiedName": "Parser.parseCreateTable",
+      "signature": "parseCreateTable(startLine: number): TableDef",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 240
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateType@L324",
+      "confidence": 1,
+      "name": "parseCreateType",
+      "qualifiedName": "Parser.parseCreateType",
+      "signature": "parseCreateType(startLine: number): TypeDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 324
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateView@L387",
+      "confidence": 1,
+      "name": "parseCreateView",
+      "qualifiedName": "Parser.parseCreateView",
+      "signature": "parseCreateView(startLine: number): ViewDef",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 387
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parsePackage@L500",
+      "confidence": 1,
+      "name": "parsePackage",
+      "qualifiedName": "Parser.parsePackage",
+      "signature": "parsePackage(startLine: number, body: boolean): Unit | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 500
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L118",
+      "confidence": 1,
+      "name": "at",
+      "qualifiedName": "Parser.at",
+      "signature": "at(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 118
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L128",
+      "confidence": 1,
+      "name": "isPunct",
+      "qualifiedName": "Parser.isPunct",
+      "signature": "isPunct(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 128
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.next@L121",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 121
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/parser.ts@L1034",
+      "snippet": "/** Read a qualified name `schema.name` or `name`; returns schema ('' if none) + name. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1035",
+    "procedureName": "Parser.parseQualifiedName",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/parser.ts@L1036",
+      "cond:packages/parsers/src/plsql/parser.ts@L1038",
+      "cond:packages/parsers/src/plsql/parser.ts@L1040"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1035",
+        "procedureName": "Parser.parseQualifiedName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:895c6dea1b45b5c0db0d805a5460d57266860d607dbf98301cc87f0cdbcf23e7",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L118",
+          "expr": "at"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1035",
+        "procedureName": "Parser.parseQualifiedName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6495d65acab0e0ce908ffcba3e10456d2391b98e3aa34b73117b48f17acae892",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L128",
+          "expr": "isPunct"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1035",
+        "procedureName": "Parser.parseQualifiedName",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1036",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1036",
+            "expr": "this.at().type !== 'word'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d154f4548e3b421f9df0835c220c51d7b33f741ba2db043d3c4cd3dd392afc8d",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1036",
+          "line": 1036,
+          "expr": "return { schema: '', name: '' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1035",
+        "procedureName": "Parser.parseQualifiedName",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1040",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1038",
+            "expr": "this.isPunct('.')"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1040",
+            "expr": "this.at().type === 'word'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:770f59be5805247c7f178ba46d9120f5e662ac41fcdf50a5a6f26d2cd83fc3bc",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.next@L121",
+          "expr": "next",
+          "line": 1037
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1035",
+        "procedureName": "Parser.parseQualifiedName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:276867ed9f0ed0aa70dab823d72dba7f6b39cc5ddb8fe185f127d97c2f0f2d53",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1037",
+          "line": 1037,
+          "expr": "const first = this.next().raw;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1035",
+        "procedureName": "Parser.parseQualifiedName",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1040",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1038",
+            "expr": "this.isPunct('.')"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1040",
+            "expr": "this.at().type === 'word'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f589f04ea7dfa5c548a55400b5c757469e52dcf7190d3697f17ae1d70c3bd974",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1041",
+          "line": 1041,
+          "expr": "const second = this.next().raw;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1035",
+        "procedureName": "Parser.parseQualifiedName",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1040",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1038",
+            "expr": "this.isPunct('.')"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1040",
+            "expr": "this.at().type === 'word'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6b0e1763df552b019d68fd047da769ec0f7c1ab34501e358517b259cc3daac27",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1042",
+          "line": 1042,
+          "expr": "return { schema: first, name: second };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1035",
+        "procedureName": "Parser.parseQualifiedName",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1038",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1038",
+            "expr": "this.isPunct('.')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:42c0cbcb209842e6cd711443a398f8574395eb5696095efcea0ffc1b474f356d",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1044",
+          "line": 1044,
+          "expr": "return { schema: '', name: first };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1035",
+        "procedureName": "Parser.parseQualifiedName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4fa68b80decaa514bb8ba25f5ad7816c61bb147d644e36fdbeb4bcbdbe4a71f1",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1046",
+          "line": 1046,
+          "expr": "return { schema: '', name: first };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

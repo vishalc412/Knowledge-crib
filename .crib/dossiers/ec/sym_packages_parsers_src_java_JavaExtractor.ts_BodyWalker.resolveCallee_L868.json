@@ -1,0 +1,216 @@
+{
+  "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.resolveCallee@L868",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e348cc1d0fa44d03b3b12b61f5e40c27d864b256b11f37d28751dfb6a4677298",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.resolveCallee@L868",
+    "kind": "symbol",
+    "type": "method",
+    "name": "resolveCallee",
+    "qualifiedName": "BodyWalker.resolveCallee",
+    "signature": "resolveCallee(chain: string[], line: number): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/JavaExtractor.ts",
+    "span": {
+      "start": 868,
+      "end": 875
+    },
+    "callSites": [
+      {
+        "callee": "methodInEnclosingClass",
+        "line": 872
+      },
+      {
+        "callee": "get",
+        "line": 873
+      },
+      {
+        "callee": "get",
+        "line": 873
+      }
+    ]
+  },
+  "source": {
+    "text": "  private resolveCallee(chain: string[], line: number): string | undefined {\n    const head = chain[0]!;\n    const name = chain[chain.length - 1]!;\n    if (head === 'super') return undefined; // parent-class member — resolver's job\n    if (head === 'this') return methodInEnclosingClass(line, name, this.symbols);\n    if (chain.length === 1) return this.byKey.get(name) ?? this.byKey.get(head);\n    return undefined; // dotted `obj.m()` / `Type.m()` — needs inference / cross-file\n  }",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 868
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAction@L745",
+      "confidence": 1,
+      "name": "addAction",
+      "qualifiedName": "BodyWalker.addAction",
+      "signature": "addAction(s: JavaStmt, procId: string, guardStack: string[], innerBranch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 745
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
+      "confidence": 1,
+      "name": "methodInEnclosingClass",
+      "qualifiedName": "methodInEnclosingClass",
+      "signature": "methodInEnclosingClass(line: number, name: string, symbols: LocalSymbol[]): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 423
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/JavaExtractor.ts@L867",
+      "snippet": "/** Resolve a call chain to an intra-file symbol id (mirrors collectCalls resolution). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.resolveCallee@L868",
+    "procedureName": "BodyWalker.resolveCallee",
+    "conditions": [
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L871",
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L872",
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L873"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.resolveCallee@L868",
+        "procedureName": "BodyWalker.resolveCallee",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L871",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L871",
+            "expr": "head === 'super'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:782756ab9befe47006a67fb6de4a42b9b904ce7b94e77f2ba8a3a3686c023908",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L871",
+          "line": 871,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.resolveCallee@L868",
+        "procedureName": "BodyWalker.resolveCallee",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L872",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L872",
+            "expr": "head === 'this'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:441ff213b82c01361a95c4a4e0ac175c3450824a8d01207811235aa070ced0c4",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
+          "expr": "methodInEnclosingClass",
+          "line": 872
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.resolveCallee@L868",
+        "procedureName": "BodyWalker.resolveCallee",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L872",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L872",
+            "expr": "head === 'this'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9cefb805ee89477696067b20cf626e4ccad3e22e5fb036f6cc8cc4660bfba3fc",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L872",
+          "line": 872,
+          "expr": "return methodInEnclosingClass(line, name, this.symbols);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.resolveCallee@L868",
+        "procedureName": "BodyWalker.resolveCallee",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L873",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L873",
+            "expr": "chain.length === 1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dc194e5ec3c82be2598eb25a23dfbc1fc71f3df5963b1981dd504f023c323ecb",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L873",
+          "line": 873,
+          "expr": "return this.byKey.get(name) ?? this.byKey.get(head);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.resolveCallee@L868",
+        "procedureName": "BodyWalker.resolveCallee",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:12472fa1f86dd9e3914007d4bdba116d92241938f25c982edafca4ac325c9ec2",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L874",
+          "line": 874,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

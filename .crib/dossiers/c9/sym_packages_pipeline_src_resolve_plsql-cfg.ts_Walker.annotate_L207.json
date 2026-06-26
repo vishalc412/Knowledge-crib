@@ -1,0 +1,291 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotate@L207",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:1d234e5d6384dc1ffbe94d1c70ae8e05bb7682f5ce035c53da3cc896e9c1007f",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotate@L207",
+    "kind": "symbol",
+    "type": "method",
+    "name": "annotate",
+    "qualifiedName": "Walker.annotate",
+    "signature": "annotate(s: Stmt, procId: string, cond: ReturnType<typeof pathCondition>): void",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/plsql-cfg.ts",
+    "span": {
+      "start": 207,
+      "end": 231
+    },
+    "callSites": [
+      {
+        "callee": "annotateCall",
+        "line": 221
+      },
+      {
+        "callee": "idFor",
+        "line": 228
+      },
+      {
+        "callee": "idFor",
+        "line": 229
+      },
+      {
+        "callee": "push",
+        "line": 230
+      },
+      {
+        "callee": "edgeId",
+        "line": 230
+      }
+    ]
+  },
+  "source": {
+    "text": "  private annotate(s: Stmt, procId: string, cond: ReturnType<typeof pathCondition>): void {\n    // case / exception are compound — segmented out of basic blocks and recursed into, never\n    // annotated directly. raise has no executes edge (it emits a `raises` edge, not executes).\n    if (s.kind === 'case' || s.kind === 'exception' || s.kind === 'raise') return;\n\n    const patch: Omit<EdgeAnnotation, 'id'> = {\n      cfgPath: cond.cfgPath,\n      inLoop: cond.inLoop,\n      inException: cond.inException,\n    };\n    if (cond.guard !== undefined) patch.guard = cond.guard;\n    if (cond.branch !== undefined) patch.branch = cond.branch;\n\n    if (s.kind === 'call') {\n      this.annotateCall(s, procId, patch);\n      return;\n    }\n    // 1.2: an assignment emits an `assignment` node (not a `statement`); compute its id so the\n    // executes edge the extractor wrote is stamped with the path condition.\n    const stmtId =\n      s.kind === 'assign'\n        ? idFor({ kind: 'assignment', file: this.path, line: s.span.start })\n        : idFor({ kind: 'statement', file: this.path, line: s.span.start });\n    this.updates.push({ id: edgeId(procId, stmtId, 'executes'), ...patch });\n  }",
+    "truncated": false,
+    "totalLines": 25,
+    "startLine": 207
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkBlock@L138",
+      "confidence": 1,
+      "name": "walkBlock",
+      "qualifiedName": "Walker.walkBlock",
+      "signature": "walkBlock(block: Block, procId: string, frames: GuardFrame[]): void",
+      "type": "method",
+      "file": "packages/pipeline/src/resolve/plsql-cfg.ts",
+      "line": 138
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotateCall@L233",
+      "confidence": 1,
+      "name": "annotateCall",
+      "qualifiedName": "Walker.annotateCall",
+      "signature": "annotateCall(s: CallStmt, procId: string, patch: Omit<EdgeAnnotation, 'id'>): void",
+      "type": "method",
+      "file": "packages/pipeline/src/resolve/plsql-cfg.ts",
+      "line": 233
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/resolve/plsql-cfg.ts@L206",
+      "snippet": "/** Stamp the path condition onto the statement's `executes` (or `calls`) edge. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-gold-pattern-already-proven-plsqlextractor",
+      "heading": "The gold pattern (already proven): `PlSqlExtractor`",
+      "anchor": "the-gold-pattern-already-proven-plsqlextractor",
+      "snippet": "The gold pattern (already proven): `PlSqlExtractor`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotate@L207",
+    "procedureName": "Walker.annotate",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L210",
+      "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L217",
+      "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L218",
+      "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L220"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotate@L207",
+        "procedureName": "Walker.annotate",
+        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L210",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L210",
+            "expr": "s.kind === 'case' || s.kind === 'exception' || s.kind === 'raise'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5c87c56a492beb45064228132abe6a85acbad989ae66a1c888aac2a7054d2d6c",
+          "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L210",
+          "line": 210,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotate@L207",
+        "procedureName": "Walker.annotate",
+        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L217",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L217",
+            "expr": "cond.guard !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bf108e5b98af8a3883369fd564a2e5076b67cbbef63e5dc7ca4cb4eafe63d1e0",
+          "target": "assign:packages/pipeline/src/resolve/plsql-cfg.ts@L217",
+          "line": 217,
+          "expr": "patch.guard = cond.guard;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotate@L207",
+        "procedureName": "Walker.annotate",
+        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L218",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L218",
+            "expr": "cond.branch !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0df08b3f64588c948973d602be751512b448e3e32702cf799d066bc859d3e3ef",
+          "target": "assign:packages/pipeline/src/resolve/plsql-cfg.ts@L218",
+          "line": 218,
+          "expr": "patch.branch = cond.branch;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotate@L207",
+        "procedureName": "Walker.annotate",
+        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L220",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L220",
+            "expr": "s.kind === 'call'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:17f26a49fdb1eda902300291fc6cc10abe3a2e09913a36ef1a33af82c48814b8",
+          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotateCall@L233",
+          "expr": "annotateCall",
+          "line": 221
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotate@L207",
+        "procedureName": "Walker.annotate",
+        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L220",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L220",
+            "expr": "s.kind === 'call'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:59ca600f5dd3f073dae08031fd67285ae5f19643cc183e19c29fb55dc978c3e7",
+          "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L221",
+          "line": 221,
+          "expr": "this.annotateCall(s, procId, patch);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotate@L207",
+        "procedureName": "Walker.annotate",
+        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L220",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L220",
+            "expr": "s.kind === 'call'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:256348d9b59b4a57686bcd23eabb67115c40b1decd98859bf637d37fc00afbd8",
+          "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L222",
+          "line": 222,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotate@L207",
+        "procedureName": "Walker.annotate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd5ce4b259acbe7155184ddb9e2dabbc49f633b598c9b56d7fe52ed8618421a7",
+          "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L226",
+          "line": 226,
+          "expr": "const stmtId =\n      s.kind === 'assign'\n        ? idFor({ kind: 'assignment', file: this.path, line: s.span.start })\n        : idFor({ kind: 'statement', file: this.path, line: s.span.start });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotate@L207",
+        "procedureName": "Walker.annotate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:956f4158b83dbf0331c65cca045e8e8b78a2a1fe313f7d40fa57bc471b150d6c",
+          "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L230",
+          "line": 230,
+          "expr": "this.updates.push({ id: edgeId(procId, stmtId, 'executes'), ...patch });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/plsql-cfg.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 2,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 5,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

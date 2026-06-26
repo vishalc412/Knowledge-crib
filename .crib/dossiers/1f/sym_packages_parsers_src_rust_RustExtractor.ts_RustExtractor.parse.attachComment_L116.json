@@ -1,0 +1,352 @@
+{
+  "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:62e46225a030a763cf8c3ca4426f9497e3881ef9947e5cd5e73d4678b618c843",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+    "kind": "symbol",
+    "type": "function",
+    "name": "attachComment",
+    "qualifiedName": "RustExtractor.parse.attachComment",
+    "signature": "attachComment(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/RustExtractor.ts",
+    "span": {
+      "start": 116,
+      "end": 142
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 117
+      },
+      {
+        "callee": "idFor",
+        "line": 119
+      },
+      {
+        "callee": "add",
+        "line": 121
+      },
+      {
+        "callee": "push",
+        "line": 122
+      },
+      {
+        "callee": "hash",
+        "line": 129
+      },
+      {
+        "callee": "push",
+        "line": 132
+      },
+      {
+        "callee": "edgeId",
+        "line": 133
+      }
+    ]
+  },
+  "source": {
+    "text": "    const attachComment = (symId: string, startLine: number): void => {\n      const block = comments.find((c) => c.end === startLine - 1);\n      if (!block || !block.text) return;\n      const id = ctx.idFor('explanation', { path, startLine: block.start });\n      if (explSeen.has(id)) return;\n      explSeen.add(id);\n      explNodes.push({\n        id,\n        kind: 'explanation',\n        commentRef: { file: path, span: { start: block.start, end: block.end } },\n        file: path,\n        span: { start: block.start, end: block.end },\n        lang: 'rust',\n        hash: ctx.hash(`${path}:${block.start}:${block.text}`),\n        meta: { text: block.text },\n      });\n      explEdges.push({\n        id: edgeId(id, symId, 'describes'),\n        src: id,\n        dst: symId,\n        rel: 'describes',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet: 'COMMENT' },\n      });\n    };",
+    "truncated": false,
+    "totalLines": 27,
+    "startLine": 116
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visit@L147",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "RustExtractor.parse.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 147
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visitImplBody@L236",
+      "confidence": 1,
+      "name": "visitImplBody",
+      "qualifiedName": "RustExtractor.parse.visitImplBody",
+      "signature": "visitImplBody(…)",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 236
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 122
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 77
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+    "procedureName": "RustExtractor.parse.attachComment",
+    "conditions": [
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L118",
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L120"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+        "procedureName": "RustExtractor.parse.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:be7ac31e9796981d63d69ab25686e29e8d395051b2cc63d4b79675b110821bc3",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L117",
+          "line": 117,
+          "expr": "const block = comments.find((c) => c.end === startLine - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+        "procedureName": "RustExtractor.parse.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:872842bdf5ca9549bde439431f86e0b74ee63db579623e3d43471c22ed0618fd",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 117
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+        "procedureName": "RustExtractor.parse.attachComment",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L118",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L118",
+            "expr": "!block || !block.text",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:943d74089a3eed29e21560fedceed7cc8fb43e9895f1fa254b3c40abf6538bdf",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L118",
+          "line": 118,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+        "procedureName": "RustExtractor.parse.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:439b57c6c48358dc61e4f335d8aa3fe8100d06d56fbef06e9f47a6749ad5a215",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L119",
+          "line": 119,
+          "expr": "const id = ctx.idFor('explanation', { path, startLine: block.start });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+        "procedureName": "RustExtractor.parse.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6002400160d87836b05b47401b80633b7634450f25368ce833118854209e8269",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+          "expr": "idFor",
+          "line": 119
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+        "procedureName": "RustExtractor.parse.attachComment",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L120",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L120",
+            "expr": "explSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ac80f079f2a4fd6a6decc7d3a5931c2661c7f2b58d8868a88e1c04afc803a6ec",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L120",
+          "line": 120,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+        "procedureName": "RustExtractor.parse.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:571e1b42b7d3872a255fed13bf187753e049010678c6490f5ed327bdd0148fc5",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L121",
+          "line": 121,
+          "expr": "explSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+        "procedureName": "RustExtractor.parse.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c2497a12bf64b83fd8ccc38dc4db4cd6caba0f8c2c815911c3daed4837ec9535",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 121
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+        "procedureName": "RustExtractor.parse.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:da3836ccc15b46476ad8ae668569c48e3d880f33aa4121b403f657241d777c7c",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L122",
+          "line": 122,
+          "expr": "explNodes.push({\n        id,\n        kind: 'explanation',\n        commentRef: { file: path, span: { start: block.start, end: block.end } },\n        file: path,\n        span: { start: block.start, end: block.end },\n        lang: 'rust',\n        hash: ctx.hash(`${path}:${block.start}:${block.text}`),\n        meta: { text: block.text },\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+        "procedureName": "RustExtractor.parse.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:814906431954a146d230a6d6d533d89d922b903f446d7f7ce44ac9fa4258cbc8",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 122
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+        "procedureName": "RustExtractor.parse.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f8d9420360f5828e1e00690ded0030c67073c3b66c4ab1f1c6708cac0dcafc2",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L132",
+          "line": 132,
+          "expr": "explEdges.push({\n        id: edgeId(id, symId, 'describes'),\n        src: id,\n        dst: symId,\n        rel: 'describes',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet: 'COMMENT' },\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+        "procedureName": "RustExtractor.parse.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:15aae18993fe26234c99ac5f5362471f9c3f314009f0f9f0f32c234b6dd29f8e",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "expr": "edgeId",
+          "line": 133
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/RustExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 7,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

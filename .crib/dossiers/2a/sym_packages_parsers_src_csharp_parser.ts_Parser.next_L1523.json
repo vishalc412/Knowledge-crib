@@ -1,0 +1,469 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1523",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4f90d71c520b37b9e7ef7dcbe5b17110fa14e353a72e93257949e47a556a17c7",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1523",
+    "kind": "symbol",
+    "type": "method",
+    "name": "next",
+    "qualifiedName": "Parser.next",
+    "signature": "next(): Token",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 1523,
+      "end": 1527
+    }
+  },
+  "source": {
+    "text": "  private next(): Token {\n    const tk = this.t[this.i] ?? { type: 'EOF', value: '', line: 0, col: 0 };\n    if (this.i < this.t.length) this.i++;\n    return tk;\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 1523
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.consumeAttribute@L910",
+      "confidence": 1,
+      "name": "consumeAttribute",
+      "qualifiedName": "Parser.consumeAttribute",
+      "signature": "consumeAttribute(out: string[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 910
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.consumeField@L713",
+      "confidence": 1,
+      "name": "consumeField",
+      "qualifiedName": "Parser.consumeField",
+      "signature": "consumeField(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 713
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseBaseClause@L473",
+      "confidence": 1,
+      "name": "parseBaseClause",
+      "qualifiedName": "Parser.parseBaseClause",
+      "signature": "parseBaseClause(): { bases: string[]; impls: string[] }",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 473
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseBody@L1004",
+      "confidence": 1,
+      "name": "parseBody",
+      "qualifiedName": "Parser.parseBody",
+      "signature": "parseBody(): { stmts: CsharpStmt[]; endLine: number }",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1004
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecl@L253",
+      "confidence": 1,
+      "name": "parseDecl",
+      "qualifiedName": "Parser.parseDecl",
+      "signature": "parseDecl(): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 253
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+      "confidence": 1,
+      "name": "parseDecls",
+      "qualifiedName": "Parser.parseDecls",
+      "signature": "parseDecls(topLevel: boolean): { defs: CsharpDef[]; closeLine: number }",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 226
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDelegate@L422",
+      "confidence": 1,
+      "name": "parseDelegate",
+      "qualifiedName": "Parser.parseDelegate",
+      "signature": "parseDelegate(startLine: number, attributes: string[], modifiers: string[]): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 422
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDo@L1128",
+      "confidence": 1,
+      "name": "parseDo",
+      "qualifiedName": "Parser.parseDo",
+      "signature": "parseDo(startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1128
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+      "confidence": 1,
+      "name": "parseDottedName",
+      "qualifiedName": "Parser.parseDottedName",
+      "signature": "parseDottedName(): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 820
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedTypeName@L833",
+      "confidence": 1,
+      "name": "parseDottedTypeName",
+      "qualifiedName": "Parser.parseDottedTypeName",
+      "signature": "parseDottedTypeName(): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 833
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseFor@L1105",
+      "confidence": 1,
+      "name": "parseFor",
+      "qualifiedName": "Parser.parseFor",
+      "signature": "parseFor(loopKind: 'for' | 'foreach', startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1105
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseIf@L1083",
+      "confidence": 1,
+      "name": "parseIf",
+      "qualifiedName": "Parser.parseIf",
+      "signature": "parseIf(startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1083
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafExpr@L1275",
+      "confidence": 1,
+      "name": "parseLeafExpr",
+      "qualifiedName": "Parser.parseLeafExpr",
+      "signature": "parseLeafExpr(startLine: number): CsharpStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1275
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1219",
+      "confidence": 1,
+      "name": "parseLeafReturn",
+      "qualifiedName": "Parser.parseLeafReturn",
+      "signature": "parseLeafReturn(kind: 'return' | 'throw', startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1219
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseMember@L524",
+      "confidence": 1,
+      "name": "parseMember",
+      "qualifiedName": "Parser.parseMember",
+      "signature": "parseMember(startLine: number, attributes: string[], modifiers: string[]): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 524
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseNamespace@L284",
+      "confidence": 1,
+      "name": "parseNamespace",
+      "qualifiedName": "Parser.parseNamespace",
+      "signature": "parseNamespace(startLine: number, attributes: string[], modifiers: string[]): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 284
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseParamList@L772",
+      "confidence": 1,
+      "name": "parseParamList",
+      "qualifiedName": "Parser.parseParamList",
+      "signature": "parseParamList(): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 772
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseRecord@L325",
+      "confidence": 1,
+      "name": "parseRecord",
+      "qualifiedName": "Parser.parseRecord",
+      "signature": "parseRecord(startLine: number, attributes: string[], modifiers: string[]): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 325
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseStmt@L1034",
+      "confidence": 1,
+      "name": "parseStmt",
+      "qualifiedName": "Parser.parseStmt",
+      "signature": "parseStmt(): CsharpStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1034
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseStmtBody@L1071",
+      "confidence": 1,
+      "name": "parseStmtBody",
+      "qualifiedName": "Parser.parseStmtBody",
+      "signature": "parseStmtBody(): CsharpStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1071
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseStmtList@L1018",
+      "confidence": 1,
+      "name": "parseStmtList",
+      "qualifiedName": "Parser.parseStmtList",
+      "signature": "parseStmtList(): CsharpStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1018
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseStmtListUntilCase@L1178",
+      "confidence": 1,
+      "name": "parseStmtListUntilCase",
+      "qualifiedName": "Parser.parseStmtListUntilCase",
+      "signature": "parseStmtListUntilCase(): CsharpStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1178
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitch@L1141",
+      "confidence": 1,
+      "name": "parseSwitch",
+      "qualifiedName": "Parser.parseSwitch",
+      "signature": "parseSwitch(startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1141
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseTry@L1191",
+      "confidence": 1,
+      "name": "parseTry",
+      "qualifiedName": "Parser.parseTry",
+      "signature": "parseTry(startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1191
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseType@L371",
+      "confidence": 1,
+      "name": "parseType",
+      "qualifiedName": "Parser.parseType",
+      "signature": "parseType(kind: 'class' | 'interface' | 'struct' | 'enum', startLine: number, attributes: string[], modifiers: string[]): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 371
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseWhile@L1113",
+      "confidence": 1,
+      "name": "parseWhile",
+      "qualifiedName": "Parser.parseWhile",
+      "signature": "parseWhile(startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1113
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.readParenText@L1465",
+      "confidence": 1,
+      "name": "readParenText",
+      "qualifiedName": "Parser.readParenText",
+      "signature": "readParenText(): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1465
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipArrowBody@L739",
+      "confidence": 1,
+      "name": "skipArrowBody",
+      "qualifiedName": "Parser.skipArrowBody",
+      "signature": "skipArrowBody(): number",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 739
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipAttributeBracket@L944",
+      "confidence": 1,
+      "name": "skipAttributeBracket",
+      "qualifiedName": "Parser.skipAttributeBracket",
+      "signature": "skipAttributeBracket(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 944
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipBalancedParens@L962",
+      "confidence": 1,
+      "name": "skipBalancedParens",
+      "qualifiedName": "Parser.skipBalancedParens",
+      "signature": "skipBalancedParens(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 962
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipBraces@L979",
+      "confidence": 1,
+      "name": "skipBraces",
+      "qualifiedName": "Parser.skipBraces",
+      "signature": "skipBraces(): number",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 979
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipEnumConstants@L875",
+      "confidence": 1,
+      "name": "skipEnumConstants",
+      "qualifiedName": "Parser.skipEnumConstants",
+      "signature": "skipEnumConstants(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 875
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipGenericAngle@L846",
+      "confidence": 1,
+      "name": "skipGenericAngle",
+      "qualifiedName": "Parser.skipGenericAngle",
+      "signature": "skipGenericAngle(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 846
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipWhereClauses@L498",
+      "confidence": 1,
+      "name": "skipWhereClauses",
+      "qualifiedName": "Parser.skipWhereClauses",
+      "signature": "skipWhereClauses(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 498
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#schema-evolution",
+      "heading": "Schema evolution",
+      "anchor": "schema-evolution",
+      "snippet": "Schema evolution",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m8-tree-sitter-wasm-plugin-languages-python-first",
+      "heading": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "anchor": "m8-tree-sitter-wasm-plugin-languages-python-first",
+      "snippet": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#3-positioning",
+      "heading": "3. Positioning",
+      "anchor": "3-positioning",
+      "snippet": "3. Positioning",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-2-product-manager",
+      "heading": "2.2 Product Manager",
+      "anchor": "2-2-product-manager",
+      "snippet": "2.2 Product Manager",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#3-overall-verdict",
+      "heading": "3. Overall verdict",
+      "anchor": "3-overall-verdict",
+      "snippet": "3. Overall verdict",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1523",
+    "procedureName": "Parser.next",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1523",
+        "procedureName": "Parser.next",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb0e6c5f7416b50dffc59cc460ad7d8eb30a839821de17e05d50d47fd8407e35",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1526",
+          "line": 1526,
+          "expr": "return tk;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

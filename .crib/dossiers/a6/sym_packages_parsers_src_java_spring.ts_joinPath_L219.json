@@ -1,0 +1,158 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#joinPath@L219",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c1287fb8f40fe5554279ab98f0a6c4b644e8a7406ab2300296524dbe0bc9a058",
+  "builtAt": "2026-06-25T22:21:02.745Z",
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#joinPath@L219",
+    "kind": "symbol",
+    "type": "function",
+    "name": "joinPath",
+    "qualifiedName": "joinPath",
+    "signature": "joinPath(base: string, sub: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 219,
+      "end": 225
+    },
+    "callSites": [
+      {
+        "callee": "replace",
+        "line": 220
+      },
+      {
+        "callee": "replace",
+        "line": 221
+      },
+      {
+        "callee": "startsWith",
+        "line": 223
+      },
+      {
+        "callee": "replace",
+        "line": 224
+      }
+    ]
+  },
+  "source": {
+    "text": "function joinPath(base: string, sub: string): string {\n  const a = base.replace(/\\/+$/, '');\n  const b = sub.replace(/^\\/+/, '');\n  const joined = b ? `${a}/${b}` : a;\n  const out = joined.startsWith('/') ? joined : `/${joined}`;\n  return out.replace(/\\/{2,}/g, '/') || '/';\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 219
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L64",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 64
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L218",
+      "snippet": "/** Join a controller base path with a method sub-path into one normalized `/a/b` route path. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#joinPath@L219",
+    "procedureName": "joinPath",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#joinPath@L219",
+        "procedureName": "joinPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:319edea41dbb5c1fe5fbb85050eea9de34f11dd55ff410847b49aa4c3ef1d91a",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L220",
+          "line": 220,
+          "expr": "const a = base.replace(/\\/+$/, '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#joinPath@L219",
+        "procedureName": "joinPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75ee8335c1bf73f2a6cca5dce2360fb893e235181d0f4930639bbc1aca892d07",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L221",
+          "line": 221,
+          "expr": "const b = sub.replace(/^\\/+/, '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#joinPath@L219",
+        "procedureName": "joinPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b6c6c93835e6ed5ebd10eb6c9d8d6fedc59c5889a974350067d4ce407d7e8608",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L223",
+          "line": 223,
+          "expr": "const out = joined.startsWith('/') ? joined : `/${joined}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#joinPath@L219",
+        "procedureName": "joinPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a0c1d36179a0b108a75df711db31c700cb532417cbe56d4703089889078490ab",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L224",
+          "line": 224,
+          "expr": "return out.replace(/\\/{2,}/g, '/') || '/';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

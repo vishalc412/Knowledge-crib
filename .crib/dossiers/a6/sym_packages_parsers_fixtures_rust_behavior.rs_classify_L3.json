@@ -1,0 +1,212 @@
+{
+  "id": "sym:packages/parsers/fixtures/rust/behavior.rs#classify@L3",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:f35ff412950fae002947cf18448f007d6e92d174b089a29fee42c2c6fe5a7244",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/rust/behavior.rs#classify@L3",
+    "kind": "symbol",
+    "type": "fn",
+    "name": "classify",
+    "qualifiedName": "classify",
+    "signature": "fn classify(code)",
+    "lang": "rust",
+    "file": "packages/parsers/fixtures/rust/behavior.rs",
+    "span": {
+      "start": 3,
+      "end": 13
+    },
+    "callSites": [
+      {
+        "callee": "mk_label",
+        "line": 4
+      },
+      {
+        "callee": "Err",
+        "line": 6
+      },
+      {
+        "callee": "Ok",
+        "line": 9
+      },
+      {
+        "callee": "Ok",
+        "line": 10
+      }
+    ],
+    "params": [
+      "code"
+    ]
+  },
+  "source": {
+    "text": "pub fn classify(code: u32) -> Result<String, String> {\n    let label = mk_label(code);\n    if code == 0 {\n        return Err(\"zero code\".to_string());\n    }\n    match code {\n        200 => Ok(label),\n        404 => Ok(String::from(\"missing\")),\n        _ => panic!(\"unexpected code\"),\n    }\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 3
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/rust/behavior.rs#mk_label@L15",
+      "confidence": 1,
+      "name": "mk_label",
+      "qualifiedName": "mk_label",
+      "signature": "fn mk_label(code)",
+      "type": "fn",
+      "file": "packages/parsers/fixtures/rust/behavior.rs",
+      "line": 15
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/fixtures/rust/behavior.rs@L1",
+      "snippet": "/// Classify a status code into a response tier.",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/rust/behavior.rs#classify@L3",
+    "procedureName": "classify",
+    "conditions": [
+      "case:packages/parsers/fixtures/rust/behavior.rs@L9",
+      "case:packages/parsers/fixtures/rust/behavior.rs@L10"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/rust/behavior.rs#classify@L3",
+        "procedureName": "classify",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:211de8e96caa757dfcd60f8b17a58814905acb7b12eb6166791f28275580ec15",
+          "target": "assign:packages/parsers/fixtures/rust/behavior.rs@L4",
+          "line": 4,
+          "expr": "let label = mk_label(code)"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/rust/behavior.rs#classify@L3",
+        "procedureName": "classify",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a05f624fb9b66890d2b1460a681f4f87e3af162af7fed8d24f0d82d530a67e86",
+          "target": "sym:packages/parsers/fixtures/rust/behavior.rs#mk_label@L15",
+          "expr": "mk_label",
+          "line": 4
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/rust/behavior.rs#classify@L3",
+        "procedureName": "classify",
+        "guard": "case:packages/parsers/fixtures/rust/behavior.rs@L9",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/fixtures/rust/behavior.rs@L9",
+            "expr": "200",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3745c3de75fb274a2e9b7c020eb95e71c47b322b24db30c7f52d2693c5750d03",
+          "target": "stmt:packages/parsers/fixtures/rust/behavior.rs@L9",
+          "line": 9,
+          "expr": "Ok(label)"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/rust/behavior.rs#classify@L3",
+        "procedureName": "classify",
+        "guard": "case:packages/parsers/fixtures/rust/behavior.rs@L10",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/fixtures/rust/behavior.rs@L10",
+            "expr": "404",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:054a99e39b05a914a5cd56c682ec4d5114ccc78c1571a451aea9031857b5f1b8",
+          "target": "stmt:packages/parsers/fixtures/rust/behavior.rs@L10",
+          "line": 10,
+          "expr": "Ok(String::from(\"missing\"))"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:packages/parsers/fixtures/rust/behavior.rs@L6",
+        "kind": "raise",
+        "name": "Err",
+        "lang": "rust",
+        "file": "packages/parsers/fixtures/rust/behavior.rs",
+        "span": {
+          "start": 6,
+          "end": 6
+        },
+        "expr": "return Err(\"zero code\".to_string())",
+        "errorMessage": "zero code",
+        "confidence": 1
+      },
+      {
+        "id": "raise:packages/parsers/fixtures/rust/behavior.rs@L11",
+        "kind": "raise",
+        "name": "panic",
+        "lang": "rust",
+        "file": "packages/parsers/fixtures/rust/behavior.rs",
+        "span": {
+          "start": 11,
+          "end": 11
+        },
+        "expr": "panic!(\"unexpected code\")",
+        "errorMessage": "unexpected code",
+        "confidence": 1
+      }
+    ],
+    "handles": [],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 1,
+    "conditions": 4,
+    "raises": 2,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,518 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:cc1868e75d623d07bd45f74de9500e412001f9f45bf33bf15fe74c4eef48d255",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+    "kind": "symbol",
+    "type": "function",
+    "name": "collectTsComments",
+    "qualifiedName": "collectTsComments",
+    "signature": "collectTsComments(src: string): CommentBlock[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 890,
+      "end": 932
+    },
+    "callSites": [
+      {
+        "callee": "split",
+        "line": 892
+      },
+      {
+        "callee": "trim",
+        "line": 895
+      },
+      {
+        "callee": "push",
+        "line": 900
+      },
+      {
+        "callee": "trim",
+        "line": 900
+      },
+      {
+        "callee": "replace",
+        "line": 900
+      },
+      {
+        "callee": "trim",
+        "line": 900
+      },
+      {
+        "callee": "push",
+        "line": 903
+      },
+      {
+        "callee": "join",
+        "line": 903
+      },
+      {
+        "callee": "push",
+        "line": 910
+      },
+      {
+        "callee": "stripBlockLine",
+        "line": 910
+      },
+      {
+        "callee": "stripBlockLine",
+        "line": 914
+      },
+      {
+        "callee": "trim",
+        "line": 917
+      },
+      {
+        "callee": "push",
+        "line": 919
+      },
+      {
+        "callee": "stripBlockLine",
+        "line": 919
+      },
+      {
+        "callee": "push",
+        "line": 923
+      },
+      {
+        "callee": "stripBlockLine",
+        "line": 923
+      },
+      {
+        "callee": "push",
+        "line": 926
+      },
+      {
+        "callee": "join",
+        "line": 926
+      },
+      {
+        "callee": "filter",
+        "line": 926
+      }
+    ]
+  },
+  "source": {
+    "text": "function collectTsComments(src: string): CommentBlock[] {\n  const out: CommentBlock[] = [];\n  const lines = src.split('\\n');\n  let i = 0;\n  while (i < lines.length) {\n    const trimmed = (lines[i] ?? '').trim();\n    if (trimmed.startsWith('//')) {\n      const start = i + 1;\n      const parts: string[] = [];\n      while (i < lines.length && (lines[i] ?? '').trim().startsWith('//')) {\n        parts.push((lines[i] ?? '').trim().replace(/^\\/\\//, '').trim());\n        i++;\n      }\n      out.push({ start, end: i, text: parts.join('\\n') });\n      continue;\n    }\n    if (trimmed.startsWith('/*')) {\n      const start = i + 1;\n      // single-line block comment closes on the same line\n      if (trimmed.endsWith('*/') && trimmed.length > 2) {\n        out.push({ start, end: start, text: stripBlockLine(trimmed) });\n        i++;\n        continue;\n      }\n      const parts: string[] = [stripBlockLine(trimmed)];\n      i++;\n      while (i < lines.length) {\n        const lt = (lines[i] ?? '').trim();\n        if (lt.endsWith('*/')) {\n          parts.push(stripBlockLine(lt));\n          i++;\n          break;\n        }\n        parts.push(stripBlockLine(lt));\n        i++;\n      }\n      out.push({ start, end: i, text: parts.filter((p) => p.length > 0).join('\\n') });\n      continue;\n    }\n    i++;\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 43,
+    "startLine": 890
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L47",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "TypeScriptExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 47
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#stripBlockLine@L935",
+      "confidence": 1,
+      "name": "stripBlockLine",
+      "qualifiedName": "stripBlockLine",
+      "signature": "stripBlockLine(line: string): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 935
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L884",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+    "procedureName": "collectTsComments",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L894",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L896",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L899",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L906",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L916",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L909",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L918"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+        "procedureName": "collectTsComments",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:64ce4ce5df26b05fe4a7d78adb102aa4817c6791966ba2aa5b1641d783fd44a6",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L892",
+          "line": 892,
+          "expr": "const lines = src.split('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+        "procedureName": "collectTsComments",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L894",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L894",
+            "expr": "i < lines.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:725cfa9e8cf62846002b3c48b2351e141c2f72632bb317fd64644e97bc913aa3",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L895",
+          "line": 895,
+          "expr": "const trimmed = (lines[i] ?? '').trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+        "procedureName": "collectTsComments",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L899",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L894",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L896",
+            "expr": "trimmed.startsWith('//')"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L899",
+            "expr": "i < lines.length && (lines[i] ?? '').trim().startsWith('//')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e09c815bd573fea6b9dd3ed236957a2e3a219e66bc6e888ff63d816a14fa1c9c",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L900",
+          "line": 900,
+          "expr": "parts.push((lines[i] ?? '').trim().replace(/^\\/\\//, '').trim());"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+        "procedureName": "collectTsComments",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b657533b5e6f80aeeef503f8eb8979a5ce7625615f441871b3e87a028b4b6e3b",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 900
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+        "procedureName": "collectTsComments",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L896",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L894",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L896",
+            "expr": "trimmed.startsWith('//')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1656f706a8dad9400639b92b7948089350e0af75f76c372a94c1c90c8fb0286",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L903",
+          "line": 903,
+          "expr": "out.push({ start, end: i, text: parts.join('\\n') });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+        "procedureName": "collectTsComments",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L916",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L894",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L906",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L916",
+            "expr": "i < lines.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5f97a91d89ce910b74678123cb3c932a1020c86531c478ddc8ca280861b0f4a1",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#stripBlockLine@L935",
+          "expr": "stripBlockLine",
+          "line": 910
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+        "procedureName": "collectTsComments",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L909",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L894",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L906",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L909",
+            "expr": "trimmed.endsWith('*/') && trimmed.length > 2",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f0553c9156771873d478ab2a6c7d2781bcfbd30c95a573d601ed9c6fc9117b3",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L910",
+          "line": 910,
+          "expr": "out.push({ start, end: start, text: stripBlockLine(trimmed) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+        "procedureName": "collectTsComments",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L906",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L894",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L906",
+            "expr": "trimmed.startsWith('/*')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa4fc2da4576841a3c7e05b7fa91a436dcb6e5194de9c0609445f3d7e633a925",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L914",
+          "line": 914,
+          "expr": "const parts: string[] = [stripBlockLine(trimmed)];"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+        "procedureName": "collectTsComments",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L916",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L894",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L906",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L916",
+            "expr": "i < lines.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:282570af0eed4571b3ab6e487b0cfcafc41bbe0ac6ac845e334fa9de1066629b",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L917",
+          "line": 917,
+          "expr": "const lt = (lines[i] ?? '').trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+        "procedureName": "collectTsComments",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L918",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L894",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L906",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L916",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L918",
+            "expr": "lt.endsWith('*/')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:03e672f563ad10f1b2704966a629517d51960d6a0e39d24055524ed3b74c3a4b",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L919",
+          "line": 919,
+          "expr": "parts.push(stripBlockLine(lt));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+        "procedureName": "collectTsComments",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L916",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L894",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L906",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L916",
+            "expr": "i < lines.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:733dada5c0903231c3c217dbd3db8b56530bc9167dd02aa513f9ba0c767a5f7b",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L923",
+          "line": 923,
+          "expr": "parts.push(stripBlockLine(lt));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+        "procedureName": "collectTsComments",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L906",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L894",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L906",
+            "expr": "trimmed.startsWith('/*')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:06560d062d4810a7eedbc2c0639e407d1265102b1ff2e49ffd8bd7ee017ae5ca",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L926",
+          "line": 926,
+          "expr": "out.push({ start, end: i, text: parts.filter((p) => p.length > 0).join('\\n') });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L890",
+        "procedureName": "collectTsComments",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d4921fd0d4c70dc1b32f51c4da3bf84b1911da481076da0cfbf7cacf97376108",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L931",
+          "line": 931,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 11,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 11,
+    "assignments": 0,
+    "conditions": 7,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 19,
+      "unresolved": 9
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "9 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

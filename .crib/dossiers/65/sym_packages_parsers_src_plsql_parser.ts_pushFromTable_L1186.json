@@ -1,0 +1,190 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#pushFromTable@L1186",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:1aaa79e3d53bcf0cd38c289feeb231f49bcff9dda455876593614ee1119b6de2",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#pushFromTable@L1186",
+    "kind": "symbol",
+    "type": "function",
+    "name": "pushFromTable",
+    "qualifiedName": "pushFromTable",
+    "signature": "pushFromTable(toks: Token[], i: number, tables: string[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 1186,
+      "end": 1189
+    },
+    "callSites": [
+      {
+        "callee": "readTableRef",
+        "line": 1187
+      },
+      {
+        "callee": "push",
+        "line": 1188
+      }
+    ]
+  },
+  "source": {
+    "text": "function pushFromTable(toks: Token[], i: number, tables: string[]): void {\n  const ref = readTableRef(toks, i + 1);\n  if (ref && !tables.includes(ref.name)) tables.push(ref.name);\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 1186
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs@L1205",
+      "confidence": 1,
+      "name": "extractSqlRefs",
+      "qualifiedName": "extractSqlRefs",
+      "signature": "extractSqlRefs(verb: string, toks: Token[]): { tables: string[]; columns: string[]; intoTarget?: string }",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1205
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs.collectFromTables@L1214",
+      "confidence": 1,
+      "name": "collectFromTables",
+      "qualifiedName": "extractSqlRefs.collectFromTables",
+      "signature": "collectFromTables(…)",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1214
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1168",
+      "confidence": 1,
+      "name": "readTableRef",
+      "qualifiedName": "readTableRef",
+      "signature": "readTableRef(toks: Token[], i: number): { name: string; next: number } | null",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1168
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/parser.ts@L1185",
+      "snippet": "/** Push the table following a FROM/JOIN/USING anchor at index `i` (reads sources for any verb). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#pushFromTable@L1186",
+    "procedureName": "pushFromTable",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/parser.ts@L1188"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#pushFromTable@L1186",
+        "procedureName": "pushFromTable",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:315a798c76788016212c4ac9407b920ce2d4c45c770ebea92d453875acbaf2fc",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1168",
+          "expr": "readTableRef",
+          "line": 1187
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#pushFromTable@L1186",
+        "procedureName": "pushFromTable",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6fe28b615b53df122a5b9ac99df66fa66489a849cb548aacfd176dc686de7940",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1187",
+          "line": 1187,
+          "expr": "const ref = readTableRef(toks, i + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#pushFromTable@L1186",
+        "procedureName": "pushFromTable",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1188",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1188",
+            "expr": "ref && !tables.includes(ref.name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b07008dce8d114cd4a58cab32952810c3ec5f0a6fd44341fd2d5c2f1327bcbfe",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1188",
+          "line": 1188,
+          "expr": "tables.push(ref.name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#pushFromTable@L1186",
+        "procedureName": "pushFromTable",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:823b7cd61a57e1d8adde6c00aff91709cf874bf31cae68ebbebd339b1389cfe6",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1188
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

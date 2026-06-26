@@ -1,0 +1,137 @@
+{
+  "id": "sym:packages/pipeline/fixtures/java-spring/LoanController.java#LoanController.issue@L23",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d1555c4edcc6a5dc046a0227a92bb72645e20efefa6a51b56af3967285087215",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/fixtures/java-spring/LoanController.java#LoanController.issue@L23",
+    "kind": "symbol",
+    "type": "method",
+    "name": "issue",
+    "qualifiedName": "LoanController.issue",
+    "signature": "issue(id)",
+    "lang": "java",
+    "file": "packages/pipeline/fixtures/java-spring/LoanController.java",
+    "span": {
+      "start": 23,
+      "end": 26
+    },
+    "callSites": [
+      {
+        "callee": "evaluate",
+        "line": 25
+      }
+    ],
+    "params": [
+      "id"
+    ]
+  },
+  "source": {
+    "text": "    @PostMapping\n    public String issue(String id) {\n        return service.evaluate(id);\n    }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 23
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a4e92d26a9a50426f.md#component-by-component-check",
+      "heading": "Component-by-component check",
+      "anchor": "component-by-component-check",
+      "snippet": "Component-by-component check",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#root-resolution-one-entry-every-project",
+      "heading": "Root resolution — one entry, every project",
+      "anchor": "root-resolution-one-entry-every-project",
+      "snippet": "Root resolution — one entry, every project",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/pipeline/fixtures/docs-linked/docs/auth.md#authentication",
+      "heading": "Authentication",
+      "anchor": "authentication",
+      "snippet": "Authentication",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/fixtures/java-spring/LoanController.java#LoanController.issue@L23",
+    "procedureName": "LoanController.issue",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/fixtures/java-spring/LoanController.java#LoanController.issue@L23",
+        "procedureName": "LoanController.issue",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:91d61284f400aaef3731147577d52055b05260cc0c78edb5a8fcb397bb61e9fb",
+          "target": "stmt:packages/pipeline/fixtures/java-spring/LoanController.java@L25",
+          "line": 25,
+          "expr": "return service.evaluate(id)"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  },
+  "framework": {
+    "routes": [
+      {
+        "id": "route:POST /api/loans@packages/pipeline/fixtures/java-spring/LoanController.java#L23",
+        "confidence": 1,
+        "name": "POST /api/loans",
+        "httpMethod": "POST",
+        "routePath": "/api/loans",
+        "framework": "spring"
+      }
+    ]
+  }
+}

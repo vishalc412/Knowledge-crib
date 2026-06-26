@@ -16,7 +16,7 @@
  */
 import { buildDelta, fileScopedIds, pathFromId } from '@knowledge-crib/core';
 import type { IndexDelta, SoulStore } from '@knowledge-crib/core';
-import { ExtractorRegistry, MarkdownExtractor, TypeScriptExtractor } from '@knowledge-crib/parsers';
+import { ExtractorRegistry } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
 import { runCluster } from './cluster/index.js';
 import type { ClusterStats } from './cluster/index.js';
@@ -26,6 +26,7 @@ import type { SemanticStats } from './linker/index.js';
 import { runSemanticLink } from './linker/index.js';
 import { runParse } from './parse.js';
 import type { ParseStats } from './parse.js';
+import { defaultExtractors } from './pipeline.js';
 import { runResolve } from './resolve/index.js';
 import type { ResolveStats } from './resolve/index.js';
 import { metaForPaths, runStructure } from './structure.js';
@@ -38,7 +39,9 @@ export interface UpdateOpts {
   linkThreshold?: number;
   /** override the incremental anchor sha (else manifest.incrementalSince ?? repo.vcsHead). */
   since?: string;
-  /** extractors to register; defaults to TypeScript + Markdown. */
+  /** extractors to register; defaults to the full shipped fleet (Markdown + TypeScript + PL/SQL +
+   *  + Python + Java + C# + Go + Rust) — shared with `indexRepo` so an incremental update re-extracts
+   *  the changed file's language, never silently dropping Java/C#/Go/Rust/Python/SQL symbols. */
   extractors?: Extractor[];
   /** re-run structural clustering after re-extraction; default true (M7). Clustering is a global,
    *  deterministic, idempotent phase — re-running it keeps cluster nodes + member-of edges consistent
@@ -123,9 +126,11 @@ export async function updateRepo(
   // Drop only the CHANGED files' records (reverse-dep nodes persist — their source is unchanged).
   for (const p of changedPaths) soul.removeByFile(p);
 
-  // Re-extract changed files: structure (file nodes) + parse (symbols + intra-file edges).
+  // Re-extract changed files: structure (file nodes) + parse (symbols + intra-file edges). The
+  // default fleet is the SAME set `indexRepo` ships (via `defaultExtractors`) so a body-only edit to a
+  // `.java` controller re-emits its Spring routes/exposes/DI rather than vanishing from the graph.
   const registry = new ExtractorRegistry();
-  for (const e of opts.extractors ?? [new TypeScriptExtractor(), new MarkdownExtractor()]) {
+  for (const e of opts.extractors ?? defaultExtractors()) {
     registry.register(e);
   }
   const changedMetas = metaForPaths(root, changedPaths);

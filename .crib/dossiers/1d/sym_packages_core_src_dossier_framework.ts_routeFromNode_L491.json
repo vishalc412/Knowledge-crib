@@ -1,0 +1,143 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#routeFromNode@L491",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:378838476d32daeb3ad16623dfe8a3fdbd30261ac7661f03476382f4f59ff953",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#routeFromNode@L491",
+    "kind": "symbol",
+    "type": "function",
+    "name": "routeFromNode",
+    "qualifiedName": "routeFromNode",
+    "signature": "routeFromNode(rn: Node | undefined, confidence: number): DossierRoute | undefined",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 491,
+      "end": 507
+    },
+    "callSites": [
+      {
+        "callee": "isArray",
+        "line": 494
+      }
+    ]
+  },
+  "source": {
+    "text": "function routeFromNode(rn: Node | undefined, confidence: number): DossierRoute | undefined {\n  if (!rn) return undefined;\n  const meta = (rn.meta ?? {}) as Record<string, unknown>;\n  const params = Array.isArray(meta.params) ? (meta.params as DossierRoute['params']) : undefined;\n  const security =\n    meta.security !== undefined ? (meta.security as Record<string, unknown>) : undefined;\n  return {\n    id: rn.id,\n    confidence,\n    ...(rn.name ? { name: rn.name } : {}),\n    ...(rn.httpMethod ? { httpMethod: rn.httpMethod } : {}),\n    ...(rn.routePath ? { routePath: rn.routePath } : {}),\n    ...(rn.framework ? { framework: rn.framework } : {}),\n    ...(params ? { params } : {}),\n    ...(security ? { security } : {}),\n  };\n}",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 491
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L192",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 192
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/framework.ts@L490",
+      "snippet": "/** A route entry from a route node (verbatim name/httpMethod/routePath/framework/params/security). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#routeFromNode@L491",
+    "procedureName": "routeFromNode",
+    "conditions": [
+      "cond:packages/core/src/dossier/framework.ts@L492"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#routeFromNode@L491",
+        "procedureName": "routeFromNode",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L492",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L492",
+            "expr": "!rn",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fc48b5e0181f5ad80832f8110fd1f5019dbdb2c6b31d207a432e48af771582df",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L492",
+          "line": 492,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#routeFromNode@L491",
+        "procedureName": "routeFromNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dbc43313ee968bfa6ae10a1543a989bef5399db95ec23cdb847b827f47a8f32a",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L494",
+          "line": 494,
+          "expr": "const params = Array.isArray(meta.params) ? (meta.params as DossierRoute['params']) : undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#routeFromNode@L491",
+        "procedureName": "routeFromNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e2c228c08ec3f7ecdaaf00f67f5f8461236862d5e4648e8a5e1ac782ac62a30b",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L497",
+          "line": 497,
+          "expr": "return {\n    id: rn.id,\n    confidence,\n    ...(rn.name ? { name: rn.name } : {}),\n    ...(rn.httpMethod ? { httpMethod: rn.httpMethod } : {}),\n    ...(rn.routePath ? { routePath: rn.routePath } : {}),\n    ...(rn.framework ? { framework: rn.framework } : {}),\n    ...(params ? { params } : {}),\n    ...(security ? { security } : {}),\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -10,6 +10,7 @@
 import { edgeId } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
 import ts from 'typescript';
+import { EXPR_MAX_CHARS, clampExpr } from '../types.js';
 import type { Capabilities, ExtractCtx, ExtractResult, Extractor, FileMeta } from '../types.js';
 
 interface LocalSymbol {
@@ -571,13 +572,17 @@ export class TypeScriptExtractor implements Extractor {
     const line = env.lineOf(stmt.getStart());
     const id = env.ctx.idFor('assignment', { file: env.path, line });
     const bin = stmt.expression as ts.BinaryExpression;
-    const target = truncate(bin.left.getText(), 200);
+    const target = truncate(bin.left.getText(), EXPR_MAX_CHARS);
+    // capture the FULL assignment text (`lhs op rhs`) as `expr` so the scoring formula on the RHS
+    // survives into the graph — parity with PL/SQL, which captures the RHS. Without this a TS
+    // assignment carried only its LHS target and the formula was lost.
     if (!env.behaviorSeen.has(id)) {
       env.behaviorSeen.add(id);
       env.nodes.push({
         id,
         kind: 'assignment',
         assignTarget: target,
+        ...exprFields(stmt.getText()),
         file: env.path,
         span: { start: line, end: line },
         lang: 'typescript',
@@ -617,8 +622,8 @@ export class TypeScriptExtractor implements Extractor {
         id,
         kind: 'case-branch',
         branch: 'CASE',
-        expr: truncate(selector, 200),
-        whenSelector: truncate(selector, 200),
+        ...exprFields(selector),
+        whenSelector: truncate(selector, EXPR_MAX_CHARS),
         file: env.path,
         span: { start: line, end: line },
         lang: 'typescript',
@@ -684,7 +689,7 @@ export class TypeScriptExtractor implements Extractor {
         id,
         kind: 'condition',
         branch,
-        expr: truncate(expr, 200),
+        ...exprFields(expr),
         file: env.path,
         span: { start: line, end: line },
         lang: 'typescript',
@@ -778,7 +783,7 @@ function isFunctionLikeSymbol(node: ts.Node): boolean {
 
 /** Classify a statement as an action line (call/return/throw/assign-with-call), or undefined. */
 function actionInfo(stmt: ts.Statement): ActionInfo | undefined {
-  const text = truncate(stmt.getText(), 200);
+  const text = truncate(stmt.getText(), EXPR_MAX_CHARS);
   if (ts.isReturnStatement(stmt)) {
     return { type: 'return', expr: text, head: 'return' };
   }
@@ -858,6 +863,13 @@ function truncate(s: string, max: number): string {
   return s.length > max ? `${s.slice(0, max - 1)}…` : s;
 }
 
+/** Spread an `expr` field plus its `exprTruncated` honesty flag from a raw expression string. */
+function exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true } {
+  if (!raw) return {};
+  const { expr, truncated } = clampExpr(raw);
+  return truncated ? { expr, exprTruncated: true } : { expr };
+}
+
 // ---------------------------------------------------------------------------
 // 1.2 helpers — comment collection + throw/catch/assignment classification
 // ---------------------------------------------------------------------------
@@ -935,7 +947,7 @@ function throwMessage(expr: ts.Expression): string {
     const first = expr.arguments[0];
     if (first && ts.isStringLiteral(first)) return first.text;
   }
-  return truncate(expr.getText(), 200);
+  return truncate(expr.getText(), EXPR_MAX_CHARS);
 }
 
 /** Error code only when a literal 2nd arg to `new Error(msg, code)` is identifiable (rare in TS). */
@@ -961,7 +973,7 @@ function catchSelector(cc: ts.CatchClause): string | undefined {
 function caseSelector(expr: ts.Expression): string {
   if (ts.isStringLiteral(expr)) return expr.text;
   if (ts.isNumericLiteral(expr)) return expr.text;
-  return truncate(expr.getText(), 200);
+  return truncate(expr.getText(), EXPR_MAX_CHARS);
 }
 
 /** Is this statement a binary assignment (`lhs = rhs`, `+=`, …) at expression-statement level? */
