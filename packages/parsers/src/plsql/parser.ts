@@ -20,6 +20,7 @@ import type {
   Decl,
   ExceptionBlock,
   ExceptionHandler,
+  ForeignKey,
   IfBranch,
   IfStmt,
   LoopStmt,
@@ -241,6 +242,7 @@ class Parser {
     this.eatWord('table');
     const { schema, name } = this.parseQualifiedName();
     const columns: ColumnDef[] = [];
+    const foreignKeys: ForeignKey[] = [];
     // ( col type [, col type] ... )
     if (this.isPunct('(')) {
       this.pos++;
@@ -249,12 +251,33 @@ class Parser {
       // begin with a keyword and have no type; tolerate by stopping at depth 0.
       while (this.at().type !== 'eof' && depth > 0) {
         // table-level constraint clause starts with a keyword like primary/unique/foreign/check/constraint
+        const kw = this.at();
         if (
-          this.at().type === 'word' &&
-          ['primary', 'unique', 'foreign', 'check', 'constraint', 'key'].includes(this.at().text)
+          kw.type === 'word' &&
+          ['primary', 'unique', 'foreign', 'check', 'constraint', 'key'].includes(kw.text)
         ) {
-          // skip until , or closing ) at depth 1
-          this.skipUntilDepthZero();
+          // WS-7: a FOREIGN KEY clause (optionally preceded by `CONSTRAINT <name>`) carries a
+          // references edge child→parent — parse it instead of skipping. Other constraint clauses
+          // (PRIMARY KEY/UNIQUE/CHECK) remain opaque → skip to the next ,/) at depth 1.
+          if (kw.text === 'foreign' || kw.text === 'key') {
+            const fk = this.parseTableFk();
+            if (fk) foreignKeys.push(fk);
+            else this.skipUntilDepthZero();
+          } else if (kw.text === 'constraint') {
+            // CONSTRAINT <name> FOREIGN KEY (...) REFERENCES ... — skip the name, then parse the FK
+            // if FOREIGN KEY follows; else skip the whole clause.
+            this.pos++; // past 'constraint'
+            if (this.at().type === 'word') this.pos++; // past the constraint name
+            if (this.isWord('foreign') || this.isWord('key')) {
+              const fk = this.parseTableFk();
+              if (fk) foreignKeys.push(fk);
+              else this.skipUntilDepthZero();
+            } else {
+              this.skipUntilDepthZero();
+            }
+          } else {
+            this.skipUntilDepthZero();
+          }
           continue;
         }
         if (this.isPunct(',')) {
@@ -284,20 +307,41 @@ class Parser {
               if (sz) typeParts.push(`(${sz})`);
             }
           }
-          // remaining tokens until ,/) /; are inline column constraints (NOT NULL/DEFAULT/...).
+          // remaining tokens until the next ,/) /; at column-list depth are inline column
+          // constraints (NOT NULL/DEFAULT 0/REFERENCES parent(id)/CHECK (...)/...). Paren-depth-aware:
+          // a `)` or `,` INSIDE a constraint's own parens (e.g. `REFERENCES parent(id, id2)` or
+          // `CHECK (x > 0)`) must NOT terminate the column — only a depth-0 `)` (the CREATE TABLE
+          // close) or depth-0 `,` (the next column) does. Without this, an inline `REFERENCES
+          // parent(id)` closed the table at the inner `)`, dropping every later column (WS-7).
           const cToks: Token[] = [];
-          while (
-            this.at().type !== 'eof' &&
-            !this.isPunct(',') &&
-            !this.isPunct(')') &&
-            !this.isPunct(';')
-          ) {
+          let cDepth = 0;
+          while (this.at().type !== 'eof' && !this.isPunct(';')) {
+            if (this.isPunct('(')) {
+              cDepth++;
+              cToks.push(this.at());
+              this.pos++;
+              continue;
+            }
+            if (this.isPunct(')')) {
+              if (cDepth > 0) {
+                cDepth--;
+                cToks.push(this.at());
+                this.pos++;
+                continue;
+              }
+              break; // the CREATE TABLE closing ) — leave for the outer loop
+            }
+            if (this.isPunct(',') && cDepth === 0) break; // next column
             cToks.push(this.at());
             this.pos++;
           }
           const col: ColumnDef = { name: colName, dataType: typeParts.join(' ') };
           const constraints = splitConstraints(cToks);
           if (constraints.length > 0) col.constraints = constraints;
+          // WS-7: inline column-level REFERENCES (`col type REFERENCES parent[(cols)]`) → a FK with
+          // this column as the child column. Best-effort; misses are acceptable.
+          const inlineFk = extractInlineFk(colName, cToks);
+          if (inlineFk) foreignKeys.push(inlineFk);
           columns.push(col);
           continue;
         }
@@ -311,8 +355,77 @@ class Parser {
       schema,
       name,
       columns,
+      ...(foreignKeys.length > 0 ? { foreignKeys } : {}),
       span: { start: startLine, end: this.lineOf() },
     };
+  }
+
+  /**
+   * 1.2 (WS-7): parse a table-level FOREIGN KEY clause at `this.pos`:
+   *   FOREIGN KEY (col[, col]...) REFERENCES refTable[(ref_col[, ref_col]...)]
+   * `this.pos` is at the `foreign` (or `key`) keyword. Returns the FK, or null if the shape isn't
+   *  recognized (caller then skipUntilDepthZero). Best-effort + tolerant — never throws.
+   */
+  private parseTableFk(): ForeignKey | null {
+    const start = this.pos;
+    this.eatWord('foreign');
+    this.eatWord('key');
+    // ( col, col, ... )
+    const cols = this.readParenColumnList();
+    if (cols.length === 0) {
+      this.pos = start;
+      return null;
+    }
+    if (!this.isWord('references')) {
+      this.pos = start;
+      return null;
+    }
+    this.pos++; // past 'references'
+    const ref = readTableRef(this.toks, this.pos);
+    if (!ref) {
+      this.pos = start;
+      return null;
+    }
+    this.pos = ref.next;
+    // optional ( ref_col, ref_col, ... )
+    let refColumns: string[] | undefined;
+    if (this.isPunct('(')) {
+      refColumns = this.readParenColumnList();
+    }
+    const fk: ForeignKey = { columns: cols, refTable: ref.name };
+    if (refColumns && refColumns.length > 0) fk.refColumns = refColumns;
+    return fk;
+  }
+
+  /** 1.2 (WS-7): read a `( col, col, ... )` column list, returning the trimmed names. `this.pos`
+   *  must be at the `(`; on return it is past the matching `)`. Tolerant of stray punctuation. */
+  private readParenColumnList(): string[] {
+    if (!this.isPunct('(')) return [];
+    this.pos++; // past '('
+    const out: string[] = [];
+    let depth = 1;
+    while (this.at().type !== 'eof' && depth > 0) {
+      if (this.isPunct('(')) {
+        depth++;
+        this.pos++;
+        continue;
+      }
+      if (this.isPunct(')')) {
+        depth--;
+        this.pos++;
+        continue;
+      }
+      if (this.isPunct(',')) {
+        this.pos++;
+        continue;
+      }
+      if (this.at().type === 'word') {
+        out.push(this.next().raw);
+        continue;
+      }
+      this.pos++; // stray (sizing/keywords tolerated)
+    }
+    return out;
   }
 
   /**
@@ -971,7 +1084,9 @@ class Parser {
   }
 
   /** 1.2: parse a cursor declaration `CURSOR c [(params)] IS <select>;` → a `cursor` Decl with the
-   *  query text (whitespace-collapsed, capped). The query is read up to the depth-0 `;`. */
+   *  query text (whitespace-collapsed, capped) + the FROM/JOIN/USING table refs mined from the query
+   *  (WS-7: a cursor SELECT reads its row-source tables — mined here so the extractor can emit a
+   *  `reads` edge cursor → table). The query is read up to the depth-0 `;`. */
   private parseCursorDecl(): Decl {
     const startLine = this.lineOf();
     this.eatWord('cursor');
@@ -979,14 +1094,25 @@ class Parser {
     if (this.isPunct('(')) this.readBalancedParens(); // optional parameter list
     let cursorQuery = '';
     let cursorTruncated = false;
+    const cursorTables: string[] = [];
     if (this.isWord('is')) {
       this.pos++;
       const qStart = this.at().off;
       let depth = 0;
       while (this.at().type !== 'eof') {
+        const t = this.at();
         if (this.isPunct('(')) depth++;
         else if (this.isPunct(')')) depth = Math.max(0, depth - 1);
         else if (this.isPunct(';') && depth === 0) break;
+        else if (
+          depth === 0 &&
+          t.type === 'word' &&
+          (t.text === 'from' || t.text === 'join' || t.text === 'using')
+        ) {
+          // mine the table ref following a FROM/JOIN/USING anchor at depth 0 (the cursor's row
+          // sources). Tolerant — misses are acceptable; the resolver re-resolves against the catalog.
+          pushFromTable(this.toks, this.pos, cursorTables);
+        }
         this.pos++;
       }
       const qEnd = this.at().off;
@@ -1001,17 +1127,27 @@ class Parser {
       kind: 'cursor',
       name,
       cursorQuery,
+      ...(cursorTables.length > 0 ? { cursorTables } : {}),
       ...(cursorTruncated ? { exprTruncated: true } : {}),
       span: { start: startLine, end: this.lineOf() },
     };
   }
 
-  /** 1.2: parse a local/package variable declaration `name type[(n)] [:= expr];` → a `variable`
-   *  Decl with the dataType. Best-effort: `%TYPE`/`%ROWTYPE` anchors are kept lossily as the base
-   *  name; the optional initializer is skipped to the `;`. */
+  /** 1.2: parse a local/package variable declaration `[CONSTANT] name type[(n)] [:= expr];` → a
+   *  `variable` Decl with the dataType + optional initializer. The CONSTANT keyword PRECEDES the
+   *  type in Oracle PL/SQL (`cname CONSTANT NUMBER := 30;`), so it is consumed first and flagged —
+   *  otherwise it would be mis-captured as the dataType. The `:= expr` initializer is captured
+   *  (fidelity-clamped) so package CONSTANT values survive into `meta.variables` for migration
+   *  reconstruction (WS-6). Best-effort: `%TYPE`/`%ROWTYPE` anchors are kept lossily as the base name. */
   private parseVariableDecl(): Decl {
     const startLine = this.lineOf();
     const name = this.at().type === 'word' ? this.next().raw : '';
+    let constant = false;
+    // `cname CONSTANT NUMBER := 30;` — the CONSTANT keyword precedes the type.
+    if (this.at().type === 'word' && this.at().text.toUpperCase() === 'CONSTANT') {
+      constant = true;
+      this.next();
+    }
     const typeParts: string[] = [];
     if (this.at().type === 'word' || this.at().type === 'number') {
       typeParts.push(this.next().raw);
@@ -1020,11 +1156,43 @@ class Parser {
         if (sz) typeParts.push(`(${sz})`);
       }
     }
-    this.skipToSemicolon(); // optional `:= expr` / `%TYPE` / `%ROWTYPE` → ;
+    // optional initializer `:= expr` up to `;` — capture the literal/expr (clamped) so constants
+    // (C_THRESHOLD_AUTO_REJECT := 30) and plain defaults (g_threshold NUMBER := 1000) survive.
+    let init: string | undefined;
+    let exprTruncated = false;
+    if (this.at().type === 'op' && this.at().text === ':=') {
+      this.pos++;
+      const exprStart = this.at().off;
+      this.skipToSemicolon();
+      // skipToSemicolon() consumes the `;` (pos++ then return), so the cursor sits one past
+      // it and `this.at().off` would point AFTER the `;` — slicing there would include the
+      // `;` in the initializer ("30;" instead of "30"). The consumed `;` is the token just
+      // before the cursor; slice up to ITS offset so the initializer excludes the `;`.
+      // (Falls back to the cursor offset only if skipToSemicolon hit EOF without a `;`.)
+      const semiTok = this.toks[this.pos - 1];
+      const endOff =
+        semiTok && semiTok.type === 'punct' && semiTok.text === ';' ? semiTok.off : this.at().off;
+      const clamped = clampExpr(this.src.slice(exprStart, endOff).replace(/\s+/g, ' ').trim());
+      init = clamped.expr;
+      if (clamped.truncated) exprTruncated = true;
+    } else {
+      this.skipToSemicolon(); // %TYPE / %ROWTYPE / nothing → ;
+    }
+    // Assemble the dataType: a parenthesized size `(20)` concatenates directly to the base
+    // type (`VARCHAR2(20)`, not `VARCHAR2 (20)`); any other following part (e.g. a multi-word
+    // type like `LONG RAW`) is space-separated.
+    const dataType = typeParts.reduce((acc, p, i) => {
+      if (i === 0) return p;
+      if (p.startsWith('(')) return acc + p;
+      return `${acc} ${p}`;
+    }, '');
     return {
       kind: 'variable',
       name,
-      dataType: typeParts.join(' '),
+      dataType,
+      ...(constant ? { constant: true } : {}),
+      ...(init !== undefined ? { init } : {}),
+      ...(exprTruncated ? { exprTruncated: true } : {}),
       span: { start: startLine, end: this.lineOf() },
     };
   }
@@ -1313,6 +1481,59 @@ function extractSqlRefs(
 
 function dedupe(xs: string[]): string[] {
   return [...new Set(xs)];
+}
+
+/**
+ * 1.2 (WS-7): mine an inline column-level FOREIGN KEY from a column's trailing constraint tokens:
+ *   `<col> <type> REFERENCES <parent>[(<ref_cols>)]`
+ * Returns a FK with `columns:[colName]` + the parent table (+ optional ref columns), or null when
+ * the column has no REFERENCES clause. Best-effort + tolerant — the resolver re-resolves the parent
+ * against the schema catalog, so a miss here is a silent no-op (no fabricated edge).
+ */
+function extractInlineFk(colName: string, cToks: Token[]): ForeignKey | null {
+  for (let i = 0; i < cToks.length; i++) {
+    const t = tokAt(cToks, i);
+    if (!t || t.type !== 'word' || t.text !== 'references') continue;
+    const ref = readTableRef(cToks, i + 1);
+    if (!ref) return null;
+    // optional ( ref_col, ref_col, ... ) immediately after the parent table ref
+    let refColumns: string[] | undefined;
+    let j = ref.next;
+    const open = tokAt(cToks, j);
+    if (open && open.type === 'punct' && open.text === '(') {
+      refColumns = [];
+      j++; // past '('
+      let depth = 1;
+      while (j < cToks.length && depth > 0) {
+        const c = tokAt(cToks, j);
+        if (!c) break;
+        if (c.type === 'punct' && c.text === '(') {
+          depth++;
+          j++;
+          continue;
+        }
+        if (c.type === 'punct' && c.text === ')') {
+          depth--;
+          j++;
+          continue;
+        }
+        if (c.type === 'punct' && c.text === ',') {
+          j++;
+          continue;
+        }
+        if (c.type === 'word') {
+          refColumns.push(c.raw);
+          j++;
+          continue;
+        }
+        j++; // stray
+      }
+    }
+    const fk: ForeignKey = { columns: [colName], refTable: ref.name };
+    if (refColumns && refColumns.length > 0) fk.refColumns = refColumns;
+    return fk;
+  }
+  return null;
 }
 
 /**

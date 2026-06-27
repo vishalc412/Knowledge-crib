@@ -1,0 +1,897 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:339fa9deb905f6eb10127ad9e17693542873f0abaac099a2674001ba3c8315d8",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseStmt",
+    "qualifiedName": "Parser.parseStmt",
+    "signature": "parseStmt(): Stmt | null",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 791,
+      "end": 822
+    },
+    "callSites": [
+      {
+        "callee": "at",
+        "line": 792
+      },
+      {
+        "callee": "recover",
+        "line": 796
+      },
+      {
+        "callee": "parseIf",
+        "line": 802
+      },
+      {
+        "callee": "parseLoop",
+        "line": 803
+      },
+      {
+        "callee": "parseCase",
+        "line": 804
+      },
+      {
+        "callee": "parseRaise",
+        "line": 805
+      },
+      {
+        "callee": "lineOf",
+        "line": 808
+      },
+      {
+        "callee": "parseAnonymousBlock",
+        "line": 809
+      },
+      {
+        "callee": "wrapBlockAsPlain",
+        "line": 810
+      },
+      {
+        "callee": "parseExceptionBlock",
+        "line": 816
+      },
+      {
+        "callee": "parseSqlStmt",
+        "line": 818
+      },
+      {
+        "callee": "parsePlain",
+        "line": 819
+      },
+      {
+        "callee": "parseNameStmt",
+        "line": 821
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseStmt(): Stmt | null {\n    const t = this.at();\n    if (t.type !== 'word') {\n      // a leading `(` opens a sub-expression statement; recover to ;\n      if (t.type === 'punct' || t.type === 'op' || t.type === 'unknown') {\n        this.recover();\n        return null;\n      }\n      return null;\n    }\n    const head = t.text;\n    if (head === 'if') return this.parseIf();\n    if (head === 'for' || head === 'while' || head === 'loop') return this.parseLoop();\n    if (head === 'case') return this.parseCase();\n    if (head === 'raise') return this.parseRaise();\n    if (head === 'begin') {\n      // nested anonymous block as a statement\n      const startLine = this.lineOf();\n      const inner = this.parseAnonymousBlock();\n      if (inner?.body) return this.wrapBlockAsPlain(inner.body, startLine);\n      return null;\n    }\n    if (head === 'exception') {\n      // 1.2: an EXCEPTION clause is now parsed as a statement (one ExceptionBlock stmt in the\n      // enclosing body), so handlers/raises survive into the graph instead of being lost.\n      return this.parseExceptionBlock();\n    }\n    if (SQL_VERBS.has(head)) return this.parseSqlStmt();\n    if (STMT_HEAD_PLAIN.has(head)) return this.parsePlain();\n    // otherwise: a name-led statement — call or assignment.\n    return this.parseNameStmt();\n  }",
+    "truncated": false,
+    "totalLines": 32,
+    "startLine": 791
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseBlock@L780",
+      "confidence": 1,
+      "name": "parseBlock",
+      "qualifiedName": "Parser.parseBlock",
+      "signature": "parseBlock(stop: Set<string>): Block",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 780
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L119",
+      "confidence": 1,
+      "name": "at",
+      "qualifiedName": "Parser.at",
+      "signature": "at(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 119
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.lineOf@L147",
+      "confidence": 1,
+      "name": "lineOf",
+      "qualifiedName": "Parser.lineOf",
+      "signature": "lineOf(): number",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 147
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseAnonymousBlock@L759",
+      "confidence": 1,
+      "name": "parseAnonymousBlock",
+      "qualifiedName": "Parser.parseAnonymousBlock",
+      "signature": "parseAnonymousBlock(): Unit | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 759
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCase@L888",
+      "confidence": 1,
+      "name": "parseCase",
+      "qualifiedName": "Parser.parseCase",
+      "signature": "parseCase(): CaseStmt",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 888
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseExceptionBlock@L927",
+      "confidence": 1,
+      "name": "parseExceptionBlock",
+      "qualifiedName": "Parser.parseExceptionBlock",
+      "signature": "parseExceptionBlock(): ExceptionBlock",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 927
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseIf@L824",
+      "confidence": 1,
+      "name": "parseIf",
+      "qualifiedName": "Parser.parseIf",
+      "signature": "parseIf(): IfStmt",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 824
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseLoop@L850",
+      "confidence": 1,
+      "name": "parseLoop",
+      "qualifiedName": "Parser.parseLoop",
+      "signature": "parseLoop(): LoopStmt",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 850
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseNameStmt@L1026",
+      "confidence": 1,
+      "name": "parseNameStmt",
+      "qualifiedName": "Parser.parseNameStmt",
+      "signature": "parseNameStmt(): Stmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1026
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parsePlain@L1005",
+      "confidence": 1,
+      "name": "parsePlain",
+      "qualifiedName": "Parser.parsePlain",
+      "signature": "parsePlain(): PlainStmt",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1005
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseRaise@L948",
+      "confidence": 1,
+      "name": "parseRaise",
+      "qualifiedName": "Parser.parseRaise",
+      "signature": "parseRaise(): RaiseStmt",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 948
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L957",
+      "confidence": 1,
+      "name": "parseSqlStmt",
+      "qualifiedName": "Parser.parseSqlStmt",
+      "signature": "parseSqlStmt(): SqlStmt",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 957
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.recover@L152",
+      "confidence": 1,
+      "name": "recover",
+      "qualifiedName": "Parser.recover",
+      "signature": "recover(): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 152
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.wrapBlockAsPlain@L1078",
+      "confidence": 1,
+      "name": "wrapBlockAsPlain",
+      "qualifiedName": "Parser.wrapBlockAsPlain",
+      "signature": "wrapBlockAsPlain(_b: Block, startLine: number): Stmt",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1078
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+    "procedureName": "Parser.parseStmt",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/parser.ts@L793",
+      "cond:packages/parsers/src/plsql/parser.ts@L795",
+      "cond:packages/parsers/src/plsql/parser.ts@L802",
+      "cond:packages/parsers/src/plsql/parser.ts@L803",
+      "cond:packages/parsers/src/plsql/parser.ts@L804",
+      "cond:packages/parsers/src/plsql/parser.ts@L805",
+      "cond:packages/parsers/src/plsql/parser.ts@L806",
+      "cond:packages/parsers/src/plsql/parser.ts@L810",
+      "cond:packages/parsers/src/plsql/parser.ts@L813",
+      "cond:packages/parsers/src/plsql/parser.ts@L818",
+      "cond:packages/parsers/src/plsql/parser.ts@L819"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:205e508ba2ce37717826c47093fcb9f942d2ce915f3cfbf8b6dc076c8b6f3349",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L119",
+          "expr": "at",
+          "line": 792
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dfdf39026f81a457c8920b50e9b1820e8cae4f5f281a86ea3d36fb304c578862",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L792",
+          "line": 792,
+          "expr": "const t = this.at();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L795",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L793",
+            "expr": "t.type !== 'word'"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L795",
+            "expr": "t.type === 'punct' || t.type === 'op' || t.type === 'unknown'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6a35255f3d645e8cd1d894e2b2f43a9885d83a417a661f1ff9f78c93373cb2d7",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.recover@L152",
+          "expr": "recover",
+          "line": 796
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L795",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L793",
+            "expr": "t.type !== 'word'"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L795",
+            "expr": "t.type === 'punct' || t.type === 'op' || t.type === 'unknown'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a3eb678f1017a77c6c9948da7da135af2e139d251832ac676d87a827c7e163d7",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L796",
+          "line": 796,
+          "expr": "this.recover();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L795",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L793",
+            "expr": "t.type !== 'word'"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L795",
+            "expr": "t.type === 'punct' || t.type === 'op' || t.type === 'unknown'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aad6fba9afda1975e3cc6735f940a544421693aed4ffd581571723213db32e6e",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L797",
+          "line": 797,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L793",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L793",
+            "expr": "t.type !== 'word'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ef953790b057b5836a926b30fd5f09aec5da2cc776a8cefc131ec598e8850b84",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L799",
+          "line": 799,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L802",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L802",
+            "expr": "head === 'if'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:55ffeccd5922e2a579a2f9a298db9f0ea1ea9a571e1455c734d0d5fb4268fce0",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseIf@L824",
+          "expr": "parseIf",
+          "line": 802
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L802",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L802",
+            "expr": "head === 'if'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e07fae1371702401200041ffbd33a20ae60daf8da0c27187fcc6e8a4964c8b33",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L802",
+          "line": 802,
+          "expr": "return this.parseIf();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L803",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L803",
+            "expr": "head === 'for' || head === 'while' || head === 'loop'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0eaa4c625ef708826ecf995ba73431bac612979270e921266fc27717323484c4",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseLoop@L850",
+          "expr": "parseLoop",
+          "line": 803
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L803",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L803",
+            "expr": "head === 'for' || head === 'while' || head === 'loop'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:203f0e87e4a365b50d1fa8d00bc28fb448740b30ce457d14b6996585b80ac0b0",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L803",
+          "line": 803,
+          "expr": "return this.parseLoop();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L804",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L804",
+            "expr": "head === 'case'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c3e55b99d5c65f08779306d1c4f200838c78a4250beaf03c9ff8f661c73de8c5",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCase@L888",
+          "expr": "parseCase",
+          "line": 804
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L804",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L804",
+            "expr": "head === 'case'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:73ae396ab36f3c2ad46b7f3cc71443bfabea180ede7e5f5a4a837c4c0abcbe6d",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L804",
+          "line": 804,
+          "expr": "return this.parseCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L805",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L805",
+            "expr": "head === 'raise'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:62a24c5e833fc93ab457d16638a390c3703136bf411e2ac7c53717de4f02dd7e",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseRaise@L948",
+          "expr": "parseRaise",
+          "line": 805
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L805",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L805",
+            "expr": "head === 'raise'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b3d29bce6cb86451f80666e463ba276121bef27d6cd9020a148c1711797388cd",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L805",
+          "line": 805,
+          "expr": "return this.parseRaise();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L806",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L806",
+            "expr": "head === 'begin'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1d796eee9777d5be36b276aa910f37e7e11c7a5468b686a63cff4c5d6dbbd33c",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.lineOf@L147",
+          "expr": "lineOf",
+          "line": 808
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L806",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L806",
+            "expr": "head === 'begin'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c957e68d52f29c652307988d25eadc91579d493665453fbc05784d0f71e95b59",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L808",
+          "line": 808,
+          "expr": "const startLine = this.lineOf();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L806",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L806",
+            "expr": "head === 'begin'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dafc2de752c81e70165de2e465817e5c6b65306691b74a49b8bf6b789968c051",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseAnonymousBlock@L759",
+          "expr": "parseAnonymousBlock",
+          "line": 809
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L806",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L806",
+            "expr": "head === 'begin'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:60b637628707ce172c570ae81fecd2b4c17d4b0a8cd38d08aa838ba1456e8501",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L809",
+          "line": 809,
+          "expr": "const inner = this.parseAnonymousBlock();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L810",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L806",
+            "expr": "head === 'begin'"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L810",
+            "expr": "inner?.body",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a6807ac8a2a61dfb89c3824d98fb08d432407369a952f4856c61cf486d6031a6",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.wrapBlockAsPlain@L1078",
+          "expr": "wrapBlockAsPlain",
+          "line": 810
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L810",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L806",
+            "expr": "head === 'begin'"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L810",
+            "expr": "inner?.body",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3df57ab38b9a5a4ce0374b75f61c1212612ac62ff184eceae46d6f62b1be6e81",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L810",
+          "line": 810,
+          "expr": "return this.wrapBlockAsPlain(inner.body, startLine);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L806",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L806",
+            "expr": "head === 'begin'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8bd700779a0c78566e3dc82a3cd139ff44e25d08ed0b99175436e4ff8da8ccc",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L811",
+          "line": 811,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L813",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L813",
+            "expr": "head === 'exception'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:062e64f50f5968485448bf692137991647db9ee94f7665c9ed9a082b9f11a61c",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseExceptionBlock@L927",
+          "expr": "parseExceptionBlock",
+          "line": 816
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L813",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L813",
+            "expr": "head === 'exception'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b923d151790db6c5a42d23f639b84d3d9dcb05cf29ab0a7b77132ef50c5bc27a",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L816",
+          "line": 816,
+          "expr": "return this.parseExceptionBlock();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L818",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L818",
+            "expr": "SQL_VERBS.has(head)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ccb8b0593d74d504b90d8513b21cd6c0fdd05ebf0664cc23daf246a1d507e779",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L957",
+          "expr": "parseSqlStmt",
+          "line": 818
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L818",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L818",
+            "expr": "SQL_VERBS.has(head)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:721cd602e96fa45f7d9ea1d4543b3d2f7f3c5675ef7704bad3c9ad5877578f44",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L818",
+          "line": 818,
+          "expr": "return this.parseSqlStmt();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L819",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L819",
+            "expr": "STMT_HEAD_PLAIN.has(head)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4eef8388e1220c7d795ba2aaef823bbb7114d256c8ae89f0525d0c33d2c93753",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parsePlain@L1005",
+          "expr": "parsePlain",
+          "line": 819
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L819",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L819",
+            "expr": "STMT_HEAD_PLAIN.has(head)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:628ec70233fe84ba6aa8bd5e2f62bd8642a49246b1cafcc136c57014bb312cbc",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L819",
+          "line": 819,
+          "expr": "return this.parsePlain();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ffe6880922a76cbbbe0916eba954751878bf73b9773ded3fde0dc81d1c6e4657",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseNameStmt@L1026",
+          "expr": "parseNameStmt",
+          "line": 821
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseStmt@L791",
+        "procedureName": "Parser.parseStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e33bb52454f95586a34c2c0342cdf2d771df15aaa54709d463150e39e6fddf90",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L821",
+          "line": 821,
+          "expr": "return this.parseNameStmt();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 16,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 16,
+    "assignments": 0,
+    "conditions": 11,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 13,
+      "recorded": 13,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

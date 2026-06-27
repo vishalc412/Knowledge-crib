@@ -1,0 +1,421 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:a23eb5e0bca9cb422388813d69695a8ae251f00345a3e96cd24199620b50896d",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+    "kind": "symbol",
+    "type": "method",
+    "name": "addSql",
+    "qualifiedName": "Builder.addSql",
+    "signature": "addSql(s: SqlStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 453,
+      "end": 488
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 458
+      },
+      {
+        "callee": "hash",
+        "line": 466
+      },
+      {
+        "callee": "push",
+        "line": 478
+      },
+      {
+        "callee": "push",
+        "line": 480
+      },
+      {
+        "callee": "edge",
+        "line": 480
+      },
+      {
+        "callee": "toUpperCase",
+        "line": 480
+      },
+      {
+        "callee": "sqlRoles",
+        "line": 482
+      },
+      {
+        "callee": "linkTable",
+        "line": 483
+      },
+      {
+        "callee": "linkTable",
+        "line": 484
+      },
+      {
+        "callee": "linkColumn",
+        "line": 485
+      },
+      {
+        "callee": "push",
+        "line": 487
+      },
+      {
+        "callee": "edge",
+        "line": 487
+      }
+    ]
+  },
+  "source": {
+    "text": "  private addSql(\n    s: SqlStmt,\n    proc: ProcCtx,\n    env: { inLoop: boolean; inException: boolean; guard: string | undefined },\n  ): void {\n    const id = this.ctx.idFor('statement', { file: this.path, line: s.span.start });\n    const node: Node = {\n      id,\n      kind: 'statement',\n      sqlKind: s.sqlKind,\n      file: this.path,\n      span: s.span,\n      lang: 'plsql',\n      hash: this.ctx.hash(`${this.path}:${s.span.start}:${s.sqlKind}`),\n      ...(s.expr ? { expr: s.expr } : {}),\n      ...(s.exprTruncated ? { exprTruncated: true } : {}),\n      meta: {\n        tables: s.tables,\n        columns: s.columns,\n        ...(s.intoTarget ? { intoTarget: s.intoTarget } : {}),\n        branch: env.guard ? 'GUARDED' : undefined,\n        inLoop: env.inLoop,\n        inException: env.inException,\n      },\n    };\n    this.nodes.push(node);\n    // executes: procedure → statement\n    this.edges.push(this.edge(proc.procId, id, 'executes', s.sqlKind.toUpperCase()));\n    // local reads/writes to tables/columns declared in THIS file (cross-file → resolver).\n    const { reads, writes } = sqlRoles(s.sqlKind, s.tables);\n    for (const t of reads) this.linkTable(id, t, 'reads');\n    for (const t of writes) this.linkTable(id, t, 'writes');\n    for (const c of s.columns) this.linkColumn(id, c, s.sqlKind);\n    // guarded-by: statement → innermost enclosing condition (M11 chains the full path).\n    if (env.guard) this.edges.push(this.edge(id, env.guard, 'guarded-by', 'IF'));\n  }",
+    "truncated": false,
+    "totalLines": 36,
+    "startLine": 453
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L416",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "Builder.walkStmt",
+      "signature": "walkStmt(s: Stmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 416
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L798",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "Builder.edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string): Edge",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 798
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.linkColumn@L750",
+      "confidence": 1,
+      "name": "linkColumn",
+      "qualifiedName": "Builder.linkColumn",
+      "signature": "linkColumn(stmtId: string, ref: string, verb: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 750
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.linkTable@L745",
+      "confidence": 1,
+      "name": "linkTable",
+      "qualifiedName": "Builder.linkTable",
+      "signature": "linkTable(stmtId: string, ref: string, rel: 'reads' | 'writes'): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 745
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+      "confidence": 1,
+      "name": "sqlRoles",
+      "qualifiedName": "sqlRoles",
+      "signature": "sqlRoles(verb: string, tables: string[]): { reads: string[]; writes: string[] }",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1624
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-gold-pattern-already-proven-plsqlextractor",
+      "heading": "The gold pattern (already proven): `PlSqlExtractor`",
+      "anchor": "the-gold-pattern-already-proven-plsqlextractor",
+      "snippet": "The gold pattern (already proven): `PlSqlExtractor`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+    "procedureName": "Builder.addSql",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L487",
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L484",
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L483",
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L485"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+        "procedureName": "Builder.addSql",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:038afd45473e3d35951de1a1e676075b56ab4d57bcf7f4e3bb217f496a63694d",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L458",
+          "line": 458,
+          "expr": "const id = this.ctx.idFor('statement', { file: this.path, line: s.span.start });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+        "procedureName": "Builder.addSql",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:23dcb1227b22129d921b9a6a5a237cf9473e9c9eb0e3d97c587e6a2bc51ed99b",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L459",
+          "line": 459,
+          "expr": "const node: Node = {\n      id,\n      kind: 'statement',\n      sqlKind: s.sqlKind,\n      file: this.path,\n      span: s.span,\n      lang: 'plsql',\n      hash: this.ctx.hash(`${this.path}:${s.span.start}:${s.sqlKind}`),\n      ...(s.expr ? { expr: s.expr } : {}),\n      ...(s.exprTruncated ? { exprTruncated: true } : {}),\n      meta: {\n        tables: s.tables,\n        columns: s.columns,\n        ...(s.intoTarget ? { intoTarget: s.intoTarget } : {}),\n        branch: env.guard ? 'GUARDED' : undefined,\n        inLoop: env.inLoop,\n        inException: env.inException,\n      },\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+        "procedureName": "Builder.addSql",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e86bc0605cf0c33d546e1465ecc29056488663d04e761e982e5a9d359d495f4b",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L478",
+          "line": 478,
+          "expr": "this.nodes.push(node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+        "procedureName": "Builder.addSql",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L487",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L487",
+            "expr": "env.guard",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7e959100657f75a9a4ea5814cf67e80e96d67ab1ee5e3f7128d0dc62b8dde144",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L798",
+          "expr": "edge",
+          "line": 480
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+        "procedureName": "Builder.addSql",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cfe2e404378a64326f6e9fddc20a84e05adf6bde544f9e15553f7ce987798f5f",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L480",
+          "line": 480,
+          "expr": "this.edges.push(this.edge(proc.procId, id, 'executes', s.sqlKind.toUpperCase()));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+        "procedureName": "Builder.addSql",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2f092f50b77cf8f3b10a5585c1fa43cb9dd27656614ac7988d23cf9166b05195",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L482",
+          "line": 482,
+          "expr": "const { reads, writes } = sqlRoles(s.sqlKind, s.tables);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+        "procedureName": "Builder.addSql",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1a6af14f24c35a10c9d88f591af576d1df6ed53794ec6367e301abf479d85660",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+          "expr": "sqlRoles",
+          "line": 482
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+        "procedureName": "Builder.addSql",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L484",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L484",
+            "expr": "writes",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:38b64b29a9fe90d333dff77f349839c7922ee9546a11e0dd9b120fdfacd45c9a",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.linkTable@L745",
+          "expr": "linkTable",
+          "line": 483
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+        "procedureName": "Builder.addSql",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L483",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L483",
+            "expr": "reads",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e02a70c3436c34a52a3e1470adc346b129e332838a947b913473b9ad0f69edcb",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L483",
+          "line": 483,
+          "expr": "this.linkTable(id, t, 'reads');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+        "procedureName": "Builder.addSql",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L484",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L484",
+            "expr": "writes",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2b4b475937b1d007df5d918542a41c46a261890634d1a351140429ac291e4655",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L484",
+          "line": 484,
+          "expr": "this.linkTable(id, t, 'writes');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+        "procedureName": "Builder.addSql",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L485",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L485",
+            "expr": "s.columns",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c8eaf0b3854991ae2ef77fb338d13d57c906237522e3d43e0d9c5afcffbb579e",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.linkColumn@L750",
+          "expr": "linkColumn",
+          "line": 485
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+        "procedureName": "Builder.addSql",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L485",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L485",
+            "expr": "s.columns",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9a78835c7b634c8150ea9f9d7c087dea247a8debc5db1b0e679579eb2af8be58",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L485",
+          "line": 485,
+          "expr": "this.linkColumn(id, c, s.sqlKind);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+        "procedureName": "Builder.addSql",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L487",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L487",
+            "expr": "env.guard",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a6d5ebb2f29dba3e1350255a17ea011871066e3c260cdbcf8ade97c98ef86ba6",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L487",
+          "line": 487,
+          "expr": "this.edges.push(this.edge(id, env.guard, 'guarded-by', 'IF'));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 12,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

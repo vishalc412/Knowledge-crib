@@ -128,12 +128,14 @@ query | serve | update | reindex | merge-driver | install-hooks | export | viz |
 > There is NO 'crib migrate' command. Schema evolution is automatic and additive:
 >   (1) every 1.0→1.3 field is OPTIONAL + `additionalProperties:true`, so an old soul loads verbatim;
 >   (2) re-indexing stamps the new 1.3 fields onto the SAME node (id-stable, hash-stable, in-place);
->   (3) persisted dossiers rebuild on demand via the `shapeVersion` + `schemaVersion` staleness gate in
+>   (3) persisted dossiers rebuild via graph-content comparison plus the `shapeVersion` +
+>   `schemaVersion` staleness gate in
 >       `readDossier` (`shapeVersion` undefined → stale → rebuilt). No rewrite, no data loss.
 
 In practice: run `crib reindex .` (or `crib index .`) to stamp the current `schemaVersion` (`1.3`)
-and the 1.3 framework-semantics fields onto the existing nodes; stale persisted dossiers rebuild on
-the next `dossier` call. The `'crib migrate'` test referenced in `docs/knowledge-crib-testing.md` §7
+and the 1.3 framework-semantics fields onto the existing nodes; stale persisted dossiers rebuild
+during indexing or on the next `dossier` call. The `'crib migrate'` test referenced in
+`docs/knowledge-crib-testing.md` §7
 is the schema round-trip + forward-compat test in `packages/core/src/validate.test.ts` (1.0/1.2
 nodes validate under the 1.3 schema; a 1.2 node → stamped with 1.3 fields → re-validated, id
 unchanged) — not a CLI command.

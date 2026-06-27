@@ -671,7 +671,7 @@
       <span class="callout-icon">⚙️</span>
       <div class="callout-body">
         <strong>Requirements</strong>
-        <p>Node ≥ 20 (22+ recommended) · pnpm 9.x · macOS / Linux</p>
+        <p>Node ≥ 20 · pnpm 9.15.0 via Corepack · macOS / Linux</p>
       </div>
     </div>
 
@@ -684,7 +684,7 @@
             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
             <pre><code><span class="token-prompt">$</span> git clone &lt;knowledge-crib repo&gt; ~/Documents/Knowlege-crib
 <span class="token-prompt">$</span> cd ~/Documents/Knowlege-crib
-<span class="token-prompt">$</span> pnpm install</code></pre>
+<span class="token-prompt">$</span> corepack pnpm@9.15.0 install</code></pre>
           </div>
         </div>
       </div>
@@ -695,8 +695,8 @@
           <h4>Build all 7 packages</h4>
           <div class="code-wrapper">
             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-            <pre><code><span class="token-prompt">$</span> pnpm build     <span class="token-comment"># builds all 7 packages → dist/</span>
-<span class="token-prompt">$</span> pnpm test      <span class="token-comment"># optional: confirm 165 tests pass</span></code></pre>
+            <pre><code><span class="token-prompt">$</span> corepack pnpm@9.15.0 build     <span class="token-comment"># builds all 7 packages → dist/</span>
+<span class="token-prompt">$</span> corepack pnpm@9.15.0 release:verify    <span class="token-comment"># production release gate</span></code></pre>
           </div>
         </div>
       </div>
@@ -707,13 +707,13 @@
           <h4>Link the CLI globally</h4>
           <div class="code-wrapper">
             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-            <pre><code><span class="token-prompt">$</span> cd packages/cli && pnpm link --global
+            <pre><code><span class="token-prompt">$</span> corepack pnpm@9.15.0 --filter knowledge-crib link --global
 
 <span class="token-comment"># Verify:</span>
 <span class="token-prompt">$</span> which crib      <span class="token-comment"># /Users/&lt;you&gt;/Library/pnpm/crib</span>
 <span class="token-prompt">$</span> crib --help     <span class="token-comment"># prints the command list</span></code></pre>
           </div>
-          <p>The global link points back at the repo's <code>dist/</code>. To upgrade: <code>git pull &amp;&amp; pnpm build</code> — no reinstall. The CLI is published as two names, <code>crib</code> and <code>knowledge-crib</code> (identical).</p>
+          <p>The global link points back at the repo's <code>dist/</code>. To upgrade: <code>git pull &amp;&amp; corepack pnpm@9.15.0 build</code> — no reinstall. The CLI is published as two names, <code>crib</code> and <code>knowledge-crib</code> (identical).</p>
         </div>
       </div>
     </div>
@@ -1369,7 +1369,7 @@ tool_timeout_sec = <span class="token-num">60</span></code></pre>
     <h2 class="section-title"><span class="sec-icon">🔬</span> Worked Example: FTC Repo</h2>
     <div class="section-divider"></div>
 
-    <p>A real walkthrough on <code>/Users/vishalchawla/Documents/FTC/event_management_software</code> — a polyglot Gradle/Yarn-PnP monorepo (TypeScript + Java + SQL). Records the exact steps, root causes, and fixes.</p>
+    <p>A real walkthrough on <code>~/Projects/event_management_software</code> — a polyglot Gradle/Yarn-PnP monorepo (TypeScript + Java + SQL). Records the exact steps, root causes, and fixes.</p>
 
     <h3>Source composition</h3>
     <div class="code-wrapper">
@@ -1426,7 +1426,7 @@ tool_timeout_sec = <span class="token-num">60</span></code></pre>
     <h3>MCP server verification</h3>
     <div class="code-wrapper">
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-      <pre><code>initialize  → serverInfo { name: "knowledge-crib", version: "0.0.0" }
+      <pre><code>initialize  → serverInfo { name: "knowledge-crib", version: "0.1.0" }
 tools/list  → 11 tools (status, query, context, source, dossier, impact,
                          describes, neighbors, shortest_path, detect_changes, extract_rules)
 status      → { nodes:1576, edges:1831, clusters:104, vcsHead:... }
@@ -1496,7 +1496,7 @@ impact(ScheduleFilterBar, up, depth 2)
         <thead><tr><th>Symptom</th><th>Cause / Fix</th></tr></thead>
         <tbody class="trouble-row">
           <tr><td><code>not indexed — run crib index first</code></td><td>No <code>.crib/</code> at that path. Run <code>crib index &lt;path&gt;</code>.</td></tr>
-          <tr><td><code>crib serve</code> exits immediately</td><td>Old <code>dist/</code> — run <code>pnpm build</code> again. Fixed in current build.</td></tr>
+          <tr><td><code>crib serve</code> exits immediately</td><td>Old <code>dist/</code> — run <code>corepack pnpm@9.15.0 build</code> again. Fixed in current build.</td></tr>
           <tr><td>IDE says server failed to start / <code>crib</code> not found</td><td>IDE didn't inherit PATH. Use absolute path or run <code>crib mcp install</code> (it embeds the absolute path automatically).</td></tr>
           <tr><td>Index hangs at 100% CPU</td><td>Cache dir not ignored (e.g. <code>.yarn</code>/<code>.gradle</code>). Re-run with <code>--exclude &lt;dir&gt;</code>. (A historical PL/SQL parser infinite-loop on <code>V*.sql</code> was fixed in commit <code>0961e5b</code> — no longer a cause.)</td></tr>
           <tr><td><code>query</code> returns nothing</td><td>Symbol not extracted (e.g. <code>.js</code> / <code>.jsx</code> / <code>.cjs</code> / <code>.mjs</code>, or <code>.kt</code>). Re-index as <code>.ts</code>/<code>.tsx</code> or extend the extractor registry.</td></tr>

@@ -1,0 +1,348 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L160",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e6525cc2de873a484ff8aaeb1f72dee8b6bb01116622095f94c1982ef4b5a3ed",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L160",
+    "kind": "symbol",
+    "type": "method",
+    "name": "shortestPath",
+    "qualifiedName": "SqliteIndexStore.shortestPath",
+    "signature": "shortestPath(from: string, to: string, maxHops = Number.POSITIVE_INFINITY): PathResult",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 160,
+      "end": 183
+    },
+    "callSites": [
+      {
+        "callee": "add",
+        "line": 173
+      },
+      {
+        "callee": "set",
+        "line": 174
+      },
+      {
+        "callee": "reconstruct",
+        "line": 175
+      },
+      {
+        "callee": "push",
+        "line": 176
+      }
+    ]
+  },
+  "source": {
+    "text": "  shortestPath(from: string, to: string, maxHops = Number.POSITIVE_INFINITY): PathResult {\n    if (from === to) return { found: true, path: [from], edges: [] };\n    // BFS over directed edges (src→dst), tracking the edge used to reach each node.\n    const prev = new Map<string, { node: string; edge: Edge }>();\n    const visited = new Set<string>([from]);\n    let frontier = [from];\n    let hops = 0;\n    while (frontier.length > 0 && hops < maxHops) {\n      const next: string[] = [];\n      for (const cur of frontier) {\n        for (const edge of this.adjacent(cur, 'down')) {\n          const nb = edge.dst;\n          if (visited.has(nb)) continue;\n          visited.add(nb);\n          prev.set(nb, { node: cur, edge });\n          if (nb === to) return this.reconstruct(from, to, prev);\n          next.push(nb);\n        }\n      }\n      frontier = next;\n      hops++;\n    }\n    return { found: false, path: [], edges: [] };\n  }",
+    "truncated": false,
+    "totalLines": 24,
+    "startLine": 160
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.adjacent@L223",
+      "confidence": 1,
+      "name": "adjacent",
+      "qualifiedName": "SqliteIndexStore.adjacent",
+      "signature": "adjacent(id: string, dir: Dir): Edge[]",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 223
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reconstruct@L202",
+      "confidence": 1,
+      "name": "reconstruct",
+      "qualifiedName": "SqliteIndexStore.reconstruct",
+      "signature": "reconstruct(from: string, to: string, prev: Map<string, { node: string; edge: Edge }>): PathResult",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 202
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L160",
+    "procedureName": "SqliteIndexStore.shortestPath",
+    "conditions": [
+      "cond:packages/core/src/index/sqlite-index.ts@L161",
+      "cond:packages/core/src/index/sqlite-index.ts@L167",
+      "cond:packages/core/src/index/sqlite-index.ts@L169",
+      "cond:packages/core/src/index/sqlite-index.ts@L170",
+      "cond:packages/core/src/index/sqlite-index.ts@L175"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L160",
+        "procedureName": "SqliteIndexStore.shortestPath",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L161",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L161",
+            "expr": "from === to",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:86f848670ea3cf432b648314e8dd8e48711f4bf62ccfe8c635a7d13081ec9e1c",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L161",
+          "line": 161,
+          "expr": "return { found: true, path: [from], edges: [] };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L160",
+        "procedureName": "SqliteIndexStore.shortestPath",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L170",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L167",
+            "expr": "frontier.length > 0 && hops < maxHops"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L169",
+            "expr": "frontier"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L170",
+            "expr": "this.adjacent(cur, 'down')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6683223f07a8d44b7a95e758e1bfc61e40f008878839fb26268a556d2cec6cc2",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L173",
+          "line": 173,
+          "expr": "visited.add(nb);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L160",
+        "procedureName": "SqliteIndexStore.shortestPath",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L170",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L167",
+            "expr": "frontier.length > 0 && hops < maxHops"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L169",
+            "expr": "frontier"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L170",
+            "expr": "this.adjacent(cur, 'down')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:50541d42868032007547de70ec96e52f0adc42c93ebbce606d87fa1875daaded",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L174",
+          "line": 174,
+          "expr": "prev.set(nb, { node: cur, edge });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L160",
+        "procedureName": "SqliteIndexStore.shortestPath",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L175",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L167",
+            "expr": "frontier.length > 0 && hops < maxHops"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L169",
+            "expr": "frontier"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L170",
+            "expr": "this.adjacent(cur, 'down')"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L175",
+            "expr": "nb === to",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:104c3f4e2d93194c31db79b764587e6cc75e882a16198e087cbf3c14f25adf53",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reconstruct@L202",
+          "expr": "reconstruct",
+          "line": 175
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L160",
+        "procedureName": "SqliteIndexStore.shortestPath",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L175",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L167",
+            "expr": "frontier.length > 0 && hops < maxHops"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L169",
+            "expr": "frontier"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L170",
+            "expr": "this.adjacent(cur, 'down')"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L175",
+            "expr": "nb === to",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e0910719fee0ae0f6ad8685ef09bdf4e523eb1582bd5809fc165b5e2fd8d8c10",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L175",
+          "line": 175,
+          "expr": "return this.reconstruct(from, to, prev);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L160",
+        "procedureName": "SqliteIndexStore.shortestPath",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L170",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L167",
+            "expr": "frontier.length > 0 && hops < maxHops"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L169",
+            "expr": "frontier"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L170",
+            "expr": "this.adjacent(cur, 'down')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2b920d235f5265aa578c79e760e04269cd06773ff6d4d6e8fdd8503540fe54da",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L176",
+          "line": 176,
+          "expr": "next.push(nb);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L160",
+        "procedureName": "SqliteIndexStore.shortestPath",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L167",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L167",
+            "expr": "frontier.length > 0 && hops < maxHops",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d245358b7119efd22042d5808372544b171ee280a4a03f81344282678ad222d7",
+          "target": "assign:packages/core/src/index/sqlite-index.ts@L179",
+          "line": 179,
+          "expr": "frontier = next;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L160",
+        "procedureName": "SqliteIndexStore.shortestPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d7667927cf9c201695a3a8a87183348baa1efefdadfb79b185560b2363145db1",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L182",
+          "line": 182,
+          "expr": "return { found: false, path: [], edges: [] };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L160",
+        "procedureName": "SqliteIndexStore.shortestPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:08be33683e48000847ca8f5364e8d66a2a9b57a787bc294dd30831fbd613eb30",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.adjacent@L223",
+          "expr": "adjacent"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 1,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

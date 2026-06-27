@@ -67,6 +67,11 @@ export function computeCoverage(
     keep?: (e: Edge) => boolean;
     outgoing?: Map<string, Edge[]>;
     incoming?: Map<string, Edge[]>;
+    /** lowercased simple + qualified name index for call-site resolution. Hoist it (e.g.
+     *  `buildDossiersByScope` builds it ONCE from a single `iterate('symbol')` pass and shares it
+     *  across N callables) so the bulk path does NOT re-scan all symbol nodes per callable. Absent →
+     *  built here (single-callable path). */
+    nameIndex?: ReadonlySet<string>;
   } = {},
 ): CallableCoverage {
   const keep = opts.keep ?? (() => true);
@@ -172,7 +177,7 @@ export function computeCoverage(
   }
   const node = soul.getNode(nodeId);
   const sites = (node?.meta?.calls as Array<{ callee: string; line: number }> | undefined) ?? [];
-  const nameIndex = buildNameIndex(soul);
+  const nameIndex = opts.nameIndex ?? buildNameIndex(soul);
   let unresolved = 0;
   for (const s of sites) {
     const simple = (s.callee.split('.').pop() ?? s.callee).toLowerCase();

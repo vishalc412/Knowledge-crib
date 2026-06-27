@@ -155,9 +155,10 @@ Cost ∝ change size, not repo size.
   staleness gate in `readDossier` (`shapeVersion` undefined → stale → rebuilt). No rewrite, no data
   loss. The `crib migrate` test referenced in testing.md §7 IS the schema round-trip + forward-compat
   test in `packages/core/src/validate.test.ts` (1.0/1.2 nodes validate under the 1.3 schema; a 1.2 node
-  → stamp 1.3 fields → re-validate, id unchanged). **Dist gate:** `pnpm test` runs
-  `pretest: pnpm -r run build` first, so tests never run against stale dist (packages export from
-  `./dist`, so a stale dist silently masks bugs); `pnpm verify` = build+test+lint.
+  → stamp 1.3 fields → re-validate, id unchanged). **Dist gate:**
+  `corepack pnpm@9.15.0 test` runs the pinned `pretest` build first, so tests never run against stale
+  dist (packages export from `./dist`, so a stale dist silently masks bugs);
+  `corepack pnpm@9.15.0 release:verify` is the production gate.
 - **Round-trip safety:** unknown fields are preserved, so a newer soul stays readable by an older
   reader (forward-compatible) for additive changes.
 

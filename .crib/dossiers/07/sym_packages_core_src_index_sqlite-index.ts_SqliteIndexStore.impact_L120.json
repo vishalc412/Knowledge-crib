@@ -1,0 +1,527 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.impact@L120",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:692b1531638d0734a6a7f7a2f9429b105e6f134984e4a48cd74ab72187b4b2c0",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.impact@L120",
+    "kind": "symbol",
+    "type": "method",
+    "name": "impact",
+    "qualifiedName": "SqliteIndexStore.impact",
+    "signature": "impact(id: string, dir: Dir, depth = Number.POSITIVE_INFINITY): ImpactResult",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 120,
+      "end": 143
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 131
+      },
+      {
+        "callee": "add",
+        "line": 133
+      },
+      {
+        "callee": "push",
+        "line": 134
+      },
+      {
+        "callee": "push",
+        "line": 135
+      }
+    ]
+  },
+  "source": {
+    "text": "  impact(id: string, dir: Dir, depth = Number.POSITIVE_INFINITY): ImpactResult {\n    const visited = new Set<string>([id]);\n    const collectedNodes: string[] = [];\n    const collectedEdges: Edge[] = [];\n    let frontier = [id];\n    let d = 0;\n    while (frontier.length > 0 && d < depth) {\n      const next: string[] = [];\n      for (const cur of frontier) {\n        for (const edge of this.adjacent(cur, dir)) {\n          const neighbor = dir === 'up' ? edge.src : edge.dst;\n          collectedEdges.push(edge);\n          if (!visited.has(neighbor)) {\n            visited.add(neighbor);\n            collectedNodes.push(neighbor);\n            next.push(neighbor);\n          }\n        }\n      }\n      frontier = next;\n      d++;\n    }\n    return { root: id, dir, depth: d, nodes: collectedNodes, edges: collectedEdges };\n  }",
+    "truncated": false,
+    "totalLines": 24,
+    "startLine": 120
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.adjacent@L223",
+      "confidence": 1,
+      "name": "adjacent",
+      "qualifiedName": "SqliteIndexStore.adjacent",
+      "signature": "adjacent(id: string, dir: Dir): Edge[]",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 223
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:README.md#architecture-dual-store",
+      "heading": "Architecture (dual store)",
+      "anchor": "architecture-dual-store",
+      "snippet": "Architecture (dual store)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#knowledge-crib-implementation-plan-detailed",
+      "heading": "Knowledge-crib — Implementation Plan (detailed)",
+      "anchor": "knowledge-crib-implementation-plan-detailed",
+      "snippet": "Knowledge-crib — Implementation Plan (detailed)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "heading": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "anchor": "2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "snippet": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#3-2-feature-by-feature",
+      "heading": "3.2 Feature-by-feature",
+      "anchor": "3-2-feature-by-feature",
+      "snippet": "3.2 Feature-by-feature",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#1-design-principles",
+      "heading": "1. Design principles",
+      "anchor": "1-design-principles",
+      "snippet": "1. Design principles",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "heading": "9. Prompt skeleton you can keep at the top of a session",
+      "anchor": "9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "snippet": "9. Prompt skeleton you can keep at the top of a session",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#5-the-example-fully-represented",
+      "heading": "5. The example, fully represented",
+      "anchor": "5-the-example-fully-represented",
+      "snippet": "5. The example, fully represented",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#nexus-user-research-interview-guide",
+      "heading": "Nexus — User Research Interview Guide",
+      "anchor": "nexus-user-research-interview-guide",
+      "snippet": "Nexus — User Research Interview Guide",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#detect-changes",
+      "heading": "`detect_changes`",
+      "anchor": "detect-changes",
+      "snippet": "`detect_changes`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#2-problem-user",
+      "heading": "2. Problem & User",
+      "anchor": "2-problem-user",
+      "snippet": "2. Problem & User",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#6-mvp-scope-q23",
+      "heading": "6. MVP Scope [Q23]",
+      "anchor": "6-mvp-scope-q23",
+      "snippet": "6. MVP Scope [Q23]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#9-user-research-plan-q27-q30",
+      "heading": "9. User Research Plan [Q27–Q30]",
+      "anchor": "9-user-research-plan-q27-q30",
+      "snippet": "9. User Research Plan [Q27–Q30]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#12-future-seeroflow-integration-q38",
+      "heading": "12. Future: SeeroFlow Integration [Q38]",
+      "anchor": "12-future-seeroflow-integration-q38",
+      "snippet": "12. Future: SeeroFlow Integration [Q38]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#2-impact-analysis-before-a-change-the-canonical-crib-prompt",
+      "heading": "2. Impact analysis before a change — *the canonical crib prompt*",
+      "anchor": "2-impact-analysis-before-a-change-the-canonical-crib-prompt",
+      "snippet": "2. Impact analysis before a change — *the canonical crib prompt*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#6-code-review-pr-sizing",
+      "heading": "6. Code review / PR sizing",
+      "anchor": "6-code-review-pr-sizing",
+      "snippet": "6. Code review / PR sizing",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#my-standing-assumptions-correct-me-if-wrong",
+      "heading": "My standing assumptions (correct me if wrong)",
+      "anchor": "my-standing-assumptions-correct-me-if-wrong",
+      "snippet": "My standing assumptions (correct me if wrong)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#detect-changes-dry-run-delta-since-a-git-ref",
+      "heading": "`detect_changes` — dry-run delta since a git ref",
+      "anchor": "detect-changes-dry-run-delta-since-a-git-ref",
+      "snippet": "`detect_changes` — dry-run delta since a git ref",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.impact@L120",
+    "procedureName": "SqliteIndexStore.impact",
+    "conditions": [
+      "cond:packages/core/src/index/sqlite-index.ts@L126",
+      "cond:packages/core/src/index/sqlite-index.ts@L128",
+      "cond:packages/core/src/index/sqlite-index.ts@L129",
+      "cond:packages/core/src/index/sqlite-index.ts@L132"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.impact@L120",
+        "procedureName": "SqliteIndexStore.impact",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L129",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L126",
+            "expr": "frontier.length > 0 && d < depth"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L128",
+            "expr": "frontier"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L129",
+            "expr": "this.adjacent(cur, dir)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:382dac1333bd1e181c1b32e69c93312d15485860a146cb8d1e3b643b06b55739",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L131",
+          "line": 131,
+          "expr": "collectedEdges.push(edge);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.impact@L120",
+        "procedureName": "SqliteIndexStore.impact",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L132",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L126",
+            "expr": "frontier.length > 0 && d < depth"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L128",
+            "expr": "frontier"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L129",
+            "expr": "this.adjacent(cur, dir)"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L132",
+            "expr": "!visited.has(neighbor)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2fa8148c03d57bda3937396c17bfcd51cbd541dd5a1269bbe61bb8b60fd9e312",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L133",
+          "line": 133,
+          "expr": "visited.add(neighbor);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.impact@L120",
+        "procedureName": "SqliteIndexStore.impact",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L132",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L126",
+            "expr": "frontier.length > 0 && d < depth"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L128",
+            "expr": "frontier"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L129",
+            "expr": "this.adjacent(cur, dir)"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L132",
+            "expr": "!visited.has(neighbor)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6e9e7b6f6f0075eeb281e9aaeccb5ecec4823be0f31f5a8eb75018e23802af54",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L134",
+          "line": 134,
+          "expr": "collectedNodes.push(neighbor);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.impact@L120",
+        "procedureName": "SqliteIndexStore.impact",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L132",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L126",
+            "expr": "frontier.length > 0 && d < depth"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L128",
+            "expr": "frontier"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L129",
+            "expr": "this.adjacent(cur, dir)"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L132",
+            "expr": "!visited.has(neighbor)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb01e000da91e64de3ee0b4b7fae26a433e530f09d1f284c1506b8ff488a41ed",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L135",
+          "line": 135,
+          "expr": "next.push(neighbor);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.impact@L120",
+        "procedureName": "SqliteIndexStore.impact",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L126",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L126",
+            "expr": "frontier.length > 0 && d < depth",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2f3a0942d5041b2271b70dd30967c410bc57df91af78460a8c012686015fc6ea",
+          "target": "assign:packages/core/src/index/sqlite-index.ts@L139",
+          "line": 139,
+          "expr": "frontier = next;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.impact@L120",
+        "procedureName": "SqliteIndexStore.impact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ac8b1b6fbe209be31e5bd5484f53e84d0211366cc3f450e8f0dc7310ead11638",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L142",
+          "line": 142,
+          "expr": "return { root: id, dir, depth: d, nodes: collectedNodes, edges: collectedEdges };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.impact@L120",
+        "procedureName": "SqliteIndexStore.impact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:950da2144dff4e5995c0c24fdef847c13eaac3dbe15ce2335bf57da51eeb1d63",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.adjacent@L223",
+          "expr": "adjacent"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 1,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

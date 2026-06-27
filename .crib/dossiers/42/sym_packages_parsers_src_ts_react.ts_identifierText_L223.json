@@ -1,0 +1,193 @@
+{
+  "id": "sym:packages/parsers/src/ts/react.ts#identifierText@L223",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9ff770a134b91aa813b249f9e0b637cfc0cb6c80787ca77213494a8684115b33",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/react.ts#identifierText@L223",
+    "kind": "symbol",
+    "type": "function",
+    "name": "identifierText",
+    "qualifiedName": "identifierText",
+    "signature": "identifierText(e: ts.Expression): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/react.ts",
+    "span": {
+      "start": 223,
+      "end": 230
+    },
+    "recursive": true,
+    "callSites": [
+      {
+        "callee": "identifierText",
+        "line": 226
+      }
+    ]
+  },
+  "source": {
+    "text": "function identifierText(e: ts.Expression): string | undefined {\n  if (ts.isIdentifier(e)) return e.text;\n  if (ts.isPropertyAccessExpression(e)) {\n    const obj = identifierText(e.expression);\n    return obj ? `${obj}.${e.name.text}` : e.name.text;\n  }\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 223
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks@L129",
+      "confidence": 1,
+      "name": "collectRendersAndHooks",
+      "qualifiedName": "collectRendersAndHooks",
+      "signature": "collectRendersAndHooks(body: ts.Node | undefined, byKey: Map<string, string>, srcId: string, edges: Edge[], recorded: string[], hooks: string[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 129
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L138",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "collectRendersAndHooks.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 138
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#containsCreateElementCall@L266",
+      "confidence": 1,
+      "name": "containsCreateElementCall",
+      "qualifiedName": "containsCreateElementCall",
+      "signature": "containsCreateElementCall(node: ts.Node | undefined): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 266
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/react.ts@L221",
+      "snippet": "/** The simple text of an expression if it's an Identifier (`useState`) or PropertyAccess",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/react.ts#identifierText@L223",
+    "procedureName": "identifierText",
+    "conditions": [
+      "cond:packages/parsers/src/ts/react.ts@L224",
+      "cond:packages/parsers/src/ts/react.ts@L225"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#identifierText@L223",
+        "procedureName": "identifierText",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L224",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L224",
+            "expr": "ts.isIdentifier(e)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4979c1b110c7f1eb75e598bc51513cd406945f4acf1a6302649da32dfb0bd837",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L224",
+          "line": 224,
+          "expr": "return e.text;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#identifierText@L223",
+        "procedureName": "identifierText",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L225",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L225",
+            "expr": "ts.isPropertyAccessExpression(e)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d76c7662ca1dc90acf083457c552eaa7499aba45db443c2c0375611dc004b47d",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L226",
+          "line": 226,
+          "expr": "const obj = identifierText(e.expression);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#identifierText@L223",
+        "procedureName": "identifierText",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L225",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L225",
+            "expr": "ts.isPropertyAccessExpression(e)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ece6c99b8fe854af5977e511494bc6777f088290bd99cd27cddca6d50c072cb1",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L227",
+          "line": 227,
+          "expr": "return obj ? `${obj}.${e.name.text}` : e.name.text;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#identifierText@L223",
+        "procedureName": "identifierText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:291067e1b9c266f8b77d3ae38876c0dc129ead83c5ee30e7873371cc16c0a906",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L229",
+          "line": 229,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/react.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": true,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

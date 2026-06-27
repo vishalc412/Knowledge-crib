@@ -10,19 +10,36 @@
   },
   "packageManager": "pnpm@9.15.0",
   "scripts": {
-    "build": "pnpm -r run build",
-    "pretest": "pnpm -r run build",
-    "test": "pnpm -r run test",
-    "verify": "pnpm -r run build && pnpm -r run test && biome check .",
+    "build": "corepack pnpm@9.15.0 -r run build",
+    "pretest": "corepack pnpm@9.15.0 -r run build",
+    "test": "corepack pnpm@9.15.0 -r run test",
+    "verify": "corepack pnpm@9.15.0 -r run build && corepack pnpm@9.15.0 -r run test && biome check .",
+    "test:python": "node scripts/test-python.mjs",
+    "pack:check": "node scripts/pack-check.mjs",
+    "publish:dry-run": "corepack pnpm@9.15.0 -r publish --dry-run --no-git-checks",
+    "installer:build": "node scripts/build-installers.mjs",
+    "installer:smoke": "node scripts/install-smoke.mjs",
+    "installer:test": "node scripts/build-installers.test.mjs && node scripts/install-smoke.test.mjs && node scripts/package-runtime-deps.test.mjs && node scripts/ci-workflow.test.mjs && node scripts/release-cli-smoke.test.mjs && node scripts/test-python.test.mjs",
+    "release:metadata": "node scripts/release-metadata.test.mjs",
+    "release:verify": "node scripts/release-verify.mjs",
     "lint": "biome check .",
     "format": "biome format --write .",
-    "typecheck": "pnpm -r run typecheck",
-    "clean": "pnpm -r exec rm -rf dist coverage .crib"
+    "typecheck": "corepack pnpm@9.15.0 -r run typecheck",
+    "clean": "corepack pnpm@9.15.0 -r exec rm -rf dist coverage .crib"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/node": "^20.14.0",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KnowledgeCrib/knowledge-crib.git"
+  },
+  "bugs": {
+    "url": "https://github.com/KnowledgeCrib/knowledge-crib/issues"
+  },
+  "homepage": "https://github.com/KnowledgeCrib/knowledge-crib#readme",
+  "keywords": ["mcp", "knowledge-graph", "code-analysis", "ai-agents", "cli"]
 }

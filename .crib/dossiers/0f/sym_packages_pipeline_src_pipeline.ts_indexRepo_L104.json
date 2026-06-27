@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L104",
   "schemaVersion": "1.3",
-  "nodeHash": "blake3:878b1399f684049a79e6bfa26d8f99a7ff7b9379f52c81d2636b58bfd440b5af",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "nodeHash": "blake3:a3a8b5723c604d0297a5731f5dc9fc8edf8f9237f6974b51c5814b99420d565a",
+  "builtAt": "2026-06-27T16:12:57.877Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L104",
@@ -97,41 +97,41 @@
     ]
   },
   "source": {
-    "text": "export async function indexRepo(\n  soul: SoulStore,\n  root: string,\n  opts: IndexOpts = {},\n): Promise<IndexReport> {\n  const registry = new ExtractorRegistry();\n  for (const e of opts.extractors ?? defaultExtractors()) {\n    registry.register(e);\n  }\n\n  const files = discoverFiles(root, opts.ignores ? { ignores: opts.ignores } : {});\n  runStructure(soul, root, files); // Phase 1\n  const parse = await runParse(soul, registry, root, files); // Phase 2 + 3b (Markdown extractor)\n  const resolve = runResolve(soul, root, files, opts.resolvers); // Phase 3 (TS + PL/SQL + Python)\n  const cfg = runCfg(soul, root, files, opts.cfgPasses); // Phase 3d (M11 guard-chain annotation)\n  // Phase 3e (M13, OFF by default): ingest media segments via the offline worker + link them to\n  // symbols. Slots before the doc linker; both write disjoint edge src-kinds (media-seg vs doc-section).\n  const mediaPaths = files.filter((f) => isMediaPath(f.path)).map((f) => f.path);\n  const multimodal = opts.multimodal\n    ? await runMultimodal(soul, root, opts.multimodal, mediaPaths)\n    : { ingest: { files: 0, segments: 0, dropped: 0 }, link: { describes: 0, references: 0 } };\n  const link = runLink(soul, root, opts.linkThreshold); // Phase 4\n  const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul); // Phase 4b (M7)\n  const semantic = opts.semantic ? runSemanticLink(soul, root) : { added: 0 }; // Phase 4c (M7, INFERRED)\n  // Best-effort VCS anchor (M6): stamp the current HEAD so `crib update` / `detect_changes` can diff\n  // against it. Non-git repos silently skip (the stamp stays absent → update degrades to full index).\n  try {\n    const head = currentHead(root);\n    if (head) soul.setVcsHead(head);\n  } catch {\n    // not a git repo — leave the anchor unset\n  }\n  soul.commit(opts.now);\n\n  // Phase 5 (Workstream E): build + persist reusable deep dossiers for every callable symbol. Runs\n  // after commit so the manifest (schemaVersion + lastUpdated) is final; fresh artifacts are skipped.\n  const committedAt = opts.now ?? soul.getManifest().stats.lastUpdated;\n  const dossiers =\n    opts.dossiers === false\n      ? { candidates: 0, written: 0, fresh: 0, skipped: 0 }\n      : runDossiers(soul, root, committedAt);\n\n  if (opts.index) opts.index.buildFromSoul(soul);\n\n  return {\n    files: files.length,\n    parse,\n    resolve,\n    cfg,\n    dossiers,\n    multimodal,\n    link,\n    cluster,\n    semantic,\n  };\n}",
+    "text": "export async function indexRepo(\n  soul: SoulStore,\n  root: string,\n  opts: IndexOpts = {},\n): Promise<IndexReport> {\n  const registry = new ExtractorRegistry();\n  for (const e of opts.extractors ?? defaultExtractors()) {\n    registry.register(e);\n  }\n\n  const files = discoverFiles(root, opts.ignores ? { ignores: opts.ignores } : {});\n  runStructure(soul, root, files); // Phase 1\n  const parse = await runParse(soul, registry, root, files); // Phase 2 + 3b (Markdown extractor)\n  const resolve = runResolve(soul, root, files, opts.resolvers); // Phase 3 (TS + PL/SQL + Python)\n  const cfg = runCfg(soul, root, files, opts.cfgPasses); // Phase 3d (M11 guard-chain annotation)\n  // Phase 3e (M13, OFF by default): ingest media segments via the offline worker + link them to\n  // symbols. Slots before the doc linker; both write disjoint edge src-kinds (media-seg vs doc-section).\n  const mediaPaths = files.filter((f) => isMediaPath(f.path)).map((f) => f.path);\n  const multimodal = opts.multimodal\n    ? await runMultimodal(soul, root, opts.multimodal, mediaPaths)\n    : { ingest: { files: 0, segments: 0, dropped: 0 }, link: { describes: 0, references: 0 } };\n  const link = runLink(soul, root, opts.linkThreshold); // Phase 4\n  const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul); // Phase 4b (M7)\n  const semantic = opts.semantic ? runSemanticLink(soul, root) : { added: 0 }; // Phase 4c (M7, INFERRED)\n  // Best-effort VCS anchor (M6): stamp the current HEAD so `crib update` / `detect_changes` can diff\n  // against it. Non-git repos silently skip (the stamp stays absent → update degrades to full index).\n  try {\n    const head = currentHead(root);\n    if (head) soul.setVcsHead(head);\n  } catch {\n    // not a git repo — leave the anchor unset\n  }\n  soul.commit(opts.now);\n\n  // Phase 5 (Workstream E): build + persist reusable deep dossiers for every callable symbol. Runs\n  // after commit so the manifest (schemaVersion + lastUpdated) is final; true no-ops are skipped.\n  const committedAt = opts.now ?? soul.getManifest().stats.lastUpdated;\n  const dossiers =\n    opts.dossiers === false\n      ? { candidates: 0, written: 0, fresh: 0, skipped: 0, pruned: 0 }\n      : runDossiers(soul, root, committedAt);\n\n  if (opts.index) opts.index.buildFromSoul(soul, root);\n\n  return {\n    files: files.length,\n    parse,\n    resolve,\n    cfg,\n    dossiers,\n    multimodal,\n    link,\n    cluster,\n    semantic,\n  };\n}",
     "truncated": false,
     "totalLines": 56,
     "startLine": 104
   },
   "callers": [
     {
-      "id": "sym:packages/cli/src/cli.ts#cmdIndex@L158",
+      "id": "sym:packages/cli/src/cli.ts#cmdIndex@L199",
       "confidence": 1,
       "name": "cmdIndex",
       "qualifiedName": "cmdIndex",
       "signature": "cmdIndex(args: string[], ctx?: CmdCtx): Promise<number>",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 158
+      "line": 199
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#cmdReindex@L309",
+      "id": "sym:packages/cli/src/cli.ts#cmdReindex@L714",
       "confidence": 1,
       "name": "cmdReindex",
       "qualifiedName": "cmdReindex",
       "signature": "cmdReindex(args: string[], ctx?: CmdCtx): Promise<number>",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 309
+      "line": 714
     },
     {
-      "id": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L63",
+      "id": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L69",
       "confidence": 1,
       "name": "indexAndCommit",
       "qualifiedName": "indexAndCommit",
       "signature": "indexAndCommit(): Promise<void>",
       "type": "function",
       "file": "packages/pipeline/src/update.test.ts",
-      "line": 63
+      "line": 69
     },
     {
       "id": "sym:packages/pipeline/src/parity/parity.ts#indexRoot@L174",
@@ -216,14 +216,14 @@
       "line": 39
     },
     {
-      "id": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+      "id": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
       "confidence": 1,
       "name": "runDossiers",
       "qualifiedName": "runDossiers",
       "signature": "runDossiers(soul: SoulStore, repoRoot: string, now: string): DossierStats",
       "type": "function",
       "file": "packages/pipeline/src/dossiers.ts",
-      "line": 38
+      "line": 43
     },
     {
       "id": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
@@ -759,7 +759,7 @@
           "edgeId": "e:e58241725e2b417b6d63f30cbb9f07584222b1ba544970869757d072dfdb5ca4",
           "target": "stmt:packages/pipeline/src/pipeline.ts@L141",
           "line": 141,
-          "expr": "const dossiers =\n    opts.dossiers === false\n      ? { candidates: 0, written: 0, fresh: 0, skipped: 0 }\n      : runDossiers(soul, root, committedAt);"
+          "expr": "const dossiers =\n    opts.dossiers === false\n      ? { candidates: 0, written: 0, fresh: 0, skipped: 0, pruned: 0 }\n      : runDossiers(soul, root, committedAt);"
         }
       },
       {
@@ -770,8 +770,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:93398ad1cf5093360f484a1311615bcc4f0cfdbf6d83a05323d2a4904c48d1d2",
-          "target": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L38",
+          "edgeId": "e:1ee1ae8b7c2cc53e97c2b70e97fcf2984b7b82c7c2da9743bafac439f7c07c96",
+          "target": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
           "expr": "runDossiers",
           "line": 144
         }
@@ -795,7 +795,7 @@
           "edgeId": "e:1179dea937c9c266d2564197f34b3f2477d12867456850d281530a20a818a43a",
           "target": "stmt:packages/pipeline/src/pipeline.ts@L146",
           "line": 146,
-          "expr": "opts.index.buildFromSoul(soul);"
+          "expr": "opts.index.buildFromSoul(soul, root);"
         }
       },
       {

@@ -1,0 +1,934 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e0f153eeed233d7c92e27b88ba429d8ad18113b68fc6bbab4dcd2226ea3e1077",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+    "kind": "symbol",
+    "type": "method",
+    "name": "save",
+    "qualifiedName": "EnrichmentStore.save",
+    "signature": "save(args: EnrichSaveArgs): EnrichSaveResult",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 348,
+      "end": 411
+    },
+    "callSites": [
+      {
+        "callee": "knownLlmNodeIds",
+        "line": 351
+      },
+      {
+        "callee": "find",
+        "line": 352
+      },
+      {
+        "callee": "readManifest",
+        "line": 352
+      },
+      {
+        "callee": "targetFor",
+        "line": 355
+      },
+      {
+        "callee": "push",
+        "line": 357
+      },
+      {
+        "callee": "validateSaveItem",
+        "line": 360
+      },
+      {
+        "callee": "push",
+        "line": 362
+      },
+      {
+        "callee": "map",
+        "line": 366
+      },
+      {
+        "callee": "resolveEndpoint",
+        "line": 370
+      },
+      {
+        "callee": "resolveEndpoint",
+        "line": 371
+      },
+      {
+        "callee": "push",
+        "line": 373
+      },
+      {
+        "callee": "push",
+        "line": 376
+      },
+      {
+        "callee": "getManifest",
+        "line": 384
+      },
+      {
+        "callee": "toISOString",
+        "line": 385
+      },
+      {
+        "callee": "map",
+        "line": 389
+      },
+      {
+        "callee": "llmNodeId",
+        "line": 391
+      },
+      {
+        "callee": "writeArtifact",
+        "line": 398
+      },
+      {
+        "callee": "writeGraphProjection",
+        "line": 399
+      },
+      {
+        "callee": "add",
+        "line": 400
+      },
+      {
+        "callee": "push",
+        "line": 401
+      },
+      {
+        "callee": "writeManifest",
+        "line": 408
+      },
+      {
+        "callee": "writeOverview",
+        "line": 409
+      }
+    ]
+  },
+  "source": {
+    "text": "  save(args: EnrichSaveArgs): EnrichSaveResult {\n    const accepted: EnrichAccepted[] = [];\n    const rejected: EnrichRejected[] = [];\n    const knownLocalIds = this.knownLlmNodeIds();\n    const model = args.items.find((i) => i.model)?.model ?? this.readManifest()?.model;\n\n    for (const item of args.items) {\n      const target = this.targetFor(item.targetId);\n      if (!target) {\n        rejected.push({ targetId: item.targetId, reason: 'unknown targetId' });\n        continue;\n      }\n      const malformed = validateSaveItem(item);\n      if (malformed) {\n        rejected.push({ targetId: item.targetId, reason: malformed });\n        continue;\n      }\n\n      const localIds = new Set(item.graph.nodes.map((node) => node.localId));\n      const droppedEdges: Array<{ edge: LlmGraphEdge; reason: string }> = [];\n      const keptEdges: Array<LlmGraphEdge & { from: string; to: string; targetId: string }> = [];\n      for (const edge of item.graph.edges) {\n        const from = this.resolveEndpoint(edge.from, item.targetId, localIds, knownLocalIds);\n        const to = this.resolveEndpoint(edge.to, item.targetId, localIds, knownLocalIds);\n        if (!from || !to) {\n          droppedEdges.push({ edge, reason: 'unresolved endpoint' });\n          continue;\n        }\n        keptEdges.push({ ...edge, from, to, targetId: item.targetId });\n      }\n\n      const artifact: LlmArtifact = {\n        version: LLM_VERSION,\n        layer: target.layer,\n        targetId: item.targetId,\n        nodeHash: target.hash,\n        schemaVersion: this.soul.getManifest().schemaVersion,\n        builtAt: new Date().toISOString(),\n        ...(item.model ? { model: item.model } : {}),\n        analysis: item.analysis,\n        graph: {\n          nodes: item.graph.nodes.map((node) => ({\n            ...node,\n            id: llmNodeId(item.targetId, node.localId),\n            targetId: item.targetId,\n          })),\n          edges: keptEdges,\n        },\n        evidence: item.evidence,\n      };\n      const path = this.writeArtifact(artifact);\n      this.writeGraphProjection(artifact);\n      for (const node of artifact.graph.nodes) knownLocalIds.add(node.id);\n      accepted.push({\n        targetId: item.targetId,\n        path,\n        ...(droppedEdges.length > 0 ? { droppedEdges } : {}),\n      });\n    }\n\n    this.writeManifest(model ?? null);\n    this.writeOverview();\n    return { accepted, rejected };\n  }",
+    "truncated": false,
+    "totalLines": 64,
+    "startLine": 348
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.knownLlmNodeIds@L885",
+      "confidence": 1,
+      "name": "knownLlmNodeIds",
+      "qualifiedName": "EnrichmentStore.knownLlmNodeIds",
+      "signature": "knownLlmNodeIds(): Set<string>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 885
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.readManifest@L836",
+      "confidence": 1,
+      "name": "readManifest",
+      "qualifiedName": "EnrichmentStore.readManifest",
+      "signature": "readManifest(): | {\n        model?: string | null;\n        builtAgainstHead?: string | null;\n        lastIssued?: Record<string, { batchId: string }>;\n      }\n    | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 836
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveEndpoint@L871",
+      "confidence": 1,
+      "name": "resolveEndpoint",
+      "qualifiedName": "EnrichmentStore.resolveEndpoint",
+      "signature": "resolveEndpoint(endpoint: string, targetId: string, localIds: Set<string>, knownLlmIds: Set<string>): string | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 871
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L660",
+      "confidence": 1,
+      "name": "targetFor",
+      "qualifiedName": "EnrichmentStore.targetFor",
+      "signature": "targetFor(targetId: string): { layer: EnrichLayer; id: string; hash: string; node?: Node } | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 660
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L805",
+      "confidence": 1,
+      "name": "writeArtifact",
+      "qualifiedName": "EnrichmentStore.writeArtifact",
+      "signature": "writeArtifact(artifact: LlmArtifact): string",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 805
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeGraphProjection@L811",
+      "confidence": 1,
+      "name": "writeGraphProjection",
+      "qualifiedName": "EnrichmentStore.writeGraphProjection",
+      "signature": "writeGraphProjection(artifact: LlmArtifact): void",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 811
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeManifest@L819",
+      "confidence": 1,
+      "name": "writeManifest",
+      "qualifiedName": "EnrichmentStore.writeManifest",
+      "signature": "writeManifest(model: string | null, lastIssued?: Record<string, { batchId: string }>): void",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 819
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeOverview@L846",
+      "confidence": 1,
+      "name": "writeOverview",
+      "qualifiedName": "EnrichmentStore.writeOverview",
+      "signature": "writeOverview(): void",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 846
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#llmNodeId@L1026",
+      "confidence": 1,
+      "name": "llmNodeId",
+      "qualifiedName": "llmNodeId",
+      "signature": "llmNodeId(targetId: string, localId: string): string",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1026
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L947",
+      "confidence": 1,
+      "name": "validateSaveItem",
+      "qualifiedName": "validateSaveItem",
+      "signature": "validateSaveItem(item: EnrichSaveItem): string | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 947
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-3-run-the-loop-headlessly-cursor-copilot-codex-or-any-cli",
+      "heading": "10.3 Run the loop headlessly (Cursor / Copilot / Codex, or any CLI)",
+      "anchor": "10-3-run-the-loop-headlessly-cursor-copilot-codex-or-any-cli",
+      "snippet": "10.3 Run the loop headlessly (Cursor / Copilot / Codex, or any CLI)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#driving-the-loop",
+      "heading": "Driving the loop",
+      "anchor": "driving-the-loop",
+      "snippet": "Driving the loop",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/README.md#document-index-read-in-order",
+      "heading": "Document index (read in order)",
+      "anchor": "document-index-read-in-order",
+      "snippet": "Document index (read in order)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#crib-enrich-author-knowledge-crib-s-llm-semantic-graph",
+      "heading": "crib-enrich — author knowledge-crib's LLM semantic graph",
+      "anchor": "crib-enrich-author-knowledge-crib-s-llm-semantic-graph",
+      "snippet": "crib-enrich — author knowledge-crib's LLM semantic graph",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#the-two-rules-that-prevent-the-infinite-loop",
+      "heading": "⚠️ The two rules that prevent the infinite loop",
+      "anchor": "the-two-rules-that-prevent-the-infinite-loop",
+      "snippet": "⚠️ The two rules that prevent the infinite loop",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#tools",
+      "heading": "Tools",
+      "anchor": "tools",
+      "snippet": "Tools",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-6-ai-engineer",
+      "heading": "2.6 AI Engineer",
+      "anchor": "2-6-ai-engineer",
+      "snippet": "2.6 AI Engineer",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+    "procedureName": "EnrichmentStore.save",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L354",
+      "cond:packages/mcp/src/enrichment.ts@L356",
+      "cond:packages/mcp/src/enrichment.ts@L361",
+      "cond:packages/mcp/src/enrichment.ts@L369",
+      "cond:packages/mcp/src/enrichment.ts@L372",
+      "cond:packages/mcp/src/enrichment.ts@L400"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:764b161e917b2407913bd9bda46ea9ab26d92b7a01ce6f7f285c442ad91f683f",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.knownLlmNodeIds@L885",
+          "expr": "knownLlmNodeIds",
+          "line": 351
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8b2f4871400ffbbdf443a4cadad1558ea68410fc6b14839cba3f408139b7542f",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L351",
+          "line": 351,
+          "expr": "const knownLocalIds = this.knownLlmNodeIds();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0dbe826349bf8ddfeda2c9237cdd16d1bbcd716b0f6883cb1807e71046eb6b7f",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.readManifest@L836",
+          "expr": "readManifest",
+          "line": 352
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:41ba401a9972ee8696a3e283bf021d09667251d48598180209ff4884aef39395",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L352",
+          "line": 352,
+          "expr": "const model = args.items.find((i) => i.model)?.model ?? this.readManifest()?.model;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L354",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:68f50f36124f36d19c378c6d6e3141021829e2fedc55cb3dff1252403f3308fc",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L660",
+          "expr": "targetFor",
+          "line": 355
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L354",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3ea8140cd87ca27258952a2e3ed841e35959f1f01679ff523c966e44dfb324d7",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L355",
+          "line": 355,
+          "expr": "const target = this.targetFor(item.targetId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L356",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L356",
+            "expr": "!target",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:69396940738c035d0d5f95a7f4b977c5961b4e3ce4dc3122e5648bb0c46edc30",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L357",
+          "line": 357,
+          "expr": "rejected.push({ targetId: item.targetId, reason: 'unknown targetId' });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L354",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8f665b2d11778309958fad441b635b2dece1efefe5ec5b76967834236f2d127e",
+          "target": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L947",
+          "expr": "validateSaveItem",
+          "line": 360
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L354",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:952e7ab36ed4f1967c98d1102946c3e6d31c71cf978bc3c71d060cdcbc1c0c07",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L360",
+          "line": 360,
+          "expr": "const malformed = validateSaveItem(item);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L361",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L361",
+            "expr": "malformed",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:132807c17c8820935ebc3f4005ae9492bb42c6d174444f2cd8bdbed8a7077914",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L362",
+          "line": 362,
+          "expr": "rejected.push({ targetId: item.targetId, reason: malformed });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L354",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7865750f3b382231f935df69179964539216124a9d934443cffe31acedf3df50",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L366",
+          "line": 366,
+          "expr": "const localIds = new Set(item.graph.nodes.map((node) => node.localId));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L369",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L369",
+            "expr": "item.graph.edges",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0eb62d628c37415619f9c02f305c845d65ec6f1c7d7d9dd36267d0ed8899af47",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveEndpoint@L871",
+          "expr": "resolveEndpoint",
+          "line": 370
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L369",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L369",
+            "expr": "item.graph.edges",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d2448d72495771f57e80e9435d3bda97a5f198c522ec3b75c8b9cd509a41e4cd",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L370",
+          "line": 370,
+          "expr": "const from = this.resolveEndpoint(edge.from, item.targetId, localIds, knownLocalIds);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L369",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L369",
+            "expr": "item.graph.edges",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c535713ab4081729cfda4f58965c84b3e005dc7ba57669d5bb71e40f4797f1f3",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L371",
+          "line": 371,
+          "expr": "const to = this.resolveEndpoint(edge.to, item.targetId, localIds, knownLocalIds);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L372",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L369",
+            "expr": "item.graph.edges"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L372",
+            "expr": "!from || !to",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e83596c94c0ff66073fb58bd6b36ae11c15cd0d76ea36790c8de4edd8de0389",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L373",
+          "line": 373,
+          "expr": "droppedEdges.push({ edge, reason: 'unresolved endpoint' });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L369",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L369",
+            "expr": "item.graph.edges",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:609ff784dbe6bd80d9e3e07928a6a06972514a5f43eca020f14b54232a90716f",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L376",
+          "line": 376,
+          "expr": "keptEdges.push({ ...edge, from, to, targetId: item.targetId });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L354",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:346f08d794d3003e3c028c41b1f5557e6bd7fde4c0faeace149d919c4507424f",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L379",
+          "line": 379,
+          "expr": "const artifact: LlmArtifact = {\n        version: LLM_VERSION,\n        layer: target.layer,\n        targetId: item.targetId,\n        nodeHash: target.hash,\n        schemaVersion: this.soul.getManifest().schemaVersion,\n        builtAt: new Date().toISOString(),\n        ...(item.model ? { model: item.model } : {}),\n        analysis: item.analysis,\n        graph: {\n          nodes: item.graph.nodes.map((node) => ({\n            ...node,\n            id: llmNodeId(item.targetId, node.localId),\n            targetId: item.targetId,\n          })),\n          edges: keptEdges,\n        },\n        evidence: item.evidence,\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L354",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e6ce63dee4732b6cf7ee3a2551a39cb7944beb75c155a55a09558dbc099f789e",
+          "target": "sym:packages/mcp/src/enrichment.ts#llmNodeId@L1026",
+          "expr": "llmNodeId",
+          "line": 391
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L354",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:aa0a5914029495349a8e1d3ba7eece1b883c61acbb6d792443549efb5c52f9e0",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L805",
+          "expr": "writeArtifact",
+          "line": 398
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L354",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:89c3236485666875e665c0ae974fe995116c6a6a77fdb7f4f46e519fdf6f7b2f",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L398",
+          "line": 398,
+          "expr": "const path = this.writeArtifact(artifact);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L354",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e5303c3726ac776194b872ff1ebfe1a9c0417627644d1fcf71f6c3fbf06b7510",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeGraphProjection@L811",
+          "expr": "writeGraphProjection",
+          "line": 399
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L354",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0d1db05a2eab4ef321ed9b86736e5ad6dd96906815aefffef9bd82b7f799b198",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L399",
+          "line": 399,
+          "expr": "this.writeGraphProjection(artifact);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L400",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L400",
+            "expr": "artifact.graph.nodes",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b1668e8aac2368a0b902745a9261f4d7e67420150ba2a9d3b2e3296a39cb8bb8",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L400",
+          "line": 400,
+          "expr": "knownLocalIds.add(node.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L354",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L354",
+            "expr": "args.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:91c6e799d0eb9be58f92e7ec1bd912ff41743ee2bd381e9f891747514d8b09f5",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L401",
+          "line": 401,
+          "expr": "accepted.push({\n        targetId: item.targetId,\n        path,\n        ...(droppedEdges.length > 0 ? { droppedEdges } : {}),\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:664fc4755bee9d279cb1431d3d94b10d29cd147b69154b5478f7ea8f69eefea3",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeManifest@L819",
+          "expr": "writeManifest",
+          "line": 408
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3a4daf0899bd3e6534a9a5ea56b4b170b67bf0efda9192cbb184fcbe582d3d16",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L408",
+          "line": 408,
+          "expr": "this.writeManifest(model ?? null);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:35edf2f6b53b87847edb2013d8a9e44f68204b1b4c8bdf7b9d7a200646a927d5",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeOverview@L846",
+          "expr": "writeOverview",
+          "line": 409
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7258038a1662f0e2b7bfa2a3d3d8cac8a1260a8139b1446d885c32e22174a68e",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L409",
+          "line": 409,
+          "expr": "this.writeOverview();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+        "procedureName": "EnrichmentStore.save",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6acf945922ba378119f159a794811588262149ec81a5c1bd6482b331e31a0673",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L410",
+          "line": 410,
+          "expr": "return { accepted, rejected };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 19,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 19,
+    "assignments": 0,
+    "conditions": 6,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 10,
+      "recorded": 22,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

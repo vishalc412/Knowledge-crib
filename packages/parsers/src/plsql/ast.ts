@@ -61,9 +61,21 @@ export interface Decl {
   returnType?: string;
   /** variable: the type as written, e.g. "NUMBER" / "VARCHAR2(20)". */
   dataType?: string;
+  /** variable: the literal initializer text after `:=` (e.g. "30", "'PASSED'"), whitespace-collapsed
+   *  + fidelity-clamped. Captured so package CONSTANT values survive into `meta.variables` for
+   *  migration reconstruction (WS-6). Absent when the declaration has no initializer. */
+  init?: string;
+  /** variable: true iff declared with the CONSTANT keyword (`cname CONSTANT type := value;`). */
+  constant?: boolean;
   /** cursor: the SELECT query text (everything after IS), whitespace-collapsed. */
   cursorQuery?: string;
-  /** true iff `cursorQuery` was clipped at the fidelity cap. */
+  /** cursor: the FROM/JOIN/USING table refs mined from the cursor query (best-effort, as written).
+   *  Drives a `reads` edge cursor → table so the data-flow graph records that the cursor's row source
+   *  is read (WS-7 — without this, a cursor SELECT over a table is invisible to Plan A while Plan B
+   *  sees it). Same tolerant contract as {@link SqlStmt.tables}: the resolver re-resolves against the
+   *  schema catalog; the extractor emits same-file reads. */
+  cursorTables?: string[];
+  /** true iff `cursorQuery` or `init` was clipped at the fidelity cap. */
   exprTruncated?: boolean;
   span: AstSpan;
   body?: Block;
@@ -244,7 +256,25 @@ export interface TableDef {
   schema: string;
   name: string;
   columns: ColumnDef[];
+  /** 1.2 (WS-7): foreign keys declared on this table — both inline column-level
+   *  (`child_id NUMBER REFERENCES parent(id)`) and table-level
+   *  (`CONSTRAINT fk FOREIGN KEY (cols) REFERENCES parent(ref_cols)`). Each drives a `references`
+   *  edge child table → parent table so the schema's referential structure is in the graph (Plan B
+   *  sees FKs in the DDL; Plan A must too). Best-effort: the resolver re-resolves `refTable` against
+   *  the schema catalog; the extractor emits same-file references. */
+  foreignKeys?: ForeignKey[];
   span: AstSpan;
+}
+
+/** 1.2 (WS-7): a foreign key on a table — the local columns and the referenced table (+ optional
+ *  referenced columns). `refTable` is as written (may be schema-qualified or bare). */
+export interface ForeignKey {
+  /** the local (child) columns constrained by the FK. */
+  columns: string[];
+  /** the referenced (parent) table as written, e.g. "applicants" or "hr.applicants". */
+  refTable: string;
+  /** the referenced columns, when written `REFERENCES parent(ref_cols)`; else undefined. */
+  refColumns?: string[];
 }
 
 /**

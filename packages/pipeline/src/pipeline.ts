@@ -64,8 +64,8 @@ export interface IndexOpts {
    *  default index/serve path never spawns a subprocess. Present → run with these opts. */
   multimodal?: MultimodalPhaseOpts;
   /** build + persist reusable deep dossiers for every callable symbol post-resolve (Workstream E).
-   *  Default ON — the artifact the MCP `dossier` verb serves from cache; fresh artifacts are left
-   *  untouched so an unchanged repo re-indexes without rewriting the dossier store. */
+   *  Default ON — the artifact the MCP `dossier` verb serves from cache; graph-divergent artifacts
+   *  are refreshed while true no-ops remain byte-stable. */
   dossiers?: boolean;
 }
 
@@ -136,14 +136,14 @@ export async function indexRepo(
   soul.commit(opts.now);
 
   // Phase 5 (Workstream E): build + persist reusable deep dossiers for every callable symbol. Runs
-  // after commit so the manifest (schemaVersion + lastUpdated) is final; fresh artifacts are skipped.
+  // after commit so the manifest (schemaVersion + lastUpdated) is final; true no-ops are skipped.
   const committedAt = opts.now ?? soul.getManifest().stats.lastUpdated;
   const dossiers =
     opts.dossiers === false
-      ? { candidates: 0, written: 0, fresh: 0, skipped: 0 }
+      ? { candidates: 0, written: 0, fresh: 0, skipped: 0, pruned: 0 }
       : runDossiers(soul, root, committedAt);
 
-  if (opts.index) opts.index.buildFromSoul(soul);
+  if (opts.index) opts.index.buildFromSoul(soul, root);
 
   return {
     files: files.length,

@@ -2,7 +2,7 @@
   "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
   "schemaVersion": "1.3",
   "nodeHash": "blake3:f087f51c4e4dfe6630599dc05caddb2a99a0d592712d660362660464635109b2",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-06-27T16:07:10.655Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
@@ -50,94 +50,114 @@
       "line": 116
     },
     {
-      "id": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve.emit@L63",
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve.emit@L71",
       "confidence": 1,
       "name": "emit",
       "qualifiedName": "SqlResolver.resolve.emit",
       "signature": "emit(…)",
       "type": "function",
       "file": "packages/pipeline/src/resolve/sql-resolver.ts",
-      "line": 63
+      "line": 71
     },
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls.walk@L206",
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls.walk@L227",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "TypeScriptExtractor.collectCalls.walk",
       "signature": "walk(…)",
       "type": "function",
       "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
-      "line": 206
+      "line": 227
     },
     {
-      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.referencedBy@L509",
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.referencedBy@L831",
       "confidence": 1,
       "name": "referencedBy",
       "qualifiedName": "Verbs.gaps.referencedBy",
       "signature": "referencedBy(…)",
       "type": "function",
       "file": "packages/mcp/src/verbs.ts",
-      "line": 509
+      "line": 831
     },
     {
-      "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L600",
+      "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
       "confidence": 1,
       "name": "appendUnresolvedInjects",
       "qualifiedName": "appendUnresolvedInjects",
       "signature": "appendUnresolvedInjects(classNode: Node, outgoing: Map<string, Edge[]>, dependencies: DossierDependency[], seen: Set<string>): void",
       "type": "function",
       "file": "packages/core/src/dossier/framework.ts",
-      "line": 600
+      "line": 633
     },
     {
-      "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L570",
+      "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L603",
       "confidence": 1,
       "name": "appendUnresolvedProduces",
       "qualifiedName": "appendUnresolvedProduces",
       "signature": "appendUnresolvedProduces(node: Node, outgoing: Map<string, Edge[]>, produces: DossierProduces[], seen: Set<string>): void",
       "type": "function",
       "file": "packages/core/src/dossier/framework.ts",
-      "line": 570
+      "line": 603
     },
     {
-      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L148",
       "confidence": 1,
       "name": "buildDossier",
       "qualifiedName": "buildDossier",
       "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
       "type": "function",
       "file": "packages/core/src/dossier/builder.ts",
-      "line": 134
+      "line": 148
     },
     {
-      "id": "sym:packages/core/src/dossier/coverage.ts#buildNameIndex@L244",
+      "id": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L84",
+      "confidence": 1,
+      "name": "buildDossiersByScope",
+      "qualifiedName": "buildDossiersByScope",
+      "signature": "buildDossiersByScope(soul: SoulStore, repoRoot: string, scope: DossierScope, id: string, now: string, opts: DossiersByScopeOpts = {}): DossiersByScope | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.ts",
+      "line": 84
+    },
+    {
+      "id": "sym:packages/core/src/dossier/coverage.ts#buildNameIndex@L249",
       "confidence": 1,
       "name": "buildNameIndex",
       "qualifiedName": "buildNameIndex",
       "signature": "buildNameIndex(soul: SoulStore): Set<string>",
       "type": "function",
       "file": "packages/core/src/dossier/coverage.ts",
-      "line": 244
+      "line": 249
     },
     {
-      "id": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L528",
+      "id": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
+      "confidence": 1,
+      "name": "buildReconstruction",
+      "qualifiedName": "buildReconstruction",
+      "signature": "buildReconstruction(soul: SoulStore, repoRoot: string, pkgId: string, now: string, opts: ReconstructionOpts = {}): Reconstruction | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.ts",
+      "line": 146
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L561",
       "confidence": 1,
       "name": "collectDependencies",
       "qualifiedName": "collectDependencies",
       "signature": "collectDependencies(ownerId: string, outgoing: Map<string, Edge[]>, keep: (e: Edge) => boolean, producerOf: Map<string, string>, soul: SoulStore, brief: (id: string, c: number) => AdjacentBrief, seen: Set<string>, out: DossierDependency[]): void",
       "type": "function",
       "file": "packages/core/src/dossier/framework.ts",
-      "line": 528
+      "line": 561
     },
     {
-      "id": "sym:packages/core/src/dossier/framework.ts#collectRenders@L630",
+      "id": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
       "confidence": 1,
       "name": "collectRenders",
       "qualifiedName": "collectRenders",
       "signature": "collectRenders(ownerId: string, outgoing: Map<string, Edge[]>, keep: (e: Edge) => boolean, soul: SoulStore, brief: (id: string, c: number) => AdjacentBrief, seen: Set<string>, out: DossierRenders[]): void",
       "type": "function",
       "file": "packages/core/src/dossier/framework.ts",
-      "line": 630
+      "line": 663
     },
     {
       "id": "sym:packages/parsers/src/csharp/parser.ts#collectTypeKinds@L1655",
@@ -154,40 +174,40 @@
       "confidence": 1,
       "name": "computeCoverage",
       "qualifiedName": "computeCoverage",
-      "signature": "computeCoverage(soul: SoulStore, nodeId: string, opts: {\n    keep?: (e: Edge) => boolean;\n    outgoing?: Map<string, Edge[]>;\n    incoming?: Map<string, Edge[]>;\n  } = {}): CallableCoverage",
+      "signature": "computeCoverage(soul: SoulStore, nodeId: string, opts: {\n    keep?: (e: Edge) => boolean;\n    outgoing?: Map<string, Edge[]>;\n    incoming?: Map<string, Edge[]>;\n    /** lowercased simple + qualified name index for call-site resolution. Hoist it (e.g.\n     *  `buildDossiersByScope` builds it ONCE from a single `iterate('symbol')` pass and shares it\n     *  across N callables) so the bulk path does NOT re-scan all symbol nodes per callable. Absent →\n     *  built here (single-callable path). */\n    nameIndex?: ReadonlySet<string>;\n  } = {}): CallableCoverage",
       "type": "function",
       "file": "packages/core/src/dossier/coverage.ts",
       "line": 63
     },
     {
-      "id": "sym:packages/core/src/dossier/builder.ts#controlFlow@L323",
+      "id": "sym:packages/core/src/dossier/builder.ts#controlFlow@L366",
       "confidence": 1,
       "name": "controlFlow",
       "qualifiedName": "controlFlow",
       "signature": "controlFlow(soul: SoulStore, nodeId: string, outgoing: Map<string, Edge[]>, incoming: Map<string, Edge[]>, keep: (e: Edge) => boolean): DossierControlFlow",
       "type": "function",
       "file": "packages/core/src/dossier/builder.ts",
-      "line": 323
+      "line": 366
     },
     {
-      "id": "sym:packages/core/src/dossier/builder.ts#controlFlow.push@L339",
+      "id": "sym:packages/core/src/dossier/builder.ts#controlFlow.push@L382",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "controlFlow.push",
       "signature": "push(…)",
       "type": "function",
       "file": "packages/core/src/dossier/builder.ts",
-      "line": 339
+      "line": 382
     },
     {
-      "id": "sym:packages/core/src/rules/extract.ts#decisionTable@L191",
+      "id": "sym:packages/core/src/rules/extract.ts#decisionTable@L197",
       "confidence": 1,
       "name": "decisionTable",
       "qualifiedName": "decisionTable",
       "signature": "decisionTable(soul: SoulStore, procedure: string, opts: ExtractRulesOpts = {}): DecisionTable",
       "type": "function",
       "file": "packages/core/src/rules/extract.ts",
-      "line": 191
+      "line": 197
     },
     {
       "id": "sym:packages/pipeline/src/structure.ts#discoverFiles@L93",
@@ -240,14 +260,14 @@
       "line": 25
     },
     {
-      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L192",
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
       "confidence": 1,
       "name": "frameworkSemantics",
       "qualifiedName": "frameworkSemantics",
       "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
       "type": "function",
       "file": "packages/core/src/dossier/framework.ts",
-      "line": 192
+      "line": 203
     },
     {
       "id": "sym:packages/parsers/fixtures/python/rules.py#loop_count@L29",
@@ -270,14 +290,14 @@
       "line": 76
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#parseExcludes@L54",
+      "id": "sym:packages/cli/src/cli.ts#parseExcludes@L55",
       "confidence": 1,
       "name": "parseExcludes",
       "qualifiedName": "parseExcludes",
       "signature": "parseExcludes(args: string[]): Set<string>",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 54
+      "line": 55
     },
     {
       "id": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
@@ -410,6 +430,16 @@
       "line": 61
     },
     {
+      "id": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
+      "confidence": 1,
+      "name": "runDossiers",
+      "qualifiedName": "runDossiers",
+      "signature": "runDossiers(soul: SoulStore, repoRoot: string, now: string): DossierStats",
+      "type": "function",
+      "file": "packages/pipeline/src/dossiers.ts",
+      "line": 43
+    },
+    {
       "id": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L42",
       "confidence": 1,
       "name": "runSemanticLink",
@@ -420,14 +450,14 @@
       "line": 42
     },
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L86",
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L89",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 86
+      "line": 89
     }
   ],
   "callees": [],
@@ -451,6 +481,106 @@
       "method": "explicit",
       "provenance": "EXTRACTED",
       "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-0-universal-cfg-parity-finish-s65-6-days",
+      "heading": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "anchor": "phase-0-universal-cfg-parity-finish-s65-6-days",
+      "snippet": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CONTRIBUTING.md#contribution-guidelines",
+      "heading": "Contribution Guidelines",
+      "anchor": "contribution-guidelines",
+      "snippet": "Contribution Guidelines",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B.md#ws-a7-scale-and-performance-hardening",
+      "heading": "WS-A7 — Scale and performance hardening",
+      "anchor": "ws-a7-scale-and-performance-hardening",
+      "snippet": "WS-A7 — Scale and performance hardening",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-1-body-searchable-fts-closes-g1-highest-leverage",
+      "heading": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
+      "anchor": "ws-1-body-searchable-fts-closes-g1-highest-leverage",
+      "snippet": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
+      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-3-optional-vector-semantic-search-closes-g3",
+      "heading": "WS-3 — Optional vector/semantic search (closes G3)",
+      "anchor": "ws-3-optional-vector-semantic-search-closes-g3",
+      "snippet": "WS-3 — Optional vector/semantic search (closes G3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-5-expose-rich-verbs-on-the-cli-closes-g5",
+      "heading": "WS-5 — Expose rich verbs on the CLI (closes G5)",
+      "anchor": "ws-5-expose-rich-verbs-on-the-cli-closes-g5",
+      "snippet": "WS-5 — Expose rich verbs on the CLI (closes G5)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-7-verify-extend-sql-data-flow-edges-defense-in-depth",
+      "heading": "WS-7 — Verify/extend SQL data-flow edges (defense-in-depth)",
+      "anchor": "ws-7-verify-extend-sql-data-flow-edges-defense-in-depth",
+      "snippet": "WS-7 — Verify/extend SQL data-flow edges (defense-in-depth)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#4-architecture-invariants-to-preserve-do-not-break",
+      "heading": "4. Architecture invariants to preserve (do NOT break)",
+      "anchor": "4-architecture-invariants-to-preserve-do-not-break",
+      "snippet": "4. Architecture invariants to preserve (do NOT break)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:README.md#install",
+      "heading": "Install",
+      "anchor": "install",
+      "snippet": "Install",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
     },
     {
       "sectionId": "doc:docs/README.md#document-index-read-in-order",
@@ -661,8 +791,10 @@
       "packages/cli/src/cli.ts",
       "packages/core/src/delta.ts",
       "packages/core/src/dossier/builder.ts",
+      "packages/core/src/dossier/by-scope.ts",
       "packages/core/src/dossier/coverage.ts",
       "packages/core/src/dossier/framework.ts",
+      "packages/core/src/dossier/reconstruct.ts",
       "packages/core/src/rules/extract.ts",
       "packages/mcp/src/verbs.ts",
       "packages/parsers/fixtures/python/rules.py",
@@ -672,6 +804,7 @@
       "packages/parsers/src/rust/RustExtractor.ts",
       "packages/parsers/src/ts/TypeScriptExtractor.ts",
       "packages/pipeline/src/cluster/louvain.ts",
+      "packages/pipeline/src/dossiers.ts",
       "packages/pipeline/src/linker/semantic.ts",
       "packages/pipeline/src/linker/signals.ts",
       "packages/pipeline/src/resolve/csharp-resolver.ts",

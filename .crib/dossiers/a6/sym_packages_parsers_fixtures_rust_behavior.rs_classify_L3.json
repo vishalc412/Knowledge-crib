@@ -2,7 +2,7 @@
   "id": "sym:packages/parsers/fixtures/rust/behavior.rs#classify@L3",
   "schemaVersion": "1.3",
   "nodeHash": "blake3:f35ff412950fae002947cf18448f007d6e92d174b089a29fee42c2c6fe5a7244",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-06-27T16:12:57.877Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/fixtures/rust/behavior.rs#classify@L3",
@@ -153,20 +153,6 @@
   "controlFlow": {
     "raises": [
       {
-        "id": "raise:packages/parsers/fixtures/rust/behavior.rs@L6",
-        "kind": "raise",
-        "name": "Err",
-        "lang": "rust",
-        "file": "packages/parsers/fixtures/rust/behavior.rs",
-        "span": {
-          "start": 6,
-          "end": 6
-        },
-        "expr": "return Err(\"zero code\".to_string())",
-        "errorMessage": "zero code",
-        "confidence": 1
-      },
-      {
         "id": "raise:packages/parsers/fixtures/rust/behavior.rs@L11",
         "kind": "raise",
         "name": "panic",
@@ -178,6 +164,20 @@
         },
         "expr": "panic!(\"unexpected code\")",
         "errorMessage": "unexpected code",
+        "confidence": 1
+      },
+      {
+        "id": "raise:packages/parsers/fixtures/rust/behavior.rs@L6",
+        "kind": "raise",
+        "name": "Err",
+        "lang": "rust",
+        "file": "packages/parsers/fixtures/rust/behavior.rs",
+        "span": {
+          "start": 6,
+          "end": 6
+        },
+        "expr": "return Err(\"zero code\".to_string())",
+        "errorMessage": "zero code",
         "confidence": 1
       }
     ],

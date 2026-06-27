@@ -1,0 +1,181 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeOverview@L846",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e72d9fa3913139ddd223d4e45a0b8ed8c1eedfde859b7670991459cc42d703bb",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeOverview@L846",
+    "kind": "symbol",
+    "type": "method",
+    "name": "writeOverview",
+    "qualifiedName": "EnrichmentStore.writeOverview",
+    "signature": "writeOverview(): void",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 846,
+      "end": 848
+    },
+    "callSites": [
+      {
+        "callee": "writeJsonAtomic",
+        "line": 847
+      },
+      {
+        "callee": "join",
+        "line": 847
+      },
+      {
+        "callee": "root",
+        "line": 847
+      },
+      {
+        "callee": "buildOverview",
+        "line": 847
+      }
+    ]
+  },
+  "source": {
+    "text": "  private writeOverview(): void {\n    writeJsonAtomic(join(this.root(), 'overview.json'), this.buildOverview());\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 846
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+      "confidence": 1,
+      "name": "save",
+      "qualifiedName": "EnrichmentStore.save",
+      "signature": "save(args: EnrichSaveArgs): EnrichSaveResult",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 348
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.buildOverview@L850",
+      "confidence": 1,
+      "name": "buildOverview",
+      "qualifiedName": "EnrichmentStore.buildOverview",
+      "signature": "buildOverview(scope?: EnrichScope): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 850
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.root@L929",
+      "confidence": 1,
+      "name": "root",
+      "qualifiedName": "EnrichmentStore.root",
+      "signature": "root(): string",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 929
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#writeJsonAtomic@L1042",
+      "confidence": 1,
+      "name": "writeJsonAtomic",
+      "qualifiedName": "writeJsonAtomic",
+      "signature": "writeJsonAtomic(path: string, value: unknown): void",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1042
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeOverview@L846",
+    "procedureName": "EnrichmentStore.writeOverview",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeOverview@L846",
+        "procedureName": "EnrichmentStore.writeOverview",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:25b3e867ddf425560787d6ed24ee624f64d53c343861f19c3adabfa6bc8f2c36",
+          "target": "sym:packages/mcp/src/enrichment.ts#writeJsonAtomic@L1042",
+          "expr": "writeJsonAtomic",
+          "line": 847
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeOverview@L846",
+        "procedureName": "EnrichmentStore.writeOverview",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:128f8694b00031f535c35614d457efc26f945a204d945ee54d2bc55acf31d0ff",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.root@L929",
+          "expr": "root",
+          "line": 847
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeOverview@L846",
+        "procedureName": "EnrichmentStore.writeOverview",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5492b5b3934a980bbf293c34792b644b4a488d83c20a7ad766f381bc33692e45",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.buildOverview@L850",
+          "expr": "buildOverview",
+          "line": 847
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeOverview@L846",
+        "procedureName": "EnrichmentStore.writeOverview",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:296dbc67008af43fc72ac66b5828f0dffd0c876ee395a7b65b8490f28ab328a1",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L847",
+          "line": 847,
+          "expr": "writeJsonAtomic(join(this.root(), 'overview.json'), this.buildOverview());"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 4,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

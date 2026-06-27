@@ -1,0 +1,127 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#pathInPrefix@L1147",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d68beda63e7d422f494e529ffad32a1226722092eec333cc31ac17c4bebc3b01",
+  "builtAt": "2026-06-27T16:00:56.397Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#pathInPrefix@L1147",
+    "kind": "symbol",
+    "type": "function",
+    "name": "pathInPrefix",
+    "qualifiedName": "pathInPrefix",
+    "signature": "pathInPrefix(path: string, scope: EnrichScope): boolean",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 1147,
+      "end": 1151
+    },
+    "callSites": [
+      {
+        "callee": "startsWith",
+        "line": 1150
+      }
+    ]
+  },
+  "source": {
+    "text": "function pathInPrefix(path: string, scope: EnrichScope): boolean {\n  const prefix = scope.pathPrefix;\n  if (!prefix) return true;\n  return path === prefix || path.startsWith(`${prefix}/`);\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 1147
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+      "confidence": 1,
+      "name": "cmdEnrich",
+      "qualifiedName": "cmdEnrich",
+      "signature": "cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 994
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L1146",
+      "snippet": "/** Trailing-slash-safe prefix test: `packages/core` matches itself and `packages/core/x` only. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#pathInPrefix@L1147",
+    "procedureName": "pathInPrefix",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L1149"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#pathInPrefix@L1147",
+        "procedureName": "pathInPrefix",
+        "guard": "cond:packages/cli/src/cli.ts@L1149",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1149",
+            "expr": "!prefix",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0584314c71c53a52e74aace2d45df1b117bf606349f67cf7adacb8aaec57843b",
+          "target": "stmt:packages/cli/src/cli.ts@L1149",
+          "line": 1149,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#pathInPrefix@L1147",
+        "procedureName": "pathInPrefix",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:235ecda4e3e0e47b2a0a13a72b973cb4a5bef4337e924879c6a84618045e5e12",
+          "target": "stmt:packages/cli/src/cli.ts@L1150",
+          "line": 1150,
+          "expr": "return path === prefix || path.startsWith(`${prefix}/`);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Edge, Node, NodeKind, Rel } from '@knowledge-crib/soul-schema';
 /**
  * SqliteIndexStore — the default IndexStore backend (M1).
@@ -8,6 +10,16 @@ import type { Edge, Node, NodeKind, Rel } from '@knowledge-crib/soul-schema';
  * M7 pure-JS TF-IDF linker (pipeline `runSemanticLink`, gated by `IndexOpts.semantic` / CLI
  * `--semantic`), which emits capped `references` edges — it is not a vector ANN path and stays off
  * the deterministic query hot path.
+ *
+ * The FTS5 `body` column is a SEARCH-ONLY projection: at build/delta time each node's span is
+ * rehydrated from `repoRoot` on disk (capped at BODY_FTS_CAP chars) and folded together with the
+ * in-soul logic fragments (`expr`/`cursorQuery`/`whenSelector`/`errorMessage`/`assignTarget`) so a
+ * query can match rule *content* (e.g. "DTI > 0.43"), not just names/signatures. The body text is
+ * NEVER surfaced from `query` — `query` returns ids/scores only; deep body retrieval is
+ * `rehydrateBody` (with its own `truncated` flag) via the `source`/`context`/`dossier` verbs. So the
+ * body column carries no honesty flag of its own: the cap is a build-time constant and the
+ * surfaced body's truncation discipline lives in `rehydrateBody`. The soul stays lean — body text
+ * lives only in this derived index, never in the soul.
  */
 import Database from 'better-sqlite3';
 import type { Database as DB } from 'better-sqlite3';
@@ -23,8 +35,18 @@ import type {
 } from '../index-store.js';
 import type { SoulStore } from '../soul-store.js';
 
-/** Columns we feed into FTS5 for free-text search over symbols + doc sections. */
-const FTS_COLUMNS = 'name, qualifiedName, signature, heading, file';
+/** Columns we feed into FTS5 for free-text search over symbols + doc sections + bodies. */
+const FTS_COLUMNS = 'name, qualifiedName, signature, heading, file, body';
+
+/**
+ * Per-node char cap for the FTS `body` column. Generous enough that a typical procedure/DDL body is
+ * indexed in full; bounded so a multi-thousand-line file does not blow up the index. The surfaced
+ * (paged) body is capped separately by `rehydrateBody`'s own budgets.
+ */
+const BODY_FTS_CAP = 8192;
+
+/** Cache of file → split lines, so `buildFromSoul` reads each file ONCE, not once per node. */
+type FileLineCache = Map<string, string[] | undefined>;
 
 export class SqliteIndexStore implements IndexStore {
   private readonly db: DB;
@@ -39,23 +61,25 @@ export class SqliteIndexStore implements IndexStore {
     this.createSchema();
   }
 
-  buildFromSoul(soul: SoulStore): void {
+  buildFromSoul(soul: SoulStore, repoRoot: string): void {
     this.reset();
+    const fileCache: FileLineCache = new Map();
     const insertMany = this.db.transaction(() => {
-      for (const node of soul.iterate()) this.insertNode(node);
+      for (const node of soul.iterate()) this.insertNode(node, repoRoot, fileCache);
       for (const edge of soul.iterateEdges()) this.insertEdge(edge);
     });
     insertMany();
   }
 
-  applyDelta(changed: IndexDelta): void {
+  applyDelta(changed: IndexDelta, repoRoot: string): void {
+    const fileCache: FileLineCache = new Map();
     const apply = this.db.transaction(() => {
       for (const id of changed.removed) {
         this.db.prepare('DELETE FROM nodes WHERE id = ?').run(id);
         this.db.prepare('DELETE FROM nodes_fts WHERE id = ?').run(id);
         this.db.prepare('DELETE FROM edges WHERE id = ?').run(id);
       }
-      for (const node of changed.nodes) this.insertNode(node);
+      for (const node of changed.nodes) this.insertNode(node, repoRoot, fileCache);
       for (const edge of changed.edges) this.insertEdge(edge);
     });
     apply();
@@ -163,6 +187,11 @@ export class SqliteIndexStore implements IndexStore {
   }
 
   close(): void {
+    try {
+      this.db.pragma('wal_checkpoint(TRUNCATE)');
+    } catch {
+      // Best effort: in-memory/closing handles may not need or accept a checkpoint.
+    }
     this.db.close();
   }
 
@@ -199,13 +228,13 @@ export class SqliteIndexStore implements IndexStore {
     return rows.map((r) => JSON.parse(r.json) as Edge);
   }
 
-  private insertNode(node: Node): void {
+  private insertNode(node: Node, repoRoot: string, fileCache: FileLineCache): void {
     this.db
       .prepare('INSERT OR REPLACE INTO nodes (id, kind, name, file, json) VALUES (?, ?, ?, ?, ?)')
       .run(node.id, node.kind, node.name ?? null, node.file ?? null, JSON.stringify(node));
     this.db.prepare('DELETE FROM nodes_fts WHERE id = ?').run(node.id);
     this.db
-      .prepare(`INSERT INTO nodes_fts (id, ${FTS_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?)`)
+      .prepare(`INSERT INTO nodes_fts (id, ${FTS_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?)`)
       .run(
         node.id,
         node.name ?? '',
@@ -213,6 +242,7 @@ export class SqliteIndexStore implements IndexStore {
         node.signature ?? '',
         node.heading ?? '',
         node.file ?? '',
+        composeSearchableBody(node, repoRoot, fileCache),
       );
   }
 
@@ -253,13 +283,22 @@ export class SqliteIndexStore implements IndexStore {
       CREATE INDEX IF NOT EXISTS idx_edges_src ON edges(src);
       CREATE INDEX IF NOT EXISTS idx_edges_dst ON edges(dst);
       CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(
-        id UNINDEXED, name, qualifiedName, signature, heading, file
+        id UNINDEXED, name, qualifiedName, signature, heading, file, body
       );
     `);
   }
 
   private reset(): void {
-    this.db.exec('DELETE FROM nodes; DELETE FROM edges; DELETE FROM nodes_fts;');
+    // DROP + recreate (not just DELETE rows) so a persisted index built with an older DDL
+    // — e.g. before the WS-1 `body` FTS column — is migrated to the current schema on the
+    // next full rebuild. reset() is only called by buildFromSoul (the full-rebuild path),
+    // so dropping here is semantically the same as the old row-delete and is safe.
+    this.db.exec(`
+      DROP TABLE IF EXISTS nodes_fts;
+      DROP TABLE IF EXISTS edges;
+      DROP TABLE IF EXISTS nodes;
+    `);
+    this.createSchema();
   }
 }
 
@@ -273,4 +312,63 @@ function toFtsMatch(text: string): string | undefined {
     .filter((t) => t.length > 0)
     .map((t) => `"${t}"*`);
   return tokens.length > 0 ? tokens.join(' OR ') : undefined;
+}
+
+/**
+ * Read `file`'s split lines, memoized in `fileCache` so a build over many nodes that share a file
+ * reads it once. Returns undefined for unreadable files (the body column stays empty for that node).
+ */
+function readCachedLines(
+  repoRoot: string,
+  file: string,
+  fileCache: FileLineCache,
+): string[] | undefined {
+  if (fileCache.has(file)) return fileCache.get(file);
+  let lines: string[] | undefined;
+  try {
+    lines = readFileSync(join(repoRoot, file), 'utf8').split('\n');
+  } catch {
+    lines = undefined; // missing/unreadable file — body stays empty, signatures still indexed
+  }
+  fileCache.set(file, lines);
+  return lines;
+}
+
+/**
+ * Compose the searchable `body` text for one node: the rehydrated span from disk (capped at
+ * BODY_FTS_CAP chars) folded with the in-soul logic fragments that survive even when the body is
+ * absent (`expr` on statements/assignments/conditions, `cursorQuery`, `whenSelector` on
+ * case-branches/exception-handlers, `errorMessage` on raises, `assignTarget`). This is a search-only
+ * projection — it is never returned by `query`; deep body retrieval uses `rehydrateBody` (with its
+ * own `truncated` paging flag). The cap is a build-time constant; no honesty flag is stored because
+ * the column is never surfaced.
+ */
+function composeSearchableBody(node: Node, repoRoot: string, fileCache: FileLineCache): string {
+  const parts: string[] = [];
+
+  // 1. Rehydrated span text from disk (the body / DDL / statement text).
+  if (node.file && node.span) {
+    const lines = readCachedLines(repoRoot, node.file, fileCache);
+    if (lines && lines.length > 0) {
+      const start = Math.max(node.span.start - 1, 0);
+      const end = Math.min(node.span.end, lines.length);
+      if (end > start) {
+        const spanText = lines.slice(start, end).join('\n');
+        parts.push(spanText.length > BODY_FTS_CAP ? spanText.slice(0, BODY_FTS_CAP) : spanText);
+      }
+    }
+  }
+
+  // 2. In-soul logic fragments — searchable even when the body is absent (e.g. a spec-only file).
+  //    These are already on the node, so no disk read is needed; they carry the rule expressions,
+  //    cursor queries, case selectors, and raise error messages that the extractors captured.
+  if (node.expr) parts.push(node.expr);
+  if (node.cursorQuery) parts.push(node.cursorQuery);
+  if (node.whenSelector) parts.push(node.whenSelector);
+  if (node.errorMessage) parts.push(node.errorMessage);
+  if (node.assignTarget) parts.push(node.assignTarget);
+
+  // Bound the combined blob so the in-soul fragments plus body never exceed the cap.
+  const body = parts.join('\n');
+  return body.length > BODY_FTS_CAP ? body.slice(0, BODY_FTS_CAP) : body;
 }

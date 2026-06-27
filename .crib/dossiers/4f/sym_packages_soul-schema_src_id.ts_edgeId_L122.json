@@ -2,7 +2,7 @@
   "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
   "schemaVersion": "1.3",
   "nodeHash": "blake3:e1cf05c8404ba81be476821049e1763ca05abbffb6454e3eab3d9da605477ff0",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-06-27T16:07:10.655Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
@@ -52,24 +52,24 @@
       "line": 116
     },
     {
-      "id": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve.emit@L63",
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve.emit@L71",
       "confidence": 1,
       "name": "emit",
       "qualifiedName": "SqlResolver.resolve.emit",
       "signature": "emit(…)",
       "type": "function",
       "file": "packages/pipeline/src/resolve/sql-resolver.ts",
-      "line": 63
+      "line": 71
     },
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls.walk@L206",
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls.walk@L227",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "TypeScriptExtractor.collectCalls.walk",
       "signature": "walk(…)",
       "type": "function",
       "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
-      "line": 206
+      "line": 227
     },
     {
       "id": "sym:packages/core/src/soul-store.test.ts#callEdge@L40",
@@ -92,14 +92,24 @@
       "line": 33
     },
     {
-      "id": "sym:packages/cli/src/viz.test.ts#edge@L102",
+      "id": "sym:packages/cli/src/viz.test.ts#edge@L164",
       "confidence": 1,
       "name": "edge",
       "qualifiedName": "edge",
       "signature": "edge(src: string, dst: string, rel: Rel): Edge",
       "type": "function",
       "file": "packages/cli/src/viz.test.ts",
-      "line": 102
+      "line": 164
+    },
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.test.ts#edge@L57",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: string, dst: string, rel: Rel, over: Partial<Edge> = {}): Edge",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.test.ts",
+      "line": 57
     },
     {
       "id": "sym:packages/core/src/dossier/dossier.test.ts#edge@L47",
@@ -122,6 +132,16 @@
       "line": 86
     },
     {
+      "id": "sym:packages/core/src/dossier/reconstruct.test.ts#edge@L69",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: string, dst: string, rel: Rel, over: Partial<Edge> = {}): Edge",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.test.ts",
+      "line": 69
+    },
+    {
       "id": "sym:packages/mcp/src/verbs-detect.test.ts#edge@L77",
       "confidence": 1,
       "name": "edge",
@@ -132,14 +152,14 @@
       "line": 77
     },
     {
-      "id": "sym:packages/mcp/src/verbs.test.ts#edge@L126",
+      "id": "sym:packages/mcp/src/verbs.test.ts#edge@L188",
       "confidence": 1,
       "name": "edge",
       "qualifiedName": "edge",
       "signature": "edge(src: string, dst: string, rel: Rel, over: Partial<Edge> = {}): Edge",
       "type": "function",
       "file": "packages/mcp/src/verbs.test.ts",
-      "line": 126
+      "line": 188
     },
     {
       "id": "sym:packages/parsers/src/java/spring.ts#edge@L522",
@@ -152,6 +172,46 @@
       "line": 522
     },
     {
+      "id": "sym:packages/parsers/src/ts/express.ts#edge@L174",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string): Edge",
+      "type": "function",
+      "file": "packages/parsers/src/ts/express.ts",
+      "line": 174
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#edge@L620",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string, by = 'lang:typescript/nest', meta?: Record<string, unknown>): Edge",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 620
+    },
+    {
+      "id": "sym:packages/ui/src/viz.test.ts#edge@L27",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel']): Edge",
+      "type": "function",
+      "file": "packages/ui/src/viz.test.ts",
+      "line": 27
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#emitRender@L184",
+      "confidence": 1,
+      "name": "emitRender",
+      "qualifiedName": "emitRender",
+      "signature": "emitRender(srcId: string, childName: string, byKey: Map<string, string>, edges: Edge[], recorded: string[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 184
+    },
+    {
       "id": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
       "confidence": 1,
       "name": "ingestStaging",
@@ -160,6 +220,16 @@
       "type": "function",
       "file": "packages/pipeline/src/multimodal/ingest.ts",
       "line": 57
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#memberOf@L604",
+      "confidence": 1,
+      "name": "memberOf",
+      "qualifiedName": "memberOf",
+      "signature": "memberOf(childId: string, parentId: string): Edge",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 604
     },
     {
       "id": "sym:packages/core/src/validate.test.ts#producesEdge@L135",
@@ -414,8 +484,10 @@
     "executesCount": 1,
     "referencedByFiles": [
       "packages/cli/src/viz.test.ts",
+      "packages/core/src/dossier/by-scope.test.ts",
       "packages/core/src/dossier/dossier.test.ts",
       "packages/core/src/dossier/framework.test.ts",
+      "packages/core/src/dossier/reconstruct.test.ts",
       "packages/core/src/index/sqlite-index.test.ts",
       "packages/core/src/soul-store.test.ts",
       "packages/core/src/validate.test.ts",
@@ -425,6 +497,9 @@
       "packages/parsers/src/java/spring.ts",
       "packages/parsers/src/rust/RustExtractor.ts",
       "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "packages/parsers/src/ts/express.ts",
+      "packages/parsers/src/ts/nest.ts",
+      "packages/parsers/src/ts/react.ts",
       "packages/pipeline/src/cluster/cluster.ts",
       "packages/pipeline/src/linker/index.ts",
       "packages/pipeline/src/linker/media.ts",
@@ -436,7 +511,8 @@
       "packages/pipeline/src/resolve/python-resolver.ts",
       "packages/pipeline/src/resolve/rust-resolver.ts",
       "packages/pipeline/src/resolve/sql-resolver.ts",
-      "packages/pipeline/src/resolve/ts-resolver.ts"
+      "packages/pipeline/src/resolve/ts-resolver.ts",
+      "packages/ui/src/viz.test.ts"
     ]
   },
   "coverage": {

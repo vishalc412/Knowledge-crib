@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import {
   SoulStore,
   SqliteIndexStore,
+  dossierPath,
   dossiersDir,
   newManifest,
   readDossier,
@@ -79,6 +80,7 @@ describe('indexRepo Phase 1+2 (M2 integration)', () => {
     await indexRepo(a, repo, { now: '2026-01-01T00:00:00.000Z' });
     const idsA = [...soulFor().iterate('symbol')].map((n) => n.id).sort();
     const b = soulFor();
+    b.resetForRebuild();
     await indexRepo(b, repo, { now: '2026-01-02T00:00:00.000Z' });
     const idsB = [...soulFor().iterate('symbol')].map((n) => n.id).sort();
     expect(idsB).toEqual(idsA);
@@ -115,9 +117,72 @@ describe('indexRepo Workstream E — persisted reusable dossiers', () => {
     const a = soulFor();
     await indexRepo(a, repo, { now: '2026-01-01T00:00:00.000Z' });
     const b = soulFor();
+    b.resetForRebuild();
     const report = await indexRepo(b, repo, { now: '2026-01-02T00:00:00.000Z' });
     expect(report.dossiers.candidates).toBe(3);
     expect(report.dossiers.written).toBe(0);
     expect(report.dossiers.fresh).toBe(3);
+  });
+
+  it('refreshes an unchanged callee dossier when its incoming call edge disappears', async () => {
+    const first = soulFor();
+    await indexRepo(first, repo, { now: '2026-01-01T00:00:00.000Z' });
+    const issueBefore = [...first.iterate('symbol')].find(
+      (node) => node.qualifiedName === 'AuthService.issue',
+    )!;
+    expect(
+      readDossier(join(repo, '.crib'), issueBefore.id, {
+        nodeHash: issueBefore.hash,
+        schemaVersion: first.getManifest().schemaVersion,
+      }).dossier?.callers.map((caller) => caller.qualifiedName),
+    ).toContain('AuthService.login');
+
+    writeFileSync(
+      join(repo, 'src', 'auth.ts'),
+      [
+        'export class AuthService {',
+        '  login(): void {}',
+        '  issue(): void { log(); }',
+        '}',
+        'export function log(): void {}',
+      ].join('\n'),
+    );
+    const second = soulFor();
+    second.resetForRebuild();
+    const report = await indexRepo(second, repo, { now: '2026-01-02T00:00:00.000Z' });
+    const issueAfter = [...second.iterate('symbol')].find(
+      (node) => node.qualifiedName === 'AuthService.issue',
+    )!;
+    expect(issueAfter.hash).toBe(issueBefore.hash);
+    expect(report.dossiers.written).toBeGreaterThan(0);
+    expect(
+      readDossier(join(repo, '.crib'), issueAfter.id, {
+        nodeHash: issueAfter.hash,
+        schemaVersion: second.getManifest().schemaVersion,
+      }).dossier?.callers,
+    ).toEqual([]);
+  });
+
+  it('prunes an orphan dossier when its callable disappears', async () => {
+    const first = soulFor();
+    await indexRepo(first, repo, { now: '2026-01-01T00:00:00.000Z' });
+    const log = [...first.iterate('symbol')].find((node) => node.qualifiedName === 'log')!;
+    const path = dossierPath(join(repo, '.crib'), log.id);
+    expect(existsSync(path)).toBe(true);
+
+    writeFileSync(
+      join(repo, 'src', 'auth.ts'),
+      [
+        'export class AuthService {',
+        '  login(): void { this.issue(); }',
+        '  issue(): void {}',
+        '}',
+      ].join('\n'),
+    );
+    const second = soulFor();
+    second.resetForRebuild();
+    const report = await indexRepo(second, repo, { now: '2026-01-02T00:00:00.000Z' });
+    expect(report.dossiers.pruned).toBe(1);
+    expect(existsSync(path)).toBe(false);
   });
 });

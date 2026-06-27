@@ -1,0 +1,170 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#writeJsonAtomic@L1042",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d3cdf7b2d7b38acd52c684ef1934b1e78b8aa5bf72d19e11e51373221a5c1deb",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#writeJsonAtomic@L1042",
+    "kind": "symbol",
+    "type": "function",
+    "name": "writeJsonAtomic",
+    "qualifiedName": "writeJsonAtomic",
+    "signature": "writeJsonAtomic(path: string, value: unknown): void",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1042,
+      "end": 1047
+    },
+    "callSites": [
+      {
+        "callee": "mkdirSync",
+        "line": 1044
+      },
+      {
+        "callee": "dirname",
+        "line": 1044
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 1045
+      },
+      {
+        "callee": "stringify",
+        "line": 1045
+      },
+      {
+        "callee": "renameSync",
+        "line": 1046
+      }
+    ]
+  },
+  "source": {
+    "text": "function writeJsonAtomic(path: string, value: unknown): void {\n  const tmp = `${path}.tmp`;\n  mkdirSync(dirname(path), { recursive: true });\n  writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\\n`, 'utf8');\n  renameSync(tmp, path);\n}",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 1042
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.overview@L431",
+      "confidence": 1,
+      "name": "overview",
+      "qualifiedName": "EnrichmentStore.overview",
+      "signature": "overview(args: EnrichOverviewArgs = {}): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 431
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L805",
+      "confidence": 1,
+      "name": "writeArtifact",
+      "qualifiedName": "EnrichmentStore.writeArtifact",
+      "signature": "writeArtifact(artifact: LlmArtifact): string",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 805
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeManifest@L819",
+      "confidence": 1,
+      "name": "writeManifest",
+      "qualifiedName": "EnrichmentStore.writeManifest",
+      "signature": "writeManifest(model: string | null, lastIssued?: Record<string, { batchId: string }>): void",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 819
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeOverview@L846",
+      "confidence": 1,
+      "name": "writeOverview",
+      "qualifiedName": "EnrichmentStore.writeOverview",
+      "signature": "writeOverview(): void",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 846
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#writeJsonAtomic@L1042",
+    "procedureName": "writeJsonAtomic",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#writeJsonAtomic@L1042",
+        "procedureName": "writeJsonAtomic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:06877ee3759a8aeb14c9cf20680239b54ce162baaa76114eefc3a49831440b13",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1044",
+          "line": 1044,
+          "expr": "mkdirSync(dirname(path), { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#writeJsonAtomic@L1042",
+        "procedureName": "writeJsonAtomic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9a535307fa85830b1a33a5003a7bd6aeb1f98f8a0fa745a9116f99158b758033",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1045",
+          "line": 1045,
+          "expr": "writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\\n`, 'utf8');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#writeJsonAtomic@L1042",
+        "procedureName": "writeJsonAtomic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b746a3fac3f193ad2b5dc6c4d57d252530857f41f4918b9e2a710e90fffbee0c",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1046",
+          "line": 1046,
+          "expr": "renameSync(tmp, path);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 5,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

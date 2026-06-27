@@ -64,7 +64,12 @@ export function rehydrate(repoRoot: string, node: Node | undefined): string {
 export function rehydrateBody(
   repoRoot: string,
   node: Node | undefined,
-  opts: { maxChars?: number; maxLines?: number; startLine?: number } = {},
+  opts: {
+    maxChars?: number;
+    maxLines?: number;
+    startLine?: number;
+    readLines?: (file: string) => string[] | undefined;
+  } = {},
 ): RehydratedBody {
   const empty: RehydratedBody = { text: '', truncated: false, totalLines: 0, startLine: 0 };
   if (!node?.file || !node.span) return empty;
@@ -75,7 +80,11 @@ export function rehydrateBody(
   // page window start (1-based absolute), clamped into the span
   const winStart = Math.min(Math.max(opts.startLine ?? spanStart, spanStart), spanEnd);
   try {
-    const lines = readFileSync(join(repoRoot, node.file), 'utf8').split('\n');
+    // When an injected reader is supplied (used by the index builder's file cache to avoid
+    // re-reading the same file once per node), use it; otherwise read from disk directly.
+    const lines = opts.readLines
+      ? (opts.readLines(node.file) ?? [])
+      : readFileSync(join(repoRoot, node.file), 'utf8').split('\n');
     const totalLines = spanEnd - spanStart + 1; // whole on-disk span, independent of paging
     // window end (1-based inclusive), bounded by the span end AND the line budget
     const winEnd = Math.min(winStart + maxLines - 1, spanEnd);

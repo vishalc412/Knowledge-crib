@@ -1,0 +1,156 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#printHelp@L1201",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:95991842b52affd08fb97eeb7b235a39934c8271b2bdd9a39c82346197015561",
+  "builtAt": "2026-06-27T16:00:56.397Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#printHelp@L1201",
+    "kind": "symbol",
+    "type": "function",
+    "name": "printHelp",
+    "qualifiedName": "printHelp",
+    "signature": "printHelp(): void",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 1201,
+      "end": 1235
+    },
+    "callSites": [
+      {
+        "callee": "write",
+        "line": 1202
+      },
+      {
+        "callee": "join",
+        "line": 1203
+      }
+    ]
+  },
+  "source": {
+    "text": "function printHelp(): void {\n  process.stdout.write(\n    [\n      'crib — Knowledge-crib CLI',\n      '',\n      'Usage:',\n      '  crib index [path] [--semantic] [--exclude a,b,...]     full index → .crib soul + derived index (+ INFERRED TF-IDF semantic links)',\n      '  crib status [path]                       health + stats',\n      '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',\n      '  crib gaps [path] [--extracted-only] [--include-builtins]   analysis readiness + missing bodies + unresolved call sites',\n      '  crib rules <proc> [--include-tables]      decision table + coverage readiness for a callable',\n      '  crib context <id> [--with-source] [--with-rules] [--with-framework]   deep per-symbol context',\n      '  crib context --package <pkg> [--format markdown] [--max-symbols N]   bulk dossiers for every symbol in a scope (also --file / --cluster)',\n      '  crib dossier <id> [--format markdown]    persisted deep artifact (body + callers/callees + rules + CFG constructs)',\n      '  crib reconstruct <pkg> [--format markdown]   package reconstruction: CONSTANT values + members + referenced tables + docs + expectedBodyFile',\n      '  crib impact <id> --dir up|down [--depth N]   blast radius (dependents / dependencies)',\n      '  crib path <from> <to> [--max-hops N]     shortest dependency path between two nodes',\n      '  crib neighbors <id> [--rel reads] [--dir in|out|both]   direct edges of one node',\n      '  crib serve [path]                        run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd)',\n      '  crib update [path] [--since <sha>]      incremental re-extract since the VCS anchor',\n      '  crib reindex [path]                     full re-index (alias for `crib index`)',\n      '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',\n      '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',\n      '  crib export [--format F] [--procedure P] render soul: rules|mermaid|graph.json|report',\n      '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',\n      '  crib enrich [path]                        LLM-graph work queue + driver: coverage, --next (grounded batch), --save <file>, --overview, --scope PFX, --scopes',\n      '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]',\n      '                                          auto-wire the MCP server into each IDE config (REQ-2)',\n      '  crib skill <install|list> [name] [--dest <dir>]   install bundled skills (e.g. crib-enrich) into ~/.claude/skills',\n      '',\n      'Global: --cwd <path>   override the project root for any command',\n      '',\n    ].join('\\n'),\n  );\n}",
+    "truncated": false,
+    "totalLines": 35,
+    "startLine": 1201
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#main@L100",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main(argvRaw: string[]): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 100
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#documents-updated",
+      "heading": "Documents updated",
+      "anchor": "documents-updated",
+      "snippet": "Documents updated",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#global-flags",
+      "heading": "Global flags",
+      "anchor": "global-flags",
+      "snippet": "Global flags",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#schema-evolution",
+      "heading": "Schema evolution",
+      "anchor": "schema-evolution",
+      "snippet": "Schema evolution",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#printHelp@L1201",
+    "procedureName": "printHelp",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#printHelp@L1201",
+        "procedureName": "printHelp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a4e5e2de0fdf29ec70a46d804d611b61b65ed9e71ef0da68cd2ec827c6c034e7",
+          "target": "stmt:packages/cli/src/cli.ts@L1202",
+          "line": 1202,
+          "expr": "process.stdout.write(\n    [\n      'crib — Knowledge-crib CLI',\n      '',\n      'Usage:',\n      '  crib index [path] [--semantic] [--exclude a,b,...]     full index → .crib soul + derived index (+ INFERRED TF-IDF semantic links)',\n      '  crib status [path]                       health + stats',\n      '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',\n      '  crib gaps [path] [--extracted-only] [--include-builtins]   analysis readiness + missing bodies + unresolved call sites',\n      '  crib rules <proc> [--include-tables]      decision table + coverage readiness for a callable',\n      '  crib context <id> [--with-source] [--with-rules] [--with-framework]   deep per-symbol context',\n      '  crib context --package <pkg> [--format markdown] [--max-symbols N]   bulk dossiers for every symbol in a scope (also --file / --cluster)',\n      '  crib dossier <id> [--format markdown]    persisted deep artifact (body + callers/callees + rules + CFG constructs)',\n      '  crib reconstruct <pkg> [--format markdown]   package reconstruction: CONSTANT values + members + referenced tables + docs + expectedBodyFile',\n      '  crib impact <id> --dir up|down [--depth N]   blast radius (dependents / dependencies)',\n      '  crib path <from> <to> [--max-hops N]     shortest dependency path between two nodes',\n      '  crib neighbors <id> [--rel reads] [--dir in|out|both]   direct edges of one node',\n      '  crib serve [path]                        run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd)',\n      '  crib update [path] [--since <sha>]      incremental re-extract since the VCS anchor',\n      '  crib reindex [path]                     full re-index (alias for `crib index`)',\n      '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',\n      '  crib install-hooks [path]                wire post-comm…"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#printHelp@L1201",
+        "procedureName": "printHelp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c2890ffc064a14eb404278acc661c105ddbfc0694747dab77881cfce6241dadf",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 1202
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,269 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L449",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:6c2ebf7fb313384dc2cdd3defda58042aec68a2fa1d6d6b89b67bf7e1618b0b7",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L449",
+    "kind": "symbol",
+    "type": "method",
+    "name": "neighbors",
+    "qualifiedName": "EnrichmentStore.neighbors",
+    "signature": "neighbors(id: string): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 449,
+      "end": 458
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 450
+      },
+      {
+        "callee": "resolveLlmId",
+        "line": 450
+      },
+      {
+        "callee": "sort",
+        "line": 453
+      },
+      {
+        "callee": "filter",
+        "line": 453
+      },
+      {
+        "callee": "flatMap",
+        "line": 453
+      },
+      {
+        "callee": "allArtifacts",
+        "line": 453
+      },
+      {
+        "callee": "localeCompare",
+        "line": 456
+      }
+    ]
+  },
+  "source": {
+    "text": "  neighbors(id: string): Record<string, unknown> {\n    const resolved = this.soul.getNode(id) ? id : this.resolveLlmId(id);\n    if (!resolved)\n      return { error: { code: 'NOT_FOUND', message: `no soul or LLM node with id ${id}` } };\n    const edges = this.allArtifacts()\n      .flatMap((a) => a.graph.edges)\n      .filter((e) => e.from === resolved || e.to === resolved)\n      .sort((a, b) => `${a.from}:${a.to}:${a.rel}`.localeCompare(`${b.from}:${b.to}:${b.rel}`));\n    return { id: resolved, edges };\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 449
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L419",
+      "confidence": 1,
+      "name": "allArtifacts",
+      "qualifiedName": "EnrichmentStore.allArtifacts",
+      "signature": "allArtifacts(): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 419
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L889",
+      "confidence": 1,
+      "name": "resolveLlmId",
+      "qualifiedName": "EnrichmentStore.resolveLlmId",
+      "signature": "resolveLlmId(id: string): string | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 889
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-26-large-project-viz-design.md#approved-direction",
+      "heading": "Approved Direction",
+      "anchor": "approved-direction",
+      "snippet": "Approved Direction",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "heading": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "anchor": "2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "snippet": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-26-large-project-viz-design.md#user-experience",
+      "heading": "User Experience",
+      "anchor": "user-experience",
+      "snippet": "User Experience",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L449",
+    "procedureName": "EnrichmentStore.neighbors",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L451"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L449",
+        "procedureName": "EnrichmentStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:954b73ffa98526ec9da20890a433f7d7a1e1f465d2e2e8309aab24c22bbfdde9",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L889",
+          "expr": "resolveLlmId",
+          "line": 450
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L449",
+        "procedureName": "EnrichmentStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:077b4ea8138bdf979d210c27497cce0e59b9c66e6981832ed1518f86a50fe678",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L450",
+          "line": 450,
+          "expr": "const resolved = this.soul.getNode(id) ? id : this.resolveLlmId(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L449",
+        "procedureName": "EnrichmentStore.neighbors",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L451",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L451",
+            "expr": "!resolved",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:199f992da258c347da34246752701e7fbcbb63e51db541304683258f2a2372c7",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L452",
+          "line": 452,
+          "expr": "return { error: { code: 'NOT_FOUND', message: `no soul or LLM node with id ${id}` } };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L449",
+        "procedureName": "EnrichmentStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d14987ba29a0093d14fbb5444dfb46b199d0431ed2da8625f4eda6f332056dc2",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L419",
+          "expr": "allArtifacts",
+          "line": 453
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L449",
+        "procedureName": "EnrichmentStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4ffdb54d2eac70c39015538a438ef6b147720347f2d763cf8954bf1c2548490e",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L453",
+          "line": 453,
+          "expr": "const edges = this.allArtifacts()\n      .flatMap((a) => a.graph.edges)\n      .filter((e) => e.from === resolved || e.to === resolved)\n      .sort((a, b) => `${a.from}:${a.to}:${a.rel}`.localeCompare(`${b.from}:${b.to}:${b.rel}`));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L449",
+        "procedureName": "EnrichmentStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:473765d8f5b808b4346d5a69eeb66aa032ec3c2ffdbd9e7710a69d22ad9d97cb",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L457",
+          "line": 457,
+          "expr": "return { id: resolved, edges };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 7,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

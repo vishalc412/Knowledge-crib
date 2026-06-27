@@ -1,0 +1,184 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#findDecBy@L345",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:0fb83584f50af4c12134ddf9c3d482d5b814e7b7430c6a998080406202fd30e7",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#findDecBy@L345",
+    "kind": "symbol",
+    "type": "function",
+    "name": "findDecBy",
+    "qualifiedName": "findDecBy",
+    "signature": "findDecBy(node: ts.Node, names: Record<string, unknown>): ts.Decorator | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 345,
+      "end": 347
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 346
+      },
+      {
+        "callee": "decors",
+        "line": 346
+      },
+      {
+        "callee": "simpleName",
+        "line": 346
+      }
+    ]
+  },
+  "source": {
+    "text": "function findDecBy(node: ts.Node, names: Record<string, unknown>): ts.Decorator | undefined {\n  return decors(node).find((d) => simpleName(d) in names);\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 345
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L102",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 102
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#decors@L563",
+      "confidence": 1,
+      "name": "decors",
+      "qualifiedName": "decors",
+      "signature": "decors(node: ts.Node): ts.Decorator[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 563
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#simpleName@L569",
+      "confidence": 1,
+      "name": "simpleName",
+      "qualifiedName": "simpleName",
+      "signature": "simpleName(d: ts.Decorator): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 569
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L344",
+      "snippet": "/** The first decorator on `node` whose simple name is in `set`, or undefined. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#findDecBy@L345",
+    "procedureName": "findDecBy",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#findDecBy@L345",
+        "procedureName": "findDecBy",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:176b02e586abf0ac37d6f9367aef4aaca2146b53ce01d671ae91e55dc9c477a8",
+          "target": "sym:packages/parsers/src/ts/nest.ts#decors@L563",
+          "expr": "decors",
+          "line": 346
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#findDecBy@L345",
+        "procedureName": "findDecBy",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6a065c325a8586db21f6b0984bfab9745e539a3a41487a532c11f4649e654ce5",
+          "target": "sym:packages/parsers/src/ts/nest.ts#simpleName@L569",
+          "expr": "simpleName",
+          "line": 346
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#findDecBy@L345",
+        "procedureName": "findDecBy",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:57a9501bf971d0cb18f10971ed249fd79ea634d5df554a225be045e2b100fcbb",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L346",
+          "line": 346,
+          "expr": "return decors(node).find((d) => simpleName(d) in names);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#findDecBy@L345",
+        "procedureName": "findDecBy",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e250f19f9c348ea8a6364f59d1db03d141fb1511ffa6f471eb05c174d8cbe1e4",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 346
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

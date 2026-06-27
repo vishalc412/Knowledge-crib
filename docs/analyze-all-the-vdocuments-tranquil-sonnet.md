@@ -10,7 +10,7 @@
 > copying **neither**'s code. **Knowledge-crib is its own individual product** — see
 > §Differentiation.
 
-This plan converts the 17-doc spec package in `/Users/vishalchawla/Documents/Knowlege-crib/` into an
+This plan converts the 17-doc spec package in `~/Projects/knowledge-crib/` into an
 executable, dependency-ordered build. It merges: (a) the full 17-doc analysis, (b) the cross-document
 gap analysis, (c) the **migration-scope** deep-research findings, and (d) the **complete-requirements**
 deep-research findings (105 agents, ~3.3M tokens, 21 verified claims). Two deep-research runs
@@ -38,7 +38,7 @@ materially changed the spec — those corrections are folded in below (see **Res
 ## 1. Context & locked decisions
 
 ### What this is
-`/Users/vishalchawla/Documents/Knowlege-crib/` holds 17 spec markdown files (no code yet). This plan
+`~/Projects/knowledge-crib/` holds 17 spec markdown files (no code yet). This plan
 is the bridge from spec → repo. Two co-equal wedges ship:
 - **(1) The doc-link MVP** — code blast-radius (`impact`) + linked doc sections (`describes`). This is
   the wedge that proves the token-cut thesis end-to-end at M5.

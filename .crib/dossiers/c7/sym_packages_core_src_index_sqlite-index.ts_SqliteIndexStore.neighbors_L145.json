@@ -1,0 +1,225 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L145",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:f90c50431d795f336bcceb24dd4ae97e51b76108e1b03aec2f79ce76b1664a31",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L145",
+    "kind": "symbol",
+    "type": "method",
+    "name": "neighbors",
+    "qualifiedName": "SqliteIndexStore.neighbors",
+    "signature": "neighbors(id: string, rel?: Rel, dir?: Dir): Edge[]",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 145,
+      "end": 158
+    },
+    "callSites": [
+      {
+        "callee": "add",
+        "line": 153
+      },
+      {
+        "callee": "push",
+        "line": 154
+      }
+    ]
+  },
+  "source": {
+    "text": "  neighbors(id: string, rel?: Rel, dir?: Dir): Edge[] {\n    const dirs: Dir[] = dir ? [dir] : ['down', 'up'];\n    const out: Edge[] = [];\n    const seen = new Set<string>();\n    for (const dd of dirs) {\n      for (const edge of this.adjacent(id, dd)) {\n        if (rel && edge.rel !== rel) continue;\n        if (seen.has(edge.id)) continue;\n        seen.add(edge.id);\n        out.push(edge);\n      }\n    }\n    return out;\n  }",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 145
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.adjacent@L223",
+      "confidence": 1,
+      "name": "adjacent",
+      "qualifiedName": "SqliteIndexStore.adjacent",
+      "signature": "adjacent(id: string, dir: Dir): Edge[]",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 223
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "heading": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "anchor": "2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "snippet": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-26-large-project-viz-design.md#approved-direction",
+      "heading": "Approved Direction",
+      "anchor": "approved-direction",
+      "snippet": "Approved Direction",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-26-large-project-viz-design.md#user-experience",
+      "heading": "User Experience",
+      "anchor": "user-experience",
+      "snippet": "User Experience",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L145",
+    "procedureName": "SqliteIndexStore.neighbors",
+    "conditions": [
+      "cond:packages/core/src/index/sqlite-index.ts@L149",
+      "cond:packages/core/src/index/sqlite-index.ts@L150"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L145",
+        "procedureName": "SqliteIndexStore.neighbors",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L150",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L149",
+            "expr": "dirs"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L150",
+            "expr": "this.adjacent(id, dd)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bf2dcad8eed3e263128480a12f8ebfc9dcbcd6c5c9d22b0745cf1052a17e5362",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L153",
+          "line": 153,
+          "expr": "seen.add(edge.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L145",
+        "procedureName": "SqliteIndexStore.neighbors",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L150",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L149",
+            "expr": "dirs"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L150",
+            "expr": "this.adjacent(id, dd)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0c2f26ada4faa1f6ca78939423d5d53a23639dbd7b03b8b721a8638e726a8bdf",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L154",
+          "line": 154,
+          "expr": "out.push(edge);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L145",
+        "procedureName": "SqliteIndexStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa848d67687d965f225eca7a1db3b1dbe11a6a025dd17588500de7bae68cf5cb",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L157",
+          "line": 157,
+          "expr": "return out;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L145",
+        "procedureName": "SqliteIndexStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0bdb155986e830c1f45a0ea684920fa83a848ef4a16019e9df4512fe5dcbbdc6",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.adjacent@L223",
+          "expr": "adjacent"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

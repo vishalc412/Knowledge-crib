@@ -1,0 +1,304 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L396",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:29bd22cc476f26b9419c9666b5e4167d0ce9257ae657d86ec2d90cc9a398d1ab",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L396",
+    "kind": "symbol",
+    "type": "method",
+    "name": "dossierByScope",
+    "qualifiedName": "Verbs.dossierByScope",
+    "signature": "dossierByScope(args: {\n    /** the scope kind: 'package' (the package's member symbols), 'file' (a file's symbols), or\n     *  'cluster' (a cluster's symbols). */\n    scope: 'package' | 'file' | 'cluster';\n    /** the scope node id, OR — for a package — the qualified/simple name (parity with the other node\n     *  verbs); for a file, the path (with or without the `file:` prefix); for a cluster, the slug. */\n    id: string;\n    extractedOnly?: boolean;\n    /** resolve reads/writes table names in each callable's decision table (extra lookups). */\n    includeTables?: boolean;\n    /** cap on the number of per-symbol dossiers returned (default 1000; `truncated` flags a cap). */\n    maxSymbols?: number;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    format?: 'json' | 'markdown';\n  }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 396,
+      "end": 436
+    },
+    "callSites": [
+      {
+        "callee": "resolveNodeId",
+        "line": 415
+      },
+      {
+        "callee": "getManifest",
+        "line": 416
+      },
+      {
+        "callee": "buildDossiersByScope",
+        "line": 417
+      },
+      {
+        "callee": "notFound",
+        "line": 431
+      },
+      {
+        "callee": "dossiersByScopeToMarkdown",
+        "line": 433
+      }
+    ]
+  },
+  "source": {
+    "text": "  dossierByScope(args: {\n    /** the scope kind: 'package' (the package's member symbols), 'file' (a file's symbols), or\n     *  'cluster' (a cluster's symbols). */\n    scope: 'package' | 'file' | 'cluster';\n    /** the scope node id, OR — for a package — the qualified/simple name (parity with the other node\n     *  verbs); for a file, the path (with or without the `file:` prefix); for a cluster, the slug. */\n    id: string;\n    extractedOnly?: boolean;\n    /** resolve reads/writes table names in each callable's decision table (extra lookups). */\n    includeTables?: boolean;\n    /** cap on the number of per-symbol dossiers returned (default 1000; `truncated` flags a cap). */\n    maxSymbols?: number;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    format?: 'json' | 'markdown';\n  }): Record<string, unknown> {\n    const soul = this.deps.soul;\n    // package: use the standard qname resolver for parity with `dossier`/`context`; file/cluster: pass\n    // the raw id (buildDossiersByScope handles the file:/c: prefix + path/slug resolution itself).\n    const resolved = args.scope === 'package' ? (this.resolveNodeId(args.id) ?? args.id) : args.id;\n    const manifest = soul.getManifest();\n    const result = buildDossiersByScope(\n      soul,\n      this.deps.repoRoot,\n      args.scope,\n      resolved,\n      manifest.stats.lastUpdated,\n      {\n        ...(args.extractedOnly ? { extractedOnly: true } : {}),\n        ...(args.includeTables ? { includeTables: true } : {}),\n        ...(args.maxSymbols !== undefined ? { maxSymbols: args.maxSymbols } : {}),\n        ...(args.sourceMaxChars !== undefined ? { sourceMaxChars: args.sourceMaxChars } : {}),\n        ...(args.sourceMaxLines !== undefined ? { sourceMaxLines: args.sourceMaxLines } : {}),\n      },\n    );\n    if (!result) return notFound(args.id);\n    if (args.format === 'markdown') {\n      return { id: result.id, markdown: dossiersByScopeToMarkdown(result) };\n    }\n    return result as unknown as Record<string, unknown>;\n  }",
+    "truncated": false,
+    "totalLines": 41,
+    "startLine": 396
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1071",
+      "confidence": 1,
+      "name": "resolveNodeId",
+      "qualifiedName": "Verbs.resolveNodeId",
+      "signature": "resolveNodeId(idOrName: string): string | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1071
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1213",
+      "confidence": 1,
+      "name": "dossiersByScopeToMarkdown",
+      "qualifiedName": "dossiersByScopeToMarkdown",
+      "signature": "dossiersByScopeToMarkdown(r: DossiersByScopeShape): string",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1213
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#notFound@L1203",
+      "confidence": 1,
+      "name": "notFound",
+      "qualifiedName": "notFound",
+      "signature": "notFound(id: string): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1203
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L383",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B.md#ws-a7-scale-and-performance-hardening",
+      "heading": "WS-A7 — Scale and performance hardening",
+      "anchor": "ws-a7-scale-and-performance-hardening",
+      "snippet": "WS-A7 — Scale and performance hardening",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "heading": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "anchor": "phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "snippet": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L396",
+    "procedureName": "Verbs.dossierByScope",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L431",
+      "cond:packages/mcp/src/verbs.ts@L432"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L396",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1d7ffd4bce2c5b980a936a53b8740d1009e09d6f0b12cd90d8fa0389feb39412",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1071",
+          "expr": "resolveNodeId",
+          "line": 415
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L396",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2ffdc42fda5c128fbdfb54e1bee4d8b735758b797a26e96ac89a560fe6b4850e",
+          "target": "stmt:packages/mcp/src/verbs.ts@L415",
+          "line": 415,
+          "expr": "const resolved = args.scope === 'package' ? (this.resolveNodeId(args.id) ?? args.id) : args.id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L396",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6318c2de20c34dae4bf94bdec9d3d316bef3771f82406e3f90dce89b65be07a7",
+          "target": "stmt:packages/mcp/src/verbs.ts@L416",
+          "line": 416,
+          "expr": "const manifest = soul.getManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L396",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2d7f2aa90d65e8377fc638ac705d7983f4b635aa9cafd3f3b3b2bfdb9b2ed9d3",
+          "target": "stmt:packages/mcp/src/verbs.ts@L417",
+          "line": 417,
+          "expr": "const result = buildDossiersByScope(\n      soul,\n      this.deps.repoRoot,\n      args.scope,\n      resolved,\n      manifest.stats.lastUpdated,\n      {\n        ...(args.extractedOnly ? { extractedOnly: true } : {}),\n        ...(args.includeTables ? { includeTables: true } : {}),\n        ...(args.maxSymbols !== undefined ? { maxSymbols: args.maxSymbols } : {}),\n        ...(args.sourceMaxChars !== undefined ? { sourceMaxChars: args.sourceMaxChars } : {}),\n        ...(args.sourceMaxLines !== undefined ? { sourceMaxLines: args.sourceMaxLines } : {}),\n      },\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L396",
+        "procedureName": "Verbs.dossierByScope",
+        "guard": "cond:packages/mcp/src/verbs.ts@L431",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L431",
+            "expr": "!result",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a7de0039da34be22b1a4db904983285d7aad77185bb310ecee037c85ba034751",
+          "target": "sym:packages/mcp/src/verbs.ts#notFound@L1203",
+          "expr": "notFound",
+          "line": 431
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L396",
+        "procedureName": "Verbs.dossierByScope",
+        "guard": "cond:packages/mcp/src/verbs.ts@L431",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L431",
+            "expr": "!result",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:95aabbdc4110e532a7ef4ab90185b48f2f223cb1aa866cb5cbf9088867bd1650",
+          "target": "stmt:packages/mcp/src/verbs.ts@L431",
+          "line": 431,
+          "expr": "return notFound(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L396",
+        "procedureName": "Verbs.dossierByScope",
+        "guard": "cond:packages/mcp/src/verbs.ts@L432",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L432",
+            "expr": "args.format === 'markdown'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:381b891838ea833222ad1ca2b69f1d990079d748d1312b0363cd778fcc71376f",
+          "target": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1213",
+          "expr": "dossiersByScopeToMarkdown",
+          "line": 433
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L396",
+        "procedureName": "Verbs.dossierByScope",
+        "guard": "cond:packages/mcp/src/verbs.ts@L432",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L432",
+            "expr": "args.format === 'markdown'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:46e4b139bdf24112eb1d57edf4d8e83562cc0114ee8b1f1f13ee42c36321f9ca",
+          "target": "stmt:packages/mcp/src/verbs.ts@L433",
+          "line": 433,
+          "expr": "return { id: result.id, markdown: dossiersByScopeToMarkdown(result) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L396",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5cdaacf2a48e88de3c5101aaf9bf57536a9da531f1ec84167a4b514904c39d37",
+          "target": "stmt:packages/mcp/src/verbs.ts@L435",
+          "line": 435,
+          "expr": "return result as unknown as Record<string, unknown>;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 5,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

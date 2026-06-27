@@ -12,6 +12,26 @@ export type {
   DossierImplementation,
 } from './builder.js';
 export { dossierToMarkdown } from './serializer.js';
+export {
+  buildReconstruction,
+  reconstructionToMarkdown,
+  expectedBodyFile,
+  RECONSTRUCTION_SHAPE_VERSION,
+} from './reconstruct.js';
+export type {
+  Reconstruction,
+  ReconstructionOpts,
+  ReconstructionVariable,
+  ReconstructionMember,
+  ReconstructionTable,
+  ReconstructionDoc,
+} from './reconstruct.js';
+export { buildDossiersByScope } from './by-scope.js';
+export type {
+  DossiersByScope,
+  DossiersByScopeOpts,
+  DossierScope,
+} from './by-scope.js';
 export { computeCoverage } from './coverage.js';
 export type { CallableCoverage, CoverageCalls } from './coverage.js';
 export { frameworkSemantics, DOSSIER_SHAPE_VERSION } from './framework.js';
@@ -32,5 +52,6 @@ export {
   writeDossier,
   readDossier,
   deleteDossier,
+  pruneDossiers,
 } from './persist.js';
 export type { DossierRead } from './persist.js';

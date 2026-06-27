@@ -1,0 +1,493 @@
+{
+  "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:84612c147b283f712dc4e2e74ba5b0fa1cb4d676fb0b0ae812bc8778a84fc758",
+  "builtAt": "2026-06-27T16:00:56.397Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+    "kind": "symbol",
+    "type": "function",
+    "name": "resolveProjectRoot",
+    "qualifiedName": "resolveProjectRoot",
+    "signature": "resolveProjectRoot(opts: ResolveOpts): ResolvedRoot",
+    "lang": "typescript",
+    "file": "packages/cli/src/runtime.ts",
+    "span": {
+      "start": 53,
+      "end": 84
+    },
+    "callSites": [
+      {
+        "callee": "cwd",
+        "line": 55
+      },
+      {
+        "callee": "readRegistry",
+        "line": 56
+      },
+      {
+        "callee": "existsSync",
+        "line": 58
+      },
+      {
+        "callee": "join",
+        "line": 58
+      },
+      {
+        "callee": "resolve",
+        "line": 63
+      },
+      {
+        "callee": "resolve",
+        "line": 65
+      },
+      {
+        "callee": "resolve",
+        "line": 67
+      },
+      {
+        "callee": "hasCrib",
+        "line": 73
+      },
+      {
+        "callee": "walkUpForCrib",
+        "line": 73
+      },
+      {
+        "callee": "walkUpForCrib",
+        "line": 76
+      },
+      {
+        "callee": "lookupProject",
+        "line": 80
+      },
+      {
+        "callee": "existsSync",
+        "line": 81
+      },
+      {
+        "callee": "join",
+        "line": 81
+      }
+    ]
+  },
+  "source": {
+    "text": "export function resolveProjectRoot(opts: ResolveOpts): ResolvedRoot {\n  const env = opts.env ?? process.env;\n  const cwd = opts.cwd ?? process.cwd();\n  const registry = opts.registry ?? readRegistry(env);\n\n  const hasCrib = (dir: string) => existsSync(join(dir, '.crib', 'crib.json'));\n\n  // 1–3. explicit root: --cwd flag, positional arg (not \".\"), or env signals.\n  let candidate: string | undefined;\n  if (opts.explicitRoot) {\n    candidate = resolve(cwd, opts.explicitRoot);\n  } else if (env.KCRIB_ROOT) {\n    candidate = resolve(cwd, env.KCRIB_ROOT);\n  } else if (env.CLAUDE_PROJECT_DIR) {\n    candidate = resolve(cwd, env.CLAUDE_PROJECT_DIR);\n  }\n\n  let repoRoot: string;\n  if (candidate) {\n    // Explicit/env: walk up only if the exact dir has no .crib (handles a subdir of a project).\n    repoRoot = hasCrib(candidate) ? candidate : (walkUpForCrib(candidate) ?? candidate);\n  } else {\n    // 4–5. no signal: walk up from CWD, else fall back to CWD (pre-REQ-1 behaviour).\n    repoRoot = walkUpForCrib(cwd) ?? cwd;\n  }\n\n  // Registry overlay: a registered custom cribDir wins, but only if it still exists on disk.\n  const entry = lookupProject(repoRoot, env) ?? registry.projects[repoRoot];\n  const cribDir = entry && existsSync(entry.cribDir) ? entry.cribDir : join(repoRoot, '.crib');\n\n  return { repoRoot, cribDir };\n}",
+    "truncated": false,
+    "totalLines": 32,
+    "startLine": 53
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdExport@L850",
+      "confidence": 1,
+      "name": "cmdExport",
+      "qualifiedName": "cmdExport",
+      "signature": "cmdExport(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 850
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdQuery@L271",
+      "confidence": 1,
+      "name": "cmdQuery",
+      "qualifiedName": "cmdQuery",
+      "signature": "cmdQuery(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 271
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdViz@L897",
+      "confidence": 1,
+      "name": "cmdViz",
+      "qualifiedName": "cmdViz",
+      "signature": "cmdViz(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 897
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#resolveRoot@L94",
+      "confidence": 1,
+      "name": "resolveRoot",
+      "qualifiedName": "resolveRoot",
+      "signature": "resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 94
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/registry.ts#lookupProject@L84",
+      "confidence": 1,
+      "name": "lookupProject",
+      "qualifiedName": "lookupProject",
+      "signature": "lookupProject(absRoot: string, env: NodeJS.ProcessEnv = process.env): RegisteredProject | undefined",
+      "type": "function",
+      "file": "packages/cli/src/registry.ts",
+      "line": 84
+    },
+    {
+      "id": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+      "confidence": 1,
+      "name": "readRegistry",
+      "qualifiedName": "readRegistry",
+      "signature": "readRegistry(env: NodeJS.ProcessEnv = process.env): Registry",
+      "type": "function",
+      "file": "packages/cli/src/registry.ts",
+      "line": 60
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot.hasCrib@L58",
+      "confidence": 1,
+      "name": "hasCrib",
+      "qualifiedName": "resolveProjectRoot.hasCrib",
+      "signature": "hasCrib(…)",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 58
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+      "confidence": 1,
+      "name": "walkUpForCrib",
+      "qualifiedName": "walkUpForCrib",
+      "signature": "walkUpForCrib(start: string): string | undefined",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 87
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/runtime.ts@L48",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+    "procedureName": "resolveProjectRoot",
+    "conditions": [
+      "cond:packages/cli/src/runtime.ts@L62",
+      "cond:packages/cli/src/runtime.ts@L64",
+      "cond:packages/cli/src/runtime.ts@L66",
+      "cond:packages/cli/src/runtime.ts@L71"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d7b6ee08a85a181db509d6bd1da9718e54d1ac97f7c36f4a27f91faaddaa1ac9",
+          "target": "stmt:packages/cli/src/runtime.ts@L55",
+          "line": 55,
+          "expr": "const cwd = opts.cwd ?? process.cwd();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1eb913ab6fea72a39aa138a2e1b8f4284b9b446dd400c844d938f59d59f8d167",
+          "target": "stmt:packages/cli/src/runtime.ts@L56",
+          "line": 56,
+          "expr": "const registry = opts.registry ?? readRegistry(env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e10fbdbf7d0b24afd9ddfe1c2955c3e0346fdb1c067edd74432a3969566ee5c5",
+          "target": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+          "expr": "readRegistry",
+          "line": 56
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e4808abd6418ce17853422a600770decb850a44a349f4f091eecfa97a06f9b48",
+          "target": "stmt:packages/cli/src/runtime.ts@L58",
+          "line": 58,
+          "expr": "const hasCrib = (dir: string) => existsSync(join(dir, '.crib', 'crib.json'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "guard": "cond:packages/cli/src/runtime.ts@L62",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L62",
+            "expr": "opts.explicitRoot",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a0ee5f630dabbb2031ec764aafce1f73e8663afef64ebb8e67591d9ad8ee39bf",
+          "target": "assign:packages/cli/src/runtime.ts@L63",
+          "line": 63,
+          "expr": "candidate = resolve(cwd, opts.explicitRoot);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "guard": "cond:packages/cli/src/runtime.ts@L64",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L62",
+            "expr": "opts.explicitRoot"
+          },
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L64",
+            "expr": "env.KCRIB_ROOT",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:50f40d8176026067031916ecc4c5a2048026661a253fed3efda3c6accba48867",
+          "target": "assign:packages/cli/src/runtime.ts@L65",
+          "line": 65,
+          "expr": "candidate = resolve(cwd, env.KCRIB_ROOT);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "guard": "cond:packages/cli/src/runtime.ts@L66",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L62",
+            "expr": "opts.explicitRoot"
+          },
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L64",
+            "expr": "env.KCRIB_ROOT"
+          },
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L66",
+            "expr": "env.CLAUDE_PROJECT_DIR",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2de8eaf1e96b14370fd6432f518ef2d38f6a1e99b901342e04bf97698e54754b",
+          "target": "assign:packages/cli/src/runtime.ts@L67",
+          "line": 67,
+          "expr": "candidate = resolve(cwd, env.CLAUDE_PROJECT_DIR);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "guard": "cond:packages/cli/src/runtime.ts@L71",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L71",
+            "expr": "candidate",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:23ec27881061739a1c139463bfd18846fcfbde71693521a14ab7eec2a0a4023d",
+          "target": "sym:packages/cli/src/runtime.ts#resolveProjectRoot.hasCrib@L58",
+          "expr": "hasCrib",
+          "line": 73
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "guard": "cond:packages/cli/src/runtime.ts@L71",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L71",
+            "expr": "candidate",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e36cb7be60f03c9a61fa5d87f36d651967d041a0d65332916347589044bf1129",
+          "target": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+          "expr": "walkUpForCrib",
+          "line": 73
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "guard": "cond:packages/cli/src/runtime.ts@L71",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L71",
+            "expr": "candidate",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cd4b374a1574b66fbc266a659a59c7947ab522540388a6b97be0035595a2c933",
+          "target": "assign:packages/cli/src/runtime.ts@L73",
+          "line": 73,
+          "expr": "repoRoot = hasCrib(candidate) ? candidate : (walkUpForCrib(candidate) ?? candidate);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "guard": "cond:packages/cli/src/runtime.ts@L71",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L71",
+            "expr": "candidate",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9eeb724be4529cc3e016298d88457ab96a2fbe89fc8379b5605041f7510929cc",
+          "target": "assign:packages/cli/src/runtime.ts@L76",
+          "line": 76,
+          "expr": "repoRoot = walkUpForCrib(cwd) ?? cwd;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c2f85a884893965d9ebbf990125e4872a08b7fdbbb4514241d6f30fdf302e0e3",
+          "target": "stmt:packages/cli/src/runtime.ts@L80",
+          "line": 80,
+          "expr": "const entry = lookupProject(repoRoot, env) ?? registry.projects[repoRoot];"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:861e9a4e4226577b91d0f9954b6bb23fc80ce62f780b95e029455584879ecb8d",
+          "target": "sym:packages/cli/src/registry.ts#lookupProject@L84",
+          "expr": "lookupProject",
+          "line": 80
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e06f21132ccab3c0a88e412f19c821946df30ad92e698921e1de0cbd42d9c7a0",
+          "target": "stmt:packages/cli/src/runtime.ts@L81",
+          "line": 81,
+          "expr": "const cribDir = entry && existsSync(entry.cribDir) ? entry.cribDir : join(repoRoot, '.crib');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca77e46cd50244faff4664958b45e5c968a68b676d7a05d6c74f450513c3738e",
+          "target": "stmt:packages/cli/src/runtime.ts@L83",
+          "line": 83,
+          "expr": "return { repoRoot, cribDir };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 11,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 11,
+    "assignments": 5,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 13,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

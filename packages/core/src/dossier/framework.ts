@@ -144,6 +144,10 @@ export interface FrameworkSemanticsOpts {
   outgoing?: Map<string, Edge[]>;
   /** incoming edges by dst — reuse the caller's single soul scan. */
   incoming?: Map<string, Edge[]>;
+  /** produced-type-id → producer-method-id map (the supply-chain index). Reuse a caller's single
+   *  soul scan (buildDossiersByScope hoists this) so the bulk path does NOT re-scan all edges per
+   *  symbol to rebuild it. Absent → derived from `incoming` (which already holds produces edges). */
+  producerOf?: Map<string, string>;
   /** when true, populate only {routes, produces} the node OWNS (the persisted-dossier subset). */
   lean?: boolean;
 }
@@ -210,12 +214,11 @@ export function frameworkSemantics(
   const outgoing = opts.outgoing ?? buildAdjacency(soul, 'out');
   const incoming = opts.incoming ?? buildAdjacency(soul, 'in');
 
-  // ONE soul-wide produces scan → producedTypeId → producer method id (the supply-chain map).
-  const producerOf = new Map<string, string>();
-  for (const e of soul.iterateEdges()) {
-    if (e.rel !== 'produces') continue;
-    if (!producerOf.has(e.dst)) producerOf.set(e.dst, e.src);
-  }
+  // produced-type-id → producer-method-id (the supply-chain map). Reuse a caller's hoisted map when
+  // supplied (the buildDossiersByScope bulk path builds it ONCE and shares it across N symbols so it
+  // does NOT re-scan all edges per symbol); absent → derive from `incoming`, which already holds every
+  // `produces` edge keyed by its dst (the produced type). Either way NO soul-wide re-scan is needed.
+  const producerOf = opts.producerOf ?? buildProducerOf(incoming);
 
   const classScope = isClassScope(node, incoming);
 
@@ -486,6 +489,20 @@ function buildAdjacency(soul: SoulStore, dir: 'out' | 'in'): Map<string, Edge[]>
     const arr = m.get(key);
     if (arr) arr.push(e);
     else m.set(key, [e]);
+  }
+  return m;
+}
+
+/** Derive produced-type-id → producer-method-id from an incoming adjacency (which already holds every
+ *  `produces` edge keyed by its dst = produced type). First producer wins, mirroring the old scan. */
+function buildProducerOf(incoming: Map<string, Edge[]> | undefined): Map<string, string> {
+  const m = new Map<string, string>();
+  if (!incoming) return m;
+  for (const edges of incoming.values()) {
+    for (const e of edges) {
+      if (e.rel !== 'produces') continue;
+      if (!m.has(e.dst)) m.set(e.dst, e.src);
+    }
   }
   return m;
 }

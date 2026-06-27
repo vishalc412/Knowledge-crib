@@ -1,0 +1,103 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.cribDir@L241",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e030d06c8d9e8b96876a37d238f11f9d56a376ee8e8ed1b78133c519c569ddd5",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.cribDir@L241",
+    "kind": "symbol",
+    "type": "getter",
+    "name": "cribDir",
+    "qualifiedName": "SoulStore.cribDir",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 241,
+      "end": 243
+    }
+  },
+  "source": {
+    "text": "  get cribDir(): string {\n    return this.cribDirPrivate;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 241
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/soul-store.ts@L240",
+      "snippet": "/** Absolute path to the `.crib` directory this store owns (where dossiers + shards live). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests",
+      "heading": "Tests",
+      "anchor": "tests",
+      "snippet": "Tests",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.cribDir@L241",
+    "procedureName": "SoulStore.cribDir",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.cribDir@L241",
+        "procedureName": "SoulStore.cribDir",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:530d882a56c88a87e8287093bd7c07a5de698d0ed9935151212f6aa11aacee48",
+          "target": "stmt:packages/core/src/soul-store.ts@L242",
+          "line": 242,
+          "expr": "return this.cribDirPrivate;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

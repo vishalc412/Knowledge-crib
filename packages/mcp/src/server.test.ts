@@ -20,7 +20,7 @@ describe('MCP server wiring', () => {
     soul.load();
     soul.commit('2026-01-01T00:00:00.000Z');
     const index = new SqliteIndexStore();
-    index.buildFromSoul(soul);
+    index.buildFromSoul(soul, dir);
     const server = buildServer(new Verbs({ soul, index, repoRoot: dir }), '1.2.3');
     expect(server).toBeDefined();
     expect(typeof server.connect).toBe('function');

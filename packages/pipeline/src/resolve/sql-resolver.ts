@@ -24,6 +24,13 @@ interface CallSite {
   line: number;
 }
 
+/** Shape of an FK carried on a table node's `meta.foreignKeys` (mirrors the parser's ForeignKey). */
+interface FkMeta {
+  columns: string[];
+  refTable: string;
+  refColumns?: string[];
+}
+
 export class SqlResolver implements Resolver {
   name = 'sql-resolver';
 
@@ -37,6 +44,7 @@ export class SqlResolver implements Resolver {
       reads: 0,
       writes: 0,
       calls: 0,
+      references: 0,
       dropped: 0,
     };
     const catalog = new SchemaCatalog(ctx.soul);
@@ -100,6 +108,29 @@ export class SqlResolver implements Resolver {
       for (const t of writes) {
         const dst = catalog.resolveTable(t);
         if (dst) emit(stmt.id, dst, 'writes', t, 'writes');
+        else dropped++;
+      }
+    }
+
+    // cursor → table reads (cross-file; same-file already in the soul). A cursor's SELECT reads its
+    // row-source tables; the extractor mined them into `meta.tables` on the cursor node (WS-7).
+    for (const cur of ctx.soul.iterate('cursor')) {
+      const tables = (cur.meta?.tables as string[] | undefined) ?? [];
+      for (const t of tables) {
+        const dst = catalog.resolveTable(t);
+        if (dst) emit(cur.id, dst, 'reads', t, 'reads');
+        else dropped++;
+      }
+    }
+
+    // table → table references (cross-file FK; same-file already in the soul). The extractor mined
+    // each FK into `meta.foreignKeys` on the child table node; resolve the parent against the
+    // catalog and emit a `references` edge child → parent (WS-7 — the schema's referential structure).
+    for (const tbl of ctx.soul.iterate('table')) {
+      const fks = (tbl.meta?.foreignKeys as FkMeta[] | undefined) ?? [];
+      for (const fk of fks) {
+        const dst = catalog.resolveTable(fk.refTable);
+        if (dst) emit(tbl.id, dst, 'references', fk.refTable, 'references');
         else dropped++;
       }
     }

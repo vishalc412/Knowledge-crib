@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
@@ -71,7 +71,7 @@ afterEach(() => {
 describe('SqliteIndexStore.buildFromSoul + query (M1 gate)', () => {
   it('BM25 query returns the expected symbol id', () => {
     const idx = new SqliteIndexStore();
-    idx.buildFromSoul(store);
+    idx.buildFromSoul(store, dir);
     const hits = idx.query({ text: 'login', kinds: ['symbol'] });
     expect(hits[0]?.id).toBe(login.id);
     idx.close();
@@ -79,7 +79,7 @@ describe('SqliteIndexStore.buildFromSoul + query (M1 gate)', () => {
 
   it('query respects kind filter', () => {
     const idx = new SqliteIndexStore();
-    idx.buildFromSoul(store);
+    idx.buildFromSoul(store, dir);
     const onlyFiles = idx.query({ text: 'AuthService' });
     // both the file node and the symbol mention AuthService; filter narrows it
     expect(
@@ -93,7 +93,7 @@ describe('SqliteIndexStore.buildFromSoul + query (M1 gate)', () => {
 describe('impact (blast radius)', () => {
   it('up = dependents: who is affected if login changes', () => {
     const idx = new SqliteIndexStore();
-    idx.buildFromSoul(store);
+    idx.buildFromSoul(store, dir);
     const res = idx.impact(login.id, 'up');
     expect(res.nodes).toContain(controller.id);
     expect(res.nodes).not.toContain(issue.id);
@@ -101,7 +101,7 @@ describe('impact (blast radius)', () => {
   });
   it('down = dependencies: what login relies on', () => {
     const idx = new SqliteIndexStore();
-    idx.buildFromSoul(store);
+    idx.buildFromSoul(store, dir);
     const res = idx.impact(login.id, 'down');
     expect(res.nodes).toContain(issue.id);
     expect(res.nodes).not.toContain(controller.id);
@@ -109,7 +109,7 @@ describe('impact (blast radius)', () => {
   });
   it('depth limits the traversal', () => {
     const idx = new SqliteIndexStore();
-    idx.buildFromSoul(store);
+    idx.buildFromSoul(store, dir);
     expect(idx.impact(controller.id, 'down', 1).nodes).toEqual([login.id]);
     expect(idx.impact(controller.id, 'down', 2).nodes.sort()).toEqual([login.id, issue.id].sort());
     idx.close();
@@ -119,14 +119,14 @@ describe('impact (blast radius)', () => {
 describe('neighbors + shortestPath', () => {
   it('neighbors filters by rel and dir', () => {
     const idx = new SqliteIndexStore();
-    idx.buildFromSoul(store);
+    idx.buildFromSoul(store, dir);
     expect(idx.neighbors(login.id, 'calls', 'down').map((e) => e.dst)).toEqual([issue.id]);
     expect(idx.neighbors(login.id, 'calls', 'up').map((e) => e.src)).toEqual([controller.id]);
     idx.close();
   });
   it('shortestPath walks the call chain', () => {
     const idx = new SqliteIndexStore();
-    idx.buildFromSoul(store);
+    idx.buildFromSoul(store, dir);
     const p = idx.shortestPath(controller.id, issue.id);
     expect(p.found).toBe(true);
     expect(p.path).toEqual([controller.id, login.id, issue.id]);
@@ -139,8 +139,8 @@ describe('neighbors + shortestPath', () => {
 describe('applyDelta (incremental)', () => {
   it('adds and removes records', () => {
     const idx = new SqliteIndexStore();
-    idx.buildFromSoul(store);
-    idx.applyDelta({ nodes: [], edges: [], removed: [calls(login, issue).id] });
+    idx.buildFromSoul(store, dir);
+    idx.applyDelta({ nodes: [], edges: [], removed: [calls(login, issue).id] }, dir);
     expect(idx.impact(login.id, 'down').nodes).not.toContain(issue.id);
     idx.close();
   });
@@ -162,10 +162,61 @@ describe('persisted index file rebuilds from soul', () => {
   it('writes to disk and re-reads', () => {
     const dbPath = join(dir, 'crib.sqlite');
     const idx = new SqliteIndexStore(dbPath);
-    idx.buildFromSoul(store);
+    idx.buildFromSoul(store, dir);
     idx.close();
     const reopened = new SqliteIndexStore(dbPath);
     expect(reopened.query({ text: 'issue', kinds: ['symbol'] })[0]?.id).toBe(issue.id);
     reopened.close();
+  });
+});
+
+describe('WS-1 body-searchable FTS', () => {
+  // A node whose name/signature carry NO hint of the rule logic; the searchable token lives only in
+  // the on-disk body. Pre-WS-1 this query returned nothing; with the body FTS column it must hit.
+  it('matches a token that appears only in the rehydrated body, not the name/signature', () => {
+    const bodyFile = 'src/rules/EvalDti.ts';
+    mkdirSync(join(dir, 'src', 'rules'), { recursive: true });
+    writeFileSync(
+      join(dir, bodyFile),
+      [
+        'export function evaluate(applicant) {',
+        '  // DTI ratio gate: reject when debt-to-income exceeds 0.43',
+        '  if (applicant.dti > 0.43) return REJECT;',
+        '}',
+      ].join('\n'),
+    );
+    const dti = sym(bodyFile, 'EvalDti.evaluate', 1, { signature: 'evaluate(applicant)' });
+    const ruleStore = new SoulStore(dir, {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    ruleStore.load();
+    ruleStore.putNodes([file(bodyFile), dti]);
+    ruleStore.commit('2026-01-01T00:00:00.000Z');
+
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(ruleStore, dir);
+    // '0.43' appears only in the body — a signature-only index would never match it.
+    const hits = idx.query({ text: '0.43', kinds: ['symbol'] });
+    expect(hits.map((h) => h.id)).toContain(dti.id);
+    // 'debt-to-income' likewise — body-only phrasing.
+    expect(idx.query({ text: 'debt-to-income', kinds: ['symbol'] }).map((h) => h.id)).toContain(
+      dti.id,
+    );
+    idx.close();
+  });
+
+  it('still indexes signatures when the body file is absent (spec-only case)', () => {
+    const specOnly = sym('src/PKG_spec.sql', 'PKG.SPEC_PROC', 12, { signature: 'SPEC_PROC(x)' });
+    const specStore = new SoulStore(dir, {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    specStore.load();
+    specStore.putNodes([file('src/PKG_spec.sql'), specOnly]);
+    specStore.commit('2026-01-01T00:00:00.000Z');
+
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(specStore, dir); // file not on disk → body column empty, signature still indexed
+    expect(idx.query({ text: 'SPEC_PROC', kinds: ['symbol'] })[0]?.id).toBe(specOnly.id);
+    idx.close();
   });
 });

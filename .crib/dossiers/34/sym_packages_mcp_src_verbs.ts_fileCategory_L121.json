@@ -1,0 +1,168 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#fileCategory@L121",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4d22189296c6ab025295bf76e570522ebdb045ffd052ae10fada7a8be7087c02",
+  "builtAt": "2026-06-27T16:00:56.397Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#fileCategory@L121",
+    "kind": "symbol",
+    "type": "function",
+    "name": "fileCategory",
+    "qualifiedName": "fileCategory",
+    "signature": "fileCategory(file?: string): GapCategory",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 121,
+      "end": 130
+    }
+  },
+  "source": {
+    "text": "function fileCategory(file?: string): GapCategory {\n  if (!file) return 'project';\n  if (\n    /(^|\\/)(__tests__|test|tests|spec)\\//i.test(file) ||\n    /\\.(test|spec)\\.[cm]?[jt]sx?$/i.test(file)\n  )\n    return 'tests';\n  if (/(^|\\/)(fixtures?|__fixtures__|__probe__)\\//i.test(file)) return 'fixtures';\n  return 'project';\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 121
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#classifyGap@L132",
+      "confidence": 1,
+      "name": "classifyGap",
+      "qualifiedName": "classifyGap",
+      "signature": "classifyGap(args: { file?: string; callee?: string }): GapCategory",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 132
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#countByFileCategory@L138",
+      "confidence": 1,
+      "name": "countByFileCategory",
+      "qualifiedName": "countByFileCategory",
+      "signature": "countByFileCategory(rows: Array<Record<string, unknown>>): GapCategoryCounts",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 138
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#fileCategory@L121",
+    "procedureName": "fileCategory",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L122",
+      "cond:packages/mcp/src/verbs.ts@L123",
+      "cond:packages/mcp/src/verbs.ts@L128"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#fileCategory@L121",
+        "procedureName": "fileCategory",
+        "guard": "cond:packages/mcp/src/verbs.ts@L122",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L122",
+            "expr": "!file",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:677bfba1262ae3f88e4823ebc04fe3f6e26942521a0677a1e477e0972f4594bd",
+          "target": "stmt:packages/mcp/src/verbs.ts@L122",
+          "line": 122,
+          "expr": "return 'project';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#fileCategory@L121",
+        "procedureName": "fileCategory",
+        "guard": "cond:packages/mcp/src/verbs.ts@L123",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L123",
+            "expr": "/(^|\\/)(__tests__|test|tests|spec)\\//i.test(file) ||\n    /\\.(test|spec)\\.[cm]?[jt]sx?$/i.test(file)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:131dce64dcb214c25118b2cc2fa221778d757685c23bcca62eec6c079e354cd5",
+          "target": "stmt:packages/mcp/src/verbs.ts@L127",
+          "line": 127,
+          "expr": "return 'tests';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#fileCategory@L121",
+        "procedureName": "fileCategory",
+        "guard": "cond:packages/mcp/src/verbs.ts@L128",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L128",
+            "expr": "/(^|\\/)(fixtures?|__fixtures__|__probe__)\\//i.test(file)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6acd2fe6477a3b670d8170b7086b8092820118830dfc8101f76c5a0ab773ec3b",
+          "target": "stmt:packages/mcp/src/verbs.ts@L128",
+          "line": 128,
+          "expr": "return 'fixtures';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#fileCategory@L121",
+        "procedureName": "fileCategory",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a212f9083484bd2144d3dd1b46d883a358fae9b321f9bb02b51eb14b2e3fe4b4",
+          "target": "stmt:packages/mcp/src/verbs.ts@L129",
+          "line": 129,
+          "expr": "return 'project';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.markNodeDirty@L278",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:06b05aa42732e3bae2dcb5573553298620f8e2571a266bf92984ac46f4330ec4",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.markNodeDirty@L278",
+    "kind": "symbol",
+    "type": "method",
+    "name": "markNodeDirty",
+    "qualifiedName": "SoulStore.markNodeDirty",
+    "signature": "markNodeDirty(node: Node): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 278,
+      "end": 284
+    },
+    "callSites": [
+      {
+        "callee": "add",
+        "line": 282
+      },
+      {
+        "callee": "shardOf",
+        "line": 282
+      },
+      {
+        "callee": "shardKeyForNode",
+        "line": 282
+      }
+    ]
+  },
+  "source": {
+    "text": "  private markNodeDirty(node: Node): void {\n    if (node.kind === 'cluster') {\n      this.clustersDirty = true;\n    } else {\n      this.dirtyNodeShards.add(shardOf(shardKeyForNode(node), this.shardDigits));\n    }\n  }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 278
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.putNodes@L126",
+      "confidence": 1,
+      "name": "putNodes",
+      "qualifiedName": "SoulStore.putNodes",
+      "signature": "putNodes(ns: Node[]): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 126
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.removeByFile@L203",
+      "confidence": 1,
+      "name": "removeByFile",
+      "qualifiedName": "SoulStore.removeByFile",
+      "signature": "removeByFile(path: string): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 203
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/shard.ts#shardKeyForNode@L50",
+      "confidence": 1,
+      "name": "shardKeyForNode",
+      "qualifiedName": "shardKeyForNode",
+      "signature": "shardKeyForNode(node: Node): string",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 50
+    },
+    {
+      "id": "sym:packages/core/src/shard.ts#shardOf@L60",
+      "confidence": 1,
+      "name": "shardOf",
+      "qualifiedName": "shardOf",
+      "signature": "shardOf(key: string, shardHexDigits: number): string",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 60
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/soul-store.ts@L277",
+      "snippet": "/** Cluster nodes go to clusters/clusters.jsonl; all other nodes shard normally. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.markNodeDirty@L278",
+    "procedureName": "SoulStore.markNodeDirty",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L279"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.markNodeDirty@L278",
+        "procedureName": "SoulStore.markNodeDirty",
+        "guard": "cond:packages/core/src/soul-store.ts@L279",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L279",
+            "expr": "node.kind === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8ddbfad939d6d658bafe4ef4450dcd0a3ad142b4c4f6af9b8e5794274424fd50",
+          "target": "assign:packages/core/src/soul-store.ts@L280",
+          "line": 280,
+          "expr": "this.clustersDirty = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.markNodeDirty@L278",
+        "procedureName": "SoulStore.markNodeDirty",
+        "guard": "cond:packages/core/src/soul-store.ts@L279",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L279",
+            "expr": "node.kind === 'cluster'",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5a00710cb4a057f9edd065afdf6434e6c70c9adb157984382ea804a57bdd2128",
+          "target": "stmt:packages/core/src/soul-store.ts@L282",
+          "line": 282,
+          "expr": "this.dirtyNodeShards.add(shardOf(shardKeyForNode(node), this.shardDigits));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.markNodeDirty@L278",
+        "procedureName": "SoulStore.markNodeDirty",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:874f3d7b34b91c564eeee42040f4ea317002d51ab04b035961daeb5c59e18ae3",
+          "target": "sym:packages/core/src/shard.ts#shardOf@L60",
+          "expr": "shardOf",
+          "line": 282
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.markNodeDirty@L278",
+        "procedureName": "SoulStore.markNodeDirty",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:628fde8e436fc99ab74ccc47dee0011de168a0fefb592dfd83a50aa258f3082d",
+          "target": "sym:packages/core/src/shard.ts#shardKeyForNode@L50",
+          "expr": "shardKeyForNode",
+          "line": 282
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

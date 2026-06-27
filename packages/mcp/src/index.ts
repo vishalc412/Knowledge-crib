@@ -12,5 +12,26 @@ export {
   type RehydratedBody,
 } from './snippet.js';
 export { buildServer, serveStdio } from './server.js';
-export { Enricher, enricherFromEnv } from './enrichment.js';
-export type { EnrichOp, EnricherConfig } from './enrichment.js';
+export { EnrichmentStore, llmProjection, ENRICH_SCOPE_THRESHOLD } from './enrichment.js';
+export type {
+  EnrichAccepted,
+  EnrichLayer,
+  EnrichLayerCounts,
+  EnrichNextArgs,
+  EnrichNextBatch,
+  EnrichOverviewArgs,
+  EnrichRejected,
+  EnrichSaveArgs,
+  EnrichSaveItem,
+  EnrichSaveResult,
+  EnrichScope,
+  EnrichScopeInfo,
+  EnrichStatus,
+  EnrichStatusArgs,
+  EnrichWorkItem,
+  LlmArtifact,
+  LlmEvidence,
+  LlmGraphEdge,
+  LlmGraphNode,
+  LlmRead,
+} from './enrichment.js';

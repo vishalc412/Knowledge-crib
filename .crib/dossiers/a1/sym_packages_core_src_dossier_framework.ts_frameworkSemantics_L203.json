@@ -1,0 +1,2791 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:05d3c6a47f16efbc47f6c4b1268e8dafc3d412269911052b9286185fe3c9477d",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+    "kind": "symbol",
+    "type": "function",
+    "name": "frameworkSemantics",
+    "qualifiedName": "frameworkSemantics",
+    "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 203,
+      "end": 478
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 208
+      },
+      {
+        "callee": "buildAdjacency",
+        "line": 214
+      },
+      {
+        "callee": "buildAdjacency",
+        "line": 215
+      },
+      {
+        "callee": "buildProducerOf",
+        "line": 221
+      },
+      {
+        "callee": "isClassScope",
+        "line": 223
+      },
+      {
+        "callee": "getNode",
+        "line": 242
+      },
+      {
+        "callee": "getNode",
+        "line": 262
+      },
+      {
+        "callee": "add",
+        "line": 264
+      },
+      {
+        "callee": "push",
+        "line": 265
+      },
+      {
+        "callee": "getNode",
+        "line": 271
+      },
+      {
+        "callee": "add",
+        "line": 277
+      },
+      {
+        "callee": "routeFromNode",
+        "line": 278
+      },
+      {
+        "callee": "getNode",
+        "line": 278
+      },
+      {
+        "callee": "brief",
+        "line": 280
+      },
+      {
+        "callee": "push",
+        "line": 281
+      },
+      {
+        "callee": "add",
+        "line": 285
+      },
+      {
+        "callee": "getNode",
+        "line": 286
+      },
+      {
+        "callee": "push",
+        "line": 288
+      },
+      {
+        "callee": "brief",
+        "line": 291
+      },
+      {
+        "callee": "returnTypesOf",
+        "line": 292
+      },
+      {
+        "callee": "brief",
+        "line": 293
+      },
+      {
+        "callee": "collectDependencies",
+        "line": 301
+      },
+      {
+        "callee": "appendUnresolvedInjects",
+        "line": 303
+      },
+      {
+        "callee": "getNode",
+        "line": 306
+      },
+      {
+        "callee": "appendUnresolvedProduces",
+        "line": 307
+      },
+      {
+        "callee": "map",
+        "line": 311
+      },
+      {
+        "callee": "add",
+        "line": 317
+      },
+      {
+        "callee": "getNode",
+        "line": 318
+      },
+      {
+        "callee": "push",
+        "line": 319
+      },
+      {
+        "callee": "brief",
+        "line": 322
+      },
+      {
+        "callee": "add",
+        "line": 336
+      },
+      {
+        "callee": "getNode",
+        "line": 337
+      },
+      {
+        "callee": "push",
+        "line": 340
+      },
+      {
+        "callee": "brief",
+        "line": 343
+      },
+      {
+        "callee": "collectRenders",
+        "line": 355
+      },
+      {
+        "callee": "isCallableSymbol",
+        "line": 358
+      },
+      {
+        "callee": "add",
+        "line": 364
+      },
+      {
+        "callee": "routeFromNode",
+        "line": 365
+      },
+      {
+        "callee": "getNode",
+        "line": 365
+      },
+      {
+        "callee": "push",
+        "line": 366
+      },
+      {
+        "callee": "add",
+        "line": 373
+      },
+      {
+        "callee": "getNode",
+        "line": 374
+      },
+      {
+        "callee": "push",
+        "line": 376
+      },
+      {
+        "callee": "brief",
+        "line": 379
+      },
+      {
+        "callee": "returnTypesOf",
+        "line": 380
+      },
+      {
+        "callee": "appendUnresolvedProduces",
+        "line": 386
+      },
+      {
+        "callee": "parentClassOf",
+        "line": 390
+      },
+      {
+        "callee": "collectDependencies",
+        "line": 392
+      },
+      {
+        "callee": "getNode",
+        "line": 402
+      },
+      {
+        "callee": "appendUnresolvedInjects",
+        "line": 403
+      },
+      {
+        "callee": "add",
+        "line": 408
+      },
+      {
+        "callee": "pushDependency",
+        "line": 409
+      },
+      {
+        "callee": "map",
+        "line": 412
+      },
+      {
+        "callee": "add",
+        "line": 418
+      },
+      {
+        "callee": "getNode",
+        "line": 419
+      },
+      {
+        "callee": "push",
+        "line": 420
+      },
+      {
+        "callee": "brief",
+        "line": 423
+      },
+      {
+        "callee": "getNode",
+        "line": 436
+      },
+      {
+        "callee": "add",
+        "line": 440
+      },
+      {
+        "callee": "push",
+        "line": 442
+      },
+      {
+        "callee": "brief",
+        "line": 445
+      },
+      {
+        "callee": "collectRenders",
+        "line": 458
+      },
+      {
+        "callee": "sort",
+        "line": 463
+      },
+      {
+        "callee": "cmpLabel",
+        "line": 463
+      },
+      {
+        "callee": "labelOfRoute",
+        "line": 463
+      },
+      {
+        "callee": "labelOfRoute",
+        "line": 463
+      },
+      {
+        "callee": "sort",
+        "line": 464
+      },
+      {
+        "callee": "cmpLabel",
+        "line": 464
+      },
+      {
+        "callee": "labelOfBrief",
+        "line": 464
+      },
+      {
+        "callee": "labelOfBrief",
+        "line": 464
+      },
+      {
+        "callee": "sort",
+        "line": 465
+      },
+      {
+        "callee": "cmpLabel",
+        "line": 465
+      },
+      {
+        "callee": "labelOfBrief",
+        "line": 465
+      },
+      {
+        "callee": "labelOfBrief",
+        "line": 465
+      },
+      {
+        "callee": "sort",
+        "line": 466
+      },
+      {
+        "callee": "cmpLabel",
+        "line": 466
+      },
+      {
+        "callee": "labelOfBrief",
+        "line": 466
+      },
+      {
+        "callee": "labelOfBrief",
+        "line": 466
+      },
+      {
+        "callee": "sort",
+        "line": 467
+      },
+      {
+        "callee": "cmpLabel",
+        "line": 467
+      },
+      {
+        "callee": "labelOfBrief",
+        "line": 467
+      },
+      {
+        "callee": "labelOfBrief",
+        "line": 467
+      },
+      {
+        "callee": "sort",
+        "line": 468
+      },
+      {
+        "callee": "cmpLabel",
+        "line": 468
+      },
+      {
+        "callee": "labelOfBrief",
+        "line": 468
+      },
+      {
+        "callee": "labelOfBrief",
+        "line": 468
+      },
+      {
+        "callee": "keys",
+        "line": 477
+      }
+    ]
+  },
+  "source": {
+    "text": "export function frameworkSemantics(\n  soul: SoulStore,\n  nodeId: string,\n  opts: FrameworkSemanticsOpts = {},\n): DossierFrameworkSemantics | undefined {\n  const node = soul.getNode(nodeId);\n  if (!node) return undefined;\n  const keep = opts.keep ?? (() => true);\n\n  // adjacency: reuse the caller's single soul scan when supplied (buildDossier / context verb both\n  // already have it); else build it here from one iterateEdges() pass.\n  const outgoing = opts.outgoing ?? buildAdjacency(soul, 'out');\n  const incoming = opts.incoming ?? buildAdjacency(soul, 'in');\n\n  // produced-type-id → producer-method-id (the supply-chain map). Reuse a caller's hoisted map when\n  // supplied (the buildDossiersByScope bulk path builds it ONCE and shares it across N symbols so it\n  // does NOT re-scan all edges per symbol); absent → derive from `incoming`, which already holds every\n  // `produces` edge keyed by its dst (the produced type). Either way NO soul-wide re-scan is needed.\n  const producerOf = opts.producerOf ?? buildProducerOf(incoming);\n\n  const classScope = isClassScope(node, incoming);\n\n  const routes: DossierRoute[] = [];\n  const produces: DossierProduces[] = [];\n  const dependencies: DossierDependency[] = [];\n  const dependents: DossierDependent[] = [];\n  const relations: DossierRelation[] = [];\n  const renders: DossierRenders[] = [];\n\n  // dedup keys — each rel dedups by its natural key.\n  const seenRoutes = new Set<string>();\n  const seenProduces = new Set<string>();\n  const seenDeps = new Set<string>();\n  const seenDependents = new Set<string>();\n  const seenRelations = new Set<string>();\n  const seenRenders = new Set<string>();\n\n  /** brief of a node id (the AdjacentBrief shape — enough to locate + identify). */\n  const brief = (id: string, confidence: number): AdjacentBrief => {\n    const n = soul.getNode(id);\n    if (!n) return { id, confidence };\n    return {\n      id,\n      confidence,\n      ...(n.name ? { name: n.name } : {}),\n      ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),\n      ...(n.signature ? { signature: n.signature } : {}),\n      ...(n.type ? { type: n.type } : {}),\n      ...(n.file ? { file: n.file } : {}),\n      ...(n.span ? { line: n.span.start } : {}),\n    };\n  };\n\n  if (classScope) {\n    // CLASS scope: owners = the class itself + its member methods / fields (incoming member-of srcs).\n    const owners = new Set<string>([nodeId]);\n    const memberFields: Node[] = [];\n    for (const e of incoming.get(nodeId) ?? []) {\n      if (e.rel !== 'member-of' || !keep(e)) continue;\n      const m = soul.getNode(e.src);\n      if (!m) continue;\n      owners.add(e.src);\n      if (m.kind === 'field') memberFields.push(m);\n    }\n\n    // routes + produces: aggregate across member methods (the controller route table / @Configuration\n    // bean inventory). handler/producer = brief(member method).\n    for (const owner of owners) {\n      const m = soul.getNode(owner);\n      if (!m || !isCallableSymbol(m)) continue;\n      for (const e of outgoing.get(owner) ?? []) {\n        if (!keep(e)) continue;\n        if (e.rel === 'exposes') {\n          if (seenRoutes.has(e.dst)) continue;\n          seenRoutes.add(e.dst);\n          const r = routeFromNode(soul.getNode(e.dst), e.confidence);\n          if (r) {\n            r.handler = brief(owner, e.confidence);\n            routes.push(r);\n          }\n        } else if (e.rel === 'produces') {\n          if (seenProduces.has(e.dst)) continue;\n          seenProduces.add(e.dst);\n          const mn = soul.getNode(e.dst);\n          if (mn) {\n            produces.push({\n              id: e.dst,\n              confidence: e.confidence,\n              brief: brief(e.dst, e.confidence),\n              ...returnTypesOf(m),\n              producer: brief(owner, e.confidence),\n            });\n          }\n        }\n      }\n    }\n\n    // dependencies: the CLASS's own outgoing injects (the DI graph).\n    collectDependencies(nodeId, outgoing, keep, producerOf, soul, brief, seenDeps, dependencies);",
+    "truncated": true,
+    "totalLines": 276,
+    "startLine": 203,
+    "nextLine": 302
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L148",
+      "confidence": 1,
+      "name": "buildDossier",
+      "qualifiedName": "buildDossier",
+      "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 148
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
+      "confidence": 1,
+      "name": "appendUnresolvedInjects",
+      "qualifiedName": "appendUnresolvedInjects",
+      "signature": "appendUnresolvedInjects(classNode: Node, outgoing: Map<string, Edge[]>, dependencies: DossierDependency[], seen: Set<string>): void",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 633
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L603",
+      "confidence": 1,
+      "name": "appendUnresolvedProduces",
+      "qualifiedName": "appendUnresolvedProduces",
+      "signature": "appendUnresolvedProduces(node: Node, outgoing: Map<string, Edge[]>, produces: DossierProduces[], seen: Set<string>): void",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 603
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#brief@L339",
+      "confidence": 1,
+      "name": "brief",
+      "qualifiedName": "brief",
+      "signature": "brief(soul: SoulStore, id: string, confidence: number): AdjacentBrief",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 339
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#buildAdjacency@L484",
+      "confidence": 1,
+      "name": "buildAdjacency",
+      "qualifiedName": "buildAdjacency",
+      "signature": "buildAdjacency(soul: SoulStore, dir: 'out' | 'in'): Map<string, Edge[]>",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 484
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#buildProducerOf@L498",
+      "confidence": 1,
+      "name": "buildProducerOf",
+      "qualifiedName": "buildProducerOf",
+      "signature": "buildProducerOf(incoming: Map<string, Edge[]> | undefined): Map<string, string>",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 498
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#cmpLabel@L698",
+      "confidence": 1,
+      "name": "cmpLabel",
+      "qualifiedName": "cmpLabel",
+      "signature": "cmpLabel(a: string, b: string): number",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 698
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L561",
+      "confidence": 1,
+      "name": "collectDependencies",
+      "qualifiedName": "collectDependencies",
+      "signature": "collectDependencies(ownerId: string, outgoing: Map<string, Edge[]>, keep: (e: Edge) => boolean, producerOf: Map<string, string>, soul: SoulStore, brief: (id: string, c: number) => AdjacentBrief, seen: Set<string>, out: DossierDependency[]): void",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 561
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
+      "confidence": 1,
+      "name": "collectRenders",
+      "qualifiedName": "collectRenders",
+      "signature": "collectRenders(ownerId: string, outgoing: Map<string, Edge[]>, keep: (e: Edge) => boolean, soul: SoulStore, brief: (id: string, c: number) => AdjacentBrief, seen: Set<string>, out: DossierRenders[]): void",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 663
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics.brief@L241",
+      "confidence": 1,
+      "name": "brief",
+      "qualifiedName": "frameworkSemantics.brief",
+      "signature": "brief(…)",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 241
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#isCallableSymbol@L519",
+      "confidence": 1,
+      "name": "isCallableSymbol",
+      "qualifiedName": "isCallableSymbol",
+      "signature": "isCallableSymbol(n: Node): boolean",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 519
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#isClassScope@L511",
+      "confidence": 1,
+      "name": "isClassScope",
+      "qualifiedName": "isClassScope",
+      "signature": "isClassScope(node: Node, incoming: Map<string, Edge[]>): boolean",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 511
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#labelOfBrief@L693",
+      "confidence": 1,
+      "name": "labelOfBrief",
+      "qualifiedName": "labelOfBrief",
+      "signature": "labelOfBrief(b: AdjacentBrief | undefined): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 693
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#labelOfRoute@L687",
+      "confidence": 1,
+      "name": "labelOfRoute",
+      "qualifiedName": "labelOfRoute",
+      "signature": "labelOfRoute(r: DossierRoute): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 687
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#parentClassOf@L552",
+      "confidence": 1,
+      "name": "parentClassOf",
+      "qualifiedName": "parentClassOf",
+      "signature": "parentClassOf(method: Node, outgoing: Map<string, Edge[]>): string | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 552
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#pushDependency@L580",
+      "confidence": 1,
+      "name": "pushDependency",
+      "qualifiedName": "pushDependency",
+      "signature": "pushDependency(e: Edge, soul: SoulStore, brief: (id: string, c: number) => AdjacentBrief, producerOf: Map<string, string>, out: DossierDependency[]): void",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 580
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#returnTypesOf@L543",
+      "confidence": 1,
+      "name": "returnTypesOf",
+      "qualifiedName": "returnTypesOf",
+      "signature": "returnTypesOf(method: Node): { returnType?: string; returnElementType?: string }",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 543
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#routeFromNode@L524",
+      "confidence": 1,
+      "name": "routeFromNode",
+      "qualifiedName": "routeFromNode",
+      "signature": "routeFromNode(rn: Node | undefined, confidence: number): DossierRoute | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 524
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/framework.ts@L198",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "heading": "3.1 Framework-semantics tier (schema 1.3)",
+      "anchor": "3-1-framework-semantics-tier-schema-1-3",
+      "snippet": "3.1 Framework-semantics tier (schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+    "procedureName": "frameworkSemantics",
+    "conditions": [
+      "cond:packages/core/src/dossier/framework.ts@L209",
+      "cond:packages/core/src/dossier/framework.ts@L256",
+      "cond:packages/core/src/dossier/framework.ts@L260",
+      "cond:packages/core/src/dossier/framework.ts@L265",
+      "cond:packages/core/src/dossier/framework.ts@L270",
+      "cond:packages/core/src/dossier/framework.ts@L273",
+      "cond:packages/core/src/dossier/framework.ts@L275",
+      "cond:packages/core/src/dossier/framework.ts@L361",
+      "cond:packages/core/src/dossier/framework.ts@L362",
+      "cond:packages/core/src/dossier/framework.ts@L433",
+      "cond:packages/core/src/dossier/framework.ts@L434",
+      "cond:packages/core/src/dossier/framework.ts@L279",
+      "cond:packages/core/src/dossier/framework.ts@L283",
+      "cond:packages/core/src/dossier/framework.ts@L287",
+      "cond:packages/core/src/dossier/framework.ts@L370",
+      "cond:packages/core/src/dossier/framework.ts@L371",
+      "cond:packages/core/src/dossier/framework.ts@L375",
+      "cond:packages/core/src/dossier/framework.ts@L388",
+      "cond:packages/core/src/dossier/framework.ts@L391",
+      "cond:packages/core/src/dossier/framework.ts@L403",
+      "cond:packages/core/src/dossier/framework.ts@L305",
+      "cond:packages/core/src/dossier/framework.ts@L307",
+      "cond:packages/core/src/dossier/framework.ts@L313",
+      "cond:packages/core/src/dossier/framework.ts@L314",
+      "cond:packages/core/src/dossier/framework.ts@L331",
+      "cond:packages/core/src/dossier/framework.ts@L332",
+      "cond:packages/core/src/dossier/framework.ts@L457",
+      "cond:packages/core/src/dossier/framework.ts@L366",
+      "cond:packages/core/src/dossier/framework.ts@L405",
+      "cond:packages/core/src/dossier/framework.ts@L414",
+      "cond:packages/core/src/dossier/framework.ts@L415",
+      "cond:packages/core/src/dossier/framework.ts@L471",
+      "cond:packages/core/src/dossier/framework.ts@L472",
+      "cond:packages/core/src/dossier/framework.ts@L473",
+      "cond:packages/core/src/dossier/framework.ts@L474",
+      "cond:packages/core/src/dossier/framework.ts@L475",
+      "cond:packages/core/src/dossier/framework.ts@L476"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c279f170680c1493aeef6fe5a371a52dd26eba311c3878b13050d6db1379e6df",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L208",
+          "line": 208,
+          "expr": "const node = soul.getNode(nodeId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L209",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L209",
+            "expr": "!node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6822b7cd2954b8e4a6f7c02bd2bfbab82c593b8b78684c1ec9ba26bbc02690c3",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L209",
+          "line": 209,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:39dd3b9b9bb4a5ff832c97ccb7e558e33ce144b97d39a549ebafa0dbd58ff7d3",
+          "target": "sym:packages/core/src/dossier/framework.ts#buildAdjacency@L484",
+          "expr": "buildAdjacency",
+          "line": 214
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1c8e05e73ea31e9c906b403a285912f2f12a253a1a1d43f4305e6b9bb2d10554",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L214",
+          "line": 214,
+          "expr": "const outgoing = opts.outgoing ?? buildAdjacency(soul, 'out');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f580b17048dec8e7ae12428926c1345decc42cfb476fc8725dcdd034b3782f9b",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L215",
+          "line": 215,
+          "expr": "const incoming = opts.incoming ?? buildAdjacency(soul, 'in');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:be72eb3fb6e2858c81a805b0f59591a397681219a4720380847115a20de252fc",
+          "target": "sym:packages/core/src/dossier/framework.ts#buildProducerOf@L498",
+          "expr": "buildProducerOf",
+          "line": 221
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8e0ab663ae3c701154747be712e9a22ada1ce2400b540e0fd283e2e77367dd4c",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L221",
+          "line": 221,
+          "expr": "const producerOf = opts.producerOf ?? buildProducerOf(incoming);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a85dcaab23a674eb57924d90e418c4470d2ea001b55722d885e6952c89f821dd",
+          "target": "sym:packages/core/src/dossier/framework.ts#isClassScope@L511",
+          "expr": "isClassScope",
+          "line": 223
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75d0121bfdd4e7b383dc72de6f6faf3e1032b4413686c1577b99aa5a912153ea",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L223",
+          "line": 223,
+          "expr": "const classScope = isClassScope(node, incoming);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:48e1572205a6792dd1265f1fef43bfc9df4b2a2367293f3d903d9733370c70f0",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L241",
+          "line": 241,
+          "expr": "const brief = (id: string, confidence: number): AdjacentBrief => {\n    const n = soul.getNode(id);\n    if (!n) return { id, confidence };\n    return {\n      id,\n      confidence,\n      ...(n.name ? { name: n.name } : {}),\n      ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),\n      ...(n.signature ? { signature: n.signature } : {}),\n      ...(n.type ? { type: n.type } : {}),\n      ...(n.file ? { file: n.file } : {}),\n      ...(n.span ? { line: n.span.start } : {}),\n    };\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L260",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L260",
+            "expr": "incoming.get(nodeId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:34f4f2f3da7eb1815ef802f6ef1165765b4d0cf5bf37a5bcceab923fbe8487b2",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L262",
+          "line": 262,
+          "expr": "const m = soul.getNode(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L260",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L260",
+            "expr": "incoming.get(nodeId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e812c9e945774038febb995dd700f654003d899a8d1a0bdb356387305098aa21",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L264",
+          "line": 264,
+          "expr": "owners.add(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0c91380c280757b47f6c35505ef9c32c17d7e6f6959ac82c569bdfcf7b9ec20c",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 264
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L265",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L260",
+            "expr": "incoming.get(nodeId) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L265",
+            "expr": "m.kind === 'field'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ab695c20ebeaf8cdfae8166a2dae811be6bfca2d0e5f0cb6f6f81cb7e0144ed8",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L265",
+          "line": 265,
+          "expr": "memberFields.push(m);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1a37b4a868beacf5121819dedc5804bf5905f235967449e8341abc92383b204e",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 265
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L270",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L270",
+            "expr": "owners",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3fc046cbe0072b0ab27987abc697df160cc779b3640d0457baaf8196252a21ca",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L271",
+          "line": 271,
+          "expr": "const m = soul.getNode(owner);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L275",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L270",
+            "expr": "owners"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L273",
+            "expr": "outgoing.get(owner) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L275",
+            "expr": "e.rel === 'exposes'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:51b01818978843adbc642381272d44b5f0239a271a2c44f509145668b386a738",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L277",
+          "line": 277,
+          "expr": "seenRoutes.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L362",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L361",
+            "expr": "outgoing.get(nodeId) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L362",
+            "expr": "e.rel === 'exposes' && keep(e)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9a1e3df8995a2c984be2f6569874799283ffd72c7de9dabbb311c72debce6c61",
+          "target": "sym:packages/core/src/dossier/framework.ts#routeFromNode@L524",
+          "expr": "routeFromNode",
+          "line": 278
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L275",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L270",
+            "expr": "owners"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L273",
+            "expr": "outgoing.get(owner) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L275",
+            "expr": "e.rel === 'exposes'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:52eaa7f0d1d55c0e96976d799b25abd24a4e381de7c3f5bcbb6e26e3644f2c2c",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L278",
+          "line": 278,
+          "expr": "const r = routeFromNode(soul.getNode(e.dst), e.confidence);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L434",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L433",
+            "expr": "node.kind === 'field'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L434",
+            "expr": "outgoing.get(nodeId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:956863d81882bde647054a4f7fce03f1c48b9b1eca494296bdf861c32fcbae4e",
+          "target": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics.brief@L241",
+          "expr": "brief",
+          "line": 280
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L279",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L270",
+            "expr": "owners"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L273",
+            "expr": "outgoing.get(owner) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L275",
+            "expr": "e.rel === 'exposes'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L279",
+            "expr": "r",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fc008626eea7ac77a26e5d2b8a6bbe1ecd24934ceb46a1fdf7ed05591a709380",
+          "target": "assign:packages/core/src/dossier/framework.ts@L280",
+          "line": 280,
+          "expr": "r.handler = brief(owner, e.confidence);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bd48b4bb79cf12a57cb384c07cc783486e2cd980b416b6ec06f8d1991e5c4bec",
+          "target": "sym:packages/core/src/dossier/builder.ts#brief@L339",
+          "expr": "brief",
+          "line": 280
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L279",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L270",
+            "expr": "owners"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L273",
+            "expr": "outgoing.get(owner) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L275",
+            "expr": "e.rel === 'exposes'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L279",
+            "expr": "r",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c540f8c637042b4a3963ce262ad8b914eafccb29e9121b99c60a395dd3dfb5d1",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L281",
+          "line": 281,
+          "expr": "routes.push(r);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L283",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L270",
+            "expr": "owners"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L273",
+            "expr": "outgoing.get(owner) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L275",
+            "expr": "e.rel === 'exposes'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L283",
+            "expr": "e.rel === 'produces'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:21441d31747bd6917407b9da67d0552840ed178f92b61fd1d18db9743ec2cc93",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L285",
+          "line": 285,
+          "expr": "seenProduces.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L283",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L270",
+            "expr": "owners"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L273",
+            "expr": "outgoing.get(owner) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L275",
+            "expr": "e.rel === 'exposes'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L283",
+            "expr": "e.rel === 'produces'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c68b15d66a7b2dc5f0b7e5a83f3276fa18b51e117ed425c388df567ffb1aa064",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L286",
+          "line": 286,
+          "expr": "const mn = soul.getNode(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L287",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L270",
+            "expr": "owners"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L273",
+            "expr": "outgoing.get(owner) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L275",
+            "expr": "e.rel === 'exposes'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L283",
+            "expr": "e.rel === 'produces'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L287",
+            "expr": "mn",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:da637a04dbdbe4b03b8a00fd720a947c694c634764e9e4cc7937818b47d123b8",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L288",
+          "line": 288,
+          "expr": "produces.push({\n              id: e.dst,\n              confidence: e.confidence,\n              brief: brief(e.dst, e.confidence),\n              ...returnTypesOf(m),\n              producer: brief(owner, e.confidence),\n            });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L375",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L370",
+            "expr": "outgoing.get(nodeId) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L371",
+            "expr": "e.rel === 'produces' && keep(e)"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L375",
+            "expr": "pn",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0008b50a2b06a50468a40a22c5f6eadbfe27c1777a3cb0e61bb7c23a63956ebe",
+          "target": "sym:packages/core/src/dossier/framework.ts#returnTypesOf@L543",
+          "expr": "returnTypesOf",
+          "line": 292
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L391",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L391",
+            "expr": "parent",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:35e6bfea415c7e1a52ee1878b23b45d2c65ad9eba4958a857beb7afb4a3830fa",
+          "target": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L561",
+          "expr": "collectDependencies",
+          "line": 301
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L256",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9b16dddd2883ebbaa34cabc33cfaac65da507019560fce7681c3829d8f5433b0",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L301",
+          "line": 301,
+          "expr": "collectDependencies(nodeId, outgoing, keep, producerOf, soul, brief, seenDeps, dependencies);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L403",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L391",
+            "expr": "parent"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L403",
+            "expr": "pn",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:887ac5bf95d59fea1217eb57954f7ab9a3a52ef35932ec04fea5c4f6e8dad68d",
+          "target": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
+          "expr": "appendUnresolvedInjects",
+          "line": 303
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L256",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31f78195b4d9099c94a6ef306487881825b29c6f63d8f3a23fe7d3ba1ac0a645",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L303",
+          "line": 303,
+          "expr": "appendUnresolvedInjects(node, outgoing, dependencies, seenDeps);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L305",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L305",
+            "expr": "owners",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f323b4bfb85d40e4be3b3b929c2c1e628808d5df0db765bcbbbebdb662539d43",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L306",
+          "line": 306,
+          "expr": "const m = soul.getNode(owner);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L256",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:85d0a04bf4e7a61c8bffc6bb9dfa63fad1df8bace685f3f0bdd7f9fc811c01e5",
+          "target": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L603",
+          "expr": "appendUnresolvedProduces",
+          "line": 307
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L307",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L305",
+            "expr": "owners"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L307",
+            "expr": "m",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:20b47638372e8d856807e8fa46a351344a2c6cba278fc8a149cb6b6fc865ea2f",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L307",
+          "line": 307,
+          "expr": "appendUnresolvedProduces(m, outgoing, produces, seenProduces);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L256",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ccde806b28d98c53f39c8b5d9f3dadaa6250364a39aecae7390d008efc2133a4",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L311",
+          "line": 311,
+          "expr": "const producedTypeIds = new Set(produces.map((p) => p.id));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L314",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L313",
+            "expr": "depTargets"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L314",
+            "expr": "incoming.get(t) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:da5ab4316b5c8e1ab501c8114fed119f27a6ed3af0109204ed9658c4ecab33a6",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L317",
+          "line": 317,
+          "expr": "seenDependents.add(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L314",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L313",
+            "expr": "depTargets"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L314",
+            "expr": "incoming.get(t) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8a736c30c74b5235db9c8351f41887a455fd6552e95c7f653b236c28d798840",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L318",
+          "line": 318,
+          "expr": "const cn = soul.getNode(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L314",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L313",
+            "expr": "depTargets"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L314",
+            "expr": "incoming.get(t) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f890d88584ac960c4acb7a1a2ab4b5cce95dfafa06676500aff09614021eff11",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L319",
+          "line": 319,
+          "expr": "dependents.push({\n          id: e.src,\n          confidence: e.confidence,\n          brief: brief(e.src, e.confidence),\n          ...(cn?.stereotype ? { stereotype: cn.stereotype } : {}),\n          ...(cn?.framework ? { framework: cn.framework } : {}),\n          ...(e.evidence?.snippet ? { injectedAs: e.evidence.snippet } : {}),\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L332",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L331",
+            "expr": "memberFields"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L332",
+            "expr": "outgoing.get(f.id) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:17a0905d33974395c6ec0c657ecaf954b4d1a1477c93d4b06448048722010bef",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L336",
+          "line": 336,
+          "expr": "seenRelations.add(key);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L332",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L331",
+            "expr": "memberFields"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L332",
+            "expr": "outgoing.get(f.id) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5d5ebccb6b26fb9237d513da75d60fd06249eccaf1a2e9f8714b08a49519acab",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L337",
+          "line": 337,
+          "expr": "const rn = soul.getNode(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L332",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L331",
+            "expr": "memberFields"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L332",
+            "expr": "outgoing.get(f.id) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:83d97b3618cb19acc0f57342349ba567cd74c4e7e2e307c0c45bdb6b9b230836",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L340",
+          "line": 340,
+          "expr": "relations.push({\n          id: e.dst,\n          confidence: e.confidence,\n          brief: brief(e.dst, e.confidence),\n          field: f.name,\n          ...(typeof m.cardinality === 'string' ? { cardinality: m.cardinality } : {}),\n          ...(typeof m.cascade === 'string' ? { cascade: m.cascade } : {}),\n          ...(typeof m.fetch === 'string' ? { fetch: m.fetch } : {}),\n          ...(typeof m.mappedBy === 'string' ? { mappedBy: m.mappedBy } : {}),\n          ...(typeof m.orphanRemoval === 'string' ? { orphanRemoval: m.orphanRemoval } : {}),\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L457",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L457",
+            "expr": "node.kind === 'component'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:803d3448b9540f1667a8dd5a415b3d2f965d521ff0ea0c3d02669c3776f3af4d",
+          "target": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
+          "expr": "collectRenders",
+          "line": 355
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L256",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d7dc63da3b1e5849cc178378f9d507cc7b0f148af4d92a8b839e3cba7a6054b0",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L355",
+          "line": 355,
+          "expr": "collectRenders(nodeId, outgoing, keep, soul, brief, seenRenders, renders);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L256",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:de7f646826a22ff3e1479420d1c75bfb44bc8dad920b4f56d56a471ca923b1bb",
+          "target": "sym:packages/core/src/dossier/framework.ts#isCallableSymbol@L519",
+          "expr": "isCallableSymbol",
+          "line": 358
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L256",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:655720855c4a2ea2bfc7c9d98b1c3a546b13063649d6d7e7a3ea5a1596fb00db",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L358",
+          "line": 358,
+          "expr": "const isMethod = isCallableSymbol(node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L362",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L361",
+            "expr": "outgoing.get(nodeId) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L362",
+            "expr": "e.rel === 'exposes' && keep(e)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:27a868be7fdf821ab6f2c3c66262cc1a24a629746aab72e15bc5bfaa48a727cf",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L364",
+          "line": 364,
+          "expr": "seenRoutes.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L362",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L361",
+            "expr": "outgoing.get(nodeId) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L362",
+            "expr": "e.rel === 'exposes' && keep(e)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f043d9feaf1d28a07d97e2ad4a25e20fa2fd8152662e8135faf7cb2e08a3a02b",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L365",
+          "line": 365,
+          "expr": "const r = routeFromNode(soul.getNode(e.dst), e.confidence);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L366",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L361",
+            "expr": "outgoing.get(nodeId) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L362",
+            "expr": "e.rel === 'exposes' && keep(e)"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L366",
+            "expr": "r",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2a3d9019c2b3308db7afc52a1f0435aee3a3ffa8eb3cd066a7f6146ed1a488f0",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L366",
+          "line": 366,
+          "expr": "routes.push(r);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L371",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L370",
+            "expr": "outgoing.get(nodeId) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L371",
+            "expr": "e.rel === 'produces' && keep(e)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:11b79e54d12531694febe109157ac6b199986aa435cafbde6be81b41ad5bfee0",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L373",
+          "line": 373,
+          "expr": "seenProduces.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L371",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L370",
+            "expr": "outgoing.get(nodeId) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L371",
+            "expr": "e.rel === 'produces' && keep(e)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:86a36b867151a4d677de7872f6b5e5541d0ba70ed45ca96312f143fb11d4a19a",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L374",
+          "line": 374,
+          "expr": "const pn = soul.getNode(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L375",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L370",
+            "expr": "outgoing.get(nodeId) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L371",
+            "expr": "e.rel === 'produces' && keep(e)"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L375",
+            "expr": "pn",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:58c7524fd9211ffbf4ba79bc75973e6bc29775d73580a5db186b70b570892c86",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L376",
+          "line": 376,
+          "expr": "produces.push({\n            id: e.dst,\n            confidence: e.confidence,\n            brief: brief(e.dst, e.confidence),\n            ...returnTypesOf(node),\n          });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L256",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2fea5ff1843fe3e980a508d13f7dae4159e58c5dc3937cff573c32d5982128a9",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L386",
+          "line": 386,
+          "expr": "appendUnresolvedProduces(node, outgoing, produces, seenProduces);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L388",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bc4309166156360f6e3b620f6fa9c00fb2032edb6d57bd0d3c638c2bc225afed",
+          "target": "sym:packages/core/src/dossier/framework.ts#parentClassOf@L552",
+          "expr": "parentClassOf",
+          "line": 390
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L388",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:adcbdfd8f89d95c4b97f422ee217aad691d743d6f045170d9ecc2c1cabf93fbe",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L390",
+          "line": 390,
+          "expr": "const parent = parentClassOf(node, outgoing);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L391",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L391",
+            "expr": "parent",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:034a55525c880b4affc6afcb77a1a594a49d0bcf2f2bbf35f1e0b1c859c9ebfe",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L392",
+          "line": 392,
+          "expr": "collectDependencies(\n          parent,\n          outgoing,\n          keep,\n          producerOf,\n          soul,\n          brief,\n          seenDeps,\n          dependencies,\n        );"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L391",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L391",
+            "expr": "parent",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fe3f8ac9b8af3fd56d7ca3b6af9b5f6acbd01a2fa7bd8ad75cda325daa1519ed",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L402",
+          "line": 402,
+          "expr": "const pn = soul.getNode(parent);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L403",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L391",
+            "expr": "parent"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L403",
+            "expr": "pn",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:34e14f65fe0044709ac9b2022278d5677b075b21f70d528f06bc8bfca5bfd021",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L403",
+          "line": 403,
+          "expr": "appendUnresolvedInjects(pn, outgoing, dependencies, seenDeps);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L405",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L405",
+            "expr": "outgoing.get(nodeId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:162978b061a117e991b6135112af06094f95bdbd4dcfab352263f48213a66eab",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L408",
+          "line": 408,
+          "expr": "seenDeps.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L405",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L405",
+            "expr": "outgoing.get(nodeId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6ab74d1f1244e144bcabf5494d8658843cd53297d2f30f0c18504c8df2a5bffc",
+          "target": "sym:packages/core/src/dossier/framework.ts#pushDependency@L580",
+          "expr": "pushDependency",
+          "line": 409
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L405",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L405",
+            "expr": "outgoing.get(nodeId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1cfe155ff51aab9ea33a9c00ce0ff4d2ff26df77f7ba8f5ad5e808eda3617d32",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L409",
+          "line": 409,
+          "expr": "pushDependency(e, soul, brief, producerOf, dependencies);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L388",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ba4b7427dcbfe8e822b0c396009b5853794d47663a1f047fe356635b1389b6b3",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L412",
+          "line": 412,
+          "expr": "const producedTypeIds = new Set(produces.map((p) => p.id));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L415",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L414",
+            "expr": "depTargets"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L415",
+            "expr": "incoming.get(t) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d11b3d3b8e1e118dbf15741c5960fcc6c33e20ce1bd89bf03cfec313e905e469",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L418",
+          "line": 418,
+          "expr": "seenDependents.add(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L415",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L414",
+            "expr": "depTargets"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L415",
+            "expr": "incoming.get(t) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b3ad659a867c0a5896d093b3b60ade1aec77c55794e58d42a29499f3e1b2b5f5",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L419",
+          "line": 419,
+          "expr": "const cn = soul.getNode(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L415",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L388",
+            "expr": "!opts.lean && isMethod"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L414",
+            "expr": "depTargets"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L415",
+            "expr": "incoming.get(t) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:08f0923c1a41899dbea40aca59b16d8628f21856444d1d71bace2ec38d4b6958",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L420",
+          "line": 420,
+          "expr": "dependents.push({\n            id: e.src,\n            confidence: e.confidence,\n            brief: brief(e.src, e.confidence),\n            ...(cn?.stereotype ? { stereotype: cn.stereotype } : {}),\n            ...(cn?.framework ? { framework: cn.framework } : {}),\n            ...(e.evidence?.snippet ? { injectedAs: e.evidence.snippet } : {}),\n          });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L434",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L433",
+            "expr": "node.kind === 'field'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L434",
+            "expr": "outgoing.get(nodeId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:38721c75c2da95f949fa438569bd2ad47ad85c113219125500476a90922eaa6f",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L436",
+          "line": 436,
+          "expr": "const rn = soul.getNode(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L434",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L433",
+            "expr": "node.kind === 'field'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L434",
+            "expr": "outgoing.get(nodeId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9386f3c17d67e0f90e790aba6b2fbcfae29e943f3c5a09ce398f8532ab43f17c",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L440",
+          "line": 440,
+          "expr": "seenRelations.add(key);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L434",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L433",
+            "expr": "node.kind === 'field'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L434",
+            "expr": "outgoing.get(nodeId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce6de1bb11b93cab1317dbd7850e540cb8985c878188e035b4b1996143303021",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L442",
+          "line": 442,
+          "expr": "relations.push({\n          id: e.dst,\n          confidence: e.confidence,\n          brief: brief(e.dst, e.confidence),\n          field: node.name,\n          ...(typeof m.cardinality === 'string' ? { cardinality: m.cardinality } : {}),\n          ...(typeof m.cascade === 'string' ? { cascade: m.cascade } : {}),\n          ...(typeof m.fetch === 'string' ? { fetch: m.fetch } : {}),\n          ...(typeof m.mappedBy === 'string' ? { mappedBy: m.mappedBy } : {}),\n          ...(typeof m.orphanRemoval === 'string' ? { orphanRemoval: m.orphanRemoval } : {}),\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L457",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L256",
+            "expr": "classScope"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L457",
+            "expr": "node.kind === 'component'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f9d423aa6495cd50d7f1eec6fc26d1dce70c49e75f3f1559b917d6ad6459bb49",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L458",
+          "line": 458,
+          "expr": "collectRenders(nodeId, outgoing, keep, soul, brief, seenRenders, renders);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7aecfdb6bf9cd0c279e6b7774b484918da3f08e18fcb954b4f415a6c01ec5f16",
+          "target": "sym:packages/core/src/dossier/framework.ts#cmpLabel@L698",
+          "expr": "cmpLabel",
+          "line": 463
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f92a367e30512c21f37332ae018b8eda1071f29a3dec8e0dffdf8dfe0cf989d2",
+          "target": "sym:packages/core/src/dossier/framework.ts#labelOfRoute@L687",
+          "expr": "labelOfRoute",
+          "line": 463
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1c14193aeacb21c8f77773cce424b09ad08620963c32dc1c88bfcc2772f463bc",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L463",
+          "line": 463,
+          "expr": "routes.sort((a, b) => cmpLabel(labelOfRoute(a), labelOfRoute(b)));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a80e7ca03f4406a7ff8d6ed9dc271105fbfca6e5d473fc33befb94f6f3e59003",
+          "target": "sym:packages/core/src/dossier/framework.ts#labelOfBrief@L693",
+          "expr": "labelOfBrief",
+          "line": 464
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:27cd38be10064cf352131dd8424ad41a5ab5f95acf91ffd3b6fcd87c4d413068",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L464",
+          "line": 464,
+          "expr": "produces.sort((a, b) => cmpLabel(labelOfBrief(a.brief), labelOfBrief(b.brief)));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:286571063db6e851103cee25c836a19a85eb0336c8f2b785a2d8f3ecb3c09ab1",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L465",
+          "line": 465,
+          "expr": "dependencies.sort((a, b) => cmpLabel(labelOfBrief(a.brief), labelOfBrief(b.brief)));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:952630148bb8602b5c58c9a9ec39ba7d42e9732eaa166fe71d1228e59d802e6d",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L466",
+          "line": 466,
+          "expr": "dependents.sort((a, b) => cmpLabel(labelOfBrief(a.brief), labelOfBrief(b.brief)));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:47dd00433089a7b7a87c92550388447e967c0a9a56d05d612e55f7ab647a551e",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L467",
+          "line": 467,
+          "expr": "relations.sort((a, b) => cmpLabel(labelOfBrief(a.brief), labelOfBrief(b.brief)));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7af7366c6843980c31da302a1f4d01ed89080c8f02cb8be02f52af51ab240f2e",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L468",
+          "line": 468,
+          "expr": "renders.sort((a, b) => cmpLabel(labelOfBrief(a.brief), labelOfBrief(b.brief)));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L471",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L471",
+            "expr": "routes.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c3d504610c59c3ddd7f9883c13a389d272624eb39a8c93f4dc62391f2f0bbe3a",
+          "target": "assign:packages/core/src/dossier/framework.ts@L471",
+          "line": 471,
+          "expr": "out.routes = routes;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L472",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L472",
+            "expr": "produces.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:599bda4cc49280865512c1297d5b2b8288da679a51ab543102a5273a8a64b22a",
+          "target": "assign:packages/core/src/dossier/framework.ts@L472",
+          "line": 472,
+          "expr": "out.produces = produces;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L473",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L473",
+            "expr": "dependencies.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b9f1858b0094c9c62425d5a1752e87c524bac1e8e7238e7b68273b0f4aec6dcc",
+          "target": "assign:packages/core/src/dossier/framework.ts@L473",
+          "line": 473,
+          "expr": "out.dependencies = dependencies;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L474",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L474",
+            "expr": "dependents.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:799dea3ae1c1047139a3c491a5d2d5df897daa872879917bf83f7a34496031d6",
+          "target": "assign:packages/core/src/dossier/framework.ts@L474",
+          "line": 474,
+          "expr": "out.dependents = dependents;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L475",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L475",
+            "expr": "relations.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb0802cad53fb74d7e93afa6df31f91db0adaa2b02ac8b602bd3d1b5720d8e95",
+          "target": "assign:packages/core/src/dossier/framework.ts@L475",
+          "line": 475,
+          "expr": "out.relations = relations;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L476",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L476",
+            "expr": "renders.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d9ccb01b074cdcdaf51637fde44ffd6e80a0602233eed64dbcf89c84f5d0c342",
+          "target": "assign:packages/core/src/dossier/framework.ts@L476",
+          "line": 476,
+          "expr": "out.renders = renders;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+        "procedureName": "frameworkSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0cfaca4d96069a01c88dbebfef836d194a615d2bbd3361d17f3bb48fb2039391",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L477",
+          "line": 477,
+          "expr": "return Object.keys(out).length ? out : undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 65,
+    "referencedByFiles": [
+      "packages/core/src/dossier/builder.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 65,
+    "assignments": 7,
+    "conditions": 30,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 19,
+      "recorded": 87,
+      "unresolved": 9
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "9 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

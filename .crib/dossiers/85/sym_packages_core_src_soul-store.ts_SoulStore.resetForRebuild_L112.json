@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L112",
   "schemaVersion": "1.3",
-  "nodeHash": "blake3:d13967f1e994f2c6ea3e6786308657eaa23f23392f3806ca8ceebe6c6374da7a",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "nodeHash": "blake3:6c0c450f1ed74e9b6f6a607043b76ca69d9547dd2d77fafaa93693f8c3aca260",
+  "builtAt": "2026-06-27T16:07:10.655Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L112",
@@ -15,7 +15,7 @@
     "file": "packages/core/src/soul-store.ts",
     "span": {
       "start": 112,
-      "end": 125
+      "end": 123
     },
     "callSites": [
       {
@@ -45,9 +45,9 @@
     ]
   },
   "source": {
-    "text": "  resetForRebuild(): void {\n    this.nodes.clear();\n    this.edges.clear();\n    const nodesRoot = join(this.cribDirPrivate, 'nodes');\n    if (existsSync(nodesRoot)) for (const s of readdirSync(nodesRoot)) this.dirtyNodeShards.add(s);\n    const edgesRoot = join(this.cribDirPrivate, 'edges');\n    if (existsSync(edgesRoot)) for (const s of readdirSync(edgesRoot)) this.dirtyEdgeShards.add(s);\n    this.clustersDirty = true;\n    // NOTE: the dossiers cache is intentionally left in place — runDossiers skips fresh (hash-anchored)\n    // dossiers so an unchanged repo re-indexes WITHOUT rewriting the dossier store (byte-stable).\n    // Clearing it here would regenerate every dossier with a new `builtAt` on each rebuild, breaking\n    // determinism. Orphan dossiers for deleted nodes persist (harmless — served only on a hash match),\n    // matching the original load()-based rebuild behavior.\n  }",
+    "text": "  resetForRebuild(): void {\n    this.nodes.clear();\n    this.edges.clear();\n    const nodesRoot = join(this.cribDirPrivate, 'nodes');\n    if (existsSync(nodesRoot)) for (const s of readdirSync(nodesRoot)) this.dirtyNodeShards.add(s);\n    const edgesRoot = join(this.cribDirPrivate, 'edges');\n    if (existsSync(edgesRoot)) for (const s of readdirSync(edgesRoot)) this.dirtyEdgeShards.add(s);\n    this.clustersDirty = true;\n    // The dossier cache stays in place here. The post-commit runDossiers phase compares rebuilt\n    // graph-dependent content while ignoring only `builtAt`, preserving byte stability for true\n    // no-ops and pruning artifacts whose node disappeared.\n  }",
     "truncated": false,
-    "totalLines": 14,
+    "totalLines": 12,
     "startLine": 112
   },
   "callers": [],

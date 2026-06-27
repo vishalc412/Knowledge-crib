@@ -212,6 +212,8 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
     semantic,
     ignores,
   });
+  const index = buildIndex({ repoRoot, cribDir, soul });
+  index.close();
   registerIndexed(repoRoot, cribDir, soul);
   const stats = soul.getManifest().stats;
   process.stdout.write(
@@ -253,7 +255,8 @@ async function cmdStatus(args: string[], ctx?: CmdCtx): Promise<number> {
     return EXIT.NOT_INDEXED;
   }
   const rt = openSoul(resolved);
-  const index = buildIndex(rt);
+  const index = openIndexForRead(rt);
+  if (!index) return EXIT.NOT_INDEXED;
   const verbs = new Verbs({
     soul: rt.soul,
     index,
@@ -289,7 +292,8 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
     return EXIT.NOT_INDEXED;
   }
   const rt = openSoul(resolved);
-  const index = buildIndex(rt);
+  const index = openIndexForRead(rt);
+  if (!index) return EXIT.NOT_INDEXED;
   const verbs = new Verbs({ soul: rt.soul, index, repoRoot: resolved.repoRoot });
   process.stdout.write(
     `${JSON.stringify(
@@ -310,11 +314,24 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
 }
 
 /**
+ * Open the derived index for read commands. Missing/stale derived indexes are repaired only by an
+ * explicit `crib index`/`crib reindex`, which keeps concurrent read commands out of SQLite rebuilds.
+ */
+function openIndexForRead(rt: ReturnType<typeof openSoul>): IndexStore | null {
+  try {
+    return openIndexOnly(rt);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    process.stderr.write(`${msg}\n`);
+    return null;
+  }
+}
+
+/**
  * Shared setup for the read-only analyst commands (WS-5): resolve root, confirm it is indexed, open
- * the soul, (re)build the derived index, and hand back a wired {@link Verbs}. Prints the
+ * the soul, open the existing derived index, and hand back a wired {@link Verbs}. Prints the
  * "not indexed" message and returns `null` when the root has no `.crib`, so each command stays a
- * thin wrapper over one verb. The index is rebuilt from the committed soul every call — a stale or
- * gitignored index can never drift (the soul is the source of truth).
+ * thin wrapper over one verb.
  */
 function openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexStore } | null {
   const resolved = resolveRoot(args, ctx);
@@ -323,7 +340,8 @@ function openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexSt
     return null;
   }
   const rt = openSoul(resolved);
-  const index = buildIndex(rt);
+  const index = openIndexForRead(rt);
+  if (!index) return null;
   const verbs = new Verbs({
     soul: rt.soul,
     index,
@@ -339,7 +357,14 @@ async function cmdGaps(args: string[], ctx?: CmdCtx): Promise<number> {
   if (!opened) return EXIT.NOT_INDEXED;
   const { verbs, index } = opened;
   process.stdout.write(
-    `${JSON.stringify(verbs.gaps({ ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}) }), null, 2)}\n`,
+    `${JSON.stringify(
+      verbs.gaps({
+        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+        ...(args.includes('--include-builtins') ? { includeBuiltins: true } : {}),
+      }),
+      null,
+      2,
+    )}\n`,
   );
   index.close();
   return EXIT.OK;
@@ -630,7 +655,8 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     return EXIT.NOT_INDEXED;
   }
   const rt = openSoul(resolved);
-  const index = buildIndex(rt);
+  const index = openIndexForRead(rt);
+  if (!index) return EXIT.NOT_INDEXED;
   const verbs = new Verbs({
     soul: rt.soul,
     index,
@@ -697,6 +723,8 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
     semantic,
     ignores,
   });
+  const index = buildIndex({ repoRoot, cribDir, soul });
+  index.close();
   registerIndexed(repoRoot, cribDir, soul);
   const stats = soul.getManifest().stats;
   process.stdout.write(
@@ -1179,7 +1207,7 @@ function printHelp(): void {
       '  crib index [path] [--semantic] [--exclude a,b,...]     full index → .crib soul + derived index (+ INFERRED TF-IDF semantic links)',
       '  crib status [path]                       health + stats',
       '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',
-      '  crib gaps [path] [--extracted-only]      analysis readiness + missing bodies (spec-only) + unresolved call sites',
+      '  crib gaps [path] [--extracted-only] [--include-builtins]   analysis readiness + missing bodies + unresolved call sites',
       '  crib rules <proc> [--include-tables]      decision table + coverage readiness for a callable',
       '  crib context <id> [--with-source] [--with-rules] [--with-framework]   deep per-symbol context',
       '  crib context --package <pkg> [--format markdown] [--max-symbols N]   bulk dossiers for every symbol in a scope (also --file / --cluster)',

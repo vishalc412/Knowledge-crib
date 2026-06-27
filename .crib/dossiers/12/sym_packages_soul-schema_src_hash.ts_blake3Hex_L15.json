@@ -2,7 +2,7 @@
   "id": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
   "schemaVersion": "1.3",
   "nodeHash": "blake3:9744367d47133209519c55d9779bfb49e3363a1ecb8366fa886685f1819a8ea5",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-06-27T16:07:10.655Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
@@ -46,14 +46,14 @@
       "line": 21
     },
     {
-      "id": "sym:packages/core/src/dossier/persist.ts#dossierPath@L25",
+      "id": "sym:packages/core/src/dossier/persist.ts#dossierPath@L34",
       "confidence": 1,
       "name": "dossierPath",
       "qualifiedName": "dossierPath",
       "signature": "dossierPath(cribDir: string, nodeId: string): string",
       "type": "function",
       "file": "packages/core/src/dossier/persist.ts",
-      "line": 25
+      "line": 34
     },
     {
       "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
@@ -64,6 +64,16 @@
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
       "line": 122
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#shard@L1030",
+      "confidence": 1,
+      "name": "shard",
+      "qualifiedName": "shard",
+      "signature": "shard(id: string): string",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1030
     },
     {
       "id": "sym:packages/soul-schema/src/hash.ts#shardFor@L29",
@@ -148,6 +158,7 @@
     "referencedByFiles": [
       "packages/core/src/dossier/persist.ts",
       "packages/core/src/shard.ts",
+      "packages/mcp/src/enrichment.ts",
       "packages/soul-schema/src/hash.ts",
       "packages/soul-schema/src/id.ts"
     ]

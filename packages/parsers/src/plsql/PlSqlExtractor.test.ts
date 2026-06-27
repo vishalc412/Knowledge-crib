@@ -568,3 +568,221 @@ describe('PlSqlExtractor — recursion flag (meta.recursive)', () => {
     );
   });
 });
+
+describe('PlSqlExtractor — WS-6 constant-value capture', () => {
+  const FIXTURE_CONST = fileURLToPath(
+    new URL('../../fixtures/plsql/constants_spec.sql', import.meta.url),
+  );
+
+  it('captures CONSTANT literal values, the constant flag, and the correct dataType into meta.variables', async () => {
+    const text = readFileSync(FIXTURE_CONST, 'utf8');
+    const meta: FileMeta = {
+      path: 'fixtures/plsql/constants_spec.sql',
+      lang: 'plsql',
+      bytes: text.length,
+      mtime: 0,
+    };
+    const { nodes } = await new PlSqlExtractor().extract(meta, ctxFor(text));
+    const pkg = nodes.find(
+      (n) => n.kind === 'symbol' && n.type === 'package' && n.qualifiedName === 'constants_pkg',
+    )!;
+    expect(pkg).toBeDefined();
+    const vars = (pkg.meta?.variables ?? []) as Array<{
+      name: string;
+      dataType?: string;
+      init?: string;
+      constant?: boolean;
+    }>;
+    const byName = new Map(vars.map((v) => [v.name, v]));
+    // CONSTANT NUMBER := 30 / 80 — the value + flag + real type all survive
+    expect(byName.get('C_THRESHOLD_AUTO_REJECT')).toEqual({
+      name: 'C_THRESHOLD_AUTO_REJECT',
+      dataType: 'NUMBER',
+      init: '30',
+      constant: true,
+    });
+    expect(byName.get('C_THRESHOLD_AUTO_APPROVE')).toEqual({
+      name: 'C_THRESHOLD_AUTO_APPROVE',
+      dataType: 'NUMBER',
+      init: '80',
+      constant: true,
+    });
+    // CONSTANT VARCHAR2(20) := 'PASSED' — sized type + quoted literal
+    expect(byName.get('C_RULE_PASSED')).toEqual({
+      name: 'C_RULE_PASSED',
+      dataType: 'VARCHAR2(20)',
+      init: "'PASSED'",
+      constant: true,
+    });
+    // a plain defaulted variable (no CONSTANT) — init captured, constant flag absent
+    expect(byName.get('g_default_limit')).toEqual({
+      name: 'g_default_limit',
+      dataType: 'NUMBER',
+      init: '1000',
+    });
+  });
+});
+
+/**
+ * WS-7 — SQL data-flow edges (defense-in-depth). Confirms the extractor emits reads/writes/
+ * references for DML, SELECT INTO, cursor queries, and FK REFERENCES between tables, so that when
+ * a body IS present, crib's data-flow graph is as complete as Plan B's mental model. These exercise
+ * the LOCAL (same-file) emission path; the SqlResolver's cross-file path is covered in
+ * @knowledge-crib/pipeline.
+ */
+describe('PlSqlExtractor — WS-7 SQL data-flow edges (cursor reads + FK references)', () => {
+  async function runText(
+    text: string,
+    path = 'fixtures/plsql/dataflow.pkb',
+  ): Promise<ExtractResult> {
+    const meta: FileMeta = { path, lang: 'plsql', bytes: text.length, mtime: 0 };
+    return new PlSqlExtractor().extract(meta, ctxFor(text));
+  }
+
+  /** label a node id readably for assertions. */
+  function labelOf(r: ExtractResult): (id: string) => string {
+    const nm = new Map(r.nodes.map((n) => [n.id, n] as const));
+    return (id: string) => {
+      const n = nm.get(id);
+      if (!n) return id;
+      if (n.kind === 'table') return `table:${n.name}`;
+      if (n.kind === 'cursor') return `cursor:${n.name}`;
+      if (n.kind === 'statement') return `stmt:${n.sqlKind ?? n.type}`;
+      return n.qualifiedName ?? n.name ?? id;
+    };
+  }
+
+  it('a cursor SELECT emits a reads edge cursor → table for each FROM/JOIN row source', async () => {
+    const r = await runText(
+      [
+        'CREATE TABLE loans (id NUMBER, amount NUMBER, status VARCHAR2(20));',
+        'CREATE OR REPLACE PACKAGE BODY loan_pkg IS',
+        '  PROCEDURE assess(p_id NUMBER) IS',
+        '    CURSOR c_app IS SELECT amount, status FROM loans WHERE id = p_id;',
+        '  BEGIN',
+        '    FOR rec IN c_app LOOP',
+        '      UPDATE loans SET status = 1 WHERE id = p_id;',
+        '    END LOOP;',
+        '  END assess;',
+        'END loan_pkg;',
+      ].join('\n'),
+    );
+    const label = labelOf(r);
+    const cur = r.nodes.find((n) => n.kind === 'cursor' && n.name === 'c_app')!;
+    expect(cur).toBeDefined();
+    // the cursor carries its row-source tables on meta.tables (the resolver's input)
+    expect(cur.meta?.tables).toEqual(['loans']);
+    // local reads edge: cursor → loans (the SELECT's FROM table)
+    const cursorReads = r.edges
+      .filter((e) => e.rel === 'reads' && e.src === cur.id)
+      .map((e) => label(e.dst));
+    expect(cursorReads).toEqual(['table:loans']);
+    // every reads/writes edge is EXTRACTED/static/confidence 1 (no guessing)
+    for (const e of r.edges.filter((e) => e.rel === 'reads' || e.rel === 'writes')) {
+      expect(e.provenance).toBe('EXTRACTED');
+      expect(e.method).toBe('static');
+      expect(e.confidence).toBe(1);
+      expect(e.evidence?.by).toBe('plsql-extractor');
+    }
+  });
+
+  it('an inline column-level REFERENCES emits a references edge child table → parent table', async () => {
+    const r = await runText(
+      [
+        'CREATE TABLE applicants (id NUMBER PRIMARY KEY, name VARCHAR2(100));',
+        'CREATE TABLE loan_applications (',
+        '  id NUMBER PRIMARY KEY,',
+        '  applicant_id NUMBER REFERENCES applicants(id),',
+        '  amount NUMBER',
+        ');',
+      ].join('\n'),
+      'fixtures/plsql/fk_inline.sql',
+    );
+    const label = labelOf(r);
+    const child = r.nodes.find((n) => n.kind === 'table' && n.name === 'loan_applications')!;
+    const parent = r.nodes.find((n) => n.kind === 'table' && n.name === 'applicants')!;
+    expect(child).toBeDefined();
+    expect(parent).toBeDefined();
+    // the FK is captured on meta.foreignKeys (columns + refTable + refColumns)
+    expect(child.meta?.foreignKeys).toEqual([
+      { columns: ['applicant_id'], refTable: 'applicants', refColumns: ['id'] },
+    ]);
+    // local references edge: child → parent
+    const refs = r.edges
+      .filter((e) => e.rel === 'references' && e.src === child.id)
+      .map((e) => label(e.dst));
+    expect(refs).toEqual(['table:applicants']);
+  });
+
+  it('a table-level FOREIGN KEY (named or unnamed) emits a references edge child → parent', async () => {
+    const r = await runText(
+      [
+        'CREATE TABLE applicants (id NUMBER PRIMARY KEY);',
+        'CREATE TABLE loan_applications (',
+        '  id NUMBER PRIMARY KEY,',
+        '  amount NUMBER,',
+        '  CONSTRAINT fk_amt FOREIGN KEY (amount) REFERENCES applicants(id)',
+        ');',
+      ].join('\n'),
+      'fixtures/plsql/fk_table.sql',
+    );
+    const label = labelOf(r);
+    const child = r.nodes.find((n) => n.kind === 'table' && n.name === 'loan_applications')!;
+    const parent = r.nodes.find((n) => n.kind === 'table' && n.name === 'applicants')!;
+    expect(child.meta?.foreignKeys).toEqual([
+      { columns: ['amount'], refTable: 'applicants', refColumns: ['id'] },
+    ]);
+    const refs = r.edges
+      .filter((e) => e.rel === 'references' && e.src === child.id)
+      .map((e) => label(e.dst));
+    expect(refs).toEqual(['table:applicants']);
+  });
+
+  it('a CREATE TABLE with a parenthesized inline constraint keeps every later column (depth-aware collection)', async () => {
+    // regression for the latent parser bug: an inline `REFERENCES parent(id)` contains a `)` that
+    // previously terminated the column list at the inner paren, dropping every later column + any
+    // trailing table-level constraint. The collection is now paren-depth-aware.
+    const r = await runText(
+      [
+        'CREATE TABLE applicants (id NUMBER PRIMARY KEY);',
+        'CREATE TABLE loan_applications (',
+        '  id NUMBER PRIMARY KEY,',
+        '  applicant_id NUMBER REFERENCES applicants(id),',
+        '  amount NUMBER,',
+        '  status VARCHAR2(20)',
+        ');',
+      ].join('\n'),
+      'fixtures/plsql/fk_depth.sql',
+    );
+    const child = r.nodes.find((n) => n.kind === 'table' && n.name === 'loan_applications')!;
+    // ALL four columns survive (the `)` inside `REFERENCES applicants(id)` no longer closes the table)
+    expect(child.meta?.columns).toEqual(['id', 'applicant_id', 'amount', 'status']);
+    expect(child.meta?.foreignKeys).toEqual([
+      { columns: ['applicant_id'], refTable: 'applicants', refColumns: ['id'] },
+    ]);
+  });
+
+  it('SELECT INTO captures the FROM table as a read (the INTO target is a variable, not a table)', async () => {
+    const r = await runText(
+      [
+        'CREATE TABLE loans (id NUMBER, amount NUMBER);',
+        'CREATE OR REPLACE PACKAGE BODY loan_pkg IS',
+        '  PROCEDURE fetch_one(p_id NUMBER) IS',
+        '    v_amt NUMBER;',
+        '  BEGIN',
+        '    SELECT amount INTO v_amt FROM loans WHERE id = p_id;',
+        '  END fetch_one;',
+        'END loan_pkg;',
+      ].join('\n'),
+    );
+    const label = labelOf(r);
+    const selStmt = r.nodes.find((n) => n.kind === 'statement' && n.sqlKind === 'select')!;
+    expect(selStmt).toBeDefined();
+    // the INTO target is the variable, NOT a table — only loans is read
+    expect(selStmt.meta?.intoTarget).toBe('v_amt');
+    const reads = r.edges
+      .filter((e) => e.rel === 'reads' && e.src === selStmt.id)
+      .map((e) => label(e.dst));
+    expect(reads).toEqual(['table:loans']);
+  });
+});

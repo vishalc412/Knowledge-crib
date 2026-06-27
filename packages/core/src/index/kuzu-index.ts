@@ -27,10 +27,10 @@ export class KuzuIndexStore implements IndexStore {
   constructor() {
     throw new Error(NOT_IMPLEMENTED);
   }
-  buildFromSoul(_soul: SoulStore): void {
+  buildFromSoul(_soul: SoulStore, _repoRoot: string): void {
     throw new Error(NOT_IMPLEMENTED);
   }
-  applyDelta(_changed: IndexDelta): void {
+  applyDelta(_changed: IndexDelta, _repoRoot: string): void {
     throw new Error(NOT_IMPLEMENTED);
   }
   query(_q: HybridQuery): Hit[] {

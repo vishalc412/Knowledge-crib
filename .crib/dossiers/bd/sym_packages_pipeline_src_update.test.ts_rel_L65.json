@@ -1,0 +1,351 @@
+{
+  "id": "sym:packages/pipeline/src/update.test.ts#rel@L65",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:cd0b7b9953a335f7cd8c93ca0190c5466d5eefcdc82072f31397a50813110990",
+  "builtAt": "2026-06-27T16:12:57.877Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/update.test.ts#rel@L65",
+    "kind": "symbol",
+    "type": "function",
+    "name": "rel",
+    "qualifiedName": "rel",
+    "signature": "rel(base: string, full: string): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/update.test.ts",
+    "span": {
+      "start": 65,
+      "end": 67
+    },
+    "callSites": [
+      {
+        "callee": "replace",
+        "line": 66
+      },
+      {
+        "callee": "slice",
+        "line": 66
+      }
+    ]
+  },
+  "source": {
+    "text": "function rel(base: string, full: string): string {\n  return full.slice(base.length + 1).replace(/\\\\/g, '/');\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 65
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/update.test.ts#snapshotSoul@L47",
+      "confidence": 1,
+      "name": "snapshotSoul",
+      "qualifiedName": "snapshotSoul",
+      "signature": "snapshotSoul(): Map<string, string>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.test.ts",
+      "line": 47
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-edge-relations-rel",
+      "heading": "2. Edge relations (`rel`)",
+      "anchor": "2-edge-relations-rel",
+      "snippet": "2. Edge relations (`rel`)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#1-soulstore-source-of-truth",
+      "heading": "1. SoulStore (source of truth)",
+      "anchor": "1-soulstore-source-of-truth",
+      "snippet": "1. SoulStore (source of truth)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#1-core-seams-interfaces-first-tdd-around-these",
+      "heading": "1. Core seams (interfaces first — TDD around these)",
+      "anchor": "1-core-seams-interfaces-first-tdd-around-these",
+      "snippet": "1. Core seams (interfaces first — TDD around these)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests-3",
+      "heading": "Tests",
+      "anchor": "tests-3",
+      "snippet": "Tests",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#edge-fields",
+      "heading": "Edge fields",
+      "anchor": "edge-fields",
+      "snippet": "Edge fields",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#edge-example",
+      "heading": "Edge example",
+      "anchor": "edge-example",
+      "snippet": "Edge example",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#5-invariants-enforced-by-core-tested-in-m0",
+      "heading": "5. Invariants (enforced by `core`, tested in M0)",
+      "anchor": "5-invariants-enforced-by-core-tested-in-m0",
+      "snippet": "5. Invariants (enforced by `core`, tested in M0)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#new-edge-relations",
+      "heading": "New edge relations",
+      "anchor": "new-edge-relations",
+      "snippet": "New edge relations",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#new-metadata-on-calls-and-executes-writes-edges",
+      "heading": "New metadata on `calls` (and `executes`/`writes`) edges",
+      "anchor": "new-metadata-on-calls-and-executes-writes-edges",
+      "snippet": "New metadata on `calls` (and `executes`/`writes`) edges",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "heading": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "anchor": "4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "snippet": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#impact-symbol-dir",
+      "heading": "`impact(symbol, dir)`",
+      "anchor": "impact-symbol-dir",
+      "snippet": "`impact(symbol, dir)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#neighbors-id-rel",
+      "heading": "`neighbors(id, rel?)`",
+      "anchor": "neighbors-id-rel",
+      "snippet": "`neighbors(id, rel?)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#edge",
+      "heading": "Edge",
+      "anchor": "edge",
+      "snippet": "Edge",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#2-indexstore-derived-fast-swappable",
+      "heading": "2. IndexStore (derived, fast, swappable)",
+      "anchor": "2-indexstore-derived-fast-swappable",
+      "snippet": "2. IndexStore (derived, fast, swappable)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#7-ci",
+      "heading": "7. CI",
+      "anchor": "7-ci",
+      "snippet": "7. CI",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#3-executes-edges-procedure-symbol-each-statement-node-in-its-body",
+      "heading": "3. `executes` edges — procedure symbol → each statement node in its body",
+      "anchor": "3-executes-edges-procedure-symbol-each-statement-node-in-its-body",
+      "snippet": "3. `executes` edges — procedure symbol → each statement node in its body",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#impact-blast-radius-the-wedge-verb",
+      "heading": "`impact` — blast radius (the wedge verb)",
+      "anchor": "impact-blast-radius-the-wedge-verb",
+      "snippet": "`impact` — blast radius (the wedge verb)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#neighbors-raw-adjacency-graph-walking-primitive",
+      "heading": "`neighbors` — raw adjacency (graph-walking primitive)",
+      "anchor": "neighbors-raw-adjacency-graph-walking-primitive",
+      "snippet": "`neighbors` — raw adjacency (graph-walking primitive)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-author-contract-per-item",
+      "heading": "The author contract (per item)",
+      "anchor": "the-author-contract-per-item",
+      "snippet": "The author contract (per item)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#the-author-contract-what-you-write-per-item",
+      "heading": "The author contract — what you write per item",
+      "anchor": "the-author-contract-what-you-write-per-item",
+      "snippet": "The author contract — what you write per item",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#required-fields-server-rejects-otherwise",
+      "heading": "Required fields (server rejects otherwise)",
+      "anchor": "required-fields-server-rejects-otherwise",
+      "snippet": "Required fields (server rejects otherwise)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-1-framework-semantics-edge-field-meta-1-3",
+      "heading": "2.1 Framework-semantics edge & field meta *(1.3)*",
+      "anchor": "2-1-framework-semantics-edge-field-meta-1-3",
+      "snippet": "2.1 Framework-semantics edge & field meta *(1.3)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#new-rels",
+      "heading": "New rels",
+      "anchor": "new-rels",
+      "snippet": "New rels",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/update.test.ts#rel@L65",
+    "procedureName": "rel",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/update.test.ts#rel@L65",
+        "procedureName": "rel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e4bce3e1a2a477119cf2272c7b282757f14b5c26dfc3c8cdb660ab0a6edd83bc",
+          "target": "stmt:packages/pipeline/src/update.test.ts@L66",
+          "line": 66,
+          "expr": "return full.slice(base.length + 1).replace(/\\\\/g, '/');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/update.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

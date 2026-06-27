@@ -1,0 +1,175 @@
+{
+  "id": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d3c2e4357cfd316f8ea631c91b9a6698e2a5035bd1f6918a6fbb8017eb4aa422",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readVariables",
+    "qualifiedName": "readVariables",
+    "signature": "readVariables(node: Node): ReconstructionVariable[]",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/reconstruct.ts",
+    "span": {
+      "start": 322,
+      "end": 340
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 331
+      }
+    ]
+  },
+  "source": {
+    "text": "function readVariables(node: Node): ReconstructionVariable[] {\n  const raw = (node.meta as Record<string, unknown> | undefined)?.variables;\n  if (!Array.isArray(raw)) return [];\n  const out: ReconstructionVariable[] = [];\n  for (const entry of raw) {\n    if (!entry || typeof entry !== 'object') continue;\n    const v = entry as Record<string, unknown>;\n    const name = typeof v.name === 'string' ? v.name : '';\n    if (!name) continue;\n    out.push({\n      name,\n      ...(typeof v.dataType === 'string' ? { dataType: v.dataType } : {}),\n      ...(typeof v.init === 'string' ? { init: v.init } : {}),\n      ...(v.constant === true ? { constant: true } : {}),\n      ...(v.exprTruncated === true ? { exprTruncated: true } : {}),\n    });\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 322
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
+      "confidence": 1,
+      "name": "buildReconstruction",
+      "qualifiedName": "buildReconstruction",
+      "signature": "buildReconstruction(soul: SoulStore, repoRoot: string, pkgId: string, now: string, opts: ReconstructionOpts = {}): Reconstruction | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.ts",
+      "line": 146
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/reconstruct.ts@L321",
+      "snippet": "/** Read `meta.variables` off a package node, coerced to the reconstruction shape (best-effort). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
+    "procedureName": "readVariables",
+    "conditions": [
+      "cond:packages/core/src/dossier/reconstruct.ts@L324",
+      "cond:packages/core/src/dossier/reconstruct.ts@L326"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
+        "procedureName": "readVariables",
+        "guard": "cond:packages/core/src/dossier/reconstruct.ts@L324",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/reconstruct.ts@L324",
+            "expr": "!Array.isArray(raw)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df80222b3de239359eb63b10d808547ed4fdf64455bab3b38e7f80e2c7f7a609",
+          "target": "stmt:packages/core/src/dossier/reconstruct.ts@L324",
+          "line": 324,
+          "expr": "return [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
+        "procedureName": "readVariables",
+        "guard": "cond:packages/core/src/dossier/reconstruct.ts@L326",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/reconstruct.ts@L326",
+            "expr": "raw",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a15ebaae03c0822dee9ab7cdeca263b6abb913377a92fbaa5ffb020773950692",
+          "target": "stmt:packages/core/src/dossier/reconstruct.ts@L331",
+          "line": 331,
+          "expr": "out.push({\n      name,\n      ...(typeof v.dataType === 'string' ? { dataType: v.dataType } : {}),\n      ...(typeof v.init === 'string' ? { init: v.init } : {}),\n      ...(v.constant === true ? { constant: true } : {}),\n      ...(v.exprTruncated === true ? { exprTruncated: true } : {}),\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
+        "procedureName": "readVariables",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:863c4ed80b160f44574b7016b0e983bb7a8f584a50f1d45cb93ea900db7ed228",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 331
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
+        "procedureName": "readVariables",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8a78404a71e7ed9eb73e311b11e1c326e9e63e803533b180e9b095eef99202b",
+          "target": "stmt:packages/core/src/dossier/reconstruct.ts@L339",
+          "line": 339,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/dossier/reconstruct.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

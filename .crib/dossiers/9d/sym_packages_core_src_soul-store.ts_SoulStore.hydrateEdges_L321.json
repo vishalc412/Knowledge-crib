@@ -1,0 +1,176 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateEdges@L321",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e65ef31449165f2f5d6d2609714f5eafd95b471e68bc6751135d23260ac3afac",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateEdges@L321",
+    "kind": "symbol",
+    "type": "method",
+    "name": "hydrateEdges",
+    "qualifiedName": "SoulStore.hydrateEdges",
+    "signature": "hydrateEdges(): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 321,
+      "end": 326
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 322
+      },
+      {
+        "callee": "set",
+        "line": 324
+      }
+    ]
+  },
+  "source": {
+    "text": "  private hydrateEdges(): void {\n    const edgesRoot = join(this.cribDirPrivate, 'edges');\n    for (const file of this.walkJsonl(edgesRoot)) {\n      for (const edge of this.readRecords<Edge>(file)) this.edges.set(edge.id, edge);\n    }\n  }",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 321
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.load@L80",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "SoulStore.load",
+      "signature": "load(): Manifest",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 80
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.readRecords@L342",
+      "confidence": 1,
+      "name": "readRecords",
+      "qualifiedName": "SoulStore.readRecords",
+      "signature": "readRecords(file: string): T[]",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 342
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.walkJsonl@L328",
+      "confidence": 1,
+      "name": "walkJsonl",
+      "qualifiedName": "SoulStore.walkJsonl",
+      "signature": "walkJsonl(root: string): Iterable<string>",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 328
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateEdges@L321",
+    "procedureName": "SoulStore.hydrateEdges",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L323",
+      "cond:packages/core/src/soul-store.ts@L324"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateEdges@L321",
+        "procedureName": "SoulStore.hydrateEdges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ab3231ff76dc344ef7b4ca3d16702f93c84de26656081cc0748de7d78d5d1b91",
+          "target": "stmt:packages/core/src/soul-store.ts@L322",
+          "line": 322,
+          "expr": "const edgesRoot = join(this.cribDirPrivate, 'edges');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateEdges@L321",
+        "procedureName": "SoulStore.hydrateEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L324",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L323",
+            "expr": "this.walkJsonl(edgesRoot)"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L324",
+            "expr": "this.readRecords<Edge>(file)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4c2c2ac70f2bc97fad94ca277a1e5080afa719dda59d13f6fffa032e93bbfb2f",
+          "target": "stmt:packages/core/src/soul-store.ts@L324",
+          "line": 324,
+          "expr": "this.edges.set(edge.id, edge);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateEdges@L321",
+        "procedureName": "SoulStore.hydrateEdges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cf442b20b42031cf1724675f09ae8e09190ddc0d88fedab4689bd5ca08af55f6",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.walkJsonl@L328",
+          "expr": "walkJsonl"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateEdges@L321",
+        "procedureName": "SoulStore.hydrateEdges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a2bcbfc2a91e1e059f26754c27469eb84816d7b8b6cc9e1e244aaa2250144004",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.readRecords@L342",
+          "expr": "readRecords"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "@knowledge-crib/pipeline",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "The phased pipeline: structure → parse → resolve → doc-extract → link → cluster → index.",
   "license": "Apache-2.0",
   "type": "module",
@@ -12,7 +12,7 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "src"],
+  "files": ["dist", "src", "LICENSE", "NOTICE", "!dist/**/*.test.*", "!src/**/*.test.ts"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -21,9 +21,34 @@
   "dependencies": {
     "@knowledge-crib/soul-schema": "workspace:*",
     "@knowledge-crib/core": "workspace:*",
-    "@knowledge-crib/parsers": "workspace:*"
+    "@knowledge-crib/parsers": "workspace:*",
+    "typescript": "^5.6.0"
   },
   "devDependencies": {
     "vitest": "^2.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KnowledgeCrib/knowledge-crib.git",
+    "directory": "packages/pipeline"
+  },
+  "bugs": {
+    "url": "https://github.com/KnowledgeCrib/knowledge-crib/issues"
+  },
+  "homepage": "https://github.com/KnowledgeCrib/knowledge-crib#readme",
+  "keywords": [
+    "mcp",
+    "knowledge-graph",
+    "code-analysis",
+    "ai-agents",
+    "cli",
+    "indexing",
+    "static-analysis"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

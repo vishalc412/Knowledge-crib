@@ -13,8 +13,11 @@ import type { SoulStore } from './soul-store.js';
 export type Dir = 'up' | 'down';
 
 /**
- * The derived index (FTS5 BM25 + adjacency) is fully determined by the soul — `buildFromSoul` takes
- * no build options. The INFERRED TF-IDF semantic pass is a pipeline-level concern
+ * The derived index (FTS5 BM25 + adjacency over names/signatures/headings/files AND rehydrated body
+ * text) is fully determined by the soul + the work-tree root — `buildFromSoul(soul, repoRoot)`
+ * rehydrates each node's span from disk to populate the body FTS column (capped; the soul stays
+ * lean). `repoRoot` is required so the body-search projection is built from real source, not a
+ * stale copy. The INFERRED TF-IDF semantic pass is a pipeline-level concern
  * (`IndexOpts.semantic` / CLI `--semantic`), not an index-build option, so there is no
  * `withEmbeddings`/vector field anywhere.
  */
@@ -28,7 +31,7 @@ export interface IndexDelta {
 }
 
 export interface HybridQuery {
-  /** free-text query against names/signatures/headings (FTS5 BM25). */
+  /** free-text query against names/signatures/headings/files AND rehydrated body text (FTS5 BM25). */
   text: string;
   /** restrict to these node kinds. */
   kinds?: NodeKind[];
@@ -69,8 +72,19 @@ export interface IndexCapabilities {
 }
 
 export interface IndexStore {
-  buildFromSoul(soul: SoulStore): void;
-  applyDelta(changed: IndexDelta): void;
+  /**
+   * Rebuild the entire derived index from the soul, rehydrating each node's body text from
+   * `repoRoot` into the FTS body column. `repoRoot` is the work-tree root used for source reads;
+   * it is required because the body-search projection is built from on-disk source (the soul stays
+   * lean — text is referenced by file+span, never copied into the soul).
+   */
+  buildFromSoul(soul: SoulStore, repoRoot: string): void;
+  /**
+   * Apply an incremental change set. `repoRoot` is required for the same reason as
+   * {@link buildFromSoul}: each changed/added node's body must be rehydrated from disk so the FTS
+   * body column never carries a stale body.
+   */
+  applyDelta(changed: IndexDelta, repoRoot: string): void;
   query(q: HybridQuery): Hit[];
   impact(id: string, dir: Dir, depth?: number): ImpactResult;
   neighbors(id: string, rel?: Rel, dir?: Dir): Edge[];

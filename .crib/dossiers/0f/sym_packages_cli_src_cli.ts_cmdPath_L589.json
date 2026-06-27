@@ -1,0 +1,347 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:a181c95c704c183b48ac69f4ec64b527af80f3d6a5d7bce6bad9eb63b242b2c4",
+  "builtAt": "2026-06-27T16:00:56.397Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cmdPath",
+    "qualifiedName": "cmdPath",
+    "signature": "cmdPath(args: string[], ctx?: CmdCtx): Promise<number>",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 589,
+      "end": 614
+    },
+    "callSites": [
+      {
+        "callee": "filter",
+        "line": 590
+      },
+      {
+        "callee": "startsWith",
+        "line": 590
+      },
+      {
+        "callee": "write",
+        "line": 593
+      },
+      {
+        "callee": "openVerbs",
+        "line": 596
+      },
+      {
+        "callee": "indexOf",
+        "line": 599
+      },
+      {
+        "callee": "parseInt",
+        "line": 600
+      },
+      {
+        "callee": "write",
+        "line": 601
+      },
+      {
+        "callee": "stringify",
+        "line": 602
+      },
+      {
+        "callee": "shortestPath",
+        "line": 603
+      },
+      {
+        "callee": "isFinite",
+        "line": 606
+      },
+      {
+        "callee": "close",
+        "line": 612
+      }
+    ]
+  },
+  "source": {
+    "text": "async function cmdPath(args: string[], ctx?: CmdCtx): Promise<number> {\n  const positional = args.filter((a) => !a.startsWith('-'));\n  const [from, to] = positional;\n  if (!from || !to) {\n    process.stderr.write('usage: crib path <from> <to> [--max-hops N]\\n');\n    return EXIT.BAD_ARGS;\n  }\n  const opened = openVerbs(args, ctx);\n  if (!opened) return EXIT.NOT_INDEXED;\n  const { verbs, index } = opened;\n  const hopsIdx = args.indexOf('--max-hops');\n  const maxHops = hopsIdx >= 0 ? Number.parseInt(args[hopsIdx + 1] ?? '', 10) : undefined;\n  process.stdout.write(\n    `${JSON.stringify(\n      verbs.shortestPath({\n        from,\n        to,\n        ...(Number.isFinite(maxHops) && maxHops! > 0 ? { maxHops } : {}),\n      }),\n      null,\n      2,\n    )}\\n`,\n  );\n  index.close();\n  return EXIT.OK;\n}",
+    "truncated": false,
+    "totalLines": 26,
+    "startLine": 589
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#main@L100",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main(argvRaw: string[]): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 100
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#openVerbs@L336",
+      "confidence": 1,
+      "name": "openVerbs",
+      "qualifiedName": "openVerbs",
+      "signature": "openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexStore } | null",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 336
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L588",
+      "snippet": "/** `crib path <from> <to>` — shortest dependency path between two nodes. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+    "procedureName": "cmdPath",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L592",
+      "cond:packages/cli/src/cli.ts@L597"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+        "procedureName": "cmdPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d6c2b0fd0f523e1219c6babe223191d9f987dbc746de375157e21db0e4be47ad",
+          "target": "stmt:packages/cli/src/cli.ts@L590",
+          "line": 590,
+          "expr": "const positional = args.filter((a) => !a.startsWith('-'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+        "procedureName": "cmdPath",
+        "guard": "cond:packages/cli/src/cli.ts@L592",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L592",
+            "expr": "!from || !to",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:27a3c17e059a17e95c21395663d00c5b97b125f0b43c92a04a18f18a31e3df9c",
+          "target": "stmt:packages/cli/src/cli.ts@L593",
+          "line": 593,
+          "expr": "process.stderr.write('usage: crib path <from> <to> [--max-hops N]\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+        "procedureName": "cmdPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7781aca8bbb31743f90879f659fafcf0ac0fe74b0bdbd04c615b6ad449add9f2",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 593
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+        "procedureName": "cmdPath",
+        "guard": "cond:packages/cli/src/cli.ts@L592",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L592",
+            "expr": "!from || !to",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0133d695c7e7bef2469c778f0301591f833bc4d8caa743f1cfe912a166633759",
+          "target": "stmt:packages/cli/src/cli.ts@L594",
+          "line": 594,
+          "expr": "return EXIT.BAD_ARGS;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+        "procedureName": "cmdPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:71736cdd6999c7b4921a16d4fa86ae4f9da7dd669755e0a9ba3727fd0eaede11",
+          "target": "sym:packages/cli/src/cli.ts#openVerbs@L336",
+          "expr": "openVerbs",
+          "line": 596
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+        "procedureName": "cmdPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:44e045ee894878686f78856b7e24678c4afbb0b2e7538e01eea579bc768d1c11",
+          "target": "stmt:packages/cli/src/cli.ts@L596",
+          "line": 596,
+          "expr": "const opened = openVerbs(args, ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+        "procedureName": "cmdPath",
+        "guard": "cond:packages/cli/src/cli.ts@L597",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L597",
+            "expr": "!opened",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8736eaa6dc1cc0e00138e4ed20404c3819e6c735fe470b44446fbe12d116c15",
+          "target": "stmt:packages/cli/src/cli.ts@L597",
+          "line": 597,
+          "expr": "return EXIT.NOT_INDEXED;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+        "procedureName": "cmdPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cd42ca111eb22f1ce21f819a0fdaaef416b76c7278275edd55609654dc588ffe",
+          "target": "stmt:packages/cli/src/cli.ts@L599",
+          "line": 599,
+          "expr": "const hopsIdx = args.indexOf('--max-hops');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+        "procedureName": "cmdPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2b129ebf10e531ac5627611b9b067097b3e31bf4e21736819397461e4f6fe7d4",
+          "target": "stmt:packages/cli/src/cli.ts@L600",
+          "line": 600,
+          "expr": "const maxHops = hopsIdx >= 0 ? Number.parseInt(args[hopsIdx + 1] ?? '', 10) : undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+        "procedureName": "cmdPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5b8dbd3d9051d8701cbb6f111ecd54764367cf611a71d39d52c00447e9e659be",
+          "target": "stmt:packages/cli/src/cli.ts@L601",
+          "line": 601,
+          "expr": "process.stdout.write(\n    `${JSON.stringify(\n      verbs.shortestPath({\n        from,\n        to,\n        ...(Number.isFinite(maxHops) && maxHops! > 0 ? { maxHops } : {}),\n      }),\n      null,\n      2,\n    )}\\n`,\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+        "procedureName": "cmdPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7497999977e31f6a4bb8192108f91f5f057f1fa34ad322e61a0c000840dfb788",
+          "target": "stmt:packages/cli/src/cli.ts@L612",
+          "line": 612,
+          "expr": "index.close();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdPath@L589",
+        "procedureName": "cmdPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4abde2b1956065a228c640f52de44265edca37ffcd420ca9b98131e3fb934abc",
+          "target": "stmt:packages/cli/src/cli.ts@L613",
+          "line": 613,
+          "expr": "return EXIT.OK;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 11,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

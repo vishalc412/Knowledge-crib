@@ -1,0 +1,181 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L889",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9a2317d983e9c3bc671b873155346974706248b29fb8c315b61f1f9895f38e34",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L889",
+    "kind": "symbol",
+    "type": "method",
+    "name": "resolveLlmId",
+    "qualifiedName": "EnrichmentStore.resolveLlmId",
+    "signature": "resolveLlmId(id: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 889,
+      "end": 894
+    },
+    "callSites": [
+      {
+        "callee": "knownLlmNodeIds",
+        "line": 890
+      },
+      {
+        "callee": "filter",
+        "line": 892
+      },
+      {
+        "callee": "endsWith",
+        "line": 892
+      }
+    ]
+  },
+  "source": {
+    "text": "  private resolveLlmId(id: string): string | undefined {\n    const ids = this.knownLlmNodeIds();\n    if (ids.has(id)) return id;\n    const matches = [...ids].filter((candidate) => candidate.endsWith(`#${id}`));\n    return matches.length === 1 ? matches[0] : undefined;\n  }",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 889
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L449",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "EnrichmentStore.neighbors",
+      "signature": "neighbors(id: string): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 449
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.knownLlmNodeIds@L885",
+      "confidence": 1,
+      "name": "knownLlmNodeIds",
+      "qualifiedName": "EnrichmentStore.knownLlmNodeIds",
+      "signature": "knownLlmNodeIds(): Set<string>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 885
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L889",
+    "procedureName": "EnrichmentStore.resolveLlmId",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L891"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L889",
+        "procedureName": "EnrichmentStore.resolveLlmId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c3658b209028a2667892bd3fe88e697b6bd5eea43113aaf6d9d882c22dbef75d",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.knownLlmNodeIds@L885",
+          "expr": "knownLlmNodeIds",
+          "line": 890
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L889",
+        "procedureName": "EnrichmentStore.resolveLlmId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5d2eb2705a26d2a5ae0f2c96e6d41868755f4a1caad5cc241648cb1ed9d0c448",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L890",
+          "line": 890,
+          "expr": "const ids = this.knownLlmNodeIds();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L889",
+        "procedureName": "EnrichmentStore.resolveLlmId",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L891",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L891",
+            "expr": "ids.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a543b3e869407db988e85698d6394f636eb4d06a75e6741fb0e9b6c9c8f5fa98",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L891",
+          "line": 891,
+          "expr": "return id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L889",
+        "procedureName": "EnrichmentStore.resolveLlmId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0a1bd512bb9f1f06dbe0d63b149d632b0a319a335c44d6e691053d6c8502100d",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L892",
+          "line": 892,
+          "expr": "const matches = [...ids].filter((candidate) => candidate.endsWith(`#${id}`));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L889",
+        "procedureName": "EnrichmentStore.resolveLlmId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29622f7806b18375f541a223dc444c5d58b9592426aef3a3f12c85b24547fab5",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L893",
+          "line": 893,
+          "expr": "return matches.length === 1 ? matches[0] : undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

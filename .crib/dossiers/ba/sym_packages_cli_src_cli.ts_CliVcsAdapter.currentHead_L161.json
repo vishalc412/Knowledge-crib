@@ -1,0 +1,92 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#CliVcsAdapter.currentHead@L161",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:2519cf5275453c59bd2a56db563dfac941b368747c50a1b0f3e055881a65e50a",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#CliVcsAdapter.currentHead@L161",
+    "kind": "symbol",
+    "type": "method",
+    "name": "currentHead",
+    "qualifiedName": "CliVcsAdapter.currentHead",
+    "signature": "currentHead(root: string): string",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 161,
+      "end": 163
+    },
+    "callSites": [
+      {
+        "callee": "currentHead",
+        "line": 162
+      }
+    ]
+  },
+  "source": {
+    "text": "  currentHead(root: string): string {\n    return currentHead(root);\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 161
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#CliVcsAdapter.currentHead@L161",
+    "procedureName": "CliVcsAdapter.currentHead",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#CliVcsAdapter.currentHead@L161",
+        "procedureName": "CliVcsAdapter.currentHead",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6522434d3663eeae2b9458c1c6ddd29cf282d7c8ebf498301116c58eb29cee3c",
+          "target": "stmt:packages/cli/src/cli.ts@L162",
+          "line": 162,
+          "expr": "return currentHead(root);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

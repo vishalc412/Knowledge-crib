@@ -1,0 +1,198 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertNode@L231",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:0fcb4fb5d58fbcd223e4da4ef02f93c5654669280818b27684b5a666725691c6",
+  "builtAt": "2026-06-27T16:00:56.397Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertNode@L231",
+    "kind": "symbol",
+    "type": "method",
+    "name": "insertNode",
+    "qualifiedName": "SqliteIndexStore.insertNode",
+    "signature": "insertNode(node: Node, repoRoot: string, fileCache: FileLineCache): void",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 231,
+      "end": 247
+    },
+    "callSites": [
+      {
+        "callee": "run",
+        "line": 232
+      },
+      {
+        "callee": "prepare",
+        "line": 232
+      },
+      {
+        "callee": "stringify",
+        "line": 234
+      },
+      {
+        "callee": "run",
+        "line": 235
+      },
+      {
+        "callee": "prepare",
+        "line": 235
+      },
+      {
+        "callee": "run",
+        "line": 236
+      },
+      {
+        "callee": "prepare",
+        "line": 236
+      },
+      {
+        "callee": "composeSearchableBody",
+        "line": 245
+      }
+    ]
+  },
+  "source": {
+    "text": "  private insertNode(node: Node, repoRoot: string, fileCache: FileLineCache): void {\n    this.db\n      .prepare('INSERT OR REPLACE INTO nodes (id, kind, name, file, json) VALUES (?, ?, ?, ?, ?)')\n      .run(node.id, node.kind, node.name ?? null, node.file ?? null, JSON.stringify(node));\n    this.db.prepare('DELETE FROM nodes_fts WHERE id = ?').run(node.id);\n    this.db\n      .prepare(`INSERT INTO nodes_fts (id, ${FTS_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?)`)\n      .run(\n        node.id,\n        node.name ?? '',\n        node.qualifiedName ?? '',\n        node.signature ?? '',\n        node.heading ?? '',\n        node.file ?? '',\n        composeSearchableBody(node, repoRoot, fileCache),\n      );\n  }",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 231
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.applyDelta@L74",
+      "confidence": 1,
+      "name": "applyDelta",
+      "qualifiedName": "SqliteIndexStore.applyDelta",
+      "signature": "applyDelta(changed: IndexDelta, repoRoot: string): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 74
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L64",
+      "confidence": 1,
+      "name": "buildFromSoul",
+      "qualifiedName": "SqliteIndexStore.buildFromSoul",
+      "signature": "buildFromSoul(soul: SoulStore, repoRoot: string): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 64
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+      "confidence": 1,
+      "name": "composeSearchableBody",
+      "qualifiedName": "composeSearchableBody",
+      "signature": "composeSearchableBody(node: Node, repoRoot: string, fileCache: FileLineCache): string",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 346
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-1-body-searchable-fts-closes-g1-highest-leverage",
+      "heading": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
+      "anchor": "ws-1-body-searchable-fts-closes-g1-highest-leverage",
+      "snippet": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertNode@L231",
+    "procedureName": "SqliteIndexStore.insertNode",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertNode@L231",
+        "procedureName": "SqliteIndexStore.insertNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a48881f5103c69b528d27596c6364cd45abc45f560566860844f5ab5a33d43d1",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L232",
+          "line": 232,
+          "expr": "this.db\n      .prepare('INSERT OR REPLACE INTO nodes (id, kind, name, file, json) VALUES (?, ?, ?, ?, ?)')\n      .run(node.id, node.kind, node.name ?? null, node.file ?? null, JSON.stringify(node));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertNode@L231",
+        "procedureName": "SqliteIndexStore.insertNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e92328320a8d0fb3e134569b470f5ffe44f6454d64b3e1ec46122c04695f66e7",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L235",
+          "line": 235,
+          "expr": "this.db.prepare('DELETE FROM nodes_fts WHERE id = ?').run(node.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertNode@L231",
+        "procedureName": "SqliteIndexStore.insertNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a32c259d4ccaec11d17e85dae62fd1a3dc7fa3084199f9c0c7b5b10eb771416c",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L236",
+          "line": 236,
+          "expr": "this.db\n      .prepare(`INSERT INTO nodes_fts (id, ${FTS_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?)`)\n      .run(\n        node.id,\n        node.name ?? '',\n        node.qualifiedName ?? '',\n        node.signature ?? '',\n        node.heading ?? '',\n        node.file ?? '',\n        composeSearchableBody(node, repoRoot, fileCache),\n      );"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertNode@L231",
+        "procedureName": "SqliteIndexStore.insertNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9754209016f16d3daa6a82538e38ec9df19f1b381bfce866f40b46404930fe4f",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+          "expr": "composeSearchableBody",
+          "line": 245
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 8,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

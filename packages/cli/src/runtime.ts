@@ -16,9 +16,10 @@
  * the standard `<root>/.crib`. Explicit args always win, so existing per-project IDE entries that
  * pass an explicit root keep working unchanged.
  */
-import { existsSync, mkdirSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import { existsSync, mkdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
-import { SoulStore, openIndex } from '@knowledge-crib/core';
+import { MANIFEST_FILE, SoulStore, openIndex } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
 import { type Registry, lookupProject, readRegistry } from './registry.js';
 
@@ -126,11 +127,28 @@ export function buildIndex(rt: Runtime): IndexStore {
   const rel = manifest.stores.index.path; // e.g. .crib/index/crib.sqlite
   const path = resolveIndexPath(rel, rt.repoRoot, rt.cribDir);
   mkdirSync(dirname(path), { recursive: true });
+  if (manifest.stores.index.backend === 'sqlite') {
+    const tmp = join(dirname(path), `.crib-build-${process.pid}-${randomUUID()}.sqlite`);
+    try {
+      const index = openIndex(manifest.stores.index.backend, { path: tmp });
+      index.buildFromSoul(rt.soul, rt.repoRoot);
+      index.close();
+      rmSync(`${path}-wal`, { force: true });
+      rmSync(`${path}-shm`, { force: true });
+      renameSync(tmp, path);
+      return openIndex(manifest.stores.index.backend, { path });
+    } catch (e) {
+      rmSync(tmp, { force: true });
+      rmSync(`${tmp}-wal`, { force: true });
+      rmSync(`${tmp}-shm`, { force: true });
+      throw e;
+    }
+  }
   const index = openIndex(manifest.stores.index.backend, { path });
-  // The derived index is fully determined by the soul (FTS5 + adjacency); no vector/embedding build
-  // options exist today. `manifest.capabilities.embeddings` is a capability record (always false
-  // until a vector backend ships) and does not drive the build.
-  index.buildFromSoul(rt.soul);
+  // The derived index is fully determined by the soul + repoRoot (FTS5 + adjacency + rehydrated
+  // body text); no vector/embedding build options exist today. `manifest.capabilities.embeddings`
+  // is a capability record (always false until a vector backend ships) and does not drive the build.
+  index.buildFromSoul(rt.soul, rt.repoRoot);
   return index;
 }
 
@@ -144,7 +162,11 @@ export function openIndexOnly(rt: Runtime): IndexStore {
   const rel = manifest.stores.index.path;
   const path = resolveIndexPath(rel, rt.repoRoot, rt.cribDir);
   if (!existsSync(path)) {
-    throw new Error('index not built — run `crib index` first');
+    throw new Error('derived index missing or stale — run `crib index .`');
+  }
+  const manifestPath = join(rt.cribDir, MANIFEST_FILE);
+  if (existsSync(manifestPath) && statSync(path).mtimeMs + 1 < statSync(manifestPath).mtimeMs) {
+    throw new Error('derived index missing or stale — run `crib index .`');
   }
   return openIndex(manifest.stores.index.backend, { path });
 }

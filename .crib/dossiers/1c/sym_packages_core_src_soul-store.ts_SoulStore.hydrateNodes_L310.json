@@ -1,0 +1,226 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateNodes@L310",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9f33f86854b42755e6c1a37c30efd353c464b6427087b76aeb45250721e72085",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateNodes@L310",
+    "kind": "symbol",
+    "type": "method",
+    "name": "hydrateNodes",
+    "qualifiedName": "SoulStore.hydrateNodes",
+    "signature": "hydrateNodes(): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 310,
+      "end": 319
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 311
+      },
+      {
+        "callee": "set",
+        "line": 313
+      },
+      {
+        "callee": "join",
+        "line": 315
+      },
+      {
+        "callee": "set",
+        "line": 317
+      }
+    ]
+  },
+  "source": {
+    "text": "  private hydrateNodes(): void {\n    const nodesRoot = join(this.cribDirPrivate, 'nodes');\n    for (const file of this.walkJsonl(nodesRoot)) {\n      for (const node of this.readRecords<Node>(file)) this.nodes.set(node.id, node);\n    }\n    const clustersPath = join(this.cribDirPrivate, CLUSTERS_FILE);\n    if (existsSync(clustersPath)) {\n      for (const node of this.readRecords<Node>(clustersPath)) this.nodes.set(node.id, node);\n    }\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 310
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.load@L80",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "SoulStore.load",
+      "signature": "load(): Manifest",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 80
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.readRecords@L342",
+      "confidence": 1,
+      "name": "readRecords",
+      "qualifiedName": "SoulStore.readRecords",
+      "signature": "readRecords(file: string): T[]",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 342
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.walkJsonl@L328",
+      "confidence": 1,
+      "name": "walkJsonl",
+      "qualifiedName": "SoulStore.walkJsonl",
+      "signature": "walkJsonl(root: string): Iterable<string>",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 328
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateNodes@L310",
+    "procedureName": "SoulStore.hydrateNodes",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L312",
+      "cond:packages/core/src/soul-store.ts@L313",
+      "cond:packages/core/src/soul-store.ts@L316",
+      "cond:packages/core/src/soul-store.ts@L317"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateNodes@L310",
+        "procedureName": "SoulStore.hydrateNodes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3d981b10b7e8f35368ec70366c3832849a3b1a684ddcc84d1e4558eccf374634",
+          "target": "stmt:packages/core/src/soul-store.ts@L311",
+          "line": 311,
+          "expr": "const nodesRoot = join(this.cribDirPrivate, 'nodes');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateNodes@L310",
+        "procedureName": "SoulStore.hydrateNodes",
+        "guard": "cond:packages/core/src/soul-store.ts@L313",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L312",
+            "expr": "this.walkJsonl(nodesRoot)"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L313",
+            "expr": "this.readRecords<Node>(file)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:00412841e2fab88b0c5d31223a29d996ddb96a50885aa0eedf487357e699b01c",
+          "target": "stmt:packages/core/src/soul-store.ts@L313",
+          "line": 313,
+          "expr": "this.nodes.set(node.id, node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateNodes@L310",
+        "procedureName": "SoulStore.hydrateNodes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7880ce3cff59842c50c0605c52e8f08aba3c25604e19fa08b01c169fe9b2fb09",
+          "target": "stmt:packages/core/src/soul-store.ts@L315",
+          "line": 315,
+          "expr": "const clustersPath = join(this.cribDirPrivate, CLUSTERS_FILE);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateNodes@L310",
+        "procedureName": "SoulStore.hydrateNodes",
+        "guard": "cond:packages/core/src/soul-store.ts@L317",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L316",
+            "expr": "existsSync(clustersPath)"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L317",
+            "expr": "this.readRecords<Node>(clustersPath)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f1919b5b1806d1cf4ca17bdb9a78fd638db34760b94a2204bcbebd682b152d0b",
+          "target": "stmt:packages/core/src/soul-store.ts@L317",
+          "line": 317,
+          "expr": "this.nodes.set(node.id, node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateNodes@L310",
+        "procedureName": "SoulStore.hydrateNodes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0edb18c812b1547a7801f36abffd9b33d4170e427c69a271590173db6634aa45",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.walkJsonl@L328",
+          "expr": "walkJsonl"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateNodes@L310",
+        "procedureName": "SoulStore.hydrateNodes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:97df1253fdca916399ee316ddb66f3388e65b9c1f4cd7bde7254c21e1eb2a63b",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.readRecords@L342",
+          "expr": "readRecords"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

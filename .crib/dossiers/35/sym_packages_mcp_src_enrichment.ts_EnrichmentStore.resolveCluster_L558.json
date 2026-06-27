@@ -1,0 +1,178 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveCluster@L558",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:6540ba52d2265a3d4710ad64e2d39884ad0691403da9084680acf428f3bd164b",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveCluster@L558",
+    "kind": "symbol",
+    "type": "method",
+    "name": "resolveCluster",
+    "qualifiedName": "EnrichmentStore.resolveCluster",
+    "signature": "resolveCluster(ref: string): Node | undefined",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 558,
+      "end": 562
+    },
+    "callSites": [
+      {
+        "callee": "startsWith",
+        "line": 559
+      },
+      {
+        "callee": "slice",
+        "line": 559
+      },
+      {
+        "callee": "norm",
+        "line": 560
+      },
+      {
+        "callee": "find",
+        "line": 561
+      },
+      {
+        "callee": "iterate",
+        "line": 561
+      },
+      {
+        "callee": "norm",
+        "line": 561
+      }
+    ]
+  },
+  "source": {
+    "text": "  private resolveCluster(ref: string): Node | undefined {\n    const norm = (x: string): string => (x.startsWith('c:') ? x.slice(2) : x);\n    const r = norm(ref);\n    return [...this.soul.iterate('cluster')].find((c) => norm(c.id) === r);\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 558
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.matchesScope@L515",
+      "confidence": 1,
+      "name": "matchesScope",
+      "qualifiedName": "EnrichmentStore.matchesScope",
+      "signature": "matchesScope(node: Node, layer: EnrichLayer, scope?: EnrichScope): boolean",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 515
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveCluster.norm@L559",
+      "confidence": 1,
+      "name": "norm",
+      "qualifiedName": "EnrichmentStore.resolveCluster.norm",
+      "signature": "norm(…)",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 559
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L557",
+      "snippet": "/** Find a cluster node by id or slug (`c:slug` or bare `slug`). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveCluster@L558",
+    "procedureName": "EnrichmentStore.resolveCluster",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveCluster@L558",
+        "procedureName": "EnrichmentStore.resolveCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6e7c7f37364018394b31c88560878bd58a7c3505d4cacae4ec990a0fce1450d3",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L559",
+          "line": 559,
+          "expr": "const norm = (x: string): string => (x.startsWith('c:') ? x.slice(2) : x);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveCluster@L558",
+        "procedureName": "EnrichmentStore.resolveCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e9abe38cce2d97ef96b4037015d267fc14116eeb33a2620f613d48fad5238c2e",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveCluster.norm@L559",
+          "expr": "norm",
+          "line": 560
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveCluster@L558",
+        "procedureName": "EnrichmentStore.resolveCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:79143eb40c4d89df8082f4ef7a517790c24c507799725779993654bb43a19e20",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L560",
+          "line": 560,
+          "expr": "const r = norm(ref);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveCluster@L558",
+        "procedureName": "EnrichmentStore.resolveCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e412a5be11b4a2766983a992f098f2333f55d8c6fd5fecb4fa78b239dac1312",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L561",
+          "line": 561,
+          "expr": "return [...this.soul.iterate('cluster')].find((c) => norm(c.id) === r);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 6,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

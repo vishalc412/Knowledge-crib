@@ -2,7 +2,7 @@
   "id": "sym:packages/core/src/source.ts#rehydrate@L42",
   "schemaVersion": "1.3",
   "nodeHash": "blake3:645cdccd22e5a199c491cbf8dfdb4a100422d9d9abbf13df5f08ef5bfbc0bec0",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-06-27T16:07:10.655Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/source.ts#rehydrate@L42",
@@ -52,14 +52,24 @@
   },
   "callers": [
     {
-      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L134",
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L148",
       "confidence": 1,
       "name": "buildDossier",
       "qualifiedName": "buildDossier",
       "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
       "type": "function",
       "file": "packages/core/src/dossier/builder.ts",
-      "line": 134
+      "line": 148
+    },
+    {
+      "id": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
+      "confidence": 1,
+      "name": "buildReconstruction",
+      "qualifiedName": "buildReconstruction",
+      "signature": "buildReconstruction(soul: SoulStore, repoRoot: string, pkgId: string, now: string, opts: ReconstructionOpts = {}): Reconstruction | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.ts",
+      "line": 146
     }
   ],
   "callees": [],
@@ -73,6 +83,16 @@
       "confidence": 1
     },
     {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "heading": "1.3 The gaps that make Plan A < Plan B today",
+      "anchor": "1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "snippet": "1.3 The gaps that make Plan A < Plan B today",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-prompts.md#9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
       "heading": "9. Prompt skeleton you can keep at the top of a session",
       "anchor": "9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
@@ -81,6 +101,26 @@
       "method": "explicit",
       "provenance": "EXTRACTED",
       "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-1-body-searchable-fts-closes-g1-highest-leverage",
+      "heading": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
+      "anchor": "ws-1-body-searchable-fts-closes-g1-highest-leverage",
+      "snippet": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "heading": "7. Risks",
+      "anchor": "7-risks",
+      "snippet": "7. Risks",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
     },
     {
       "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m9-soul-reader-package-seeroflow-tier-1-read-contract",
@@ -236,7 +276,8 @@
     "status": "implemented",
     "executesCount": 5,
     "referencedByFiles": [
-      "packages/core/src/dossier/builder.ts"
+      "packages/core/src/dossier/builder.ts",
+      "packages/core/src/dossier/reconstruct.ts"
     ]
   },
   "coverage": {

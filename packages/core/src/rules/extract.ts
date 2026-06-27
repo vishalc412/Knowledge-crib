@@ -73,6 +73,12 @@ export interface DecisionTable {
 export interface ExtractRulesOpts {
   /** resolve reads/writes table names per statement (extra lookups); default false */
   includeTables?: boolean;
+  /**
+   * Prebuilt outgoing-adjacency (src → edges), so a caller extracting rules for MANY procedures
+   * (e.g. the `query` verb with `withRules` over N hits) builds it ONCE and reuses it instead of
+   * scanning all edges per procedure. Absent → built internally from the soul (single-procedure path).
+   */
+  out?: Map<string, Edge[]>;
 }
 
 /**
@@ -132,7 +138,7 @@ export function extractRules(
 ): RuleRecord[] {
   const proc = findProcedure(soul, procedure);
   if (!proc) return [];
-  const out = outgoingIndex(soul);
+  const out = opts.out ?? outgoingIndex(soul);
   const procEdges = out.get(proc.id) ?? [];
   // call-site line index: the `calls` edge's dst is the callee's DEFINITION, not the call site,
   // so the call-site line is recovered from the caller's recorded call sites (meta.calls).

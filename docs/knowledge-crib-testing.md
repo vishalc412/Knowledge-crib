@@ -57,8 +57,9 @@
 ## 7. CI
 - On PR: lint + typecheck + unit + golden + integration + contract.
 - Nightly: E2E + benchmark + perf on `fixtures/large`.
-- **DIST-REBUILD GATE:** `pnpm test` runs `pretest: pnpm -r run build` first (packages export from
-  `./dist`, so a stale dist silently masks bugs). `pnpm verify` = build + test + lint.
+- **DIST-REBUILD GATE:** `corepack pnpm@9.15.0 test` runs the pinned `pretest` build first (packages
+  export from `./dist`, so a stale dist silently masks bugs).
+  `corepack pnpm@9.15.0 release:verify` is the production gate.
 - **Schema evolution (there is NO `crib migrate` command).** Migration is automatic and additive:
   (1) every 1.0→1.3 field is OPTIONAL + `additionalProperties:true`, so an old soul loads verbatim;
   (2) re-indexing stamps the new 1.3 fields onto the SAME node (id-stable, hash-stable, in-place);

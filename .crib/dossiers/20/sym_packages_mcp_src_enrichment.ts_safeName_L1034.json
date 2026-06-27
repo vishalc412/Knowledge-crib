@@ -1,0 +1,127 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#safeName@L1034",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d744a6c3b7da5aeab0b060475887e781333097c290bbd786dc1d22018fc04934",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#safeName@L1034",
+    "kind": "symbol",
+    "type": "function",
+    "name": "safeName",
+    "qualifiedName": "safeName",
+    "signature": "safeName(id: string): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1034,
+      "end": 1036
+    },
+    "callSites": [
+      {
+        "callee": "replace",
+        "line": 1035
+      }
+    ]
+  },
+  "source": {
+    "text": "function safeName(id: string): string {\n  return id.replace(/[^A-Za-z0-9._-]+/g, '_');\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1034
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.read@L775",
+      "confidence": 1,
+      "name": "read",
+      "qualifiedName": "EnrichmentStore.read",
+      "signature": "read(layer: EnrichLayer, targetId: string, liveHash: string): LlmRead",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 775
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeGraphProjection@L811",
+      "confidence": 1,
+      "name": "writeGraphProjection",
+      "qualifiedName": "EnrichmentStore.writeGraphProjection",
+      "signature": "writeGraphProjection(artifact: LlmArtifact): void",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 811
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#artifactPath@L1016",
+      "confidence": 1,
+      "name": "artifactPath",
+      "qualifiedName": "artifactPath",
+      "signature": "artifactPath(root: string, layer: EnrichLayer, targetId: string, hash: string): string",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1016
+    },
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#dossierPath@L34",
+      "confidence": 1,
+      "name": "dossierPath",
+      "qualifiedName": "dossierPath",
+      "signature": "dossierPath(cribDir: string, nodeId: string): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 34
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#safeName@L1034",
+    "procedureName": "safeName",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#safeName@L1034",
+        "procedureName": "safeName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:684e43eed7e76f0a871d1cf36a6ba632122b127a323ced76cfd636405e4b0d91",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1035",
+          "line": 1035,
+          "expr": "return id.replace(/[^A-Za-z0-9._-]+/g, '_');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/dossier/persist.ts",
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

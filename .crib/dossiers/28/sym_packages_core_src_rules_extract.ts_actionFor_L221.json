@@ -1,0 +1,511 @@
+{
+  "id": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c726d61dd9f742762f9faac08e7c341659d8f47eac7ff84577ed6fef50554126",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+    "kind": "symbol",
+    "type": "function",
+    "name": "actionFor",
+    "qualifiedName": "actionFor",
+    "signature": "actionFor(soul: SoulStore, e: Edge, out: Map<string, Edge[]>, opts: ExtractRulesOpts, callLines: Map<string, number>): RuleAction",
+    "lang": "typescript",
+    "file": "packages/core/src/rules/extract.ts",
+    "span": {
+      "start": 221,
+      "end": 261
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 228
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 244
+      },
+      {
+        "callee": "pop",
+        "line": 244
+      },
+      {
+        "callee": "split",
+        "line": 244
+      },
+      {
+        "callee": "get",
+        "line": 246
+      },
+      {
+        "callee": "push",
+        "line": 254
+      },
+      {
+        "callee": "push",
+        "line": 255
+      }
+    ]
+  },
+  "source": {
+    "text": "function actionFor(\n  soul: SoulStore,\n  e: Edge,\n  out: Map<string, Edge[]>,\n  opts: ExtractRulesOpts,\n  callLines: Map<string, number>,\n): RuleAction {\n  const target = soul.getNode(e.dst);\n  const a: RuleAction = {\n    kind: e.rel as 'executes' | 'calls',\n    edgeId: e.id,\n    target: e.dst,\n  };\n  if (e.rel === 'executes') {\n    // executes → statement node whose span.start IS the statement's source line.\n    if (target?.span) a.line = target.span.start;\n    if (target?.sqlKind) a.sqlKind = target.sqlKind;\n    if (target?.expr) a.expr = target.expr;\n  } else {\n    // calls → callee symbol: surface its name as the expression; the call-site line is recovered\n    // from the caller's recorded call sites (the edge's dst is the callee's definition line).\n    if (target?.name) a.expr = target.name;\n    else if (target?.qualifiedName) a.expr = target.qualifiedName;\n    const calleeKey = (target?.name ?? target?.qualifiedName ?? '').split('.').pop()?.toLowerCase();\n    if (calleeKey) {\n      const line = callLines.get(calleeKey);\n      if (line !== undefined) a.line = line;\n    }\n  }\n  if (opts.includeTables && e.rel === 'executes') {\n    const reads: string[] = [];\n    const writes: string[] = [];\n    for (const re of out.get(e.dst) ?? []) {\n      if (re.rel === 'reads') reads.push(re.dst);\n      else if (re.rel === 'writes') writes.push(re.dst);\n    }\n    if (reads.length > 0) a.reads = reads;\n    if (writes.length > 0) a.writes = writes;\n  }\n  return a;\n}",
+    "truncated": false,
+    "totalLines": 41,
+    "startLine": 221
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#extractRules@L134",
+      "confidence": 1,
+      "name": "extractRules",
+      "qualifiedName": "extractRules",
+      "signature": "extractRules(soul: SoulStore, procedure: string, opts: ExtractRulesOpts = {}): RuleRecord[]",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 134
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/rules/extract.ts@L220",
+      "snippet": "/** Build the action record for one annotated edge, optionally pulling reads/writes tables. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+    "procedureName": "actionFor",
+    "conditions": [
+      "cond:packages/core/src/rules/extract.ts@L234",
+      "cond:packages/core/src/rules/extract.ts@L236",
+      "cond:packages/core/src/rules/extract.ts@L237",
+      "cond:packages/core/src/rules/extract.ts@L238",
+      "cond:packages/core/src/rules/extract.ts@L242",
+      "cond:packages/core/src/rules/extract.ts@L243",
+      "cond:packages/core/src/rules/extract.ts@L245",
+      "cond:packages/core/src/rules/extract.ts@L247",
+      "cond:packages/core/src/rules/extract.ts@L250",
+      "cond:packages/core/src/rules/extract.ts@L253",
+      "cond:packages/core/src/rules/extract.ts@L254",
+      "cond:packages/core/src/rules/extract.ts@L255",
+      "cond:packages/core/src/rules/extract.ts@L257",
+      "cond:packages/core/src/rules/extract.ts@L258"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4c51d754c66c0c92b3af3664cf66e8687252e27a6737914d81a8c52101650b46",
+          "target": "stmt:packages/core/src/rules/extract.ts@L228",
+          "line": 228,
+          "expr": "const target = soul.getNode(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "guard": "cond:packages/core/src/rules/extract.ts@L236",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L234",
+            "expr": "e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L236",
+            "expr": "target?.span",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b07275432d7359f8c6b66413752c08f29bc901bf96587d3733d05aa862bab028",
+          "target": "assign:packages/core/src/rules/extract.ts@L236",
+          "line": 236,
+          "expr": "a.line = target.span.start;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "guard": "cond:packages/core/src/rules/extract.ts@L237",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L234",
+            "expr": "e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L237",
+            "expr": "target?.sqlKind",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce4eaac4c5d2ba809d2ba4ab1e1a1f7233766e041ab971c86e7f38d2d7b9c5d8",
+          "target": "assign:packages/core/src/rules/extract.ts@L237",
+          "line": 237,
+          "expr": "a.sqlKind = target.sqlKind;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "guard": "cond:packages/core/src/rules/extract.ts@L238",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L234",
+            "expr": "e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L238",
+            "expr": "target?.expr",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:564c3e045268ad6814dcc1aece371d3d7c4148173cb6baba0a156d3c0da48b42",
+          "target": "assign:packages/core/src/rules/extract.ts@L238",
+          "line": 238,
+          "expr": "a.expr = target.expr;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "guard": "cond:packages/core/src/rules/extract.ts@L242",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L234",
+            "expr": "e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L242",
+            "expr": "target?.name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ab7ad5640b39933e91c26ebf24339dfaa54861db98736c6d21779c3d436be6aa",
+          "target": "assign:packages/core/src/rules/extract.ts@L242",
+          "line": 242,
+          "expr": "a.expr = target.name;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "guard": "cond:packages/core/src/rules/extract.ts@L243",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L234",
+            "expr": "e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L242",
+            "expr": "target?.name"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L243",
+            "expr": "target?.qualifiedName",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bde66e5c089845602fd7562d3c69af8f5879a7075a1c1d9c2f5ac5e2559a4b7e",
+          "target": "assign:packages/core/src/rules/extract.ts@L243",
+          "line": 243,
+          "expr": "a.expr = target.qualifiedName;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "guard": "cond:packages/core/src/rules/extract.ts@L234",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L234",
+            "expr": "e.rel === 'executes'",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f4ecb86c4e6e5d874658b8b6df00c1920a092ea7882917ba494c1307dd02ca6f",
+          "target": "stmt:packages/core/src/rules/extract.ts@L244",
+          "line": 244,
+          "expr": "const calleeKey = (target?.name ?? target?.qualifiedName ?? '').split('.').pop()?.toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "guard": "cond:packages/core/src/rules/extract.ts@L245",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L234",
+            "expr": "e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L245",
+            "expr": "calleeKey",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:41e2150b3a85e1bc14cf98e47039d792441a786f52998c400f03819f049aa22a",
+          "target": "stmt:packages/core/src/rules/extract.ts@L246",
+          "line": 246,
+          "expr": "const line = callLines.get(calleeKey);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "guard": "cond:packages/core/src/rules/extract.ts@L247",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L234",
+            "expr": "e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L245",
+            "expr": "calleeKey"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L247",
+            "expr": "line !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6b580ca33eafe1c4fdb9d45439dd8f391b48017b593b4d9d1c50a090ced20fb4",
+          "target": "assign:packages/core/src/rules/extract.ts@L247",
+          "line": 247,
+          "expr": "a.line = line;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "guard": "cond:packages/core/src/rules/extract.ts@L254",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L250",
+            "expr": "opts.includeTables && e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L253",
+            "expr": "out.get(e.dst) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L254",
+            "expr": "re.rel === 'reads'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9a0201662708f6c8b88cc2f2afc766397d750eef26474d71d3a27a0c590df15b",
+          "target": "stmt:packages/core/src/rules/extract.ts@L254",
+          "line": 254,
+          "expr": "reads.push(re.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cd6f6a3a693cbff8ef28e40e7c1997d8579483a6e6655452340cc1b719d8c23b",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 254
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "guard": "cond:packages/core/src/rules/extract.ts@L255",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L250",
+            "expr": "opts.includeTables && e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L253",
+            "expr": "out.get(e.dst) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L254",
+            "expr": "re.rel === 'reads'"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L255",
+            "expr": "re.rel === 'writes'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:155875b8147e28cbd0a1f41d6166b064236067c1d0d919c2154903472da64076",
+          "target": "stmt:packages/core/src/rules/extract.ts@L255",
+          "line": 255,
+          "expr": "writes.push(re.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "guard": "cond:packages/core/src/rules/extract.ts@L257",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L250",
+            "expr": "opts.includeTables && e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L257",
+            "expr": "reads.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4a3cc356b5fffea65bc303bccc8a90ffbdc9c41e4a6d22c9b425bafb2b1ecb51",
+          "target": "assign:packages/core/src/rules/extract.ts@L257",
+          "line": 257,
+          "expr": "a.reads = reads;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "guard": "cond:packages/core/src/rules/extract.ts@L258",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L250",
+            "expr": "opts.includeTables && e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L258",
+            "expr": "writes.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d8289b879976ef86afaf62b695373230925504cba88e2e37d51b60baf44b7e95",
+          "target": "assign:packages/core/src/rules/extract.ts@L258",
+          "line": 258,
+          "expr": "a.writes = writes;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a95eee970509d9fa44c3784a40be46aa9a8378e598649d0580823f8dd6ed7c93",
+          "target": "stmt:packages/core/src/rules/extract.ts@L260",
+          "line": 260,
+          "expr": "return a;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 14,
+    "referencedByFiles": [
+      "packages/core/src/rules/extract.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 14,
+    "assignments": 8,
+    "conditions": 12,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 7,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

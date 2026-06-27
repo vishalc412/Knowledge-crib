@@ -1,0 +1,429 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:13c8d28c3d7051b61cdf7a0f80a6e5a0dc7f1e7f1e9e4775fac4b1c8ff32f679",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkSwitch",
+    "qualifiedName": "TypeScriptExtractor.walkSwitch",
+    "signature": "walkSwitch(stmt: ts.SwitchStatement, env: BodyEnv): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 453,
+      "end": 467
+    },
+    "callSites": [
+      {
+        "callee": "lineOf",
+        "line": 459
+      },
+      {
+        "callee": "getStart",
+        "line": 459
+      },
+      {
+        "callee": "caseSelector",
+        "line": 460
+      },
+      {
+        "callee": "caseBranch",
+        "line": 461
+      },
+      {
+        "callee": "walkBody",
+        "line": 462
+      },
+      {
+        "callee": "pushGuard",
+        "line": 462
+      },
+      {
+        "callee": "walkBody",
+        "line": 464
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkSwitch(stmt: ts.SwitchStatement, env: BodyEnv): void {\n    // 1.2: each `case <expr>:` emits a `case-branch` node (whenSelector = the case expression text)\n    // + an `executes` edge (proc → case-branch) and becomes the guard for its body. The `default`\n    // clause walks under the inherited guard (no case-branch node, mirroring PL/SQL's ELSE).\n    for (const c of stmt.caseBlock.clauses) {\n      if (ts.isCaseClause(c) && c.expression) {\n        const caseLine = env.lineOf(c.getStart());\n        const selector = caseSelector(c.expression);\n        const branchId = this.caseBranch(caseLine, selector, env);\n        this.walkBody([...c.statements], this.pushGuard(env, branchId, 'CASE'));\n      } else if (ts.isDefaultClause(c)) {\n        this.walkBody([...c.statements], env);\n      }\n    }\n  }",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 453
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L353",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "TypeScriptExtractor.walkStmt",
+      "signature": "walkStmt(stmt: ts.Statement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 353
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.caseBranch@L638",
+      "confidence": 1,
+      "name": "caseBranch",
+      "qualifiedName": "TypeScriptExtractor.caseBranch",
+      "signature": "caseBranch(line: number, selector: string, env: BodyEnv): string",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 638
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.lineOf@L63",
+      "confidence": 1,
+      "name": "lineOf",
+      "qualifiedName": "TypeScriptExtractor.parse.lineOf",
+      "signature": "lineOf(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 63
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.pushGuard@L724",
+      "confidence": 1,
+      "name": "pushGuard",
+      "qualifiedName": "TypeScriptExtractor.pushGuard",
+      "signature": "pushGuard(env: BodyEnv, condId: string, branch: string): BodyEnv",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 724
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L349",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "TypeScriptExtractor.walkBody",
+      "signature": "walkBody(stmts: readonly ts.Statement[], env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 349
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#caseSelector@L994",
+      "confidence": 1,
+      "name": "caseSelector",
+      "qualifiedName": "caseSelector",
+      "signature": "caseSelector(expr: ts.Expression): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 994
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+    "procedureName": "TypeScriptExtractor.walkSwitch",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L457",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L463"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+        "procedureName": "TypeScriptExtractor.walkSwitch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L457",
+            "expr": "stmt.caseBlock.clauses"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+            "expr": "ts.isCaseClause(c) && c.expression",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e901f73bdcf5e4b235d6aff1a550295a9eb87b4345ef34155a8c84d2416a3b16",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.lineOf@L63",
+          "expr": "lineOf",
+          "line": 459
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+        "procedureName": "TypeScriptExtractor.walkSwitch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L457",
+            "expr": "stmt.caseBlock.clauses"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+            "expr": "ts.isCaseClause(c) && c.expression",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bbfd2a0206554905f9387116b289e3c1585a08af0fbb0b27656155e8de91ad45",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L459",
+          "line": 459,
+          "expr": "const caseLine = env.lineOf(c.getStart());"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+        "procedureName": "TypeScriptExtractor.walkSwitch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L457",
+            "expr": "stmt.caseBlock.clauses"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+            "expr": "ts.isCaseClause(c) && c.expression",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e5566eac9be05cdde2ef4ed16c79cfea9c74cb60ec4e607e300a735860060354",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#caseSelector@L994",
+          "expr": "caseSelector",
+          "line": 460
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+        "procedureName": "TypeScriptExtractor.walkSwitch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L457",
+            "expr": "stmt.caseBlock.clauses"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+            "expr": "ts.isCaseClause(c) && c.expression",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4d558f5a40f8b723544842f720d541636b64eb9897faee8a04c21e3515f24c7e",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L460",
+          "line": 460,
+          "expr": "const selector = caseSelector(c.expression);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+        "procedureName": "TypeScriptExtractor.walkSwitch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L457",
+            "expr": "stmt.caseBlock.clauses"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+            "expr": "ts.isCaseClause(c) && c.expression",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c6efe31be8ad8d5669a8c80ce9b2116f7004aa8a4d3d9628be5cf938fcea1dbd",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.caseBranch@L638",
+          "expr": "caseBranch",
+          "line": 461
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+        "procedureName": "TypeScriptExtractor.walkSwitch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L457",
+            "expr": "stmt.caseBlock.clauses"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+            "expr": "ts.isCaseClause(c) && c.expression",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fccc5456d0d6c919b64dfb6ae53db74a645d64625edda44ea0a3e9134cc1acd5",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L461",
+          "line": 461,
+          "expr": "const branchId = this.caseBranch(caseLine, selector, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+        "procedureName": "TypeScriptExtractor.walkSwitch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L463",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L457",
+            "expr": "stmt.caseBlock.clauses"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+            "expr": "ts.isCaseClause(c) && c.expression"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L463",
+            "expr": "ts.isDefaultClause(c)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7b7ae0798614901d26acee4d4a543474613c8d6c19cbf07d12938a831e99e70d",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L349",
+          "expr": "walkBody",
+          "line": 462
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+        "procedureName": "TypeScriptExtractor.walkSwitch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L457",
+            "expr": "stmt.caseBlock.clauses"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+            "expr": "ts.isCaseClause(c) && c.expression",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a4d82e68c8203fc553c5fb343e66b8782a16f14bc1a6b6395c29e1e6e7f50696",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.pushGuard@L724",
+          "expr": "pushGuard",
+          "line": 462
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+        "procedureName": "TypeScriptExtractor.walkSwitch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L457",
+            "expr": "stmt.caseBlock.clauses"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+            "expr": "ts.isCaseClause(c) && c.expression",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:be4a4bac0afc3325a788ae51f6dfc41a547e4a527c85301601f8cdea48ec5a6e",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L462",
+          "line": 462,
+          "expr": "this.walkBody([...c.statements], this.pushGuard(env, branchId, 'CASE'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+        "procedureName": "TypeScriptExtractor.walkSwitch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L463",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L457",
+            "expr": "stmt.caseBlock.clauses"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L458",
+            "expr": "ts.isCaseClause(c) && c.expression"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L463",
+            "expr": "ts.isDefaultClause(c)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7cd945850f091ac533111a74c5868237d5c5af74767f9e5b025f8817a6a9b60c",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L464",
+          "line": 464,
+          "expr": "this.walkBody([...c.statements], env);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 7,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

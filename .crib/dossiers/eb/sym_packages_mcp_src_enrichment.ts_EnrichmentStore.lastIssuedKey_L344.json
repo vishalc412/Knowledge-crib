@@ -1,0 +1,97 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lastIssuedKey@L344",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9bd062f0db1380ca70f07ece416b9f77aa64586a8211927696429a41bf94ca5a",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lastIssuedKey@L344",
+    "kind": "symbol",
+    "type": "method",
+    "name": "lastIssuedKey",
+    "qualifiedName": "EnrichmentStore.lastIssuedKey",
+    "signature": "lastIssuedKey(layer: EnrichLayer, scope?: EnrichScope): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 344,
+      "end": 346
+    }
+  },
+  "source": {
+    "text": "  private lastIssuedKey(layer: EnrichLayer, scope?: EnrichScope): string {\n    return `${layer}:${scope?.pathPrefix ?? ''}|${scope?.cluster ?? ''}`;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 344
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.next@L296",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "EnrichmentStore.next",
+      "signature": "next(args: EnrichNextArgs = {}): EnrichNextBatch",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 296
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L343",
+      "snippet": "/** Stable key under which the last-issued batchId is persisted for zero-progress detection. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lastIssuedKey@L344",
+    "procedureName": "EnrichmentStore.lastIssuedKey",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lastIssuedKey@L344",
+        "procedureName": "EnrichmentStore.lastIssuedKey",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a435e3799c0ee4c528dfbbdca41d4195eb4d340c48414be74f87c37342310791",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L345",
+          "line": 345,
+          "expr": "return `${layer}:${scope?.pathPrefix ?? ''}|${scope?.cluster ?? ''}`;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

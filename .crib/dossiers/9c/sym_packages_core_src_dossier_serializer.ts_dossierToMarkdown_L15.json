@@ -2,7 +2,7 @@
   "id": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
   "schemaVersion": "1.3",
   "nodeHash": "blake3:0640adae056ad4f7f3ec1d7b609e39316f41400f7b992dc9dca0033eebc41f59",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-06-27T16:07:10.655Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
@@ -651,7 +651,18 @@
     "startLine": 15,
     "nextLine": 103
   },
-  "callers": [],
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1213",
+      "confidence": 1,
+      "name": "dossiersByScopeToMarkdown",
+      "qualifiedName": "dossiersByScopeToMarkdown",
+      "signature": "dossiersByScopeToMarkdown(r: DossiersByScopeShape): string",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1213
+    }
+  ],
   "callees": [
     {
       "id": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown.h@L18",
@@ -674,14 +685,14 @@
       "line": 288
     },
     {
-      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
       "confidence": 1,
       "name": "label",
       "qualifiedName": "label",
       "signature": "label(soul: SoulStore, id: string): string",
       "type": "function",
       "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
-      "line": 144
+      "line": 202
     },
     {
       "id": "sym:packages/core/src/dossier/serializer.ts#loc@L292",
@@ -1904,8 +1915,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:14a191f64cd635067ae33b516858625c35168daac5f8d3e42a3322cd7a9d8805",
-          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L144",
+          "edgeId": "e:8c631e36e1f10301ab02dd54f8ce2465e0b2321e474ccc66da3bb48fbf1dbdc9",
+          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
           "expr": "label",
           "line": 124
         }
@@ -3221,7 +3232,9 @@
   "implementation": {
     "status": "implemented",
     "executesCount": 99,
-    "referencedByFiles": []
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
   },
   "coverage": {
     "readiness": "partial",

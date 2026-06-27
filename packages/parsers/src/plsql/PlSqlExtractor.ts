@@ -147,6 +147,7 @@ class Builder {
 
   private addTable(def: TableDef): void {
     const id = this.ctx.idFor('table', { schema: def.schema, name: def.name });
+    const fks = def.foreignKeys ?? [];
     const tableNode: Node = {
       id,
       kind: 'table',
@@ -156,11 +157,26 @@ class Builder {
       span: def.span,
       lang: 'plsql',
       hash: this.ctx.hash(`${def.schema}.${def.name}`),
-      meta: { columns: def.columns.map((c) => c.name) },
+      meta: {
+        columns: def.columns.map((c) => c.name),
+        ...(fks.length > 0 ? { foreignKeys: fks } : {}),
+      },
     };
     this.nodes.push(tableNode);
     this.indexTable(def.schema, def.name, id);
     for (const col of def.columns) this.addColumn(def.schema, def.name, col, def.span.start, id);
+    // WS-7: emit a `references` edge child table → parent table for each FK whose parent resolves
+    // locally (same-file). Cross-file FK parents are emitted by the SqlResolver against the schema
+    // catalog (it reads `meta.foreignKeys`). Without this, the schema's referential structure is
+    // invisible to Plan A while Plan B reads the FKs straight from the DDL.
+    for (const fk of fks) {
+      const parent = this.resolveLocalTable(fk.refTable);
+      if (parent) {
+        this.edges.push(
+          this.edge(id, parent, 'references', `FK ${fk.columns.join(',')} -> ${fk.refTable}`),
+        );
+      }
+    }
   }
 
   private addColumn(
@@ -280,7 +296,15 @@ class Builder {
     this.attachComment(symId, u.span.start);
 
     // nested declarations (procedures/functions/cursors/variables inside a package or another proc)
-    const variables: { name: string; dataType?: string }[] = [];
+    // variables carry the optional initializer (`init`) + `constant` flag (WS-6) so package CONSTANT
+    // values (C_THRESHOLD_AUTO_REJECT := 30) survive for migration reconstruction.
+    const variables: {
+      name: string;
+      dataType?: string;
+      init?: string;
+      constant?: boolean;
+      exprTruncated?: boolean;
+    }[] = [];
     if (u.declarations) {
       for (const d of u.declarations) {
         if (d.kind === 'procedure' || d.kind === 'function') {
@@ -297,7 +321,13 @@ class Builder {
         } else if (d.kind === 'cursor') {
           this.addCursor(d, symId);
         } else if (d.kind === 'variable') {
-          variables.push({ name: d.name, dataType: d.dataType });
+          variables.push({
+            name: d.name,
+            dataType: d.dataType,
+            ...(d.init !== undefined ? { init: d.init } : {}),
+            ...(d.constant ? { constant: true } : {}),
+            ...(d.exprTruncated ? { exprTruncated: true } : {}),
+          });
         }
       }
     }
@@ -320,10 +350,17 @@ class Builder {
   /**
    * 1.2: emit a `cursor` node for a CURSOR declaration + a `declares` edge (unit → cursor) + a
    * `member-of` edge (cursor → unit) and index it by name for local `iterates` resolution.
+   *
+   * WS-7: a cursor's SELECT reads its row-source tables. The FROM/JOIN/USING refs are mined by the
+   * parser into `d.cursorTables`; we emit a `reads` edge cursor → table for each one resolvable
+   * locally (same-file). Cross-file cursor reads are emitted by the SqlResolver against the schema
+   * catalog (the `meta.tables` carried here is the resolver's input). Without this, a cursor SELECT
+   * over a table is invisible to Plan A while Plan B sees the read in the body.
    */
   private addCursor(d: Decl, ownerId: string): void {
     if (!d.name) return;
     const id = this.ctx.idFor('cursor', { file: this.path, name: d.name, line: d.span.start });
+    const cursorTables = d.cursorTables ?? [];
     const node: Node = {
       id,
       kind: 'cursor',
@@ -334,11 +371,15 @@ class Builder {
       hash: this.ctx.hash(`${this.path}:${d.name}:${d.span.start}`),
       ...(d.cursorQuery ? { cursorQuery: d.cursorQuery } : {}),
       ...(d.exprTruncated ? { exprTruncated: true } : {}),
+      ...(cursorTables.length > 0 ? { meta: { tables: cursorTables } } : {}),
     };
     this.nodes.push(node);
     this.edges.push(this.edge(ownerId, id, 'declares', d.name));
     this.edges.push(this.memberOf(id, ownerId));
     this.cursors.set(d.name, id);
+    // local cursor reads (same-file tables). linkTable resolves via the local table index; a miss
+    // is a silent no-op (the resolver re-resolves against the catalog for cross-file tables).
+    for (const t of cursorTables) this.linkTable(id, t, 'reads');
   }
 
   /**

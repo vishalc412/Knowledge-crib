@@ -1,6 +1,6 @@
 {
   "name": "@knowledge-crib/ui",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "M7 web graph viz — Claude Design DC runtime snapshot builder + static assets.",
   "license": "Apache-2.0",
   "type": "module",
@@ -12,11 +12,11 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "web"],
+  "files": ["dist", "web", "LICENSE", "NOTICE", "!dist/**/*.test.*"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --passWithNoTests --reporter=dot"
+    "test": "vitest run --reporter=dot"
   },
   "dependencies": {
     "@knowledge-crib/soul-schema": "workspace:*",
@@ -24,5 +24,21 @@
   },
   "devDependencies": {
     "vitest": "^2.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KnowledgeCrib/knowledge-crib.git",
+    "directory": "packages/ui"
+  },
+  "bugs": {
+    "url": "https://github.com/KnowledgeCrib/knowledge-crib/issues"
+  },
+  "homepage": "https://github.com/KnowledgeCrib/knowledge-crib#readme",
+  "keywords": ["mcp", "knowledge-graph", "code-analysis", "ai-agents", "cli", "visualization"],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

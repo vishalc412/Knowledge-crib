@@ -2,7 +2,7 @@
   "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
   "schemaVersion": "1.3",
   "nodeHash": "blake3:54379ee97b79df85e0dee28d6903e04c93441dff3531676c90f8df235a34fbfe",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-06-27T16:07:10.655Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
@@ -293,44 +293,64 @@
       "line": 360
     },
     {
-      "id": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L489",
+      "id": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L483",
       "confidence": 1,
       "name": "columnMetaOf",
       "qualifiedName": "columnMetaOf",
       "signature": "columnMetaOf(def: JavaDef): Record<string, unknown> | undefined",
       "type": "function",
       "file": "packages/parsers/src/java/spring.ts",
-      "line": 489
+      "line": 483
     },
     {
-      "id": "sym:packages/parsers/src/java/spring.ts#dedupe@L405",
+      "id": "sym:packages/parsers/src/ts/nest.ts#columnMetaOf@L455",
+      "confidence": 1,
+      "name": "columnMetaOf",
+      "qualifiedName": "columnMetaOf",
+      "signature": "columnMetaOf(pDecs: ts.Decorator[], names: Set<string>): Record<string, unknown> | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 455
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#dedupe@L401",
       "confidence": 1,
       "name": "dedupe",
       "qualifiedName": "dedupe",
       "signature": "dedupe(xs: string[]): string[]",
       "type": "function",
       "file": "packages/parsers/src/java/spring.ts",
-      "line": 405
+      "line": 401
     },
     {
-      "id": "sym:packages/parsers/src/plsql/parser.ts#dedupe@L1314",
+      "id": "sym:packages/parsers/src/ts/react.ts#dedupe@L361",
       "confidence": 1,
       "name": "dedupe",
       "qualifiedName": "dedupe",
       "signature": "dedupe(xs: string[]): string[]",
       "type": "function",
-      "file": "packages/parsers/src/plsql/parser.ts",
-      "line": 1314
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 361
     },
     {
-      "id": "sym:packages/parsers/src/java/spring.ts#edge@L528",
+      "id": "sym:packages/parsers/src/java/spring.ts#edge@L522",
       "confidence": 1,
       "name": "edge",
       "qualifiedName": "edge",
       "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string): Edge",
       "type": "function",
       "file": "packages/parsers/src/java/spring.ts",
-      "line": 528
+      "line": 522
+    },
+    {
+      "id": "sym:packages/ui/src/viz.test.ts#edge@L27",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel']): Edge",
+      "type": "function",
+      "file": "packages/ui/src/viz.test.ts",
+      "line": 27
     },
     {
       "id": "sym:packages/parsers/src/java/spring.ts#emitInject@L332",
@@ -343,14 +363,24 @@
       "line": 332
     },
     {
-      "id": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L454",
+      "id": "sym:packages/parsers/src/ts/nest.ts#emitInject@L313",
+      "confidence": 1,
+      "name": "emitInject",
+      "qualifiedName": "emitInject",
+      "signature": "emitInject(consumerId: string, depType: string, byKey: Map<string, string>, edges: Edge[], recorded: string[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 313
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L450",
       "confidence": 1,
       "name": "exceptionTypesOf",
       "qualifiedName": "exceptionTypesOf",
       "signature": "exceptionTypesOf(s?: string): string | undefined",
       "type": "function",
       "file": "packages/parsers/src/java/spring.ts",
-      "line": 454
+      "line": 450
     },
     {
       "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics.isBean@L110",
@@ -383,14 +413,24 @@
       "line": 77
     },
     {
-      "id": "sym:packages/parsers/src/java/spring.ts#joinPath@L397",
+      "id": "sym:packages/parsers/src/java/spring.ts#joinPath@L393",
       "confidence": 1,
       "name": "joinPath",
       "qualifiedName": "joinPath",
       "signature": "joinPath(base: string, sub: string): string",
       "type": "function",
       "file": "packages/parsers/src/java/spring.ts",
-      "line": 397
+      "line": 393
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#joinPath@L549",
+      "confidence": 1,
+      "name": "joinPath",
+      "qualifiedName": "joinPath",
+      "signature": "joinPath(base: string, sub: string): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 549
     },
     {
       "id": "sym:packages/parsers/src/java/spring.ts#mappingAnno@L366",
@@ -413,54 +453,74 @@
       "line": 39
     },
     {
-      "id": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+      "id": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L468",
       "confidence": 1,
       "name": "relationMetaOf",
       "qualifiedName": "relationMetaOf",
       "signature": "relationMetaOf(s?: string): Record<string, string>",
       "type": "function",
       "file": "packages/parsers/src/java/spring.ts",
-      "line": 474
+      "line": 468
     },
     {
-      "id": "sym:packages/parsers/src/java/spring.ts#requestMethodsOf@L387",
+      "id": "sym:packages/parsers/src/java/spring.ts#requestMethodsOf@L385",
       "confidence": 1,
       "name": "requestMethodsOf",
       "qualifiedName": "requestMethodsOf",
       "signature": "requestMethodsOf(s?: string): string[] | undefined",
       "type": "function",
       "file": "packages/parsers/src/java/spring.ts",
-      "line": 387
+      "line": 385
     },
     {
-      "id": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L410",
+      "id": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
       "confidence": 1,
       "name": "routeMetaOf",
       "qualifiedName": "routeMetaOf",
       "signature": "routeMetaOf(m: JavaDef): Record<string, unknown>",
       "type": "function",
       "file": "packages/parsers/src/java/spring.ts",
-      "line": 410
+      "line": 406
     },
     {
-      "id": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L464",
+      "id": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+      "confidence": 1,
+      "name": "routeMetaOf",
+      "qualifiedName": "routeMetaOf",
+      "signature": "routeMetaOf(m: ts.MethodDeclaration): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 402
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L458",
       "confidence": 1,
       "name": "scheduledAnnoKind",
       "qualifiedName": "scheduledAnnoKind",
       "signature": "scheduledAnnoKind(s?: string): string | undefined",
       "type": "function",
       "file": "packages/parsers/src/java/spring.ts",
-      "line": 464
+      "line": 458
     },
     {
-      "id": "sym:packages/parsers/src/java/spring.ts#securityOf@L442",
+      "id": "sym:packages/parsers/src/java/spring.ts#securityOf@L438",
       "confidence": 1,
       "name": "securityOf",
       "qualifiedName": "securityOf",
       "signature": "securityOf(m: JavaDef): Record<string, string> | undefined",
       "type": "function",
       "file": "packages/parsers/src/java/spring.ts",
-      "line": 442
+      "line": 438
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#securityOf@L429",
+      "confidence": 1,
+      "name": "securityOf",
+      "qualifiedName": "securityOf",
+      "signature": "securityOf(decs: ts.Decorator[]): Record<string, string> | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 429
     },
     {
       "id": "sym:packages/parsers/src/java/spring.ts#stereotypeOf@L347",
@@ -859,8 +919,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:f8107186929e29e7205e8ec124a47a876958450ba47f433407264b7e266ff3c1",
-          "target": "sym:packages/parsers/src/java/spring.ts#requestMethodsOf@L387",
+          "edgeId": "e:ef00ce03950d38836e31c943e84ec1756e09f3b5fe506bf40a787dc88fc948a5",
+          "target": "sym:packages/parsers/src/java/spring.ts#requestMethodsOf@L385",
           "expr": "requestMethodsOf",
           "line": 132
         }
@@ -949,8 +1009,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:7421ca17ce961c441edd6bc4b30f31d0dd1582ff4c35f890eaacf8eb0f7f9db8",
-          "target": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L410",
+          "edgeId": "e:f169d619891bae972a6c76bf71899862c09e34eb118b060f15cfdd29e1852571",
+          "target": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
           "expr": "routeMetaOf",
           "line": 138
         }
@@ -988,6 +1048,20 @@
       {
         "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
         "procedureName": "extractSpringSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b1e71d6cce83f62e62e552357178cc8d8d107246f764f10c34619402cb66d492",
+          "target": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+          "expr": "routeMetaOf",
+          "line": 138
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
         "guard": "cond:packages/parsers/src/java/spring.ts@L140",
         "branch": "LOOP",
         "conditions": [
@@ -1017,8 +1091,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:8131c18d62702c320efcdc996fa822b1692d1d1dca9178dff4485ce2b059f24f",
-          "target": "sym:packages/parsers/src/java/spring.ts#joinPath@L397",
+          "edgeId": "e:f009214e54d47bffd70c9460ea20c163c21041897d58797e1a4159b45f7397f7",
+          "target": "sym:packages/parsers/src/java/spring.ts#joinPath@L393",
           "expr": "joinPath",
           "line": 141
         }
@@ -1059,6 +1133,20 @@
           "target": "stmt:packages/parsers/src/java/spring.ts@L141",
           "line": 141,
           "expr": "const routePath = joinPath(basePath, sub);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:59ef1c2c192558a140bcb0c6b063af69c9d33f54d5f00324e4b3f7e15c64f18f",
+          "target": "sym:packages/parsers/src/ts/nest.ts#joinPath@L549",
+          "expr": "joinPath",
+          "line": 141
         }
       },
       {
@@ -1227,8 +1315,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:fb9624d3408317b9fd3a107056a488c8438288c64a3db0612ce96ecd80ddbb21",
-          "target": "sym:packages/parsers/src/java/spring.ts#edge@L528",
+          "edgeId": "e:47af69cbc3e8b1674e1d556bc993a87e42289ab86fa425cd030351bdd5e9da22",
+          "target": "sym:packages/parsers/src/java/spring.ts#edge@L522",
           "expr": "edge",
           "line": 164
         }
@@ -1273,6 +1361,20 @@
           "target": "stmt:packages/parsers/src/java/spring.ts@L164",
           "line": 164,
           "expr": "edges.push(edge(handlerId, routeId, 'exposes', `${verb} ${routePath}`));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:46b12670a02c5e7976c8b55bbb5d45080ed3a046114049ea6b72bd82d3e87c06",
+          "target": "sym:packages/ui/src/viz.test.ts#edge@L27",
+          "expr": "edge",
+          "line": 164
         }
       },
       {
@@ -1510,6 +1612,20 @@
       {
         "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
         "procedureName": "extractSpringSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ff60508e04ea3af8c8462b957315bfb416d4ab7d3847219e92f06394cd5350d0",
+          "target": "sym:packages/parsers/src/ts/nest.ts#emitInject@L313",
+          "expr": "emitInject",
+          "line": 189
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
         "guard": "cond:packages/parsers/src/java/spring.ts@L196",
         "branch": "THEN",
         "conditions": [
@@ -1565,8 +1681,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:438376e8dd9b4b5a4781543dd652a0b5182d6577293b8dd51e77a2f77bbb711e",
-          "target": "sym:packages/parsers/src/java/spring.ts#dedupe@L405",
+          "edgeId": "e:1efeb24de872182c1e1739407b327c4acf6cb2210c56c23ceacc00d0d5d94a8d",
+          "target": "sym:packages/parsers/src/java/spring.ts#dedupe@L401",
           "expr": "dedupe",
           "line": 199
         }
@@ -1609,8 +1725,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:dc374f75cbf05f893b6cee351926da5653091bbcaaf363b77ae1c1df64f9831a",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#dedupe@L1314",
+          "edgeId": "e:cb1f7a9cf238a0499d4a4de502788c896bd8b78d3db59baea0c652440952225b",
+          "target": "sym:packages/parsers/src/ts/react.ts#dedupe@L361",
           "expr": "dedupe",
           "line": 199
         }
@@ -1857,8 +1973,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:788d1817e69864f4ce6f46c4682568b6a04f7d0f3157b1b07f08563b0aaf79a9",
-          "target": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L454",
+          "edgeId": "e:43f5ceb145b8e60154ba167469ba914715bae131d09aa1a40e7607dcdff89c63",
+          "target": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L450",
           "expr": "exceptionTypesOf",
           "line": 236
         }
@@ -2115,8 +2231,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:2fb3eda2cf6635b227ca760956721059c6ac0faa8369f23dde722c2d03ad76e0",
-          "target": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L464",
+          "edgeId": "e:1d9157c4bcd77a80ababfd6bfa066a1397656bc5f56b222acd4f0ce90592933a",
+          "target": "sym:packages/parsers/src/java/spring.ts#scheduledAnnoKind@L458",
           "expr": "scheduledAnnoKind",
           "line": 265
         }
@@ -2287,8 +2403,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:8b11a6cb3638e56c9a519e87e34aef7a90efbc22fad5fed57018a7b44cbe66b6",
-          "target": "sym:packages/parsers/src/java/spring.ts#securityOf@L442",
+          "edgeId": "e:0258e11d8841344536961b661f68f16d70c2b0117d2fe06e32cb3184c50bb17b",
+          "target": "sym:packages/parsers/src/java/spring.ts#securityOf@L438",
           "expr": "securityOf",
           "line": 275
         }
@@ -2317,6 +2433,20 @@
           "target": "stmt:packages/parsers/src/java/spring.ts@L275",
           "line": 275,
           "expr": "const sec = securityOf(m);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:44ee9de376cd32b8cd0c489a33de56aedb76bc8b1e9001af84c44b9938581f01",
+          "target": "sym:packages/parsers/src/ts/nest.ts#securityOf@L429",
+          "expr": "securityOf",
+          "line": 275
         }
       },
       {
@@ -2541,8 +2671,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:7e0165b243226d997ef78f92a0316f1b6c4b710b5ce532b97f56a62f2d391db0",
-          "target": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L474",
+          "edgeId": "e:5b7ad79d8ff967c3d7f267fdfef8ed0d9db222744cd72775686f439735530ad3",
+          "target": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L468",
           "expr": "relationMetaOf",
           "line": 307
         }
@@ -2725,8 +2855,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:6d0ada248d380dd5ce74daccc8e550caf63467542fdff5006b13f5e497837608",
-          "target": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L489",
+          "edgeId": "e:1aa5852d0cbb81b68447ab4717b47edfcd0cef82f9cf9d794633adf2f43ae098",
+          "target": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L483",
           "expr": "columnMetaOf",
           "line": 321
         }
@@ -2755,6 +2885,20 @@
           "target": "stmt:packages/parsers/src/java/spring.ts@L321",
           "line": 321,
           "expr": "const col = columnMetaOf(def);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+        "procedureName": "extractSpringSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8ccceda9fae50866429d45c1da338275bc8c00ed30891ec813b7a41596697676",
+          "target": "sym:packages/parsers/src/ts/nest.ts#columnMetaOf@L455",
+          "expr": "columnMetaOf",
+          "line": 321
         }
       },
       {
@@ -2841,7 +2985,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 20,
+      "resolved": 26,
       "recorded": 58,
       "unresolved": 20
     },

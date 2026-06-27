@@ -1,0 +1,271 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.status@L167",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:6da6a53bf531273eae8505a8f323c745fbc5aec27bac23ff31e483c498577ab3",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.status@L167",
+    "kind": "symbol",
+    "type": "method",
+    "name": "status",
+    "qualifiedName": "Verbs.status",
+    "signature": "status(): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 167,
+      "end": 178
+    },
+    "callSites": [
+      {
+        "callee": "getManifest",
+        "line": 168
+      },
+      {
+        "callee": "hasAnyFresh",
+        "line": 169
+      },
+      {
+        "callee": "capabilities",
+        "line": 176
+      }
+    ]
+  },
+  "source": {
+    "text": "  status(): Record<string, unknown> {\n    const m = this.deps.soul.getManifest();\n    const hasLlmGraph = this.llm.hasAnyFresh();\n    return {\n      indexed: m.stats.nodes > 0,\n      schemaVersion: m.schemaVersion,\n      stats: { nodes: m.stats.nodes, edges: m.stats.edges, clusters: m.stats.clusters },\n      ...(m.repo.vcsHead ? { vcsHead: m.repo.vcsHead } : {}),\n      ...(m.stats.incrementalSince ? { incrementalSince: m.stats.incrementalSince } : {}),\n      capabilities: { ...m.capabilities, ...this.deps.index.capabilities(), llmGraph: hasLlmGraph },\n    };\n  }",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 167
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.enrichStatus@L614",
+      "confidence": 1,
+      "name": "enrichStatus",
+      "qualifiedName": "Verbs.enrichStatus",
+      "signature": "enrichStatus(args: {\n      layer?: EnrichLayer;\n      scope?: { pathPrefix?: string; cluster?: string };\n      scopes?: boolean;\n    } = {}): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 614
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-af1351ebc1a170ddc.md#refutation-grounds",
+      "heading": "Refutation grounds",
+      "anchor": "refutation-grounds",
+      "snippet": "Refutation grounds",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#known-non-blockers",
+      "heading": "Known Non-Blockers",
+      "anchor": "known-non-blockers",
+      "snippet": "Known Non-Blockers",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "heading": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "anchor": "1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "snippet": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-2-concrete-before-after-the-loan-rule-engine-procedure",
+      "heading": "1.2 Concrete before/after — the loan-rule-engine procedure",
+      "anchor": "1-2-concrete-before-after-the-loan-rule-engine-procedure",
+      "snippet": "1.2 Concrete before/after — the loan-rule-engine procedure",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#security",
+      "heading": "Security",
+      "anchor": "security",
+      "snippet": "Security",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CODE_OF_CONDUCT.md#our-pledge",
+      "heading": "Our Pledge",
+      "anchor": "our-pledge",
+      "snippet": "Our Pledge",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-5-tree-sitter-wasm-the-offline-core-tension",
+      "heading": "4.5 tree-sitter WASM + the offline-core tension",
+      "anchor": "4-5-tree-sitter-wasm-the-offline-core-tension",
+      "snippet": "4.5 tree-sitter WASM + the offline-core tension",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-beta-installers.md#verify-the-bundle",
+      "heading": "Verify The Bundle",
+      "anchor": "verify-the-bundle",
+      "snippet": "Verify The Bundle",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#release-gate",
+      "heading": "Release Gate",
+      "anchor": "release-gate",
+      "snippet": "Release Gate",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-7-mcp-server-verification-the-real-test",
+      "heading": "5.7 MCP server verification (the real test)",
+      "anchor": "5-7-mcp-server-verification-the-real-test",
+      "snippet": "5.7 MCP server verification (the real test)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#8-troubleshooting",
+      "heading": "8. Troubleshooting",
+      "anchor": "8-troubleshooting",
+      "snippet": "8. Troubleshooting",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.status@L167",
+    "procedureName": "Verbs.status",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.status@L167",
+        "procedureName": "Verbs.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:77203d5a354174c3e2ce6ccd716f3cb1b457fe6138198a1154b78fafb83e1ad3",
+          "target": "stmt:packages/mcp/src/verbs.ts@L168",
+          "line": 168,
+          "expr": "const m = this.deps.soul.getManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.status@L167",
+        "procedureName": "Verbs.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c0f5929615fdd1bd3c33048b96172cf31600cc0a32b6dfd29a75695a3842fe5c",
+          "target": "stmt:packages/mcp/src/verbs.ts@L169",
+          "line": 169,
+          "expr": "const hasLlmGraph = this.llm.hasAnyFresh();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.status@L167",
+        "procedureName": "Verbs.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fd15e56258b63aa69c90e449da02ffd1a31941486863b925c93a0ad48465dc3a",
+          "target": "stmt:packages/mcp/src/verbs.ts@L170",
+          "line": 170,
+          "expr": "return {\n      indexed: m.stats.nodes > 0,\n      schemaVersion: m.schemaVersion,\n      stats: { nodes: m.stats.nodes, edges: m.stats.edges, clusters: m.stats.clusters },\n      ...(m.repo.vcsHead ? { vcsHead: m.repo.vcsHead } : {}),\n      ...(m.stats.incrementalSince ? { incrementalSince: m.stats.incrementalSince } : {}),\n      capabilities: { ...m.capabilities, ...this.deps.index.capabilities(), llmGraph: hasLlmGraph },\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,255 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeClusters@L370",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:5c4e6157bb7271aec38c57581f29232f57da7b7eafe761050712f04c211186b6",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeClusters@L370",
+    "kind": "symbol",
+    "type": "method",
+    "name": "writeClusters",
+    "qualifiedName": "SoulStore.writeClusters",
+    "signature": "writeClusters(): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 370,
+      "end": 381
+    },
+    "callSites": [
+      {
+        "callee": "sort",
+        "line": 372
+      },
+      {
+        "callee": "filter",
+        "line": 372
+      },
+      {
+        "callee": "values",
+        "line": 372
+      },
+      {
+        "callee": "join",
+        "line": 375
+      },
+      {
+        "callee": "rmSync",
+        "line": 377
+      },
+      {
+        "callee": "atomicWrite",
+        "line": 380
+      },
+      {
+        "callee": "join",
+        "line": 380
+      },
+      {
+        "callee": "map",
+        "line": 380
+      },
+      {
+        "callee": "stringify",
+        "line": 380
+      }
+    ]
+  },
+  "source": {
+    "text": "  private writeClusters(): void {\n    if (!this.clustersDirty) return;\n    const records = [...this.nodes.values()]\n      .filter((n) => n.kind === 'cluster')\n      .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));\n    const path = join(this.cribDirPrivate, CLUSTERS_FILE);\n    if (records.length === 0) {\n      if (existsSync(path)) rmSync(path);\n      return;\n    }\n    this.atomicWrite(path, `${records.map((r) => JSON.stringify(r)).join('\\n')}\\n`);\n  }",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 370
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L219",
+      "confidence": 1,
+      "name": "commit",
+      "qualifiedName": "SoulStore.commit",
+      "signature": "commit(now = new Date().toISOString()): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 219
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L430",
+      "confidence": 1,
+      "name": "atomicWrite",
+      "qualifiedName": "SoulStore.atomicWrite",
+      "signature": "atomicWrite(path: string, content: string): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 430
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeClusters@L370",
+    "procedureName": "SoulStore.writeClusters",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L371",
+      "cond:packages/core/src/soul-store.ts@L376",
+      "cond:packages/core/src/soul-store.ts@L377"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeClusters@L370",
+        "procedureName": "SoulStore.writeClusters",
+        "guard": "cond:packages/core/src/soul-store.ts@L371",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L371",
+            "expr": "!this.clustersDirty",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:167f4fa98a29393d57707cd69cacbdf398c52b05dd8d10d4fbaf0496bfedf1b5",
+          "target": "stmt:packages/core/src/soul-store.ts@L371",
+          "line": 371,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeClusters@L370",
+        "procedureName": "SoulStore.writeClusters",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a117c3b50956cc421e8d85caf54667f2345d2b15fb45fe873b68334675e9123e",
+          "target": "stmt:packages/core/src/soul-store.ts@L372",
+          "line": 372,
+          "expr": "const records = [...this.nodes.values()]\n      .filter((n) => n.kind === 'cluster')\n      .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeClusters@L370",
+        "procedureName": "SoulStore.writeClusters",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d3e19b6885580132eacb2be15831711b5f5bc632ca83a1067e1f761593fc9701",
+          "target": "stmt:packages/core/src/soul-store.ts@L375",
+          "line": 375,
+          "expr": "const path = join(this.cribDirPrivate, CLUSTERS_FILE);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeClusters@L370",
+        "procedureName": "SoulStore.writeClusters",
+        "guard": "cond:packages/core/src/soul-store.ts@L377",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L376",
+            "expr": "records.length === 0"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L377",
+            "expr": "existsSync(path)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a6c4406d5c757eaf0ae0f5f1f13d9bbcfeec8592a43df9e9b26e0d09bbca6c83",
+          "target": "stmt:packages/core/src/soul-store.ts@L377",
+          "line": 377,
+          "expr": "rmSync(path);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeClusters@L370",
+        "procedureName": "SoulStore.writeClusters",
+        "guard": "cond:packages/core/src/soul-store.ts@L376",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L376",
+            "expr": "records.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5dd9ff3832666d77d9116009a320e9862b3f673592e7ccd27fc4e3ebc6bc1d72",
+          "target": "stmt:packages/core/src/soul-store.ts@L378",
+          "line": 378,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeClusters@L370",
+        "procedureName": "SoulStore.writeClusters",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d57836bad2a7e419821bdfa63834441602e6f50816b62324e6a7fc06224d6f20",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L430",
+          "expr": "atomicWrite",
+          "line": 380
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.writeClusters@L370",
+        "procedureName": "SoulStore.writeClusters",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8a75c64c9b0d65c83e4f0b2c54aa4657a0e4e53ea8aa956f4691e07329ae4670",
+          "target": "stmt:packages/core/src/soul-store.ts@L380",
+          "line": 380,
+          "expr": "this.atomicWrite(path, `${records.map((r) => JSON.stringify(r)).join('\\n')}\\n`);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 9,
+      "unresolved": 8
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "8 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

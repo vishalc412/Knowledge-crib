@@ -6,9 +6,18 @@
  * one file (minimal diffs). Writes are atomic (temp→rename) so a crash never leaves a half-written
  * artifact. Staleness is hash-anchored: a dossier carries the source node's `hash` + the soul's
  * `schemaVersion` at build time; {@link readDossier} reports `stale` when either differs from the
- * live soul, so the verb can rebuild on miss/stale and the pipeline can refresh changed symbols only.
+ * live soul. The pipeline additionally compares rebuilt graph-dependent content and prunes orphan
+ * artifacts, covering relationship changes that do not alter the source node hash.
  */
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import { blake3Hex } from '@knowledge-crib/soul-schema';
 import type { Dossier } from './builder.js';
@@ -84,6 +93,32 @@ export function deleteDossier(cribDir: string, nodeId: string): void {
       // swallow — cleanup is best-effort
     }
   }
+}
+
+/** Remove persisted dossiers whose node no longer exists in the live soul. */
+export function pruneDossiers(cribDir: string, liveNodeIds: ReadonlySet<string>): number {
+  const root = dossiersDir(cribDir);
+  if (!existsSync(root)) return 0;
+  let pruned = 0;
+  for (const shard of readdirSync(root, { withFileTypes: true })) {
+    if (!shard.isDirectory()) continue;
+    const shardPath = join(root, shard.name);
+    for (const entry of readdirSync(shardPath, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith('.json')) continue;
+      const path = join(shardPath, entry.name);
+      let id: string | undefined;
+      try {
+        const parsed = JSON.parse(readFileSync(path, 'utf8')) as { id?: unknown };
+        if (typeof parsed.id === 'string') id = parsed.id;
+      } catch {
+        // Invalid cache entries are unusable and safe to discard.
+      }
+      if (id !== undefined && liveNodeIds.has(id)) continue;
+      rmSync(path, { force: true });
+      pruned++;
+    }
+  }
+  return pruned;
 }
 
 /** Filesystem-safe name for a node id (replaces path separators / colons). */

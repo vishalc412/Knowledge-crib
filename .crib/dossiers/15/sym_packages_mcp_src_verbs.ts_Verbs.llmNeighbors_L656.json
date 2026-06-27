@@ -1,0 +1,148 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.llmNeighbors@L656",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:8fecd1f5d3ed8c4e694b258f5eb3bf0fafa3dfce8f01aa53968e5d30b8baf1c3",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.llmNeighbors@L656",
+    "kind": "symbol",
+    "type": "method",
+    "name": "llmNeighbors",
+    "qualifiedName": "Verbs.llmNeighbors",
+    "signature": "llmNeighbors(args: { id: string }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 656,
+      "end": 659
+    },
+    "callSites": [
+      {
+        "callee": "resolveNodeId",
+        "line": 657
+      },
+      {
+        "callee": "neighbors",
+        "line": 658
+      }
+    ]
+  },
+  "source": {
+    "text": "  llmNeighbors(args: { id: string }): Record<string, unknown> {\n    const id = this.resolveNodeId(args.id) ?? args.id;\n    return this.llm.neighbors(id);\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 656
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "Verbs.neighbors",
+      "signature": "neighbors(args: {\n    id: string;\n    rel?: string;\n    dir?: ApiDir;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 670
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1071",
+      "confidence": 1,
+      "name": "resolveNodeId",
+      "qualifiedName": "Verbs.resolveNodeId",
+      "signature": "resolveNodeId(idOrName: string): string | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1071
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.llmNeighbors@L656",
+    "procedureName": "Verbs.llmNeighbors",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.llmNeighbors@L656",
+        "procedureName": "Verbs.llmNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4e8c1be9a1a03564b8877664842633237fbfdc1cae3ebba48e684e15f25a60b5",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1071",
+          "expr": "resolveNodeId",
+          "line": 657
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.llmNeighbors@L656",
+        "procedureName": "Verbs.llmNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5b98191e9a0d8f79e6c99bbc1f95443c92411d76b48365fbbf7188d64bc20458",
+          "target": "stmt:packages/mcp/src/verbs.ts@L657",
+          "line": 657,
+          "expr": "const id = this.resolveNodeId(args.id) ?? args.id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.llmNeighbors@L656",
+        "procedureName": "Verbs.llmNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d0e9ef36b4e35f274f93ac499eabd15cb40a1312bbb6c295c563b6a9b3ed0964",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+          "expr": "neighbors",
+          "line": 658
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.llmNeighbors@L656",
+        "procedureName": "Verbs.llmNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa4cf57f532348e62f8cccccd1c4dd1fbe84fadcabb4a44e3f9c5b480be4979c",
+          "target": "stmt:packages/mcp/src/verbs.ts@L658",
+          "line": 658,
+          "expr": "return this.llm.neighbors(id);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -2,7 +2,7 @@
   "id": "sym:packages/pipeline/src/rules/export.ts#renderExport@L83",
   "schemaVersion": "1.3",
   "nodeHash": "blake3:f50e751b614184bbb9baa2d17cb8c4f4ae4fb9e4352332fe0d6c14386bf2ac51",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-06-27T16:07:10.655Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/rules/export.ts#renderExport@L83",
@@ -56,26 +56,26 @@
   },
   "callers": [
     {
-      "id": "sym:packages/cli/src/cli.ts#cmdExport@L442",
+      "id": "sym:packages/cli/src/cli.ts#cmdExport@L850",
       "confidence": 1,
       "name": "cmdExport",
       "qualifiedName": "cmdExport",
       "signature": "cmdExport(args: string[], ctx?: CmdCtx): Promise<number>",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 442
+      "line": 850
     }
   ],
   "callees": [
     {
-      "id": "sym:packages/core/src/rules/extract.ts#decisionTable@L191",
+      "id": "sym:packages/core/src/rules/extract.ts#decisionTable@L197",
       "confidence": 1,
       "name": "decisionTable",
       "qualifiedName": "decisionTable",
       "signature": "decisionTable(soul: SoulStore, procedure: string, opts: ExtractRulesOpts = {}): DecisionTable",
       "type": "function",
       "file": "packages/core/src/rules/extract.ts",
-      "line": 191
+      "line": 197
     },
     {
       "id": "sym:packages/pipeline/src/rules/export.ts#exportGraph@L20",
@@ -172,8 +172,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:fa62b268c6da5c6cc4a00cfe6537d922782fe9033442bb303c82083f4efcc383",
-          "target": "sym:packages/core/src/rules/extract.ts#decisionTable@L191",
+          "edgeId": "e:696a707ee833d904a6e1a18414d731cccf4807015690acdc7231d9a093932495",
+          "target": "sym:packages/core/src/rules/extract.ts#decisionTable@L197",
           "expr": "decisionTable",
           "line": 91
         }

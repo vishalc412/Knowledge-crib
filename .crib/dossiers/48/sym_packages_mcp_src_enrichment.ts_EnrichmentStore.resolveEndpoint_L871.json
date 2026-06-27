@@ -1,0 +1,230 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveEndpoint@L871",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:5798b1cefb12283c549335c0091ed4ec75c6c7e0d2bf9505953679aaa60875ed",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveEndpoint@L871",
+    "kind": "symbol",
+    "type": "method",
+    "name": "resolveEndpoint",
+    "qualifiedName": "EnrichmentStore.resolveEndpoint",
+    "signature": "resolveEndpoint(endpoint: string, targetId: string, localIds: Set<string>, knownLlmIds: Set<string>): string | undefined",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 871,
+      "end": 883
+    },
+    "callSites": [
+      {
+        "callee": "llmNodeId",
+        "line": 878
+      },
+      {
+        "callee": "llmNodeId",
+        "line": 880
+      }
+    ]
+  },
+  "source": {
+    "text": "  private resolveEndpoint(\n    endpoint: string,\n    targetId: string,\n    localIds: Set<string>,\n    knownLlmIds: Set<string>,\n  ): string | undefined {\n    if (this.soul.getNode(endpoint)) return endpoint;\n    if (localIds.has(endpoint)) return llmNodeId(targetId, endpoint);\n    if (knownLlmIds.has(endpoint)) return endpoint;\n    const sameTarget = llmNodeId(targetId, endpoint);\n    if (knownLlmIds.has(sameTarget)) return sameTarget;\n    return undefined;\n  }",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 871
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L348",
+      "confidence": 1,
+      "name": "save",
+      "qualifiedName": "EnrichmentStore.save",
+      "signature": "save(args: EnrichSaveArgs): EnrichSaveResult",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 348
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#llmNodeId@L1026",
+      "confidence": 1,
+      "name": "llmNodeId",
+      "qualifiedName": "llmNodeId",
+      "signature": "llmNodeId(targetId: string, localId: string): string",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1026
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveEndpoint@L871",
+    "procedureName": "EnrichmentStore.resolveEndpoint",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L877",
+      "cond:packages/mcp/src/enrichment.ts@L878",
+      "cond:packages/mcp/src/enrichment.ts@L879",
+      "cond:packages/mcp/src/enrichment.ts@L881"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveEndpoint@L871",
+        "procedureName": "EnrichmentStore.resolveEndpoint",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L877",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L877",
+            "expr": "this.soul.getNode(endpoint)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:606cbdda84e0032ca10e414b44b7b79a6ca1991b2e3af7b5ff878d20b265d6ae",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L877",
+          "line": 877,
+          "expr": "return endpoint;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveEndpoint@L871",
+        "procedureName": "EnrichmentStore.resolveEndpoint",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d4678b9dd7e941dc1ba8c88ab5a8054cef2d1bdd0942f902546936ba0c8ec08f",
+          "target": "sym:packages/mcp/src/enrichment.ts#llmNodeId@L1026",
+          "expr": "llmNodeId",
+          "line": 878
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveEndpoint@L871",
+        "procedureName": "EnrichmentStore.resolveEndpoint",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L878",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L878",
+            "expr": "localIds.has(endpoint)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:000686bedb6dedc31ee1ae8c91356007017d2afd106833dc4d10b1fa87044006",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L878",
+          "line": 878,
+          "expr": "return llmNodeId(targetId, endpoint);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveEndpoint@L871",
+        "procedureName": "EnrichmentStore.resolveEndpoint",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L879",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L879",
+            "expr": "knownLlmIds.has(endpoint)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c6972e8721b87c74586722a72666dfc3baf089e35fe0bfc48260c78692839cc",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L879",
+          "line": 879,
+          "expr": "return endpoint;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveEndpoint@L871",
+        "procedureName": "EnrichmentStore.resolveEndpoint",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:08db0a7d3d1a53210337cc8d8dd2a5af7fd417b59841b2e861810bba37fce29b",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L880",
+          "line": 880,
+          "expr": "const sameTarget = llmNodeId(targetId, endpoint);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveEndpoint@L871",
+        "procedureName": "EnrichmentStore.resolveEndpoint",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L881",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L881",
+            "expr": "knownLlmIds.has(sameTarget)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f7036a7d9e64e53c79167b158add133f59a931aca16d6a9174f14af1b4ceb1ee",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L881",
+          "line": 881,
+          "expr": "return sameTarget;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveEndpoint@L871",
+        "procedureName": "EnrichmentStore.resolveEndpoint",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c8c94c65c3135ec97d6a9b71a0b27bae79b300ec4cb7030934e089d972ae64e2",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L882",
+          "line": 882,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

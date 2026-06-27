@@ -1,7 +1,7 @@
 # Knowledge-crib — Refined vs Existing: Detailed-Level Analysis Assessment
 
 > Formal comparison artifact + six-role judgment, per the governing plan
-> (`/Users/vishalchawla/.claude/plans/do-you-need-your-federated-pike.md`).
+> (`~/.claude/plans/do-you-need-your-federated-pike.md`).
 >
 > **Question under review:** Does the refined implementation capture *detailed-level* analysis (the
 > kind a migration analyst or a local LLM needs to rebuild a rule engine on another stack), and how

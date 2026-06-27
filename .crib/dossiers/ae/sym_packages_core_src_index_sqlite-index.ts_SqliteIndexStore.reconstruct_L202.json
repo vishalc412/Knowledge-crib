@@ -1,0 +1,271 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reconstruct@L202",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:780cff30e2df59af2337a8ca41cc6ed659a62bb68d2313f32feeb06c409540d0",
+  "builtAt": "2026-06-27T16:00:56.397Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reconstruct@L202",
+    "kind": "symbol",
+    "type": "method",
+    "name": "reconstruct",
+    "qualifiedName": "SqliteIndexStore.reconstruct",
+    "signature": "reconstruct(from: string, to: string, prev: Map<string, { node: string; edge: Edge }>): PathResult",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 202,
+      "end": 220
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 211
+      },
+      {
+        "callee": "push",
+        "line": 213
+      },
+      {
+        "callee": "push",
+        "line": 214
+      },
+      {
+        "callee": "reverse",
+        "line": 217
+      },
+      {
+        "callee": "reverse",
+        "line": 218
+      }
+    ]
+  },
+  "source": {
+    "text": "  private reconstruct(\n    from: string,\n    to: string,\n    prev: Map<string, { node: string; edge: Edge }>,\n  ): PathResult {\n    const path: string[] = [to];\n    const edges: Edge[] = [];\n    let cur = to;\n    while (cur !== from) {\n      const step = prev.get(cur);\n      if (!step) break;\n      edges.push(step.edge);\n      path.push(step.node);\n      cur = step.node;\n    }\n    path.reverse();\n    edges.reverse();\n    return { found: true, path, edges };\n  }",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 202
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.shortestPath@L160",
+      "confidence": 1,
+      "name": "shortestPath",
+      "qualifiedName": "SqliteIndexStore.shortestPath",
+      "signature": "shortestPath(from: string, to: string, maxHops = Number.POSITIVE_INFINITY): PathResult",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 160
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "heading": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "anchor": "phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "snippet": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "heading": "7. Risks",
+      "anchor": "7-risks",
+      "snippet": "7. Risks",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-1-language-agnostic-migration-core-8-days",
+      "heading": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "anchor": "phase-1-language-agnostic-migration-core-8-days",
+      "snippet": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-6-reconstruction-artifact-closes-g6",
+      "heading": "WS-6 — Reconstruction artifact (closes G6)",
+      "anchor": "ws-6-reconstruction-artifact-closes-g6",
+      "snippet": "WS-6 — Reconstruction artifact (closes G6)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reconstruct@L202",
+    "procedureName": "SqliteIndexStore.reconstruct",
+    "conditions": [
+      "cond:packages/core/src/index/sqlite-index.ts@L210"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reconstruct@L202",
+        "procedureName": "SqliteIndexStore.reconstruct",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L210",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L210",
+            "expr": "cur !== from",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75b1a7890488d03583c82aca0c1c14ca25b62b4acdc12b7302e411df54ed6db6",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L211",
+          "line": 211,
+          "expr": "const step = prev.get(cur);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reconstruct@L202",
+        "procedureName": "SqliteIndexStore.reconstruct",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L210",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L210",
+            "expr": "cur !== from",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6f16fe31da6b6f71696add945fdaaafc25b4c127686ef66e87d69f3b77f2f001",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L213",
+          "line": 213,
+          "expr": "edges.push(step.edge);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reconstruct@L202",
+        "procedureName": "SqliteIndexStore.reconstruct",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L210",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L210",
+            "expr": "cur !== from",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:20011e5142642cf601ce2858f6f7c4a8726dc5371ea602636f955dd45cae8767",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L214",
+          "line": 214,
+          "expr": "path.push(step.node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reconstruct@L202",
+        "procedureName": "SqliteIndexStore.reconstruct",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L210",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L210",
+            "expr": "cur !== from",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fbb15a9b55b58f508862affd928b5d9cd3aec003e4f296385fca8ec8bb5e4272",
+          "target": "assign:packages/core/src/index/sqlite-index.ts@L215",
+          "line": 215,
+          "expr": "cur = step.node;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reconstruct@L202",
+        "procedureName": "SqliteIndexStore.reconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6770cc8779aed8b5aa6cd54bb97fe544703b57efb02a20073dc29c23edf62085",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L217",
+          "line": 217,
+          "expr": "path.reverse();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reconstruct@L202",
+        "procedureName": "SqliteIndexStore.reconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1cc1e758543edf993d7a14a06b6a7ee36f94861ccae8fb8985af9e152ec3a4ec",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L218",
+          "line": 218,
+          "expr": "edges.reverse();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reconstruct@L202",
+        "procedureName": "SqliteIndexStore.reconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:246d40a96a6348c9fe2b4b028a345794f18d273a89d65cc02e6b154a8a25f24e",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L219",
+          "line": 219,
+          "expr": "return { found: true, path, edges };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 5,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

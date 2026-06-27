@@ -1,0 +1,481 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:71a1ad76c40e582788b1b28a6fd6364eacb4d55deb3b3643be4e90b976cf6476",
+  "builtAt": "2026-06-27T16:00:56.397Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+    "kind": "symbol",
+    "type": "function",
+    "name": "composeSearchableBody",
+    "qualifiedName": "composeSearchableBody",
+    "signature": "composeSearchableBody(node: Node, repoRoot: string, fileCache: FileLineCache): string",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 346,
+      "end": 374
+    },
+    "callSites": [
+      {
+        "callee": "readCachedLines",
+        "line": 351
+      },
+      {
+        "callee": "max",
+        "line": 353
+      },
+      {
+        "callee": "min",
+        "line": 354
+      },
+      {
+        "callee": "join",
+        "line": 356
+      },
+      {
+        "callee": "slice",
+        "line": 356
+      },
+      {
+        "callee": "push",
+        "line": 357
+      },
+      {
+        "callee": "slice",
+        "line": 357
+      },
+      {
+        "callee": "push",
+        "line": 365
+      },
+      {
+        "callee": "push",
+        "line": 366
+      },
+      {
+        "callee": "push",
+        "line": 367
+      },
+      {
+        "callee": "push",
+        "line": 368
+      },
+      {
+        "callee": "push",
+        "line": 369
+      },
+      {
+        "callee": "join",
+        "line": 372
+      },
+      {
+        "callee": "slice",
+        "line": 373
+      }
+    ]
+  },
+  "source": {
+    "text": "function composeSearchableBody(node: Node, repoRoot: string, fileCache: FileLineCache): string {\n  const parts: string[] = [];\n\n  // 1. Rehydrated span text from disk (the body / DDL / statement text).\n  if (node.file && node.span) {\n    const lines = readCachedLines(repoRoot, node.file, fileCache);\n    if (lines && lines.length > 0) {\n      const start = Math.max(node.span.start - 1, 0);\n      const end = Math.min(node.span.end, lines.length);\n      if (end > start) {\n        const spanText = lines.slice(start, end).join('\\n');\n        parts.push(spanText.length > BODY_FTS_CAP ? spanText.slice(0, BODY_FTS_CAP) : spanText);\n      }\n    }\n  }\n\n  // 2. In-soul logic fragments — searchable even when the body is absent (e.g. a spec-only file).\n  //    These are already on the node, so no disk read is needed; they carry the rule expressions,\n  //    cursor queries, case selectors, and raise error messages that the extractors captured.\n  if (node.expr) parts.push(node.expr);\n  if (node.cursorQuery) parts.push(node.cursorQuery);\n  if (node.whenSelector) parts.push(node.whenSelector);\n  if (node.errorMessage) parts.push(node.errorMessage);\n  if (node.assignTarget) parts.push(node.assignTarget);\n\n  // Bound the combined blob so the in-soul fragments plus body never exceed the cap.\n  const body = parts.join('\\n');\n  return body.length > BODY_FTS_CAP ? body.slice(0, BODY_FTS_CAP) : body;\n}",
+    "truncated": false,
+    "totalLines": 29,
+    "startLine": 346
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertNode@L231",
+      "confidence": 1,
+      "name": "insertNode",
+      "qualifiedName": "SqliteIndexStore.insertNode",
+      "signature": "insertNode(node: Node, repoRoot: string, fileCache: FileLineCache): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 231
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#readCachedLines@L321",
+      "confidence": 1,
+      "name": "readCachedLines",
+      "qualifiedName": "readCachedLines",
+      "signature": "readCachedLines(repoRoot: string, file: string, fileCache: FileLineCache): string[] | undefined",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 321
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/index/sqlite-index.ts@L337",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+    "procedureName": "composeSearchableBody",
+    "conditions": [
+      "cond:packages/core/src/index/sqlite-index.ts@L350",
+      "cond:packages/core/src/index/sqlite-index.ts@L352",
+      "cond:packages/core/src/index/sqlite-index.ts@L355",
+      "cond:packages/core/src/index/sqlite-index.ts@L365",
+      "cond:packages/core/src/index/sqlite-index.ts@L366",
+      "cond:packages/core/src/index/sqlite-index.ts@L367",
+      "cond:packages/core/src/index/sqlite-index.ts@L368",
+      "cond:packages/core/src/index/sqlite-index.ts@L369"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L350",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L350",
+            "expr": "node.file && node.span",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ad35cc622e32156335abeebb1eb63eeecff55e7232bc1661d0b28117e6b7989e",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#readCachedLines@L321",
+          "expr": "readCachedLines",
+          "line": 351
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L350",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L350",
+            "expr": "node.file && node.span",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:788f14a5745cf60fe5cc86febf92e7941e5e5917565ceb4dab5b33d54bd3043e",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L351",
+          "line": 351,
+          "expr": "const lines = readCachedLines(repoRoot, node.file, fileCache);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L352",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L350",
+            "expr": "node.file && node.span"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L352",
+            "expr": "lines && lines.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dffde044fae910445228548ec96309a852e5e20a89571bc0ad907ee0f863b324",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L353",
+          "line": 353,
+          "expr": "const start = Math.max(node.span.start - 1, 0);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L352",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L350",
+            "expr": "node.file && node.span"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L352",
+            "expr": "lines && lines.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f910c7c5710c45c3c03fb96f8d672e06641b65075d331a0e3565076386490447",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L354",
+          "line": 354,
+          "expr": "const end = Math.min(node.span.end, lines.length);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L355",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L350",
+            "expr": "node.file && node.span"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L352",
+            "expr": "lines && lines.length > 0"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L355",
+            "expr": "end > start",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b07c658392fb72a3b0043179f0d94189a7858da2929dad80caa9271949f755b4",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L356",
+          "line": 356,
+          "expr": "const spanText = lines.slice(start, end).join('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L355",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L350",
+            "expr": "node.file && node.span"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L352",
+            "expr": "lines && lines.length > 0"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L355",
+            "expr": "end > start",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eeccd28dd48c497edcb88ff179d978d450b34babfc2d4dfffa703bffcb408637",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L357",
+          "line": 357,
+          "expr": "parts.push(spanText.length > BODY_FTS_CAP ? spanText.slice(0, BODY_FTS_CAP) : spanText);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7ea95569b155349cf256bdbf44534fd3e2226a16990b2a54938c2dafb7aff8ec",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 357
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L365",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L365",
+            "expr": "node.expr",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:18a853d8ec1fc098b6b435ccf4dcd2c1a8877a5b03feaa21315308e8104635a7",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L365",
+          "line": 365,
+          "expr": "parts.push(node.expr);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L366",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L366",
+            "expr": "node.cursorQuery",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fbf145b420be9b91e2262a40dc9c6d7463fd2a63f8a7c5cb88aa007bfb69b3f5",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L366",
+          "line": 366,
+          "expr": "parts.push(node.cursorQuery);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L367",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L367",
+            "expr": "node.whenSelector",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ae3f850304acb217de48970387c3362b56b04603031d24aac8e21a2b0947e61a",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L367",
+          "line": 367,
+          "expr": "parts.push(node.whenSelector);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L368",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L368",
+            "expr": "node.errorMessage",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c6caedf4f8e7d10d4fd664e193593f33e4a3cfb032e4f76b6d064a6293585ca5",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L368",
+          "line": 368,
+          "expr": "parts.push(node.errorMessage);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L369",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L369",
+            "expr": "node.assignTarget",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8ad5cd44bdc9e82139c445bf9d8be21e7446109f24cd02a2b62d4b0781404464",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L369",
+          "line": 369,
+          "expr": "parts.push(node.assignTarget);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7f3e0aa7f26b0ff6a63446343fb84fbb11d3c88a93e1fb821f7f68f8c3f08ee7",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L372",
+          "line": 372,
+          "expr": "const body = parts.join('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L346",
+        "procedureName": "composeSearchableBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a9aecf06182aab0804ab6751108e2f7fc1d98aafc4440fcf5b7818c4d12c7ebe",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L373",
+          "line": 373,
+          "expr": "return body.length > BODY_FTS_CAP ? body.slice(0, BODY_FTS_CAP) : body;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 0,
+    "conditions": 8,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 14,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

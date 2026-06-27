@@ -1,0 +1,97 @@
+{
+  "id": "sym:packages/core/src/dossier/builder.ts#byLabel@L435",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:2e143a4ad778b9169e0933ab9d1cb9791b1ff7475865b8f54ea7e467383a6a86",
+  "builtAt": "2026-06-27T16:12:57.877Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/builder.ts#byLabel@L435",
+    "kind": "symbol",
+    "type": "function",
+    "name": "byLabel",
+    "qualifiedName": "byLabel",
+    "signature": "byLabel(a: AdjacentBrief, b: AdjacentBrief): number",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/builder.ts",
+    "span": {
+      "start": 435,
+      "end": 439
+    }
+  },
+  "source": {
+    "text": "function byLabel(a: AdjacentBrief, b: AdjacentBrief): number {\n  const la = a.qualifiedName ?? a.name ?? a.id;\n  const lb = b.qualifiedName ?? b.name ?? b.id;\n  return la < lb ? -1 : la > lb ? 1 : 0;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 435
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L148",
+      "confidence": 1,
+      "name": "buildDossier",
+      "qualifiedName": "buildDossier",
+      "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 148
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/builder.ts@L434",
+      "snippet": "/** Sort adjacent briefs by a stable label (qualifiedName → name → id). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/builder.ts#byLabel@L435",
+    "procedureName": "byLabel",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#byLabel@L435",
+        "procedureName": "byLabel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:911c62cc92592ac5de2de3d5bc5691401edccb8b98af8fe8bcf297c8741f4cf6",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L438",
+          "line": 438,
+          "expr": "return la < lb ? -1 : la > lb ? 1 : 0;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/dossier/builder.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

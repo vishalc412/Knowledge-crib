@@ -1,0 +1,436 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:32e0070549bf289022948928790b262b3eb520be802b9cfc2ed7bde157169aab",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+    "kind": "symbol",
+    "type": "method",
+    "name": "neighbors",
+    "qualifiedName": "Verbs.neighbors",
+    "signature": "neighbors(args: {\n    id: string;\n    rel?: string;\n    dir?: ApiDir;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 670,
+      "end": 688
+    },
+    "callSites": [
+      {
+        "callee": "resolveNodeId",
+        "line": 677
+      },
+      {
+        "callee": "notFound",
+        "line": 678
+      },
+      {
+        "callee": "filter",
+        "line": 679
+      },
+      {
+        "callee": "adjacency",
+        "line": 679
+      },
+      {
+        "callee": "apiDir",
+        "line": 679
+      },
+      {
+        "callee": "bound",
+        "line": 682
+      },
+      {
+        "callee": "map",
+        "line": 682
+      }
+    ]
+  },
+  "source": {
+    "text": "  neighbors(args: {\n    id: string;\n    rel?: string;\n    dir?: ApiDir;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown> {\n    const id = this.resolveNodeId(args.id);\n    if (!id || !this.deps.soul.getNode(id)) return notFound(args.id);\n    const edges = this.adjacency(id, apiDir(args.dir), args.extractedOnly).filter(\n      (e) => !args.rel || e.rel === args.rel,\n    );\n    const page = bound(edges.map(publicEdge), args.limit ?? 50);\n    return {\n      edges: page.items,\n      truncated: page.truncated,\n      ...(page.cursor ? { cursor: page.cursor } : {}),\n    };\n  }",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 670
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.adjacency@L1025",
+      "confidence": 1,
+      "name": "adjacency",
+      "qualifiedName": "Verbs.adjacency",
+      "signature": "adjacency(id: string, dir: Dir | 'both', extractedOnly?: boolean): Edge[]",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1025
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.callEdges@L1033",
+      "confidence": 1,
+      "name": "callEdges",
+      "qualifiedName": "Verbs.callEdges",
+      "signature": "callEdges(id: string, dir: Dir, extractedOnly?: boolean): Edge[]",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1033
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L1040",
+      "confidence": 1,
+      "name": "docsFor",
+      "qualifiedName": "Verbs.docsFor",
+      "signature": "docsFor(id: string, minConfidence: number, extractedOnly?: boolean): DocLink[]",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1040
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L807",
+      "confidence": 1,
+      "name": "gaps",
+      "qualifiedName": "Verbs.gaps",
+      "signature": "gaps(args: { extractedOnly?: boolean; includeBuiltins?: boolean } = {}): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 807
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.hasExecutes@L826",
+      "confidence": 1,
+      "name": "hasExecutes",
+      "qualifiedName": "Verbs.gaps.hasExecutes",
+      "signature": "hasExecutes(…)",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 826
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.referencedBy@L831",
+      "confidence": 1,
+      "name": "referencedBy",
+      "qualifiedName": "Verbs.gaps.referencedBy",
+      "signature": "referencedBy(…)",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 831
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.llmNeighbors@L656",
+      "confidence": 1,
+      "name": "llmNeighbors",
+      "qualifiedName": "Verbs.llmNeighbors",
+      "signature": "llmNeighbors(args: { id: string }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 656
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.adjacency@L1025",
+      "confidence": 1,
+      "name": "adjacency",
+      "qualifiedName": "Verbs.adjacency",
+      "signature": "adjacency(id: string, dir: Dir | 'both', extractedOnly?: boolean): Edge[]",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1025
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1071",
+      "confidence": 1,
+      "name": "resolveNodeId",
+      "qualifiedName": "Verbs.resolveNodeId",
+      "signature": "resolveNodeId(idOrName: string): string | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1071
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#apiDir@L1185",
+      "confidence": 1,
+      "name": "apiDir",
+      "qualifiedName": "apiDir",
+      "signature": "apiDir(d?: ApiDir): Dir | 'both'",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1185
+    },
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#bound@L15",
+      "confidence": 1,
+      "name": "bound",
+      "qualifiedName": "bound",
+      "signature": "bound(all: T[], limit: number, offset = 0): Bounded<T>",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 15
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#notFound@L1203",
+      "confidence": 1,
+      "name": "notFound",
+      "qualifiedName": "notFound",
+      "signature": "notFound(id: string): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1203
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "heading": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "anchor": "2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "snippet": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-26-large-project-viz-design.md#approved-direction",
+      "heading": "Approved Direction",
+      "anchor": "approved-direction",
+      "snippet": "Approved Direction",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-26-large-project-viz-design.md#user-experience",
+      "heading": "User Experience",
+      "anchor": "user-experience",
+      "snippet": "User Experience",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+    "procedureName": "Verbs.neighbors",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L678"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+        "procedureName": "Verbs.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a836c5a30779dbd579c91a6341534ad5dff3dc0d13994e2b29931d82c2e75cd3",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1071",
+          "expr": "resolveNodeId",
+          "line": 677
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+        "procedureName": "Verbs.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:762a3f39d15d13d8713d49eac0b3f10f265e7736ac2681a85544e9ef222b4855",
+          "target": "stmt:packages/mcp/src/verbs.ts@L677",
+          "line": 677,
+          "expr": "const id = this.resolveNodeId(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+        "procedureName": "Verbs.neighbors",
+        "guard": "cond:packages/mcp/src/verbs.ts@L678",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L678",
+            "expr": "!id || !this.deps.soul.getNode(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:545f0ea42d7873dddbb910cf102bcec26b9522833bf2852aa18e1268abff1832",
+          "target": "sym:packages/mcp/src/verbs.ts#notFound@L1203",
+          "expr": "notFound",
+          "line": 678
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+        "procedureName": "Verbs.neighbors",
+        "guard": "cond:packages/mcp/src/verbs.ts@L678",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L678",
+            "expr": "!id || !this.deps.soul.getNode(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:02cb93346fd369445add93a6a9daa6eeef93724970d2cb1e3113c7648040a45a",
+          "target": "stmt:packages/mcp/src/verbs.ts@L678",
+          "line": 678,
+          "expr": "return notFound(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+        "procedureName": "Verbs.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0744fd1cfa7abcdcbb20af0db81e7d71a0d455e24b6beb193da6a9cb1fe7a555",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.adjacency@L1025",
+          "expr": "adjacency",
+          "line": 679
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+        "procedureName": "Verbs.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:48ed4273c4172c6cc29a844480bc4c5a9db31255fef2231a36399aac2495e1a8",
+          "target": "sym:packages/mcp/src/verbs.ts#apiDir@L1185",
+          "expr": "apiDir",
+          "line": 679
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+        "procedureName": "Verbs.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4c0dac1865c8a44560696c87ecf45cce99941f2e671fa38d8b63263453a6088c",
+          "target": "stmt:packages/mcp/src/verbs.ts@L679",
+          "line": 679,
+          "expr": "const edges = this.adjacency(id, apiDir(args.dir), args.extractedOnly).filter(\n      (e) => !args.rel || e.rel === args.rel,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+        "procedureName": "Verbs.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b18bb501a81599719df32584ff6cdc4486b065b2e13776322589e457a35fc920",
+          "target": "stmt:packages/mcp/src/verbs.ts@L682",
+          "line": 682,
+          "expr": "const page = bound(edges.map(publicEdge), args.limit ?? 50);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+        "procedureName": "Verbs.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dfa578732e72f60fca59c9276d916aa7f25bea5d3ed8d862c5b23ddbe55293c2",
+          "target": "sym:packages/mcp/src/token-budget.ts#bound@L15",
+          "expr": "bound",
+          "line": 682
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L670",
+        "procedureName": "Verbs.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:81cc394c8b705da5ac0eac48e2af59c4c87707f18fffb13e8717e84d4176f363",
+          "target": "stmt:packages/mcp/src/verbs.ts@L683",
+          "line": 683,
+          "expr": "return {\n      edges: page.items,\n      truncated: page.truncated,\n      ...(page.cursor ? { cursor: page.cursor } : {}),\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 7,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

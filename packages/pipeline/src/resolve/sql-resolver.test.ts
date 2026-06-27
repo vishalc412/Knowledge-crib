@@ -14,6 +14,13 @@ const SQL_CROSS = join(
   'fixtures',
   'sql-cross',
 );
+const SQL_DATAFLOW = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  'fixtures',
+  'sql-dataflow',
+);
 const MIXED = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'fixtures', 'mixed');
 
 const TS_EXTS = ['.ts', '.tsx', '.mts', '.cts'];
@@ -135,6 +142,57 @@ describe('Mixed TS + SQL indexRepo — no cross-talk (M10 gate)', () => {
   });
 });
 
+describe('SqlResolver — WS-7 cross-file cursor reads + FK references', () => {
+  it('resolves a cursor SELECT → table read across files (cursor in .pkb, table in loans.sql)', async () => {
+    const soul = soulFor();
+    await indexRepo(soul, SQL_DATAFLOW, { now: '2026-01-01T00:00:00.000Z' });
+
+    // the cursor node carries its row-source table on meta.tables
+    const cur = [...soul.iterate('cursor')].find((n) => n.name === 'c_app')!;
+    expect(cur).toBeDefined();
+    expect(cur.meta?.tables).toEqual(['loan_applications']);
+
+    // cross-file cursor read: cursor (in loan_pkg.pkb) -> loan_applications (in loans.sql)
+    const cursorReads = [...soul.iterateEdges('reads')]
+      .filter((e) => soul.getNode(e.src)?.kind === 'cursor')
+      .map((e) => pair(soul, e.src, e.dst));
+    expect(cursorReads).toContain('cursor:loan_pkg.pkb:c_app -> table:loan_applications');
+
+    // the body UPDATE writes loan_applications (cross-file, same catalog resolution path)
+    const writes = [...soul.iterateEdges('writes')].map((e) => pair(soul, e.src, e.dst));
+    expect(writes).toContain('stmt:loan_pkg.pkb:update -> table:loan_applications');
+
+    for (const e of soul.iterateEdges('reads')) expectEdge(e);
+    for (const e of soul.iterateEdges('writes')) expectEdge(e);
+  });
+
+  it('resolves a cross-file FK REFERENCES child table → parent table (parent in applicants.sql)', async () => {
+    const soul = soulFor();
+    await indexRepo(soul, SQL_DATAFLOW, { now: '2026-01-01T00:00:00.000Z' });
+
+    // the child table carries its FK on meta.foreignKeys
+    const child = [...soul.iterate('table')].find((n) => n.name === 'loan_applications')!;
+    expect(child.meta?.foreignKeys).toEqual([
+      { columns: ['applicant_id'], refTable: 'applicants', refColumns: ['id'] },
+    ]);
+
+    // cross-file references edge: child (loans.sql) -> parent (applicants.sql)
+    const refs = [...soul.iterateEdges('references')].map((e) => pair(soul, e.src, e.dst));
+    expect(refs).toEqual(['table:loan_applications -> table:applicants']);
+    for (const e of soul.iterateEdges('references')) expectEdge(e);
+  });
+
+  it('never emits a dangling edge for the data-flow fixture (pruneDangling-safe)', async () => {
+    const soul = soulFor();
+    await indexRepo(soul, SQL_DATAFLOW, { now: '2026-01-01T00:00:00.000Z' });
+    const ids = new Set([...soul.iterate()].map((n) => n.id));
+    for (const e of soul.iterateEdges()) {
+      expect(ids.has(e.src)).toBe(true);
+      expect(ids.has(e.dst)).toBe(true);
+    }
+  });
+});
+
 // --- helpers ---
 
 function pair(soul: SoulStore, srcId: string, dstId: string): string {
@@ -153,6 +211,8 @@ function label(soul: SoulStore, id: string): string {
       return `col:${n.table}.${n.name}`;
     case 'statement':
       return `stmt:${shortFile(n.file)}:${n.sqlKind ?? n.type}`;
+    case 'cursor':
+      return `cursor:${shortFile(n.file)}:${n.name}`;
     case 'condition':
       return `cond:${shortFile(n.file)}:L${n.span?.start}`;
     default:

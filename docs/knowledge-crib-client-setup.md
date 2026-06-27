@@ -17,12 +17,12 @@ project can use it.
 
 ```bash
 cd ~/Documents/Knowlege-crib          # the knowledge-crib repo
-pnpm install
-pnpm build                            # builds all 7 packages → dist/
-pnpm test                             # optional: confirm 165 tests pass
+corepack pnpm@9.15.0 install
+corepack pnpm@9.15.0 build            # builds all 7 packages → dist/
+corepack pnpm@9.15.0 release:verify   # production release gate
 
 # Link the CLI globally (crib + knowledge-crib binaries)
-cd packages/cli && pnpm link --global
+corepack pnpm@9.15.0 --filter knowledge-crib link --global
 ```
 
 Verify:
@@ -32,10 +32,11 @@ which crib                            # /Users/<you>/Library/pnpm/crib
 crib --help                           # prints the command list
 ```
 
-The global link points back at the repo's `dist/`, so `pnpm build` after a `git pull` is all you
+The global link points back at the repo's `dist/`, so `corepack pnpm@9.15.0 build` after a
+`git pull` is all you
 need to upgrade — no reinstall.
 
-Requirements: Node ≥ 20 (22+ recommended), pnpm 9.x. macOS/Linux.
+Requirements: Node ≥ 20 and pnpm 9.15.0 via Corepack. macOS/Linux.
 
 ### PATH gotcha for GUI-launched clients
 
@@ -107,12 +108,13 @@ All four clients launch the same thing:
 crib serve <project-root>
 ```
 
-The server speaks MCP over stdio, reads the soul from `<project-root>/.crib/`, and exposes **11
-tools** (provenance-tagged + token-bounded so the agent never dumps the whole graph):
+The server speaks MCP over stdio, reads the soul from `<project-root>/.crib/`, and exposes **17
+tools** (provenance-tagged + token-bounded so the agent never dumps the whole graph). The 11
+structural tools:
 
 | Tool | What it returns |
 |---|---|
-| `status` | Health + node/edge/cluster counts + VCS anchor |
+| `status` | Health + node/edge/cluster counts + VCS anchor + capability flags |
 | `query` | Hybrid BM25 search over code + docs |
 | `context` | 360° for one symbol: signature, callers, callees, linked docs |
 | `source` | Paged source body for a symbol (span rehydration) |
@@ -123,6 +125,12 @@ tools** (provenance-tagged + token-bounded so the agent never dumps the whole gr
 | `shortest_path` | Shortest directed path between two nodes |
 | `detect_changes` | Dry-run delta since a git ref (for reviewing diffs) |
 | `extract_rules` | Decision table from a procedure's guard-annotated CFG |
+
+Plus `gaps` (unimplemented symbols / missing package bodies / unresolved call sites) and the **5
+LLM-graph verbs** — `enrich_status`, `enrich_next`, `enrich_save`, `overview`, `llm_neighbors` —
+which drive the optional LLM-authored semantic-graph layer. Those are covered in
+[user guide §10](knowledge-crib-user-guide.md#10-the-llm-semantic-graph-layer-the-grove-plan); the
+wiring to run them from each client is in §10 below.
 
 ### Root resolution — one entry, every project
 
@@ -208,7 +216,7 @@ project — no per-project config.
 Verify inside a Claude Code session:
 
 ```
-/mcp          # lists connected servers + tools; knowledge-crib should show 12 tools
+/mcp          # lists connected servers + tools; knowledge-crib should show 17 tools (12 structural + 5 LLM-graph)
 ```
 
 > The `.` in `args` is **not** resolved by Claude Code's CWD — Claude Code ignores the `cwd` field
@@ -349,6 +357,74 @@ Install git hooks so the soul stays fresh automatically:
 ```bash
 crib install-hooks .                    # post-commit → crib update; .gitattributes merge driver
 ```
+
+---
+
+## 10. The LLM semantic-graph layer (optional — "build the bible")
+
+The soul from §2 is a **deterministic structural graph** (call edges, member-of, doc↔code links) —
+enough for `context` / `impact` / `query` to give an agent precise, low-token context. On top of it
+sits an **opt-in LLM-authored semantic graph**: the concepts, business rules, capabilities, and
+cross-cutting flows an agent reasons about. This is the **grove plan**. The one hard rule: **the
+MCP server never calls a model — the host IDE LLM is the generator.** The server only hands it
+grounded work, validates + persists what it authors (under `.crib/llm/`), and reports coverage.
+
+`crib index` / `crib reindex` print a hint after a successful build when targets are uncovered:
+
+```
+3 target(s) pending LLM graph generation (next: symbol) — run `/crib-enrich` or `crib enrich --next` to drive the loop.
+```
+
+### 10.1 Install the bundled skill (one-time, any client machine)
+
+The loop driver ships **inside the knowledge-crib package** as the `/crib-enrich` skill, so you
+install it from the CLI — no separate repo to clone:
+
+```bash
+crib skill install                      # copies /crib-enrich to ~/.claude/skills/ (idempotent; skips byte-identical re-installs)
+crib skill list                         # show bundled skills
+```
+
+This makes `/crib-enrich` available in **Claude Code** (the only client with a slash-command skill
+system today). Cursor / Copilot / Codex have no equivalent skill loader, so from those clients you
+drive the same loop headlessly via the CLI (§10.3).
+
+### 10.2 Run the loop from Claude Code
+
+In a Claude Code session in the indexed project, type `/crib-enrich` (or say "enrich the crib" /
+"build the LLM graph" / "generate the codebase bible"). The skill drives
+`enrich_status → enrich_next → author → enrich_save` one batch per turn, bottom-up
+(`symbol → file → cluster → system`), then calls `overview` to render the bible. It reports
+accepted/rejected counts + `droppedEdges` after each batch and a one-line bible summary at the end.
+Full detail on the loop, the author contract, and grounding rules is in
+[user guide §10](knowledge-crib-user-guide.md#10-the-llm-semantic-graph-layer-the-grove-plan).
+
+### 10.3 Run the loop headlessly (Cursor / Copilot / Codex, or any CLI)
+
+The same loop without an IDE skill:
+
+```bash
+crib enrich --status                              # coverage per layer + nextLayer + done
+crib enrich --next [--layer symbol] [--limit 4]  # prints a grounded batch (seed + schema per item)
+# author items to a JSON file shaped {batchId, items} against each item's outputSchema, then:
+crib enrich --save ./batch.json                   # validates + persists → {accepted, rejected, droppedEdges}
+crib enrich --overview                            # the bible (after the system layer)
+```
+
+### 10.4 Capability flags — what flips, what doesn't
+
+`status.capabilities` reports five flags. After the loop runs:
+
+| Flag | After the loop | Why |
+|---|---|---|
+| `llmGraph` | **`true`** | Flips on after the first `enrich_save` — the only flag the grove moves. |
+| `embeddings` | `false` (always) | Embeddings need a model (violates the no-model invariant) + `better-sqlite3` has no ANN. The LLM graph replaces that need via `withLlm` at query time. |
+| `vector` | `false` (always) | Same reason — BM25 + the TF-IDF linker are the deterministic recall path. |
+| `multimodal` | `false` unless `--multimodal` | Opt-in via `crib index --multimodal` (spawns `crib_worker`); unrelated to the grove. |
+| `cypher` | `false` (always) | No Cypher query layer. |
+
+Commit `.crib/llm/` alongside the rest of the soul — it's the same chunked-JSONL, diff-friendly,
+engine-free format, so the whole team shares one authored semantic graph.
 
 ---
 

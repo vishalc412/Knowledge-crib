@@ -1,0 +1,81 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.enrichNext@L624",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:f50e85e638621d2f6893bf88029ef07b0f93e6aa3746cff2070fd68ee49647f2",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.enrichNext@L624",
+    "kind": "symbol",
+    "type": "method",
+    "name": "enrichNext",
+    "qualifiedName": "Verbs.enrichNext",
+    "signature": "enrichNext(args: {\n      layer?: EnrichLayer;\n      limit?: number;\n      scope?: { pathPrefix?: string; cluster?: string };\n    } = {}): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 624,
+      "end": 632
+    },
+    "callSites": [
+      {
+        "callee": "next",
+        "line": 631
+      }
+    ]
+  },
+  "source": {
+    "text": "  enrichNext(\n    args: {\n      layer?: EnrichLayer;\n      limit?: number;\n      scope?: { pathPrefix?: string; cluster?: string };\n    } = {},\n  ): Record<string, unknown> {\n    return this.llm.next(args) as unknown as Record<string, unknown>;\n  }",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 624
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.enrichNext@L624",
+    "procedureName": "Verbs.enrichNext",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.enrichNext@L624",
+        "procedureName": "Verbs.enrichNext",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a956339fe1c4df8ed74a7a055b7bab33f3c2270825bd922c7cc9044c92af26a0",
+          "target": "stmt:packages/mcp/src/verbs.ts@L631",
+          "line": 631,
+          "expr": "return this.llm.next(args) as unknown as Record<string, unknown>;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

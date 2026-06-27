@@ -1,0 +1,898 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:fb5377c0cc2e06b74682d18c13e5727155800b44882d019e2eac9a1af4afdb8c",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parse",
+    "qualifiedName": "TypeScriptExtractor.parse",
+    "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 50,
+      "end": 114
+    },
+    "callSites": [
+      {
+        "callee": "endsWith",
+        "line": 51
+      },
+      {
+        "callee": "createSourceFile",
+        "line": 52
+      },
+      {
+        "callee": "getLineAndCharacterOfPosition",
+        "line": 63
+      },
+      {
+        "callee": "declarationOf",
+        "line": 67
+      },
+      {
+        "callee": "push",
+        "line": 69
+      },
+      {
+        "callee": "has",
+        "line": 70
+      },
+      {
+        "callee": "set",
+        "line": 70
+      },
+      {
+        "callee": "forEachChild",
+        "line": 71
+      },
+      {
+        "callee": "visit",
+        "line": 71
+      },
+      {
+        "callee": "forEachChild",
+        "line": 73
+      },
+      {
+        "callee": "visit",
+        "line": 73
+      },
+      {
+        "callee": "forEachChild",
+        "line": 76
+      },
+      {
+        "callee": "visit",
+        "line": 76
+      },
+      {
+        "callee": "map",
+        "line": 78
+      },
+      {
+        "callee": "map",
+        "line": 79
+      },
+      {
+        "callee": "memberOf",
+        "line": 80
+      },
+      {
+        "callee": "parentIdFor",
+        "line": 80
+      },
+      {
+        "callee": "attachExplanations",
+        "line": 85
+      },
+      {
+        "callee": "collectTsComments",
+        "line": 85
+      },
+      {
+        "callee": "collectCalls",
+        "line": 88
+      },
+      {
+        "callee": "walkBodies",
+        "line": 93
+      },
+      {
+        "callee": "map",
+        "line": 100
+      },
+      {
+        "callee": "filter",
+        "line": 100
+      },
+      {
+        "callee": "isClassDeclaration",
+        "line": 101
+      },
+      {
+        "callee": "extractNestSemantics",
+        "line": 108
+      },
+      {
+        "callee": "extractExpressRoutes",
+        "line": 110
+      },
+      {
+        "callee": "extractReactSemantics",
+        "line": 111
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult {\n    const scriptKind = path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;\n    const sf = ts.createSourceFile(\n      path,\n      text,\n      ts.ScriptTarget.Latest,\n      /*setParentNodes*/ true,\n      scriptKind,\n    );\n\n    const symbols: LocalSymbol[] = [];\n    const byKey = new Map<string, string>(); // lookup key → symbol id\n\n    const lineOf = (pos: number): number => sf.getLineAndCharacterOfPosition(pos).line + 1;\n\n    // --- pass 1: declarations + member-of ---\n    const visit = (node: ts.Node, qualifier: string[], parentId: string): void => {\n      const decl = this.declarationOf(node, qualifier, path, fileId, lineOf, ctx);\n      if (decl) {\n        symbols.push(decl.local);\n        for (const k of decl.local.keys) if (!byKey.has(k)) byKey.set(k, decl.local.node.id);\n        ts.forEachChild(node, (c) => visit(c, decl.childQualifier, decl.local.node.id));\n      } else {\n        ts.forEachChild(node, (c) => visit(c, qualifier, parentId));\n      }\n    };\n    ts.forEachChild(sf, (c) => visit(c, [], fileId));\n\n    const nodes: Node[] = symbols.map((s) => s.node);\n    const edges: Edge[] = symbols.map((s) =>\n      this.memberOf(s.node, this.parentIdFor(s, symbols, fileId)),\n    );\n\n    // --- pass 1.5 (1.2): preceding comment block → `explanation` node + `describes` edge,\n    //     so a symbol's intent survives into the graph. Pure line-association, never throws. ---\n    this.attachExplanations(path, ctx, collectTsComments(text), symbols, lineOf, nodes, edges);\n\n    // --- pass 2: intra-file calls (deduped proc→callee, no guard fields yet) ---\n    this.collectCalls(sf, symbols, byKey, lineOf, edges);\n\n    // --- pass 3: body-walk — condition/statement nodes + executes/guarded-by edges,\n    //     call-site recording (meta.calls) + guard-field annotation on the calls edges.\n    //     1.2: also emits raise/exception-handler/assignment/case-branch behavior nodes. ---\n    this.walkBodies(path, ctx, symbols, byKey, lineOf, nodes, edges);\n\n    // --- pass 4 (1.3): framework semantics — NestJS (decorators) + Express (imperative routes) +\n    //     React (components/hooks/renders). Derives routes/DI/module-producers/entity-relations/\n    //     columns/exception-filters + the React component composition tree above the syntactic\n    //     graph. A non-framework file is a no-op for each. Shares the 1.3 kinds/rels with the\n    //     Java/Spring track; no schema change. ---\n    const classSyms = symbols\n      .filter((s) => ts.isClassDeclaration(s.tsNode))\n      .map((s) => ({\n        tsNode: s.tsNode as ts.ClassDeclaration,\n        id: s.node.id,\n        qualifiedName: s.node.qualifiedName ?? '',\n      }));\n    if (classSyms.length) {\n      extractNestSemantics({ classSyms, byKey, nodes, edges, ctx, path, lineOf });\n    }\n    extractExpressRoutes({ sf, byKey, symbols, nodes, edges, ctx, path, lineOf });\n    extractReactSemantics({ symbols, byKey, nodes, edges, ctx, path, lineOf });\n\n    return { nodes, edges };\n  }",
+    "truncated": false,
+    "totalLines": 65,
+    "startLine": 50
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.extract@L39",
+      "confidence": 1,
+      "name": "extract",
+      "qualifiedName": "TypeScriptExtractor.extract",
+      "signature": "extract(file: FileMeta, ctx: ExtractCtx): Promise<ExtractResult>",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 39
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.attachExplanations@L121",
+      "confidence": 1,
+      "name": "attachExplanations",
+      "qualifiedName": "TypeScriptExtractor.attachExplanations",
+      "signature": "attachExplanations(path: string, ctx: ExtractCtx, comments: CommentBlock[], symbols: LocalSymbol[], lineOf: (pos: number) => number, nodes: Node[], edges: Edge[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 121
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls@L219",
+      "confidence": 1,
+      "name": "collectCalls",
+      "qualifiedName": "TypeScriptExtractor.collectCalls",
+      "signature": "collectCalls(sf: ts.SourceFile, symbols: LocalSymbol[], byKey: Map<string, string>, lineOf: (pos: number) => number, edges: Edge[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 219
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.memberOf@L205",
+      "confidence": 1,
+      "name": "memberOf",
+      "qualifiedName": "TypeScriptExtractor.memberOf",
+      "signature": "memberOf(child: Node, parentId: string): Edge",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 205
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parentIdFor@L198",
+      "confidence": 1,
+      "name": "parentIdFor",
+      "qualifiedName": "TypeScriptExtractor.parentIdFor",
+      "signature": "parentIdFor(sym: LocalSymbol, all: LocalSymbol[], fileId: string): string",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 198
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L66",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "TypeScriptExtractor.parse.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 66
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBodies@L278",
+      "confidence": 1,
+      "name": "walkBodies",
+      "qualifiedName": "TypeScriptExtractor.walkBodies",
+      "signature": "walkBodies(path: string, ctx: ExtractCtx, symbols: LocalSymbol[], byKey: Map<string, string>, lineOf: (pos: number) => number, nodes: Node[], edges: Edge[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 278
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L911",
+      "confidence": 1,
+      "name": "collectTsComments",
+      "qualifiedName": "collectTsComments",
+      "signature": "collectTsComments(src: string): CommentBlock[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 911
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L60",
+      "confidence": 1,
+      "name": "extractExpressRoutes",
+      "qualifiedName": "extractExpressRoutes",
+      "signature": "extractExpressRoutes(input: ExpressPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/express.ts",
+      "line": 60
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L102",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 102
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#extractReactSemantics@L64",
+      "confidence": 1,
+      "name": "extractReactSemantics",
+      "qualifiedName": "extractReactSemantics",
+      "signature": "extractReactSemantics(input: ReactPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 64
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-6-migration-track-findings-from-the-migration-scope-run",
+      "heading": "4.6 Migration track findings (from the migration-scope run)",
+      "anchor": "4-6-migration-track-findings-from-the-migration-scope-run",
+      "snippet": "4.6 Migration track findings (from the migration-scope run)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
+      "heading": "What was built",
+      "anchor": "what-was-built-2",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#summary",
+      "heading": "Summary",
+      "anchor": "summary",
+      "snippet": "Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-index-path",
+      "heading": "`crib index [path]`",
+      "anchor": "crib-index-path",
+      "snippet": "`crib index [path]`",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "heading": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "anchor": "3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "snippet": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
+      "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "anchor": "java-spring-boot-track-built-tested-schema-1-3",
+      "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-0-universal-cfg-parity-finish-s65-6-days",
+      "heading": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "anchor": "phase-0-universal-cfg-parity-finish-s65-6-days",
+      "snippet": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:README.md#architecture-dual-store",
+      "heading": "Architecture (dual store)",
+      "anchor": "architecture-dual-store",
+      "snippet": "Architecture (dual store)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a5aca268aa0995cac.md#caveats-why-medium-not-high",
+      "heading": "Caveats (why medium, not high)",
+      "anchor": "caveats-why-medium-not-high",
+      "snippet": "Caveats (why medium, not high)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a5aca268aa0995cac.md#conclusion",
+      "heading": "Conclusion",
+      "anchor": "conclusion",
+      "snippet": "Conclusion",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#knowledge-crib-implementation-plan-detailed",
+      "heading": "Knowledge-crib — Implementation Plan (detailed)",
+      "anchor": "knowledge-crib-implementation-plan-detailed",
+      "snippet": "Knowledge-crib — Implementation Plan (detailed)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "heading": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "anchor": "2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "snippet": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-5-tree-sitter-wasm-the-offline-core-tension",
+      "heading": "4.5 tree-sitter WASM + the offline-core tension",
+      "anchor": "4-5-tree-sitter-wasm-the-offline-core-tension",
+      "snippet": "4.5 tree-sitter WASM + the offline-core tension",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#8-build-waves-parallelism",
+      "heading": "8. Build waves (parallelism)",
+      "anchor": "8-build-waves-parallelism",
+      "snippet": "8. Build waves (parallelism)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m2-parse-pipeline-1-lang-typescript-symbols-intra-file-edges",
+      "heading": "M2 — parse pipeline, 1 lang (TypeScript) → symbols + intra-file edges",
+      "anchor": "m2-parse-pipeline-1-lang-typescript-symbols-intra-file-edges",
+      "snippet": "M2 — parse pipeline, 1 lang (TypeScript) → symbols + intra-file edges",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests-3",
+      "heading": "Tests",
+      "anchor": "tests-3",
+      "snippet": "Tests",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#1-why-this-is-its-own-capability",
+      "heading": "1. Why this is its own capability",
+      "anchor": "1-why-this-is-its-own-capability",
+      "snippet": "1. Why this is its own capability",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#1-contract",
+      "heading": "1. Contract",
+      "anchor": "1-contract",
+      "snippet": "1. Contract",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m8-tree-sitter-wasm-plugin-languages-python-first",
+      "heading": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "anchor": "m8-tree-sitter-wasm-plugin-languages-python-first",
+      "snippet": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-2-parse-tree-sitter-wasm",
+      "heading": "Phase 2 — Parse (tree-sitter, WASM)",
+      "anchor": "phase-2-parse-tree-sitter-wasm",
+      "snippet": "Phase 2 — Parse (tree-sitter, WASM)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-gold-pattern-already-proven-plsqlextractor",
+      "heading": "The gold pattern (already proven): `PlSqlExtractor`",
+      "anchor": "the-gold-pattern-already-proven-plsqlextractor",
+      "snippet": "The gold pattern (already proven): `PlSqlExtractor`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+    "procedureName": "TypeScriptExtractor.parse",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L107"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c77c674de984ee29d89dbc11c0db237bc696c89ac55999d1c50a03f0b8104d9",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L51",
+          "line": 51,
+          "expr": "const scriptKind = path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:26a9bd7cf12d5de9ee832a72a73d636e287738b2b20fcb703d6684f14af2d634",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L52",
+          "line": 52,
+          "expr": "const sf = ts.createSourceFile(\n      path,\n      text,\n      ts.ScriptTarget.Latest,\n      /*setParentNodes*/ true,\n      scriptKind,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:41ae65965852f2d549f7392306034e549917ca6b3ebb4dc9488913884c0af1c0",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L63",
+          "line": 63,
+          "expr": "const lineOf = (pos: number): number => sf.getLineAndCharacterOfPosition(pos).line + 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2912c4ab6a222e9c10d04138d5ffb2131f7dd162126409168f776e43e624a8e2",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L66",
+          "line": 66,
+          "expr": "const visit = (node: ts.Node, qualifier: string[], parentId: string): void => {\n      const decl = this.declarationOf(node, qualifier, path, fileId, lineOf, ctx);\n      if (decl) {\n        symbols.push(decl.local);\n        for (const k of decl.local.keys) if (!byKey.has(k)) byKey.set(k, decl.local.node.id);\n        ts.forEachChild(node, (c) => visit(c, decl.childQualifier, decl.local.node.id));\n      } else {\n        ts.forEachChild(node, (c) => visit(c, qualifier, parentId));\n      }\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c9360988c40c1562001b49ef85b0b0c330ef1cab3c0f0e051342e72d8cfbc694",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L66",
+          "expr": "visit",
+          "line": 71
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dcf70bd1662b6df21ba556f76e1201fec408df50c7e0776e0605661c7f36e92e",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L76",
+          "line": 76,
+          "expr": "ts.forEachChild(sf, (c) => visit(c, [], fileId));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:892b23c095b80cbd7630049a34cb739caf7132a267ef988e8271ae1f17d2e483",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L78",
+          "line": 78,
+          "expr": "const nodes: Node[] = symbols.map((s) => s.node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ad5be44f6ea46138ae9230df34403f71dbe60ebb64cd408817877e351ad42caa",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L79",
+          "line": 79,
+          "expr": "const edges: Edge[] = symbols.map((s) =>\n      this.memberOf(s.node, this.parentIdFor(s, symbols, fileId)),\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9ca5df2a3978675e854702e93d741aa2b957999354107471ff15ebdae8e1aff2",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.memberOf@L205",
+          "expr": "memberOf",
+          "line": 80
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f4650d34dea734d60da6aeeac888dd9316ca1e0e7274c1088242435431d55351",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parentIdFor@L198",
+          "expr": "parentIdFor",
+          "line": 80
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b1dfea8be485085807a85e746896028927067fe1a2ee9be41ed917bfe417052f",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.attachExplanations@L121",
+          "expr": "attachExplanations",
+          "line": 85
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:321a503b3b8741a494bab0a2c608dbf4fcebf1755ed284196e0887e33ab03cc0",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L911",
+          "expr": "collectTsComments",
+          "line": 85
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8b733852a43e8f4ff3235f62e645fd0c3704aff790bf8d963c56ef55f2e86da5",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L85",
+          "line": 85,
+          "expr": "this.attachExplanations(path, ctx, collectTsComments(text), symbols, lineOf, nodes, edges);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fc127b266ef774be59098c88f7c6ffdb0c9e57217a1e6f217f2b1206d9843681",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls@L219",
+          "expr": "collectCalls",
+          "line": 88
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9ef770fe973a779e61fce1d983c1e6b6cb00b3753edd357bf52e17fbf847a906",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L88",
+          "line": 88,
+          "expr": "this.collectCalls(sf, symbols, byKey, lineOf, edges);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:af3981c07c9bf8aa16a8ee9bf4f7817463f1e91e8aa479f982d83bb49b42ee6a",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBodies@L278",
+          "expr": "walkBodies",
+          "line": 93
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:718942d2cf5fab3c9ff287b5e0096a52a64fc5a174db725abf402c471a4875a4",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L93",
+          "line": 93,
+          "expr": "this.walkBodies(path, ctx, symbols, byKey, lineOf, nodes, edges);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ed5f1b9487b17a23d4919837c515ffc83a8bf8700397e95106afc601684fb3c2",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L100",
+          "line": 100,
+          "expr": "const classSyms = symbols\n      .filter((s) => ts.isClassDeclaration(s.tsNode))\n      .map((s) => ({\n        tsNode: s.tsNode as ts.ClassDeclaration,\n        id: s.node.id,\n        qualifiedName: s.node.qualifiedName ?? '',\n      }));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L107",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L107",
+            "expr": "classSyms.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8cbcfea109085b02c2bdfe1df2cf692304a40775ecf093582e2579b63eccd1bd",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L108",
+          "line": 108,
+          "expr": "extractNestSemantics({ classSyms, byKey, nodes, edges, ctx, path, lineOf });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c8dd1a893d3265ef4a2d7a9b482cf58dcf7131d981027ba342c6b4f4107aba1b",
+          "target": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L102",
+          "expr": "extractNestSemantics",
+          "line": 108
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f77d2e9a6f3fc667b9a4dabeb13ed53f609131526ee913c729ae952513f702d2",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L110",
+          "line": 110,
+          "expr": "extractExpressRoutes({ sf, byKey, symbols, nodes, edges, ctx, path, lineOf });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bdec9573d3314b89d256d3a2bea8a95ca953362b54fb2849248600f592c63431",
+          "target": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L60",
+          "expr": "extractExpressRoutes",
+          "line": 110
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db4837a79c9dcfca971c9c3b0dfe8e68bde900b15c243a72c18399734d5ee61e",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L111",
+          "line": 111,
+          "expr": "extractReactSemantics({ symbols, byKey, nodes, edges, ctx, path, lineOf });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3582a63f10c64ac615c48bfdef1093bbbce1906b95d44ebd7069ed1635db38e2",
+          "target": "sym:packages/parsers/src/ts/react.ts#extractReactSemantics@L64",
+          "expr": "extractReactSemantics",
+          "line": 111
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L50",
+        "procedureName": "TypeScriptExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6099cc9a29abb7af62900d002fdaadc32458cac241f2f4993570368525da5097",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L113",
+          "line": 113,
+          "expr": "return { nodes, edges };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 15,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 15,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 10,
+      "recorded": 27,
+      "unresolved": 13
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "13 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,611 @@
+{
+  "id": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:2fc641e21028f7902ec5890ed3c90af7a1549c755bddfc3c27cd4b24612bb221",
+  "builtAt": "2026-06-27T16:00:56.397Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildIndex",
+    "qualifiedName": "buildIndex",
+    "signature": "buildIndex(rt: Runtime): IndexStore",
+    "lang": "typescript",
+    "file": "packages/cli/src/runtime.ts",
+    "span": {
+      "start": 125,
+      "end": 153
+    },
+    "callSites": [
+      {
+        "callee": "getManifest",
+        "line": 126
+      },
+      {
+        "callee": "resolveIndexPath",
+        "line": 128
+      },
+      {
+        "callee": "mkdirSync",
+        "line": 129
+      },
+      {
+        "callee": "dirname",
+        "line": 129
+      },
+      {
+        "callee": "join",
+        "line": 131
+      },
+      {
+        "callee": "dirname",
+        "line": 131
+      },
+      {
+        "callee": "randomUUID",
+        "line": 131
+      },
+      {
+        "callee": "openIndex",
+        "line": 133
+      },
+      {
+        "callee": "buildFromSoul",
+        "line": 134
+      },
+      {
+        "callee": "close",
+        "line": 135
+      },
+      {
+        "callee": "rmSync",
+        "line": 136
+      },
+      {
+        "callee": "rmSync",
+        "line": 137
+      },
+      {
+        "callee": "renameSync",
+        "line": 138
+      },
+      {
+        "callee": "openIndex",
+        "line": 139
+      },
+      {
+        "callee": "rmSync",
+        "line": 141
+      },
+      {
+        "callee": "rmSync",
+        "line": 142
+      },
+      {
+        "callee": "rmSync",
+        "line": 143
+      },
+      {
+        "callee": "openIndex",
+        "line": 147
+      },
+      {
+        "callee": "buildFromSoul",
+        "line": 151
+      }
+    ]
+  },
+  "source": {
+    "text": "export function buildIndex(rt: Runtime): IndexStore {\n  const manifest = rt.soul.getManifest();\n  const rel = manifest.stores.index.path; // e.g. .crib/index/crib.sqlite\n  const path = resolveIndexPath(rel, rt.repoRoot, rt.cribDir);\n  mkdirSync(dirname(path), { recursive: true });\n  if (manifest.stores.index.backend === 'sqlite') {\n    const tmp = join(dirname(path), `.crib-build-${process.pid}-${randomUUID()}.sqlite`);\n    try {\n      const index = openIndex(manifest.stores.index.backend, { path: tmp });\n      index.buildFromSoul(rt.soul, rt.repoRoot);\n      index.close();\n      rmSync(`${path}-wal`, { force: true });\n      rmSync(`${path}-shm`, { force: true });\n      renameSync(tmp, path);\n      return openIndex(manifest.stores.index.backend, { path });\n    } catch (e) {\n      rmSync(tmp, { force: true });\n      rmSync(`${tmp}-wal`, { force: true });\n      rmSync(`${tmp}-shm`, { force: true });\n      throw e;\n    }\n  }\n  const index = openIndex(manifest.stores.index.backend, { path });\n  // The derived index is fully determined by the soul + repoRoot (FTS5 + adjacency + rehydrated\n  // body text); no vector/embedding build options exist today. `manifest.capabilities.embeddings`\n  // is a capability record (always false until a vector backend ships) and does not drive the build.\n  index.buildFromSoul(rt.soul, rt.repoRoot);\n  return index;\n}",
+    "truncated": false,
+    "totalLines": 29,
+    "startLine": 125
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdIndex@L199",
+      "confidence": 1,
+      "name": "cmdIndex",
+      "qualifiedName": "cmdIndex",
+      "signature": "cmdIndex(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 199
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdReindex@L714",
+      "confidence": 1,
+      "name": "cmdReindex",
+      "qualifiedName": "cmdReindex",
+      "signature": "cmdReindex(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 714
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdUpdate@L672",
+      "confidence": 1,
+      "name": "cmdUpdate",
+      "qualifiedName": "cmdUpdate",
+      "signature": "cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 672
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/index/factory.ts#openIndex@L16",
+      "confidence": 1,
+      "name": "openIndex",
+      "qualifiedName": "openIndex",
+      "signature": "openIndex(backend: IndexBackend = 'sqlite', opts: OpenIndexOpts = {}): IndexStore",
+      "type": "function",
+      "file": "packages/core/src/index/factory.ts",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#resolveIndexPath@L175",
+      "confidence": 1,
+      "name": "resolveIndexPath",
+      "qualifiedName": "resolveIndexPath",
+      "signature": "resolveIndexPath(rel: string, repoRoot: string, cribDir: string): string",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 175
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/runtime.ts@L116",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#11-architecture",
+      "heading": "11. Architecture",
+      "anchor": "11-architecture",
+      "snippet": "11. Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+    "procedureName": "buildIndex",
+    "conditions": [
+      "cond:packages/cli/src/runtime.ts@L130"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5d839af4af6c4ad621ad87c6b2c2ceae29325863b5c2bfc485a3ce0fd02029ed",
+          "target": "stmt:packages/cli/src/runtime.ts@L126",
+          "line": 126,
+          "expr": "const manifest = rt.soul.getManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c68157cad2d885cedaa82ad952af5a691d45482df8dba1ad540df383b4a507c8",
+          "target": "sym:packages/cli/src/runtime.ts#resolveIndexPath@L175",
+          "expr": "resolveIndexPath",
+          "line": 128
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75320c88eac8b351bb8a6691d79efa56b42b23f6d811dcd9051af63760d8ba55",
+          "target": "stmt:packages/cli/src/runtime.ts@L128",
+          "line": 128,
+          "expr": "const path = resolveIndexPath(rel, rt.repoRoot, rt.cribDir);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:526f69d879ab18213b18684acd380e8f9430554b06471cec80a1253888c82bf6",
+          "target": "stmt:packages/cli/src/runtime.ts@L129",
+          "line": 129,
+          "expr": "mkdirSync(dirname(path), { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "guard": "cond:packages/cli/src/runtime.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L130",
+            "expr": "manifest.stores.index.backend === 'sqlite'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5c5da687ebc897834a68a5fb2e3508ee58d25b1e73c42a8058d97a34743e9897",
+          "target": "stmt:packages/cli/src/runtime.ts@L131",
+          "line": 131,
+          "expr": "const tmp = join(dirname(path), `.crib-build-${process.pid}-${randomUUID()}.sqlite`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "guard": "cond:packages/cli/src/runtime.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L130",
+            "expr": "manifest.stores.index.backend === 'sqlite'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f8dcf2ed875b6dba70e83940f6c3ff71336b9746a8668e9c28f0787d862e7c2",
+          "target": "stmt:packages/cli/src/runtime.ts@L133",
+          "line": 133,
+          "expr": "const index = openIndex(manifest.stores.index.backend, { path: tmp });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:82c2ace0f0b1a52d11abf16d575418ab78c3752d5fc0bf44b899fdc88a3898f1",
+          "target": "sym:packages/core/src/index/factory.ts#openIndex@L16",
+          "expr": "openIndex",
+          "line": 133
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "guard": "cond:packages/cli/src/runtime.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L130",
+            "expr": "manifest.stores.index.backend === 'sqlite'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:12784dc425ac79ec309a8a7853d6577fddb96024fb3277412f51126b3157c724",
+          "target": "stmt:packages/cli/src/runtime.ts@L134",
+          "line": 134,
+          "expr": "index.buildFromSoul(rt.soul, rt.repoRoot);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "guard": "cond:packages/cli/src/runtime.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L130",
+            "expr": "manifest.stores.index.backend === 'sqlite'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a7bf581ad4a4257302dc57f64db3986a9933fcec17152cf45f68686a7016ee7b",
+          "target": "stmt:packages/cli/src/runtime.ts@L135",
+          "line": 135,
+          "expr": "index.close();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "guard": "cond:packages/cli/src/runtime.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L130",
+            "expr": "manifest.stores.index.backend === 'sqlite'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fc3c28c549eecbc3628ac90b97b6f10f465303e703020f108a68b0212f6d948f",
+          "target": "stmt:packages/cli/src/runtime.ts@L136",
+          "line": 136,
+          "expr": "rmSync(`${path}-wal`, { force: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "guard": "cond:packages/cli/src/runtime.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L130",
+            "expr": "manifest.stores.index.backend === 'sqlite'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9722bc0bba70da45a64d90b37d7c85c97b44ff71104ff42f4fbad0290229f1c3",
+          "target": "stmt:packages/cli/src/runtime.ts@L137",
+          "line": 137,
+          "expr": "rmSync(`${path}-shm`, { force: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "guard": "cond:packages/cli/src/runtime.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L130",
+            "expr": "manifest.stores.index.backend === 'sqlite'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:04c22f922ec4161fd97ddbbcc5403211a9abac868752265d2c1425745ffff18a",
+          "target": "stmt:packages/cli/src/runtime.ts@L138",
+          "line": 138,
+          "expr": "renameSync(tmp, path);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "guard": "cond:packages/cli/src/runtime.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L130",
+            "expr": "manifest.stores.index.backend === 'sqlite'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:00a8995c850dc6083c696ccfabc7dfafddf46157b6f54e644f66497ac3077ab6",
+          "target": "stmt:packages/cli/src/runtime.ts@L139",
+          "line": 139,
+          "expr": "return openIndex(manifest.stores.index.backend, { path });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "guard": "cond:packages/cli/src/runtime.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L130",
+            "expr": "manifest.stores.index.backend === 'sqlite'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7cab84ee9f3405ee1d725f223069631db3be217f2cda6d40b6f25ed637ec5d90",
+          "target": "stmt:packages/cli/src/runtime.ts@L141",
+          "line": 141,
+          "expr": "rmSync(tmp, { force: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "guard": "cond:packages/cli/src/runtime.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L130",
+            "expr": "manifest.stores.index.backend === 'sqlite'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:91a78eb70ec251bd6d21b6c4d8d8bb2f566b9891ee59939a96739afabed1c412",
+          "target": "stmt:packages/cli/src/runtime.ts@L142",
+          "line": 142,
+          "expr": "rmSync(`${tmp}-wal`, { force: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "guard": "cond:packages/cli/src/runtime.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L130",
+            "expr": "manifest.stores.index.backend === 'sqlite'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:06e1ab0c8eb1d332ee3ce5ffa80dd095c2cefe65cc8e9375e63ce97989bb841c",
+          "target": "stmt:packages/cli/src/runtime.ts@L143",
+          "line": 143,
+          "expr": "rmSync(`${tmp}-shm`, { force: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:74bb603173a031535866390742d5852756e89af5c4f4a83fe2200c5fbf8ccc9c",
+          "target": "stmt:packages/cli/src/runtime.ts@L147",
+          "line": 147,
+          "expr": "const index = openIndex(manifest.stores.index.backend, { path });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f41e37125e70267761bfeba4aeabb8ae1fe7d73364b6d92db7a4fad797c30e87",
+          "target": "stmt:packages/cli/src/runtime.ts@L151",
+          "line": 151,
+          "expr": "index.buildFromSoul(rt.soul, rt.repoRoot);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#buildIndex@L125",
+        "procedureName": "buildIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:edd006cf531758660f09bfe1cec4a1ea439ae1bc2c1c42cc450e52599e7384a4",
+          "target": "stmt:packages/cli/src/runtime.ts@L152",
+          "line": 152,
+          "expr": "return index;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:packages/cli/src/runtime.ts@L144",
+        "kind": "raise",
+        "lang": "typescript",
+        "file": "packages/cli/src/runtime.ts",
+        "span": {
+          "start": 144,
+          "end": 144
+        },
+        "errorMessage": "e",
+        "confidence": 1
+      }
+    ],
+    "handles": [
+      {
+        "id": "exc:packages/cli/src/runtime.ts@L140",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/cli/src/runtime.ts",
+        "span": {
+          "start": 140,
+          "end": 140
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 17,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 17,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 1,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 19,
+      "unresolved": 11
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "11 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

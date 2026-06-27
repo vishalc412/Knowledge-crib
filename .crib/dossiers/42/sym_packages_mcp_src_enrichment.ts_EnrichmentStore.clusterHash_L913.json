@@ -1,0 +1,161 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L913",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:285b16c55a41f37dc9dc3acba9882be304d35c18ca4062f7086b093dcacbb7c0",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L913",
+    "kind": "symbol",
+    "type": "method",
+    "name": "clusterHash",
+    "qualifiedName": "EnrichmentStore.clusterHash",
+    "signature": "clusterHash(cluster: Node): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 913,
+      "end": 918
+    },
+    "callSites": [
+      {
+        "callee": "sort",
+        "line": 914
+      },
+      {
+        "callee": "map",
+        "line": 914
+      },
+      {
+        "callee": "clusterMembers",
+        "line": 914
+      },
+      {
+        "callee": "contentHash",
+        "line": 917
+      },
+      {
+        "callee": "join",
+        "line": 917
+      }
+    ]
+  },
+  "source": {
+    "text": "  private clusterHash(cluster: Node): string {\n    const memberHashes = this.clusterMembers(cluster)\n      .map((n) => n.hash)\n      .sort();\n    return contentHash([cluster.hash, ...memberHashes].join('|'));\n  }",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 913
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L660",
+      "confidence": 1,
+      "name": "targetFor",
+      "qualifiedName": "EnrichmentStore.targetFor",
+      "signature": "targetFor(targetId: string): { layer: EnrichLayer; id: string; hash: string; node?: Node } | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 660
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L488",
+      "confidence": 1,
+      "name": "targets",
+      "qualifiedName": "EnrichmentStore.targets",
+      "signature": "targets(layer: EnrichLayer, scope?: EnrichScope): Array<{ layer: EnrichLayer; id: string; hash: string; node?: Node }>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 488
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterMembers@L905",
+      "confidence": 1,
+      "name": "clusterMembers",
+      "qualifiedName": "EnrichmentStore.clusterMembers",
+      "signature": "clusterMembers(cluster: Node): Node[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 905
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L913",
+    "procedureName": "EnrichmentStore.clusterHash",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L913",
+        "procedureName": "EnrichmentStore.clusterHash",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1522aeffa4e625919d9f7ef2ca450f15eb222b9c9cc313f736062b79d6f29eba",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterMembers@L905",
+          "expr": "clusterMembers",
+          "line": 914
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L913",
+        "procedureName": "EnrichmentStore.clusterHash",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1cc0f536d257a9e6692679832cad0428069c962156523a4bccca70d46e82339b",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L914",
+          "line": 914,
+          "expr": "const memberHashes = this.clusterMembers(cluster)\n      .map((n) => n.hash)\n      .sort();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L913",
+        "procedureName": "EnrichmentStore.clusterHash",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:02b245e9a8f68c3ed87adab6018324c2d325eb6363bb60f309505f27d29de035",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L917",
+          "line": 917,
+          "expr": "return contentHash([cluster.hash, ...memberHashes].join('|'));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 5,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#resolveRoot@L94",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:5c0497523661af48259a0c166388336474cf186bab7a8034ccaa3e4fadd79cfd",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#resolveRoot@L94",
+    "kind": "symbol",
+    "type": "function",
+    "name": "resolveRoot",
+    "qualifiedName": "resolveRoot",
+    "signature": "resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 94,
+      "end": 98
+    },
+    "callSites": [
+      {
+        "callee": "pathArg",
+        "line": 95
+      },
+      {
+        "callee": "resolveProjectRoot",
+        "line": 97
+      }
+    ]
+  },
+  "source": {
+    "text": "function resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot {\n  const pos = pathArg(args);\n  const explicitRoot = ctx?.cwdOverride ?? (pos && pos !== '.' ? pos : undefined);\n  return resolveProjectRoot({ explicitRoot });\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 94
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+      "confidence": 1,
+      "name": "cmdEnrich",
+      "qualifiedName": "cmdEnrich",
+      "signature": "cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 994
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdServe@L651",
+      "confidence": 1,
+      "name": "cmdServe",
+      "qualifiedName": "cmdServe",
+      "signature": "cmdServe(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 651
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdStatus@L251",
+      "confidence": 1,
+      "name": "cmdStatus",
+      "qualifiedName": "cmdStatus",
+      "signature": "cmdStatus(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 251
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdUpdate@L672",
+      "confidence": 1,
+      "name": "cmdUpdate",
+      "qualifiedName": "cmdUpdate",
+      "signature": "cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 672
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#openVerbs@L336",
+      "confidence": 1,
+      "name": "openVerbs",
+      "qualifiedName": "openVerbs",
+      "signature": "openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexStore } | null",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 336
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#pathArg@L72",
+      "confidence": 1,
+      "name": "pathArg",
+      "qualifiedName": "pathArg",
+      "signature": "pathArg(args: string[]): string | undefined",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 72
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+      "confidence": 1,
+      "name": "resolveProjectRoot",
+      "qualifiedName": "resolveProjectRoot",
+      "signature": "resolveProjectRoot(opts: ResolveOpts): ResolvedRoot",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 53
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L93",
+      "snippet": "/** Resolve a root for the path-taking commands (serve/status/update/export/viz): walks up + registry overlay. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#resolveRoot@L94",
+    "procedureName": "resolveRoot",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#resolveRoot@L94",
+        "procedureName": "resolveRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:486c9fca60a0942878fff8e5023d38e22083707d2f279fae9ffeba6886cbd205",
+          "target": "sym:packages/cli/src/cli.ts#pathArg@L72",
+          "expr": "pathArg",
+          "line": 95
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#resolveRoot@L94",
+        "procedureName": "resolveRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:30a982c53ed24bef81fbcd2691376e8994d0af59a6c960f1c6f2d637fb4a46c5",
+          "target": "stmt:packages/cli/src/cli.ts@L95",
+          "line": 95,
+          "expr": "const pos = pathArg(args);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#resolveRoot@L94",
+        "procedureName": "resolveRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:20bbc72427124bbb2c34dde42548099519987a51a395d24dd695166e75d78bc2",
+          "target": "stmt:packages/cli/src/cli.ts@L97",
+          "line": 97,
+          "expr": "return resolveProjectRoot({ explicitRoot });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#resolveRoot@L94",
+        "procedureName": "resolveRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dbbeb853ae59425d0f01012d4bb11cf4969b59e6f1b485dbe631ddc058d96916",
+          "target": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+          "expr": "resolveProjectRoot",
+          "line": 97
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

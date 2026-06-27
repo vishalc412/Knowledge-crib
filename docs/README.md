@@ -49,25 +49,34 @@ Two existing tools each prove half and serve as **design inspiration only (no co
 | — | [knowledge-crib-prompts.md](knowledge-crib-prompts.md) | **Prompting guide** — how to drive crib from a local LLM (Claude Code / Codex) to save tokens + compute |
 | — | [knowledge-crib-refined-vs-existing-assessment.md](knowledge-crib-refined-vs-existing-assessment.md) | **Refined vs existing comparison + six-role judgment** on detailed-level analysis (plan review) |
 | — | [knowledge-crib-m6-m13-build-plan.md](knowledge-crib-m6-m13-build-plan.md) | Milestones M6→M13 (post-foundation build plan) |
+| — | [knowledge-crib-production-readiness.md](knowledge-crib-production-readiness.md) | Release gate, packaging fixes, and remaining production gaps |
+| — | [knowledge-crib-beta-installers.md](knowledge-crib-beta-installers.md) | macOS and Windows beta installer bundle build/install guide |
 
-## Repo layout (target)
+## Open-Source Release Files
+
+| File | Purpose |
+|---|---|
+| [../CONTRIBUTING.md](../CONTRIBUTING.md) | Contribution workflow, release gate, and project principles |
+| [../SECURITY.md](../SECURITY.md) | Supported versions and private vulnerability reporting |
+| [../CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) | Community participation expectations |
+
+## Repo layout
 ```
 knowledge-crib/                 # pnpm monorepo
   packages/
     soul-schema/   # JSON Schema + TS types (the contract)
     core/          # GraphModel, SoulStore, IndexStore
-    parsers/       # hand-rolled recursive-descent extractors (TS/Python/PL-SQL/MD/Java/C#/Go/Rust)
+    parsers/       # offline extractors (TS/PL-SQL/Python/Java/C#/Go/Rust/Markdown)
     pipeline/      # extract → resolve → link → cluster → index
     mcp/           # MCP server (npx knowledge-crib)
     cli/           # crib index|update|export|serve|mcp|viz|install-hooks|merge-driver
-    ui/            # web graph viz (later)
-    soul-reader/   # engine-free reader for SeeroFlow / external
+    ui/            # offline React/canvas graph visualization
   docs/            # these specs
 ```
 
 ## Runtime & licensing
-- **TypeScript / Node** [Q36]. Hand-rolled recursive-descent parsers (zero native deps, offline).
-  Index = LadybugDB or `better-sqlite3`+FTS5 fallback.
+- **TypeScript / Node** [Q36]. Compiler-API and hand-rolled extractors are offline and deterministic.
+  The `0.1.0` index is `better-sqlite3` + FTS5.
 - **Apache-2.0** [Q37]. `NOTICE` credits GitNexus + Graphify as inspiration. No code reused.
 
 ## Vision quickstart (target UX)

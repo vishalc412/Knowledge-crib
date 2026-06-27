@@ -1,0 +1,81 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.enrichSave@L634",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:97c95d70c3f84652a2614de6beee27663b5bbba51bf28cf526b039014ac0f51e",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.enrichSave@L634",
+    "kind": "symbol",
+    "type": "method",
+    "name": "enrichSave",
+    "qualifiedName": "Verbs.enrichSave",
+    "signature": "enrichSave(args: {\n    batchId: string;\n    items: Array<{\n      targetId: string;\n      model?: string;\n      analysis: Record<string, unknown>;\n      graph: {\n        nodes: Array<Record<string, unknown>>;\n        edges: Array<Record<string, unknown>>;\n      };\n      evidence: Array<Record<string, unknown>>;\n    }>;\n  }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 634,
+      "end": 648
+    },
+    "callSites": [
+      {
+        "callee": "save",
+        "line": 647
+      }
+    ]
+  },
+  "source": {
+    "text": "  enrichSave(args: {\n    batchId: string;\n    items: Array<{\n      targetId: string;\n      model?: string;\n      analysis: Record<string, unknown>;\n      graph: {\n        nodes: Array<Record<string, unknown>>;\n        edges: Array<Record<string, unknown>>;\n      };\n      evidence: Array<Record<string, unknown>>;\n    }>;\n  }): Record<string, unknown> {\n    return this.llm.save(args as never) as unknown as Record<string, unknown>;\n  }",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 634
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.enrichSave@L634",
+    "procedureName": "Verbs.enrichSave",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.enrichSave@L634",
+        "procedureName": "Verbs.enrichSave",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ee43e48ded10046bc2b3c88ebece2b4ae7b67782756feb92681e5132cacee087",
+          "target": "stmt:packages/mcp/src/verbs.ts@L647",
+          "line": 647,
+          "expr": "return this.llm.save(args as never) as unknown as Record<string, unknown>;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

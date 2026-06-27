@@ -112,7 +112,7 @@ beforeEach(() => {
   soul.setVcsHead('h1'); // establishes the incremental anchor
   soul.commit('2026-01-01T00:00:00.000Z');
   index = new SqliteIndexStore();
-  index.buildFromSoul(soul);
+  index.buildFromSoul(soul, repo);
   verbs = new Verbs({ soul, index, repoRoot: repo }); // no vcs → "not configured"
 });
 afterEach(() => {
@@ -167,7 +167,7 @@ describe('detect_changes (M6 read-only dry run)', () => {
       s.putNodes([login, fileNode('src/auth.ts')]);
       s.commit('2026-01-01T00:00:00.000Z'); // no setVcsHead → no anchor
       const idx = new SqliteIndexStore();
-      idx.buildFromSoul(s);
+      idx.buildFromSoul(s, fresh);
       const v = new Verbs({ soul: s, index: idx, repoRoot: fresh, vcs: stubAdapter() });
       const res = v.detectChanges({}) as Record<string, unknown>;
       expect(res.note).toBe('no incremental anchor — run `crib index` to establish one');

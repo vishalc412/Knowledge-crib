@@ -1,0 +1,313 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:880f21680344d9b49efe6655a17d517afc2c31e083454d5318a032fe8a81b743",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+    "kind": "symbol",
+    "type": "function",
+    "name": "paramDepType",
+    "qualifiedName": "paramDepType",
+    "signature": "paramDepType(p: ts.ParameterDeclaration): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 351,
+      "end": 358
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 352
+      },
+      {
+        "callee": "decors",
+        "line": 352
+      },
+      {
+        "callee": "simpleName",
+        "line": 352
+      },
+      {
+        "callee": "firstInjectToken",
+        "line": 354
+      },
+      {
+        "callee": "paramTypeOf",
+        "line": 357
+      }
+    ]
+  },
+  "source": {
+    "text": "function paramDepType(p: ts.ParameterDeclaration): string | undefined {\n  const injectDec = decors(p).find((d) => simpleName(d) === 'Inject');\n  if (injectDec) {\n    const token = firstInjectToken(injectDec);\n    if (token) return token;\n  }\n  return paramTypeOf(p);\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 351
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L102",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 102
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#decors@L563",
+      "confidence": 1,
+      "name": "decors",
+      "qualifiedName": "decors",
+      "signature": "decors(node: ts.Node): ts.Decorator[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 563
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#firstInjectToken@L361",
+      "confidence": 1,
+      "name": "firstInjectToken",
+      "qualifiedName": "firstInjectToken",
+      "signature": "firstInjectToken(dec: ts.Decorator): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 361
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#paramTypeOf@L544",
+      "confidence": 1,
+      "name": "paramTypeOf",
+      "qualifiedName": "paramTypeOf",
+      "signature": "paramTypeOf(p: ts.ParameterDeclaration | ts.PropertyDeclaration): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 544
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#simpleName@L569",
+      "confidence": 1,
+      "name": "simpleName",
+      "qualifiedName": "simpleName",
+      "signature": "simpleName(d: ts.Decorator): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 569
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L349",
+      "snippet": "/** The dependency type for a constructor param: `@Inject(token)` overrides with the DI token, else",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+    "procedureName": "paramDepType",
+    "conditions": [
+      "cond:packages/parsers/src/ts/nest.ts@L353",
+      "cond:packages/parsers/src/ts/nest.ts@L355"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+        "procedureName": "paramDepType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8c67047f6a2595784992b3ba2ed5abe23759823e26ccfb8f840730de6099bd71",
+          "target": "sym:packages/parsers/src/ts/nest.ts#decors@L563",
+          "expr": "decors",
+          "line": 352
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+        "procedureName": "paramDepType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a2cef17af22f4f91c903b5897ce4d493cb66238b767c7f06ffb1e27c66b698d7",
+          "target": "sym:packages/parsers/src/ts/nest.ts#simpleName@L569",
+          "expr": "simpleName",
+          "line": 352
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+        "procedureName": "paramDepType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:72c6abb8b563b44baeb963a8019c74e00f1e3a1e325f5ac2f20687f6fe35dc3a",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L352",
+          "line": 352,
+          "expr": "const injectDec = decors(p).find((d) => simpleName(d) === 'Inject');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+        "procedureName": "paramDepType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1e697ad35c10395000598de78dc8b50f321f68d36d2f9f3522d91c6acbbe5d30",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 352
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+        "procedureName": "paramDepType",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L353",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L353",
+            "expr": "injectDec",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fcf36b2f1424cb07cd0059cefc9108010a2bd5337898b1f8c11e3682912580ee",
+          "target": "sym:packages/parsers/src/ts/nest.ts#firstInjectToken@L361",
+          "expr": "firstInjectToken",
+          "line": 354
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+        "procedureName": "paramDepType",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L353",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L353",
+            "expr": "injectDec",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2dd2ac5ea4d0407968b295ec59b61f1a29d2b4cd8407b215496d41a272bf49da",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L354",
+          "line": 354,
+          "expr": "const token = firstInjectToken(injectDec);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+        "procedureName": "paramDepType",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L355",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L353",
+            "expr": "injectDec"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L355",
+            "expr": "token",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6d749e2855e50d78b60d12acedb2b3e92be721766e625f78bd27a39fc289fada",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L355",
+          "line": 355,
+          "expr": "return token;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+        "procedureName": "paramDepType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:55872e4b9203c9d16c90e204eabf448d25dc66e5c2609dc29c37a950628bfbe6",
+          "target": "sym:packages/parsers/src/ts/nest.ts#paramTypeOf@L544",
+          "expr": "paramTypeOf",
+          "line": 357
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+        "procedureName": "paramDepType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:45520665ecab8b49a09826d41fe0e9efcf2150a4f44b475c82a75e4d5623670f",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L357",
+          "line": 357,
+          "expr": "return paramTypeOf(p);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 5,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

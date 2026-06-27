@@ -1,0 +1,1300 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:fadc66b6195d5c2a6833d02f03690d959737784e08b71658e4fdf92225966d2f",
+  "builtAt": "2026-06-27T16:00:56.397Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cmdEnrich",
+    "qualifiedName": "cmdEnrich",
+    "signature": "cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number>",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 994,
+      "end": 1112
+    },
+    "callSites": [
+      {
+        "callee": "slice",
+        "line": 996
+      },
+      {
+        "callee": "indexOf",
+        "line": 997
+      },
+      {
+        "callee": "splice",
+        "line": 999
+      },
+      {
+        "callee": "resolveRoot",
+        "line": 1001
+      },
+      {
+        "callee": "write",
+        "line": 1003
+      },
+      {
+        "callee": "openSoul",
+        "line": 1006
+      },
+      {
+        "callee": "parseScopeFlag",
+        "line": 1011
+      },
+      {
+        "callee": "write",
+        "line": 1015
+      },
+      {
+        "callee": "status",
+        "line": 1021
+      },
+      {
+        "callee": "write",
+        "line": 1022
+      },
+      {
+        "callee": "stringify",
+        "line": 1022
+      },
+      {
+        "callee": "write",
+        "line": 1027
+      },
+      {
+        "callee": "stringify",
+        "line": 1028
+      },
+      {
+        "callee": "overview",
+        "line": 1028
+      },
+      {
+        "callee": "indexOf",
+        "line": 1034
+      },
+      {
+        "callee": "write",
+        "line": 1037
+      },
+      {
+        "callee": "parse",
+        "line": 1040
+      },
+      {
+        "callee": "readFileSync",
+        "line": 1040
+      },
+      {
+        "callee": "save",
+        "line": 1044
+      },
+      {
+        "callee": "String",
+        "line": 1049
+      },
+      {
+        "callee": "getNode",
+        "line": 1050
+      },
+      {
+        "callee": "write",
+        "line": 1052
+      },
+      {
+        "callee": "write",
+        "line": 1058
+      },
+      {
+        "callee": "stringify",
+        "line": 1058
+      },
+      {
+        "callee": "indexOf",
+        "line": 1063
+      },
+      {
+        "callee": "indexOf",
+        "line": 1065
+      },
+      {
+        "callee": "parseInt",
+        "line": 1066
+      },
+      {
+        "callee": "next",
+        "line": 1067
+      },
+      {
+        "callee": "isFinite",
+        "line": 1069
+      },
+      {
+        "callee": "write",
+        "line": 1072
+      },
+      {
+        "callee": "stringify",
+        "line": 1072
+      },
+      {
+        "callee": "write",
+        "line": 1074
+      },
+      {
+        "callee": "status",
+        "line": 1083
+      },
+      {
+        "callee": "write",
+        "line": 1084
+      },
+      {
+        "callee": "stringify",
+        "line": 1084
+      },
+      {
+        "callee": "reduce",
+        "line": 1092
+      },
+      {
+        "callee": "write",
+        "line": 1096
+      },
+      {
+        "callee": "write",
+        "line": 1100
+      },
+      {
+        "callee": "write",
+        "line": 1105
+      },
+      {
+        "callee": "write",
+        "line": 1109
+      }
+    ]
+  },
+  "source": {
+    "text": "async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {\n  // Strip --save <file> so the file path is not misinterpreted as the project root.\n  const rootArgs = args.slice();\n  const saveIdx = rootArgs.indexOf('--save');\n  if (saveIdx >= 0) {\n    rootArgs.splice(saveIdx, 2);\n  }\n  const resolved = resolveRoot(rootArgs, ctx);\n  if (!isIndexedRoot(resolved)) {\n    process.stderr.write('not indexed — run `crib index` first\\n');\n    return EXIT.NOT_INDEXED;\n  }\n  const rt = openSoul(resolved);\n  const enrich = new EnrichmentStore(rt.soul, resolved.repoRoot);\n\n  let scope: EnrichScope | undefined;\n  try {\n    scope = parseScopeFlag(args);\n  } catch (e) {\n    // `--scope` present but malformed (missing/flag-like value) MUST NOT silently default to full-repo\n    // — that silent default is the exact failure mode the scope picker exists to prevent.\n    process.stderr.write(`error: ${(e as Error).message}\\n`);\n    return EXIT.BAD_ARGS;\n  }\n\n  // --scopes: discovery view — ranked path-prefix scopes for a headless/CI agent to pick from.\n  if (args.includes('--scopes')) {\n    const st = enrich.status({ scopes: true });\n    process.stdout.write(`${JSON.stringify(st, null, 2)}\\n`);\n    return EXIT.OK;\n  }\n\n  if (args.includes('--overview')) {\n    process.stdout.write(\n      `${JSON.stringify(enrich.overview({ ...(scope ? { scope } : {}) }), null, 2)}\\n`,\n    );\n    return EXIT.OK;\n  }\n\n  if (args.includes('--save')) {\n    const fileIdx = args.indexOf('--save');\n    const file = args[fileIdx + 1];\n    if (file === undefined || file.startsWith('--')) {\n      process.stderr.write('usage: crib enrich --save <file> [path] [--scope PFX]\\n');\n      return EXIT.BAD_ARGS;\n    }\n    const batch = JSON.parse(readFileSync(file, 'utf8')) as {\n      batchId: string;\n      items: Array<Record<string, unknown>>;\n    };\n    const result = enrich.save(batch as never) as { accepted: unknown[]; rejected: unknown[] };\n    // Advisory: scope is a queue filter, not a write constraint — but warn if a saved target is\n    // out-of-scope so a headless driver notices a scope/file mismatch.\n    if (scope) {\n      for (const item of batch.items) {\n        const tid = String(item.targetId ?? '');\n        const node = rt.soul.getNode(tid);\n        if (node?.file && !pathInPrefix(node.file, scope)) {\n          process.stderr.write(\n            `warning: saved target ${tid} is outside scope ${scope.pathPrefix}\\n`,\n          );\n        }\n      }\n    }\n    process.stdout.write(`${JSON.stringify(result, null, 2)}\\n`);\n    return EXIT.OK;\n  }\n\n  if (args.includes('--next')) {\n    const layerIdx = args.indexOf('--layer');\n    const layer = layerIdx >= 0 ? (args[layerIdx + 1] as EnrichLayer | undefined) : undefined;\n    const limitIdx = args.indexOf('--limit');\n    const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;\n    const batch = enrich.next({\n      ...(layer ? { layer } : {}),\n      ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),\n      ...(scope ? { scope } : {}),\n    });\n    process.stdout.write(`${JSON.stringify(batch, null, 2)}\\n`);\n    if (batch.zeroProgress) {\n      process.stderr.write(\n        `zero-progress: batchId ${batch.batchId} was already issued for layer ${batch.layer}` +\n          ` (previousBatchId ${batch.previousBatchId ?? 'n/a'}) with no save landing — stop and check that enrich_save is persisting.\\n`,\n      );\n    }\n    return EXIT.OK;\n  }\n\n  // default: coverage + pending + follow-up hint (scoped if --scope given).\n  const st = enrich.status({ ...(scope ? { scope } : {}) });\n  process.stdout.write(`${JSON.stringify(st, null, 2)}\\n`);\n  const layers = st.layers as Record<string, { missing: number; stale: number }>;\n  if (!st.done) {\n    // Under a scope the system key in `layers` is the WHOLE-REPO system count (reported separately in\n    // wholeRepoPending.system) — exclude it from the scoped pending sum so the hint reflects scoped work.\n    const scopedKeys = scope",
+    "truncated": true,
+    "totalLines": 119,
+    "startLine": 994,
+    "nextLine": 1090
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#main@L100",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main(argvRaw: string[]): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 100
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L107",
+      "confidence": 1,
+      "name": "isIndexedRoot",
+      "qualifiedName": "isIndexedRoot",
+      "signature": "isIndexedRoot(resolved: ResolvedRoot): boolean",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 107
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#openSoul@L100",
+      "confidence": 1,
+      "name": "openSoul",
+      "qualifiedName": "openSoul",
+      "signature": "openSoul(resolved: ResolvedRoot): Runtime",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 35
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#parseScopeFlag@L1119",
+      "confidence": 1,
+      "name": "parseScopeFlag",
+      "qualifiedName": "parseScopeFlag",
+      "signature": "parseScopeFlag(args: string[]): EnrichScope | undefined",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1119
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#pathInPrefix@L1147",
+      "confidence": 1,
+      "name": "pathInPrefix",
+      "qualifiedName": "pathInPrefix",
+      "signature": "pathInPrefix(path: string, scope: EnrichScope): boolean",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1147
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#resolveRoot@L94",
+      "confidence": 1,
+      "name": "resolveRoot",
+      "qualifiedName": "resolveRoot",
+      "signature": "resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 94
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L977",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+    "procedureName": "cmdEnrich",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L998",
+      "cond:packages/cli/src/cli.ts@L1002",
+      "cond:packages/cli/src/cli.ts@L1020",
+      "cond:packages/cli/src/cli.ts@L1026",
+      "cond:packages/cli/src/cli.ts@L1033",
+      "cond:packages/cli/src/cli.ts@L1036",
+      "cond:packages/cli/src/cli.ts@L1047",
+      "cond:packages/cli/src/cli.ts@L1048",
+      "cond:packages/cli/src/cli.ts@L1051",
+      "cond:packages/cli/src/cli.ts@L1062",
+      "cond:packages/cli/src/cli.ts@L1073",
+      "cond:packages/cli/src/cli.ts@L1086",
+      "cond:packages/cli/src/cli.ts@L1099",
+      "cond:packages/cli/src/cli.ts@L1104"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:83c15dafe1cb163801d94d753dd37d3f68182ff51b9a0adfd419140465c8f950",
+          "target": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L107",
+          "expr": "isIndexedRoot"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a208dd1a2f20ad8a0fcce5d04c227d418ddbdf38f4d0452186c50c3aea5a9676",
+          "target": "stmt:packages/cli/src/cli.ts@L996",
+          "line": 996,
+          "expr": "const rootArgs = args.slice();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f9b74b6ecc49501d90c459836e4b436a451d512d25f729cb9266ed20bd402d71",
+          "target": "stmt:packages/cli/src/cli.ts@L997",
+          "line": 997,
+          "expr": "const saveIdx = rootArgs.indexOf('--save');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L998",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L998",
+            "expr": "saveIdx >= 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9d022788331185b87c5b9546133e96b8856b2477be92abcbffd8e859d7e9cb4f",
+          "target": "stmt:packages/cli/src/cli.ts@L999",
+          "line": 999,
+          "expr": "rootArgs.splice(saveIdx, 2);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9f8d1efd9c81c1772312997f085f23f4a66fb4700d0f87a26d86643fc4f5f82e",
+          "target": "sym:packages/cli/src/cli.ts#resolveRoot@L94",
+          "expr": "resolveRoot",
+          "line": 1001
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c5f9aad395f776e6ad8d13cd8cb1a3f5c98cd089bfe9278ee4f9cf12cbee3233",
+          "target": "stmt:packages/cli/src/cli.ts@L1001",
+          "line": 1001,
+          "expr": "const resolved = resolveRoot(rootArgs, ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1002",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1002",
+            "expr": "!isIndexedRoot(resolved)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0cbb2e9be9741bf96906854e6a1719cf7b092654624684b9646a54b319319ac4",
+          "target": "stmt:packages/cli/src/cli.ts@L1003",
+          "line": 1003,
+          "expr": "process.stderr.write('not indexed — run `crib index` first\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:768c3400b8f9ee5ff5f06a69035c45e0806f1a86181c0b619eec2d15a4c623ee",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 1003
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1002",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1002",
+            "expr": "!isIndexedRoot(resolved)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:73ae3c425c66039bfb8f8997a6f5b2c8d97f800ef60af2363ffccd7fd09840c0",
+          "target": "stmt:packages/cli/src/cli.ts@L1004",
+          "line": 1004,
+          "expr": "return EXIT.NOT_INDEXED;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:119d729c311d40b75afc4b7bd8073057a63edba9ceb1673ad1c3a53a931d76d4",
+          "target": "stmt:packages/cli/src/cli.ts@L1006",
+          "line": 1006,
+          "expr": "const rt = openSoul(resolved);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7a410d60e546e78269f5c798ffb8f75c4f12061251c68e764492818fa00e6b15",
+          "target": "sym:packages/cli/src/runtime.ts#openSoul@L100",
+          "expr": "openSoul",
+          "line": 1006
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:791de53c3af0013b44acfe595198ea3e55fea9b144e70bd278628348d3c17dd8",
+          "target": "sym:packages/cli/src/cli.ts#parseScopeFlag@L1119",
+          "expr": "parseScopeFlag",
+          "line": 1011
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e849aeaf291b04e45a6a70e0de49200acd304feca77c5313a4f1c740b3a9a835",
+          "target": "assign:packages/cli/src/cli.ts@L1011",
+          "line": 1011,
+          "expr": "scope = parseScopeFlag(args);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9974a88d62b7f2334763330f5ccfa649c68f172c5b81d8c2cae30f02d0bb0c86",
+          "target": "stmt:packages/cli/src/cli.ts@L1015",
+          "line": 1015,
+          "expr": "process.stderr.write(`error: ${(e as Error).message}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:53b5b9e540eb30b6923b497bdead739c17d12aca0c132fd48b749d352485d9d7",
+          "target": "stmt:packages/cli/src/cli.ts@L1016",
+          "line": 1016,
+          "expr": "return EXIT.BAD_ARGS;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1020",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1020",
+            "expr": "args.includes('--scopes')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6920e31a976b906f51227de1c25c2ca80bd9cbae9fed4d7e8207b99d47a6a817",
+          "target": "stmt:packages/cli/src/cli.ts@L1021",
+          "line": 1021,
+          "expr": "const st = enrich.status({ scopes: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1020",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1020",
+            "expr": "args.includes('--scopes')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db614d6c690c8773bbc2192182bdc6822d770006f64736185e4c2f5316d169c6",
+          "target": "stmt:packages/cli/src/cli.ts@L1022",
+          "line": 1022,
+          "expr": "process.stdout.write(`${JSON.stringify(st, null, 2)}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1020",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1020",
+            "expr": "args.includes('--scopes')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a05f6f1e9131b9f1af9fa4744a6aad7174ade4f2032ad204fa75118d65e441c",
+          "target": "stmt:packages/cli/src/cli.ts@L1023",
+          "line": 1023,
+          "expr": "return EXIT.OK;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1026",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1026",
+            "expr": "args.includes('--overview')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e1a565d4c96e582f3f0997bc860dd439b62ea3ee83e7a26353524e2a9b0516d1",
+          "target": "stmt:packages/cli/src/cli.ts@L1027",
+          "line": 1027,
+          "expr": "process.stdout.write(\n      `${JSON.stringify(enrich.overview({ ...(scope ? { scope } : {}) }), null, 2)}\\n`,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1026",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1026",
+            "expr": "args.includes('--overview')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca5870acb47c54208399835f4725ddf7b1e3b12d5a477f3158e6dac0dc8c711a",
+          "target": "stmt:packages/cli/src/cli.ts@L1030",
+          "line": 1030,
+          "expr": "return EXIT.OK;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1033",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1033",
+            "expr": "args.includes('--save')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f9d525c8d1ece6631d51d2bda33750ccc55b53ff72494a5e544f6721e5ff98b9",
+          "target": "stmt:packages/cli/src/cli.ts@L1034",
+          "line": 1034,
+          "expr": "const fileIdx = args.indexOf('--save');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1036",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1033",
+            "expr": "args.includes('--save')"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1036",
+            "expr": "file === undefined || file.startsWith('--')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b7bdb43d65dfc8d98e54f17be82069539c4a09a73a5b951cff15883509154e57",
+          "target": "stmt:packages/cli/src/cli.ts@L1037",
+          "line": 1037,
+          "expr": "process.stderr.write('usage: crib enrich --save <file> [path] [--scope PFX]\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1036",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1033",
+            "expr": "args.includes('--save')"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1036",
+            "expr": "file === undefined || file.startsWith('--')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:be2268e0057c012f3f6af0603941db310b24061af439fc8e8ada97f73b5e17ca",
+          "target": "stmt:packages/cli/src/cli.ts@L1038",
+          "line": 1038,
+          "expr": "return EXIT.BAD_ARGS;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1033",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1033",
+            "expr": "args.includes('--save')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:696a075f3ba18eb96b7585b3e76f03c3eb685eb80c8a10f0c8703f2e76d7e32e",
+          "target": "stmt:packages/cli/src/cli.ts@L1040",
+          "line": 1040,
+          "expr": "const batch = JSON.parse(readFileSync(file, 'utf8')) as {\n      batchId: string;\n      items: Array<Record<string, unknown>>;\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:021fdecff355ab43204609b383e913af3185d22d5122b096cd4227259c9c30a8",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+          "expr": "parse",
+          "line": 1040
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1033",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1033",
+            "expr": "args.includes('--save')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6f6fc093a7702362b8d30b7011cf4e191569253a3de759eeb157a142cf0d806d",
+          "target": "stmt:packages/cli/src/cli.ts@L1044",
+          "line": 1044,
+          "expr": "const result = enrich.save(batch as never) as { accepted: unknown[]; rejected: unknown[] };"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1048",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1033",
+            "expr": "args.includes('--save')"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1047",
+            "expr": "scope"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1048",
+            "expr": "batch.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:246c48fe294108eb06144ac5257dae3fe0796e6f99fa860a13650ecdad905106",
+          "target": "stmt:packages/cli/src/cli.ts@L1049",
+          "line": 1049,
+          "expr": "const tid = String(item.targetId ?? '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1048",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1033",
+            "expr": "args.includes('--save')"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1047",
+            "expr": "scope"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1048",
+            "expr": "batch.items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:896dc70ef286596bcb629f75db053c9d7bebd97e44a8122950446a81f91064e6",
+          "target": "stmt:packages/cli/src/cli.ts@L1050",
+          "line": 1050,
+          "expr": "const node = rt.soul.getNode(tid);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1051",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1033",
+            "expr": "args.includes('--save')"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1047",
+            "expr": "scope"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1048",
+            "expr": "batch.items"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1051",
+            "expr": "node?.file && !pathInPrefix(node.file, scope)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d0c12f2ce57c202138cb50fe58052f32edcd29803ccb1cebb8dc843711166f80",
+          "target": "stmt:packages/cli/src/cli.ts@L1052",
+          "line": 1052,
+          "expr": "process.stderr.write(\n            `warning: saved target ${tid} is outside scope ${scope.pathPrefix}\\n`,\n          );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1033",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1033",
+            "expr": "args.includes('--save')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4dd5973d7191b71e6f1fc9b013db401e2db69a85801cdda69beaa8787bd3ebfc",
+          "target": "stmt:packages/cli/src/cli.ts@L1058",
+          "line": 1058,
+          "expr": "process.stdout.write(`${JSON.stringify(result, null, 2)}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1033",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1033",
+            "expr": "args.includes('--save')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:882a1b2f90ad0f40dc87875ec4e5a67bb908f6fc838e630e56f75673b54580a2",
+          "target": "stmt:packages/cli/src/cli.ts@L1059",
+          "line": 1059,
+          "expr": "return EXIT.OK;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1062",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1062",
+            "expr": "args.includes('--next')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0d7d53b3b1ede50e77b3ad135d61a966bc91282d3074e6bb1109324630bb488b",
+          "target": "stmt:packages/cli/src/cli.ts@L1063",
+          "line": 1063,
+          "expr": "const layerIdx = args.indexOf('--layer');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1062",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1062",
+            "expr": "args.includes('--next')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5966e599f87c9be755168ccc503e56ed249742621d2e785f960511ea37764ab6",
+          "target": "stmt:packages/cli/src/cli.ts@L1065",
+          "line": 1065,
+          "expr": "const limitIdx = args.indexOf('--limit');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1062",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1062",
+            "expr": "args.includes('--next')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e1b2c8a11271a8ba8c4918717db5788304963ab06855695dc4534d6ccf9f6581",
+          "target": "stmt:packages/cli/src/cli.ts@L1066",
+          "line": 1066,
+          "expr": "const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1062",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1062",
+            "expr": "args.includes('--next')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c15700a622bce08133b5fb4f6e235e81a4820cfb9c2892438943743252b19b1d",
+          "target": "stmt:packages/cli/src/cli.ts@L1067",
+          "line": 1067,
+          "expr": "const batch = enrich.next({\n      ...(layer ? { layer } : {}),\n      ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),\n      ...(scope ? { scope } : {}),\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1062",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1062",
+            "expr": "args.includes('--next')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fbf14a1c53beb0302a8460ea4ef1023b3bfd6ab2c484d29b45f6d80012f877b4",
+          "target": "stmt:packages/cli/src/cli.ts@L1072",
+          "line": 1072,
+          "expr": "process.stdout.write(`${JSON.stringify(batch, null, 2)}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1073",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1062",
+            "expr": "args.includes('--next')"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1073",
+            "expr": "batch.zeroProgress",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4337ed4a7654f29ab4c12a2db2da0760a505b3a9ff55c0f7cb6bbf984009fff7",
+          "target": "stmt:packages/cli/src/cli.ts@L1074",
+          "line": 1074,
+          "expr": "process.stderr.write(\n        `zero-progress: batchId ${batch.batchId} was already issued for layer ${batch.layer}` +\n          ` (previousBatchId ${batch.previousBatchId ?? 'n/a'}) with no save landing — stop and check that enrich_save is persisting.\\n`,\n      );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1062",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1062",
+            "expr": "args.includes('--next')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1bf9d43d4b6767cceb71502fdbe7b3013d7f25bde403f4f21fc50ef099bdd62d",
+          "target": "stmt:packages/cli/src/cli.ts@L1079",
+          "line": 1079,
+          "expr": "return EXIT.OK;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cedad455c01430fffb147705ad30c5224b25f6beae10e98110e8696adbc28a78",
+          "target": "stmt:packages/cli/src/cli.ts@L1083",
+          "line": 1083,
+          "expr": "const st = enrich.status({ ...(scope ? { scope } : {}) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d00e169c74b2ea3fbda67a8a332c956b5adb5907d370dfca591c837a81bd680f",
+          "target": "stmt:packages/cli/src/cli.ts@L1084",
+          "line": 1084,
+          "expr": "process.stdout.write(`${JSON.stringify(st, null, 2)}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1086",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1086",
+            "expr": "!st.done",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e34c0a818bcc0743938386db9b0f41f5fb2d0d65121cfcd5c8ad19611e925b0",
+          "target": "stmt:packages/cli/src/cli.ts@L1092",
+          "line": 1092,
+          "expr": "const pending = scopedKeys.reduce(\n      (n, k) => n + (layers[k]?.missing ?? 0) + (layers[k]?.stale ?? 0),\n      0,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1086",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1086",
+            "expr": "!st.done",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7fc69d19ce49f26148bc60626035496787e533adef05931a20d720bb36cdfb95",
+          "target": "stmt:packages/cli/src/cli.ts@L1096",
+          "line": 1096,
+          "expr": "process.stdout.write(\n      `${pending} target(s) pending (next: ${st.nextLayer ?? 'symbol'}) — run \\`/crib-enrich\\` to author the LLM graph.\\n`,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1099",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1086",
+            "expr": "!st.done"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1099",
+            "expr": "scope && st.wholeRepoPending?.system",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:33bf2be9b8044034da2871fdae56066d72854b8761bd4d1bf25eee84d48e0d30",
+          "target": "stmt:packages/cli/src/cli.ts@L1100",
+          "line": 1100,
+          "expr": "process.stdout.write(\n        `(${st.wholeRepoPending.system} whole-repo system target(s) still pending — needs an unscoped pass)\\n`,\n      );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1104",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1086",
+            "expr": "!st.done"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1104",
+            "expr": "scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d92cd6f6550346cf6143f77634ff9ff6b889d49c42bf06e8021187e89cdfac51",
+          "target": "stmt:packages/cli/src/cli.ts@L1105",
+          "line": 1105,
+          "expr": "process.stdout.write(\n      `scope \\`${scope.pathPrefix}\\` complete — run \\`crib enrich --overview --scope ${scope.pathPrefix}\\` for the module bible (whole-repo system layer still needs an unscoped pass).\\n`,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "guard": "cond:packages/cli/src/cli.ts@L1104",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1086",
+            "expr": "!st.done"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1104",
+            "expr": "scope",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e5f48a1f63fb79b974620d6982cd46a466374bf592a0e4e4f71bf4a1173a6b28",
+          "target": "stmt:packages/cli/src/cli.ts@L1109",
+          "line": 1109,
+          "expr": "process.stdout.write('LLM graph complete — `crib enrich --overview` for the bible.\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:27cb8b266aa08649d949b756c73847d1b730358fab0e1f0ed9abd49bcb696af5",
+          "target": "stmt:packages/cli/src/cli.ts@L1111",
+          "line": 1111,
+          "expr": "return EXIT.OK;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdEnrich@L994",
+        "procedureName": "cmdEnrich",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b5c8a5c05e190c8c3161b343d9e0fab080708dd3984e23e5e563f38615bb9737",
+          "target": "sym:packages/cli/src/cli.ts#pathInPrefix@L1147",
+          "expr": "pathInPrefix"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/cli/src/cli.ts@L1012",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/cli/src/cli.ts",
+        "span": {
+          "start": 1012,
+          "end": 1012
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 40,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 40,
+    "assignments": 1,
+    "conditions": 13,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 7,
+      "recorded": 40,
+      "unresolved": 16
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "16 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

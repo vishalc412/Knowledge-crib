@@ -12,6 +12,9 @@ import type { Edge, Node } from '@knowledge-crib/soul-schema';
 import ts from 'typescript';
 import { EXPR_MAX_CHARS, clampExpr } from '../types.js';
 import type { Capabilities, ExtractCtx, ExtractResult, Extractor, FileMeta } from '../types.js';
+import { extractExpressRoutes } from './express.js';
+import { extractNestSemantics } from './nest.js';
+import { extractReactSemantics } from './react.js';
 
 interface LocalSymbol {
   node: Node;
@@ -88,6 +91,24 @@ export class TypeScriptExtractor implements Extractor {
     //     call-site recording (meta.calls) + guard-field annotation on the calls edges.
     //     1.2: also emits raise/exception-handler/assignment/case-branch behavior nodes. ---
     this.walkBodies(path, ctx, symbols, byKey, lineOf, nodes, edges);
+
+    // --- pass 4 (1.3): framework semantics — NestJS (decorators) + Express (imperative routes) +
+    //     React (components/hooks/renders). Derives routes/DI/module-producers/entity-relations/
+    //     columns/exception-filters + the React component composition tree above the syntactic
+    //     graph. A non-framework file is a no-op for each. Shares the 1.3 kinds/rels with the
+    //     Java/Spring track; no schema change. ---
+    const classSyms = symbols
+      .filter((s) => ts.isClassDeclaration(s.tsNode))
+      .map((s) => ({
+        tsNode: s.tsNode as ts.ClassDeclaration,
+        id: s.node.id,
+        qualifiedName: s.node.qualifiedName ?? '',
+      }));
+    if (classSyms.length) {
+      extractNestSemantics({ classSyms, byKey, nodes, edges, ctx, path, lineOf });
+    }
+    extractExpressRoutes({ sf, byKey, symbols, nodes, edges, ctx, path, lineOf });
+    extractReactSemantics({ symbols, byKey, nodes, edges, ctx, path, lineOf });
 
     return { nodes, edges };
   }

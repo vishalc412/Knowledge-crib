@@ -5,7 +5,9 @@
 > agent-agnostic, incrementally upgraded as the project evolves. Delivered as **one fast MCP server**
 > (not a skill). Greenfield, all-new, **Apache-2.0**.
 
-**Status:** implementation in progress — see [the build plan](docs/knowledge-crib-build-plan.md).
+**Status:** `0.1.0` release candidate. Run the full release gate before tagging or publishing; see
+[production readiness](docs/knowledge-crib-production-readiness.md) and the
+[build plan](docs/knowledge-crib-build-plan.md).
 
 ---
 
@@ -25,11 +27,12 @@ Two existing tools each prove half and serve as **design inspiration only (no co
 ## Architecture (dual store)
 - **SoulStore** — chunked JSONL graph committed to git; source of truth; cross-IDE; engine-free
   (readable by SeeroFlow with zero dependencies).
-- **IndexStore** — derived fast-query layer (sqlite + FTS5 + optional sqlite-vec); gitignored;
-  rebuildable from the soul. Kùzu/Ladybug is an optional future backend.
+- **IndexStore** — derived SQLite + FTS5 query layer; gitignored and rebuildable from the soul.
+  Vector search and alternate graph backends do not ship in `0.1.0`.
 
 The deterministic core (parse / graph / impact / search) **never needs a network**. LLM enrichment is
-opt-in, off the query hot path, via direct LLM provider API calls (MCP sampling is deprecated).
+opt-in and off the query hot path: the bundled `/crib-enrich` skill lets the host agent author a
+grounded semantic graph, while the server remains provider-neutral.
 
 ## Repo layout
 ```
@@ -37,12 +40,11 @@ knowledge-crib/                 # pnpm monorepo
   packages/
     soul-schema/   # JSON Schema + TS types (the contract)
     core/          # GraphModel, SoulStore, IndexStore
-    parsers/       # tree-sitter (WASM) wrappers + ANTLR4 legacy front-end
+    parsers/       # offline extractors: TS, PL/SQL, Python, Java, C#, Go, Rust, Markdown
     pipeline/      # extract → resolve → link → cluster → index
     mcp/           # MCP server (npx knowledge-crib)
     cli/           # crib index|update|export|serve|mcp|viz|install-hooks|merge-driver
-    ui/            # web graph viz (later)
-    soul-reader/   # engine-free reader for SeeroFlow / external
+    ui/            # offline React/canvas graph visualization
   docs/            # the spec package
 ```
 
@@ -52,26 +54,35 @@ Knowledge-crib is a pnpm workspace. The recommended way to make the `crib` CLI a
 
 ```bash
 cd knowledge-crib
-pnpm install
-pnpm build
-pnpm --filter knowledge-crib link --global   # or: cd packages/cli && pnpm link --global
+corepack pnpm@9.15.0 install
+corepack pnpm@9.15.0 build
+corepack pnpm@9.15.0 release:verify
+corepack pnpm@9.15.0 --filter knowledge-crib link --global
 crib --help
 ```
 
 Do **not** run `pnpm add -g knowledge-crib` from inside the workspace — pnpm may create broken relative symlinks in the global install because the package declares workspace dependencies.
 
+Beta installer bundles for macOS and Windows can be built with
+`corepack pnpm@9.15.0 installer:build`; see
+[`docs/knowledge-crib-beta-installers.md`](docs/knowledge-crib-beta-installers.md).
+
 ## Develop
 ```bash
-pnpm install
-pnpm build
-pnpm test
-pnpm lint
+corepack pnpm@9.15.0 install
+corepack pnpm@9.15.0 release:verify
 ```
 
-Requires Node >= 20 (22+ recommended), pnpm 9.x.
+Requires Node >= 20 and pnpm 9.15.0 via Corepack.
 
 ## Document index (read in order)
-See [`docs/README.md`](docs/README.md) for the full 17-doc spec index.
+See [`docs/README.md`](docs/README.md) for the complete specification and guide index.
+
+## Community
+
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ## License
 Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). GitNexus and Graphify are credited as design

@@ -1,0 +1,270 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:b8b2af256477d401ee97ce1bcb8239acbdcba29c70db0ca111e948c61e00ac7e",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+    "kind": "symbol",
+    "type": "function",
+    "name": "routeMetaOf",
+    "qualifiedName": "routeMetaOf",
+    "signature": "routeMetaOf(m: ts.MethodDeclaration): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 402,
+      "end": 409
+    },
+    "callSites": [
+      {
+        "callee": "routeParamsOf",
+        "line": 404
+      },
+      {
+        "callee": "securityOf",
+        "line": 406
+      },
+      {
+        "callee": "decors",
+        "line": 406
+      }
+    ]
+  },
+  "source": {
+    "text": "function routeMetaOf(m: ts.MethodDeclaration): Record<string, unknown> {\n  const meta: Record<string, unknown> = {};\n  const params = routeParamsOf(m);\n  if (params.length) meta.params = params;\n  const sec = securityOf(decors(m));\n  if (sec) meta.security = sec;\n  return meta;\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 402
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L102",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 102
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 100
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#decors@L563",
+      "confidence": 1,
+      "name": "decors",
+      "qualifiedName": "decors",
+      "signature": "decors(node: ts.Node): ts.Decorator[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 563
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L412",
+      "confidence": 1,
+      "name": "routeParamsOf",
+      "qualifiedName": "routeParamsOf",
+      "signature": "routeParamsOf(m: ts.MethodDeclaration): Array<{ name: string; type?: string; in: string }>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 412
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#securityOf@L429",
+      "confidence": 1,
+      "name": "securityOf",
+      "qualifiedName": "securityOf",
+      "signature": "securityOf(decs: ts.Decorator[]): Record<string, string> | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 429
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L401",
+      "snippet": "/** The route-param contract + security for a handler method, as a `meta` object for its route node. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+    "procedureName": "routeMetaOf",
+    "conditions": [
+      "cond:packages/parsers/src/ts/nest.ts@L405",
+      "cond:packages/parsers/src/ts/nest.ts@L407"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+        "procedureName": "routeMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4d1d072c3cf99f05f9f2d8011f901e86cdc8ff5012593526272c13e7b7ab0196",
+          "target": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L412",
+          "expr": "routeParamsOf",
+          "line": 404
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+        "procedureName": "routeMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2ae6896ee0ead976c4ab28da4dd0e1b5a613b0dec99f4050f28d8d50351e65a1",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L404",
+          "line": 404,
+          "expr": "const params = routeParamsOf(m);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+        "procedureName": "routeMetaOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L405",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L405",
+            "expr": "params.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:edd0a73cd6eb746c4726595b1e0716b5df8ef11e626e3d58d10f08b0868ddc68",
+          "target": "assign:packages/parsers/src/ts/nest.ts@L405",
+          "line": 405,
+          "expr": "meta.params = params;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+        "procedureName": "routeMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7a7639aaa13fa3e87427760d1873d7124bd015014544ca515bd40c4efb4eebbf",
+          "target": "sym:packages/parsers/src/ts/nest.ts#securityOf@L429",
+          "expr": "securityOf",
+          "line": 406
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+        "procedureName": "routeMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d36d0069553e1c11c9d76cf975e9a57a3717492e8bcacda46cb714e533828a9b",
+          "target": "sym:packages/parsers/src/ts/nest.ts#decors@L563",
+          "expr": "decors",
+          "line": 406
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+        "procedureName": "routeMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0cb53651b34d2ee9bf99e9970a49f0e129e93c8be791a35ea78586917bf23f4a",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L406",
+          "line": 406,
+          "expr": "const sec = securityOf(decors(m));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+        "procedureName": "routeMetaOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L407",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L407",
+            "expr": "sec",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:da340b7b43c9a9d2671b7348eed850092820ed1f75e50ecea245aa7cc39df78f",
+          "target": "assign:packages/parsers/src/ts/nest.ts@L407",
+          "line": 407,
+          "expr": "meta.security = sec;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+        "procedureName": "routeMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8fa58ac28fac2e6b1de4f974263c9cdf5f00d5171767ed3fcb363f610ce9838a",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L408",
+          "line": 408,
+          "expr": "return meta;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts",
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 2,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

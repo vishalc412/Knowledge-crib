@@ -1,6 +1,6 @@
 {
   "name": "knowledge-crib",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Knowledge-crib CLI + MCP server — a portable project soul for AI coding agents.",
   "license": "Apache-2.0",
   "type": "module",
@@ -8,7 +8,7 @@
     "crib": "./dist/cli.js",
     "knowledge-crib": "./dist/cli.js"
   },
-  "files": ["dist"],
+  "files": ["dist", "skills", "LICENSE", "NOTICE", "!dist/**/*.test.*"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -23,5 +23,18 @@
   },
   "devDependencies": {
     "vitest": "^2.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KnowledgeCrib/knowledge-crib.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/KnowledgeCrib/knowledge-crib/issues"
+  },
+  "homepage": "https://github.com/KnowledgeCrib/knowledge-crib#readme",
+  "keywords": ["mcp", "knowledge-graph", "code-analysis", "ai-agents", "cli", "project-context"],
+  "engines": {
+    "node": ">=20"
   }
 }

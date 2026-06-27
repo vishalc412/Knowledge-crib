@@ -1,11 +1,11 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SoulStore, newManifest } from '@knowledge-crib/core';
 import { Verbs } from '@knowledge-crib/mcp';
 import { indexRepo } from '@knowledge-crib/pipeline';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { buildIndex, isIndexed, openSoul, resolveProjectRoot } from './runtime.js';
+import { buildIndex, isIndexed, openIndexOnly, openSoul, resolveProjectRoot } from './runtime.js';
 
 let repo: string;
 beforeEach(() => {
@@ -51,5 +51,22 @@ describe('CLI runtime — index → open → query', () => {
     const docs = (verbs.describes({ id: login?.id ?? '' }) as { docs: unknown[] }).docs;
     expect(docs.length).toBeGreaterThanOrEqual(1);
     index.close();
+  });
+
+  it('refuses to open a stale derived index for read commands', async () => {
+    const seed = new SoulStore(join(repo, '.crib'), { manifest: newManifest({ root: '.' }) });
+    seed.load();
+    await indexRepo(seed, repo);
+
+    const rt = openSoul(resolveProjectRoot({ explicitRoot: repo }));
+    const index = buildIndex(rt);
+    index.close();
+
+    const manifestPath = join(repo, '.crib', 'crib.json');
+    writeFileSync(manifestPath, `${JSON.stringify(rt.soul.getManifest())}\n`);
+    const future = new Date(Date.now() + 5000);
+    utimesSync(manifestPath, future, future);
+
+    expect(() => openIndexOnly(rt)).toThrow(/derived index missing or stale/);
   });
 });

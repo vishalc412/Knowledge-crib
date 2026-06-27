@@ -1,0 +1,203 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.workItem@L679",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:f57d1f311e02e6094b6ba2d9f1dacbcafb78fb031e1eae1489678cc8706238e0",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.workItem@L679",
+    "kind": "symbol",
+    "type": "method",
+    "name": "workItem",
+    "qualifiedName": "EnrichmentStore.workItem",
+    "signature": "workItem(target: {\n    layer: EnrichLayer;\n    id: string;\n    hash: string;\n    node?: Node;\n  }): EnrichWorkItem",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 679,
+      "end": 692
+    },
+    "callSites": [
+      {
+        "callee": "seed",
+        "line": 687
+      },
+      {
+        "callee": "lowerLayer",
+        "line": 688
+      },
+      {
+        "callee": "outputSchema",
+        "line": 689
+      },
+      {
+        "callee": "instructionsFor",
+        "line": 690
+      }
+    ]
+  },
+  "source": {
+    "text": "  private workItem(target: {\n    layer: EnrichLayer;\n    id: string;\n    hash: string;\n    node?: Node;\n  }): EnrichWorkItem {\n    return {\n      targetId: target.id,\n      seed: this.seed(target),\n      lowerLayer: this.lowerLayer(target),\n      outputSchema: outputSchema(target.layer),\n      instructions: instructionsFor(target.layer),\n    };\n  }",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 679
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.next@L296",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "EnrichmentStore.next",
+      "signature": "next(args: EnrichNextArgs = {}): EnrichNextBatch",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 296
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lowerLayer@L747",
+      "confidence": 1,
+      "name": "lowerLayer",
+      "qualifiedName": "EnrichmentStore.lowerLayer",
+      "signature": "lowerLayer(target: { layer: EnrichLayer; node?: Node }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 747
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.seed@L694",
+      "confidence": 1,
+      "name": "seed",
+      "qualifiedName": "EnrichmentStore.seed",
+      "signature": "seed(target: { layer: EnrichLayer; id: string; node?: Node }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 694
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#instructionsFor@L1004",
+      "confidence": 1,
+      "name": "instructionsFor",
+      "qualifiedName": "instructionsFor",
+      "signature": "instructionsFor(layer: EnrichLayer): string",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1004
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#outputSchema@L972",
+      "confidence": 1,
+      "name": "outputSchema",
+      "qualifiedName": "outputSchema",
+      "signature": "outputSchema(layer: EnrichLayer): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 972
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.workItem@L679",
+    "procedureName": "EnrichmentStore.workItem",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.workItem@L679",
+        "procedureName": "EnrichmentStore.workItem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c0fc54470a4f4b744a65bf09a9b9866282b00353d8b8e1f72ce7fb711c9e2e32",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L685",
+          "line": 685,
+          "expr": "return {\n      targetId: target.id,\n      seed: this.seed(target),\n      lowerLayer: this.lowerLayer(target),\n      outputSchema: outputSchema(target.layer),\n      instructions: instructionsFor(target.layer),\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.workItem@L679",
+        "procedureName": "EnrichmentStore.workItem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:72e5c473ed99931f0bbeef5c0c742f049a95c9485f469021a132d9ab6c657093",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.seed@L694",
+          "expr": "seed",
+          "line": 687
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.workItem@L679",
+        "procedureName": "EnrichmentStore.workItem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4df849d3db4827ba0f4484a422fbc37ff5605bffad4bb1e524d740e2dd485b9b",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lowerLayer@L747",
+          "expr": "lowerLayer",
+          "line": 688
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.workItem@L679",
+        "procedureName": "EnrichmentStore.workItem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:58900679804d99f0df82213693e8dec3e147b7f441d0151d707a7db94b32f946",
+          "target": "sym:packages/mcp/src/enrichment.ts#outputSchema@L972",
+          "expr": "outputSchema",
+          "line": 689
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.workItem@L679",
+        "procedureName": "EnrichmentStore.workItem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8a5419d004809f3c9244181cc611dfcb13d590a48d9d41e226c7a4479665be49",
+          "target": "sym:packages/mcp/src/enrichment.ts#instructionsFor@L1004",
+          "expr": "instructionsFor",
+          "line": 690
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

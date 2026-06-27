@@ -20,6 +20,8 @@ import { ExtractorRegistry } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
 import { runCluster } from './cluster/index.js';
 import type { ClusterStats } from './cluster/index.js';
+import { runDossiers } from './dossiers.js';
+import type { DossierStats } from './dossiers.js';
 import { runLink } from './linker/index.js';
 import type { LinkStats } from './linker/index.js';
 import type { SemanticStats } from './linker/index.js';
@@ -61,6 +63,7 @@ export interface UpdateReport {
   link: LinkStats;
   cluster: ClusterStats;
   semantic: SemanticStats;
+  dossiers: DossierStats;
 }
 
 export interface UpdateNoopReport {
@@ -157,6 +160,8 @@ export async function updateRepo(
   soul.setVcsHead(head);
   soul.commit(opts.now);
 
+  const committedAt = opts.now ?? soul.getManifest().stats.lastUpdated;
+  const dossiers = runDossiers(soul, root, committedAt);
   const delta = buildDelta(soul, before, scope);
   return {
     delta,
@@ -168,5 +173,6 @@ export async function updateRepo(
     link,
     cluster,
     semantic,
+    dossiers,
   };
 }

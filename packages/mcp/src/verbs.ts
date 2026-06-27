@@ -3,13 +3,18 @@ import type { Dir, Dossier, IndexStore, SoulStore } from '@knowledge-crib/core';
 import {
   CALLABLE_SYMBOL_TYPES,
   buildDossier,
+  buildDossiersByScope,
+  buildReconstruction,
   computeCoverage,
   decisionTable,
   dossierToMarkdown,
+  expectedBodyFile,
   frameworkSemantics,
   readDossier,
+  reconstructionToMarkdown,
   writeDossier,
 } from '@knowledge-crib/core';
+import type { DossiersByScope as DossiersByScopeShape } from '@knowledge-crib/core';
 /**
  * The MCP verbs as pure functions over the soul + index. These are the product surface; the stdio
  * server is thin wiring on top. Every edge-bearing result carries {method, provenance, confidence,
@@ -17,6 +22,7 @@ import {
  * touch the network or the enricher.
  */
 import type { Edge, Node, NodeKind } from '@knowledge-crib/soul-schema';
+import { type EnrichLayer, EnrichmentStore, llmProjection } from './enrichment.js';
 import {
   DEFAULT_BODY_MAX_CHARS,
   DEFAULT_BODY_MAX_LINES,
@@ -31,16 +37,8 @@ import { DEFAULT_DOC_LIMIT, DEFAULT_LIMIT, bound } from './token-budget.js';
  * Oracle conventions the migration feedback keys on: `.pks`→`.pkb`, `*_spec.sql`→`*_body.sql`, and a
  * generic `spec`→`body` token swap. Returns `undefined` when the path gives no signal (honesty: we do
  * not fabricate a name we are not confident about). Pure + language-agnostic — works for any repo.
+ * Imported from @knowledge-crib/core (WS-6) so the CLI / pipeline / verbs share one implementation.
  */
-function expectedBodyFile(specFile: string): string | undefined {
-  if (/\.pks$/i.test(specFile)) return specFile.replace(/\.pks$/i, '.pkb');
-  if (/_spec\.sql$/i.test(specFile)) return specFile.replace(/_spec\.sql$/i, '_body.sql');
-  if (/spec\.sql$/i.test(specFile)) return specFile.replace(/spec\.sql$/i, 'body.sql');
-  if (/\.sql$/i.test(specFile) && /spec/i.test(specFile)) {
-    return specFile.replace(/spec/i, 'body');
-  }
-  return undefined;
-}
 
 /**
  * Injected VCS adapter (M6) so `detect_changes` can read the git anchor + changed files without the MCP
@@ -75,18 +73,107 @@ export interface DocLink {
 
 const DOC_RELS = new Set(['describes', 'references']);
 
+type GapCategory = 'project' | 'tests' | 'fixtures' | 'builtin' | 'external';
+type GapCategoryCounts = Record<GapCategory, number>;
+
+const GAP_CATEGORIES: readonly GapCategory[] = [
+  'project',
+  'tests',
+  'fixtures',
+  'builtin',
+  'external',
+];
+
+const BUILTIN_CALLEE_PATTERNS: readonly RegExp[] = [
+  /^(DBMS_|UTL_|APEX_|HTP|HTF_|SYS\.|STANDARD\.|DBA_|ALL_|USER_)/i,
+  /^(Array|String|Number|Boolean|Object|Promise|JSON|Math|Date|RegExp|Map|Set|WeakMap|WeakSet|Symbol|Reflect|Error|TypeError|console|process|Buffer)\b/i,
+  /^(setTimeout|clearTimeout|setInterval|clearInterval|parseInt|parseFloat|isNaN|require)\b/i,
+  /^(fs|path|crypto|url|util|events|stream|child_process|os|http|https|assert)\./i,
+  /^(print|len|range|enumerate|zip|map|filter|sum|min|max|abs|open|dict|list|set|tuple|str|int|float|bool|super|isinstance|hasattr|getattr|setattr)\b/i,
+  /^(os|sys|pathlib|json|re|typing|dataclasses|itertools|functools|collections|subprocess|logging|datetime|math)\./i,
+  /^(java|javax|jakarta)\./i,
+  /^(System|String|Integer|Long|Double|Boolean|Math|List|Map|Set|Optional|Collections|Arrays|Objects)\./,
+  /^(System|Microsoft)\./,
+  /^(Console|Enumerable|Task|DateTime|Guid|StringComparer)\./,
+  /^(fmt|strings|errors|context|json|http|os|filepath|strconv|sync|time)\./,
+  /^(std|core|alloc)::/,
+  /^(Option|Result|Vec|String|Box|HashMap|HashSet)::/,
+];
+
+const EXTERNAL_CALLEE_PATTERNS: readonly RegExp[] = [
+  /^@[\w-]+\//,
+  /^(react|react-dom|lodash|axios|express|fastify|zod|vitest|jest|mocha|chai|commander)\b/i,
+  /^(org\.springframework|org\.slf4j|com\.fasterxml|com\.google|io\.micrometer)\./i,
+];
+
+function initGapCategories(): GapCategoryCounts {
+  return { project: 0, tests: 0, fixtures: 0, builtin: 0, external: 0 };
+}
+
+function isBuiltinCallee(callee: string): boolean {
+  return BUILTIN_CALLEE_PATTERNS.some((p) => p.test(callee));
+}
+
+function isExternalCallee(callee: string): boolean {
+  return EXTERNAL_CALLEE_PATTERNS.some((p) => p.test(callee));
+}
+
+function fileCategory(file?: string): GapCategory {
+  if (!file) return 'project';
+  if (
+    /(^|\/)(__tests__|test|tests|spec)\//i.test(file) ||
+    /\.(test|spec)\.[cm]?[jt]sx?$/i.test(file)
+  )
+    return 'tests';
+  if (/(^|\/)(fixtures?|__fixtures__|__probe__)\//i.test(file)) return 'fixtures';
+  return 'project';
+}
+
+function classifyGap(args: { file?: string; callee?: string }): GapCategory {
+  if (args.callee && isBuiltinCallee(args.callee)) return 'builtin';
+  if (args.callee && isExternalCallee(args.callee)) return 'external';
+  return fileCategory(args.file);
+}
+
+function countByFileCategory(rows: Array<Record<string, unknown>>): GapCategoryCounts {
+  const counts = initGapCategories();
+  for (const row of rows) {
+    const file =
+      typeof row.file === 'string'
+        ? row.file
+        : typeof row.callerFile === 'string'
+          ? row.callerFile
+          : undefined;
+    counts[fileCategory(file)]++;
+  }
+  return counts;
+}
+
+function sumGapCategories(parts: GapCategoryCounts[]): GapCategoryCounts {
+  const out = initGapCategories();
+  for (const part of parts) {
+    for (const category of GAP_CATEGORIES) out[category] += part[category];
+  }
+  return out;
+}
+
 export class Verbs {
-  constructor(private readonly deps: VerbDeps) {}
+  private readonly llm: EnrichmentStore;
+
+  constructor(private readonly deps: VerbDeps) {
+    this.llm = new EnrichmentStore(deps.soul, deps.repoRoot);
+  }
 
   status(): Record<string, unknown> {
     const m = this.deps.soul.getManifest();
+    const hasLlmGraph = this.llm.hasAnyFresh();
     return {
       indexed: m.stats.nodes > 0,
       schemaVersion: m.schemaVersion,
       stats: { nodes: m.stats.nodes, edges: m.stats.edges, clusters: m.stats.clusters },
       ...(m.repo.vcsHead ? { vcsHead: m.repo.vcsHead } : {}),
       ...(m.stats.incrementalSince ? { incrementalSince: m.stats.incrementalSince } : {}),
-      capabilities: { ...m.capabilities, ...this.deps.index.capabilities() },
+      capabilities: { ...m.capabilities, ...this.deps.index.capabilities(), llmGraph: hasLlmGraph },
     };
   }
 
@@ -106,6 +193,8 @@ export class Verbs {
      *  trip (no round-trip). Unresolved `meta.injects`/`meta.produces` type names surface as
      *  `⚠ unresolved` entries (parity with `gaps`). */
     withFramework?: boolean;
+    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */
+    withLlm?: boolean;
     /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */
     sourceMaxChars?: number;
     /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */
@@ -114,18 +203,17 @@ export class Verbs {
     sourceStartLine?: number;
   }): Record<string, unknown> {
     const soul = this.deps.soul;
-    const node = soul.getNode(args.id);
+    const id = this.resolveNodeId(args.id);
+    if (!id) return notFound(args.id);
+    const node = soul.getNode(id);
     if (!node) return notFound(args.id);
-    const callers = this.callEdges(args.id, 'up', args.extractedOnly).map((e) =>
+    const callers = this.callEdges(id, 'up', args.extractedOnly).map((e) =>
       this.brief(e.src, e.confidence),
     );
-    const callees = this.callEdges(args.id, 'down', args.extractedOnly).map((e) =>
+    const callees = this.callEdges(id, 'down', args.extractedOnly).map((e) =>
       this.brief(e.dst, e.confidence),
     );
-    const docs = bound(
-      this.docsFor(args.id, 0, args.extractedOnly),
-      args.docLimit ?? DEFAULT_DOC_LIMIT,
-    );
+    const docs = bound(this.docsFor(id, 0, args.extractedOnly), args.docLimit ?? DEFAULT_DOC_LIMIT);
     const result: Record<string, unknown> = {
       node: this.publicNode(node),
       callers,
@@ -135,21 +223,22 @@ export class Verbs {
     };
     if (args.withSource) result.source = this.bodyOf(node, args);
     if (args.withRules && node.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {
-      result.rules = decisionTable(soul, args.id, { includeTables: true });
+      result.rules = decisionTable(soul, id, { includeTables: true });
       // coverage gates the rules: an `unimplemented`/`partial` readiness tells the consumer the
       // decision table may be empty or lossy because the body is missing or expressions were clipped.
-      result.coverage = computeCoverage(soul, args.id, {
+      result.coverage = computeCoverage(soul, id, {
         keep: (e) => !args.extractedOnly || e.provenance === 'EXTRACTED',
       });
     }
     if (args.withFramework) {
       // frameworkSemantics is pure over the soul (one iterateEdges scan, cached adjacency); auto-scopes
       // by node. Undefined when the node has no framework edges (a non-Spring method) → key omitted.
-      const fw = frameworkSemantics(soul, args.id, {
+      const fw = frameworkSemantics(soul, id, {
         keep: (e) => !args.extractedOnly || e.provenance === 'EXTRACTED',
       });
       if (fw) result.framework = fw;
     }
+    this.attachLlm(result, id, args.withLlm);
     return result;
   }
 
@@ -169,7 +258,9 @@ export class Verbs {
     /** absolute file line to start the page at (paging cursor; default = span start) */
     startLine?: number;
   }): Record<string, unknown> {
-    const node = this.deps.soul.getNode(args.id);
+    const id = this.resolveNodeId(args.id);
+    if (!id) return notFound(args.id);
+    const node = this.deps.soul.getNode(id);
     if (!node) return notFound(args.id);
     return { node: this.publicNode(node), source: this.bodyOf(node, args) };
   }
@@ -184,8 +275,9 @@ export class Verbs {
    * persisted file and the live verb output are identical in shape.
    *
    * Cache discipline: a default-shape request (no source paging opts) is served from the persisted
-   * artifact under `.crib/dossiers/` when it is fresh (node hash + schema version match the live
-   * soul); otherwise it is rebuilt and re-persisted. A paged request (sourceStartLine / sourceMaxLines
+   * artifact under `.crib/dossiers/` when it is fresh. Full and incremental indexing refresh
+   * graph-dependent dossier content; the read gate also checks node hash, schema, and shape version.
+   * Otherwise it is rebuilt and re-persisted. A paged request (sourceStartLine / sourceMaxLines
    * / sourceMaxChars) is a live view — it is rebuilt every time (the cache holds the default page).
    * `format: 'markdown'` returns the deterministic human/agent-facing projection.
    */
@@ -197,10 +289,14 @@ export class Verbs {
     /** absolute file line to start the source page at (paging cursor; default = span start) */
     sourceStartLine?: number;
     extractedOnly?: boolean;
+    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */
+    withLlm?: boolean;
     format?: 'json' | 'markdown';
   }): Record<string, unknown> {
     const soul = this.deps.soul;
-    const node = soul.getNode(args.id);
+    const id = this.resolveNodeId(args.id);
+    if (!id) return notFound(args.id);
+    const node = soul.getNode(id);
     if (!node) return notFound(args.id);
     const manifest = soul.getManifest();
     const paged =
@@ -218,37 +314,125 @@ export class Verbs {
     let dossier: Dossier | undefined;
     if (!paged) {
       // default-shape: prefer the persisted artifact when fresh, else build + persist.
-      const read = readDossier(soul.cribDir, args.id, {
+      // Cache is keyed by the canonical id, so a request by qualified/simple name and one by full
+      // id share one dossier file (no duplicate artifacts).
+      const read = readDossier(soul.cribDir, id, {
         nodeHash: node.hash,
         schemaVersion: manifest.schemaVersion,
       });
       if (!read.missing && !read.stale && read.dossier) {
         dossier = read.dossier;
       } else {
-        dossier = buildDossier(
-          soul,
-          this.deps.repoRoot,
-          args.id,
-          manifest.stats.lastUpdated,
-          buildOpts,
-        );
+        dossier = buildDossier(soul, this.deps.repoRoot, id, manifest.stats.lastUpdated, buildOpts);
         if (dossier) writeDossier(soul.cribDir, dossier);
       }
     } else {
       // paged view: always rebuild (the cache holds the default page only).
-      dossier = buildDossier(
-        soul,
-        this.deps.repoRoot,
-        args.id,
-        manifest.stats.lastUpdated,
-        buildOpts,
-      );
+      dossier = buildDossier(soul, this.deps.repoRoot, id, manifest.stats.lastUpdated, buildOpts);
     }
     if (!dossier) return notFound(args.id);
     if (args.format === 'markdown') {
-      return { id: args.id, markdown: dossierToMarkdown(dossier) };
+      return { id, markdown: dossierToMarkdown(dossier) };
     }
-    return dossier as unknown as Record<string, unknown>;
+    const result = dossier as unknown as Record<string, unknown>;
+    this.attachLlm(result, id, args.withLlm);
+    return result;
+  }
+
+  /**
+   * `reconstruct` — the package-scoped migration-reconstruction view: CONSTANT values (the 30/80
+   * thresholds), every member callable with its implementation status, the union of tables the
+   * package reads/writes, docs linked to the package or its members, and the expected body file.
+   * The artifact an agent hands a migrator in one call instead of orchestrating `context` over every
+   * member + `gaps` + `extract_rules`. Backed by the pure core {@link buildReconstruction} (same code
+   * path the pipeline could use to persist it). Returns NOT_FOUND for an unknown id OR a non-package
+   * node (reconstruct is package-scoped; use `dossier`/`context` for a single callable). Accepts the
+   * full id OR a qualified/simple name (parity with the other node verbs).
+   */
+  reconstruct(args: {
+    id: string;
+    extractedOnly?: boolean;
+    /** include the referenced-tables section (default true) */
+    includeTables?: boolean;
+    /** cap on the number of member entries (default 1000; `truncated` flags a cap) */
+    maxSymbols?: number;
+    format?: 'json' | 'markdown';
+  }): Record<string, unknown> {
+    const soul = this.deps.soul;
+    const id = this.resolveNodeId(args.id);
+    if (!id) return notFound(args.id);
+    const manifest = soul.getManifest();
+    const reconstruction = buildReconstruction(
+      soul,
+      this.deps.repoRoot,
+      id,
+      manifest.stats.lastUpdated,
+      {
+        ...(args.extractedOnly ? { extractedOnly: true } : {}),
+        ...(args.includeTables !== undefined ? { includeTables: args.includeTables } : {}),
+        ...(args.maxSymbols !== undefined ? { maxSymbols: args.maxSymbols } : {}),
+      },
+    );
+    if (!reconstruction) return notFound(args.id);
+    if (args.format === 'markdown') {
+      return { id, markdown: reconstructionToMarkdown(reconstruction) };
+    }
+    return reconstruction as unknown as Record<string, unknown>;
+  }
+
+  /**
+   * `dossierByScope` — bulk per-symbol dossiers for EVERY symbol in a scope (a package's members, a
+   * file's symbols, or a cluster's symbols), built in ONE call. The analyst flow: instead of
+   * orchestrating `dossier` over each of ~50 package members (50 round-trips), one call returns the
+   * deep reusable context for all of them — constants-aware node, rehydrated body, callers/callees,
+   * decision table, implementation status, linked docs — so a migration plan built from crib (Plan A)
+   * sees the same per-symbol detail a full code read (Plan B) sees. Backed by the pure core
+   * {@link buildDossiersByScope} (the 1-scan-adjacency path: `iterateEdges()` is walked ONCE for the
+   * whole scope, then every per-symbol {@link buildDossier} reuses it). Returns NOT_FOUND when the
+   * scope node cannot be resolved. Honesty flags: `symbolCount` (total resolved) + `truncated` (capped
+   * at `maxSymbols`) + `skipped` (symbol ids that resolved to no dossier). `format:'markdown'`
+   * concatenates {@link dossierToMarkdown} per symbol under a scope banner.
+   */
+  dossierByScope(args: {
+    /** the scope kind: 'package' (the package's member symbols), 'file' (a file's symbols), or
+     *  'cluster' (a cluster's symbols). */
+    scope: 'package' | 'file' | 'cluster';
+    /** the scope node id, OR — for a package — the qualified/simple name (parity with the other node
+     *  verbs); for a file, the path (with or without the `file:` prefix); for a cluster, the slug. */
+    id: string;
+    extractedOnly?: boolean;
+    /** resolve reads/writes table names in each callable's decision table (extra lookups). */
+    includeTables?: boolean;
+    /** cap on the number of per-symbol dossiers returned (default 1000; `truncated` flags a cap). */
+    maxSymbols?: number;
+    sourceMaxChars?: number;
+    sourceMaxLines?: number;
+    format?: 'json' | 'markdown';
+  }): Record<string, unknown> {
+    const soul = this.deps.soul;
+    // package: use the standard qname resolver for parity with `dossier`/`context`; file/cluster: pass
+    // the raw id (buildDossiersByScope handles the file:/c: prefix + path/slug resolution itself).
+    const resolved = args.scope === 'package' ? (this.resolveNodeId(args.id) ?? args.id) : args.id;
+    const manifest = soul.getManifest();
+    const result = buildDossiersByScope(
+      soul,
+      this.deps.repoRoot,
+      args.scope,
+      resolved,
+      manifest.stats.lastUpdated,
+      {
+        ...(args.extractedOnly ? { extractedOnly: true } : {}),
+        ...(args.includeTables ? { includeTables: true } : {}),
+        ...(args.maxSymbols !== undefined ? { maxSymbols: args.maxSymbols } : {}),
+        ...(args.sourceMaxChars !== undefined ? { sourceMaxChars: args.sourceMaxChars } : {}),
+        ...(args.sourceMaxLines !== undefined ? { sourceMaxLines: args.sourceMaxLines } : {}),
+      },
+    );
+    if (!result) return notFound(args.id);
+    if (args.format === 'markdown') {
+      return { id: result.id, markdown: dossiersByScopeToMarkdown(result) };
+    }
+    return result as unknown as Record<string, unknown>;
   }
 
   /** Rehydrate a node's full span, mapping the budget + paging args onto the snippet defaults. */
@@ -279,9 +463,10 @@ export class Verbs {
     limit?: number;
     extractedOnly?: boolean;
   }): Record<string, unknown> {
-    if (!this.deps.soul.getNode(args.id)) return notFound(args.id);
+    const id = this.resolveNodeId(args.id);
+    if (!id || !this.deps.soul.getNode(id)) return notFound(args.id);
     const depth = args.depth ?? 2;
-    const visited = new Set<string>([args.id]);
+    const visited = new Set<string>([id]);
     const affected: Array<{
       id: string;
       rel: string;
@@ -289,7 +474,7 @@ export class Verbs {
       risk: string;
       docs: DocLink[];
     }> = [];
-    let frontier = [args.id];
+    let frontier = [id];
     for (let d = 1; d <= depth && frontier.length > 0; d++) {
       const next: string[] = [];
       for (const cur of frontier) {
@@ -312,33 +497,165 @@ export class Verbs {
     }
     const page = bound(affected, args.limit ?? DEFAULT_LIMIT);
     return {
-      root: args.id,
+      root: id,
       dir: args.dir,
       affected: page.items,
-      relatedDocs: this.docsFor(args.id, 0, args.extractedOnly),
+      relatedDocs: this.docsFor(id, 0, args.extractedOnly),
       truncated: page.truncated,
       ...(page.cursor ? { cursor: page.cursor } : {}),
     };
   }
 
-  query(args: { q: string; kinds?: NodeKind[]; limit?: number }): Record<string, unknown> {
-    const hits = this.deps.index
-      .query({
-        text: args.q,
-        ...(args.kinds ? { kinds: args.kinds } : {}),
-        limit: args.limit ?? DEFAULT_LIMIT,
-      })
-      .map((h) => {
-        const node = this.deps.soul.getNode(h.id);
-        return {
-          id: h.id,
-          kind: h.kind,
-          score: h.score,
-          snippet: rehydrate(this.deps.repoRoot, node),
-          ...(node?.clusterId ? { clusterId: node.clusterId } : {}),
-        };
-      });
-    return { hits, truncated: false };
+  /**
+   * `query` — free-text search over names/signatures/headings/files AND rehydrated body text (FTS5
+   * BM25, WS-1). By default returns one-line snippets (the discovery view). With `withSource` /
+   * `withRules` / `withFramework` it folds the deep per-symbol context into EACH hit — so a single
+   * `crib query "DTI" --with-source --with-rules` returns the symbol, its body, and its decision
+   * table, matching what a full file read surfaces (closes the Plan-A-vs-Plan-B discovery gap).
+   *
+   * Cost: when `withRules`/`withFramework` is set, outgoing+incoming adjacency is built ONCE from a
+   * single soul edge scan and reused across all hits (decisionTable / computeCoverage /
+   * frameworkSemantics all accept prebuilt adjacency), so N hits cost 1 scan + N×O(degree) — never
+   * N full edge scans. `withRules`/`withFramework` apply only to callable/symbol hits; non-callable
+   * hits (tables/columns/statements) still return their snippet + (optional) source body.
+   */
+  query(args: {
+    q: string;
+    kinds?: NodeKind[];
+    limit?: number;
+    /** restrict rules/framework edges to EXTRACTED provenance (parity with `context`). */
+    extractedOnly?: boolean;
+    /** include the full rehydrated source body per hit (budgeted; see sourceMaxChars/Lines). */
+    withSource?: boolean;
+    /** char cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}). */
+    sourceMaxChars?: number;
+    /** line cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}). */
+    sourceMaxLines?: number;
+    /** for a callable hit, fold in its decision table + coverage readiness. */
+    withRules?: boolean;
+    /** fold in framework-semantics (routes/beans/DI/relations) per hit, when present. */
+    withFramework?: boolean;
+    /** include saved LLM semantic analysis on hits and search LLM analysis text too. */
+    withLlm?: boolean;
+  }): Record<string, unknown> {
+    const soul = this.deps.soul;
+    const hits = this.deps.index.query({
+      text: args.q,
+      ...(args.kinds ? { kinds: args.kinds } : {}),
+      limit: args.limit ?? DEFAULT_LIMIT,
+    });
+
+    // Build outgoing + incoming adjacency ONCE when rules/framework are requested, so per-hit
+    // decisionTable / computeCoverage / frameworkSemantics reuse it instead of re-scanning edges.
+    const needEdges = args.withRules || args.withFramework;
+    let outgoing: Map<string, Edge[]> | undefined;
+    let incoming: Map<string, Edge[]> | undefined;
+    if (needEdges) {
+      outgoing = new Map<string, Edge[]>();
+      incoming = new Map<string, Edge[]>();
+      for (const e of soul.iterateEdges()) {
+        const o = outgoing.get(e.src);
+        if (o) o.push(e);
+        else outgoing.set(e.src, [e]);
+        const i = incoming.get(e.dst);
+        if (i) i.push(e);
+        else incoming.set(e.dst, [e]);
+      }
+    }
+    const keep = (e: Edge) => !args.extractedOnly || e.provenance === 'EXTRACTED';
+
+    const enriched = hits.map((h) => {
+      const node = soul.getNode(h.id);
+      const hit: Record<string, unknown> = {
+        id: h.id,
+        kind: h.kind,
+        score: h.score,
+        snippet: rehydrate(this.deps.repoRoot, node),
+        ...(node?.clusterId ? { clusterId: node.clusterId } : {}),
+      };
+      if (args.withSource && node) {
+        // the paged/body view; `truncated` tells the consumer to page via `source.nextLine` if needed.
+        hit.source = this.bodyOf(node, args);
+      }
+      if (args.withRules && node?.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {
+        hit.rules = decisionTable(soul, h.id, { includeTables: true, out: outgoing });
+        // coverage gates the rules: an `unimplemented`/`partial` readiness says the decision table may
+        // be empty/lossy because the body is missing or expressions were clipped — never present
+        // an empty rules array as if the callable had no logic.
+        hit.coverage = computeCoverage(soul, h.id, { keep, outgoing, incoming });
+      }
+      if (args.withFramework) {
+        const fw = frameworkSemantics(soul, h.id, { keep, outgoing, incoming });
+        if (fw) hit.framework = fw;
+      }
+      this.attachLlm(hit, h.id, args.withLlm);
+      return hit;
+    });
+    if (args.withLlm !== false) {
+      const existing = new Set(enriched.map((h) => String(h.id)));
+      const llmHits: Array<Record<string, unknown>> = [];
+      for (const artifact of this.llm.matchText(args.q, args.limit ?? DEFAULT_LIMIT)) {
+        if (existing.has(artifact.targetId)) continue;
+        const node = soul.getNode(artifact.targetId);
+        llmHits.push({
+          id: artifact.targetId,
+          kind: node?.kind ?? 'symbol',
+          score: 0,
+          snippet: node ? rehydrate(this.deps.repoRoot, node) : '',
+          llm: llmProjection({ artifact, missing: false, stale: false }),
+        });
+        existing.add(artifact.targetId);
+      }
+      enriched.unshift(...llmHits);
+    }
+    return { hits: enriched.slice(0, args.limit ?? DEFAULT_LIMIT), truncated: false };
+  }
+
+  enrichStatus(
+    args: {
+      layer?: EnrichLayer;
+      scope?: { pathPrefix?: string; cluster?: string };
+      scopes?: boolean;
+    } = {},
+  ): Record<string, unknown> {
+    return this.llm.status(args) as unknown as Record<string, unknown>;
+  }
+
+  enrichNext(
+    args: {
+      layer?: EnrichLayer;
+      limit?: number;
+      scope?: { pathPrefix?: string; cluster?: string };
+    } = {},
+  ): Record<string, unknown> {
+    return this.llm.next(args) as unknown as Record<string, unknown>;
+  }
+
+  enrichSave(args: {
+    batchId: string;
+    items: Array<{
+      targetId: string;
+      model?: string;
+      analysis: Record<string, unknown>;
+      graph: {
+        nodes: Array<Record<string, unknown>>;
+        edges: Array<Record<string, unknown>>;
+      };
+      evidence: Array<Record<string, unknown>>;
+    }>;
+  }): Record<string, unknown> {
+    return this.llm.save(args as never) as unknown as Record<string, unknown>;
+  }
+
+  overview(
+    args: { scope?: { pathPrefix?: string; cluster?: string } } = {},
+  ): Record<string, unknown> {
+    return this.llm.overview(args) as unknown as Record<string, unknown>;
+  }
+
+  llmNeighbors(args: { id: string }): Record<string, unknown> {
+    const id = this.resolveNodeId(args.id) ?? args.id;
+    return this.llm.neighbors(id);
   }
 
   describes(args: { id: string; minConfidence?: number; extractedOnly?: boolean }): Record<
@@ -357,8 +674,9 @@ export class Verbs {
     limit?: number;
     extractedOnly?: boolean;
   }): Record<string, unknown> {
-    if (!this.deps.soul.getNode(args.id)) return notFound(args.id);
-    const edges = this.adjacency(args.id, apiDir(args.dir), args.extractedOnly).filter(
+    const id = this.resolveNodeId(args.id);
+    if (!id || !this.deps.soul.getNode(id)) return notFound(args.id);
+    const edges = this.adjacency(id, apiDir(args.dir), args.extractedOnly).filter(
       (e) => !args.rel || e.rel === args.rel,
     );
     const page = bound(edges.map(publicEdge), args.limit ?? 50);
@@ -370,7 +688,11 @@ export class Verbs {
   }
 
   shortestPath(args: { from: string; to: string; maxHops?: number }): Record<string, unknown> {
-    const r = this.deps.index.shortestPath(args.from, args.to, args.maxHops ?? 6);
+    // resolve qualified/simple names on both endpoints (parity with the other node verbs); fall
+    // back to the raw input so index.shortestPath reports a clean not-found instead of throwing.
+    const from = this.resolveNodeId(args.from) ?? args.from;
+    const to = this.resolveNodeId(args.to) ?? args.to;
+    const r = this.deps.index.shortestPath(from, to, args.maxHops ?? 6);
     return { path: r.path, edges: r.edges.map(publicEdge), found: r.found };
   }
 
@@ -482,7 +804,7 @@ export class Verbs {
    *     symbol in the soul: a call into a missing asset. Oracle built-in packages (`DBMS_*`/`UTL_*`/
    *     `APEX_*`/…) are flagged `builtin:true`, never silently hidden.
    */
-  gaps(args: { extractedOnly?: boolean } = {}): Record<string, unknown> {
+  gaps(args: { extractedOnly?: boolean; includeBuiltins?: boolean } = {}): Record<string, unknown> {
     const soul = this.deps.soul;
     const idx = this.deps.index;
     const keep = (e: Edge): boolean => !args.extractedOnly || e.provenance === 'EXTRACTED';
@@ -572,9 +894,8 @@ export class Verbs {
       });
     }
 
-    // Unresolved call sites: callee simple-name matches no symbol. Built-in Oracle packages are
-    // flagged, not dropped (honesty: nothing is hidden).
-    const BUILTIN = /^(DBMS_|UTL_|APEX_|HTP|HTF_|SYS\.|STANDARD\.|DBA_|ALL_|USER_)/i;
+    // Unresolved call sites: callee simple-name matches no symbol. Builtins/external APIs are counted
+    // in summary.byCategory, and are shown only when explicitly requested so project gaps stay legible.
     const nameIndex = new Set<string>();
     for (const c of callables) {
       if (c.name) nameIndex.add(c.name.toLowerCase());
@@ -584,19 +905,26 @@ export class Verbs {
       }
     }
     const unresolvedCallSites: Array<Record<string, unknown>> = [];
+    const unresolvedByCategory = initGapCategories();
     for (const c of callables) {
       const sites = c.meta?.calls as Array<{ callee: string; line: number }> | undefined;
       if (!Array.isArray(sites)) continue;
       for (const s of sites) {
         const simple = (s.callee.split('.').pop() ?? s.callee).toLowerCase();
         if (nameIndex.has(simple)) continue;
+        const category = classifyGap({ file: c.file, callee: s.callee });
+        unresolvedByCategory[category]++;
+        if ((category === 'builtin' || category === 'external') && !args.includeBuiltins) {
+          continue;
+        }
         unresolvedCallSites.push({
           caller: c.id,
           ...(c.qualifiedName ? { callerName: c.qualifiedName } : {}),
           ...(c.file ? { callerFile: c.file } : {}),
           callee: s.callee,
           line: s.line,
-          builtin: BUILTIN.test(s.callee),
+          builtin: category === 'builtin',
+          category,
         });
       }
     }
@@ -658,6 +986,14 @@ export class Verbs {
       }
     }
 
+    const byCategory = sumGapCategories([
+      countByFileCategory(unimplemented),
+      countByFileCategory(packageSpecsWithoutBody),
+      unresolvedByCategory,
+      countByFileCategory(controllersWithoutRoutes),
+      countByFileCategory(unresolvedInjects),
+    ]);
+
     return {
       unimplemented,
       packageSpecsWithoutBody,
@@ -670,6 +1006,7 @@ export class Verbs {
         unresolvedCallSites: unresolvedCallSites.length,
         controllersWithoutRoutes: controllersWithoutRoutes.length,
         unresolvedInjects: unresolvedInjects.length,
+        byCategory,
         // `incomplete` iff the soul has any body-missing gap — an unimplemented callable or a
         // package spec with no body. The headline the loan-rule-engine feedback wanted: the crib
         // says up front "you cannot trust behavior analysis here — a body is missing".
@@ -722,6 +1059,28 @@ export class Verbs {
     return links.sort((a, b) => b.confidence - a.confidence);
   }
 
+  /**
+   * Resolve an id-or-name to a canonical node id, so every node-targeted verb accepts either the
+   * full node id (`sym:...@L105`) OR a qualified/simple name (`PKG_LOAN_RULE_ENGINE.EVAL_DTI_RATIO`
+   * / `EVAL_DTI_RATIO`) — the same convenience `extract_rules`/`findProcedure` already offer. Order:
+   * exact id, then qualified name (case-insensitive), then simple name (case-insensitive, first
+   * match). Returns undefined when nothing matches so the caller can emit NOT_FOUND with the
+   * ORIGINAL input (not the resolved id). Pure over the soul; one-or-two iterate() passes only when
+   * the input is not already an exact id.
+   */
+  private resolveNodeId(idOrName: string): string | undefined {
+    const soul = this.deps.soul;
+    if (soul.getNode(idOrName)) return idOrName;
+    const needle = idOrName.toLowerCase();
+    for (const n of soul.iterate()) {
+      if (n.qualifiedName?.toLowerCase() === needle) return n.id;
+    }
+    for (const n of soul.iterate()) {
+      if (n.name?.toLowerCase() === needle) return n.id;
+    }
+    return undefined;
+  }
+
   private brief(id: string, confidence: number): Record<string, unknown> {
     const n = this.deps.soul.getNode(id);
     if (!n) return { id, confidence };
@@ -735,6 +1094,12 @@ export class Verbs {
       ...(n.span ? { line: n.span.start } : {}),
       confidence,
     };
+  }
+
+  private attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void {
+    if (withLlm === false) return;
+    const projection = llmProjection(this.llm.readForTarget(targetId));
+    if (projection) result.llm = projection;
   }
 
   /**
@@ -809,6 +1174,9 @@ export class Verbs {
       if (Array.isArray(m.injects)) out.injects = m.injects;
       if (Array.isArray(m.produces)) out.produces = m.produces;
       if (m.column !== undefined) out.column = m.column;
+      // PL/SQL package state: CONSTANT values + plain defaults (WS-6) — surfaced so `context` carries
+      // the migration-critical thresholds (30/80) the same way `reconstruct` does (no round-trip).
+      if (Array.isArray(m.variables)) out.variables = m.variables;
     }
     return out;
   }
@@ -834,4 +1202,28 @@ function publicEdge(e: Edge): Record<string, unknown> {
 
 function notFound(id: string): Record<string, unknown> {
   return { error: { code: 'NOT_FOUND', message: `no node with id ${id}` } };
+}
+
+/**
+ * Render a {@link buildDossiersByScope} result as Markdown: a scope banner (scope / label / counts /
+ * truncated / skipped) followed by each per-symbol dossier rendered via {@link dossierToMarkdown},
+ * separated by horizontal rules. Deterministic + diff-friendly. Each dossier is already
+ * self-describing, so this is a thin concatenation with attribution.
+ */
+function dossiersByScopeToMarkdown(r: DossiersByScopeShape): string {
+  const parts: string[] = [];
+  parts.push(`# Dossier-by-scope: ${r.label}`);
+  parts.push('');
+  parts.push(`- scope: ${r.scope}`);
+  parts.push(`- id: ${r.id}`);
+  parts.push(`- symbols: ${r.symbolCount}${r.truncated ? ` (capped at ${r.symbols.length})` : ''}`);
+  if (r.skipped.length > 0) parts.push(`- skipped: ${r.skipped.length}`);
+  parts.push('');
+  for (const d of r.symbols) {
+    parts.push('---');
+    parts.push('');
+    parts.push(dossierToMarkdown(d));
+    parts.push('');
+  }
+  return parts.join('\n');
 }

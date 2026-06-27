@@ -1,0 +1,247 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#emitInject@L313",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:db4fca2cb18b0bb516eb22c8809d7a0e4017eefdb7beed9cda8357a62a109e71",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#emitInject@L313",
+    "kind": "symbol",
+    "type": "function",
+    "name": "emitInject",
+    "qualifiedName": "emitInject",
+    "signature": "emitInject(consumerId: string, depType: string, byKey: Map<string, string>, edges: Edge[], recorded: string[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 313,
+      "end": 325
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 320
+      },
+      {
+        "callee": "get",
+        "line": 321
+      },
+      {
+        "callee": "push",
+        "line": 323
+      },
+      {
+        "callee": "edge",
+        "line": 323
+      }
+    ]
+  },
+  "source": {
+    "text": "function emitInject(\n  consumerId: string,\n  depType: string,\n  byKey: Map<string, string>,\n  edges: Edge[],\n  recorded: string[],\n): void {\n  recorded.push(depType);\n  const depId = byKey.get(depType);\n  if (depId && depId !== consumerId) {\n    edges.push(edge(consumerId, depId, 'injects', depType));\n  }\n}",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 313
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L102",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 102
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 100
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#edge@L620",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string, by = 'lang:typescript/nest', meta?: Record<string, unknown>): Edge",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 620
+    },
+    {
+      "id": "sym:packages/ui/src/viz.test.ts#edge@L27",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel']): Edge",
+      "type": "function",
+      "file": "packages/ui/src/viz.test.ts",
+      "line": 27
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L310",
+      "snippet": "/** Emit an `injects` edge (consumer → dependency type) when the type resolves intra-file; always",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#emitInject@L313",
+    "procedureName": "emitInject",
+    "conditions": [
+      "cond:packages/parsers/src/ts/nest.ts@L322"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#emitInject@L313",
+        "procedureName": "emitInject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a2a181e5a045896e599dcd3b95157266d791604a59c6f0ce09f852d4bdfc3fdf",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L320",
+          "line": 320,
+          "expr": "recorded.push(depType);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#emitInject@L313",
+        "procedureName": "emitInject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:94106a02595bc36c33c8f99a3baadbb204f38d81b8971ead37b7eaef8cfba0e1",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 320
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#emitInject@L313",
+        "procedureName": "emitInject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ece40dc33b239d276feba9c9806164e6ea3a701d8be600a713927cef2522cc72",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L321",
+          "line": 321,
+          "expr": "const depId = byKey.get(depType);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#emitInject@L313",
+        "procedureName": "emitInject",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L322",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L322",
+            "expr": "depId && depId !== consumerId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0562536ebb16a76c424a5a178079e9631d51f1401afa26f0c43d4a0416fd50b8",
+          "target": "sym:packages/parsers/src/ts/nest.ts#edge@L620",
+          "expr": "edge",
+          "line": 323
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#emitInject@L313",
+        "procedureName": "emitInject",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L322",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L322",
+            "expr": "depId && depId !== consumerId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a72f2c0f82ff2fab2a1aa6acb90ca028479e3cdb0b8195ae2c5b2bc033d442e4",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L323",
+          "line": 323,
+          "expr": "edges.push(edge(consumerId, depId, 'injects', depType));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#emitInject@L313",
+        "procedureName": "emitInject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3a799e96c14f814c1382d1fa411a675f1965056ea7a7c83274e370cc07b05f7f",
+          "target": "sym:packages/ui/src/viz.test.ts#edge@L27",
+          "expr": "edge",
+          "line": 323
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts",
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 4,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

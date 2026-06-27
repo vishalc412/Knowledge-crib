@@ -2,7 +2,7 @@
   "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecl@L267",
   "schemaVersion": "1.3",
   "nodeHash": "blake3:31ccc14a86aa2573ee95793e38dfd5ba451a4e6c44cefbcf712de55f18774416",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-06-27T16:07:10.655Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecl@L267",
@@ -80,64 +80,64 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/parsers/src/java/parser.ts#Parser.atEnd@L889",
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.atEnd@L893",
       "confidence": 1,
       "name": "atEnd",
       "qualifiedName": "Parser.atEnd",
       "signature": "atEnd(): boolean",
       "type": "method",
       "file": "packages/parsers/src/java/parser.ts",
-      "line": 889
+      "line": 893
     },
     {
-      "id": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L770",
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L774",
       "confidence": 1,
       "name": "consumeAnnotation",
       "qualifiedName": "Parser.consumeAnnotation",
       "signature": "consumeAnnotation(out: string[], rich?: JavaAnno[]): void",
       "type": "method",
       "file": "packages/parsers/src/java/parser.ts",
-      "line": 770
+      "line": 774
     },
     {
-      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isName@L871",
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isName@L875",
       "confidence": 1,
       "name": "isName",
       "qualifiedName": "Parser.isName",
       "signature": "isName(v: string): boolean",
       "type": "method",
       "file": "packages/parsers/src/java/parser.ts",
-      "line": 871
+      "line": 875
     },
     {
-      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isNameAnyOf@L874",
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isNameAnyOf@L878",
       "confidence": 1,
       "name": "isNameAnyOf",
       "qualifiedName": "Parser.isNameAnyOf",
       "signature": "isNameAnyOf(vs: string[]): boolean",
       "type": "method",
       "file": "packages/parsers/src/java/parser.ts",
-      "line": 874
+      "line": 878
     },
     {
-      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L864",
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L868",
       "confidence": 1,
       "name": "isOp",
       "qualifiedName": "Parser.isOp",
       "signature": "isOp(v: string): boolean",
       "type": "method",
       "file": "packages/parsers/src/java/parser.ts",
-      "line": 864
+      "line": 868
     },
     {
-      "id": "sym:packages/parsers/src/java/parser.ts#Parser.next@L881",
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.next@L885",
       "confidence": 1,
       "name": "next",
       "qualifiedName": "Parser.next",
       "signature": "next(): Token",
       "type": "method",
       "file": "packages/parsers/src/java/parser.ts",
-      "line": 881
+      "line": 885
     },
     {
       "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseMember@L375",
@@ -160,14 +160,14 @@
       "line": 298
     },
     {
-      "id": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L886",
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L890",
       "confidence": 1,
       "name": "peek",
       "qualifiedName": "Parser.peek",
       "signature": "peek(): Token",
       "type": "method",
       "file": "packages/parsers/src/java/parser.ts",
-      "line": 886
+      "line": 890
     }
   ],
   "docs": [
@@ -214,8 +214,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:a423d07b4e513174a112d3aa8206eb6e48933d51092c20d5fc02481a788f2505",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L886",
+          "edgeId": "e:a33abc0cf65fa251d78a8a50b40f4182a72492d255da3ab4a5c5c1161e4b632e",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L890",
           "expr": "peek",
           "line": 268
         }
@@ -254,8 +254,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:08678cbc3c13850790491d293fe5515e0835beed00b1bfcdcd29c6200847fdb9",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L770",
+          "edgeId": "e:d0b29fd74b4ba5825b395b63a2f47441f57f82a7c9d61e008027d42dbc5940e2",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.consumeAnnotation@L774",
           "expr": "consumeAnnotation",
           "line": 275
         }
@@ -332,8 +332,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:e707dbd7385b07b3b5038e266bb9ecd192fe65803c71e0b07b809797d38d6812",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L881",
+          "edgeId": "e:2a9365f0ba7769f8f3936174c1b812a46d1c1b933b5e27ccc2d02fc20103a50e",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L885",
           "expr": "next",
           "line": 280
         }
@@ -532,8 +532,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:1365eae3f5244ea3e4d91df1a882e4c3e96d5abcd7ea2f1d48a8694f7b208b12",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L864",
+          "edgeId": "e:e5b2872a002614f1954ddb01802f6aa43cd17361f7c5c71631ac160c9efdb44e",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L868",
           "expr": "isOp"
         }
       },
@@ -545,8 +545,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:99032fdce3cee2e0658a513bded783c5ea42feb55cfc084411d05ffe8986ce9a",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isName@L871",
+          "edgeId": "e:4ebe4dfe0153f439dca37720cf6ae8f6593c3bc0839fa0b1695633b8279c934a",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isName@L875",
           "expr": "isName"
         }
       },
@@ -558,8 +558,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:3305a5373125bb6163f48d6bf733bf4dd4be5930b9ee9f43641dab86c786be06",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isNameAnyOf@L874",
+          "edgeId": "e:1a2421eff29b304403e375a7a80783ee911363dfcc1a04d0dcd4a4dafc3a34d2",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isNameAnyOf@L878",
           "expr": "isNameAnyOf"
         }
       },
@@ -571,8 +571,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:6eb21bfa29d425f437ff6d75b7523119c1c66b1c6f2fcdf8d9bab3d1d0ab13c1",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.atEnd@L889",
+          "edgeId": "e:d50719daf1222129f2afa30001c74a8853ec5c66ee038dcc5881853fb8e3c9c5",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.atEnd@L893",
           "expr": "atEnd"
         }
       }

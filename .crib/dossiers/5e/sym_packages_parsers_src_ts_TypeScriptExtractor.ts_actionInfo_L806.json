@@ -1,0 +1,468 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:78b9f5d87d1e35e1990404fe1292ed910429263605d22fb689a3357492256650",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+    "kind": "symbol",
+    "type": "function",
+    "name": "actionInfo",
+    "qualifiedName": "actionInfo",
+    "signature": "actionInfo(stmt: ts.Statement): ActionInfo | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 806,
+      "end": 842
+    },
+    "callSites": [
+      {
+        "callee": "truncate",
+        "line": 807
+      },
+      {
+        "callee": "getText",
+        "line": 807
+      },
+      {
+        "callee": "calleeIdentifier",
+        "line": 817
+      },
+      {
+        "callee": "firstCallWithin",
+        "line": 821
+      },
+      {
+        "callee": "calleeIdentifier",
+        "line": 825
+      },
+      {
+        "callee": "firstCallWithin",
+        "line": 833
+      },
+      {
+        "callee": "calleeIdentifier",
+        "line": 837
+      }
+    ]
+  },
+  "source": {
+    "text": "function actionInfo(stmt: ts.Statement): ActionInfo | undefined {\n  const text = truncate(stmt.getText(), EXPR_MAX_CHARS);\n  if (ts.isReturnStatement(stmt)) {\n    return { type: 'return', expr: text, head: 'return' };\n  }\n  if (ts.isThrowStatement(stmt)) {\n    return { type: 'throw', expr: text, head: 'throw' };\n  }\n  if (ts.isExpressionStatement(stmt)) {\n    const expr = stmt.expression;\n    if (ts.isCallExpression(expr)) {\n      return { type: 'call', expr: text, head: calleeIdentifier(expr) ?? 'call' };\n    }\n    // assignment with a call on the RHS (`x = foo()`, `x.y = foo()`) — surface the call.\n    if (isAssignmentWithCall(expr)) {\n      const callee = firstCallWithin(expr);\n      return {\n        type: 'assign',\n        expr: text,\n        head: callee ? (calleeIdentifier(callee) ?? 'call') : 'assign',\n      };\n    }\n  }\n  if (ts.isVariableStatement(stmt)) {\n    // `const x = foo();` — an assignment-with-call initializer; surface the call.\n    const d = stmt.declarationList.declarations[0];\n    if (d?.initializer && containsCall(d.initializer)) {\n      const callee = firstCallWithin(d.initializer);\n      return {\n        type: 'assign',\n        expr: text,\n        head: callee ? (calleeIdentifier(callee) ?? 'call') : 'assign',\n      };\n    }\n  }\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 37,
+    "startLine": 806
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L470",
+      "confidence": 1,
+      "name": "addStatement",
+      "qualifiedName": "TypeScriptExtractor.addStatement",
+      "signature": "addStatement(stmt: ts.Statement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 470
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#calleeIdentifier@L1091",
+      "confidence": 1,
+      "name": "calleeIdentifier",
+      "qualifiedName": "calleeIdentifier",
+      "signature": "calleeIdentifier(expr: ts.Expression): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 1091
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#containsCall@L853",
+      "confidence": 1,
+      "name": "containsCall",
+      "qualifiedName": "containsCall",
+      "signature": "containsCall(node: ts.Node): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 853
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#firstCallWithin@L863",
+      "confidence": 1,
+      "name": "firstCallWithin",
+      "qualifiedName": "firstCallWithin",
+      "signature": "firstCallWithin(node: ts.Node): ts.CallExpression | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 863
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isAssignmentWithCall@L845",
+      "confidence": 1,
+      "name": "isAssignmentWithCall",
+      "qualifiedName": "isAssignmentWithCall",
+      "signature": "isAssignmentWithCall(expr: ts.Expression): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 845
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#truncate@L883",
+      "confidence": 1,
+      "name": "truncate",
+      "qualifiedName": "truncate",
+      "signature": "truncate(s: string, max: number): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 883
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L805",
+      "snippet": "/** Classify a statement as an action line (call/return/throw/assign-with-call), or undefined. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+    "procedureName": "actionInfo",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L808",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L811",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L829",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L832",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L814",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L816",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L820"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:10a816567e3b119c71275fdfbafcd2b14cdc06d221ce0502d77f40cfbc6f24b8",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#truncate@L883",
+          "expr": "truncate",
+          "line": 807
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ee0c98cfc297ffe4c3d2952fe5150387230261335e27983cbae1ef705e082756",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L807",
+          "line": 807,
+          "expr": "const text = truncate(stmt.getText(), EXPR_MAX_CHARS);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L808",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L808",
+            "expr": "ts.isReturnStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75c8d78f8d1a1206e7a49d46986da5a7b336d24c9cd2099ab58360ef414f3785",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L809",
+          "line": 809,
+          "expr": "return { type: 'return', expr: text, head: 'return' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L811",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L811",
+            "expr": "ts.isThrowStatement(stmt)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d35be16cc9bb39e6be0fecdbe4864cefd7e6fb4a48a382b2650f35a550a5bb8d",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L812",
+          "line": 812,
+          "expr": "return { type: 'throw', expr: text, head: 'throw' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L832",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L829",
+            "expr": "ts.isVariableStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L832",
+            "expr": "d?.initializer && containsCall(d.initializer)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:266f50950da5da74b356f7179482890c4c791f45fab35f9cbe81effa1ec8560d",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#calleeIdentifier@L1091",
+          "expr": "calleeIdentifier",
+          "line": 817
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L816",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L814",
+            "expr": "ts.isExpressionStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L816",
+            "expr": "ts.isCallExpression(expr)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aa5dd8965811079412cadedabbc5f3b0575fc93285f7fe54aa3edcd5ff444d86",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L817",
+          "line": 817,
+          "expr": "return { type: 'call', expr: text, head: calleeIdentifier(expr) ?? 'call' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L832",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L829",
+            "expr": "ts.isVariableStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L832",
+            "expr": "d?.initializer && containsCall(d.initializer)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2fbe24500db34bfe254306b8966021ab85c78e4270d76c622cb16e7f537f1c8e",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#firstCallWithin@L863",
+          "expr": "firstCallWithin",
+          "line": 821
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L820",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L814",
+            "expr": "ts.isExpressionStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L820",
+            "expr": "isAssignmentWithCall(expr)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6234b552cbc666a2cb836dbbfb698a1e6ba5484fe0b22bbce558133ac80f010b",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L821",
+          "line": 821,
+          "expr": "const callee = firstCallWithin(expr);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L820",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L814",
+            "expr": "ts.isExpressionStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L820",
+            "expr": "isAssignmentWithCall(expr)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c30fb06b7e9ddeabb178e313e23bf5c34ff995801c8894c89b4c0449a18a9247",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L822",
+          "line": 822,
+          "expr": "return {\n        type: 'assign',\n        expr: text,\n        head: callee ? (calleeIdentifier(callee) ?? 'call') : 'assign',\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L832",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L829",
+            "expr": "ts.isVariableStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L832",
+            "expr": "d?.initializer && containsCall(d.initializer)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5ac9f56d3d3ee2e88792fea13a072958caf5e22b027b17b90e86a6a0053eb5a8",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L833",
+          "line": 833,
+          "expr": "const callee = firstCallWithin(d.initializer);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L832",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L829",
+            "expr": "ts.isVariableStatement(stmt)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L832",
+            "expr": "d?.initializer && containsCall(d.initializer)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:664d494ca13a40821a3457ed945a1f6e7983c832f7bbf933d7f733ff1e0ff2a0",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L834",
+          "line": 834,
+          "expr": "return {\n        type: 'assign',\n        expr: text,\n        head: callee ? (calleeIdentifier(callee) ?? 'call') : 'assign',\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:858572ceab8fe90cb5eb98dd7a7135b4c2a903fae0b94feb4b01b75b6c1a43a1",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L841",
+          "line": 841,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9cb389f991c1f3a5d6df7a762d91ff0cec1babd2dfbf31f9463605c3b9fe17cd",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isAssignmentWithCall@L845",
+          "expr": "isAssignmentWithCall"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+        "procedureName": "actionInfo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3fffb8854394634bb975d069af7f47d1b5b7f92acc05233f0efaa7d141361f78",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#containsCall@L853",
+          "expr": "containsCall"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 0,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 7,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

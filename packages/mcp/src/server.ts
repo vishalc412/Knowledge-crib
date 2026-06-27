@@ -14,7 +14,7 @@ const TOOL_RESULT = (obj: unknown) => ({
 });
 
 /** Build (but do not connect) the MCP server with all verbs registered. */
-export function buildServer(verbs: Verbs, version = '0.0.0'): McpServer {
+export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
   const server = new McpServer({ name: 'knowledge-crib', version });
 
   server.registerTool(
@@ -34,6 +34,7 @@ export function buildServer(verbs: Verbs, version = '0.0.0'): McpServer {
         extractedOnly: z.boolean().optional(),
         withSource: z.boolean().optional(),
         withRules: z.boolean().optional(),
+        withLlm: z.boolean().optional(),
         sourceMaxChars: z.number().int().positive().optional(),
         sourceMaxLines: z.number().int().positive().optional(),
         sourceStartLine: z.number().int().positive().optional(),
@@ -69,10 +70,46 @@ export function buildServer(verbs: Verbs, version = '0.0.0'): McpServer {
         sourceMaxLines: z.number().int().positive().optional(),
         sourceStartLine: z.number().int().positive().optional(),
         extractedOnly: z.boolean().optional(),
+        withLlm: z.boolean().optional(),
         format: z.enum(['json', 'markdown']).optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.dossier(a)),
+  );
+
+  server.registerTool(
+    'reconstruct',
+    {
+      description:
+        'Package-scoped migration reconstruction: the package CONSTANT values (e.g. the 30/80 thresholds), every member callable with its implementation status, the union of tables the package reads/writes, docs linked to the package or its members, and the expected body file (Oracle spec→body inference). The artifact an agent hands a migrator in one call instead of orchestrating context over every member + gaps + extract_rules. Returns NOT_FOUND for an unknown id or a non-package node (use context/dossier for a single callable).',
+      inputSchema: {
+        id: z.string(),
+        extractedOnly: z.boolean().optional(),
+        includeTables: z.boolean().optional(),
+        maxSymbols: z.number().int().positive().optional(),
+        format: z.enum(['json', 'markdown']).optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.reconstruct(a)),
+  );
+
+  server.registerTool(
+    'dossier_by_scope',
+    {
+      description:
+        "Bulk per-symbol dossiers for EVERY symbol in a scope — a package's members, a file's symbols, or a cluster's symbols — in ONE call (the 1-scan-adjacency path). Each dossier carries the deep node, rehydrated source body, callers/callees, decision table, implementation status, and linked docs. Use this instead of orchestrating `dossier` over each of ~50 package members: one call returns all of them so a migration plan built from crib (Plan A) sees the same per-symbol detail a full code read (Plan B) sees. Returns NOT_FOUND when the scope node cannot be resolved. Honesty flags: symbolCount (total resolved), truncated (capped at maxSymbols), skipped (ids that resolved to no dossier). For a package, `id` is the id or qualified/simple name; for a file, the path (with or without the `file:` prefix); for a cluster, the slug.",
+      inputSchema: {
+        scope: z.enum(['package', 'file', 'cluster']),
+        id: z.string(),
+        extractedOnly: z.boolean().optional(),
+        includeTables: z.boolean().optional(),
+        maxSymbols: z.number().int().positive().optional(),
+        sourceMaxChars: z.number().int().positive().optional(),
+        sourceMaxLines: z.number().int().positive().optional(),
+        format: z.enum(['json', 'markdown']).optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.dossierByScope(a)),
   );
 
   server.registerTool(
@@ -95,11 +132,19 @@ export function buildServer(verbs: Verbs, version = '0.0.0'): McpServer {
   server.registerTool(
     'query',
     {
-      description: 'Hybrid BM25 search over code + docs.',
+      description:
+        'Hybrid BM25 search over code + docs, including rehydrated source bodies (WS-1: matches rule content, not just signatures). By default returns one-line snippets; set withSource to fold the full source body into each hit, withRules to fold a callable decision table + coverage readiness, withFramework to fold routes/beans/DI/relations. One query --with-source --with-rules returns what a full file read surfaces.',
       inputSchema: {
         q: z.string(),
         kinds: z.array(z.string()).optional(),
         limit: z.number().int().positive().optional(),
+        extractedOnly: z.boolean().optional(),
+        withSource: z.boolean().optional(),
+        sourceMaxChars: z.number().int().positive().optional(),
+        sourceMaxLines: z.number().int().positive().optional(),
+        withRules: z.boolean().optional(),
+        withFramework: z.boolean().optional(),
+        withLlm: z.boolean().optional(),
       },
     },
     async (a) =>
@@ -108,8 +153,104 @@ export function buildServer(verbs: Verbs, version = '0.0.0'): McpServer {
           q: a.q,
           ...(a.kinds ? { kinds: a.kinds as NodeKind[] } : {}),
           ...(a.limit ? { limit: a.limit } : {}),
+          ...(a.extractedOnly !== undefined ? { extractedOnly: a.extractedOnly } : {}),
+          ...(a.withSource !== undefined ? { withSource: a.withSource } : {}),
+          ...(a.sourceMaxChars ? { sourceMaxChars: a.sourceMaxChars } : {}),
+          ...(a.sourceMaxLines ? { sourceMaxLines: a.sourceMaxLines } : {}),
+          ...(a.withRules !== undefined ? { withRules: a.withRules } : {}),
+          ...(a.withFramework !== undefined ? { withFramework: a.withFramework } : {}),
+          ...(a.withLlm !== undefined ? { withLlm: a.withLlm } : {}),
         }),
       ),
+  );
+
+  server.registerTool(
+    'enrich_status',
+    {
+      description:
+        'Coverage/progress for the agent-driven LLM semantic graph layer under .crib/llm. Pass scopes:true (with no scope) to get ranked path-prefix scopes + totalPending + threshold for the graphify-style scope picker. Pass scope:{pathPrefix} to restrict counts/nextLayer/done to in-scope targets (system layer is whole-repo only and reported via wholeRepoPending). The server never calls a model.',
+      inputSchema: {
+        layer: z.enum(['symbol', 'file', 'cluster', 'system']).optional(),
+        scope: z
+          .object({
+            pathPrefix: z.string().optional(),
+            cluster: z.string().optional(),
+          })
+          .optional(),
+        scopes: z.boolean().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.enrichStatus(a)),
+  );
+
+  server.registerTool(
+    'enrich_next',
+    {
+      description:
+        'Return the next missing/stale grounded work batch for the IDE agent model to author. Includes seed facts, lower-layer analyses, schema, and instructions. Pass scope:{pathPrefix} to restrict the batch to in-scope targets. batchId is deterministic (same pending set => same id) so a zero-progress re-issue is detectable by id equality. The system layer is never offered under a scope.',
+      inputSchema: {
+        layer: z.enum(['symbol', 'file', 'cluster', 'system']).optional(),
+        limit: z.number().int().positive().optional(),
+        scope: z
+          .object({
+            pathPrefix: z.string().optional(),
+            cluster: z.string().optional(),
+          })
+          .optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.enrichNext(a)),
+  );
+
+  server.registerTool(
+    'enrich_save',
+    {
+      description:
+        'Validate and persist an IDE-agent-authored LLM semantic graph batch under .crib/llm.',
+      inputSchema: {
+        batchId: z.string(),
+        items: z.array(
+          z.object({
+            targetId: z.string(),
+            model: z.string().optional(),
+            analysis: z.record(z.string(), z.unknown()),
+            graph: z.object({
+              nodes: z.array(z.record(z.string(), z.unknown())),
+              edges: z.array(z.record(z.string(), z.unknown())),
+            }),
+            evidence: z.array(z.record(z.string(), z.unknown())),
+          }),
+        ),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.enrichSave(a)),
+  );
+
+  server.registerTool(
+    'overview',
+    {
+      description:
+        'Return the LLM-authored codebase bible / overview generated from the semantic graph layer. Pass scope:{pathPrefix} for a module-scoped bible (excludes the whole-repo system layer); omit scope for the cached whole-repo overview.json.',
+      inputSchema: {
+        scope: z
+          .object({
+            pathPrefix: z.string().optional(),
+            cluster: z.string().optional(),
+          })
+          .optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.overview(a)),
+  );
+
+  server.registerTool(
+    'llm_neighbors',
+    {
+      description:
+        'Walk the LLM semantic graph around a soul id or LLM local/global node id: rules, features, flows, capabilities, and concepts touching it.',
+      inputSchema: { id: z.string() },
+    },
+    async (a) => TOOL_RESULT(verbs.llmNeighbors(a)),
   );
 
   server.registerTool(
@@ -182,6 +323,7 @@ export function buildServer(verbs: Verbs, version = '0.0.0'): McpServer {
         'Missing-asset + unimplemented-symbol detection over the soul. Returns unimplemented procedures (declared, no body / no executes edges), package specs with no body file (e.g. a .pks present but .pkb absent — the migration-critical "body is missing" signal), and unresolved call sites (calls into symbols that do not exist in the crib; Oracle built-ins flagged). Use this to confirm whether a package body or implementation is actually present before trusting the graph for line-level migration.',
       inputSchema: {
         extractedOnly: z.boolean().optional(),
+        includeBuiltins: z.boolean().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.gaps(a)),

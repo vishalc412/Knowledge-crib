@@ -2,7 +2,13 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { SoulStore, SqliteIndexStore, newManifest, shardOf } from '@knowledge-crib/core';
+import {
+  SoulStore,
+  SqliteIndexStore,
+  newManifest,
+  readDossier,
+  shardOf,
+} from '@knowledge-crib/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { indexRepo } from './pipeline.js';
 import { updateRepo } from './update.js';
@@ -107,7 +113,7 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     // Also build a derived index from the initial soul, to prove the delta keeps the index consistent.
     const soul0 = soulFor();
     const index = new SqliteIndexStore();
-    index.buildFromSoul(soul0);
+    index.buildFromSoul(soul0, repo);
     const bMain = [...soul0.iterate('symbol')].find((n) => n.qualifiedName === 'main')!;
     const aGreet = [...soul0.iterate('symbol')].find((n) => n.qualifiedName === 'greet')!;
     expect(index.impact(bMain.id, 'down').nodes).toContain(aGreet.id);
@@ -129,7 +135,7 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     expect(reopened.getEdge(callsEdge.id)).toBeDefined();
 
     // Applying the delta to the derived index preserves impact (edge survived in the index too).
-    index.applyDelta(report.delta);
+    index.applyDelta(report.delta, repo);
     expect(index.impact(bMain.id, 'down').nodes).toContain(aGreet.id);
     index.close();
 
@@ -153,6 +159,43 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     expect(reopened.getManifest().stats.incrementalSince).toBe(h2);
     expect(reopened.getManifest().repo.vcsHead).toBe(h2);
     expect(h1).not.toBe(h2);
+  });
+
+  it('refreshes graph-dependent dossiers after an incremental edge deletion', async () => {
+    await indexAndCommit();
+    const indexed = soulFor();
+    const greet = [...indexed.iterate('symbol')].find((node) => node.qualifiedName === 'greet')!;
+    expect(
+      readDossier(join(repo, '.crib'), greet.id, {
+        nodeHash: greet.hash,
+        schemaVersion: indexed.getManifest().schemaVersion,
+      }).dossier?.callers.map((caller) => caller.qualifiedName),
+    ).toContain('main');
+
+    writeFileSync(join(repo, 'src', 'b.ts'), "export function main(): string { return 'done'; }\n");
+    git(repo, ['add', 'src/b.ts']);
+    git(repo, [
+      '-c',
+      'user.email=t@t.test',
+      '-c',
+      'user.name=T',
+      'commit',
+      '-q',
+      '-m',
+      'remove-call',
+    ]);
+
+    const updated = soulFor();
+    const result = (await updateRepo(updated, repo, {
+      now: '2026-01-02T00:00:00.000Z',
+    })) as UpdateReport;
+    expect(result.dossiers.written).toBeGreaterThan(0);
+    expect(
+      readDossier(join(repo, '.crib'), greet.id, {
+        nodeHash: greet.hash,
+        schemaVersion: updated.getManifest().schemaVersion,
+      }).dossier?.callers,
+    ).toEqual([]);
   });
 
   it('regression (cc-update-java-extractor): a `crib update` on an edited .java controller re-emits ' +

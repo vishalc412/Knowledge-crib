@@ -1,0 +1,307 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L659",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:20f4729677ca05042706edc501ca1228aaeeb06adecc0c33d695d55e577185da",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L659",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkException",
+    "qualifiedName": "Builder.walkException",
+    "signature": "walkException(s: ExceptionBlock, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 659,
+      "end": 681
+    },
+    "callSites": [
+      {
+        "callee": "exceptionHandler",
+        "line": 665
+      },
+      {
+        "callee": "walkBlock",
+        "line": 673
+      },
+      {
+        "callee": "filter",
+        "line": 674
+      },
+      {
+        "callee": "slice",
+        "line": 674
+      },
+      {
+        "callee": "push",
+        "line": 678
+      },
+      {
+        "callee": "edge",
+        "line": 678
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkException(\n    s: ExceptionBlock,\n    proc: ProcCtx,\n    env: { inLoop: boolean; inException: boolean; guard: string | undefined },\n  ): void {\n    for (const handler of s.handlers) {\n      const excId = this.exceptionHandler(handler.condition, handler.span.start);\n      const handlerEnv = {\n        inLoop: env.inLoop,\n        inException: true,\n        guard: env.guard, // inherit outer guard; an exception is not a new guarded branch\n      };\n      // capture the statement ids emitted inside the handler so we can link `handles` to each.\n      const before = this.nodes.length;\n      this.walkBlock(handler.body, proc, handlerEnv);\n      const handlerStmts = this.nodes\n        .slice(before)\n        .filter((n) => n.kind === 'statement' || n.kind === 'assignment' || n.kind === 'raise');\n      for (const target of handlerStmts) {\n        this.edges.push(this.edge(excId, target.id, 'handles', handler.condition));\n      }\n    }\n  }",
+    "truncated": false,
+    "totalLines": 23,
+    "startLine": 659
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L416",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "Builder.walkStmt",
+      "signature": "walkStmt(s: Stmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 416
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L798",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "Builder.edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string): Edge",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 798
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.exceptionHandler@L726",
+      "confidence": 1,
+      "name": "exceptionHandler",
+      "qualifiedName": "Builder.exceptionHandler",
+      "signature": "exceptionHandler(selector: string, line: number): string",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 726
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkBlock@L408",
+      "confidence": 1,
+      "name": "walkBlock",
+      "qualifiedName": "Builder.walkBlock",
+      "signature": "walkBlock(block: Block, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 408
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/PlSqlExtractor.ts@L657",
+      "snippet": "/** 1.2: walk an EXCEPTION clause — each handler emits an `exception-handler` node + `handles`",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L659",
+    "procedureName": "Builder.walkException",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L664",
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L677"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L659",
+        "procedureName": "Builder.walkException",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L664",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L664",
+            "expr": "s.handlers",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f022bc604e857d4136dec4a59f50a70a90188ed4e18ad95585f23885826399ba",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.exceptionHandler@L726",
+          "expr": "exceptionHandler",
+          "line": 665
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L659",
+        "procedureName": "Builder.walkException",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L664",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L664",
+            "expr": "s.handlers",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:790967d1154adf481b2d7fb97b619d8b910d8ab92c1206431156639d4cfe3011",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L665",
+          "line": 665,
+          "expr": "const excId = this.exceptionHandler(handler.condition, handler.span.start);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L659",
+        "procedureName": "Builder.walkException",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L664",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L664",
+            "expr": "s.handlers",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4fac974c1c775673562538dbac9a852a2516c8eb357a2466cc37bed76e75a4da",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkBlock@L408",
+          "expr": "walkBlock",
+          "line": 673
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L659",
+        "procedureName": "Builder.walkException",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L664",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L664",
+            "expr": "s.handlers",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:817ec2a25ac255be402e356c3e7520bd7e7000b483964d2c041e9df9473afe7f",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L673",
+          "line": 673,
+          "expr": "this.walkBlock(handler.body, proc, handlerEnv);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L659",
+        "procedureName": "Builder.walkException",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L664",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L664",
+            "expr": "s.handlers",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b3505f6c3eaba31fc6c5c4d85c96ead83312982ba245ac549e27df8f25cc136c",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L674",
+          "line": 674,
+          "expr": "const handlerStmts = this.nodes\n        .slice(before)\n        .filter((n) => n.kind === 'statement' || n.kind === 'assignment' || n.kind === 'raise');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L659",
+        "procedureName": "Builder.walkException",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L677",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L664",
+            "expr": "s.handlers"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L677",
+            "expr": "handlerStmts",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:34c732b0b79f0a437d784181deaf6809ff04529d3a4b49ef2bc76836021b52cb",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L798",
+          "expr": "edge",
+          "line": 678
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L659",
+        "procedureName": "Builder.walkException",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L677",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L664",
+            "expr": "s.handlers"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L677",
+            "expr": "handlerStmts",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1c7f446c176745565c99de803474c004e7e43f8b2b4f3e6f6ca7fcb6b9a3531d",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L678",
+          "line": 678,
+          "expr": "this.edges.push(this.edge(excId, target.id, 'handles', handler.condition));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 6,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

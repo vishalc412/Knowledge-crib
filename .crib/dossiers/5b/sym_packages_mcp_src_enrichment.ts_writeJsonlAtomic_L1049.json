@@ -1,0 +1,148 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#writeJsonlAtomic@L1049",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d5100e5fe040fd99470a88cea9c4c272c8e4008e433cad473f2684f2e0e61a60",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#writeJsonlAtomic@L1049",
+    "kind": "symbol",
+    "type": "function",
+    "name": "writeJsonlAtomic",
+    "qualifiedName": "writeJsonlAtomic",
+    "signature": "writeJsonlAtomic(path: string, values: unknown[]): void",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1049,
+      "end": 1058
+    },
+    "callSites": [
+      {
+        "callee": "mkdirSync",
+        "line": 1051
+      },
+      {
+        "callee": "dirname",
+        "line": 1051
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 1052
+      },
+      {
+        "callee": "join",
+        "line": 1054
+      },
+      {
+        "callee": "map",
+        "line": 1054
+      },
+      {
+        "callee": "stringify",
+        "line": 1054
+      },
+      {
+        "callee": "renameSync",
+        "line": 1057
+      }
+    ]
+  },
+  "source": {
+    "text": "function writeJsonlAtomic(path: string, values: unknown[]): void {\n  const tmp = `${path}.tmp`;\n  mkdirSync(dirname(path), { recursive: true });\n  writeFileSync(\n    tmp,\n    values.map((v) => JSON.stringify(v)).join('\\n') + (values.length ? '\\n' : ''),\n    'utf8',\n  );\n  renameSync(tmp, path);\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 1049
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeGraphProjection@L811",
+      "confidence": 1,
+      "name": "writeGraphProjection",
+      "qualifiedName": "EnrichmentStore.writeGraphProjection",
+      "signature": "writeGraphProjection(artifact: LlmArtifact): void",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 811
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#writeJsonlAtomic@L1049",
+    "procedureName": "writeJsonlAtomic",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#writeJsonlAtomic@L1049",
+        "procedureName": "writeJsonlAtomic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e85e2a85f4b75bac73391e9623378b23caa3448e90184e00eb7146624f11a4d",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1051",
+          "line": 1051,
+          "expr": "mkdirSync(dirname(path), { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#writeJsonlAtomic@L1049",
+        "procedureName": "writeJsonlAtomic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:15db1beca18f39c98065d4051a527d71e169867b5ce606b547993e589ee58fc9",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1052",
+          "line": 1052,
+          "expr": "writeFileSync(\n    tmp,\n    values.map((v) => JSON.stringify(v)).join('\\n') + (values.length ? '\\n' : ''),\n    'utf8',\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#writeJsonlAtomic@L1049",
+        "procedureName": "writeJsonlAtomic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a4826270c6ee8b8ebc9ecc110b915c29c7f479c6968b812825a4a74c9a3502d",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1057",
+          "line": 1057,
+          "expr": "renameSync(tmp, path);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 7,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

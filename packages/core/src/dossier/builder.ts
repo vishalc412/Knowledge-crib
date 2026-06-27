@@ -73,6 +73,20 @@ export interface DossierOpts extends ExtractRulesOpts {
   sourceStartLine?: number;
   /** when true, drop non-EXTRACTED edges from callers/callees/docs/controlFlow (trust filter) */
   extractedOnly?: boolean;
+  /** prebuilt outgoing-adjacency (src → edges), so a caller building MANY dossiers (e.g. the
+   *  `dossierByScope` verb over N package members) scans `iterateEdges()` ONCE and reuses the
+   *  result instead of re-scanning per symbol. Absent → built internally (single-symbol path). */
+  outgoing?: Map<string, Edge[]>;
+  /** prebuilt incoming-adjacency (dst → edges); see {@link outgoing}. Absent → built internally. */
+  incoming?: Map<string, Edge[]>;
+  /** prebuilt produced-type-id → producer-method-id map (the framework-semantics supply-chain index);
+   *  hoisted by `buildDossiersByScope` so the bulk path does NOT re-scan all edges per symbol to
+   *  rebuild it inside {@link frameworkSemantics}. Absent → derived from `incoming`. */
+  producerOf?: Map<string, string>;
+  /** prebuilt lowercased name index for coverage call-site resolution. Hoisted by
+   *  `buildDossiersByScope` (built ONCE from a single `iterate('symbol')` pass) so the bulk path does
+   *  NOT re-scan all symbol nodes per callable inside {@link computeCoverage}. Absent → built there. */
+  nameIndex?: ReadonlySet<string>;
 }
 
 /** The persisted dossier artifact. `nodeHash` + `schemaVersion` drive staleness; the rest is payload. */
@@ -141,16 +155,11 @@ export function buildDossier(
   const node = soul.getNode(nodeId);
   if (!node) return undefined;
 
-  const outgoing = new Map<string, Edge[]>();
-  const incoming = new Map<string, Edge[]>();
-  for (const e of soul.iterateEdges()) {
-    const o = outgoing.get(e.src);
-    if (o) o.push(e);
-    else outgoing.set(e.src, [e]);
-    const i = incoming.get(e.dst);
-    if (i) i.push(e);
-    else incoming.set(e.dst, [e]);
-  }
+  // Reuse prebuilt adjacency when supplied (the dossierByScope 1-scan path); otherwise build it from
+  // a single iterateEdges() pass. Each is resolved independently so a caller may supply one, both,
+  // or neither.
+  const outgoing = opts.outgoing ?? buildAdjacency(soul, (e) => e.src);
+  const incoming = opts.incoming ?? buildAdjacency(soul, (e) => e.dst);
   const keep = (e: Edge): boolean => !opts.extractedOnly || e.provenance === 'EXTRACTED';
 
   const callers = (incoming.get(nodeId) ?? [])
@@ -201,6 +210,9 @@ export function buildDossier(
   if (node.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {
     dossier.rules = decisionTable(soul, nodeId, {
       ...(opts.includeTables ? { includeTables: true } : {}),
+      // reuse the adjacency already built (or supplied) so extractRules does not re-scan; an
+      // explicit opts.out (ExtractRulesOpts) still wins for callers that pass a different shape.
+      out: opts.out ?? outgoing,
     });
     const cf = controlFlow(soul, nodeId, outgoing, incoming, keep);
     if (cf.raises.length || cf.handles.length || cf.iterates.length || cf.declares.length) {
@@ -223,12 +235,23 @@ export function buildDossier(
       referencedByFiles: [...refFiles].sort(),
     };
     // 360° self-report: reuse the adjacency we already built (no extra edge scan).
-    dossier.coverage = computeCoverage(soul, nodeId, { keep, outgoing, incoming });
+    dossier.coverage = computeCoverage(soul, nodeId, {
+      keep,
+      outgoing,
+      incoming,
+      ...(opts.nameIndex ? { nameIndex: opts.nameIndex } : {}),
+    });
   }
   // schema-1.3 framework semantics: the LEAN method subset (routes + produces the callable owns).
   // Reuses the single iterateEdges() adjacency already built above — no extra scan. Undefined for a
   // non-Spring callable (no exposes/produces edges) → the key is omitted, keeping the shape honest.
-  const fw = frameworkSemantics(soul, nodeId, { keep, outgoing, incoming, lean: true });
+  const fw = frameworkSemantics(soul, nodeId, {
+    keep,
+    outgoing,
+    incoming,
+    lean: true,
+    ...(opts.producerOf ? { producerOf: opts.producerOf } : {}),
+  });
   if (fw) dossier.framework = fw;
   return dossier;
 }
@@ -282,14 +305,34 @@ export function publicNode(n: Node): Record<string, unknown> {
     if (m.kind !== undefined) out.kindMeta = m.kind;
     if (m.recursive !== undefined) out.recursive = m.recursive;
     if (Array.isArray(m.calls)) out.callSites = m.calls;
-    // framework-semantics 1.3 meta — route params/security, DI injects, @Bean produces, JPA column.
+    // framework-semantics 1.3 meta — route params/security, DI injects, @Bean produces, JPA
+    // column, React renders/hooks/props/state.
     if (Array.isArray(m.params)) out.params = m.params;
     if (m.security !== undefined) out.security = m.security;
     if (Array.isArray(m.injects)) out.injects = m.injects;
     if (Array.isArray(m.produces)) out.produces = m.produces;
     if (m.column !== undefined) out.column = m.column;
+    if (Array.isArray(m.renders)) out.renders = m.renders;
+    if (Array.isArray(m.hooks)) out.hooks = m.hooks;
+    if (m.propsType !== undefined) out.propsType = m.propsType;
+    if (m.stateType !== undefined) out.stateType = m.stateType;
+    // PL/SQL package state: CONSTANT values + plain defaults (WS-6). Surfaced so `context`/`dossier`
+    // carry the migration-critical thresholds (30/80) the same way `reconstruct` does — no round-trip.
+    if (Array.isArray(m.variables)) out.variables = m.variables;
   }
   return out;
+}
+
+/** Build a src-or-dst-keyed adjacency map in one iterateEdges() pass. */
+function buildAdjacency(soul: SoulStore, key: (e: Edge) => string): Map<string, Edge[]> {
+  const map = new Map<string, Edge[]>();
+  for (const e of soul.iterateEdges()) {
+    const k = key(e);
+    const list = map.get(k);
+    if (list) list.push(e);
+    else map.set(k, [e]);
+  }
+  return map;
 }
 
 /** Build a caller/callee brief from a node id + the edge confidence. */
@@ -372,6 +415,14 @@ function controlFlow(
     for (const e of outgoing.get(cond) ?? []) {
       if (e.rel === 'iterates') push('iterates', e, e.dst);
     }
+  }
+  for (const key of ['raises', 'handles', 'iterates', 'declares'] as const) {
+    const values = groups[key];
+    values.sort((a, b) => {
+      const left = String(a.id);
+      const right = String(b.id);
+      return left < right ? -1 : left > right ? 1 : 0;
+    });
   }
   return groups;
 }

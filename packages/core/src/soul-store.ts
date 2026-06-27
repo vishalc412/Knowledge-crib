@@ -117,11 +117,9 @@ export class SoulStore {
     const edgesRoot = join(this.cribDirPrivate, 'edges');
     if (existsSync(edgesRoot)) for (const s of readdirSync(edgesRoot)) this.dirtyEdgeShards.add(s);
     this.clustersDirty = true;
-    // NOTE: the dossiers cache is intentionally left in place — runDossiers skips fresh (hash-anchored)
-    // dossiers so an unchanged repo re-indexes WITHOUT rewriting the dossier store (byte-stable).
-    // Clearing it here would regenerate every dossier with a new `builtAt` on each rebuild, breaking
-    // determinism. Orphan dossiers for deleted nodes persist (harmless — served only on a hash match),
-    // matching the original load()-based rebuild behavior.
+    // The dossier cache stays in place here. The post-commit runDossiers phase compares rebuilt
+    // graph-dependent content while ignoring only `builtAt`, preserving byte stability for true
+    // no-ops and pruning artifacts whose node disappeared.
   }
 
   /** Upsert nodes by id. Routes each to its shard and marks that shard dirty. */

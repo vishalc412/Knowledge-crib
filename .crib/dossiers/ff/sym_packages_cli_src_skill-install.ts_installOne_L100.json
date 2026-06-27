@@ -1,0 +1,194 @@
+{
+  "id": "sym:packages/cli/src/skill-install.ts#installOne@L100",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:491bf03cedaeddeb3c708ce5fbb51ae5455572170d4e0f48cfd6729a3e1c0288",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/skill-install.ts#installOne@L100",
+    "kind": "symbol",
+    "type": "function",
+    "name": "installOne",
+    "qualifiedName": "installOne",
+    "signature": "installOne(skill: BundledSkill, destRoot: string): SkillInstallResult",
+    "lang": "typescript",
+    "file": "packages/cli/src/skill-install.ts",
+    "span": {
+      "start": 100,
+      "end": 108
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 101
+      },
+      {
+        "callee": "mkdirSync",
+        "line": 102
+      },
+      {
+        "callee": "cpSync",
+        "line": 106
+      }
+    ]
+  },
+  "source": {
+    "text": "function installOne(skill: BundledSkill, destRoot: string): SkillInstallResult {\n  const destDir = join(destRoot, skill.name);\n  mkdirSync(destDir, { recursive: true });\n  if (dirEquals(skill.sourceDir, destDir)) {\n    return { name: skill.name, destDir, written: false, note: 'already up to date' };\n  }\n  cpSync(skill.sourceDir, destDir, { recursive: true, force: true });\n  return { name: skill.name, destDir, written: true };\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 100
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/skill-install.ts#installSkill@L82",
+      "confidence": 1,
+      "name": "installSkill",
+      "qualifiedName": "installSkill",
+      "signature": "installSkill(opts: SkillInstallOptions = {}): SkillInstallResult[]",
+      "type": "function",
+      "file": "packages/cli/src/skill-install.ts",
+      "line": 82
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/skill-install.ts#dirEquals@L124",
+      "confidence": 1,
+      "name": "dirEquals",
+      "qualifiedName": "dirEquals",
+      "signature": "dirEquals(a: string, b: string): boolean",
+      "type": "function",
+      "file": "packages/cli/src/skill-install.ts",
+      "line": 124
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/cli/src/skill-install.ts#installOne@L100",
+    "procedureName": "installOne",
+    "conditions": [
+      "cond:packages/cli/src/skill-install.ts@L103"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/skill-install.ts#installOne@L100",
+        "procedureName": "installOne",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:84a49c109abca42914ecb407c85e5755dd866a46d44058bff99d262c9d7e7901",
+          "target": "stmt:packages/cli/src/skill-install.ts@L101",
+          "line": 101,
+          "expr": "const destDir = join(destRoot, skill.name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/skill-install.ts#installOne@L100",
+        "procedureName": "installOne",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:289a38d394ac88bdf0d987ed366ef30e960e1848930e9eeb2119adf06be0c5a8",
+          "target": "stmt:packages/cli/src/skill-install.ts@L102",
+          "line": 102,
+          "expr": "mkdirSync(destDir, { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/skill-install.ts#installOne@L100",
+        "procedureName": "installOne",
+        "guard": "cond:packages/cli/src/skill-install.ts@L103",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/skill-install.ts@L103",
+            "expr": "dirEquals(skill.sourceDir, destDir)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:427a833a81f9c85ec647318ead960c721212ae8108512b24d64fb099853cefc9",
+          "target": "stmt:packages/cli/src/skill-install.ts@L104",
+          "line": 104,
+          "expr": "return { name: skill.name, destDir, written: false, note: 'already up to date' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/skill-install.ts#installOne@L100",
+        "procedureName": "installOne",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1770f8cbdb9f6db82c6be93cd08713f1ccbf4eb4015cf13c05017914b91db6dd",
+          "target": "stmt:packages/cli/src/skill-install.ts@L106",
+          "line": 106,
+          "expr": "cpSync(skill.sourceDir, destDir, { recursive: true, force: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/skill-install.ts#installOne@L100",
+        "procedureName": "installOne",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3ebfbbbfc3ba898457ca546ee72eba0e39698689c7d1eef3273758f5be7cf87c",
+          "target": "stmt:packages/cli/src/skill-install.ts@L107",
+          "line": 107,
+          "expr": "return { name: skill.name, destDir, written: true };"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/skill-install.ts#installOne@L100",
+        "procedureName": "installOne",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:64587a6bc2cd486cf42ced5ea156a8fc63fbc244b4ea4ec4120e060036e3eaf7",
+          "target": "sym:packages/cli/src/skill-install.ts#dirEquals@L124",
+          "expr": "dirEquals"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/cli/src/skill-install.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

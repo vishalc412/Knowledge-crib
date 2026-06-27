@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -83,6 +83,68 @@ describe('crib viz — buildVizGraph (DC runtime contract)', () => {
     const dir = vizAssetsDir();
     expect(existsSync(join(dir, 'index.html'))).toBe(true);
     expect(existsSync(join(dir, 'support.js'))).toBe(true);
+  });
+
+  it('validates edge endpoints with indexed node ids before first render', () => {
+    const html = readFileSync(join(vizAssetsDir(), 'index.html'), 'utf8');
+
+    expect(html).toContain('const nodeIds = new Set(nodes.map(n => n.id));');
+    expect(html).toContain('nodeIds.has(e.src) && nodeIds.has(e.dst)');
+    expect(html).toContain('const largeGraph = ns.length > 1800;');
+    expect(html).toMatch(/if\(!largeGraph\)\{\s*for\(let i=0;i<ns\.length;i\+\+\)/);
+    expect(html).not.toContain('nodes.some(n => n.id === e.src)');
+    expect(html).not.toContain('nodes.some(n => n.id === e.dst)');
+  });
+
+  it('opens large graphs as overview maps before focused node rendering', () => {
+    const html = readFileSync(join(vizAssetsDir(), 'index.html'), 'utf8');
+
+    expect(html).toContain("mode: 'overview'");
+    expect(html).toContain('buildOverview');
+    expect(html).toContain('drawOverview');
+    expect(html).toContain('visibleNodes');
+    expect(html).toContain('selectedClusterId');
+  });
+
+  it('exposes zoom controls for expanding and shrinking dense layouts', () => {
+    const html = readFileSync(join(vizAssetsDir(), 'index.html'), 'utf8');
+
+    expect(html).toContain('onClick="{{ zoomOut }}"');
+    expect(html).toContain('onClick="{{ zoomIn }}"');
+    expect(html).toContain('overviewZoom');
+    expect(html).toContain('{{ zoomLabel }}');
+    expect(html).toContain('zoomOut:()=>this.zoomOut()');
+    expect(html).toContain('zoomIn:()=>this.zoomIn()');
+  });
+
+  it('keeps selected-node hierarchy visually distinct through two hops', () => {
+    const html = readFileSync(join(vizAssetsDir(), 'index.html'), 'utf8');
+
+    expect(html).toContain('DEPTH_COLORS');
+    expect(html).toContain('selectedTrail');
+    expect(html).toContain('depthMap');
+    expect(html).toContain('Horizon');
+    expect(html).toContain('2-hop context');
+  });
+
+  it('presents focused selections as a compact local graph cockpit', () => {
+    const html = readFileSync(join(vizAssetsDir(), 'index.html'), 'utf8');
+
+    expect(html).toContain('arrangeNodeFocus');
+    expect(html).toContain('graphFocusZoom');
+    expect(html).toContain('focusRing');
+    expect(html).toContain('compactStats');
+    expect(html).toContain('max-width:360px');
+  });
+
+  it('keeps overview labels and narrow headers inside their boxes', () => {
+    const html = readFileSync(join(vizAssetsDir(), 'index.html'), 'utf8');
+
+    expect(html).toContain('ellipsize(ctx');
+    expect(html).toContain('ctx.clip()');
+    expect(html).toContain('kc-topbar');
+    expect(html).toContain('kc-brand-stats');
+    expect(html).toContain('@media (max-width: 900px)');
   });
 });
 
