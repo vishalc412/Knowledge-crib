@@ -57,7 +57,12 @@ cd knowledge-crib
 corepack pnpm@9.15.0 install
 corepack pnpm@9.15.0 build
 corepack pnpm@9.15.0 release:verify
-corepack pnpm@9.15.0 --filter knowledge-crib link --global
+
+# One-time: create the global bin directory and add it to your PATH
+corepack pnpm@9.15.0 setup
+# Then restart your terminal (or `source ~/.zshrc`) so `crib` resolves.
+
+corepack pnpm@9.15.0 --dir packages/cli link --global
 crib --help
 ```
 

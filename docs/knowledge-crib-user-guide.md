@@ -57,8 +57,12 @@ corepack pnpm@9.15.0 install
 corepack pnpm@9.15.0 build              # builds all 7 packages
 corepack pnpm@9.15.0 release:verify     # production release gate
 
+# One-time machine setup: create the global bin directory and add it to PATH
+corepack pnpm@9.15.0 setup
+# Then restart your terminal (or `source ~/.zshrc`) so `crib` resolves.
+
 # Link the CLI globally so `crib` is on PATH for every project
-corepack pnpm@9.15.0 --filter knowledge-crib link --global
+corepack pnpm@9.15.0 --dir packages/cli link --global
 ```
 
 Verify:
@@ -67,6 +71,9 @@ Verify:
 which crib                              # /Users/<you>/Library/pnpm/crib
 crib --help
 ```
+
+If `link --global` fails with `ERR_PNPM_NO_GLOBAL_BIN_DIR`, run the `setup` step
+above, restart your terminal, and retry.
 
 The link points back at the repo's `dist/`, so to upgrade:
 `git pull && corepack pnpm@9.15.0 build` — no reinstall.
@@ -266,7 +273,8 @@ monorepo (TypeScript + Java + SQL). It records the exact steps and numbers.
 ```bash
 cd ~/Documents/Knowlege-crib
 corepack pnpm@9.15.0 install && corepack pnpm@9.15.0 release:verify
-corepack pnpm@9.15.0 --filter knowledge-crib link --global
+corepack pnpm@9.15.0 setup   # one-time; restart terminal after
+corepack pnpm@9.15.0 --dir packages/cli link --global
 which crib          # ~/Library/pnpm/crib
 ```
 

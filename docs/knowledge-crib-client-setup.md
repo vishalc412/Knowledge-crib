@@ -21,8 +21,12 @@ corepack pnpm@9.15.0 install
 corepack pnpm@9.15.0 build            # builds all 7 packages → dist/
 corepack pnpm@9.15.0 release:verify   # production release gate
 
+# One-time machine setup: create the global bin directory and add it to PATH
+corepack pnpm@9.15.0 setup
+# Then restart your terminal (or `source ~/.zshrc`) so `crib` resolves.
+
 # Link the CLI globally (crib + knowledge-crib binaries)
-corepack pnpm@9.15.0 --filter knowledge-crib link --global
+corepack pnpm@9.15.0 --dir packages/cli link --global
 ```
 
 Verify:
@@ -31,6 +35,9 @@ Verify:
 which crib                            # /Users/<you>/Library/pnpm/crib
 crib --help                           # prints the command list
 ```
+
+> If `link --global` fails with `ERR_PNPM_NO_GLOBAL_BIN_DIR`, you skipped the
+> `corepack pnpm@9.15.0 setup` step. Run it, restart your terminal, then retry.
 
 The global link points back at the repo's `dist/`, so `corepack pnpm@9.15.0 build` after a
 `git pull` is all you
