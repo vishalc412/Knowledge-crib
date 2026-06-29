@@ -22,7 +22,12 @@ import type { DossiersByScope as DossiersByScopeShape } from '@knowledge-crib/co
  * touch the network or the enricher.
  */
 import type { Edge, Node, NodeKind } from '@knowledge-crib/soul-schema';
-import { type EnrichLayer, EnrichmentStore, llmProjection } from './enrichment.js';
+import {
+  type EnrichNextArgs,
+  type EnrichStatusArgs,
+  EnrichmentStore,
+  llmProjection,
+} from './enrichment.js';
 import {
   DEFAULT_BODY_MAX_CHARS,
   DEFAULT_BODY_MAX_LINES,
@@ -48,6 +53,8 @@ import { DEFAULT_DOC_LIMIT, DEFAULT_LIMIT, bound } from './token-budget.js';
 export interface VcsAdapter {
   currentHead(root: string): string;
   changedFilesSince(root: string, since: string): string[];
+  /** Repo-relative paths of staged + unstaged working-tree changes relative to HEAD. */
+  uncommittedChanges(root: string): string[];
 }
 
 export interface VerbDeps {
@@ -164,10 +171,10 @@ export class Verbs {
     this.llm = new EnrichmentStore(deps.soul, deps.repoRoot);
   }
 
-  status(): Record<string, unknown> {
+  status(opts?: { dirty?: boolean }): Record<string, unknown> {
     const m = this.deps.soul.getManifest();
     const hasLlmGraph = this.llm.hasAnyFresh();
-    return {
+    const result: Record<string, unknown> = {
       indexed: m.stats.nodes > 0,
       schemaVersion: m.schemaVersion,
       stats: { nodes: m.stats.nodes, edges: m.stats.edges, clusters: m.stats.clusters },
@@ -175,6 +182,43 @@ export class Verbs {
       ...(m.stats.incrementalSince ? { incrementalSince: m.stats.incrementalSince } : {}),
       capabilities: { ...m.capabilities, ...this.deps.index.capabilities(), llmGraph: hasLlmGraph },
     };
+    if (this.deps.vcs) {
+      try {
+        const head = this.deps.vcs.currentHead(this.deps.repoRoot);
+        const dirtyFiles = this.deps.vcs.uncommittedChanges(this.deps.repoRoot);
+        result.currentHead = head;
+        result.dirty = {
+          isDirty: dirtyFiles.length > 0,
+          uncommitted: dirtyFiles,
+          aheadOfVcsHead: Boolean(m.repo.vcsHead && m.repo.vcsHead !== head),
+        };
+        if (opts?.dirty) {
+          const since = m.stats.incrementalSince ?? m.repo.vcsHead;
+          const changed = new Set<string>();
+          if (since) {
+            for (const p of this.deps.vcs.changedFilesSince(this.deps.repoRoot, since))
+              changed.add(p);
+          }
+          for (const p of dirtyFiles) changed.add(p);
+          const scope = new Set(changed);
+          for (const edge of this.deps.soul.iterateEdges()) {
+            const d = pathFromId(edge.dst);
+            if (d !== undefined && changed.has(d)) {
+              const s = pathFromId(edge.src);
+              if (s !== undefined) scope.add(s);
+            }
+          }
+          result.dirtyPreview = {
+            wouldUpdate: [...changed].sort(),
+            wouldScope: [...scope].sort(),
+            head,
+          };
+        }
+      } catch {
+        // VCS read is best-effort; never mask deterministic status.
+      }
+    }
+    return result;
   }
 
   context(args: {
@@ -611,23 +655,159 @@ export class Verbs {
     return { hits: enriched.slice(0, args.limit ?? DEFAULT_LIMIT), truncated: false };
   }
 
-  enrichStatus(
-    args: {
-      layer?: EnrichLayer;
-      scope?: { pathPrefix?: string; cluster?: string };
-      scopes?: boolean;
-    } = {},
-  ): Record<string, unknown> {
+  /**
+   * `ask` — natural-language question answered from the crib deterministically.
+   *
+   * No live LLM is invoked. The verb classifies the question, retrieves the most relevant
+   * symbol/file/cluster context, and returns either a structured object or a Markdown answer
+   * assembled from the retrieved facts. This makes `crib ask` useful in headless/MCP settings
+   * while keeping the Knowledge-crib server model-free.
+   */
+  ask(args: {
+    q: string;
+    limit?: number;
+    format?: 'json' | 'markdown';
+    withSource?: boolean;
+    withRules?: boolean;
+    withFramework?: boolean;
+    extractedOnly?: boolean;
+  }): Record<string, unknown> {
+    const q = args.q.trim();
+    if (!q) {
+      return { error: { code: 'BAD_ARGS', message: 'question must be non-empty' } };
+    }
+
+    // 1. Direct-node question: the query itself resolves to a known node id/name.
+    const resolvedId = this.resolveNodeId(q);
+    if (resolvedId) {
+      const ctx = this.context({
+        id: resolvedId,
+        ...(args.withSource ? { withSource: true } : {}),
+        ...(args.withRules ? { withRules: true } : {}),
+        ...(args.withFramework ? { withFramework: true } : {}),
+        ...(args.extractedOnly ? { extractedOnly: true } : {}),
+      });
+      const result = {
+        question: q,
+        interpretation: 'explain',
+        nodeId: resolvedId,
+        context: ctx,
+      };
+      if (args.format === 'markdown') {
+        return { ...result, markdown: askToMarkdown(result) };
+      }
+      return result;
+    }
+
+    // 2. Overview/architecture question: serve the system bible when enriched, else a cluster summary.
+    if (isOverviewQuestion(q)) {
+      const overview = this.overview();
+      const hasAnalyses = Array.isArray(overview.analyses) && overview.analyses.length > 0;
+      const result = {
+        question: q,
+        interpretation: 'overview',
+        overview,
+        ...(hasAnalyses ? {} : { fallback: this.clusterSummary() }),
+      };
+      if (args.format === 'markdown') {
+        return { ...result, markdown: askToMarkdown(result) };
+      }
+      return result;
+    }
+
+    // 3. Discovery question: search the index and gather deep context per hit.
+    const hits = this.deps.index.query({ text: q, limit: args.limit ?? DEFAULT_LIMIT });
+    const needEdges = args.withRules || args.withFramework;
+    let outgoing: Map<string, Edge[]> | undefined;
+    let incoming: Map<string, Edge[]> | undefined;
+    if (needEdges) {
+      outgoing = new Map<string, Edge[]>();
+      incoming = new Map<string, Edge[]>();
+      for (const e of this.deps.soul.iterateEdges()) {
+        const o = outgoing.get(e.src);
+        if (o) o.push(e);
+        else outgoing.set(e.src, [e]);
+        const i = incoming.get(e.dst);
+        if (i) i.push(e);
+        else incoming.set(e.dst, [e]);
+      }
+    }
+    const keep = (e: Edge) => !args.extractedOnly || e.provenance === 'EXTRACTED';
+
+    const enriched = hits.map((h) => {
+      const node = this.deps.soul.getNode(h.id);
+      const hit: Record<string, unknown> = {
+        id: h.id,
+        kind: h.kind,
+        score: h.score,
+        snippet: rehydrate(this.deps.repoRoot, node),
+        ...(node?.clusterId ? { clusterId: node.clusterId } : {}),
+      };
+      if (args.withSource && node) {
+        hit.source = this.bodyOf(node, {});
+      }
+      if (args.withRules && node?.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {
+        hit.rules = decisionTable(this.deps.soul, h.id, { includeTables: true, out: outgoing });
+        hit.coverage = computeCoverage(this.deps.soul, h.id, { keep, outgoing, incoming });
+      }
+      if (args.withFramework) {
+        const fw = frameworkSemantics(this.deps.soul, h.id, { keep, outgoing, incoming });
+        if (fw) hit.framework = fw;
+      }
+      this.attachLlm(hit, h.id);
+      return hit;
+    });
+
+    // Also surface saved LLM analyses whose text matches the question.
+    const existing = new Set(enriched.map((h) => String(h.id)));
+    const llmHits: Array<Record<string, unknown>> = [];
+    for (const artifact of this.llm.matchText(q, args.limit ?? DEFAULT_LIMIT)) {
+      if (existing.has(artifact.targetId)) continue;
+      const node = this.deps.soul.getNode(artifact.targetId);
+      llmHits.push({
+        id: artifact.targetId,
+        kind: node?.kind ?? 'symbol',
+        score: 0,
+        snippet: node ? rehydrate(this.deps.repoRoot, node) : '',
+        llm: llmProjection({ artifact, missing: false, stale: false }),
+      });
+      existing.add(artifact.targetId);
+    }
+
+    const result = {
+      question: q,
+      interpretation: 'discovery',
+      hits: enriched,
+      llmHits,
+      truncated: false,
+    };
+    if (args.format === 'markdown') {
+      return { ...result, markdown: askToMarkdown(result) };
+    }
+    return result;
+  }
+
+  /** Summarize clusters/files for overview questions when no LLM system bible exists. */
+  private clusterSummary(): Record<string, unknown> {
+    const clusters = [...this.deps.soul.iterate('cluster')]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        memberCount: c.members?.length ?? 0,
+      }));
+    const files = [...this.deps.soul.iterate('file')]
+      .sort((a, b) => (a.file ?? '').localeCompare(b.file ?? ''))
+      .slice(0, 50)
+      .map((f) => ({ id: f.id, path: f.file }));
+    return { clusters, files };
+  }
+
+  enrichStatus(args: EnrichStatusArgs = {}): Record<string, unknown> {
     return this.llm.status(args) as unknown as Record<string, unknown>;
   }
 
-  enrichNext(
-    args: {
-      layer?: EnrichLayer;
-      limit?: number;
-      scope?: { pathPrefix?: string; cluster?: string };
-    } = {},
-  ): Record<string, unknown> {
+  enrichNext(args: EnrichNextArgs = {}): Record<string, unknown> {
     return this.llm.next(args) as unknown as Record<string, unknown>;
   }
 
@@ -1225,5 +1405,149 @@ function dossiersByScopeToMarkdown(r: DossiersByScopeShape): string {
     parts.push(dossierToMarkdown(d));
     parts.push('');
   }
+  return parts.join('\n');
+}
+
+/** Heuristic classification for overview/architecture questions. */
+function isOverviewQuestion(q: string): boolean {
+  return /\b(architecture|overview|high.?level|how is .* organized|system structure|repo structure|big picture|what does this repo do)\b/i.test(
+    q,
+  );
+}
+
+/**
+ * Render an `ask` result as a deterministic Markdown answer. No model is invoked;
+ * the text is assembled from the retrieved node context, relationships, docs, and
+ * saved LLM analyses so a human (or another LLM) can read it directly.
+ */
+function askToMarkdown(result: Record<string, unknown>): string {
+  const parts: string[] = [];
+  parts.push(`# ${result.question}`);
+  parts.push('');
+  parts.push(`**interpretation:** ${result.interpretation}`);
+  parts.push('');
+
+  if (result.interpretation === 'explain') {
+    const ctx = result.context as Record<string, unknown> | undefined;
+    if (ctx?.error) {
+      parts.push(`> ${(ctx.error as { message?: string }).message ?? 'not found'}`);
+    } else {
+      const node = (ctx?.node ?? {}) as Record<string, unknown>;
+      const title = String(node.qualifiedName ?? node.name ?? node.id ?? 'node');
+      parts.push(`## ${title}`);
+      parts.push('');
+      if (node.file) parts.push(`- **file:** ${node.file}`);
+      if (node.kind) parts.push(`- **kind:** ${node.kind}`);
+      if (node.signature) parts.push(`- **signature:** \`${node.signature}\``);
+      parts.push('');
+
+      const src = (ctx?.source as { text?: string } | undefined)?.text;
+      if (src) {
+        parts.push('### source');
+        parts.push('```');
+        parts.push(String(src).trim());
+        parts.push('```');
+        parts.push('');
+      }
+
+      const callers = (ctx?.callers ?? []) as Array<Record<string, unknown>>;
+      if (callers.length > 0) {
+        parts.push(
+          `**callers (${callers.length}):** ${callers.map((c) => `\`${c.qualifiedName ?? c.name ?? c.id}\``).join(', ')}`,
+        );
+        parts.push('');
+      }
+      const callees = (ctx?.callees ?? []) as Array<Record<string, unknown>>;
+      if (callees.length > 0) {
+        parts.push(
+          `**callees (${callees.length}):** ${callees.map((c) => `\`${c.qualifiedName ?? c.name ?? c.id}\``).join(', ')}`,
+        );
+        parts.push('');
+      }
+
+      const docs = (ctx?.docs ?? []) as Array<Record<string, unknown>>;
+      if (docs.length > 0) {
+        parts.push('### docs');
+        for (const d of docs.slice(0, 5)) {
+          parts.push(`- *${d.edgeType}* ${d.heading ? `**${d.heading}**` : d.sectionId}`);
+          if (d.snippet) parts.push(`  > ${String(d.snippet).split('\n')[0]}`);
+        }
+        parts.push('');
+      }
+
+      const llm = (ctx?.llm as Record<string, unknown> | undefined)?.analysis as Record<
+        string,
+        unknown
+      >;
+      if (llm?.purpose) {
+        parts.push('### LLM analysis');
+        parts.push(String(llm.purpose));
+        parts.push('');
+      }
+    }
+    return parts.join('\n');
+  }
+
+  if (result.interpretation === 'overview') {
+    const overview = (result.overview ?? {}) as Record<string, unknown>;
+    const system = overview.system as Record<string, unknown> | undefined;
+    if (system?.purpose) {
+      parts.push(String(system.purpose));
+      parts.push('');
+    }
+    const analyses = (overview.analyses ?? []) as Array<Record<string, unknown>>;
+    if (analyses.length > 0) {
+      parts.push('## analyses');
+      for (const a of analyses.slice(0, 10)) {
+        const analysis = (a.analysis as Record<string, unknown>) ?? {};
+        parts.push(`- **${a.targetId}** — ${analysis.purpose ?? 'no summary'}`);
+      }
+      parts.push('');
+    }
+    const fallback = result.fallback as Record<string, unknown> | undefined;
+    if (fallback?.clusters) {
+      const clusters = fallback.clusters as Array<Record<string, unknown>>;
+      parts.push(`## clusters (${clusters.length})`);
+      for (const c of clusters.slice(0, 20)) {
+        parts.push(`- ${c.id}${c.memberCount !== undefined ? ` (${c.memberCount} members)` : ''}`);
+      }
+      parts.push('');
+    }
+    return parts.join('\n');
+  }
+
+  // discovery
+  const hits = (result.hits ?? []) as Array<Record<string, unknown>>;
+  const llmHits = (result.llmHits ?? []) as Array<Record<string, unknown>>;
+  parts.push(
+    `Found ${hits.length} graph hits${llmHits.length > 0 ? ` and ${llmHits.length} LLM hits` : ''}.`,
+  );
+  parts.push('');
+
+  if (hits.length > 0) {
+    parts.push('## graph hits');
+    for (const h of hits.slice(0, 20)) {
+      const node = (h.node ?? h) as Record<string, unknown>;
+      const label = String(node.qualifiedName ?? node.name ?? h.id);
+      parts.push(`### ${label}`);
+      if (node.file) parts.push(`- file: ${node.file}`);
+      if (h.score !== undefined) parts.push(`- score: ${h.score}`);
+      if (h.snippet) parts.push(`\`\`\`\n${String(h.snippet).trim()}\n\`\`\``);
+      parts.push('');
+    }
+  }
+
+  if (llmHits.length > 0) {
+    parts.push('## LLM hits');
+    for (const h of llmHits.slice(0, 10)) {
+      const llm = (h.llm as Record<string, unknown> | undefined)?.analysis as Record<
+        string,
+        unknown
+      >;
+      parts.push(`- **${h.id}** — ${llm?.purpose ?? 'LLM analysis available'}`);
+    }
+    parts.push('');
+  }
+
   return parts.join('\n');
 }

@@ -11,6 +11,16 @@ export interface Bounded<T> {
   cursor?: string;
 }
 
+/**
+ * Rough token estimator: characters / 4. Used for cost previews and budget guards; never billed.
+ * Falls back to 0 for undefined/null.
+ */
+export function estimateTokens(value: unknown): number {
+  if (value === undefined || value === null) return 0;
+  const text = typeof value === 'string' ? value : JSON.stringify(value);
+  return Math.ceil(text.length / 4);
+}
+
 /** Take the first `limit` items, signalling truncation + a numeric cursor for the next page. */
 export function bound<T>(all: T[], limit: number, offset = 0): Bounded<T> {
   const slice = all.slice(offset, offset + limit);

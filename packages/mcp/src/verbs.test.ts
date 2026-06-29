@@ -379,6 +379,55 @@ describe('verbs', () => {
     expect(hit!.coverage!.readiness).toBe('unimplemented');
   });
 
+  it('ask explains a resolved node id/name directly', () => {
+    const res = verbs.ask({ q: 'AuthService.login' }) as unknown as {
+      question: string;
+      interpretation: string;
+      nodeId: string;
+      context: ContextResult;
+    };
+    expect(res.interpretation).toBe('explain');
+    expect(res.nodeId).toBe(login.id);
+    expect(res.context.node.qualifiedName).toBe('AuthService.login');
+    expect(res.context.callers.map((c) => c.id)).toContain(handle.id);
+  });
+
+  it('ask discovery searches the index and returns hits + LLM hits', () => {
+    const res = verbs.ask({ q: 'session' }) as unknown as {
+      interpretation: string;
+      hits: Array<{ id: string }>;
+      llmHits: unknown[];
+    };
+    expect(res.interpretation).toBe('discovery');
+    const ids = res.hits.map((h) => h.id);
+    expect(ids.length).toBeGreaterThan(0);
+    // the doc section about sessions should be one of the hits.
+    expect(ids).toContain(docSection.id);
+  });
+
+  it('ask overview classifies architecture questions', () => {
+    const res = verbs.ask({ q: 'what is the architecture' }) as unknown as {
+      interpretation: string;
+      overview: { analyses: unknown[] };
+      fallback?: { clusters: unknown[] };
+    };
+    expect(res.interpretation).toBe('overview');
+    // with no LLM artifacts, the system bible is absent and a deterministic cluster fallback is present.
+    expect(res.overview.analyses).toEqual([]);
+    expect(res.fallback?.clusters).toBeDefined();
+  });
+
+  it('ask returns markdown when format is markdown', () => {
+    const res = verbs.ask({ q: 'AuthService.login', format: 'markdown' }) as unknown as {
+      markdown: string;
+      interpretation: string;
+    };
+    expect(res.interpretation).toBe('explain');
+    expect(res.markdown).toContain('# AuthService.login');
+    expect(res.markdown).toContain('interpretation:');
+    expect(res.markdown).toContain('Controller.handleLogin');
+  });
+
   it('neighbors maps in/out/both', () => {
     expect(
       (verbs.neighbors({ id: login.id, rel: 'calls', dir: 'in' }) as unknown as NeighborsResult)
@@ -403,6 +452,26 @@ describe('verbs', () => {
     const res = verbs.status() as unknown as StatusResult;
     expect(res.indexed).toBe(true);
     expect(res.capabilities.cypher).toBe(false);
+  });
+
+  it('status({dirty:true}) previews what a dirty update would re-index', () => {
+    soul.setVcsHead('h1');
+    const v = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      vcs: {
+        currentHead: () => 'h2',
+        changedFilesSince: () => ['src/auth.ts'],
+        uncommittedChanges: () => ['src/http.ts'],
+      },
+    });
+    const res = v.status({ dirty: true }) as unknown as StatusResult & {
+      dirtyPreview: { wouldUpdate: string[]; wouldScope: string[]; head: string };
+    };
+    expect(res.dirtyPreview.head).toBe('h2');
+    expect(res.dirtyPreview.wouldUpdate.sort()).toEqual(['src/auth.ts', 'src/http.ts']);
+    expect(res.dirtyPreview.wouldScope).toContain('src/http.ts'); // reverse-dep closure from handle→login
   });
 
   it('enrich_status / enrich_next / enrich_save drive an LLM-authored symbol graph batch', () => {
@@ -478,6 +547,44 @@ describe('verbs', () => {
     const after = verbs.enrichStatus({ layer: 'symbol' }) as unknown as EnrichStatusResult;
     expect(after.model).toBe('host-selected-model');
     expect(after.layers.symbol.fresh).toBe(1);
+  });
+
+  it('enrich_status reports progress + costEstimate and enrich_next respects budgetTokens guard', () => {
+    const status = verbs.enrichStatus() as unknown as EnrichStatusResult & {
+      progress: { completed: number; pending: number; total: number };
+      costEstimate: { currency: string; pending: number; total: number };
+    };
+    expect(status.progress.total).toBeGreaterThanOrEqual(3);
+    expect(status.progress.pending).toBeGreaterThan(0);
+    expect(status.progress.completed).toBeLessThan(status.progress.total);
+    expect(status.costEstimate.currency).toBe('tokens');
+    expect(status.costEstimate.pending).toBeGreaterThan(0);
+    expect(status.costEstimate.total).toBeGreaterThanOrEqual(status.costEstimate.pending);
+
+    const batch = verbs.enrichNext({ layer: 'symbol', limit: 1 }) as unknown as EnrichNextResult & {
+      progress: { completed: number; pending: number; total: number };
+      costEstimate: {
+        currency: string;
+        batch: number;
+        perItem: Array<{ targetId: string; tokens: number }>;
+        totalPending: number;
+      };
+    };
+    expect(batch.progress.pending).toBeGreaterThan(0);
+    expect(batch.costEstimate.batch).toBeGreaterThan(0);
+    expect(batch.costEstimate.perItem).toHaveLength(1);
+
+    const blocked = verbs.enrichNext({
+      layer: 'symbol',
+      limit: 1,
+      budgetTokens: 1,
+    }) as unknown as EnrichNextResult & {
+      budgetExceeded: boolean;
+      budget: number;
+    };
+    expect(blocked.budgetExceeded).toBe(true);
+    expect(blocked.budget).toBe(1);
+    expect(blocked.items).toHaveLength(0);
   });
 
   it('context, dossier, query, overview, and llm_neighbors surface saved LLM graph context', () => {

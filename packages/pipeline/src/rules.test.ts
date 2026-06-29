@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SoulStore, decisionTable, extractRules, newManifest } from '@knowledge-crib/core';
 import type { RuleRecord } from '@knowledge-crib/core';
-import { idFor } from '@knowledge-crib/soul-schema';
+import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { indexRepo } from './pipeline.js';
 import { exportGraph, renderExport, renderMermaid, renderReport } from './rules/index.js';
@@ -166,6 +166,85 @@ describe('M12 renderers', () => {
 
     expect(() => renderExport(soul, 'rules')).toThrow(/procedure/);
     expect(() => renderExport(soul, 'mermaid')).toThrow(/procedure/);
+  });
+
+  it('renderReport surfaces surprising cross-package / cross-cluster connections', () => {
+    const soul = soulFor();
+    const fileA = 'pkg/a.ts';
+    const fileB = 'pkg2/b.ts';
+    const symA = idFor({ kind: 'symbol', path: fileA, qualifiedName: 'A.foo', startLine: 1 });
+    const symB = idFor({ kind: 'symbol', path: fileB, qualifiedName: 'B.bar', startLine: 1 });
+    const clusterA = idFor({ kind: 'cluster', slug: 'clusterA' });
+    const clusterB = idFor({ kind: 'cluster', slug: 'clusterB' });
+
+    soul.putNodes([
+      {
+        id: idFor({ kind: 'file', path: fileA }),
+        kind: 'file',
+        file: fileA,
+        hash: contentHash(fileA),
+      },
+      {
+        id: idFor({ kind: 'file', path: fileB }),
+        kind: 'file',
+        file: fileB,
+        hash: contentHash(fileB),
+      },
+      {
+        id: symA,
+        kind: 'symbol',
+        type: 'function',
+        name: 'foo',
+        qualifiedName: 'A.foo',
+        file: fileA,
+        span: { start: 1, end: 2 },
+        lang: 'typescript',
+        hash: contentHash('A.foo'),
+      },
+      {
+        id: symB,
+        kind: 'symbol',
+        type: 'function',
+        name: 'bar',
+        qualifiedName: 'B.bar',
+        file: fileB,
+        span: { start: 1, end: 2 },
+        lang: 'typescript',
+        hash: contentHash('B.bar'),
+      },
+      {
+        id: clusterA,
+        kind: 'cluster',
+        name: 'clusterA',
+        members: [symA],
+        hash: contentHash('clusterA'),
+      },
+      {
+        id: clusterB,
+        kind: 'cluster',
+        name: 'clusterB',
+        members: [symB],
+        hash: contentHash('clusterB'),
+      },
+    ]);
+    soul.putEdges([
+      {
+        id: edgeId(symA, symB, 'calls'),
+        src: symA,
+        dst: symB,
+        rel: 'calls',
+        method: 'static',
+        provenance: 'EXTRACTED',
+        confidence: 1,
+      },
+    ]);
+
+    const report = renderReport(soul);
+    expect(report).toContain('surprising connections:');
+    expect(report).toContain('cross-package');
+    expect(report).toContain('cross-cluster');
+    expect(report).toContain(symA);
+    expect(report).toContain(symB);
   });
 
   it('exportGraph is a deterministic soul dump', async () => {

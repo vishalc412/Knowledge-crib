@@ -19,6 +19,7 @@ import { buildDossier, computeCoverage, decisionTable } from '@knowledge-crib/co
 import type { SoulStore } from '@knowledge-crib/core';
 import { blake3Hex, contentHash } from '@knowledge-crib/soul-schema';
 import type { Node } from '@knowledge-crib/soul-schema';
+import { estimateTokens } from './token-budget.js';
 
 export type EnrichLayer = 'symbol' | 'file' | 'cluster' | 'system';
 
@@ -36,6 +37,14 @@ const SHARD_HEX = 2;
  * never nags. Tunable in one place.
  */
 export const ENRICH_SCOPE_THRESHOLD = 200;
+
+/** Rough per-target token heuristics for status-level cost previews. */
+const HEURISTIC_TOKENS_PER_LAYER: Record<EnrichLayer, number> = {
+  symbol: 2500,
+  file: 5000,
+  cluster: 8000,
+  system: 12000,
+};
 
 export interface EnrichScope {
   /** Repo-relative path prefix, e.g. `packages/cli`. Trailing-slash-safe startsWith match. */
@@ -76,6 +85,14 @@ export interface EnrichStatus {
   scopeEmpty?: boolean;
   /** Under a scope the system layer is whole-repo only; report its pending count separately. */
   wholeRepoPending?: { system: number };
+  /** Progress across all layers: completed / pending / total targets. */
+  progress?: { completed: number; pending: number; total: number };
+  /** Rough token-cost preview (currency: tokens), using heuristics for status and per-seed for next. */
+  costEstimate?: { currency: 'tokens'; pending: number; total: number };
+  /** Set when `budgetTokens` was supplied and the pending estimate exceeds it. */
+  budgetExceeded?: boolean;
+  /** Echo of the supplied budget, if any. */
+  budget?: number;
 }
 
 export interface EnrichStatusArgs {
@@ -83,12 +100,16 @@ export interface EnrichStatusArgs {
   scope?: EnrichScope;
   /** When true and no scope is set, return ranked scopes + totalPending + threshold for the picker. */
   scopes?: boolean;
+  /** Optional token budget guard. If pending cost estimate exceeds this, status returns `budgetExceeded: true`. */
+  budgetTokens?: number;
 }
 
 export interface EnrichNextArgs {
   layer?: EnrichLayer;
   limit?: number;
   scope?: EnrichScope;
+  /** Optional token budget guard. If the selected batch estimate exceeds this, items will be empty and `budgetExceeded: true`. */
+  budgetTokens?: number;
 }
 
 export interface EnrichOverviewArgs {
@@ -120,6 +141,19 @@ export interface EnrichNextBatch {
    * pending set was returned twice with no save landing in between. The server-derived signal that the
    * old 6m27s churn trap is recurring; a driver MUST break on this. */
   zeroProgress?: boolean;
+  /** Progress across all layers: completed / pending / total targets. */
+  progress?: { completed: number; pending: number; total: number };
+  /** Rough token-cost preview (currency: tokens) for this batch, with a per-item breakdown. */
+  costEstimate?: {
+    currency: 'tokens';
+    batch: number;
+    perItem: Array<{ targetId: string; tokens: number }>;
+    totalPending: number;
+  };
+  /** Set when `budgetTokens` was supplied and the batch estimate exceeds it. */
+  budgetExceeded?: boolean;
+  /** Echo of the supplied budget, if any. */
+  budget?: number;
 }
 
 export interface LlmAnalysis {
@@ -222,19 +256,22 @@ export class EnrichmentStore {
 
   status(args: EnrichStatusArgs = {}): EnrichStatus {
     const manifest = this.readManifest();
+    let result: EnrichStatus;
+    let layers: Record<EnrichLayer, EnrichLayerCounts>;
 
     // Picker-discovery mode: no active scope, caller wants the ranked scopes for the picker.
     if (args.scopes && !args.scope) {
-      const layers = Object.fromEntries(
-        LAYERS.map((layer) => [layer, this.countLayer(layer)]),
-      ) as Record<EnrichLayer, EnrichLayerCounts>;
+      layers = Object.fromEntries(LAYERS.map((layer) => [layer, this.countLayer(layer)])) as Record<
+        EnrichLayer,
+        EnrichLayerCounts
+      >;
       const totalPending = Object.values(layers).reduce((n, l) => n + l.missing + l.stale, 0);
       const nextLayer = args.layer
         ? layers[args.layer].missing + layers[args.layer].stale > 0
           ? args.layer
           : undefined
         : LAYERS.find((layer) => layers[layer].missing + layers[layer].stale > 0);
-      return {
+      result = {
         model: manifest?.model ?? null,
         ...(manifest?.builtAgainstHead ? { builtAgainstHead: manifest.builtAgainstHead } : {}),
         layers,
@@ -244,12 +281,10 @@ export class EnrichmentStore {
         threshold: ENRICH_SCOPE_THRESHOLD,
         scopes: this.scopes(),
       };
-    }
-
-    // Scoped mode: counts/nextLayer/done are over in-scope targets only; system is whole-repo.
-    if (args.scope) {
+    } else if (args.scope) {
+      // Scoped mode: counts/nextLayer/done are over in-scope targets only; system is whole-repo.
       const scope = args.scope;
-      const layers = Object.fromEntries(
+      layers = Object.fromEntries(
         LAYERS_SCOPED.map((layer) => [layer, this.countLayer(layer, scope)]),
       ) as Record<EnrichLayer, EnrichLayerCounts>;
       // Report the whole-repo system layer separately so the user knows the bible still needs it.
@@ -263,7 +298,7 @@ export class EnrichmentStore {
         : LAYERS_SCOPED.find((layer) => layers[layer].missing + layers[layer].stale > 0);
       const scopeEmpty = LAYERS_SCOPED.every((layer) => layers[layer].total === 0);
       const wholeSystem = layers.system.missing + layers.system.stale;
-      return {
+      result = {
         model: manifest?.model ?? null,
         ...(manifest?.builtAgainstHead ? { builtAgainstHead: manifest.builtAgainstHead } : {}),
         layers,
@@ -273,24 +308,35 @@ export class EnrichmentStore {
         scopeEmpty,
         wholeRepoPending: { system: wholeSystem },
       };
+    } else {
+      // Unscoped (current behavior).
+      layers = Object.fromEntries(LAYERS.map((layer) => [layer, this.countLayer(layer)])) as Record<
+        EnrichLayer,
+        EnrichLayerCounts
+      >;
+      const nextLayer = args.layer
+        ? layers[args.layer].missing + layers[args.layer].stale > 0
+          ? args.layer
+          : undefined
+        : LAYERS.find((layer) => layers[layer].missing + layers[layer].stale > 0);
+      result = {
+        model: manifest?.model ?? null,
+        ...(manifest?.builtAgainstHead ? { builtAgainstHead: manifest.builtAgainstHead } : {}),
+        layers,
+        ...(nextLayer ? { nextLayer } : {}),
+        done: !nextLayer,
+      };
     }
 
-    // Unscoped (current behavior).
-    const layers = Object.fromEntries(
-      LAYERS.map((layer) => [layer, this.countLayer(layer)]),
-    ) as Record<EnrichLayer, EnrichLayerCounts>;
-    const nextLayer = args.layer
-      ? layers[args.layer].missing + layers[args.layer].stale > 0
-        ? args.layer
-        : undefined
-      : LAYERS.find((layer) => layers[layer].missing + layers[layer].stale > 0);
-    return {
-      model: manifest?.model ?? null,
-      ...(manifest?.builtAgainstHead ? { builtAgainstHead: manifest.builtAgainstHead } : {}),
-      layers,
-      ...(nextLayer ? { nextLayer } : {}),
-      done: !nextLayer,
-    };
+    result.progress = progressFromLayers(layers);
+    result.costEstimate = costFromLayers(layers);
+    if (args.budgetTokens !== undefined) {
+      result.budget = args.budgetTokens;
+      if (result.costEstimate.pending > args.budgetTokens) {
+        result.budgetExceeded = true;
+      }
+    }
+    return result;
   }
 
   next(args: EnrichNextArgs = {}): EnrichNextBatch {
@@ -320,23 +366,64 @@ export class EnrichmentStore {
         .sort()
         .join('|'),
     ).slice(0, 12)}`;
+    const items = selected.map((target) => this.workItem(target));
+    const perItemCost = items.map((item) => ({
+      targetId: item.targetId,
+      tokens: estimateWorkItemCost(item),
+    }));
+    const batchCost = perItemCost.reduce((n, c) => n + c.tokens, 0);
+    const remainingCount = Math.max(0, pending.length - selected.length);
+    const totalPendingCostEstimate = batchCost + remainingCount * HEURISTIC_TOKENS_PER_LAYER[layer];
+
+    const budgetExceeded = args.budgetTokens !== undefined && batchCost > args.budgetTokens;
+
     // Server-side zero-progress detection: persist the last-issued batchId per (layer, scope) so a
     // context-compacted host or a headless driver can detect a re-issue without remembering anything.
-    const key = this.lastIssuedKey(layer, scope);
-    const manifest = this.readManifest();
-    const previousBatchId = manifest?.lastIssued?.[key]?.batchId;
-    const zeroProgress = previousBatchId !== undefined && previousBatchId === batchId;
-    const lastIssued = { ...(manifest?.lastIssued ?? {}), [key]: { batchId } };
-    this.writeManifest(manifest?.model ?? null, lastIssued);
+    // Do NOT persist when the batch is blocked by a budget guard — that would be a false zero-progress.
+    if (!budgetExceeded) {
+      const key = this.lastIssuedKey(layer, scope);
+      const manifest = this.readManifest();
+      const previousBatchId = manifest?.lastIssued?.[key]?.batchId;
+      const zeroProgress = previousBatchId !== undefined && previousBatchId === batchId;
+      const lastIssued = { ...(manifest?.lastIssued ?? {}), [key]: { batchId } };
+      this.writeManifest(manifest?.model ?? null, lastIssued);
+      return {
+        batchId,
+        layer,
+        items,
+        remaining: remainingCount,
+        selectedTargetIds: selected.map((target) => target.id),
+        progress: this.status(scope ? { scope } : {}).progress,
+        costEstimate: {
+          currency: 'tokens',
+          batch: batchCost,
+          perItem: perItemCost,
+          totalPending: totalPendingCostEstimate,
+        },
+        ...(args.budgetTokens !== undefined ? { budget: args.budgetTokens } : {}),
+        ...(scope ? { scopeEcho: scope, scopeEmpty: all.length === 0 } : {}),
+        ...(previousBatchId !== undefined ? { previousBatchId } : {}),
+        ...(zeroProgress ? { zeroProgress: true } : {}),
+      };
+    }
+
+    // Budget guard: return an empty batch with the cost preview so the caller can decide.
     return {
       batchId,
       layer,
-      items: selected.map((target) => this.workItem(target)),
-      remaining: Math.max(0, pending.length - selected.length),
-      selectedTargetIds: selected.map((target) => target.id),
+      items: [],
+      remaining: pending.length,
+      selectedTargetIds: [],
+      progress: this.status(scope ? { scope } : {}).progress,
+      costEstimate: {
+        currency: 'tokens',
+        batch: batchCost,
+        perItem: perItemCost,
+        totalPending: totalPendingCostEstimate,
+      },
+      budget: args.budgetTokens,
+      budgetExceeded: true,
       ...(scope ? { scopeEcho: scope, scopeEmpty: all.length === 0 } : {}),
-      ...(previousBatchId !== undefined ? { previousBatchId } : {}),
-      ...(zeroProgress ? { zeroProgress: true } : {}),
     };
   }
 
@@ -1088,6 +1175,41 @@ function presencedLastIssued(v: unknown): v is Record<string, { batchId: string 
     if (!isRecord(entry) || typeof entry.batchId !== 'string') return false;
   }
   return true;
+}
+
+function estimateWorkItemCost(item: EnrichWorkItem): number {
+  return (
+    estimateTokens(item.seed) +
+    estimateTokens(item.lowerLayer) +
+    estimateTokens(item.instructions) +
+    estimateTokens(item.outputSchema)
+  );
+}
+
+function progressFromLayers(layers: Record<EnrichLayer, EnrichLayerCounts>): {
+  completed: number;
+  pending: number;
+  total: number;
+} {
+  const total = Object.values(layers).reduce((n, l) => n + l.total, 0);
+  const pending = Object.values(layers).reduce((n, l) => n + l.missing + l.stale, 0);
+  return { completed: total - pending, pending, total };
+}
+
+function costFromLayers(layers: Record<EnrichLayer, EnrichLayerCounts>): {
+  currency: 'tokens';
+  pending: number;
+  total: number;
+} {
+  let pending = 0;
+  let total = 0;
+  for (const layer of LAYERS) {
+    const l = layers[layer];
+    const rate = HEURISTIC_TOKENS_PER_LAYER[layer];
+    pending += (l.missing + l.stale) * rate;
+    total += l.total * rate;
+  }
+  return { currency: 'tokens', pending, total };
 }
 
 function artifactText(artifact: LlmArtifact): string {

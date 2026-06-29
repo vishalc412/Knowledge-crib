@@ -2,7 +2,7 @@
 /**
  * `crib` — the Knowledge-crib CLI. Wraps the pipeline + MCP server.
  *
- * Commands: index | status | query | gaps | rules | context | dossier | impact | path | neighbors |
+ * Commands: index | status | query | gaps | rules | context | ask | dossier | impact | path | neighbors |
  *           serve | update | reindex | merge-driver | install-hooks | export | viz | mcp.
  *
  * Root resolution (REQ-1): `crib serve`/`status`/`update`/`export`/`viz`/`query` resolve the project
@@ -24,6 +24,7 @@ import {
   currentHead,
   indexRepo,
   renderExport,
+  uncommittedChanges,
   updateRepo,
 } from '@knowledge-crib/pipeline';
 import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
@@ -114,6 +115,8 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdRules(rest, ctx);
     case 'context':
       return cmdContext(rest, ctx);
+    case 'ask':
+      return cmdAsk(rest, ctx);
     case 'dossier':
       return cmdDossier(rest, ctx);
     case 'reconstruct':
@@ -163,6 +166,9 @@ class CliVcsAdapter implements VcsAdapter {
   }
   changedFilesSince(root: string, since: string): string[] {
     return changedFilesSince(root, since);
+  }
+  uncommittedChanges(root: string): string[] {
+    return uncommittedChanges(root);
   }
 }
 
@@ -263,7 +269,8 @@ async function cmdStatus(args: string[], ctx?: CmdCtx): Promise<number> {
     repoRoot: resolved.repoRoot,
     vcs: new CliVcsAdapter(),
   });
-  process.stdout.write(`${JSON.stringify(verbs.status(), null, 2)}\n`);
+  const dirty = args.includes('--dirty');
+  process.stdout.write(`${JSON.stringify(verbs.status({ dirty }), null, 2)}\n`);
   index.close();
   return EXIT.OK;
 }
@@ -428,6 +435,44 @@ async function cmdContext(args: string[], ctx?: CmdCtx): Promise<number> {
       2,
     )}\n`,
   );
+  index.close();
+  return EXIT.OK;
+}
+
+/** `crib ask "<question>"` — natural-language question answered deterministically from the crib. */
+async function cmdAsk(args: string[], ctx?: CmdCtx): Promise<number> {
+  const positional = args.filter((a) => !a.startsWith('-'));
+  const q = positional.join(' ').trim();
+  if (!q) {
+    process.stderr.write(
+      'usage: crib ask "<question>" [--format markdown] [--limit N] [--with-source] [--with-rules] [--with-framework] [--extracted-only]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+
+  const fmtIdx = args.indexOf('--format');
+  const format = fmtIdx >= 0 && args[fmtIdx + 1] === 'markdown' ? 'markdown' : undefined;
+  const limitIdx = args.indexOf('--limit');
+  const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;
+
+  const result = verbs.ask({
+    q,
+    ...(format ? { format } : {}),
+    ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
+    ...(args.includes('--with-source') ? { withSource: true } : {}),
+    ...(args.includes('--with-rules') ? { withRules: true } : {}),
+    ...(args.includes('--with-framework') ? { withFramework: true } : {}),
+    ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+  });
+
+  if (format === 'markdown') {
+    process.stdout.write(`${String(result.markdown ?? '')}\n`);
+  } else {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  }
   index.close();
   return EXIT.OK;
 }
@@ -673,13 +718,18 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
   const resolved = resolveRoot(args, ctx);
   const sinceIdx = args.indexOf('--since');
   const since = sinceIdx >= 0 ? args[sinceIdx + 1] : undefined;
+  const dirty = args.includes('--dirty');
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return EXIT.NOT_INDEXED;
   }
   const rt = openSoul(resolved);
   const started = Date.now();
-  const result = await updateRepo(rt.soul, resolved.repoRoot, since ? { since } : {});
+  const updateOpts: Parameters<typeof updateRepo>[2] = {
+    ...(since ? { since } : {}),
+    ...(dirty ? { dirty: true } : {}),
+  };
+  const result = await updateRepo(rt.soul, resolved.repoRoot, updateOpts);
   if (result === null) {
     // No anchor / non-git → degrade to a full index.
     process.stderr.write('no incremental anchor — falling back to full index\n');
@@ -982,11 +1032,11 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
  * skill (which calls the same verbs over MCP) or by any agent that reads `--next` and writes `--save`.
  *
  * Usage:
- *   crib enrich [path]                              coverage + pending count + follow-up hint
- *   crib enrich --next [path] [--layer L] [--limit N] [--scope PFX]    print the next grounded batch
+ *   crib enrich [path] [--budget-tokens N]            coverage + pending count + follow-up hint
+ *   crib enrich --next [path] [--layer L] [--limit N] [--scope PFX] [--budget-tokens N]  print the next grounded batch
  *   crib enrich --save <file> [path] [--scope PFX]   persist a {batchId, items[]} JSON batch
  *   crib enrich --overview [path] [--scope PFX]     print the bible (scoped to PFX if given)
- *   crib enrich --scopes [path]                     ranked path-prefix scopes for the picker
+ *   crib enrich --scopes [path] [--budget-tokens N] ranked path-prefix scopes for the picker
  *
  * `--scope <prefix>` restricts status/next to in-scope targets (system layer is whole-repo only).
  * `--scope-cluster <cluster>` optionally refines inside the prefix. `--scopes` is a discovery view.
@@ -1015,11 +1065,20 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
     process.stderr.write(`error: ${(e as Error).message}\n`);
     return EXIT.BAD_ARGS;
   }
+  const budgetIdx = args.indexOf('--budget-tokens');
+  const budgetTokens = budgetIdx >= 0 ? Number.parseInt(args[budgetIdx + 1] ?? '', 10) : undefined;
+  const budget = Number.isFinite(budgetTokens) && budgetTokens! > 0 ? budgetTokens : undefined;
 
   // --scopes: discovery view — ranked path-prefix scopes for a headless/CI agent to pick from.
   if (args.includes('--scopes')) {
-    const st = enrich.status({ scopes: true });
+    const st = enrich.status({ scopes: true, ...(budget ? { budgetTokens: budget } : {}) });
     process.stdout.write(`${JSON.stringify(st, null, 2)}\n`);
+    if (st.budgetExceeded) {
+      process.stderr.write(
+        `budget guard: pending cost ~${st.costEstimate?.pending} tokens exceeds --budget-tokens ${budget}\n`,
+      );
+      return EXIT.ERROR;
+    }
     return EXIT.OK;
   }
 
@@ -1068,8 +1127,15 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
       ...(layer ? { layer } : {}),
       ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
       ...(scope ? { scope } : {}),
+      ...(budget ? { budgetTokens: budget } : {}),
     });
     process.stdout.write(`${JSON.stringify(batch, null, 2)}\n`);
+    if (batch.budgetExceeded) {
+      process.stderr.write(
+        `budget guard: batch cost ~${batch.costEstimate?.batch} tokens exceeds --budget-tokens ${budget} — reduce --limit or raise the budget.\n`,
+      );
+      return EXIT.ERROR;
+    }
     if (batch.zeroProgress) {
       process.stderr.write(
         `zero-progress: batchId ${batch.batchId} was already issued for layer ${batch.layer}` +
@@ -1080,8 +1146,17 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
   }
 
   // default: coverage + pending + follow-up hint (scoped if --scope given).
-  const st = enrich.status({ ...(scope ? { scope } : {}) });
+  const st = enrich.status({
+    ...(scope ? { scope } : {}),
+    ...(budget ? { budgetTokens: budget } : {}),
+  });
   process.stdout.write(`${JSON.stringify(st, null, 2)}\n`);
+  if (st.budgetExceeded) {
+    process.stderr.write(
+      `budget guard: pending cost ~${st.costEstimate?.pending} tokens exceeds --budget-tokens ${budget}\n`,
+    );
+    return EXIT.ERROR;
+  }
   const layers = st.layers as Record<string, { missing: number; stale: number }>;
   if (!st.done) {
     // Under a scope the system key in `layers` is the WHOLE-REPO system count (reported separately in
@@ -1205,25 +1280,26 @@ function printHelp(): void {
       '',
       'Usage:',
       '  crib index [path] [--semantic] [--exclude a,b,...]     full index → .crib soul + derived index (+ INFERRED TF-IDF semantic links)',
-      '  crib status [path]                       health + stats',
+      '  crib status [path] [--dirty]             health + stats; --dirty previews files that would be re-indexed',
       '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',
       '  crib gaps [path] [--extracted-only] [--include-builtins]   analysis readiness + missing bodies + unresolved call sites',
       '  crib rules <proc> [--include-tables]      decision table + coverage readiness for a callable',
       '  crib context <id> [--with-source] [--with-rules] [--with-framework]   deep per-symbol context',
       '  crib context --package <pkg> [--format markdown] [--max-symbols N]   bulk dossiers for every symbol in a scope (also --file / --cluster)',
+      '  crib ask "<question>" [--format markdown] [--limit N] [--with-source] [--with-rules] [--with-framework]   natural-language answer from the crib (deterministic)',
       '  crib dossier <id> [--format markdown]    persisted deep artifact (body + callers/callees + rules + CFG constructs)',
       '  crib reconstruct <pkg> [--format markdown]   package reconstruction: CONSTANT values + members + referenced tables + docs + expectedBodyFile',
       '  crib impact <id> --dir up|down [--depth N]   blast radius (dependents / dependencies)',
       '  crib path <from> <to> [--max-hops N]     shortest dependency path between two nodes',
       '  crib neighbors <id> [--rel reads] [--dir in|out|both]   direct edges of one node',
       '  crib serve [path]                        run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd)',
-      '  crib update [path] [--since <sha>]      incremental re-extract since the VCS anchor',
+      '  crib update [path] [--since <sha>] [--dirty]  incremental re-extract since the VCS anchor; --dirty includes working-tree changes without advancing vcsHead',
       '  crib reindex [path]                     full re-index (alias for `crib index`)',
       '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',
       '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',
       '  crib export [--format F] [--procedure P] render soul: rules|mermaid|graph.json|report',
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
-      '  crib enrich [path]                        LLM-graph work queue + driver: coverage, --next (grounded batch), --save <file>, --overview, --scope PFX, --scopes',
+      '  crib enrich [path] [--budget-tokens N]    LLM-graph work queue + driver: coverage, --next (grounded batch), --save <file>, --overview, --scope PFX, --scopes',
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]',
       '                                          auto-wire the MCP server into each IDE config (REQ-2)',
       '  crib skill <install|list> [name] [--dest <dir>]   install bundled skills (e.g. crib-enrich) into ~/.claude/skills',

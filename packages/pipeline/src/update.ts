@@ -32,7 +32,7 @@ import { defaultExtractors } from './pipeline.js';
 import { runResolve } from './resolve/index.js';
 import type { ResolveStats } from './resolve/index.js';
 import { metaForPaths, runStructure } from './structure.js';
-import { changedFilesSince, currentHead } from './vcs.js';
+import { changedFilesSince, currentHead, uncommittedChanges } from './vcs.js';
 
 export interface UpdateOpts {
   /** commit timestamp (deterministic tests). */
@@ -51,6 +51,11 @@ export interface UpdateOpts {
   cluster?: boolean;
   /** run the INFERRED TF-IDF semantic linker pass over scoped docs; default false (M7). */
   semantic?: boolean;
+  /** Include staged and unstaged working-tree changes in the delta without advancing `repo.vcsHead`.
+   * The derived index/soul is refreshed, `stats.incrementalSince` is set to current HEAD so subsequent
+   * normal updates see no committed diff, but `repo.vcsHead` stays pinned to the last real commit so
+   * `crib status` can still report the dirty delta. */
+  dirty?: boolean;
 }
 
 export interface UpdateReport {
@@ -104,9 +109,20 @@ export async function updateRepo(
 
   const changedPaths = changedFilesSince(root, since);
 
+  if (opts.dirty) {
+    for (const p of uncommittedChanges(root)) {
+      if (!changedPaths.includes(p)) changedPaths.push(p);
+    }
+  }
+
   // No file changes: just advance the anchor so the next update is anchored to the new HEAD.
   if (changedPaths.length === 0) {
-    soul.setVcsHead(head);
+    if (opts.dirty) {
+      // Dirty no-op: keep the committed vcsHead pinned, but record that the soul is now current with HEAD.
+      soul.setIncrementalSince(head);
+    } else {
+      soul.setVcsHead(head);
+    }
     soul.commit(opts.now);
     return { changedPaths, scopeFiles: [], head, noop: true };
   }
@@ -157,7 +173,13 @@ export async function updateRepo(
   // Semantic pass (M7, INFERRED): scoped to the docs in scope, like the deterministic re-link.
   const semantic = opts.semantic ? runSemanticLink(soul, root, scopeDocFiles) : { added: 0 };
 
-  soul.setVcsHead(head);
+  if (opts.dirty) {
+    // Dirty update: refresh the soul to match HEAD + working tree, but keep vcsHead on the last real
+    // commit so `crib status` can still detect/report the uncommitted delta.
+    soul.setIncrementalSince(head);
+  } else {
+    soul.setVcsHead(head);
+  }
   soul.commit(opts.now);
 
   const committedAt = opts.now ?? soul.getManifest().stats.lastUpdated;

@@ -51,6 +51,30 @@ export function changedFilesSince(root: string, since: string): string[] {
     .map(toPosix);
 }
 
+/**
+ * Repo-relative POSIX paths of files with uncommitted changes relative to HEAD: both staged
+ * (`--cached`) and unstaged. Does NOT include untracked files — those are not yet part of the
+ * project's source-of-truth and indexing them silently could leak ignored build artifacts.
+ * Returns [] if nothing changed. Throws NotARepoError if `root` is not a git work tree.
+ */
+export function uncommittedChanges(root: string): string[] {
+  const cached = git(root, ['diff', '--cached', '--name-only', '--no-renames']) ?? '';
+  const unstaged = git(root, ['diff', '--name-only', '--no-renames']) ?? '';
+  const set = new Set<string>();
+  for (const block of [cached, unstaged]) {
+    for (const line of block.split('\n')) {
+      const trimmed = line.trim();
+      if (trimmed.length > 0) set.add(toPosix(trimmed));
+    }
+  }
+  return [...set].sort();
+}
+
+/** True if the work tree has staged or unstaged changes relative to HEAD. */
+export function hasUncommittedChanges(root: string): boolean {
+  return uncommittedChanges(root).length > 0;
+}
+
 /** Run a git subcommand; returns trimmed stdout, or undefined on git failure (missing repo/commits). */
 function git(root: string, args: string[]): string | undefined {
   try {

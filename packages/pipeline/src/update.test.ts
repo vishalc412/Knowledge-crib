@@ -295,4 +295,46 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     }
     expect(soulFor().getManifest().stats.incrementalSince).toBe(h2);
   });
+
+  it('includes uncommitted working-tree changes with dirty:true without advancing vcsHead', async () => {
+    await indexAndCommit();
+    const h1 = git(repo, ['rev-parse', 'HEAD']);
+
+    // Unstaged edit to a.ts: working tree is ahead of the committed anchor.
+    writeFileSync(join(repo, 'src', 'a.ts'), "export function greet(): string { return 'hey'; }\n");
+
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, {
+      dirty: true,
+      now: '2026-01-02T00:00:00.000Z',
+    });
+    expect(result).not.toBeNull();
+    expect(result && 'noop' in result).toBe(false);
+
+    const report = result as UpdateReport;
+    expect(report.changedPaths).toContain('src/a.ts');
+    expect(report.scopeFiles).toContain('src/a.ts');
+    expect(report.scopeFiles).toContain('src/b.ts'); // reverse-dependency closure
+
+    // vcsHead stays pinned to the last real commit; incrementalSince catches up to current HEAD.
+    const manifest = soulFor().getManifest();
+    expect(manifest.repo.vcsHead).toBe(h1);
+    expect(manifest.stats.incrementalSince).toBe(h1);
+  });
+
+  it('dirty no-op still refreshes incrementalSince without moving vcsHead', async () => {
+    await indexAndCommit();
+    const h1 = git(repo, ['rev-parse', 'HEAD']);
+
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, {
+      dirty: true,
+      now: '2026-01-02T00:00:00.000Z',
+    });
+    expect(result && 'noop' in result).toBe(true);
+
+    const manifest = soulFor().getManifest();
+    expect(manifest.repo.vcsHead).toBe(h1);
+    expect(manifest.stats.incrementalSince).toBe(h1);
+  });
 });

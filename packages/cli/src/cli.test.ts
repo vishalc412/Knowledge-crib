@@ -199,6 +199,37 @@ describe('crib reconstruct (WS-6) — CLI dispatch + maxSymbols guard (Blocker 2
   });
 });
 
+describe('crib ask — natural-language CLI dispatch', () => {
+  it('markdown answer explains a symbol by qualified name', () => {
+    const md = runCli(['ask', 'loan_pkg.process_one', '--format', 'markdown']);
+    expect(md).toContain('# loan_pkg.process_one');
+    expect(md).toContain('interpretation:');
+    expect(md).toContain('loan_pkg');
+  });
+
+  it('discovery answer searches the index and returns graph hits', () => {
+    const out = runCli(['ask', 'C_THRESHOLD', '--limit', '5']);
+    const r = JSON.parse(out) as {
+      interpretation: string;
+      hits: Array<{ id: string; snippet?: string }>;
+    };
+    expect(r.interpretation).toBe('discovery');
+    expect(r.hits.length).toBeGreaterThan(0);
+    const text = r.hits.map((h) => `${h.id} ${h.snippet ?? ''}`).join('\n');
+    expect(text).toMatch(/loan_pkg|C_THRESHOLD/i);
+  });
+
+  it('overview question falls back to cluster summary when no LLM bible exists', () => {
+    const out = runCli(['ask', 'what is the architecture']);
+    const r = JSON.parse(out) as {
+      interpretation: string;
+      fallback?: { clusters: unknown[] };
+    };
+    expect(r.interpretation).toBe('overview');
+    expect(r.fallback?.clusters).toBeDefined();
+  });
+});
+
 describe('crib enrich --scope / --scope-cluster / --save flag guards (scope-picker hardening)', () => {
   it('--scope with no value is REJECTED as BAD_ARGS (no silent full-repo default)', () => {
     // The silent default to full-repo on a malformed --scope is the exact failure mode the scope

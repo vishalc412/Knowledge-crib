@@ -11,5 +11,5 @@ export type {
   ExtractRulesOpts,
 } from '@knowledge-crib/core';
 export { renderMermaid } from './mermaid.js';
-export { exportGraph, renderReport, renderExport } from './export.js';
-export type { GraphJson } from './export.js';
+export { exportGraph, renderReport, renderExport, surprisingConnections } from './export.js';
+export type { GraphJson, SurprisingConnection } from './export.js';

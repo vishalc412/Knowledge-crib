@@ -253,6 +253,16 @@ export class SoulStore {
   }
 
   /**
+   * Advance only the incremental diff anchor (`stats.incrementalSince`) without touching the committed
+   * `repo.vcsHead`. Used by dirty updates: the soul is refreshed to include uncommitted working-tree
+   * changes, but `vcsHead` stays pinned to the last real commit so `crib status` can still detect and
+   * report the dirty delta. Persisted on the next `commit()`.
+   */
+  setIncrementalSince(sha: string): void {
+    this.manifest.stats = { ...this.manifest.stats, incrementalSince: sha };
+  }
+
+  /**
    * Record a derived capability (M13): `multimodal` flips true once media segments have been ingested,
    * `embeddings` once a vector index exists (M7+). Merge-in semantics — pass only the flags that
    * changed. Persisted on the next `commit()`. Readers (`status`, MCP) advertise capabilities so a
