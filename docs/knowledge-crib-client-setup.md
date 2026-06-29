@@ -36,7 +36,7 @@ The global link points back at the repo's `dist/`, so `corepack pnpm@9.15.0 buil
 `git pull` is all you
 need to upgrade — no reinstall.
 
-Requirements: Node ≥ 20 and pnpm 9.15.0 via Corepack. macOS/Linux.
+Requirements: Node ≥ 22.5 and pnpm 9.15.0 via Corepack. macOS/Linux.
 
 ### PATH gotcha for GUI-launched clients
 
@@ -418,7 +418,7 @@ crib enrich --overview                            # the bible (after the system 
 | Flag | After the loop | Why |
 |---|---|---|
 | `llmGraph` | **`true`** | Flips on after the first `enrich_save` — the only flag the grove moves. |
-| `embeddings` | `false` (always) | Embeddings need a model (violates the no-model invariant) + `better-sqlite3` has no ANN. The LLM graph replaces that need via `withLlm` at query time. |
+| `embeddings` | `false` (always) | Embeddings need a model (violates the no-model invariant) + `node:sqlite` has no ANN. The LLM graph replaces that need via `withLlm` at query time. |
 | `vector` | `false` (always) | Same reason — BM25 + the TF-IDF linker are the deterministic recall path. |
 | `multimodal` | `false` unless `--multimodal` | Opt-in via `crib index --multimodal` (spawns `crib_worker`); unrelated to the grove. |
 | `cypher` | `false` (always) | No Cypher query layer. |

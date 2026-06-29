@@ -63,7 +63,7 @@ cleanup() {
 trap cleanup EXIT
 
 if ! command -v node >/dev/null 2>&1; then
-  echo "Knowledge-crib requires Node.js 20 or newer. Install Node, then rerun this installer." >&2
+  echo "Knowledge-crib requires Node.js 22.5 or newer. Install Node, then rerun this installer." >&2
   exit 1
 fi
 
@@ -79,8 +79,8 @@ case "$NODE_MAJOR" in
     exit 1
     ;;
 esac
-if [ "$NODE_MAJOR" -lt 20 ]; then
-  echo "Knowledge-crib requires Node.js 20 or newer; found Node.js $(node --version)." >&2
+if [ "$NODE_MAJOR" -lt 22 ]; then
+  echo "Knowledge-crib requires Node.js 22.5 or newer; found Node.js $(node --version)." >&2
   exit 1
 fi
 
@@ -108,7 +108,7 @@ export function installPs1(tarballNames) {
 $CacheDir = Join-Path ([System.IO.Path]::GetTempPath()) ("knowledge-crib-npm-cache-" + [System.Guid]::NewGuid().ToString("N"))
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-  Write-Error "Knowledge-crib requires Node.js 20 or newer. Install Node, then rerun this installer."
+  Write-Error "Knowledge-crib requires Node.js 22.5 or newer. Install Node, then rerun this installer."
 }
 
 if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
@@ -116,8 +116,8 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
 }
 
 $NodeMajor = [int](& node -p "process.versions.node.split('.')[0]")
-if ($NodeMajor -lt 20) {
-  throw "Knowledge-crib requires Node.js 20 or newer; found $(node --version)."
+if ($NodeMajor -lt 22) {
+  throw "Knowledge-crib requires Node.js 22.5 or newer; found $(node --version)."
 }
 
 $ChecksumPath = Join-Path $PSScriptRoot "SHA256SUMS.txt"
@@ -233,7 +233,7 @@ export function buildInstallers({ outRoot = join(repoRoot, 'dist', 'installers')
     checksums,
     generatedAt: new Date().toISOString(),
     requirements: {
-      node: '>=20',
+      node: '>=22.5.0',
       npm: 'bundled with Node.js',
     },
   };

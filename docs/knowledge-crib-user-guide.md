@@ -48,7 +48,7 @@ opt-in and off the query hot path.
 
 ## 2. Install
 
-Requirements: **Node ≥ 20** and **pnpm 9.15.0 via Corepack**, macOS/Linux.
+Requirements: **Node ≥ 22.5** and **pnpm 9.15.0 via Corepack**, macOS/Linux.
 
 ```bash
 git clone <knowledge-crib repo> ~/Documents/Knowlege-crib
@@ -588,7 +588,7 @@ artifact. It is the **only** capability flag the grove plan touches:
 | Flag | Meaning | Status |
 |---|---|---|
 | `llmGraph` | LLM-authored semantic graph present | Flips on after the first `enrich_save`; the one flag the grove moves. |
-| `embeddings` | Embedding index | Stays `false` — embeddings need a model (violates the no-model invariant) and `better-sqlite3` has no ANN. The LLM graph replaces that need via `withLlm`. |
+| `embeddings` | Embedding index | Stays `false` — embeddings need a model (violates the no-model invariant) and `node:sqlite` has no ANN. The LLM graph replaces that need via `withLlm`. |
 | `vector` | Vector / ANN search | Stays `false` — same reason; BM25 + the TF-IDF linker are the deterministic recall path. |
 | `multimodal` | PDF / image / audio extraction | Opt-in via `crib index --multimodal` (spawns `crib_worker`); not part of the grove. |
 

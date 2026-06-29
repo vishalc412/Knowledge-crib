@@ -73,7 +73,7 @@ corepack pnpm@9.15.0 install
 corepack pnpm@9.15.0 release:verify
 ```
 
-Requires Node >= 20 and pnpm 9.15.0 via Corepack.
+Requires Node >= 22.5 and pnpm 9.15.0 via Corepack.
 
 ## Document index (read in order)
 See [`docs/README.md`](docs/README.md) for the complete specification and guide index.

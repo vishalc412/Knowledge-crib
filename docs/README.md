@@ -76,7 +76,7 @@ knowledge-crib/                 # pnpm monorepo
 
 ## Runtime & licensing
 - **TypeScript / Node** [Q36]. Compiler-API and hand-rolled extractors are offline and deterministic.
-  The `0.1.0` index is `better-sqlite3` + FTS5.
+  The `0.1.0` index is `node:sqlite` + FTS5.
 - **Apache-2.0** [Q37]. `NOTICE` credits GitNexus + Graphify as inspiration. No code reused.
 
 ## Vision quickstart (target UX)

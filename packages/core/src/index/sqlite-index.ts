@@ -1,28 +1,34 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import type { Edge, Node, NodeKind, Rel } from '@knowledge-crib/soul-schema';
 /**
  * SqliteIndexStore — the default IndexStore backend (M1).
  *
- * better-sqlite3 + FTS5 (BM25 ranking) + materialized adjacency, so `impact`/`neighbors`/
- * `shortestPath` are O(degree) graph walks over indexed `edges(src)` / `edges(dst)`. No vector
- * index ships — `capabilities().vector=false` unconditionally. The INFERRED "semantic" layer is the
- * M7 pure-JS TF-IDF linker (pipeline `runSemanticLink`, gated by `IndexOpts.semantic` / CLI
- * `--semantic`), which emits capped `references` edges — it is not a vector ANN path and stays off
+ * Built-in `node:sqlite` + FTS5 (BM25 ranking) + materialized adjacency, so
+ * `impact`/`neighbors`/`shortestPath` are O(degree) graph walks over indexed
+ * `edges(src)` / `edges(dst)`. No vector index ships — `capabilities().vector=false`
+ * unconditionally. The INFERRED "semantic" layer is the M7 pure-JS TF-IDF linker
+ * (pipeline `runSemanticLink`, gated by `IndexOpts.semantic` / CLI `--semantic`),
+ * which emits capped `references` edges — it is not a vector ANN path and stays off
  * the deterministic query hot path.
  *
- * The FTS5 `body` column is a SEARCH-ONLY projection: at build/delta time each node's span is
- * rehydrated from `repoRoot` on disk (capped at BODY_FTS_CAP chars) and folded together with the
- * in-soul logic fragments (`expr`/`cursorQuery`/`whenSelector`/`errorMessage`/`assignTarget`) so a
- * query can match rule *content* (e.g. "DTI > 0.43"), not just names/signatures. The body text is
- * NEVER surfaced from `query` — `query` returns ids/scores only; deep body retrieval is
- * `rehydrateBody` (with its own `truncated` flag) via the `source`/`context`/`dossier` verbs. So the
- * body column carries no honesty flag of its own: the cap is a build-time constant and the
- * surfaced body's truncation discipline lives in `rehydrateBody`. The soul stays lean — body text
- * lives only in this derived index, never in the soul.
+ * Using Node's built-in `node:sqlite` removes the native `better-sqlite3` build
+ * dependency, so `pnpm install` works on a fresh machine without Xcode / CLT /
+ * Python / node-gyp. Requires Node.js >= 22.5.0 (stable `node:sqlite`).
+ *
+ * The FTS5 `body` column is a SEARCH-ONLY projection: at build/delta time each node's
+ * span is rehydrated from `repoRoot` on disk (capped at BODY_FTS_CAP chars) and folded
+ * together with the in-soul logic fragments (`expr`/`cursorQuery`/`whenSelector`/
+ * `errorMessage`/`assignTarget`) so a query can match rule *content*
+ * (e.g. "DTI > 0.43"), not just names/signatures. The body text is NEVER surfaced
+ * from `query` — `query` returns ids/scores only; deep body retrieval is
+ * `rehydrateBody` (with its own `truncated` flag) via the `source`/`context`/
+ * `dossier` verbs. So the body column carries no honesty flag of its own: the cap is
+ * a build-time constant and the surfaced body's truncation discipline lives in
+ * `rehydrateBody`. The soul stays lean — body text lives only in this derived index,
+ * never in the soul.
  */
-import Database from 'better-sqlite3';
-import type { Database as DB } from 'better-sqlite3';
 import type {
   Dir,
   Hit,
@@ -49,22 +55,22 @@ const BODY_FTS_CAP = 8192;
 type FileLineCache = Map<string, string[] | undefined>;
 
 export class SqliteIndexStore implements IndexStore {
-  private readonly db: DB;
+  private readonly db: DatabaseSync;
 
   /**
    * @param path file path for the sqlite db, or ':memory:' for an ephemeral index.
    */
   constructor(path = ':memory:') {
-    this.db = new Database(path);
-    this.db.pragma('journal_mode = WAL');
-    this.db.pragma('foreign_keys = OFF');
+    this.db = new DatabaseSync(path);
+    this.db.exec('PRAGMA journal_mode = WAL');
+    this.db.exec('PRAGMA foreign_keys = OFF');
     this.createSchema();
   }
 
   buildFromSoul(soul: SoulStore, repoRoot: string): void {
     this.reset();
     const fileCache: FileLineCache = new Map();
-    const insertMany = this.db.transaction(() => {
+    const insertMany = this.transaction(() => {
       for (const node of soul.iterate()) this.insertNode(node, repoRoot, fileCache);
       for (const edge of soul.iterateEdges()) this.insertEdge(edge);
     });
@@ -73,7 +79,7 @@ export class SqliteIndexStore implements IndexStore {
 
   applyDelta(changed: IndexDelta, repoRoot: string): void {
     const fileCache: FileLineCache = new Map();
-    const apply = this.db.transaction(() => {
+    const apply = this.transaction(() => {
       for (const id of changed.removed) {
         this.db.prepare('DELETE FROM nodes WHERE id = ?').run(id);
         this.db.prepare('DELETE FROM nodes_fts WHERE id = ?').run(id);
@@ -188,7 +194,7 @@ export class SqliteIndexStore implements IndexStore {
 
   close(): void {
     try {
-      this.db.pragma('wal_checkpoint(TRUNCATE)');
+      this.db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
     } catch {
       // Best effort: in-memory/closing handles may not need or accept a checkpoint.
     }
@@ -226,6 +232,26 @@ export class SqliteIndexStore implements IndexStore {
       json: string;
     }>;
     return rows.map((r) => JSON.parse(r.json) as Edge);
+  }
+
+  /**
+   * Wrap a callback in BEGIN ... COMMIT / ROLLBACK.
+   * `node:sqlite` has no built-in `transaction()` helper, so we provide the same
+   * synchronous, all-or-nothing semantics that `better-sqlite3` offered. The
+   * current call sites never nest transactions, so a flat BEGIN is sufficient.
+   */
+  private transaction<T>(fn: () => T): () => T {
+    return () => {
+      this.db.exec('BEGIN');
+      try {
+        const result = fn();
+        this.db.exec('COMMIT');
+        return result;
+      } catch (err) {
+        this.db.exec('ROLLBACK');
+        throw err;
+      }
+    };
   }
 
   private insertNode(node: Node, repoRoot: string, fileCache: FileLineCache): void {
