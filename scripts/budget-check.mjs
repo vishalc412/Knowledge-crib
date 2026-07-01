@@ -20,14 +20,15 @@ import { execFileSync } from 'node:child_process';
 import {
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
+  readdirSync,
   rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { sessionCost } from './lib/pricing.mjs';
 
 const MAX_RUNTIME_DEPS = 6;
 const MAX_PACKAGE_BYTES = 5 * 1024 * 1024; // 5 MB, mcp+cli combined
@@ -37,6 +38,13 @@ const MAX_DEFAULT_HIT_BYTES = 1536; // 1.5 KB/hit default tier
 const MAX_QUERY_P50_MS = 150;
 const MAX_INDEX_MS = 20_000;
 const FIXTURE_FILE_COUNT = 50;
+// The product's core promise is a dollar promise, not just a token promise. This gate turns "crib is
+// cheaper" into a build-breaking CI fact: over a modeled multi-turn task, the crib-default retrieval
+// must cost at most 1/MIN_COST_SAVING of what reading the whole hit files (the no-crib path) costs.
+// Deliberately conservative — the harness typically shows 40x+; a regression that drops us below 3x
+// means the tiered default has bloated or the cache-stable advantage has been lost, and should fail.
+const MIN_COST_SAVING = 3;
+const COST_MODEL_TURNS = 6;
 
 const CORE_PATH_DIRS = [
   'packages/core/src',
@@ -194,6 +202,95 @@ await check(`cold index time (${FIXTURE_FILE_COUNT} files)`, () => {
     const elapsed = Date.now() - start;
     if (elapsed > MAX_INDEX_MS) {
       throw new Error(`${elapsed}ms > cap ${MAX_INDEX_MS}ms`);
+    }
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+// 7. Cost-saving floor — the dollar promise, enforced. Index the fixture, run a real multi-hit
+// query, and compare the modeled per-task cost of the crib-default response against reading every
+// whole hit file (the no-crib path), using the shared pricing model. Fail if crib isn't materially
+// cheaper. This is the CI guard for the whole "more tokens, less money" thesis.
+await check(`cost saving >= ${MIN_COST_SAVING}x (${COST_MODEL_TURNS}-turn task)`, async () => {
+  // A dedicated fixture with REALISTICALLY sized files. The generic buildFixture writes near-empty
+  // stubs, where a whole-file read is barely bigger than a crib hit — that under-measures the real
+  // saving (production files are dozens–hundreds of lines). Representative files are the honest test:
+  // no-crib pays for the whole file, crib pays for one line, and the ratio reflects real usage.
+  const repoRoot = mkdtempSync(join(tmpdir(), 'knowledge-crib-cost-fixture-'));
+  writeFileSync(
+    join(repoRoot, 'package.json'),
+    `${JSON.stringify({ name: 'crib-cost-fixture', private: true, type: 'module' }, null, 2)}\n`,
+  );
+  for (let i = 0; i < 20; i++) {
+    const filePath = join(repoRoot, 'src', `widget${i}.ts`);
+    mkdirSync(dirname(filePath), { recursive: true });
+    // ~40 lines/file of plausible code — the body a no-crib agent must pull in full just to locate
+    // one symbol, versus the single snippet line crib returns.
+    const body = Array.from(
+      { length: 12 },
+      (_, k) =>
+        `  /** Handler ${k} for widget ${i}: validates and transforms the incoming payload. */\n` +
+        `  method${k}(input: string): string {\n    const trimmed = input.trim();\n` +
+        `    return \`widget${i}:\${trimmed}:\${${k}}\`;\n  }\n`,
+    ).join('\n');
+    writeFileSync(
+      filePath,
+      `export interface Widget${i}Config {\n  id: string;\n  enabled: boolean;\n}\n\n` +
+        `export class Widget${i} {\n  constructor(private readonly config: Widget${i}Config) {}\n\n${body}}\n`,
+    );
+  }
+  try {
+    const runtimeModule = resolve('packages/cli/dist/runtime.js');
+    const mcpModule = resolve('packages/mcp/dist/index.js');
+    const { resolveProjectRoot, openSoul, openIndexOnly } = await import(runtimeModule);
+    const { Verbs } = await import(mcpModule);
+    runCli(resolve('packages/cli/dist/cli.js'), ['index', repoRoot], repoRoot);
+    const resolved = resolveProjectRoot({ explicitRoot: repoRoot });
+    const rt = openSoul(resolved);
+    const index = openIndexOnly(rt);
+    const verbs = new Verbs({ soul: rt.soul, index, repoRoot: resolved.repoRoot });
+    const result = verbs.query({ q: 'widget', limit: 10 });
+    index.close();
+
+    const hits = result.hits ?? [];
+    if (hits.length === 0) throw new Error('fixture query returned no hits — cannot measure cost');
+
+    // no-crib: whole files behind the hits, re-primed each turn (churn). crib: the compact,
+    // cache-stable default response, primed once then re-read cheaply.
+    const files = new Set();
+    for (const hit of hits) {
+      const m = /^(?:sym|file|cluster):([^#]+?)(?:#.*)?$/.exec(hit.id);
+      if (m) files.add(m[1]);
+    }
+    let rawTokens = 0;
+    for (const file of files) {
+      try {
+        rawTokens += Math.ceil(
+          Buffer.byteLength(readFileSync(join(resolved.repoRoot, file), 'utf8'), 'utf8') / 4,
+        );
+      } catch {
+        // a hit node with no readable backing file (e.g. a synthesized cluster node) — skip it
+        // rather than fail the gate on an artifact of node modeling; the rawTokens===0 guard below
+        // still catches the pathological "nothing resolved at all" case.
+      }
+    }
+    if (rawTokens === 0)
+      throw new Error('could not resolve any hit file — cost measurement invalid');
+    const cribTokens = Math.ceil(Buffer.byteLength(JSON.stringify(hits), 'utf8') / 4);
+
+    const cribCost = sessionCost({ contextTokens: cribTokens, turns: COST_MODEL_TURNS });
+    const noCribCost = sessionCost({
+      contextTokens: rawTokens,
+      turns: COST_MODEL_TURNS,
+      stable: false,
+    });
+    const saving = cribCost > 0 ? noCribCost / cribCost : Number.POSITIVE_INFINITY;
+    if (saving < MIN_COST_SAVING) {
+      throw new Error(
+        `crib is only ${saving.toFixed(1)}x cheaper (crib $${cribCost.toFixed(6)} vs no-crib ` +
+          `$${noCribCost.toFixed(6)}) < floor ${MIN_COST_SAVING}x`,
+      );
     }
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
