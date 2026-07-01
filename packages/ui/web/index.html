@@ -334,10 +334,18 @@ class Component extends DCLogic {
       this.byId = {}; nodes.forEach(n => this.byId[n.id] = n);
       this.deg = {}; this.adj = {}; this.revDep = {};
       nodes.forEach(n => { this.deg[n.id] = 0; this.adj[n.id] = []; this.revDep[n.id] = []; });
+      // Architectural-only adjacency mirrors packages/ui/src/viz.ts ARCHITECTURAL_RELS and drives
+      // Focus/Horizon/keyboard navigation. We keep it separate from `adj` (which mixes every edge
+      // type for physics/search) so a method's "neighbors" are callers/callees/importers, not
+      // every sibling in the same file via `member-of`.
+      const ARCH_RELS = new Set(['calls','imports','inherits','implements','exposes','injects','renders','produces']);
+      this.archAdj = {};
+      nodes.forEach(n => { this.archAdj[n.id] = []; });
       edges.forEach(e => {
         this.deg[e.src]++; this.deg[e.dst]++;
         this.adj[e.src].push(e.dst); this.adj[e.dst].push(e.src);
         if (this.DEP.has(e.rel)) this.revDep[e.dst].push(e.src);
+        if (ARCH_RELS.has(e.rel)) { this.archAdj[e.src].push(e.dst); this.archAdj[e.dst].push(e.src); }
       });
       // Build a per-repo guided tour from the highest-degree non-file nodes. The static
       // TOUR below hardcodes one demo project's BARE names, but buildVizGraph emits
@@ -600,6 +608,9 @@ class Component extends DCLogic {
   w2s(x,y){ return [ (x-this.view.cx)*this.view.k + this.W/2, (y-this.view.cy)*this.view.k + this.H/2 ]; }
   s2w(x,y){ return [ (x-this.W/2)/this.view.k + this.view.cx, (y-this.H/2)/this.view.k + this.view.cy ]; }
   fit(){ const vis=this.visibleNodes().filter(n=>!this.state.hidden[n.kind]); if(!vis.length)return; let m={x0:1e9,y0:1e9,x1:-1e9,y1:-1e9}; for(const n of vis){m.x0=Math.min(m.x0,n.x-n.r);m.y0=Math.min(m.y0,n.y-n.r);m.x1=Math.max(m.x1,n.x+n.r);m.y1=Math.max(m.y1,n.y+n.r);} const w=m.x1-m.x0, h=m.y1-m.y0; const pad=140; const k=Math.min((this.W-pad)/w,(this.H-pad-60)/h,1.8); this.view.k=Math.max(0.2,k); this.view.cx=(m.x0+m.x1)/2; this.view.cy=(m.y0+m.y1)/2+20; }
+  /** The selected root renders (and hit-tests) larger than everything else — "you are here"
+   *  should be legible from size alone, not just a glow ring. */
+  nodeRadius(n){ return n.r * (n.id===this.state.selectedId ? 1.35 : 1); }
 
   // ---------- drawing ----------
   draw(){
@@ -645,20 +656,26 @@ class Component extends DCLogic {
       if(active&&direct){ const lab=this.state.blast?'breaks if changed':(this.PHRASE[e.rel]||e.rel); ctx.font="500 10.5px 'IBM Plex Sans', system-ui, sans-serif"; const tw=ctx.measureText(lab).width; ctx.save(); ctx.translate(cxp,cyp); let ar=Math.atan2(by-ay,bx-ax); if(ar>Math.PI/2)ar-=Math.PI; if(ar<-Math.PI/2)ar+=Math.PI; ctx.rotate(ar); ctx.fillStyle=th.labelPill; ctx.strokeStyle=this.hex(col,0.5); ctx.lineWidth=1; this.rr(ctx,-tw/2-6,-9,tw+12,18,5); ctx.fill(); ctx.stroke(); ctx.fillStyle=this.state.blast?'#f87171':th.label; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lab,0,0); ctx.restore(); }
     }
     // nodes
-    for(const n of visible){ if(hid[n.kind])continue; const [x,y]=this.w2s(n.x,n.y); const r=n.r*k;
+    for(const n of visible){ if(hid[n.kind])continue; const [x,y]=this.w2s(n.x,n.y);
       const isSel=n.id===sel; const isHover=n.id===this.hoverId; const inHL=hl&&hl.set.has(n.id); const depth=hl&&hl.depthMap?hl.depthMap.get(n.id):undefined; const match=isMatch(n);
+      const r=this.nodeRadius(n)*k;
       let dim = (sel&&!inHL) || (q&&!match&&!isSel);
-      let col=this.KIND[n.kind]||'#888';
-      if(this.state.blast && hl && hl.blast.has(n.id) && hl.blast.get(n.id)>0){ col='#f87171'; }
-      else if(depth!==undefined){ col=this.DEPTH_COLORS[depth]||col; }
+      // Fill always answers "what kind of thing is this" — kind color is never overwritten by
+      // distance-from-root or blast state, so the legend stays true inside the exact neighborhood
+      // the user is inspecting. Distance/blast is a separate ring-only signal (ringCol) instead of
+      // hijacking the same channel as node identity.
+      const col=this.KIND[n.kind]||'#888';
+      let ringCol;
+      if(this.state.blast && hl && hl.blast.has(n.id) && hl.blast.get(n.id)>0){ ringCol='#f87171'; }
+      else if(depth!==undefined){ ringCol=this.DEPTH_COLORS[depth]; }
       // Statement-level kinds fade by default so the architectural layer reads first — but never
       // when they're the focus, hovered, in the horizon, or a search match (then full opacity).
       const noiseFade = !isSel && !isHover && depth===undefined && !match && this.NOISE_KINDS.has(n.kind);
       ctx.globalAlpha = dim?0.16:(noiseFade?0.4:1);
       // glow for selected / hover / search match
-      if(isSel||isHover||match||depth!==undefined){ ctx.beginPath(); ctx.arc(x,y,r+ (isSel?8:(depth===1?6:4)),0,7); ctx.fillStyle=this.hex(col,isSel?0.28:(depth===1?0.18:0.1)); ctx.fill(); }
+      if(isSel||isHover||match||ringCol){ ctx.beginPath(); ctx.arc(x,y,r+ (isSel?8:(depth===1?6:4)),0,7); ctx.fillStyle=this.hex(ringCol||col,isSel?0.28:(depth===1?0.18:0.1)); ctx.fill(); }
       ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fillStyle=col; ctx.fill();
-      ctx.lineWidth=isSel?3.2:(depth===1?2.2:1.5); ctx.strokeStyle=depth!==undefined?this.hex(this.DEPTH_COLORS[depth]||col,0.96):th.nodeStroke; ctx.stroke();
+      ctx.lineWidth=isSel?3.2:(depth===1?2.2:1.5); ctx.strokeStyle=ringCol?this.hex(ringCol,0.96):th.nodeStroke; ctx.stroke();
       if(n.id===this._cand && !isSel){ ctx.save(); ctx.setLineDash([3,3]); ctx.lineWidth=2; ctx.strokeStyle=th.label; ctx.beginPath(); ctx.arc(x,y,r+5,0,7); ctx.stroke(); ctx.restore(); }
       // doc/table icon hints via inner mark
       if(n.kind==='table'||n.kind==='column'){ ctx.strokeStyle=this.hex('#000',0.25); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x-r*0.5,y); ctx.lineTo(x+r*0.5,y); ctx.stroke(); }
@@ -678,7 +695,7 @@ class Component extends DCLogic {
     });
     const labelZoomMin = Math.max(1.15, Math.min(3.2, 0.9 + this.layoutScale * 0.28));
     for(const n of labelNodes){
-      const [x,y]=this.w2s(n.x,n.y); const r=n.r*k;
+      const [x,y]=this.w2s(n.x,n.y); const r=this.nodeRadius(n)*k;
       const isSel=n.id===sel; const isHover=n.id===this.hoverId; const inHL=hl&&hl.set.has(n.id); const match=isMatch(n);
       const dim = (sel&&!inHL) || (q&&!match&&!isSel);
       if(dim) continue;
@@ -698,6 +715,25 @@ class Component extends DCLogic {
       ctx.globalAlpha=dim?0.3:1;
       ctx.fillStyle=th.labelPill; this.rr(ctx,lx,ly-9,lw,lh,5); ctx.fill();
       ctx.fillStyle=isSel?th.label:th.label; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lab,x,ly); ctx.globalAlpha=1;
+    }
+    // On-canvas "expand to 2-hop" chip — additive to the Horizon panel row (buildDetail()), so the
+    // expand affordance is visible without opening/scrolling the side panel. Only shown when
+    // collapsed (focusDepth:1) and there's actually a 2-hop ring to reveal.
+    this._expandChipRect = null;
+    if(sel && !this.state.blast && (this.state.focusDepth||1)===1 && hl && hl.depthMap){
+      let count2=0; for(const d of hl.depthMap.values()) if(d===2) count2++;
+      if(count2>0){
+        const lab='+'+count2+' more · expand';
+        ctx.font="600 12px 'IBM Plex Sans', system-ui, sans-serif";
+        const tw=ctx.measureText(lab).width; const pw=tw+30, ph=34;
+        const px=this.W/2-pw/2, py=this.H-ph-20;
+        ctx.fillStyle=th.labelPill; ctx.strokeStyle=this.hex(this.DEPTH_COLORS[2],0.6); ctx.lineWidth=1.4;
+        this.rr(ctx,px,py,pw,ph,17); ctx.fill(); ctx.stroke();
+        ctx.fillStyle=this.DEPTH_COLORS[2]; ctx.beginPath(); ctx.arc(px+18,py+ph/2,4,0,7); ctx.fill();
+        ctx.fillStyle=th.label; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(lab,px+pw/2+7,py+ph/2+0.5);
+        this._expandChipRect={x0:px,y0:py,x1:px+pw,y1:py+ph};
+      }
     }
   }
 
@@ -785,14 +821,15 @@ class Component extends DCLogic {
   // ---------- interaction ----------
   bind(){ const c=this.canvas;
     this.onWheel=(e)=>{ e.preventDefault(); this._vt=null; const [wx,wy]=this.s2w(e.offsetX,e.offsetY); const f=Math.exp(-e.deltaY*0.0014); this.view.k=Math.min(3.5,Math.max(0.18,this.view.k*f)); const [nx,ny]=this.s2w(e.offsetX,e.offsetY); this.view.cx+=wx-nx; this.view.cy+=wy-ny; };
-    this.onDown=(e)=>{ c.setPointerCapture(e.pointerId); const block=this.largeGraph&&this.state.mode==='overview'?this.hitOverview(e.offsetX,e.offsetY):null; const n=block?null:this.hit(e.offsetX,e.offsetY); this._p={x:e.offsetX,y:e.offsetY,sx:e.offsetX,sy:e.offsetY,node:n,block,moved:false}; if(n){ n.pin=true; c.style.cursor='grabbing'; } else c.style.cursor='grabbing'; };
+    this.onDown=(e)=>{ c.setPointerCapture(e.pointerId); const chip=this.hitExpandChip(e.offsetX,e.offsetY); const block=!chip&&this.largeGraph&&this.state.mode==='overview'?this.hitOverview(e.offsetX,e.offsetY):null; const n=(chip||block)?null:this.hit(e.offsetX,e.offsetY); this._p={x:e.offsetX,y:e.offsetY,sx:e.offsetX,sy:e.offsetY,node:n,block,chip,moved:false}; if(n){ n.pin=true; c.style.cursor='grabbing'; } else c.style.cursor='grabbing'; };
     this.onMove=(e)=>{ const p=this._p;
       if(p){ const dx=e.offsetX-p.x, dy=e.offsetY-p.y; if(Math.abs(e.offsetX-p.sx)+Math.abs(e.offsetY-p.sy)>3)p.moved=true;
+        if(p.chip){ p.x=e.offsetX; p.y=e.offsetY; return; }
         if(p.block){ p.x=e.offsetX; p.y=e.offsetY; return; }
         if(p.node){ const [wx,wy]=this.s2w(e.offsetX,e.offsetY); p.node.x=wx; p.node.y=wy; p.node.vx=0; p.node.vy=0; this.reheat(0.3); } else { this._vt=null; this.view.cx-=dx/this.view.k; this.view.cy-=dy/this.view.k; } p.x=e.offsetX; p.y=e.offsetY; return; }
-      const block=this.largeGraph&&this.state.mode==='overview'?this.hitOverview(e.offsetX,e.offsetY):null; const n=block?null:this.hit(e.offsetX,e.offsetY); this.hoverId=n?n.id:null; c.style.cursor=(n||block)?'pointer':'grab'; this.tip(n,e.offsetX,e.offsetY);
+      const chip=this.hitExpandChip(e.offsetX,e.offsetY); const block=!chip&&this.largeGraph&&this.state.mode==='overview'?this.hitOverview(e.offsetX,e.offsetY):null; const n=(chip||block)?null:this.hit(e.offsetX,e.offsetY); this.hoverId=n?n.id:null; c.style.cursor=(chip||n||block)?'pointer':'grab'; this.tip(n,e.offsetX,e.offsetY);
     };
-    this.onUp=(e)=>{ const p=this._p; this._p=null; c.style.cursor='grab'; if(!p)return; if(p.node)p.node.pin=false; if(!p.moved){ if(p.block&&p.block.isNode) this.select(p.block.nodeId); else if(p.block) this.selectCluster(p.block.id); else if(p.node) this.select(p.node.id); else this.closePanel(); } };
+    this.onUp=(e)=>{ const p=this._p; this._p=null; c.style.cursor='grab'; if(!p)return; if(p.node)p.node.pin=false; if(!p.moved){ if(p.chip) this.toggleFocusDepth(); else if(p.block&&p.block.isNode) this.select(p.block.nodeId); else if(p.block) this.selectCluster(p.block.id); else if(p.node) this.select(p.node.id); else this.closePanel(); } };
     this.onKey=(e)=>{ const k=e.key; const tag=(e.target&&e.target.tagName)||''; if(tag==='INPUT'){ if(k==='Escape')e.target.blur(); return; }
       if(this.state.tour){ if(k==='ArrowRight'||k===' '||k==='ArrowDown'){e.preventDefault(); this.tourGo(this.state.tourStep+1);} else if(k==='ArrowLeft'||k==='ArrowUp'){e.preventDefault(); this.tourGo(this.state.tourStep-1);} else if(k==='Escape'){this.exitTour();} return; }
       if(k==='Escape'){ this._cand=null; this.closePanel(); return; }
@@ -804,7 +841,8 @@ class Component extends DCLogic {
     c.addEventListener('wheel',this.onWheel,{passive:false}); c.addEventListener('pointerdown',this.onDown); c.addEventListener('pointermove',this.onMove); c.addEventListener('pointerup',this.onUp); window.addEventListener('keydown',this.onKey);
   }
   unbind(){ const c=this.canvas; if(!c)return; c.removeEventListener('wheel',this.onWheel); c.removeEventListener('pointerdown',this.onDown); c.removeEventListener('pointermove',this.onMove); c.removeEventListener('pointerup',this.onUp); window.removeEventListener('keydown',this.onKey); }
-  hit(sx,sy){ let best=null,bd=1e9; for(const n of this.visibleNodes()){ if(this.state.hidden[n.kind])continue; const [x,y]=this.w2s(n.x,n.y); const d=Math.hypot(x-sx,y-sy); if(d<n.r*this.view.k+5 && d<bd){bd=d;best=n;} } return best; }
+  hit(sx,sy){ let best=null,bd=1e9; for(const n of this.visibleNodes()){ if(this.state.hidden[n.kind])continue; const [x,y]=this.w2s(n.x,n.y); const d=Math.hypot(x-sx,y-sy); if(d<this.nodeRadius(n)*this.view.k+5 && d<bd){bd=d;best=n;} } return best; }
+  hitExpandChip(sx,sy){ const r=this._expandChipRect; if(!r) return false; return sx>=r.x0 && sx<=r.x1 && sy>=r.y0 && sy<=r.y1; }
   hitOverview(sx,sy){
     const blocks=this.overview; if(!blocks.length)return null;
     const maxX=Math.max(...blocks.map(b=>Math.abs(b.x)+b.w/2),1);
@@ -825,7 +863,7 @@ class Component extends DCLogic {
   // whether the previous node had been expanded to 2-hop; expansion is a per-node choice, not a
   // sticky mode. arrangeNodeFocus is passed depth=1 explicitly so it doesn't read the (about to be
   // stale) previous state.focusDepth before setState lands.
-  select(id){ if(!this.byId[id]) return; const n=this.byId[id]; this._cand=null; this._nb=[...new Set(this.adj[id]||[])]; this._nIdx=null; this.arrangeNodeFocus(id,1);
+  select(id){ if(!this.byId[id]) return; const n=this.byId[id]; this._cand=null; this._nb=[...new Set(this.archAdj[id]||[])]; this._nIdx=null; this.arrangeNodeFocus(id,1);
     const trail=[...(this.state.selectedTrail||[]).filter(t=>t.id!==id),{id,label:n.qualified||n.label||id}].slice(-4);
     this.setState({selectedId:id, selectedClusterId:n.cluster, selectedTrail:trail, mode:'focus', focusDepth:1}); this.reheat(0.08); }
   /** Toggle between 1-hop and 2-hop context for the currently selected node — the explicit
@@ -860,7 +898,10 @@ class Component extends DCLogic {
       const cur=queue.shift();
       const d=depthMap.get(cur);
       if(d>=maxDepth) continue;
-      for(const nb of this.adj[cur]||[]){
+      // Walk only the architectural adjacency map so focus rings and Horizon counts reflect
+      // real code references (calls/imports/inherits/implements/exposes/injects/renders/produces)
+      // rather than structural or statement-level edges like `member-of` or `executes`.
+      for(const nb of this.archAdj[cur]||[]){
         if(depthMap.has(nb)) continue;
         depthMap.set(nb,d+1);
         queue.push(nb);
@@ -916,7 +957,7 @@ class Component extends DCLogic {
       const ring1Hidden=this._ring1Hidden||0;
       const horizon=[
         { id:'depth-0', label:'Selected node', color:this.DEPTH_COLORS[0], relColor:this.DEPTH_COLORS[0], phrase:String(counts[0]||1), tail:' in focus', onGo:()=>this.select(sel), badge:null },
-        { id:'depth-1', label:'Direct neighbors', color:this.DEPTH_COLORS[1], relColor:this.DEPTH_COLORS[1], phrase:String(counts[1]||0), tail:ring1Hidden>0?(' 1-hop links · showing top '+(this.RING1_CAP)+' by importance'):' 1-hop links', onGo:()=>{}, badge:null },
+        { id:'depth-1', label:'Direct neighbors', color:this.DEPTH_COLORS[1], relColor:this.DEPTH_COLORS[1], phrase:String(counts[1]||0), tail:ring1Hidden>0?(' 1-hop links · showing top '+(this.RING1_CAP)+' by importance'):' 1-hop links', onGo:()=>this.select(sel), badge:null },
         { id:'depth-2', label:expanded?'2-hop context (shown)':'Expand to 2-hop context', color:this.DEPTH_COLORS[2], relColor:this.DEPTH_COLORS[2], phrase:String(counts[2]||0), tail:expanded?' wider nodes — click to collapse':' wider nodes available — click to reveal', onGo:()=>this.toggleFocusDepth(), badge:null },
         ...trail,
       ];
