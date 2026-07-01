@@ -14,7 +14,7 @@
  * stays unified. Splitting into one soul per package would lose cross-package blast radius — the
  * killer feature — so we scope extraction, not storage.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, join, sep } from 'node:path';
 
 export interface WorkspacePackage {
@@ -112,9 +112,7 @@ function detectNpmWorkspaces(root: string): WorkspaceLayout | null {
   } catch {
     return null;
   }
-  const patterns = Array.isArray(pkg.workspaces)
-    ? pkg.workspaces
-    : pkg.workspaces?.packages;
+  const patterns = Array.isArray(pkg.workspaces) ? pkg.workspaces : pkg.workspaces?.packages;
   const arr = toStringArray(patterns);
   if (arr.length === 0) return null;
   const packages = expandPatterns(root, arr);
@@ -255,7 +253,7 @@ function globDirs(root: string, pattern: string): string[] {
           } catch {
             continue;
           }
-          const childPrefix = prefix === '' ? entry : prefix + '/' + entry;
+          const childPrefix = prefix === '' ? entry : `${prefix}/${entry}`;
           results.push(...walk(abs, idx, childPrefix));
           results.push(...walk(abs, idx + 1, childPrefix));
         }
@@ -275,7 +273,7 @@ function globDirs(root: string, pattern: string): string[] {
           } catch {
             continue;
           }
-          const childPrefix = prefix === '' ? entry : prefix + '/' + entry;
+          const childPrefix = prefix === '' ? entry : `${prefix}/${entry}`;
           results.push(...walk(abs, idx + 1, childPrefix));
         }
       } catch {
@@ -290,7 +288,7 @@ function globDirs(root: string, pattern: string): string[] {
     } catch {
       return [];
     }
-    const childPrefix = prefix === '' ? seg : prefix + '/' + seg;
+    const childPrefix = prefix === '' ? seg : `${prefix}/${seg}`;
     return walk(abs, idx + 1, childPrefix);
   };
   return walk(root, 0, '');
@@ -325,7 +323,8 @@ function toStringArray(v: unknown): string[] {
 
 function stripQuotes(s: string): string {
   let out = s.trim();
-  const isQuote = (ch: string): boolean => ch === '"' || ch === "'" || ch === String.fromCharCode(0x60);
+  const isQuote = (ch: string): boolean =>
+    ch === '"' || ch === "'" || ch === String.fromCharCode(0x60);
   while (out.length > 0 && isQuote(out[0]!)) out = out.slice(1);
   while (out.length > 0 && isQuote(out[out.length - 1]!)) out = out.slice(0, -1);
   return out.trim();

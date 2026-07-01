@@ -146,7 +146,12 @@ function parsePackages(args: string[]): string[] {
 function resolvePackageScope(
   repoRoot: string,
   args: string[],
-): { status: number; packageRoots?: string[]; layout: WorkspaceLayout | null; indexedPackages: string[] } {
+): {
+  status: number;
+  packageRoots?: string[];
+  layout: WorkspaceLayout | null;
+  indexedPackages: string[];
+} {
   const layout = detectWorkspace(repoRoot);
   const tokens = parsePackages(args);
   const allPackages = layout ? layout.packages.map((p) => p.rel) : [];
@@ -155,10 +160,9 @@ function resolvePackageScope(
       process.stderr.write(
         `monorepo detected (${layout.tool}): ${layout.packages.length} package(s)\n`,
       );
-      for (const p of layout.packages)
-        process.stderr.write(`  - ${p.name}  (${p.rel})\n`);
+      for (const p of layout.packages) process.stderr.write(`  - ${p.name}  (${p.rel})\n`);
       process.stderr.write(
-        `scope one with: crib index . --package <name>  |  all: --package all\n`,
+        'scope one with: crib index . --package <name>  |  all: --package all\n',
       );
     }
     return { status: EXIT.OK, packageRoots: undefined, layout, indexedPackages: allPackages };
@@ -168,7 +172,9 @@ function resolvePackageScope(
   for (const token of tokens) {
     const r = resolvePackageArg(repoRoot, token, layout);
     if (r.unknown) {
-      const valid = layout ? layout.packages.map((p) => p.name).join(', ') : '(none — not a monorepo)';
+      const valid = layout
+        ? layout.packages.map((p) => p.name).join(', ')
+        : '(none — not a monorepo)';
       process.stderr.write(`unknown package: ${r.unknown}\navailable: ${valid}\n`);
       return { status: EXIT.BAD_ARGS, layout, indexedPackages: [] };
     }
@@ -418,9 +424,7 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   const index = buildIndex({ repoRoot, cribDir, soul });
   registerIndexed(repoRoot, cribDir, soul);
   const stats = soul.getManifest().stats;
-  const scopeSuffix = scope.packageRoots
-    ? ` [scoped: ${scope.indexedPackages.join(', ')}]`
-    : '';
+  const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
   process.stdout.write(
     `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
       `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
@@ -999,9 +1003,7 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
   index.close();
   registerIndexed(repoRoot, cribDir, soul);
   const stats = soul.getManifest().stats;
-  const scopeSuffix = scope.packageRoots
-    ? ` [scoped: ${scope.indexedPackages.join(', ')}]`
-    : '';
+  const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
   process.stdout.write(
     `reindexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
       `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,

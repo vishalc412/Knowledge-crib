@@ -62,7 +62,12 @@ describe('PhpExtractor — golden (P3 tree-sitter proof-of-concept gate)', () =>
 
   it('declares capability-honest flags (no resolver ⇒ inheritance:false despite captured bases)', async () => {
     const capabilities = new PhpExtractor().capabilities;
-    expect(capabilities).toEqual({ imports: false, calls: true, inheritance: false, types: 'none' });
+    expect(capabilities).toEqual({
+      imports: false,
+      calls: true,
+      inheritance: false,
+      types: 'none',
+    });
   });
 
   it('emits member-of edges: methods → class/interface, top-level symbols → file', async () => {

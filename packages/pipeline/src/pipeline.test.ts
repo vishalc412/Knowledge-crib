@@ -192,9 +192,16 @@ describe('indexRepo — PHP end-to-end (P3 tree-sitter proof-of-concept, full pi
     mkdirSync(join(repo, 'src', 'legacy'), { recursive: true });
     writeFileSync(
       join(repo, 'src', 'legacy', 'greeter.php'),
-      ['<?php', 'function greet($name) {', '    return shout($name);', '}', 'function shout($name) {', '    return strtoupper($name);', '}', ''].join(
-        '\n',
-      ),
+      [
+        '<?php',
+        'function greet($name) {',
+        '    return shout($name);',
+        '}',
+        'function shout($name) {',
+        '    return strtoupper($name);',
+        '}',
+        '',
+      ].join('\n'),
     );
     const soul = soulFor();
     const report = await indexRepo(soul, repo, { now: '2026-01-01T00:00:00.000Z' });
