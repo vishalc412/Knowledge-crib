@@ -1,5 +1,5 @@
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SoulStore, newManifest, openIndex } from '@knowledge-crib/core';
@@ -272,5 +272,215 @@ describe('crib enrich --scope / --scope-cluster / --save flag guards (scope-pick
     // The scoped pending sum excludes the whole-repo system target, which is reported on its own line.
     expect(r.stdout).toMatch(/\d+ target\(s\) pending/);
     expect(r.stdout).toContain('whole-repo system target(s) still pending');
+  });
+});
+
+describe('crib index --package (workspace-aware indexing) — CLI dispatch', () => {
+  let wsRepo: string;
+  const wsPkg = (name: string, rel: string): void => {
+    const dir = join(wsRepo, rel);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name, version: '0.0.0' }));
+    mkdirSync(join(dir, 'src'), { recursive: true });
+    writeFileSync(join(dir, 'src', 'index.ts'), `export const ${name.replace(/-/g, '_')} = 1;\n`);
+  };
+  const runWs = (args: string[]): { status: number; stdout: string; stderr: string } => {
+    const r = spawnSync(process.execPath, [CLI, ...args], {
+      cwd: wsRepo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    const stripNoise = (s: string): string =>
+      s
+        .split('\n')
+        .filter((l) => !/ExperimentalWarning|trace-warnings/.test(l))
+        .join('\n')
+        .trim();
+    return {
+      status: r.status ?? 1,
+      stdout: stripNoise(r.stdout ?? ''),
+      stderr: stripNoise(r.stderr ?? ''),
+    };
+  };
+
+  beforeEach(() => {
+    wsRepo = mkdtempSync(join(tmpdir(), 'crib-cli-ws-'));
+    writeFileSync(join(wsRepo, 'pnpm-workspace.yaml'), 'packages:\n  - "packages/*"\n');
+    writeFileSync(join(wsRepo, 'README.md'), '# root\n');
+    wsPkg('ftc-cloud', 'packages/FTCCloud');
+    wsPkg('ftc-local', 'packages/FTCLocal');
+  });
+  afterEach(() => rmSync(wsRepo, { recursive: true, force: true }));
+
+  const fileCount = (stdout: string): number => {
+    const m = stdout.match(/indexed (\d+) files/);
+    return m ? Number(m[1]!) : -1;
+  };
+
+  it('indexes the full repo when no --package is given, but lists detected packages on stderr', () => {
+    const r = runWs(['index', '.']);
+    expect(r.status).toBe(0);
+    expect(r.stderr).toContain('monorepo detected (pnpm)');
+    expect(r.stderr).toContain('ftc-cloud');
+    expect(r.stderr).toContain('--package');
+    expect(r.stdout).toMatch(/indexed \d+ files/);
+    expect(r.stdout).not.toContain('[scoped:');
+    // full walk sees both packages + root files
+    expect(fileCount(r.stdout)).toBeGreaterThanOrEqual(6);
+  });
+
+  it('scopes discovery to one package with --package <name> (sibling pruned)', () => {
+    const scoped = runWs(['index', '.', '--package', 'ftc-cloud']);
+    expect(scoped.status).toBe(0);
+    expect(scoped.stdout).toContain('[scoped: packages/FTCCloud]');
+    const scopedCount = fileCount(scoped.stdout);
+    // scoped walk: FTCCloud package.json + index.ts + root README + workspace.yaml (4), NOT FTCLocal
+    expect(scopedCount).toBeLessThanOrEqual(4);
+    // the FTCLocal source file never enters the soul
+    expect(scoped.stdout).not.toContain('FTCLocal');
+
+    const full = runWs(['index', '.', '--package', 'all']);
+    expect(full.status).toBe(0);
+    expect(full.stdout).not.toContain('[scoped:');
+    expect(fileCount(full.stdout)).toBeGreaterThan(scopedCount);
+  });
+
+  it('scopes by repo-relative path too', () => {
+    const r = runWs(['index', '.', '--package', 'packages/FTCLocal']);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('[scoped: packages/FTCLocal]');
+  });
+
+  it('rejects an unknown package name as BAD_ARGS with the valid names listed', () => {
+    const r = runWs(['index', '.', '--package', 'ghost']);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('unknown package: ghost');
+    expect(r.stderr).toContain('ftc-cloud');
+    expect(r.stderr).toContain('ftc-local');
+  });
+
+  it('records the workspace + indexedPackages in the soul manifest meta', () => {
+    const r = runWs(['index', '.', '--package', 'ftc-cloud']);
+    expect(r.status).toBe(0);
+    const manifest = JSON.parse(
+      execFileSync('cat', [join(wsRepo, '.crib', 'crib.json')], { encoding: 'utf8' }),
+    ) as { meta?: { workspace?: { tool: string }; indexedPackages?: string[] } };
+    expect(manifest.meta?.workspace?.tool).toBe('pnpm');
+    expect(manifest.meta?.indexedPackages).toEqual(['packages/FTCCloud']);
+  });
+});
+
+describe('crib index — token-savings hero output (P1 instant value)', () => {
+  let heroRepo: string;
+  const runHero = (args: string[]): { status: number; stdout: string; stderr: string } => {
+    const r = spawnSync(process.execPath, [CLI, ...args], {
+      cwd: heroRepo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    const stripNoise = (s: string): string =>
+      s
+        .split('\n')
+        .filter((l) => !/ExperimentalWarning|trace-warnings/.test(l))
+        .join('\n')
+        .trim();
+    return {
+      status: r.status ?? 1,
+      stdout: stripNoise(r.stdout ?? ''),
+      stderr: stripNoise(r.stderr ?? ''),
+    };
+  };
+
+  afterEach(() => rmSync(heroRepo, { recursive: true, force: true }));
+
+  it('prints a real measured token-savings ratio when a central, well-called symbol exists', () => {
+    heroRepo = mkdtempSync(join(tmpdir(), 'crib-cli-hero-'));
+    writeFileSync(join(heroRepo, 'package.json'), JSON.stringify({ name: 'hero', type: 'module' }));
+    mkdirSync(join(heroRepo, 'src'), { recursive: true });
+    // a deliberately central function (high in-degree) called from several other files padded with
+    // unrelated content, so the raw-file-read cost meaningfully exceeds the one-line query response.
+    const filler = Array.from({ length: 40 }, (_, i) => `export const filler${i} = ${i};`).join('\n');
+    writeFileSync(
+      join(heroRepo, 'src', 'core.ts'),
+      `${filler}\nexport function widgetCore(id: string): string {\n  return id.toUpperCase();\n}\n`,
+    );
+    for (let i = 0; i < 5; i++) {
+      writeFileSync(
+        join(heroRepo, 'src', `caller${i}.ts`),
+        `${filler}\nimport { widgetCore } from './core.js';\nexport function use${i}(): string {\n  return widgetCore('x${i}');\n}\n`,
+      );
+    }
+    const r = runHero(['index', '.']);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/≈\d+(\.\d+)?x fewer tokens per discovery query than reading files directly/);
+    expect(r.stdout).toContain('via crib query');
+  });
+
+  it('omits the hero line on a tiny repo where the win is not real (no overclaiming)', () => {
+    heroRepo = mkdtempSync(join(tmpdir(), 'crib-cli-hero-tiny-'));
+    writeFileSync(join(heroRepo, 'package.json'), JSON.stringify({ name: 'tiny', type: 'module' }));
+    mkdirSync(join(heroRepo, 'src'), { recursive: true });
+    writeFileSync(join(heroRepo, 'src', 'a.ts'), 'export function one(): number {\n  return 1;\n}\n');
+    const r = runHero(['index', '.']);
+    expect(r.status).toBe(0);
+    expect(r.stdout).not.toMatch(/fewer tokens per discovery query/);
+  });
+});
+
+describe('crib update --package (P4 multi-package federation) — CLI dispatch', () => {
+  let fedRepo: string;
+  const runFed = (args: string[]): { status: number; stdout: string; stderr: string } => {
+    const r = spawnSync(process.execPath, [CLI, ...args], {
+      cwd: fedRepo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    const stripNoise = (s: string): string =>
+      s
+        .split('\n')
+        .filter((l) => !/ExperimentalWarning|trace-warnings/.test(l))
+        .join('\n')
+        .trim();
+    return { status: r.status ?? 1, stdout: stripNoise(r.stdout ?? ''), stderr: stripNoise(r.stderr ?? '') };
+  };
+  const git = (args: string[]): string =>
+    execFileSync('git', ['-C', fedRepo, ...args], { encoding: 'utf8' }).trim();
+
+  beforeEach(() => {
+    fedRepo = mkdtempSync(join(tmpdir(), 'crib-cli-fed-'));
+    writeFileSync(join(fedRepo, 'pnpm-workspace.yaml'), 'packages:\n  - "packages/*"\n');
+    for (const [name, rel] of [
+      ['pkg-a', 'packages/pkg-a'],
+      ['pkg-b', 'packages/pkg-b'],
+    ] as const) {
+      mkdirSync(join(fedRepo, rel, 'src'), { recursive: true });
+      writeFileSync(join(fedRepo, rel, 'package.json'), JSON.stringify({ name, version: '0.0.0' }));
+      writeFileSync(join(fedRepo, rel, 'src', 'index.ts'), `export const ${name.replace('-', '_')} = 1;\n`);
+    }
+    git(['init', '-q']);
+    git(['add', '-A']);
+    git(['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'initial']);
+  });
+  afterEach(() => rmSync(fedRepo, { recursive: true, force: true }));
+
+  it('scopes an incremental update to one package, leaving the other package pending and the anchor un-advanced', () => {
+    const indexed = runFed(['index', '.']);
+    expect(indexed.status).toBe(0);
+    const h1 = git(['rev-parse', 'HEAD']);
+
+    writeFileSync(join(fedRepo, 'packages', 'pkg-a', 'src', 'index.ts'), 'export const pkg_a = 2;\n');
+    writeFileSync(join(fedRepo, 'packages', 'pkg-b', 'src', 'index.ts'), 'export const pkg_b = 2;\n');
+    git(['add', 'packages/pkg-a/src/index.ts', 'packages/pkg-b/src/index.ts']);
+    git(['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'edit both']);
+
+    const scoped = runFed(['update', '.', '--package', 'pkg-a']);
+    expect(scoped.status).toBe(0);
+    expect(scoped.stdout).toContain('outside scope');
+    expect(scoped.stdout).toContain('anchor not advanced');
+
+    const manifest = JSON.parse(readFileSync(join(fedRepo, '.crib', 'crib.json'), 'utf8')) as {
+      repo: { vcsHead: string };
+    };
+    expect(manifest.repo.vcsHead).toBe(h1);
   });
 });

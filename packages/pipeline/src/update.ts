@@ -56,11 +56,21 @@ export interface UpdateOpts {
    * normal updates see no committed diff, but `repo.vcsHead` stays pinned to the last real commit so
    * `crib status` can still report the dirty delta. */
   dirty?: boolean;
+  /** Restrict this update to files under any of these repo-relative package roots (multi-package
+   *  federation: independently re-sync one package's slice of a shared, already-indexed monorepo
+   *  soul without touching the rest). Changed files OUTSIDE every root are left untouched AND —
+   *  critically — the incremental anchor (`vcsHead`/`incrementalSince`) is only advanced if there
+   *  were none, so a later scoped-or-unscoped update still sees the full diff for whatever this run
+   *  skipped. Undefined ⇒ unscoped, the existing whole-repo behavior. */
+  packageRoots?: string[];
 }
 
 export interface UpdateReport {
   delta: IndexDelta;
   changedPaths: string[];
+  /** changed files outside every `packageRoots` prefix, left unprocessed this run (empty when
+   *  unscoped, or when every changed file happened to fall inside the requested package(s)). */
+  excludedPaths: string[];
   scopeFiles: string[];
   head: string;
   parse: ParseStats;
@@ -73,6 +83,7 @@ export interface UpdateReport {
 
 export interface UpdateNoopReport {
   changedPaths: string[];
+  excludedPaths: string[];
   scopeFiles: [];
   head: string;
   noop: true;
@@ -107,24 +118,40 @@ export async function updateRepo(
   const since = opts.since ?? manifest.stats.incrementalSince ?? manifest.repo.vcsHead;
   if (!since) return null; // no anchor yet → full index
 
-  const changedPaths = changedFilesSince(root, since);
+  const allChangedPaths = changedFilesSince(root, since);
 
   if (opts.dirty) {
     for (const p of uncommittedChanges(root)) {
-      if (!changedPaths.includes(p)) changedPaths.push(p);
+      if (!allChangedPaths.includes(p)) allChangedPaths.push(p);
     }
   }
 
-  // No file changes: just advance the anchor so the next update is anchored to the new HEAD.
+  // Package-scoped update: only re-sync files under one of the given roots. `excludedPaths` is what
+  // this run intentionally leaves pending — the anchor-advance guard below uses it to decide whether
+  // it's safe to move `vcsHead`/`incrementalSince` forward (only when nothing was skipped).
+  const inRoot = (p: string, r: string): boolean => p === r || p.startsWith(`${r}/`);
+  const packageRoots = opts.packageRoots;
+  const changedPaths = packageRoots
+    ? allChangedPaths.filter((p) => packageRoots.some((r) => inRoot(p, r)))
+    : allChangedPaths;
+  const excludedPaths = packageRoots
+    ? allChangedPaths.filter((p) => !packageRoots.some((r) => inRoot(p, r)))
+    : [];
+
+  // No in-scope file changes: advance the anchor ONLY if nothing was excluded — a scoped run that
+  // skipped out-of-scope changes must NOT advance the shared anchor, or a later update (for another
+  // package, or unscoped) would wrongly believe those skipped changes were already accounted for.
   if (changedPaths.length === 0) {
-    if (opts.dirty) {
-      // Dirty no-op: keep the committed vcsHead pinned, but record that the soul is now current with HEAD.
-      soul.setIncrementalSince(head);
-    } else {
-      soul.setVcsHead(head);
+    if (excludedPaths.length === 0) {
+      if (opts.dirty) {
+        // Dirty no-op: keep the committed vcsHead pinned, but record that the soul is now current with HEAD.
+        soul.setIncrementalSince(head);
+      } else {
+        soul.setVcsHead(head);
+      }
+      soul.commit(opts.now);
     }
-    soul.commit(opts.now);
-    return { changedPaths, scopeFiles: [], head, noop: true };
+    return { changedPaths, excludedPaths, scopeFiles: [], head, noop: true };
   }
 
   // Reverse-dependency closure: every file whose references reach into a changed file. Captured BEFORE
@@ -173,12 +200,16 @@ export async function updateRepo(
   // Semantic pass (M7, INFERRED): scoped to the docs in scope, like the deterministic re-link.
   const semantic = opts.semantic ? runSemanticLink(soul, root, scopeDocFiles) : { added: 0 };
 
-  if (opts.dirty) {
-    // Dirty update: refresh the soul to match HEAD + working tree, but keep vcsHead on the last real
-    // commit so `crib status` can still detect/report the uncommitted delta.
-    soul.setIncrementalSince(head);
-  } else {
-    soul.setVcsHead(head);
+  // Advance the shared incremental anchor only if this run left nothing pending — a package-scoped
+  // update that excluded other packages' changes must NOT advance it (see UpdateOpts.packageRoots).
+  if (excludedPaths.length === 0) {
+    if (opts.dirty) {
+      // Dirty update: refresh the soul to match HEAD + working tree, but keep vcsHead on the last real
+      // commit so `crib status` can still detect/report the uncommitted delta.
+      soul.setIncrementalSince(head);
+    } else {
+      soul.setVcsHead(head);
+    }
   }
   soul.commit(opts.now);
 
@@ -188,6 +219,7 @@ export async function updateRepo(
   return {
     delta,
     changedPaths,
+    excludedPaths,
     scopeFiles: [...scope].sort(),
     head,
     parse,

@@ -4,6 +4,7 @@ import type { SoulStore } from '@knowledge-crib/core';
  * symbol nodes + intra-file edges to the soul. A file with no extractor is left as just its Phase-1
  * file node. Extractors degrade to no symbols on parse failure (they never throw the pipeline).
  */
+import { grammarsNeededFor, preloadGrammars } from '@knowledge-crib/parsers';
 import type { ExtractorRegistry, FileMeta } from '@knowledge-crib/parsers';
 import { makeExtractCtx } from './extract-ctx.js';
 
@@ -20,6 +21,9 @@ export async function runParse(
   root: string,
   files: FileMeta[],
 ): Promise<ParseStats> {
+  // Preload only the tree-sitter grammars THIS run actually needs (grammarsNeededFor([]) short-
+  // circuits to a true no-op) — a repo with zero .php files never boots the WASM engine.
+  await preloadGrammars(grammarsNeededFor(files));
   let filesParsed = 0;
   let nodes = 0;
   let edges = 0;

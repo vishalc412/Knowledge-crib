@@ -15,19 +15,22 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { MANIFEST_FILE, SoulStore, newManifest } from '@knowledge-crib/core';
+import { CALLABLE_SYMBOL_TYPES, MANIFEST_FILE, SoulStore, newManifest } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
-import { EnrichmentStore, Verbs, serveStdio } from '@knowledge-crib/mcp';
+import { EnrichmentStore, Verbs, estimateTokens, serveStdio } from '@knowledge-crib/mcp';
 import type { EnrichLayer, EnrichScope, VcsAdapter } from '@knowledge-crib/mcp';
 import {
   changedFilesSince,
   currentHead,
+  detectWorkspace,
   indexRepo,
   renderExport,
+  resolvePackageArg,
   uncommittedChanges,
   updateRepo,
 } from '@knowledge-crib/pipeline';
 import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
+import type { WorkspaceLayout } from '@knowledge-crib/pipeline';
 import { buildVizGraph, vizAssetsDir } from '@knowledge-crib/ui';
 import { installHooks, mergeDriverFiles } from './hooks.js';
 import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
@@ -50,6 +53,48 @@ interface CmdCtx {
 }
 
 /**
+ * Flags that take a value as their next argv token (`--limit 5`, `--format markdown`, …). When
+ * collecting positional search text / ids we must drop BOTH the flag and the value — otherwise the
+ * value (e.g. `5`, `markdown`) leaks into the query string (`crib query "sqlite" --limit 5` would
+ * otherwise search for "sqlite 5"; `crib ask "… issue" --format markdown` would ask about "… issue
+ * markdown"). Boolean flags (no value) are dropped separately by the `-` prefix check.
+ */
+const VALUE_FLAGS = new Set([
+  '--limit',
+  '--format',
+  '--cwd',
+  '--since',
+  '--exclude',
+  '--depth',
+  '--doc-limit',
+  '--max-symbols',
+  '--source-max-chars',
+  '--source-max-lines',
+  '--max-chars',
+  '--max-lines',
+  '--start-line',
+  '--source-start-line',
+  '--min-confidence',
+  '--max-hops',
+  '--package',
+]);
+
+/** Collect positional argv tokens, skipping boolean flags AND value-taking flags + their values. */
+function positionalsOf(args: string[]): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i]!;
+    if (VALUE_FLAGS.has(a)) {
+      i++; // drop the value token too
+      continue;
+    }
+    if (a.startsWith('-')) continue;
+    out.push(a);
+  }
+  return out;
+}
+
+/**
  * Parse `--exclude a,b,c` (repeatable) into a discovery ignore set merged with DEFAULT_IGNORES.
  * Lets users skip project-specific cache/source dirs that aren't in the default list.
  */
@@ -67,6 +112,93 @@ function parseExcludes(args: string[]): Set<string> {
     }
   }
   return ignores;
+}
+
+/**
+ * Parse `--package <name>` (repeatable, comma-separated) into a list of package tokens. `all` is a
+ * reserved token meaning "index every package (full repo walk)". Names/rel-paths are matched
+ * against the detected layout by {@link resolvePackageScope}.
+ */
+function parsePackages(args: string[]): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--package') {
+      const val = args[++i];
+      if (!val) continue;
+      for (const p of val
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean))
+        out.push(p);
+    }
+  }
+  return out;
+}
+
+/**
+ * Resolve `--package` args against the detected monorepo layout. When the repo is a monorepo and no
+ * `--package` is given, the detected packages are listed to stderr with a scoping hint, then the
+ * index proceeds over the full repo (non-interactive default). `--package all` is an explicit full
+ * walk. An unknown package name is a BAD_ARGS abort (with the valid names listed). Returns the
+ * `packageRoots` to thread into {@link indexRepo} (undefined = full repo) + the names to record in
+ * the soul manifest's `meta.indexedPackages`.
+ */
+function resolvePackageScope(
+  repoRoot: string,
+  args: string[],
+): { status: number; packageRoots?: string[]; layout: WorkspaceLayout | null; indexedPackages: string[] } {
+  const layout = detectWorkspace(repoRoot);
+  const tokens = parsePackages(args);
+  const allPackages = layout ? layout.packages.map((p) => p.rel) : [];
+  if (tokens.length === 0) {
+    if (layout) {
+      process.stderr.write(
+        `monorepo detected (${layout.tool}): ${layout.packages.length} package(s)\n`,
+      );
+      for (const p of layout.packages)
+        process.stderr.write(`  - ${p.name}  (${p.rel})\n`);
+      process.stderr.write(
+        `scope one with: crib index . --package <name>  |  all: --package all\n`,
+      );
+    }
+    return { status: EXIT.OK, packageRoots: undefined, layout, indexedPackages: allPackages };
+  }
+  const roots: string[] = [];
+  const indexed: string[] = [];
+  for (const token of tokens) {
+    const r = resolvePackageArg(repoRoot, token, layout);
+    if (r.unknown) {
+      const valid = layout ? layout.packages.map((p) => p.name).join(', ') : '(none — not a monorepo)';
+      process.stderr.write(`unknown package: ${r.unknown}\navailable: ${valid}\n`);
+      return { status: EXIT.BAD_ARGS, layout, indexedPackages: [] };
+    }
+    if (r.all) {
+      return { status: EXIT.OK, packageRoots: undefined, layout, indexedPackages: allPackages };
+    }
+    if (r.packageRoots) {
+      for (const pr of r.packageRoots) {
+        if (!roots.includes(pr)) roots.push(pr);
+        if (!indexed.includes(pr)) indexed.push(pr);
+      }
+    }
+  }
+  return { status: EXIT.OK, packageRoots: roots, layout, indexedPackages: indexed };
+}
+
+/** Stamp the detected workspace + the package roots actually indexed onto the soul manifest's `meta`. */
+function stampPackageMeta(
+  soul: SoulStore,
+  scope: { layout: WorkspaceLayout | null; indexedPackages: string[] },
+): void {
+  const meta: Record<string, unknown> = { ...(soul.getManifest().meta ?? {}) };
+  if (scope.layout) {
+    meta.workspace = {
+      tool: scope.layout.tool,
+      packages: scope.layout.packages.map((p) => ({ name: p.name, rel: p.rel })),
+    };
+  }
+  meta.indexedPackages = scope.indexedPackages;
+  soul.getManifest().meta = meta;
 }
 
 /** First non-flag positional arg (the path for path-taking commands), or `undefined`. */
@@ -183,6 +315,67 @@ function registerIndexed(repoRoot: string, cribDir: string, soul: SoulStore): vo
 }
 
 /**
+ * After a (re)index, print one real, measured token-savings number so the value of indexing is
+ * visible immediately (P1: instant value) instead of staying an abstract claim. Picks the most
+ * *called* callable symbol (highest in-degree — the actual architectural center of the codebase,
+ * not just whichever name happens to repeat most, e.g. trivial getters) as a representative
+ * discovery query, runs it once against the just-built index, and compares the default-tier
+ * response cost to the cost of reading the matched files whole — the same comparison `crib-bench`
+ * makes, just inline and best-effort at index time. Never throws: a failed measurement must not
+ * mask a successful index.
+ */
+function printTokenSavingsHero(verbs: Verbs, soul: SoulStore, repoRoot: string): void {
+  try {
+    const inDegree = new Map<string, number>();
+    for (const edge of soul.iterateEdges()) {
+      inDegree.set(edge.dst, (inDegree.get(edge.dst) ?? 0) + 1);
+    }
+    let term: string | undefined;
+    let best = 0;
+    for (const node of soul.iterate('symbol')) {
+      if (!node.name || !node.type || !CALLABLE_SYMBOL_TYPES.has(node.type)) continue;
+      const degree = inDegree.get(node.id) ?? 0;
+      if (degree > best) {
+        best = degree;
+        term = node.name;
+      }
+    }
+    if (!term) return;
+
+    const result = verbs.query({ q: term, limit: 10 }) as { hits?: Array<{ id: string }> };
+    const hits = result.hits ?? [];
+    if (hits.length === 0) return;
+
+    const files = new Set<string>();
+    for (const hit of hits) {
+      const m = /^(?:sym|file|cluster):([^#]+?)(?:#.*)?$/.exec(hit.id);
+      if (m) files.add(m[1]!);
+    }
+    let rawTokens = 0;
+    for (const file of files) {
+      try {
+        rawTokens += estimateTokens(readFileSync(join(repoRoot, file), 'utf8'));
+      } catch {
+        // file moved/unreadable between index and read — skip it, don't fail the hero line
+      }
+    }
+    const defaultTokens = estimateTokens(JSON.stringify(result));
+    if (rawTokens === 0 || defaultTokens === 0) return;
+    const ratio = rawTokens / defaultTokens;
+    // On very small repos the fixed JSON envelope (hits/llmHits/truncated + per-hit keys) can cost
+    // more than the few raw bytes it replaces — only claim a win when there actually is one. This
+    // line is a "wow" moment, not a property that holds at every scale; never overclaim it.
+    if (ratio < 1.5) return;
+    process.stdout.write(
+      `≈${ratio.toFixed(1)}x fewer tokens per discovery query than reading files directly ` +
+        `(sample query "${term}": ${rawTokens} tokens raw → ${defaultTokens} tokens via crib query)\n`,
+    );
+  } catch {
+    // Best-effort instant-value hint; never let it mask a successful index.
+  }
+}
+
+/**
  * After a (re)index, surface how many LLM-graph targets are pending and point the user at the driver.
  * The deterministic index is LLM-free, so "auto" here is a nudge: print the count + the follow-up command.
  * The actual generation is driven by the `/crib-enrich` skill (the host IDE LLM) or `crib enrich --next`.
@@ -204,28 +397,36 @@ function printLlmPending(soul: SoulStore, repoRoot: string): void {
 
 async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   // index targets the exact given dir (no upward walk) — you index THIS, not a parent.
-  const repoRoot = resolve(ctx?.cwdOverride ?? pathArg(args) ?? '.');
+  const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
   const semantic = args.includes('--semantic');
   const ignores = parseExcludes(args);
+  const scope = resolvePackageScope(repoRoot, args);
+  if (scope.status !== EXIT.OK) return scope.status;
   const cribDir = join(repoRoot, '.crib');
   // Full rebuild: fresh manifest stamped with the current SCHEMA_VERSION (never inherit a stale
   // one), repo.id preserved across rebuilds (stable committed soul + ~/.crib/registry mapping),
   // resetForRebuild() so every on-disk shard is pruned-on-commit instead of layering new nodes over
   // a stale older-schema soul. Do NOT load() — that hydrates stale nodes and overwrites the manifest.
   const soul = freshSoulForRebuild(cribDir);
+  stampPackageMeta(soul, scope);
   const started = Date.now();
   const report = await indexRepo(soul, repoRoot, {
     semantic,
     ignores,
+    packageRoots: scope.packageRoots,
   });
   const index = buildIndex({ repoRoot, cribDir, soul });
-  index.close();
   registerIndexed(repoRoot, cribDir, soul);
   const stats = soul.getManifest().stats;
+  const scopeSuffix = scope.packageRoots
+    ? ` [scoped: ${scope.indexedPackages.join(', ')}]`
+    : '';
   process.stdout.write(
     `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
-      `(${report.link.describes} describes, ${report.link.references} references) in ${Date.now() - started}ms\n`,
+      `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
   );
+  printTokenSavingsHero(new Verbs({ soul, index, repoRoot }), soul, repoRoot);
+  index.close();
   printLlmPending(soul, repoRoot);
   return EXIT.OK;
 }
@@ -277,11 +478,11 @@ async function cmdStatus(args: string[], ctx?: CmdCtx): Promise<number> {
 
 async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
   // query positionals are the search text, NOT a root — root comes from --cwd / env / cwd walk only.
-  const positional = args.filter((a) => !a.startsWith('-'));
-  const q = positional.join(' ');
+  // Use positionalsOf so `--limit 5` does not leak `5` into the query string.
+  const q = positionalsOf(args).join(' ');
   if (!q) {
     process.stderr.write(
-      'usage: crib query <text> [--with-source] [--with-rules] [--with-framework] [--extracted-only] [--limit N]\n',
+      'usage: crib query <text> [--with-source] [--with-rules] [--with-framework] [--extracted-only] [--with-llm] [--limit N]\n',
     );
     return EXIT.BAD_ARGS;
   }
@@ -291,6 +492,10 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
   const withRules = args.includes('--with-rules');
   const withFramework = args.includes('--with-framework');
   const extractedOnly = args.includes('--extracted-only');
+  // --with-llm opts INTO the full LLM analysis+graph+evidence blob on each hit. Default (off) keeps
+  // the discovery view lightweight: a one-line snippet + a 5-field LLM pointer (provenance/confidence/
+  // purpose) — the token-cost discipline. Set this only when you want the full LLM brief per hit.
+  const withLlm = args.includes('--with-llm');
   const limitIdx = args.indexOf('--limit');
   const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;
   const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
@@ -310,6 +515,7 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
         ...(withRules ? { withRules: true } : {}),
         ...(withFramework ? { withFramework: true } : {}),
         ...(extractedOnly ? { extractedOnly: true } : {}),
+        ...(withLlm ? { withLlm: true } : {}),
         ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
       }),
       null,
@@ -441,8 +647,8 @@ async function cmdContext(args: string[], ctx?: CmdCtx): Promise<number> {
 
 /** `crib ask "<question>"` — natural-language question answered deterministically from the crib. */
 async function cmdAsk(args: string[], ctx?: CmdCtx): Promise<number> {
-  const positional = args.filter((a) => !a.startsWith('-'));
-  const q = positional.join(' ').trim();
+  // positionalsOf drops `--format markdown` / `--limit N` values so they never pollute the question.
+  const q = positionalsOf(args).join(' ').trim();
   if (!q) {
     process.stderr.write(
       'usage: crib ask "<question>" [--format markdown] [--limit N] [--with-source] [--with-rules] [--with-framework] [--extracted-only]\n',
@@ -632,7 +838,7 @@ async function cmdImpact(args: string[], ctx?: CmdCtx): Promise<number> {
 
 /** `crib path <from> <to>` — shortest dependency path between two nodes. */
 async function cmdPath(args: string[], ctx?: CmdCtx): Promise<number> {
-  const positional = args.filter((a) => !a.startsWith('-'));
+  const positional = positionalsOf(args);
   const [from, to] = positional;
   if (!from || !to) {
     process.stderr.write('usage: crib path <from> <to> [--max-hops N]\n');
@@ -709,7 +915,10 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     vcs: new CliVcsAdapter(),
   });
   // stdout is the MCP transport; logs go to stderr only.
-  process.stderr.write('knowledge-crib MCP server on stdio\n');
+  const stats = rt.soul.getManifest().stats;
+  process.stderr.write(
+    `knowledge-crib MCP server on stdio — ${stats.nodes} nodes, ${stats.edges} edges ready (default responses are tiered lean; pass withLlm:true for the full analysis blob)\n`,
+  );
   await serveStdio(verbs);
   return EXIT.OK;
 }
@@ -723,11 +932,16 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
     process.stderr.write('not indexed — run `crib index` first\n');
     return EXIT.NOT_INDEXED;
   }
+  // Multi-package federation: --package restricts this incremental update to one package's slice
+  // of an already-indexed monorepo soul, leaving the rest untouched (see UpdateOpts.packageRoots).
+  const scope = resolvePackageScope(resolved.repoRoot, args);
+  if (scope.status !== EXIT.OK) return scope.status;
   const rt = openSoul(resolved);
   const started = Date.now();
   const updateOpts: Parameters<typeof updateRepo>[2] = {
     ...(since ? { since } : {}),
     ...(dirty ? { dirty: true } : {}),
+    ...(scope.packageRoots ? { packageRoots: scope.packageRoots } : {}),
   };
   const result = await updateRepo(rt.soul, resolved.repoRoot, updateOpts);
   if (result === null) {
@@ -735,9 +949,13 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
     process.stderr.write('no incremental anchor — falling back to full index\n');
     return cmdIndex(args, ctx);
   }
+  const excludedSuffix =
+    result.excludedPaths.length > 0
+      ? ` [${result.excludedPaths.length} file(s) outside scope left pending — anchor not advanced]`
+      : '';
   if ('noop' in result) {
     process.stdout.write(
-      `up to date (head ${result.head.slice(0, 12)}) in ${Date.now() - started}ms\n`,
+      `up to date (head ${result.head.slice(0, 12)}) in ${Date.now() - started}ms${excludedSuffix}\n`,
     );
     return EXIT.OK;
   }
@@ -755,7 +973,7 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
   const d = result.delta;
   process.stdout.write(
     `updated ${result.changedPaths.length} file(s) [scope ${result.scopeFiles.length}] → ` +
-      `+${d.nodes.length} nodes +${d.edges.length} edges −${d.removed.length} in ${Date.now() - started}ms\n` +
+      `+${d.nodes.length} nodes +${d.edges.length} edges −${d.removed.length} in ${Date.now() - started}ms${excludedSuffix}\n` +
       `changed: ${result.changedPaths.join(', ')}\n`,
   );
   return EXIT.OK;
@@ -763,23 +981,30 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
 
 async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
   // reindex targets the exact given dir (no upward walk), like index.
-  const repoRoot = resolve(ctx?.cwdOverride ?? pathArg(args) ?? '.');
+  const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
   const semantic = args.includes('--semantic');
   const ignores = parseExcludes(args);
+  const scope = resolvePackageScope(repoRoot, args);
+  if (scope.status !== EXIT.OK) return scope.status;
   const cribDir = join(repoRoot, '.crib');
   const soul = freshSoulForRebuild(cribDir);
+  stampPackageMeta(soul, scope);
   const started = Date.now();
   const report = await indexRepo(soul, repoRoot, {
     semantic,
     ignores,
+    packageRoots: scope.packageRoots,
   });
   const index = buildIndex({ repoRoot, cribDir, soul });
   index.close();
   registerIndexed(repoRoot, cribDir, soul);
   const stats = soul.getManifest().stats;
+  const scopeSuffix = scope.packageRoots
+    ? ` [scoped: ${scope.indexedPackages.join(', ')}]`
+    : '';
   process.stdout.write(
     `reindexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
-      `(${report.link.describes} describes, ${report.link.references} references) in ${Date.now() - started}ms\n`,
+      `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
   );
   printLlmPending(soul, repoRoot);
   return EXIT.OK;
@@ -1279,7 +1504,7 @@ function printHelp(): void {
       'crib — Knowledge-crib CLI',
       '',
       'Usage:',
-      '  crib index [path] [--semantic] [--exclude a,b,...]     full index → .crib soul + derived index (+ INFERRED TF-IDF semantic links)',
+      '  crib index [path] [--semantic] [--exclude a,b,...] [--package <name|all>...]     full index → .crib soul + derived index (+ INFERRED TF-IDF semantic links); --package scopes to one monorepo package (list detected with no --package)',
       '  crib status [path] [--dirty]             health + stats; --dirty previews files that would be re-indexed',
       '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',
       '  crib gaps [path] [--extracted-only] [--include-builtins]   analysis readiness + missing bodies + unresolved call sites',
@@ -1293,8 +1518,8 @@ function printHelp(): void {
       '  crib path <from> <to> [--max-hops N]     shortest dependency path between two nodes',
       '  crib neighbors <id> [--rel reads] [--dir in|out|both]   direct edges of one node',
       '  crib serve [path]                        run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd)',
-      '  crib update [path] [--since <sha>] [--dirty]  incremental re-extract since the VCS anchor; --dirty includes working-tree changes without advancing vcsHead',
-      '  crib reindex [path]                     full re-index (alias for `crib index`)',
+      '  crib update [path] [--since <sha>] [--dirty] [--package <name>]  incremental re-extract since the VCS anchor; --dirty includes working-tree changes without advancing vcsHead; --package scopes to one package of a monorepo without advancing the shared anchor if other packages changed too',
+      '  crib reindex [path] [--package <name|all>...]     full re-index (alias for `crib index`; --package scopes to one monorepo package)',
       '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',
       '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',
       '  crib export [--format F] [--procedure P] render soul: rules|mermaid|graph.json|report',

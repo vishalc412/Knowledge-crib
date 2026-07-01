@@ -162,16 +162,28 @@ Blast radius + the docs describing affected nodes. **The wedge verb.**
 ```
 
 ## `query(hybrid)`
-Hybrid BM25 + semantic search over code + docs, process-grouped.
+Hybrid BM25 search over code + docs (names/signatures/headings/files AND rehydrated source bodies +
+in-soul logic fragments — matches rule content like `DTI > 0.43`, not just signatures). LLM semantic
+discoveries that BM25 missed are surfaced separately in `llmHits`.
 ```jsonc
 // req: { "q":"where is the session token issued?", "kinds?":["symbol","doc-section"], "limit?":10,
-//        "extractedOnly?":false }
+//        "extractedOnly?":false, "withSource?":false, "withRules?":false,
+//        "withFramework?":false, "withLlm?":false }
 // res:
 { "hits":[ { "id":"sym:…#TokenService.issue@L88","kind":"symbol","score":0.81,
-             "snippet":"issue(userId):Session","clusterId":"c:auth" } ],
-  "groups":[ { "clusterId":"c:auth","label":"Authentication","hitIds":["…"] } ],
+             "snippet":"issue(userId):Session","clusterId":"c:auth",
+             "llm":{ "provenance":"LLM","model":"…","stale":false,"confidence":0.9,
+                     "purpose":"Issues a session token after auth." } } ],
+  "llmHits":[ { "id":"sym:…#SessionCache@L12","kind":"symbol","snippet":"…",
+                "llm":{ "provenance":"LLM","confidence":0.8,"purpose":"…" } } ],
   "truncated": false }
 ```
+By default each hit carries a **lightweight LLM pointer** (5 fields, no analysis blob) — the
+token-cost discipline. `withLlm:true` upgrades the pointer to the full `analysis`+`graph`+`evidence`
+blob; `withLlm:false` suppresses even the pointer. `withSource`/`withRules`/`withFramework` fold the
+rehydrated body / decision table+coverage / framework semantics per hit. `llmHits` are ranked by
+term-overlap and de-duplicated against `hits` so they never override BM25 ranking. `truncated:true`
+means more results existed beyond `limit`.
 
 ## `describes(symbol)`
 Thin verb: just the doc-sections linked to a symbol (cheap, high value).

@@ -551,9 +551,16 @@ export class EnrichmentStore {
       .map((t) => t.trim())
       .filter(Boolean);
     if (terms.length === 0) return [];
+    // Rank by term-overlap count (desc) so a query whose terms all land in one artifact's
+    // analysis/graph beats an artifact that mentions only one term. This also de-prioritizes
+    // single-term false positives (e.g. a test helper that happens to mention "sqlite" once)
+    // relative to artifacts whose core purpose/responsibilities match every query term.
     return this.allArtifacts()
-      .filter((a) => !this.isStale(a) && terms.some((term) => artifactText(a).includes(term)))
-      .slice(0, limit);
+      .map((a) => ({ a, hits: terms.filter((term) => artifactText(a).includes(term)).length }))
+      .filter((x) => x.hits > 0 && !this.isStale(x.a))
+      .sort((x, y) => y.hits - x.hits)
+      .slice(0, limit)
+      .map((x) => x.a);
   }
 
   hasAnyFresh(): boolean {
@@ -1028,6 +1035,25 @@ export function llmProjection(read: LlmRead): Record<string, unknown> | undefine
     analysis: read.artifact.analysis,
     graph: read.artifact.graph,
     evidence: read.artifact.evidence,
+  };
+}
+
+/**
+ * Lightweight LLM pointer — the DEFAULT projection folded onto a hit so a consumer can see "an LLM
+ * analysis exists for this target, here is its one-line purpose + confidence" without paying the
+ * multi-KB cost of the full analysis+graph+evidence blob. The full {@link llmProjection} is opt-in
+ * via `withLlm: true` on the read verbs; this pointer is what keeps `query`/`context`/`dossier`
+ * lightweight by default — the core token-cost promise of the crib.
+ */
+export function llmPointer(read: LlmRead): Record<string, unknown> | undefined {
+  if (!read.artifact) return undefined;
+  const a = read.artifact.analysis;
+  return {
+    provenance: 'LLM',
+    model: read.artifact.model,
+    stale: read.stale,
+    confidence: a.confidence,
+    purpose: a.purpose ?? '',
   };
 }
 

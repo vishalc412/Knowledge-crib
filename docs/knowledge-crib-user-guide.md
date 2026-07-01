@@ -96,12 +96,12 @@ crib status .                           # 2. health + stats
 
 | Command | Purpose |
 |---|---|
-| `crib index [path] [--semantic] [--exclude a,b,…]` | Full index → `.crib` soul + derived SQLite index (+ optional INFERRED TF-IDF semantic links) |
+| `crib index [path] [--semantic] [--exclude a,b,…] [--package <name\|all>]` | Full index → `.crib` soul + derived SQLite index (+ optional INFERRED TF-IDF semantic links); `--package` scopes a monorepo to one workspace package |
 | `crib status [path]` | Health + node/edge/cluster counts + VCS anchor |
-| `crib query <text>` | BM25 search over code + docs |
+| `crib query <text>` | BM25 search over code + docs → `{ hits, llmHits, truncated }`; `--with-source` / `--with-rules` / `--with-framework` fold deep context; `--with-llm` upgrades the lightweight LLM pointer to the full analysis+graph+evidence blob (default is lightweight to keep token cost low) |
 | `crib serve [path]` | Run the MCP server on stdio (what IDEs connect to) |
 | `crib update [path] [--since <sha>]` | Incremental re-extract since the VCS anchor |
-| `crib reindex [path]` | Full re-index (alias for `index`) |
+| `crib reindex [path] [--package <name\|all>]` | Full re-index (alias for `index`); `--package` scopes a monorepo |
 | `crib install-hooks [path]` | Wire post-commit hook + `.gitattributes` merge driver |
 | `crib merge-driver %O %A %B %P` | Git custom merge driver for `.crib` chunks |
 | `crib export [--format F] [--procedure P]` | Render: `rules` \| `mermaid` \| `graph.json` \| `report` |
@@ -136,6 +136,39 @@ Add your own with `--exclude` (comma-separated, repeatable):
 ```bash
 crib index . --exclude vendor,third_party,generated
 ```
+
+### Monorepos: scope indexing to one package (`--package`)
+
+If the target is a monorepo, `crib index` detects the workspace layout before walking — pnpm
+(`pnpm-workspace.yaml`), Lerna (`lerna.json`), Nx (`nx.json` + inherited package list), npm/Yarn
+workspaces (`package.json#workspaces`), or Cargo (`Cargo.toml` `[workspace].members`) — and
+enumerates the packages. With **no `--package`**, it lists the detected packages to stderr and
+indexes the full repo:
+
+```
+$ crib index .
+monorepo detected (pnpm): 2 package(s)               # stderr
+  - ftc-cloud  (packages/FTCCloud)
+  - ftc-local  (packages/FTCLocal)
+scope one with: crib index . --package <name>  |  all: --package all
+indexed 6 files → ...                                  # stdout (full walk)
+```
+
+Scope discovery to one package (sibling packages pruned at the dir branch; root-level files kept):
+
+```bash
+crib index . --package ftc-cloud        # by package name
+crib index . --package packages/FTCCloud   # by repo-relative path
+crib index . --package ftc-cloud,ftc-local # multiple (repeatable / comma-separated)
+crib index . --package all              # explicit full walk (no [scoped: …] suffix)
+crib index . --package ghost            # unknown → exit 2, lists valid names
+```
+
+**One soul per repo is preserved.** `--package` only narrows which package dirs discovery descends
+into — the soul stays unified, so cross-package impact / blast-radius queries still resolve. Splitting
+into one soul per package would lose cross-package reach, so we scope extraction, not storage. The
+detected layout + indexed package roots are stamped onto the soul manifest's `meta.workspace` and
+`meta.indexedPackages`.
 
 ### Commit the soul
 
@@ -174,8 +207,22 @@ Health + whether indexed. `→ { indexed, schemaVersion, stats{nodes,edges,clust
 ```jsonc
 { "q": "where is the session token issued?", "limit": 10 }
 → { "hits": [ { "id": "sym:…#TokenService.issue@L88", "kind": "symbol", "score": 0.81,
-                "snippet": "issue(userId):Session", "clusterId": "c:auth" } ], "truncated": false }
+                "snippet": "issue(userId):Session", "clusterId": "c:auth",
+                "llm": { "provenance": "LLM", "model": "…", "stale": false,
+                         "confidence": 0.9, "purpose": "Issues a session token after auth." } } ],
+    "llmHits": [ { "id": "sym:…#SessionCache@L12", "kind": "symbol", "snippet": "…",
+                  "llm": { "provenance": "LLM", "confidence": 0.8, "purpose": "…" } } ],
+    "truncated": false }
 ```
+BM25-ranked `hits` (names/signatures/headings/files AND rehydrated source bodies — it matches rule
+content like `DTI > 0.43`, not just signatures). By default each hit carries a **lightweight LLM
+pointer** (`provenance`/`model`/`stale`/`confidence`/`purpose`) — ~5 fields, no analysis blob — so the
+default call stays tiny (the token-cost promise). `llmHits` are semantic discoveries from the LLM
+graph layer that BM25 missed, ranked by term-overlap and de-duplicated against `hits`; they live in
+their own field so they never override BM25 ranking. Opt into the full analysis+graph+evidence blob
+per hit with `withLlm: true`; fold the body / decision table / framework semantics with
+`withSource` / `withRules` / `withFramework`. `truncated: true` means more results existed beyond the
+limit — widen `limit` to page.
 
 ### `context` — 360° for one symbol
 ```jsonc
@@ -581,12 +628,22 @@ per turn.
 | `overview` | The rendered bible (system-level synthesis); empty until the system layer lands |
 | `llm_neighbors` | `{ id }` → walk the LLM semantic graph around a soul id (rules / features / flows / concepts / capabilities) |
 
-### Query-time merge — `withLlm`
+### Query-time merge — lightweight by default, full on `withLlm`
 
-The semantic graph is **off the query hot path by default.** The 12 deterministic verbs are
-unchanged. Add `withLlm: true` (alongside `withRules` / `withFramework`) and the server folds the
-saved LLM analysis + semantic edges into the response — `query` returns the business rules a hit
-`realizes`; `context` returns the symbol's authored `purpose` + `invariants` + `whatToDistrust`.
+The semantic graph is **off the query hot path by default**, but its existence is still surfaced
+cheaply. By default `query` / `context` / `dossier` fold a **lightweight LLM pointer** onto each hit —
+`{ provenance, model, stale, confidence, purpose }`, ~5 fields, no analysis blob — so a consumer can
+see "an LLM analysis exists for this target, here is its one-line purpose" without paying the
+multi-KB cost of the full analysis+graph+evidence. On the self-index, a `query` hit with an LLM
+artifact is ~1.3 KB default vs ~10.3 KB with the full blob — roughly **7.7× smaller per hit**, which
+is the token-cost benefit the crib is built for.
+
+Add `withLlm: true` (alongside `withRules` / `withFramework`) and the pointer upgrades to the full
+saved analysis + semantic graph + evidence — `query` returns the business rules a hit `realizes`;
+`context` returns the symbol's authored `purpose` + `invariants` + `whatToDistrust`. Pass
+`withLlm: false` to suppress even the pointer (pure deterministic hit). `query` also exposes
+LLM-only discoveries that BM25 missed in a separate `llmHits` field (ranked by term-overlap,
+de-duplicated against `hits`) — they never override BM25 ranking.
 
 ### The `llmGraph` capability flag
 

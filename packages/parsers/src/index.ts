@@ -1,11 +1,14 @@
 /**
- * @knowledge-crib/parsers — extractor plugins + registry. All extractors are pure-JS, offline, and
- * deterministic: TypeScript (compiler API); PL/SQL, Python, Java, C#, Go, Rust (all hand-rolled,
- * M8/M14); and the Markdown format extractor (M4) register through the same contract. No tree-sitter
- * / ANTLR runtime.
+ * @knowledge-crib/parsers — extractor plugins + registry. Extractors are deterministic and never
+ * call an LLM. Most are pure-JS, offline, hand-rolled parsers: TypeScript (compiler API); PL/SQL,
+ * Python, Java, C#, Go, Rust (M8/M14); and the Markdown format extractor (M4). PHP is the first
+ * tree-sitter-backed extractor (vendored `grammars/tree-sitter-php.wasm` via `web-tree-sitter`),
+ * proving the pattern the other extractors could migrate to over time.
  */
 export * from './types.js';
 export * from './registry.js';
+export { PhpExtractor } from './php/PhpExtractor.js';
+export { grammarsNeededFor, preloadGrammars, createParserHandle } from './tree-sitter-pool.js';
 export { TypeScriptExtractor } from './ts/TypeScriptExtractor.js';
 export { PythonExtractor } from './python/PythonExtractor.js';
 export { tokenize as tokenizePython } from './python/lexer.js';

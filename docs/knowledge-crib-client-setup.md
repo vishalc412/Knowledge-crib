@@ -105,6 +105,26 @@ Discovery ignores the usual dirs by default (`.git`, `node_modules`, `build`, `d
 crib index . --exclude vendor,third_party,generated
 ```
 
+### Monorepos: index one package at a time (`--package`)
+
+If the project is a monorepo, `crib index` detects the workspace layout (pnpm / Lerna / Nx /
+npm-Yarn workspaces / Cargo) and enumerates its packages before walking. With **no `--package`** it
+lists the detected packages to stderr and indexes the full repo. Scope discovery to one package so
+sibling packages are pruned (root-level files are always kept):
+
+```bash
+crib index . --package FTCCloud          # by name (sibling packages pruned)
+crib index . --package packages/FTCCloud # by repo-relative path
+crib index . --package all               # explicit full walk
+crib index . --package ghost             # unknown → exit 2, lists valid names
+```
+
+The detected layout + the package roots actually indexed are stamped onto the soul manifest's
+`meta.workspace` and `meta.indexedPackages`. **One soul per repo is preserved** — `--package` only
+narrows discovery, so cross-package impact queries still resolve across the unified soul. See the
+[CLI spec](knowledge-crib-cli.md#monorepo--workspace-detection---package) for the full detection
+matrix.
+
 ---
 
 ## 3. The MCP server the clients connect to
@@ -122,7 +142,7 @@ structural tools:
 | Tool | What it returns |
 |---|---|
 | `status` | Health + node/edge/cluster counts + VCS anchor + capability flags |
-| `query` | Hybrid BM25 search over code + docs |
+| `query` | Hybrid BM25 search over code + docs → `{ hits, llmHits, truncated }`. `hits` are BM25-ranked with a lightweight LLM pointer by default; `llmHits` are semantic discoveries BM25 missed (separate, de-duped); `withLlm: true` upgrades the pointer to the full analysis+graph+evidence blob |
 | `context` | 360° for one symbol: signature, callers, callees, linked docs |
 | `source` | Paged source body for a symbol (span rehydration) |
 | `dossier` | One-call deep context for a symbol: decision table, raises, handlers, cursors, declares, docs (persisted under `.crib/dossiers/`) |

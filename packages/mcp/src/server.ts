@@ -133,7 +133,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'query',
     {
       description:
-        'Hybrid BM25 search over code + docs, including rehydrated source bodies (WS-1: matches rule content, not just signatures). By default returns one-line snippets; set withSource to fold the full source body into each hit, withRules to fold a callable decision table + coverage readiness, withFramework to fold routes/beans/DI/relations. One query --with-source --with-rules returns what a full file read surfaces.',
+        'Hybrid BM25 search over code + docs, including rehydrated source bodies (WS-1: matches rule content, not just signatures). Returns { hits, llmHits, truncated }. `hits` are BM25-ranked symbols/docs each carrying a one-line snippet + a LIGHTWEIGHT LLM pointer (provenance/confidence/purpose) when an LLM analysis exists — this is the cheap default that keeps token cost low. `llmHits` are semantic discoveries from the LLM graph layer that BM25 missed, ranked by term-overlap, de-duplicated against `hits` (they never override BM25 ranking). Set withSource to fold the rehydrated source body into each hit, withRules to fold a callable decision table + coverage readiness, withFramework to fold routes/beans/DI/relations, and withLlm to upgrade the LLM pointer to the FULL analysis+graph+evidence blob. One query --with-source --with-rules --with-llm returns what a full file read + an LLM brief surfaces, but the default call stays tiny.',
       inputSchema: {
         q: z.string(),
         kinds: z.array(z.string()).optional(),

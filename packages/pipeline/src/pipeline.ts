@@ -11,6 +11,7 @@ import {
   GoExtractor,
   JavaExtractor,
   MarkdownExtractor,
+  PhpExtractor,
   PlSqlExtractor,
   PythonExtractor,
   RustExtractor,
@@ -53,6 +54,10 @@ export interface IndexOpts {
   /** dirs to skip during discovery; REPLACES the default ignore set (merge with DEFAULT_IGNORES at
    *  the caller if you want to extend rather than narrow). */
   ignores?: Set<string>;
+  /** Repo-relative POSIX package dirs to scope discovery to (monorepo `--package`). When non-empty,
+   *  discovery only descends into these roots (+ root-level files); sibling packages are pruned.
+   *  Absent/empty → full-repo walk. One soul stays unified so cross-package impact still resolves. */
+  packageRoots?: string[];
   /** run structural clustering (Louvain) after the link phase; default true (M7). */
   cluster?: boolean;
   /** run the INFERRED TF-IDF semantic linker pass after the deterministic linker; default false (M7).
@@ -83,10 +88,12 @@ export interface IndexReport {
 
 /** The default extractor fleet shipped with a fresh index — Markdown first so doc files never fall
  *  through to a code extractor, then every language extractor (TypeScript + PL/SQL + Python + Java +
- *  C# + Go + Rust). The SINGLE source of truth shared by `indexRepo` (full) and `updateRepo`
- *  (incremental): a `crib update` on an edited `.java`/`.cs`/`.go`/`.rs`/`.py`/`.sql` file re-extracts
- *  that language's symbols + framework semantics (routes/DI/JPA) instead of silently dropping them.
- *  `Supports()` are disjoint by extension, so the order is only load-bearing for `.md`. */
+ *  C# + Go + Rust + PHP). The SINGLE source of truth shared by `indexRepo` (full) and `updateRepo`
+ *  (incremental): a `crib update` on an edited `.java`/`.cs`/`.go`/`.rs`/`.py`/`.sql`/`.php` file
+ *  re-extracts that language's symbols + framework semantics (routes/DI/JPA) instead of silently
+ *  dropping them. `Supports()` are disjoint by extension, so the order is only load-bearing for
+ *  `.md`. PHP (`.php`) is the only tree-sitter-backed extractor; `runParse` preloads its grammar
+ *  lazily — see `grammarsNeededFor` — so repos with no `.php` files never pay the WASM boot cost. */
 export function defaultExtractors(): Extractor[] {
   return [
     new MarkdownExtractor(),
@@ -97,6 +104,7 @@ export function defaultExtractors(): Extractor[] {
     new CsharpExtractor(),
     new GoExtractor(),
     new RustExtractor(),
+    new PhpExtractor(),
   ];
 }
 
@@ -111,7 +119,10 @@ export async function indexRepo(
     registry.register(e);
   }
 
-  const files = discoverFiles(root, opts.ignores ? { ignores: opts.ignores } : {});
+  const discoverOpts: { ignores?: Set<string>; packageRoots?: string[] } = {};
+  if (opts.ignores) discoverOpts.ignores = opts.ignores;
+  if (opts.packageRoots && opts.packageRoots.length > 0) discoverOpts.packageRoots = opts.packageRoots;
+  const files = discoverFiles(root, discoverOpts);
   runStructure(soul, root, files); // Phase 1
   const parse = await runParse(soul, registry, root, files); // Phase 2 + 3b (Markdown extractor)
   const resolve = runResolve(soul, root, files, opts.resolvers); // Phase 3 (TS + PL/SQL + Python)

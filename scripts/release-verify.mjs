@@ -13,6 +13,7 @@ pnpm(['verify']);
 pnpm(['test:python']);
 pnpm(['release:metadata']);
 pnpm(['pack:check']);
+pnpm(['budget:check']);
 pnpm(['publish:dry-run']);
 pnpm(['installer:test']);
 pnpm(['installer:build']);

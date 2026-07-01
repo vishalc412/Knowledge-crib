@@ -338,3 +338,68 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     expect(manifest.stats.incrementalSince).toBe(h1);
   });
 });
+
+describe('updateRepo — packageRoots (P4 multi-package federation)', () => {
+  it('a package-scoped update re-syncs only that package, leaves the other package pending, and does NOT advance the shared anchor', async () => {
+    await indexAndCommit();
+    const h1 = git(repo, ['rev-parse', 'HEAD']);
+
+    // Change files in TWO different packages in the same commit.
+    writeFileSync(join(repo, 'src', 'a.ts'), "export function greet(): string { return 'yo'; }\n");
+    writeFileSync(
+      join(repo, 'src', 'b.ts'),
+      "import { greet } from './a.js';\nexport function main(): string { return greet() + '!'; }\n",
+    );
+    git(repo, ['add', 'src/a.ts', 'src/b.ts']);
+    git(repo, ['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'edit both']);
+
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, {
+      packageRoots: ['src/a.ts'], // a single-file "package" for this fixture's flat layout
+      now: '2026-01-02T00:00:00.000Z',
+    });
+    expect(result).not.toBeNull();
+    expect(result && 'noop' in result).toBe(false);
+    const report = result as UpdateReport;
+
+    expect(report.changedPaths).toEqual(['src/a.ts']);
+    expect(report.excludedPaths).toEqual(['src/b.ts']);
+
+    // The anchor must NOT advance — src/b.ts's change was intentionally left unprocessed.
+    const manifest = soulFor().getManifest();
+    expect(manifest.repo.vcsHead).toBe(h1);
+    expect(manifest.stats.incrementalSince).toBe(h1);
+
+    // A later unscoped update re-diffs from the SAME un-advanced anchor, so it naturally sees both
+    // files again (src/a.ts redundantly, but idempotently — same content, no spurious soul diff) —
+    // that redundant re-touch is the honest cost of never advancing the anchor early: nothing the
+    // scoped run skipped (src/b.ts) is ever silently lost. NOW everything is covered, so the anchor
+    // finally advances.
+    const finalSoul = soulFor();
+    const finalResult = await updateRepo(finalSoul, repo, { now: '2026-01-03T00:00:00.000Z' });
+    expect(finalResult && 'noop' in finalResult).toBe(false);
+    const finalReport = finalResult as UpdateReport;
+    expect(finalReport.changedPaths).toEqual(['src/a.ts', 'src/b.ts']);
+    expect(finalReport.excludedPaths).toEqual([]);
+    const h2 = git(repo, ['rev-parse', 'HEAD']);
+    expect(soulFor().getManifest().repo.vcsHead).toBe(h2);
+  });
+
+  it('advances the anchor when the scoped update happens to cover every changed file (nothing excluded)', async () => {
+    await indexAndCommit();
+
+    writeFileSync(join(repo, 'src', 'a.ts'), "export function greet(): string { return 'yo'; }\n");
+    git(repo, ['add', 'src/a.ts']);
+    git(repo, ['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'edit a only']);
+    const h2 = git(repo, ['rev-parse', 'HEAD']);
+
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, {
+      packageRoots: ['src/a.ts'],
+      now: '2026-01-02T00:00:00.000Z',
+    });
+    const report = result as UpdateReport;
+    expect(report.excludedPaths).toEqual([]);
+    expect(soulFor().getManifest().repo.vcsHead).toBe(h2);
+  });
+});

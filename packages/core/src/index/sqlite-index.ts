@@ -40,6 +40,7 @@ import type {
   PathResult,
 } from '../index-store.js';
 import type { SoulStore } from '../soul-store.js';
+import { expandToken } from './synonyms.js';
 
 /** Columns we feed into FTS5 for free-text search over symbols + doc sections + bodies. */
 const FTS_COLUMNS = 'name, qualifiedName, signature, heading, file, body';
@@ -329,15 +330,18 @@ export class SqliteIndexStore implements IndexStore {
 }
 
 /**
- * Turn a user query into a safe FTS5 MATCH expression: each alphanumeric token becomes a prefix
- * match, OR-joined. Returns undefined if the query has no usable tokens.
+ * Turn a user query into a safe FTS5 MATCH expression: each alphanumeric token (plus its synonym
+ * group, when one exists — the lightweight hybrid layer, see synonyms.ts) becomes a prefix match,
+ * OR-joined. Returns undefined if the query has no usable tokens.
  */
 function toFtsMatch(text: string): string | undefined {
-  const tokens = text
-    .split(/[^A-Za-z0-9_]+/)
-    .filter((t) => t.length > 0)
-    .map((t) => `"${t}"*`);
-  return tokens.length > 0 ? tokens.join(' OR ') : undefined;
+  const rawTokens = text.split(/[^A-Za-z0-9_]+/).filter((t) => t.length > 0);
+  if (rawTokens.length === 0) return undefined;
+  const expanded = new Set<string>();
+  for (const t of rawTokens) {
+    for (const e of expandToken(t)) expanded.add(e);
+  }
+  return [...expanded].map((t) => `"${t}"*`).join(' OR ');
 }
 
 /**

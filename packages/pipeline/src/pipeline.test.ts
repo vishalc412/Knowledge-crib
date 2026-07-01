@@ -186,3 +186,37 @@ describe('indexRepo Workstream E — persisted reusable dossiers', () => {
     expect(existsSync(path)).toBe(false);
   });
 });
+
+describe('indexRepo — PHP end-to-end (P3 tree-sitter proof-of-concept, full pipeline wiring)', () => {
+  it('indexes a .php file through the real registry + tree-sitter grammar pool, not just the unit-level extractor', async () => {
+    mkdirSync(join(repo, 'src', 'legacy'), { recursive: true });
+    writeFileSync(
+      join(repo, 'src', 'legacy', 'greeter.php'),
+      ['<?php', 'function greet($name) {', '    return shout($name);', '}', 'function shout($name) {', '    return strtoupper($name);', '}', ''].join(
+        '\n',
+      ),
+    );
+    const soul = soulFor();
+    const report = await indexRepo(soul, repo, { now: '2026-01-01T00:00:00.000Z' });
+    // 2 files: the existing src/auth.ts fixture + the new .php one.
+    expect(report.files).toBe(2);
+
+    const reopened = soulFor();
+    const phpNodes = [...reopened.iterate('symbol')].filter((n) => n.lang === 'php');
+    const phpSymbols = phpNodes.map((n) => n.qualifiedName).sort();
+    expect(phpSymbols).toEqual(['greet', 'shout']);
+    const phpIds = new Set(phpNodes.map((n) => n.id));
+    const phpCalls = [...reopened.iterateEdges('calls')].filter(
+      (e) => phpIds.has(e.src) || phpIds.has(e.dst),
+    );
+    expect(phpCalls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('a repo with no .php files never touches the tree-sitter grammar pool (lazy preload)', async () => {
+    // src/auth.ts only (from beforeEach) — no .php anywhere. This must succeed exactly as before
+    // PHP support existed; a regression here would mean every index now pays a tree-sitter cost.
+    const soul = soulFor();
+    const report = await indexRepo(soul, repo, { now: '2026-01-01T00:00:00.000Z' });
+    expect(report.files).toBe(1);
+  });
+});

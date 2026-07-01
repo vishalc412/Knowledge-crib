@@ -26,6 +26,7 @@ import {
   type EnrichNextArgs,
   type EnrichStatusArgs,
   EnrichmentStore,
+  llmPointer,
   llmProjection,
 } from './enrichment.js';
 import {
@@ -583,11 +584,16 @@ export class Verbs {
     withLlm?: boolean;
   }): Record<string, unknown> {
     const soul = this.deps.soul;
-    const hits = this.deps.index.query({
+    const limit = args.limit ?? DEFAULT_LIMIT;
+    // Over-fetch by one to detect whether the BM25 result set was capped (honest `truncated` flag)
+    // without an extra count query; we slice back to `limit` after the overflow check.
+    const rawHits = this.deps.index.query({
       text: args.q,
       ...(args.kinds ? { kinds: args.kinds } : {}),
-      limit: args.limit ?? DEFAULT_LIMIT,
+      limit: limit + 1,
     });
+    const bm25Truncated = rawHits.length > limit;
+    const hits0 = bm25Truncated ? rawHits.slice(0, limit) : rawHits;
 
     // Build outgoing + incoming adjacency ONCE when rules/framework are requested, so per-hit
     // decisionTable / computeCoverage / frameworkSemantics reuse it instead of re-scanning edges.
@@ -608,7 +614,8 @@ export class Verbs {
     }
     const keep = (e: Edge) => !args.extractedOnly || e.provenance === 'EXTRACTED';
 
-    const enriched = hits.map((h) => {
+    const bm25Ids = new Set(hits0.map((h) => h.id));
+    const hits = hits0.map((h) => {
       const node = soul.getNode(h.id);
       const hit: Record<string, unknown> = {
         id: h.id,
@@ -632,27 +639,36 @@ export class Verbs {
         const fw = frameworkSemantics(soul, h.id, { keep, outgoing, incoming });
         if (fw) hit.framework = fw;
       }
+      // Lightweight LLM pointer by default; full analysis/graph/evidence only when withLlm===true;
+      // never attach when withLlm===false. This keeps the default discovery view cheap.
       this.attachLlm(hit, h.id, args.withLlm);
       return hit;
     });
-    if (args.withLlm !== false) {
-      const existing = new Set(enriched.map((h) => String(h.id)));
-      const llmHits: Array<Record<string, unknown>> = [];
-      for (const artifact of this.llm.matchText(args.q, args.limit ?? DEFAULT_LIMIT)) {
-        if (existing.has(artifact.targetId)) continue;
-        const node = soul.getNode(artifact.targetId);
-        llmHits.push({
-          id: artifact.targetId,
-          kind: node?.kind ?? 'symbol',
-          score: 0,
-          snippet: node ? rehydrate(this.deps.repoRoot, node) : '',
-          llm: llmProjection({ artifact, missing: false, stale: false }),
-        });
-        existing.add(artifact.targetId);
-      }
-      enriched.unshift(...llmHits);
+
+    // Semantic discoveries from the LLM graph layer that BM25 did NOT surface — ranked by term-overlap
+    // (see EnrichmentStore.matchText) and de-duplicated against the BM25 hit set. These live in their
+    // own `llmHits` field so they never drown out BM25 ranking (the old `unshift`-at-score-0 path put
+    // a test helper that merely mentioned a query term above the real `sqlite-index.ts` for "sqlite").
+    const seen = new Set(bm25Ids);
+    const llmArtifacts = args.withLlm === false ? [] : this.llm.matchText(args.q, limit + 1);
+    const llmTruncated = llmArtifacts.length > limit;
+    const llmHits: Array<Record<string, unknown>> = [];
+    for (const artifact of llmArtifacts.slice(0, limit)) {
+      if (seen.has(artifact.targetId)) continue;
+      seen.add(artifact.targetId);
+      const node = soul.getNode(artifact.targetId);
+      const read = { artifact, missing: false, stale: false };
+      const proj = args.withLlm === true ? llmProjection(read) : llmPointer(read);
+      if (!proj) continue;
+      llmHits.push({
+        id: artifact.targetId,
+        kind: node?.kind ?? 'symbol',
+        snippet: node ? rehydrate(this.deps.repoRoot, node) : '',
+        llm: proj,
+      });
     }
-    return { hits: enriched.slice(0, args.limit ?? DEFAULT_LIMIT), truncated: false };
+
+    return { hits, llmHits, truncated: bm25Truncated || llmTruncated };
   }
 
   /**
@@ -758,18 +774,23 @@ export class Verbs {
       return hit;
     });
 
-    // Also surface saved LLM analyses whose text matches the question.
+    // Also surface saved LLM analyses whose text matches the question. Lightweight pointers only —
+    // `ask` is the deterministic discovery path and never folds the full analysis/graph blob.
     const existing = new Set(enriched.map((h) => String(h.id)));
+    const limit = args.limit ?? DEFAULT_LIMIT;
+    const llmArtifacts = this.llm.matchText(q, limit + 1);
+    const llmTruncated = llmArtifacts.length > limit;
     const llmHits: Array<Record<string, unknown>> = [];
-    for (const artifact of this.llm.matchText(q, args.limit ?? DEFAULT_LIMIT)) {
+    for (const artifact of llmArtifacts.slice(0, limit)) {
       if (existing.has(artifact.targetId)) continue;
       const node = this.deps.soul.getNode(artifact.targetId);
+      const proj = llmPointer({ artifact, missing: false, stale: false });
+      if (!proj) continue;
       llmHits.push({
         id: artifact.targetId,
         kind: node?.kind ?? 'symbol',
-        score: 0,
         snippet: node ? rehydrate(this.deps.repoRoot, node) : '',
-        llm: llmProjection({ artifact, missing: false, stale: false }),
+        llm: proj,
       });
       existing.add(artifact.targetId);
     }
@@ -779,7 +800,7 @@ export class Verbs {
       interpretation: 'discovery',
       hits: enriched,
       llmHits,
-      truncated: false,
+      truncated: llmTruncated,
     };
     if (args.format === 'markdown') {
       return { ...result, markdown: askToMarkdown(result) };
@@ -1278,7 +1299,12 @@ export class Verbs {
 
   private attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void {
     if (withLlm === false) return;
-    const projection = llmProjection(this.llm.readForTarget(targetId));
+    // Default (withLlm undefined): fold the LIGHTWEIGHT pointer only — provenance + confidence +
+    // one-line purpose — so a hit signals "LLM insight exists" without paying the multi-KB
+    // analysis+graph+evidence blob. Full projection is opt-in via withLlm: true; this is the
+    // token-cost discipline that keeps query/context/dossier lightweight by default.
+    const read = this.llm.readForTarget(targetId);
+    const projection = withLlm === true ? llmProjection(read) : llmPointer(read);
     if (projection) result.llm = projection;
   }
 

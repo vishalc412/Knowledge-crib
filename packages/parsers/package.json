@@ -1,7 +1,7 @@
 {
   "name": "@knowledge-crib/parsers",
   "version": "0.1.0",
-  "description": "Offline deterministic extractors for TypeScript, PL/SQL, Python, Java, C#, Go, Rust, and Markdown.",
+  "description": "Offline deterministic extractors for TypeScript, PL/SQL, Python, Java, C#, Go, Rust, PHP, and Markdown.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,6 +15,7 @@
   "files": [
     "dist",
     "src",
+    "grammars",
     "LICENSE",
     "NOTICE",
     "!dist/**/*.test.*",
@@ -29,7 +30,8 @@
   },
   "dependencies": {
     "@knowledge-crib/soul-schema": "workspace:*",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "web-tree-sitter": "^0.20.8"
   },
   "devDependencies": {
     "@knowledge-crib/core": "workspace:*",

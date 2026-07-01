@@ -62,6 +62,8 @@ interface QueryResult {
     rules?: { rules: Array<{ action: { kind: string } }> };
     coverage?: { readiness: string };
   }>;
+  llmHits: Array<{ id: string; snippet: string }>;
+  truncated: boolean;
 }
 interface NeighborsResult {
   edges: Array<{ src: string; dst: string }>;
@@ -379,6 +381,42 @@ describe('verbs', () => {
     expect(hit!.coverage!.readiness).toBe('unimplemented');
   });
 
+  it('query keeps BM25 hits ranked and LLM discoveries in a separate llmHits field', () => {
+    // A symbol-only BM25 query for "login" must surface the login symbol at the top of `hits`.
+    // The old code unshifted LLM matches at score 0 above BM25, so a loosely-matching LLM artifact
+    // could push the real symbol out of position. The new shape keeps BM25 ranking honest and
+    // moves LLM-only discoveries to `llmHits` (de-duped against `hits`).
+    const res = verbs.query({ q: 'login', kinds: ['symbol'], limit: 5 }) as unknown as QueryResult;
+    expect(res.hits.length).toBeGreaterThan(0);
+    expect(res.hits[0]!.id).toBe(login.id);
+    // llmHits never share an id with a BM25 hit (de-duped).
+    const bm25Ids = new Set(res.hits.map((h) => h.id));
+    expect(res.llmHits.every((h) => !bm25Ids.has(h.id))).toBe(true);
+  });
+
+  it('query reports truncated=true honestly when the BM25 result set exceeds the limit', () => {
+    // Over-fetch by one to detect overflow. "login" matches the login symbol AND the auth.md doc
+    // section (whose body mentions "AuthService.login"), so a limit of 1 must report truncated,
+    // not the old hardcoded `truncated: false`.
+    const res = verbs.query({ q: 'login', limit: 1 }) as unknown as QueryResult;
+    expect(res.truncated).toBe(true);
+    expect(res.hits.length).toBe(1);
+  });
+
+  it('query withLlm:false attaches NO llm pointer to hits and emits no llmHits', () => {
+    const res = verbs.query({
+      q: 'login',
+      kinds: ['symbol'],
+      withLlm: false,
+    }) as unknown as {
+      hits: Array<{ id: string; llm?: unknown }>;
+      llmHits: unknown[];
+      truncated: boolean;
+    };
+    expect(res.hits.every((h) => h.llm === undefined)).toBe(true);
+    expect(res.llmHits).toHaveLength(0);
+  });
+
   it('ask explains a resolved node id/name directly', () => {
     const res = verbs.ask({ q: 'AuthService.login' }) as unknown as {
       question: string;
@@ -640,22 +678,55 @@ describe('verbs', () => {
       ],
     });
 
+    // Default projection is LIGHTWEIGHT: provenance + confidence + purpose only, no full
+    // analysis/graph/evidence blob (the token-cost promise). The pointer still signals LLM insight.
     const ctx = verbs.context({ id: target.targetId }) as unknown as {
-      llm?: { analysis: { purpose: string } };
+      llm?: { provenance: string; purpose: string; analysis?: unknown; graph?: unknown };
     };
-    expect(ctx.llm?.analysis.purpose).toContain('login credentials');
+    expect(ctx.llm?.provenance).toBe('LLM');
+    expect(ctx.llm?.purpose).toContain('login credentials');
+    expect(ctx.llm?.analysis).toBeUndefined();
+    expect(ctx.llm?.graph).toBeUndefined();
 
-    const doss = verbs.dossier({ id: target.targetId }) as unknown as {
+    // Opt-in full projection via withLlm: true folds the analysis + graph.
+    const ctxFull = verbs.context({
+      id: target.targetId,
+      withLlm: true,
+    }) as unknown as { llm?: { analysis: { purpose: string }; graph: { nodes: unknown[] } } };
+    expect(ctxFull.llm?.analysis.purpose).toContain('login credentials');
+    expect(ctxFull.llm?.graph.nodes).toHaveLength(1);
+
+    const doss = verbs.dossier({ id: target.targetId, withLlm: true }) as unknown as {
       llm?: { graph: { nodes: unknown[] } };
     };
     expect(doss.llm?.graph.nodes).toHaveLength(1);
 
-    const query = verbs.query({ q: 'authenticated sessions', limit: 1 }) as unknown as {
-      hits: Array<{ id: string; llm?: { provenance: string } }>;
+    // query: BM25 `hits` stay lightweight by default; LLM-only discoveries land in `llmHits` (ranked,
+    // de-duped), never overriding BM25 ranking. The target's analysis mentions "authenticated" +
+    // "session" so it surfaces as a semantic discovery.
+    const query = verbs.query({ q: 'authenticated sessions', limit: 5 }) as unknown as {
+      hits: Array<{ id: string; llm?: { provenance: string; analysis?: unknown } }>;
+      llmHits: Array<{ id: string; llm?: { provenance: string } }>;
     };
-    expect(query.hits.some((h) => h.id === target.targetId && h.llm?.provenance === 'LLM')).toBe(
+    expect(query.hits.every((h) => h.llm?.analysis === undefined)).toBe(true);
+    expect(query.llmHits.some((h) => h.id === target.targetId && h.llm?.provenance === 'LLM')).toBe(
       true,
     );
+
+    // Opt-in full LLM on query upgrades the pointer on every hit to the full analysis blob.
+    const queryFull = verbs.query({
+      q: 'authenticated sessions',
+      limit: 5,
+      withLlm: true,
+    }) as unknown as {
+      hits: Array<{ id: string; llm?: { provenance: string; analysis?: unknown } }>;
+      llmHits: Array<{ id: string; llm?: { provenance: string; analysis?: unknown } }>;
+    };
+    expect(
+      [...queryFull.hits, ...queryFull.llmHits].some(
+        (h) => h.id === target.targetId && h.llm?.provenance === 'LLM' && h.llm?.analysis,
+      ),
+    ).toBe(true);
 
     const neighbors = verbs.llmNeighbors({ id: target.targetId }) as unknown as {
       edges: Array<{ rel: string; to: string }>;

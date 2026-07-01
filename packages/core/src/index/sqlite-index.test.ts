@@ -220,3 +220,43 @@ describe('WS-1 body-searchable FTS', () => {
     idx.close();
   });
 });
+
+describe('P2 lightweight hybrid retrieval (synonym-expanded query)', () => {
+  it('a conceptual query ("save") finds a symbol named with its synonym ("persistData"), which pure prefix-FTS5 would miss', () => {
+    const persistFn = sym('src/storage/Writer.ts', 'persistData', 1, {
+      signature: 'persistData(record): void',
+    });
+    const semStore = new SoulStore(dir, {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    semStore.load();
+    semStore.putNodes([file('src/storage/Writer.ts'), persistFn]);
+    semStore.commit('2026-01-01T00:00:00.000Z');
+
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(semStore, dir);
+    // sanity: plain substring-unrelated terms never collide ("save" is not a substring of
+    // "persistData", so this proves the hit comes from synonym expansion, not a lucky prefix match).
+    expect('persistdata'.startsWith('save')).toBe(false);
+    const hits = idx.query({ text: 'save', kinds: ['symbol'] });
+    expect(hits.map((h) => h.id)).toContain(persistFn.id);
+    idx.close();
+  });
+
+  it('an unrelated query term does not pull in a synonym group (no false-positive recall)', () => {
+    const persistFn = sym('src/storage/Writer.ts', 'persistData', 1);
+    const semStore = new SoulStore(dir, {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    semStore.load();
+    semStore.putNodes([file('src/storage/Writer.ts'), persistFn]);
+    semStore.commit('2026-01-01T00:00:00.000Z');
+
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(semStore, dir);
+    expect(idx.query({ text: 'render', kinds: ['symbol'] }).map((h) => h.id)).not.toContain(
+      persistFn.id,
+    );
+    idx.close();
+  });
+});
