@@ -1,0 +1,199 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4a29cde49b988c75015ef907c14ca89a8fc0c474741a0eb9e0c452e65ab5b3e9",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
+    "kind": "symbol",
+    "type": "function",
+    "name": "bodyOf",
+    "qualifiedName": "bodyOf",
+    "signature": "bodyOf(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.test.ts",
+    "span": {
+      "start": 488,
+      "end": 493
+    },
+    "callSites": [
+      {
+        "callee": "parse",
+        "line": 489
+      },
+      {
+        "callee": "find",
+        "line": 490
+      },
+      {
+        "callee": "find",
+        "line": 491
+      }
+    ]
+  },
+  "source": {
+    "text": "  const bodyOf = (src: string): JavaStmt[] => {\n    const m = parse(src);\n    const c = find(m.defs, 'C');\n    const meth = c!.body.find((d) => d.kind === 'method' || d.kind === 'constructor');\n    return meth?.stmts ?? [];\n  };",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 488
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 35
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.test.ts@L487",
+      "snippet": "/** Parse one method's body statements directly via parseBodyStmts. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
+      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
+    "procedureName": "bodyOf",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
+        "procedureName": "bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:72d73cec5060dfd0eb0d8fd5caab6b61bf49849acb345fcff30d7e231a9acf95",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+          "expr": "parse",
+          "line": 489
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
+        "procedureName": "bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e40ae1ebe94a0b70eb05a01f78d7da8fab99b0ccbeedce85919d2ca737f5201d",
+          "target": "stmt:packages/parsers/src/java/parser.test.ts@L489",
+          "line": 489,
+          "expr": "const m = parse(src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
+        "procedureName": "bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dd48680561748820d8200ab377fab56d09e0d482d6a993f2499833050878b370",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 490
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
+        "procedureName": "bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:41946aba0ce9972ecd5a209fff6376d13ddb09aed631ef7b74cceb8121a859a6",
+          "target": "stmt:packages/parsers/src/java/parser.test.ts@L490",
+          "line": 490,
+          "expr": "const c = find(m.defs, 'C');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
+        "procedureName": "bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ddb13bd2eab17ca92a6479c995dc3871933a83dbb4b862c9892cbd4bbf764ba",
+          "target": "stmt:packages/parsers/src/java/parser.test.ts@L491",
+          "line": 491,
+          "expr": "const meth = c!.body.find((d) => d.kind === 'method' || d.kind === 'constructor');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
+        "procedureName": "bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:62f80af647bb6d13442bbb24ad41d9e35b63ff3ca98bf88a9070d27d1726ad44",
+          "target": "stmt:packages/parsers/src/java/parser.test.ts@L492",
+          "line": 492,
+          "expr": "return meth?.stmts ?? [];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

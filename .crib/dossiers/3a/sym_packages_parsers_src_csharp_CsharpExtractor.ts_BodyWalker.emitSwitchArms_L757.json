@@ -1,0 +1,176 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitSwitchArms@L757",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e39bb377c7e0d185b6d6b17275c4942614564325ed89ccd01a818d827691daca",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitSwitchArms@L757",
+    "kind": "symbol",
+    "type": "method",
+    "name": "emitSwitchArms",
+    "qualifiedName": "BodyWalker.emitSwitchArms",
+    "signature": "emitSwitchArms(arms: CsharpSwitchCase[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 757,
+      "end": 761
+    },
+    "callSites": [
+      {
+        "callee": "caseBranch",
+        "line": 759
+      }
+    ]
+  },
+  "source": {
+    "text": "  private emitSwitchArms(arms: CsharpSwitchCase[]): void {\n    for (const a of arms) {\n      this.caseBranch(a.predicate ?? '', a.condLine, false);\n    }\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 757
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addAssignStatement@L663",
+      "confidence": 1,
+      "name": "addAssignStatement",
+      "qualifiedName": "BodyWalker.addAssignStatement",
+      "signature": "addAssignStatement(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 663
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+      "confidence": 1,
+      "name": "addCallStatement",
+      "qualifiedName": "BodyWalker.addCallStatement",
+      "signature": "addCallStatement(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 633
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addStatement@L600",
+      "confidence": 1,
+      "name": "addStatement",
+      "qualifiedName": "BodyWalker.addStatement",
+      "signature": "addStatement(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 600
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkStmt@L463",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 463
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.caseBranch@L717",
+      "confidence": 1,
+      "name": "caseBranch",
+      "qualifiedName": "BodyWalker.caseBranch",
+      "signature": "caseBranch(predicate: string, line: number, isDefault: boolean): string",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 717
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/CsharpExtractor.ts@L755",
+      "snippet": "/** 1.2: lift switch-expression arms to `case-branch` nodes (predicate = pattern text; no body —",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitSwitchArms@L757",
+    "procedureName": "BodyWalker.emitSwitchArms",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L758"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitSwitchArms@L757",
+        "procedureName": "BodyWalker.emitSwitchArms",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L758",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L758",
+            "expr": "arms",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5a69afd35c01e5dd7eb23802c2028e68150b43b459fb6b022d66e34845e3f0a4",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.caseBranch@L717",
+          "expr": "caseBranch",
+          "line": 759
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitSwitchArms@L757",
+        "procedureName": "BodyWalker.emitSwitchArms",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L758",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L758",
+            "expr": "arms",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2b13ff034c1329e994609964f3f8a82478cc2098cc68b5bdca820ed2d9f3fdc0",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L759",
+          "line": 759,
+          "expr": "this.caseBranch(a.predicate ?? '', a.condLine, false);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

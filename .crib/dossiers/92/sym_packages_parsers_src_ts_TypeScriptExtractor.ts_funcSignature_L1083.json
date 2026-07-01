@@ -1,0 +1,154 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#funcSignature@L1083",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9f2072d6ccffe1c5c6d3d201c8d0aa61c7acf8a737d2873258010e6ce78db606",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#funcSignature@L1083",
+    "kind": "symbol",
+    "type": "function",
+    "name": "funcSignature",
+    "qualifiedName": "funcSignature",
+    "signature": "funcSignature(node: ts.FunctionDeclaration | ts.MethodDeclaration): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 1083,
+      "end": 1088
+    },
+    "callSites": [
+      {
+        "callee": "isIdentifier",
+        "line": 1084
+      },
+      {
+        "callee": "join",
+        "line": 1085
+      },
+      {
+        "callee": "map",
+        "line": 1085
+      },
+      {
+        "callee": "getText",
+        "line": 1085
+      },
+      {
+        "callee": "getText",
+        "line": 1086
+      }
+    ]
+  },
+  "source": {
+    "text": "function funcSignature(node: ts.FunctionDeclaration | ts.MethodDeclaration): string {\n  const name = node.name && ts.isIdentifier(node.name) ? node.name.text : 'anonymous';\n  const params = node.parameters.map((p) => p.getText()).join(', ');\n  const ret = node.type ? `: ${node.type.getText()}` : '';\n  return `${name}(${params})${ret}`;\n}",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 1083
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+      "confidence": 1,
+      "name": "symbolInfo",
+      "qualifiedName": "symbolInfo",
+      "signature": "symbolInfo(node: ts.Node): SymInfo | null",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 1039
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#funcSignature@L1083",
+    "procedureName": "funcSignature",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#funcSignature@L1083",
+        "procedureName": "funcSignature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:35b8f0c82d70f74248a768193c68a6b500f77600192f4d7f0a44a5ee4097a77c",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1084",
+          "line": 1084,
+          "expr": "const name = node.name && ts.isIdentifier(node.name) ? node.name.text : 'anonymous';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#funcSignature@L1083",
+        "procedureName": "funcSignature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:941845f2a730835daa73e20130303f0d3e1b7d27fdf17023b992c31c4733d9f4",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1085",
+          "line": 1085,
+          "expr": "const params = node.parameters.map((p) => p.getText()).join(', ');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#funcSignature@L1083",
+        "procedureName": "funcSignature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:533e9970c6a3032b501155ce8a4f63a0828796fd1e1a28842e728a7518a45213",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1086",
+          "line": 1086,
+          "expr": "const ret = node.type ? `: ${node.type.getText()}` : '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#funcSignature@L1083",
+        "procedureName": "funcSignature",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:388656fb71e12ff491f80e1566e8f578f70436181f97615c79d71a4668455878",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1087",
+          "line": 1087,
+          "expr": "return `${name}(${params})${ret}`;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 5,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

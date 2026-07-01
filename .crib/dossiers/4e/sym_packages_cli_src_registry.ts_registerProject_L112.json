@@ -1,0 +1,228 @@
+{
+  "id": "sym:packages/cli/src/registry.ts#registerProject@L112",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:3a09809911c84ef716aa66113b19b93cebcbd9648d6a85054f0fc3c2ac078704",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/registry.ts#registerProject@L112",
+    "kind": "symbol",
+    "type": "function",
+    "name": "registerProject",
+    "qualifiedName": "registerProject",
+    "signature": "registerProject(absRoot: string, opts: RegisterOpts): RegisteredProject",
+    "lang": "typescript",
+    "file": "packages/cli/src/registry.ts",
+    "span": {
+      "start": 112,
+      "end": 125
+    },
+    "callSites": [
+      {
+        "callee": "readRegistry",
+        "line": 114
+      },
+      {
+        "callee": "toISOString",
+        "line": 120
+      },
+      {
+        "callee": "writeRegistry",
+        "line": 123
+      }
+    ]
+  },
+  "source": {
+    "text": "export function registerProject(absRoot: string, opts: RegisterOpts): RegisteredProject {\n  const env = opts.env ?? process.env;\n  const reg = readRegistry(env);\n  const existing = reg.projects[absRoot];\n  const entry: RegisteredProject = {\n    repoId: opts.repoId,\n    cribDir: opts.cribDir,\n    ...(opts.vcsHead !== undefined ? { vcsHead: opts.vcsHead } : {}),\n    addedAt: existing?.addedAt ?? opts.addedAt ?? new Date().toISOString(),\n  };\n  reg.projects[absRoot] = entry;\n  writeRegistry(reg, env);\n  return entry;\n}",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 112
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#registerIndexed@L308",
+      "confidence": 1,
+      "name": "registerIndexed",
+      "qualifiedName": "registerIndexed",
+      "signature": "registerIndexed(repoRoot: string, cribDir: string, soul: SoulStore): void",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 308
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+      "confidence": 1,
+      "name": "readRegistry",
+      "qualifiedName": "readRegistry",
+      "signature": "readRegistry(env: NodeJS.ProcessEnv = process.env): Registry",
+      "type": "function",
+      "file": "packages/cli/src/registry.ts",
+      "line": 60
+    },
+    {
+      "id": "sym:packages/cli/src/registry.ts#writeRegistry@L75",
+      "confidence": 1,
+      "name": "writeRegistry",
+      "qualifiedName": "writeRegistry",
+      "signature": "writeRegistry(reg: Registry, env: NodeJS.ProcessEnv = process.env): void",
+      "type": "function",
+      "file": "packages/cli/src/registry.ts",
+      "line": 75
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/registry.ts@L107",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/registry.ts#registerProject@L112",
+    "procedureName": "registerProject",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#registerProject@L112",
+        "procedureName": "registerProject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d421335c92a5aae8640ee657a3023a2fa79c003ebd373619174cbbfc325476db",
+          "target": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+          "expr": "readRegistry",
+          "line": 114
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#registerProject@L112",
+        "procedureName": "registerProject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df702b21b7a2ec6e4ccfd8874760bbcb59a7db1e2ce8f0cee85294c1e8f4a031",
+          "target": "stmt:packages/cli/src/registry.ts@L114",
+          "line": 114,
+          "expr": "const reg = readRegistry(env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#registerProject@L112",
+        "procedureName": "registerProject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c903c3b27d910b727c42ed0507951466a18fa005821cb68a5853da696df959c6",
+          "target": "stmt:packages/cli/src/registry.ts@L116",
+          "line": 116,
+          "expr": "const entry: RegisteredProject = {\n    repoId: opts.repoId,\n    cribDir: opts.cribDir,\n    ...(opts.vcsHead !== undefined ? { vcsHead: opts.vcsHead } : {}),\n    addedAt: existing?.addedAt ?? opts.addedAt ?? new Date().toISOString(),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#registerProject@L112",
+        "procedureName": "registerProject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5581ce97375ab23106d41506898a6e3e8769c2d73dbb5ae76acae1aeb911e15d",
+          "target": "assign:packages/cli/src/registry.ts@L122",
+          "line": 122,
+          "expr": "reg.projects[absRoot] = entry;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#registerProject@L112",
+        "procedureName": "registerProject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8031ec1ebb23b3b1993ac0adea164d9f9d00c6f83b73c2f400efb8390b477234",
+          "target": "sym:packages/cli/src/registry.ts#writeRegistry@L75",
+          "expr": "writeRegistry",
+          "line": 123
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#registerProject@L112",
+        "procedureName": "registerProject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:80bc1f86ca20486e1ebe29895361384716fdf32064f84434e639999a549dde5b",
+          "target": "stmt:packages/cli/src/registry.ts@L123",
+          "line": 123,
+          "expr": "writeRegistry(reg, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#registerProject@L112",
+        "procedureName": "registerProject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aff4a35c0fc1bc88c56b531b3508cf420dbaa3e0596df78b48c36187b6cee918",
+          "target": "stmt:packages/cli/src/registry.ts@L124",
+          "line": 124,
+          "expr": "return entry;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 1,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

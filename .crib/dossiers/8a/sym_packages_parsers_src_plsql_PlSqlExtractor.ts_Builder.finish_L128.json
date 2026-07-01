@@ -1,0 +1,88 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.finish@L128",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d3cfe1955f9822d918091fa150220fc9c9bbc528b3fd9b54c030ffff529cd24d",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.finish@L128",
+    "kind": "symbol",
+    "type": "method",
+    "name": "finish",
+    "qualifiedName": "Builder.finish",
+    "signature": "finish(): ExtractResult",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 128,
+      "end": 130
+    }
+  },
+  "source": {
+    "text": "  finish(): ExtractResult {\n    return { nodes: this.nodes, edges: this.edges };\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 128
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#PlSqlExtractor.build@L85",
+      "confidence": 1,
+      "name": "build",
+      "qualifiedName": "PlSqlExtractor.build",
+      "signature": "build(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 85
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.finish@L128",
+    "procedureName": "Builder.finish",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.finish@L128",
+        "procedureName": "Builder.finish",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6b67b9af13813b1ec8712d6b88559884b8479d294d0ab42e1e39909cde8eeaa2",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L129",
+          "line": 129,
+          "expr": "return { nodes: this.nodes, edges: this.edges };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

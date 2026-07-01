@@ -1,0 +1,204 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.skipUntilDepthZero@L599",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:92769a9f3afafd81b7e1e2cbb43a449f9d985515e6ab71c6c8c5685a3eaf5ff9",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.skipUntilDepthZero@L599",
+    "kind": "symbol",
+    "type": "method",
+    "name": "skipUntilDepthZero",
+    "qualifiedName": "Parser.skipUntilDepthZero",
+    "signature": "skipUntilDepthZero(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 599,
+      "end": 611
+    }
+  },
+  "source": {
+    "text": "  private skipUntilDepthZero(): void {\n    let depth = 0;\n    while (this.at().type !== 'eof') {\n      if (this.isPunct('(')) depth++;\n      else if (this.isPunct(')')) {\n        if (depth === 0) return; // caller's closing paren\n        depth--;\n      } else if (this.isPunct(',') && depth === 0) {\n        return;\n      }\n      this.pos++;\n    }\n  }",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 599
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateTable@L241",
+      "confidence": 1,
+      "name": "parseCreateTable",
+      "qualifiedName": "Parser.parseCreateTable",
+      "signature": "parseCreateTable(startLine: number): TableDef",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 241
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L119",
+      "confidence": 1,
+      "name": "at",
+      "qualifiedName": "Parser.at",
+      "signature": "at(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 119
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L129",
+      "confidence": 1,
+      "name": "isPunct",
+      "qualifiedName": "Parser.isPunct",
+      "signature": "isPunct(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 129
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/parser.ts@L598",
+      "snippet": "/** Skip tokens until the paren depth returns to zero (relative to entry), then stop. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.skipUntilDepthZero@L599",
+    "procedureName": "Parser.skipUntilDepthZero",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/parser.ts@L601",
+      "cond:packages/parsers/src/plsql/parser.ts@L602",
+      "cond:packages/parsers/src/plsql/parser.ts@L603",
+      "cond:packages/parsers/src/plsql/parser.ts@L604",
+      "cond:packages/parsers/src/plsql/parser.ts@L606"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.skipUntilDepthZero@L599",
+        "procedureName": "Parser.skipUntilDepthZero",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5d3376d2198581c4c814ef9170c91b3354ac0010051eafdc43058f5ba3df8374",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L119",
+          "expr": "at"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.skipUntilDepthZero@L599",
+        "procedureName": "Parser.skipUntilDepthZero",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9a590374d39eb0a173852852436cf7f5dcc5fa448d455341dab805d4b94a059e",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L129",
+          "expr": "isPunct"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.skipUntilDepthZero@L599",
+        "procedureName": "Parser.skipUntilDepthZero",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L604",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L601",
+            "expr": "this.at().type !== 'eof'"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L602",
+            "expr": "this.isPunct('(')"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L603",
+            "expr": "this.isPunct(')')"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L604",
+            "expr": "depth === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:247c4204d4f0a17a001974b50b6e2aa539c71ae8db7926eca9befbbd588e3647",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L604",
+          "line": 604,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.skipUntilDepthZero@L599",
+        "procedureName": "Parser.skipUntilDepthZero",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L606",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L601",
+            "expr": "this.at().type !== 'eof'"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L602",
+            "expr": "this.isPunct('(')"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L603",
+            "expr": "this.isPunct(')')"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L606",
+            "expr": "this.isPunct(',') && depth === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:94682e242aaf352e5c1f295a6d36c5a2261ea1cccea10a39a26e510c12ea335f",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L607",
+          "line": 607,
+          "expr": "return;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

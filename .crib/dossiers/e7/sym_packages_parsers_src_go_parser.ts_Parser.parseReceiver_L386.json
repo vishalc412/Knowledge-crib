@@ -1,0 +1,735 @@
+{
+  "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ac2bd2c79ff44c25cc98b1ceefa9e09504539f62390535a381417a358d41be98",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseReceiver",
+    "qualifiedName": "Parser.parseReceiver",
+    "signature": "parseReceiver(): { type: string; name: string; typeParams: string[] }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/parser.ts",
+    "span": {
+      "start": 386,
+      "end": 449
+    },
+    "callSites": [
+      {
+        "callee": "next",
+        "line": 387
+      },
+      {
+        "callee": "peek",
+        "line": 396
+      },
+      {
+        "callee": "next",
+        "line": 399
+      },
+      {
+        "callee": "next",
+        "line": 404
+      },
+      {
+        "callee": "next",
+        "line": 411
+      },
+      {
+        "callee": "max",
+        "line": 415
+      },
+      {
+        "callee": "next",
+        "line": 417
+      },
+      {
+        "callee": "push",
+        "line": 422
+      },
+      {
+        "callee": "push",
+        "line": 425
+      },
+      {
+        "callee": "next",
+        "line": 428
+      },
+      {
+        "callee": "next",
+        "line": 433
+      },
+      {
+        "callee": "next",
+        "line": 436
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseReceiver(): { type: string; name: string; typeParams: string[] } {\n    this.next(); // (\n    let depth = 1;\n    const names: string[] = [];\n    let bdepth = 0;\n    // type-param NAMEs collected inside the receiver's `[...]`\n    const tparams: string[] = [];\n    let inBracket = false;\n    let segStart = true; // true when next NAME at depth 1/bracket 0 is the start of a param\n    while (!this.atEnd() && depth > 0) {\n      const tk = this.peek();\n      if (tk.type === 'OP' && tk.value === '(') {\n        depth++;\n        this.next();\n        continue;\n      }\n      if (tk.type === 'OP' && tk.value === ')') {\n        depth--;\n        this.next();\n        continue;\n      }\n      if (tk.type === 'OP' && tk.value === '[') {\n        bdepth++;\n        inBracket = true;\n        segStart = true;\n        this.next();\n        continue;\n      }\n      if (tk.type === 'OP' && tk.value === ']') {\n        bdepth = Math.max(0, bdepth - 1);\n        inBracket = bdepth > 0;\n        this.next();\n        continue;\n      }\n      if (tk.type === 'NAME') {\n        if (bdepth === 0) {\n          names.push(tk.value);\n        } else if (inBracket && segStart) {\n          // first NAME after `[` or `,` inside the receiver's type-arg list is a type param\n          tparams.push(tk.value);\n          segStart = false;\n        }\n        this.next();\n        continue;\n      }\n      if (tk.type === 'OP' && tk.value === ',' && bdepth > 0) {\n        segStart = true;\n        this.next();\n        continue;\n      }\n      this.next();\n    }\n    if (names.length === 0) return { type: '', name: '', typeParams: [] };\n    // `*Server` → 1 NAME → type=Server, name=''. `s *Server` → 2 → name=s, type=Server.\n    // `pkg.Server` → 2 → type=Server (last), name='' (qualified — receiver name not first).\n    // Heuristic: if the first token (after stripping *) is a lone NAME followed by a type token,\n    // the first is the receiver var name. We approximate: 2+ names with the 2nd looking like a type\n    // ⇒ first is the name; 1 name ⇒ type only. For `pkg.Server` (qualified) this picks Server as the\n    // type and drops pkg — acceptable since receiver types are usually in-package.\n    if (names.length >= 2) {\n      return { type: names[names.length - 1] ?? '', name: names[0] ?? '', typeParams: tparams };\n    }\n    return { type: names[0] ?? '', name: '', typeParams: tparams };\n  }",
+    "truncated": false,
+    "totalLines": 64,
+    "startLine": 386
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseFunc@L326",
+      "confidence": 1,
+      "name": "parseFunc",
+      "qualifiedName": "Parser.parseFunc",
+      "signature": "parseFunc(startLine: number): GoDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 326
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.atEnd@L1698",
+      "confidence": 1,
+      "name": "atEnd",
+      "qualifiedName": "Parser.atEnd",
+      "signature": "atEnd(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1698
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.next@L1690",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1690
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.peek@L1695",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1695
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/parser.ts@L381",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+    "procedureName": "Parser.parseReceiver",
+    "conditions": [
+      "cond:packages/parsers/src/go/parser.ts@L395",
+      "cond:packages/parsers/src/go/parser.ts@L397",
+      "cond:packages/parsers/src/go/parser.ts@L402",
+      "cond:packages/parsers/src/go/parser.ts@L407",
+      "cond:packages/parsers/src/go/parser.ts@L414",
+      "cond:packages/parsers/src/go/parser.ts@L420",
+      "cond:packages/parsers/src/go/parser.ts@L421",
+      "cond:packages/parsers/src/go/parser.ts@L423",
+      "cond:packages/parsers/src/go/parser.ts@L431",
+      "cond:packages/parsers/src/go/parser.ts@L438",
+      "cond:packages/parsers/src/go/parser.ts@L445"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L395",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cfcf1124eb2da9b0d457ceef828c4dec84ae4767cb071ca02d5558794fdc1fc1",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.next@L1690",
+          "expr": "next",
+          "line": 387
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a86307b0a4a60cdd9ef3a7c6b69f15df79f8b5af10dcca4e0d7c37fa118f8cf6",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L387",
+          "line": 387,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L395",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:be273f4c231b8adda4c243a10cb249b89a878afa3ded81698fd079628a4b6296",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.peek@L1695",
+          "expr": "peek",
+          "line": 396
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L395",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:661ddba4a1103cb4fb4627da74eedfade2a33bf4c415c3e44449212a621b64f6",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L396",
+          "line": 396,
+          "expr": "const tk = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L397",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L397",
+            "expr": "tk.type === 'OP' && tk.value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5cafcd56572c83324e7f08d36820956520a2dea62b0b3d31fb06a1aa623db9a6",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L399",
+          "line": 399,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L402",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L402",
+            "expr": "tk.type === 'OP' && tk.value === ')'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e6d1fa0013c705df061730b0b06c1fb1f0a696c3eb873c637642645d3404933f",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L404",
+          "line": 404,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L407",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L407",
+            "expr": "tk.type === 'OP' && tk.value === '['",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dd62eea5522023bd8bcd77ee83609e7db778082d53c53569becb14bd1d25d238",
+          "target": "assign:packages/parsers/src/go/parser.ts@L409",
+          "line": 409,
+          "expr": "inBracket = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L407",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L407",
+            "expr": "tk.type === 'OP' && tk.value === '['",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0518dbaf901247be22c44fc1b5a7ec672a60e53eae87db986d2a5b477af9359a",
+          "target": "assign:packages/parsers/src/go/parser.ts@L410",
+          "line": 410,
+          "expr": "segStart = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L407",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L407",
+            "expr": "tk.type === 'OP' && tk.value === '['",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:005b4aa2f5c5ab660e6f59e4fcdd1fa928047b29c529edecff2d77554fd80ef3",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L411",
+          "line": 411,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L414",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L414",
+            "expr": "tk.type === 'OP' && tk.value === ']'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:853c6cd0f29d6c52ff33ca50ecea37426a9446e6b2f2dec8e79d4245e56415e9",
+          "target": "assign:packages/parsers/src/go/parser.ts@L415",
+          "line": 415,
+          "expr": "bdepth = Math.max(0, bdepth - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L414",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L414",
+            "expr": "tk.type === 'OP' && tk.value === ']'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b5fd850641a480bf5ee094bea3522cef8c9c2ea71304394e45e4ebdccca44592",
+          "target": "assign:packages/parsers/src/go/parser.ts@L416",
+          "line": 416,
+          "expr": "inBracket = bdepth > 0;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L414",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L414",
+            "expr": "tk.type === 'OP' && tk.value === ']'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:da5324c11d46d4eef8158200267a2fc5b3a72d87ded1902ff04722b6145012a7",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L417",
+          "line": 417,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L421",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L420",
+            "expr": "tk.type === 'NAME'"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L421",
+            "expr": "bdepth === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8191a1a7f0ec477dd12ff2f101b13686ae381f839eeaa3e1c78a9127e4d24782",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L422",
+          "line": 422,
+          "expr": "names.push(tk.value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L423",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L420",
+            "expr": "tk.type === 'NAME'"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L421",
+            "expr": "bdepth === 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L423",
+            "expr": "inBracket && segStart",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:abf038d295865e4c486ea5d91cf274c9dfb22860fa666f6ecbcd6d9dfb378eb7",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L425",
+          "line": 425,
+          "expr": "tparams.push(tk.value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L423",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L420",
+            "expr": "tk.type === 'NAME'"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L421",
+            "expr": "bdepth === 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L423",
+            "expr": "inBracket && segStart",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1e227184462a1cfdfcbab0406824f6774e396bbea48aafed12701edb40979ecc",
+          "target": "assign:packages/parsers/src/go/parser.ts@L426",
+          "line": 426,
+          "expr": "segStart = false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L420",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L420",
+            "expr": "tk.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c6825fff96c9d6e421915fd107fad1e07de7fed30ef7bcb510abdbede59084d8",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L428",
+          "line": 428,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L431",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L431",
+            "expr": "tk.type === 'OP' && tk.value === ',' && bdepth > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e7a75d33112fe09fb2d814d012193228ef10df792d775f396c9618aa23eb094e",
+          "target": "assign:packages/parsers/src/go/parser.ts@L432",
+          "line": 432,
+          "expr": "segStart = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L431",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L431",
+            "expr": "tk.type === 'OP' && tk.value === ',' && bdepth > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:139f0169a79970aea5270ab1fc1c368e4f8cb286e043558126ec8dd84ad1b4f3",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L433",
+          "line": 433,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L395",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L395",
+            "expr": "!this.atEnd() && depth > 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2cb43098d857095ea3d00e57662f18cdee561d15229b1faa4037aae26b65aedf",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L436",
+          "line": 436,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L438",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L438",
+            "expr": "names.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:09cce9d7b2f2b2566e529171d241c9be129664827dc111cc41021df119056816",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L438",
+          "line": 438,
+          "expr": "return { type: '', name: '', typeParams: [] };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L445",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L445",
+            "expr": "names.length >= 2",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1caf9a10702dc61bf2c907d655ded3fb21af90a200395ec5b709e48a94f71189",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L446",
+          "line": 446,
+          "expr": "return { type: names[names.length - 1] ?? '', name: names[0] ?? '', typeParams: tparams };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:429e6e244bf891fbf3504a6ab6d0a1a8dba706cb48114735df9191d87008f992",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L448",
+          "line": 448,
+          "expr": "return { type: names[0] ?? '', name: '', typeParams: tparams };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseReceiver@L386",
+        "procedureName": "Parser.parseReceiver",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3061361ab47c09f0ce14f795d90c16a768f63b278783fb74df4fd24660d6072d",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.atEnd@L1698",
+          "expr": "atEnd"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 20,
+    "referencedByFiles": [
+      "packages/parsers/src/go/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 20,
+    "assignments": 6,
+    "conditions": 11,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 12,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

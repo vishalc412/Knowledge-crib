@@ -1,0 +1,131 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#expectEdge@L233",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4fca8a4a5dd1313ab230b9f5fc9672a378374f0200e99af9544a5985f4bda7f9",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#expectEdge@L233",
+    "kind": "symbol",
+    "type": "function",
+    "name": "expectEdge",
+    "qualifiedName": "expectEdge",
+    "signature": "expectEdge(e: { provenance: string; method: string; confidence: number }): void",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/java-resolver.test.ts",
+    "span": {
+      "start": 233,
+      "end": 237
+    },
+    "callSites": [
+      {
+        "callee": "toBe",
+        "line": 234
+      },
+      {
+        "callee": "expect",
+        "line": 234
+      },
+      {
+        "callee": "toBe",
+        "line": 235
+      },
+      {
+        "callee": "expect",
+        "line": 235
+      },
+      {
+        "callee": "toBe",
+        "line": 236
+      },
+      {
+        "callee": "expect",
+        "line": 236
+      }
+    ]
+  },
+  "source": {
+    "text": "function expectEdge(e: { provenance: string; method: string; confidence: number }): void {\n  expect(e.provenance).toBe('EXTRACTED');\n  expect(e.method).toBe('static');\n  expect(e.confidence).toBe(1);\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 233
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#expectEdge@L233",
+    "procedureName": "expectEdge",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#expectEdge@L233",
+        "procedureName": "expectEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:11acc992fe4549ea86e7d6c361c282c82b3951dede6e46f8825f982ba49795ad",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.test.ts@L234",
+          "line": 234,
+          "expr": "expect(e.provenance).toBe('EXTRACTED');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#expectEdge@L233",
+        "procedureName": "expectEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:72b8f23d37ede78b9fddf2810127996b28ce5916b7af0b763df0c770ca7aea9c",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.test.ts@L235",
+          "line": 235,
+          "expr": "expect(e.method).toBe('static');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#expectEdge@L233",
+        "procedureName": "expectEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e37d590b56979a40e71840a2177b470e6a200dedb97492edd9a4a6a150e46248",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.test.ts@L236",
+          "line": 236,
+          "expr": "expect(e.confidence).toBe(1);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 6,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

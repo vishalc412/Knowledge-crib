@@ -1,0 +1,141 @@
+{
+  "id": "sym:packages/cli/src/mcp-install.ts#writeJson@L94",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:51edd3062ed91738ae6d488b73ae0db7a2c0e1b8afc7e961e7ebc7fcbce3a5d5",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/mcp-install.ts#writeJson@L94",
+    "kind": "symbol",
+    "type": "function",
+    "name": "writeJson",
+    "qualifiedName": "writeJson",
+    "signature": "writeJson(path: string, obj: unknown): void",
+    "lang": "typescript",
+    "file": "packages/cli/src/mcp-install.ts",
+    "span": {
+      "start": 94,
+      "end": 97
+    },
+    "callSites": [
+      {
+        "callee": "mkdirSync",
+        "line": 95
+      },
+      {
+        "callee": "dirname",
+        "line": 95
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 96
+      },
+      {
+        "callee": "stringify",
+        "line": 96
+      }
+    ]
+  },
+  "source": {
+    "text": "function writeJson(path: string, obj: unknown): void {\n  mkdirSync(dirname(path), { recursive: true });\n  writeFileSync(path, `${JSON.stringify(obj, null, 2)}\\n`, 'utf8');\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 94
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#installMcp@L171",
+      "confidence": 1,
+      "name": "installMcp",
+      "qualifiedName": "installMcp",
+      "signature": "installMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 171
+    },
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
+      "confidence": 1,
+      "name": "removeMcp",
+      "qualifiedName": "removeMcp",
+      "signature": "removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 281
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/mcp-install.ts@L93",
+      "snippet": "/** Serialize JSON with a trailing newline (matches the rest of the codebase's on-disk style). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/mcp-install.ts#writeJson@L94",
+    "procedureName": "writeJson",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#writeJson@L94",
+        "procedureName": "writeJson",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:301ddc83335864dfda4f52683a3b858672b5b887105c31b1ca9de38105ba4a60",
+          "target": "stmt:packages/cli/src/mcp-install.ts@L95",
+          "line": 95,
+          "expr": "mkdirSync(dirname(path), { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#writeJson@L94",
+        "procedureName": "writeJson",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce4e8da65c9cb86247707add302cef479c3d348af73759129d1bc455b221b6c5",
+          "target": "stmt:packages/cli/src/mcp-install.ts@L96",
+          "line": 96,
+          "expr": "writeFileSync(path, `${JSON.stringify(obj, null, 2)}\\n`, 'utf8');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/cli/src/mcp-install.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

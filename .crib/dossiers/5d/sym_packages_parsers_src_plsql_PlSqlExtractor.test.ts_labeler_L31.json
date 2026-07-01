@@ -1,0 +1,115 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#labeler@L31",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d8049b78111a670b907bda760f85935d46d0d13e60f370d7856375a8012ad41f",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#labeler@L31",
+    "kind": "symbol",
+    "type": "function",
+    "name": "labeler",
+    "qualifiedName": "labeler",
+    "signature": "labeler(r: ExtractResult): (id: string) => string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
+    "span": {
+      "start": 31,
+      "end": 50
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 33
+      }
+    ]
+  },
+  "source": {
+    "text": "function labeler(r: ExtractResult): (id: string) => string {\n  return (id: string): string => {\n    const n = r.nodes.find((x) => x.id === id);\n    if (!n) return id;\n    switch (n.kind) {\n      case 'symbol':\n        return n.qualifiedName ?? n.name ?? id;\n      case 'table':\n        return `table:${n.name}`;\n      case 'column':\n        return `col:${n.table}.${n.name}`;\n      case 'statement':\n        return `stmt:L${n.span?.start}:${n.sqlKind ?? n.type}`;\n      case 'condition':\n        return `cond:L${n.span?.start}:${n.branch}`;\n      default:\n        return n.kind;\n    }\n  };\n}",
+    "truncated": false,
+    "totalLines": 20,
+    "startLine": 31
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/PlSqlExtractor.test.ts@L30",
+      "snippet": "/** label a node id for readable assertions: qualified name / table / col / stmt:L / cond:L. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#labeler@L31",
+    "procedureName": "labeler",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#labeler@L31",
+        "procedureName": "labeler",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af435dc3c135477d11cadd1f47bf8ffddcaf6c5f31cf483cd114352a6ca1c360",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.test.ts@L32",
+          "line": 32,
+          "expr": "return (id: string): string => {\n    const n = r.nodes.find((x) => x.id === id);\n    if (!n) return id;\n    switch (n.kind) {\n      case 'symbol':\n        return n.qualifiedName ?? n.name ?? id;\n      case 'table':\n        return `table:${n.name}`;\n      case 'column':\n        return `col:${n.table}.${n.name}`;\n      case 'statement':\n        return `stmt:L${n.span?.start}:${n.sqlKind ?? n.type}`;\n      case 'condition':\n        return `cond:L${n.span?.start}:${n.branch}`;\n      default:\n        return n.kind;\n    }\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#labeler@L31",
+        "procedureName": "labeler",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9019955c10914aa85c773def4058772cb0db5cce82e1096cd2e2db7234a190db",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 33
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

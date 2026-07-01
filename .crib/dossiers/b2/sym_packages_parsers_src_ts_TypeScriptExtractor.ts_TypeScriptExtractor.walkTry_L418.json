@@ -1,0 +1,441 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:36f589c92077226a3ec27309233971587477d060676e9e8f26cc60a367128b4a",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkTry",
+    "qualifiedName": "TypeScriptExtractor.walkTry",
+    "signature": "walkTry(stmt: ts.TryStatement, env: BodyEnv): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 418,
+      "end": 451
+    },
+    "callSites": [
+      {
+        "callee": "walkBody",
+        "line": 422
+      },
+      {
+        "callee": "lineOf",
+        "line": 425
+      },
+      {
+        "callee": "getStart",
+        "line": 425
+      },
+      {
+        "callee": "catchSelector",
+        "line": 426
+      },
+      {
+        "callee": "exceptionHandler",
+        "line": 427
+      },
+      {
+        "callee": "walkBody",
+        "line": 432
+      },
+      {
+        "callee": "filter",
+        "line": 434
+      },
+      {
+        "callee": "slice",
+        "line": 434
+      },
+      {
+        "callee": "push",
+        "line": 438
+      },
+      {
+        "callee": "edgeId",
+        "line": 439
+      },
+      {
+        "callee": "walkBody",
+        "line": 450
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkTry(stmt: ts.TryStatement, env: BodyEnv): void {\n    // try/catch/finally sets inException=true on every body (try + catch + finally); no condition is\n    // pushed (try has no predicate). Mirrors PlSqlExtractor.walkException's env choice.\n    const tryEnv: BodyEnv = { ...env, inException: true };\n    if (stmt.tryBlock) this.walkBody([...stmt.tryBlock.statements], tryEnv);\n    // TS models a single catchClause per try (best-effort: one typed handler — lossy but never throws).\n    if (stmt.catchClause) {\n      const catchLine = env.lineOf(stmt.catchClause.getStart());\n      const selector = catchSelector(stmt.catchClause);\n      const excId = this.exceptionHandler(catchLine, selector, env);\n      // capture nodes emitted inside the handler so we can link `handles` to each (statement/\n      // assignment/raise) — same shape as PlSqlExtractor.walkException.\n      const before = env.nodes.length;\n      if (stmt.catchClause.block) {\n        this.walkBody([...stmt.catchClause.block.statements], tryEnv);\n      }\n      const handled = env.nodes\n        .slice(before)\n        .filter((n) => n.kind === 'statement' || n.kind === 'assignment' || n.kind === 'raise');\n      for (const target of handled) {\n        env.edges.push({\n          id: edgeId(excId, target.id, 'handles'),\n          src: excId,\n          dst: target.id,\n          rel: 'handles',\n          method: 'static',\n          provenance: 'EXTRACTED',\n          confidence: 1,\n          evidence: { by: this.name, snippet: selector ?? 'catch' },\n        });\n      }\n    }\n    if (stmt.finallyBlock) this.walkBody([...stmt.finallyBlock.statements], tryEnv);\n  }",
+    "truncated": false,
+    "totalLines": 34,
+    "startLine": 418
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L353",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "TypeScriptExtractor.walkStmt",
+      "signature": "walkStmt(stmt: ts.Statement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 353
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.exceptionHandler@L670",
+      "confidence": 1,
+      "name": "exceptionHandler",
+      "qualifiedName": "TypeScriptExtractor.exceptionHandler",
+      "signature": "exceptionHandler(line: number, selector: string | undefined, env: BodyEnv): string",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 670
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.lineOf@L63",
+      "confidence": 1,
+      "name": "lineOf",
+      "qualifiedName": "TypeScriptExtractor.parse.lineOf",
+      "signature": "lineOf(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 63
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L349",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "TypeScriptExtractor.walkBody",
+      "signature": "walkBody(stmts: readonly ts.Statement[], env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 349
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#catchSelector@L986",
+      "confidence": 1,
+      "name": "catchSelector",
+      "qualifiedName": "catchSelector",
+      "signature": "catchSelector(cc: ts.CatchClause): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 986
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+    "procedureName": "TypeScriptExtractor.walkTry",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L450",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L422",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L431",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L437"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+        "procedureName": "TypeScriptExtractor.walkTry",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L450",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L450",
+            "expr": "stmt.finallyBlock",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a7cf0057244ef58f6ea891e06abf3fb289388f83f0ef3ba54382b7712c6f4d0d",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L349",
+          "expr": "walkBody",
+          "line": 422
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+        "procedureName": "TypeScriptExtractor.walkTry",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L422",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L422",
+            "expr": "stmt.tryBlock",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f81a03086f0eb335b5fe4208d86f55e037dd38830a2766a1cafb166bbb07b98b",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L422",
+          "line": 422,
+          "expr": "this.walkBody([...stmt.tryBlock.statements], tryEnv);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+        "procedureName": "TypeScriptExtractor.walkTry",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+            "expr": "stmt.catchClause",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:781021e8a2b20ab26db5f353b6a6d13511668d45fb1db5c0e0a9950170b4f796",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.lineOf@L63",
+          "expr": "lineOf",
+          "line": 425
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+        "procedureName": "TypeScriptExtractor.walkTry",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+            "expr": "stmt.catchClause",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f355d3b2a7092413b808be6e9eadc5a5d37850178c776a470b6ddbf67fa5b7a",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L425",
+          "line": 425,
+          "expr": "const catchLine = env.lineOf(stmt.catchClause.getStart());"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+        "procedureName": "TypeScriptExtractor.walkTry",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+            "expr": "stmt.catchClause",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c912b999d398f2d2caa1096c5c9185636a5b58674c31cb5b9c199fd99ee3267c",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#catchSelector@L986",
+          "expr": "catchSelector",
+          "line": 426
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+        "procedureName": "TypeScriptExtractor.walkTry",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+            "expr": "stmt.catchClause",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:09e796894a757e94a83492deb38cd7d62565f791b81582bcffdfa5d156884488",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L426",
+          "line": 426,
+          "expr": "const selector = catchSelector(stmt.catchClause);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+        "procedureName": "TypeScriptExtractor.walkTry",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+            "expr": "stmt.catchClause",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:381cd00317958d5feff424bea9848aa2dd8319c89132a1d2c080dac19579a18f",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.exceptionHandler@L670",
+          "expr": "exceptionHandler",
+          "line": 427
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+        "procedureName": "TypeScriptExtractor.walkTry",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+            "expr": "stmt.catchClause",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b37cbca9978b395a112f03f2269a03eeb045976b705abee1ba3a8090646a535e",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L427",
+          "line": 427,
+          "expr": "const excId = this.exceptionHandler(catchLine, selector, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+        "procedureName": "TypeScriptExtractor.walkTry",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L431",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+            "expr": "stmt.catchClause"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L431",
+            "expr": "stmt.catchClause.block",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e7c5ba776a137c03772342d377acb014718065deadd1f5742eaf99f9ebd5e283",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L432",
+          "line": 432,
+          "expr": "this.walkBody([...stmt.catchClause.block.statements], tryEnv);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+        "procedureName": "TypeScriptExtractor.walkTry",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+            "expr": "stmt.catchClause",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b83894506e39e658023d425b03638f894856fdbb964a84d534abe614b319c0af",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L434",
+          "line": 434,
+          "expr": "const handled = env.nodes\n        .slice(before)\n        .filter((n) => n.kind === 'statement' || n.kind === 'assignment' || n.kind === 'raise');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+        "procedureName": "TypeScriptExtractor.walkTry",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L437",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L424",
+            "expr": "stmt.catchClause"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L437",
+            "expr": "handled",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c1c949ad308c4372b48ab573ad56c8bf0a3f6de84d244dd0dccd089d9cad84e9",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L438",
+          "line": 438,
+          "expr": "env.edges.push({\n          id: edgeId(excId, target.id, 'handles'),\n          src: excId,\n          dst: target.id,\n          rel: 'handles',\n          method: 'static',\n          provenance: 'EXTRACTED',\n          confidence: 1,\n          evidence: { by: this.name, snippet: selector ?? 'catch' },\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L418",
+        "procedureName": "TypeScriptExtractor.walkTry",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L450",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L450",
+            "expr": "stmt.finallyBlock",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a4fcc461ec73d2cde522ef704f8a34a0fd72d31fcab55f236a37b9914672399c",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L450",
+          "line": 450,
+          "expr": "this.walkBody([...stmt.finallyBlock.statements], tryEnv);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 8,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 8,
+    "assignments": 0,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 11,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.isNumberStart@L473",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:8411fa46a7a6423ae37bf8ad73cd4f85b49175a238fedfb6e17d53fca661ac5c",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.isNumberStart@L473",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isNumberStart",
+    "qualifiedName": "Lexer.isNumberStart",
+    "signature": "isNumberStart(c: string): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/lexer.ts",
+    "span": {
+      "start": 473,
+      "end": 475
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 474
+      },
+      {
+        "callee": "peek",
+        "line": 474
+      }
+    ]
+  },
+  "source": {
+    "text": "  private isNumberStart(c: string): boolean {\n    return (c >= '0' && c <= '9') || (c === '.' && this.peek(1) >= '0' && this.peek(1) <= '9');\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 473
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.tokens@L257",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 257
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.peek@L437",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 437
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.isNumberStart@L473",
+    "procedureName": "Lexer.isNumberStart",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.isNumberStart@L473",
+        "procedureName": "Lexer.isNumberStart",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:42a8d90dbb70e1fd7782e31888941ca6fba6c407948dd02e7c125967f803345c",
+          "target": "sym:packages/parsers/src/go/lexer.ts#Lexer.peek@L437",
+          "expr": "peek",
+          "line": 474
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.isNumberStart@L473",
+        "procedureName": "Lexer.isNumberStart",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:036704d80c07db3ea18ffc0dda17fd1c30497e6865c9c68061acf09bd2c84b33",
+          "target": "stmt:packages/parsers/src/go/lexer.ts@L474",
+          "line": 474,
+          "expr": "return (c >= '0' && c <= '9') || (c === '.' && this.peek(1) >= '0' && this.peek(1) <= '9');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/go/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

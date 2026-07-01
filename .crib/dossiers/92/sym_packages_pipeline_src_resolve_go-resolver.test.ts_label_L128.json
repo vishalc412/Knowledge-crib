@@ -1,0 +1,356 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L128",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:0f3ceb933e1f92ccb7372546b3776893c08dd78fc162b604ee2250c1e47a5b87",
+  "builtAt": "2026-06-30T15:54:03.404Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L128",
+    "kind": "symbol",
+    "type": "function",
+    "name": "label",
+    "qualifiedName": "label",
+    "signature": "label(soul: SoulStore, id: string): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/go-resolver.test.ts",
+    "span": {
+      "start": 128,
+      "end": 139
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 129
+      },
+      {
+        "callee": "iterate",
+        "line": 129
+      },
+      {
+        "callee": "shortFile",
+        "line": 135
+      }
+    ]
+  },
+  "source": {
+    "text": "function label(soul: SoulStore, id: string): string {\n  const n: Node | undefined = [...soul.iterate()].find((x) => x.id === id);\n  if (!n) return id;\n  switch (n.kind) {\n    case 'symbol':\n      return `sym:${n.qualifiedName ?? n.name}`;\n    case 'file':\n      return `file:${shortFile(n.file)}`;\n    default:\n      return n.kind;\n  }\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 128
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#pair@L124",
+      "confidence": 1,
+      "name": "pair",
+      "qualifiedName": "pair",
+      "signature": "pair(soul: SoulStore, srcId: string, dstId: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.test.ts",
+      "line": 124
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#shortFile@L141",
+      "confidence": 1,
+      "name": "shortFile",
+      "qualifiedName": "shortFile",
+      "signature": "shortFile(p: string | undefined): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.test.ts",
+      "line": 141
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#shortFile@L223",
+      "confidence": 1,
+      "name": "shortFile",
+      "qualifiedName": "shortFile",
+      "signature": "shortFile(p: string | undefined): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "line": 223
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#11-verification-strategy-end-to-end",
+      "heading": "11. Verification strategy (end-to-end)",
+      "anchor": "11-verification-strategy-end-to-end",
+      "snippet": "11. Verification strategy (end-to-end)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#4-link-precision-measurement-m4-the-trust-gate",
+      "heading": "4. Link-precision measurement (M4 — the trust gate)",
+      "anchor": "4-link-precision-measurement-m4-the-trust-gate",
+      "snippet": "4. Link-precision measurement (M4 — the trust gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#creative-direction-signal-grid",
+      "heading": "Creative Direction: Signal Grid",
+      "anchor": "creative-direction-signal-grid",
+      "snippet": "Creative Direction: Signal Grid",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#4-9-seconds-the-product",
+      "heading": "4-9 seconds: The Product",
+      "anchor": "4-9-seconds-the-product",
+      "snippet": "4-9 seconds: The Product",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L128",
+    "procedureName": "label",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/go-resolver.test.ts@L130",
+      "case:packages/pipeline/src/resolve/go-resolver.test.ts@L132",
+      "case:packages/pipeline/src/resolve/go-resolver.test.ts@L134"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L128",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ed248c8bed84567f3df7ad6f3de2fef395c8d682fcac1be9fc3cde3a5bada87e",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.test.ts@L129",
+          "line": 129,
+          "expr": "const n: Node | undefined = [...soul.iterate()].find((x) => x.id === id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L128",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9e94f1efee569f8125ed1ee77b130589121485c7facf3baafc69fdcd39255468",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 129
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L128",
+        "procedureName": "label",
+        "guard": "cond:packages/pipeline/src/resolve/go-resolver.test.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.test.ts@L130",
+            "expr": "!n",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:48f22bed59e9d10a04cbe669db8eed3d4650564673c962cc5c58220069259891",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.test.ts@L130",
+          "line": 130,
+          "expr": "return id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L128",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:142380e7d7fec39ad793b875cadd52378703cf14c52201ba93e59743a9325261",
+          "target": "case:packages/pipeline/src/resolve/go-resolver.test.ts@L132",
+          "line": 132,
+          "expr": "symbol"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L128",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/go-resolver.test.ts@L132",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/go-resolver.test.ts@L132",
+            "expr": "symbol",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9572be1c570dbac6a0d1dadebd06474bc15d481dd4251074e175088cb876e704",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.test.ts@L133",
+          "line": 133,
+          "expr": "return `sym:${n.qualifiedName ?? n.name}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L128",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a411a7f49b112aab906f104f4aac16cb8c905bd20906ced80b173c2f816558a2",
+          "target": "case:packages/pipeline/src/resolve/go-resolver.test.ts@L134",
+          "line": 134,
+          "expr": "file"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L128",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/go-resolver.test.ts@L134",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/go-resolver.test.ts@L134",
+            "expr": "file",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:653b177fdc874c2f614189e49739b2947edceb23b3cb4a5556d5918c8e812397",
+          "target": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#shortFile@L141",
+          "expr": "shortFile",
+          "line": 135
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L128",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/go-resolver.test.ts@L134",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/go-resolver.test.ts@L134",
+            "expr": "file",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:54cbc99e7d9f2618e6743a50fc21bb826605342e8f6bd688d4d62f47ef23b0a4",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.test.ts@L135",
+          "line": 135,
+          "expr": "return `file:${shortFile(n.file)}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L128",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5ead204c16121d8264a6d891dc69daf9359b9d3cbea5f89c489fcf7a7f5050f7",
+          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#shortFile@L223",
+          "expr": "shortFile",
+          "line": 135
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L128",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:49eefb33b215e007afec23dfe648c58ece563a5036605b29044a1f4d8a48fa6a",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.test.ts@L137",
+          "line": 137,
+          "expr": "return n.kind;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/go-resolver.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 2,
+    "calls": {
+      "resolved": 3,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,342 @@
+{
+  "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:7d26d146df981524b58f364eb68f7839e538c40306a0a82d18f970f5aea21a34",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+    "kind": "symbol",
+    "type": "method",
+    "name": "matchQuote",
+    "qualifiedName": "Lexer.matchQuote",
+    "signature": "matchQuote(): { delim: string; triple: boolean } | null",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/lexer.ts",
+    "span": {
+      "start": 422,
+      "end": 440
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 428
+      },
+      {
+        "callee": "advance",
+        "line": 429
+      },
+      {
+        "callee": "advance",
+        "line": 430
+      },
+      {
+        "callee": "advance",
+        "line": 431
+      },
+      {
+        "callee": "peek",
+        "line": 434
+      },
+      {
+        "callee": "advance",
+        "line": 436
+      }
+    ]
+  },
+  "source": {
+    "text": "  private matchQuote(): { delim: string; triple: boolean } | null {\n    if (\n      this.peek() === this.peek(1) &&\n      this.peek(1) === this.peek(2) &&\n      (this.peek() === '\"' || this.peek() === \"'\")\n    ) {\n      const d = this.peek();\n      this.advance();\n      this.advance();\n      this.advance();\n      return { delim: d!, triple: true };\n    }\n    const c = this.peek();\n    if (c === '\"' || c === \"'\") {\n      this.advance();\n      return { delim: c, triple: false };\n    }\n    return null;\n  }",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 422
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanString@L239",
+      "confidence": 1,
+      "name": "scanString",
+      "qualifiedName": "Lexer.scanString",
+      "signature": "scanString(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 239
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.advance@L394",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 394
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 390
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+    "procedureName": "Lexer.matchQuote",
+    "conditions": [
+      "cond:packages/parsers/src/python/lexer.ts@L423",
+      "cond:packages/parsers/src/python/lexer.ts@L435"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+        "procedureName": "Lexer.matchQuote",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9e21bbc525c47833e23f2aac2e8e56ba6df3310469e11818a076042195453638",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
+          "expr": "peek",
+          "line": 428
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+        "procedureName": "Lexer.matchQuote",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L423",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L423",
+            "expr": "this.peek() === this.peek(1) &&\n      this.peek(1) === this.peek(2) &&\n      (this.peek() === '\"' || this.peek() === \"'\")",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7467399b19dab0820e500024b2e3cafbe08043b876d8e24410fcd8f3323ee912",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L428",
+          "line": 428,
+          "expr": "const d = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+        "procedureName": "Lexer.matchQuote",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L435",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L435",
+            "expr": "c === '\"' || c === \"'\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0491c6f100595e4f65588d7453bd0fff2ca7abc7646d7b4be47793a2c5a29675",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.advance@L394",
+          "expr": "advance",
+          "line": 429
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+        "procedureName": "Lexer.matchQuote",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L423",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L423",
+            "expr": "this.peek() === this.peek(1) &&\n      this.peek(1) === this.peek(2) &&\n      (this.peek() === '\"' || this.peek() === \"'\")",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f97c7ef2c28885e4d65ef02cac9ffad54a0402f6c9c4a4415a322d96bf1927ca",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L429",
+          "line": 429,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+        "procedureName": "Lexer.matchQuote",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L423",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L423",
+            "expr": "this.peek() === this.peek(1) &&\n      this.peek(1) === this.peek(2) &&\n      (this.peek() === '\"' || this.peek() === \"'\")",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:47cc54a2e893b2e41654fec5aa3e849d0ca306b78603efc6ee79d0c6406e7a7f",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L430",
+          "line": 430,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+        "procedureName": "Lexer.matchQuote",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L423",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L423",
+            "expr": "this.peek() === this.peek(1) &&\n      this.peek(1) === this.peek(2) &&\n      (this.peek() === '\"' || this.peek() === \"'\")",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5f643e8daaca86e53a0d8c323597d770e13c489621ddd1fab3a93c057162d074",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L431",
+          "line": 431,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+        "procedureName": "Lexer.matchQuote",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L423",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L423",
+            "expr": "this.peek() === this.peek(1) &&\n      this.peek(1) === this.peek(2) &&\n      (this.peek() === '\"' || this.peek() === \"'\")",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f7c2175c10ce05df376ec3f6b4f7068d04cce3189926a72335fff3734ab6970",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L432",
+          "line": 432,
+          "expr": "return { delim: d!, triple: true };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+        "procedureName": "Lexer.matchQuote",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:01396feaab29bdb036e967194788b45d26a529d3dc80862cb5b3e213f57a6742",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L434",
+          "line": 434,
+          "expr": "const c = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+        "procedureName": "Lexer.matchQuote",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L435",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L435",
+            "expr": "c === '\"' || c === \"'\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29a40ee5687be11b6125560d232b25c066461c3532d1a747d78020b4d3e4fae9",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L436",
+          "line": 436,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+        "procedureName": "Lexer.matchQuote",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L435",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L435",
+            "expr": "c === '\"' || c === \"'\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:25787501bcc6ce971a551734b5ab24bf878c2e9fdadafe8410c595cacb02ad25",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L437",
+          "line": 437,
+          "expr": "return { delim: c, triple: false };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+        "procedureName": "Lexer.matchQuote",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:34d916659fe32e9a6454082ddeafc148c41998cca6f590e85893f838724e87a6",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L439",
+          "line": 439,
+          "expr": "return null;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/parsers/src/python/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 6,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

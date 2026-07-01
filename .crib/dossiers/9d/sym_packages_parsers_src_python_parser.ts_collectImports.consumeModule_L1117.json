@@ -1,0 +1,198 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#collectImports.consumeModule@L1117",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:79176a5d61309a177118f7ddd7c5827547c63ee01609f82a1ee82ee12aeb2846",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#collectImports.consumeModule@L1117",
+    "kind": "symbol",
+    "type": "function",
+    "name": "consumeModule",
+    "qualifiedName": "collectImports.consumeModule",
+    "signature": "consumeModule(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 1117,
+      "end": 1130
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 1121
+      }
+    ]
+  },
+  "source": {
+    "text": "  const consumeModule = (k: number): { parts: string[]; j: number } => {\n    const parts: string[] = [];\n    let j = k;\n    while (isName(j)) {\n      parts.push(tokens[j]!.value);\n      j++;\n      if (isOp(j, '.')) {\n        j++;\n        continue;\n      }\n      break;\n    }\n    return { parts, j };\n  };",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 1117
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#collectImports@L1096",
+      "confidence": 1,
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(tokens: Token[]): PyImport[]",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 1096
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.isName@L798",
+      "confidence": 1,
+      "name": "isName",
+      "qualifiedName": "Parser.isName",
+      "signature": "isName(value: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 798
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#collectImports.isOp@L1101",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "collectImports.isOp",
+      "signature": "isOp(…)",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 1101
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/parser.ts@L1116",
+      "snippet": "/** Consume a dotted module path (NAME (. NAME)*); return parts + new cursor. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#collectImports.consumeModule@L1117",
+    "procedureName": "collectImports.consumeModule",
+    "conditions": [
+      "cond:packages/parsers/src/python/parser.ts@L1120"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#collectImports.consumeModule@L1117",
+        "procedureName": "collectImports.consumeModule",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d948d7cd8940bc6bb83a1d807403fa10e914f796ca3475e6fd38ec65f7f129d3",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.isName@L798",
+          "expr": "isName"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#collectImports.consumeModule@L1117",
+        "procedureName": "collectImports.consumeModule",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f701dc89a2c462c7b8673427bfc71172d7194c6ef48cefbb4b14ecc1149b92c4",
+          "target": "sym:packages/parsers/src/python/parser.ts#collectImports.isOp@L1101",
+          "expr": "isOp"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#collectImports.consumeModule@L1117",
+        "procedureName": "collectImports.consumeModule",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L1120",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L1120",
+            "expr": "isName(j)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d69b0f20ee9efdd437d7b4a7c8c90f191d0e986d5e56306068278d33a8d23301",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L1121",
+          "line": 1121,
+          "expr": "parts.push(tokens[j]!.value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#collectImports.consumeModule@L1117",
+        "procedureName": "collectImports.consumeModule",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9be6a72372bc05817aec9209893f0281f7cae72aecb37838f13eac678f24eb78",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1121
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#collectImports.consumeModule@L1117",
+        "procedureName": "collectImports.consumeModule",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:649202be49c07e97cd63af7b8c774b4ec4ea90dda33f26ee267110dfffa303f0",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L1129",
+          "line": 1129,
+          "expr": "return { parts, j };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

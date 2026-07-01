@@ -1,0 +1,301 @@
+{
+  "id": "sym:packages/core/src/dossier/builder.ts#buildAdjacency@L327",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:36b46802cf43210a692b49cc96beb1824ad5fc09e7bf335af2221adba1125f05",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/builder.ts#buildAdjacency@L327",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildAdjacency",
+    "qualifiedName": "buildAdjacency",
+    "signature": "buildAdjacency(soul: SoulStore, key: (e: Edge) => string): Map<string, Edge[]>",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/builder.ts",
+    "span": {
+      "start": 327,
+      "end": 336
+    },
+    "callSites": [
+      {
+        "callee": "key",
+        "line": 330
+      },
+      {
+        "callee": "get",
+        "line": 331
+      },
+      {
+        "callee": "push",
+        "line": 332
+      },
+      {
+        "callee": "set",
+        "line": 333
+      }
+    ]
+  },
+  "source": {
+    "text": "function buildAdjacency(soul: SoulStore, key: (e: Edge) => string): Map<string, Edge[]> {\n  const map = new Map<string, Edge[]>();\n  for (const e of soul.iterateEdges()) {\n    const k = key(e);\n    const list = map.get(k);\n    if (list) list.push(e);\n    else map.set(k, [e]);\n  }\n  return map;\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 327
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L148",
+      "confidence": 1,
+      "name": "buildDossier",
+      "qualifiedName": "buildDossier",
+      "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 148
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#controlFlow.push@L382",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "controlFlow.push",
+      "signature": "push(…)",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 382
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/linker.test.ts#key@L57",
+      "confidence": 1,
+      "name": "key",
+      "qualifiedName": "key",
+      "signature": "key(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/linker.test.ts",
+      "line": 57
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/builder.ts@L326",
+      "snippet": "/** Build a src-or-dst-keyed adjacency map in one iterateEdges() pass. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/builder.ts#buildAdjacency@L327",
+    "procedureName": "buildAdjacency",
+    "conditions": [
+      "cond:packages/core/src/dossier/builder.ts@L329",
+      "cond:packages/core/src/dossier/builder.ts@L332"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildAdjacency@L327",
+        "procedureName": "buildAdjacency",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L329",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L329",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c77fb7da1a1adadc985a0e63aa915c60ba824cc65a5feab1ce5c561f7d773e2f",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L330",
+          "line": 330,
+          "expr": "const k = key(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildAdjacency@L327",
+        "procedureName": "buildAdjacency",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f9487afbdb8a27c4b89faf6222de99d56dfe74ebad768953d103fd1dc5623da4",
+          "target": "sym:packages/pipeline/src/linker/linker.test.ts#key@L57",
+          "expr": "key",
+          "line": 330
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildAdjacency@L327",
+        "procedureName": "buildAdjacency",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L329",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L329",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3f41bfca44f42fd1afe3b71c8a5779a74e540524fd30cc10ac77e75735826a4f",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L331",
+          "line": 331,
+          "expr": "const list = map.get(k);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildAdjacency@L327",
+        "procedureName": "buildAdjacency",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L332",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L329",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L332",
+            "expr": "list",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:643947dc2865a7e44b224c9b51c50e66fe2c8dc9f1b66bb2da36e3b5084b2890",
+          "target": "sym:packages/core/src/dossier/builder.ts#controlFlow.push@L382",
+          "expr": "push",
+          "line": 332
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildAdjacency@L327",
+        "procedureName": "buildAdjacency",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L332",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L329",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L332",
+            "expr": "list",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c90691024be0c4ebac695abd1ca01f8905f952b048de43c41bb7792ade9bf5d3",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L332",
+          "line": 332,
+          "expr": "list.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildAdjacency@L327",
+        "procedureName": "buildAdjacency",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f227ecc5a341884d61bbbabd1474cb62e693d93b191951ce81182b3c3e7248de",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 332
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildAdjacency@L327",
+        "procedureName": "buildAdjacency",
+        "guard": "cond:packages/core/src/dossier/builder.ts@L332",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L329",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/builder.ts@L332",
+            "expr": "list",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:919e9c871d9f7aa4bbb9950e6b240c3019a1b3a46ecc06198cbf457389059b6a",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L333",
+          "line": 333,
+          "expr": "map.set(k, [e]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/builder.ts#buildAdjacency@L327",
+        "procedureName": "buildAdjacency",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:928d4d213af8c750d6c39aa6ad71e0bb9cdf7a1121ee64d1a9a820cf4be14ffe",
+          "target": "stmt:packages/core/src/dossier/builder.ts@L335",
+          "line": 335,
+          "expr": "return map;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/core/src/dossier/builder.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 4,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

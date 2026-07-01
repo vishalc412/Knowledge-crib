@@ -1,0 +1,157 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#artifactPath@L1129",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9222a81eb0a00e7f25144d48d9f628596563f01d6639e4d5e606beb2c226e9b1",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#artifactPath@L1129",
+    "kind": "symbol",
+    "type": "function",
+    "name": "artifactPath",
+    "qualifiedName": "artifactPath",
+    "signature": "artifactPath(root: string, layer: EnrichLayer, targetId: string, hash: string): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1129,
+      "end": 1137
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 1130
+      },
+      {
+        "callee": "shard",
+        "line": 1134
+      },
+      {
+        "callee": "safeName",
+        "line": 1135
+      },
+      {
+        "callee": "safeName",
+        "line": 1135
+      }
+    ]
+  },
+  "source": {
+    "text": "function artifactPath(root: string, layer: EnrichLayer, targetId: string, hash: string): string {\n  return join(\n    root,\n    'analysis',\n    layer,\n    shard(targetId),\n    `${safeName(targetId)}_${safeName(hash)}.json`,\n  );\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 1129
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L899",
+      "confidence": 1,
+      "name": "writeArtifact",
+      "qualifiedName": "EnrichmentStore.writeArtifact",
+      "signature": "writeArtifact(artifact: LlmArtifact): string",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 899
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#safeName@L1147",
+      "confidence": 1,
+      "name": "safeName",
+      "qualifiedName": "safeName",
+      "signature": "safeName(id: string): string",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1147
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#shard@L1143",
+      "confidence": 1,
+      "name": "shard",
+      "qualifiedName": "shard",
+      "signature": "shard(id: string): string",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1143
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#artifactPath@L1129",
+    "procedureName": "artifactPath",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#artifactPath@L1129",
+        "procedureName": "artifactPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:075e5777e69bb57ff30e4d2a417f94cb9c28af57cf804f8f419ad635ae4bd0e4",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1130",
+          "line": 1130,
+          "expr": "return join(\n    root,\n    'analysis',\n    layer,\n    shard(targetId),\n    `${safeName(targetId)}_${safeName(hash)}.json`,\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#artifactPath@L1129",
+        "procedureName": "artifactPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:55c24a0cbfca7c5c97a08e403c6ba5ce1a8e5e9e2e979edaf2d406940c4715f0",
+          "target": "sym:packages/mcp/src/enrichment.ts#shard@L1143",
+          "expr": "shard",
+          "line": 1134
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#artifactPath@L1129",
+        "procedureName": "artifactPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:02907370f75d09fa1e0f607ad27d1693e5100b146899a1853a8e4d8f2c47cf41",
+          "target": "sym:packages/mcp/src/enrichment.ts#safeName@L1147",
+          "expr": "safeName",
+          "line": 1135
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

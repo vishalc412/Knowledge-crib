@@ -1,0 +1,629 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:010796f9e394e940bcfe1686e9c9d5b3ed12f3e1b44529f18b5837154099630f",
+  "builtAt": "2026-06-30T22:39:43.179Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cmdQuery",
+    "qualifiedName": "cmdQuery",
+    "signature": "cmdQuery(args: string[], ctx?: CmdCtx): Promise<number>",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 479,
+      "end": 527
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 482
+      },
+      {
+        "callee": "positionalsOf",
+        "line": 482
+      },
+      {
+        "callee": "write",
+        "line": 484
+      },
+      {
+        "callee": "includes",
+        "line": 491
+      },
+      {
+        "callee": "includes",
+        "line": 492
+      },
+      {
+        "callee": "includes",
+        "line": 493
+      },
+      {
+        "callee": "includes",
+        "line": 494
+      },
+      {
+        "callee": "includes",
+        "line": 498
+      },
+      {
+        "callee": "indexOf",
+        "line": 499
+      },
+      {
+        "callee": "parseInt",
+        "line": 500
+      },
+      {
+        "callee": "resolveProjectRoot",
+        "line": 501
+      },
+      {
+        "callee": "write",
+        "line": 503
+      },
+      {
+        "callee": "openSoul",
+        "line": 506
+      },
+      {
+        "callee": "openIndexForRead",
+        "line": 507
+      },
+      {
+        "callee": "write",
+        "line": 510
+      },
+      {
+        "callee": "stringify",
+        "line": 511
+      },
+      {
+        "callee": "query",
+        "line": 512
+      },
+      {
+        "callee": "isFinite",
+        "line": 519
+      },
+      {
+        "callee": "close",
+        "line": 525
+      }
+    ]
+  },
+  "source": {
+    "text": "async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {\n  // query positionals are the search text, NOT a root — root comes from --cwd / env / cwd walk only.\n  // Use positionalsOf so `--limit 5` does not leak `5` into the query string.\n  const q = positionalsOf(args).join(' ');\n  if (!q) {\n    process.stderr.write(\n      'usage: crib query <text> [--with-source] [--with-rules] [--with-framework] [--extracted-only] [--with-llm] [--limit N]\\n',\n    );\n    return EXIT.BAD_ARGS;\n  }\n  // WS-2: fold the deep per-symbol context into each hit so one CLI call returns what a full file\n  // read surfaces (bodies + decision tables), not just signatures. Flags mirror the MCP `query` tool.\n  const withSource = args.includes('--with-source');\n  const withRules = args.includes('--with-rules');\n  const withFramework = args.includes('--with-framework');\n  const extractedOnly = args.includes('--extracted-only');\n  // --with-llm opts INTO the full LLM analysis+graph+evidence blob on each hit. Default (off) keeps\n  // the discovery view lightweight: a one-line snippet + a 5-field LLM pointer (provenance/confidence/\n  // purpose) — the token-cost discipline. Set this only when you want the full LLM brief per hit.\n  const withLlm = args.includes('--with-llm');\n  const limitIdx = args.indexOf('--limit');\n  const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;\n  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });\n  if (!isIndexedRoot(resolved)) {\n    process.stderr.write('not indexed — run `crib index` first\\n');\n    return EXIT.NOT_INDEXED;\n  }\n  const rt = openSoul(resolved);\n  const index = openIndexForRead(rt);\n  if (!index) return EXIT.NOT_INDEXED;\n  const verbs = new Verbs({ soul: rt.soul, index, repoRoot: resolved.repoRoot });\n  process.stdout.write(\n    `${JSON.stringify(\n      verbs.query({\n        q,\n        ...(withSource ? { withSource: true } : {}),\n        ...(withRules ? { withRules: true } : {}),\n        ...(withFramework ? { withFramework: true } : {}),\n        ...(extractedOnly ? { extractedOnly: true } : {}),\n        ...(withLlm ? { withLlm: true } : {}),\n        ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),\n      }),\n      null,\n      2,\n    )}\\n`,\n  );\n  index.close();\n  return EXIT.OK;\n}",
+    "truncated": false,
+    "totalLines": 49,
+    "startLine": 479
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#main@L233",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main(argvRaw: string[]): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 233
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L107",
+      "confidence": 1,
+      "name": "isIndexedRoot",
+      "qualifiedName": "isIndexedRoot",
+      "signature": "isIndexedRoot(resolved: ResolvedRoot): boolean",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 107
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#openIndexForRead@L533",
+      "confidence": 1,
+      "name": "openIndexForRead",
+      "qualifiedName": "openIndexForRead",
+      "signature": "openIndexForRead(rt: ReturnType<typeof openSoul>): IndexStore | null",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 533
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#openSoul@L100",
+      "confidence": 1,
+      "name": "openSoul",
+      "qualifiedName": "openSoul",
+      "signature": "openSoul(resolved: ResolvedRoot): Runtime",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#positionalsOf@L83",
+      "confidence": 1,
+      "name": "positionalsOf",
+      "qualifiedName": "positionalsOf",
+      "signature": "positionalsOf(args: string[]): string[]",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 83
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+      "confidence": 1,
+      "name": "resolveProjectRoot",
+      "qualifiedName": "resolveProjectRoot",
+      "signature": "resolveProjectRoot(opts: ResolveOpts): ResolvedRoot",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 53
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
+      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+    "procedureName": "cmdQuery",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L483",
+      "cond:packages/cli/src/cli.ts@L502",
+      "cond:packages/cli/src/cli.ts@L508"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dee104362a5b70d8744a0f30fefe25d2d40966e09414b647a74815da62035dba",
+          "target": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L107",
+          "expr": "isIndexedRoot"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6640a17276542f47a6b67e72ea0bfda672115e16233b33000598f0f351bbaa93",
+          "target": "sym:packages/cli/src/cli.ts#positionalsOf@L83",
+          "expr": "positionalsOf",
+          "line": 482
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9e362f74a775a22cb0b2db3620d238d38cd18b30e83fbe997d241cf9637060f6",
+          "target": "stmt:packages/cli/src/cli.ts@L482",
+          "line": 482,
+          "expr": "const q = positionalsOf(args).join(' ');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "guard": "cond:packages/cli/src/cli.ts@L483",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L483",
+            "expr": "!q",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cb610b87d94db10fe46e38112007eaf04fabc808ec80bc67382786d0de7c0350",
+          "target": "stmt:packages/cli/src/cli.ts@L484",
+          "line": 484,
+          "expr": "process.stderr.write(\n      'usage: crib query <text> [--with-source] [--with-rules] [--with-framework] [--extracted-only] [--with-llm] [--limit N]\\n',\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:453e7b6b08a98c62447f97f0426908d9db42b9bdc8bcbbbb46efcfa9e35a984f",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 484
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "guard": "cond:packages/cli/src/cli.ts@L483",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L483",
+            "expr": "!q",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c3e4b39536d95ff7cf5ae090cc68dccefe6f9ad6639ada48066589a5509aaceb",
+          "target": "stmt:packages/cli/src/cli.ts@L487",
+          "line": 487,
+          "expr": "return EXIT.BAD_ARGS;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fc1c2bbffd8607e3511f58b36d50b9d321676134fe31b47fa914d9ef09e704df",
+          "target": "stmt:packages/cli/src/cli.ts@L491",
+          "line": 491,
+          "expr": "const withSource = args.includes('--with-source');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:51526afdf37480dc073cd3236131f03d9d53a8233543dd6e35dbddef57c992d4",
+          "target": "stmt:packages/cli/src/cli.ts@L492",
+          "line": 492,
+          "expr": "const withRules = args.includes('--with-rules');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:07001033ba73dafe6b1d95c44151f64157ab4d546fbd6dd0e814e98fd68000ff",
+          "target": "stmt:packages/cli/src/cli.ts@L493",
+          "line": 493,
+          "expr": "const withFramework = args.includes('--with-framework');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:18bf9b48862fdf95a7dfe541f26516d5eab3b26aa1040b9f7ee102b6bb68f8ca",
+          "target": "stmt:packages/cli/src/cli.ts@L494",
+          "line": 494,
+          "expr": "const extractedOnly = args.includes('--extracted-only');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2509cc67aa19a96e0ef115b1b1562120480ec09dcba2ca9f0f291b483969cfd7",
+          "target": "stmt:packages/cli/src/cli.ts@L498",
+          "line": 498,
+          "expr": "const withLlm = args.includes('--with-llm');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8cabcd45cc22bcce8607ca9e21d1b4883b327e5b227406ea04f8a1e50c8c7934",
+          "target": "stmt:packages/cli/src/cli.ts@L499",
+          "line": 499,
+          "expr": "const limitIdx = args.indexOf('--limit');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9875713adb1115157d393d903c0eceabbe5ab32d4a83fab146904e8c28518210",
+          "target": "stmt:packages/cli/src/cli.ts@L500",
+          "line": 500,
+          "expr": "const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5f5e91cad7784a8b5c954e6d5ba543d7a3a4c00dd96604ed13b7b48f37dcd8a",
+          "target": "stmt:packages/cli/src/cli.ts@L501",
+          "line": 501,
+          "expr": "const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7d4b35d4ce4ec7d34e76fa78f4509297f4cf7ad987f0bd7ea4d45bd386a3c163",
+          "target": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+          "expr": "resolveProjectRoot",
+          "line": 501
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "guard": "cond:packages/cli/src/cli.ts@L502",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L502",
+            "expr": "!isIndexedRoot(resolved)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:64609d875c0aa90d87a8b2f64365fce61d978f52eaa141cbc94a6115a3aa823d",
+          "target": "stmt:packages/cli/src/cli.ts@L503",
+          "line": 503,
+          "expr": "process.stderr.write('not indexed — run `crib index` first\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "guard": "cond:packages/cli/src/cli.ts@L502",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L502",
+            "expr": "!isIndexedRoot(resolved)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:da6106de72617ed029d2c1508df000e3d3b526d21c57fc8fa004cbc2186164ba",
+          "target": "stmt:packages/cli/src/cli.ts@L504",
+          "line": 504,
+          "expr": "return EXIT.NOT_INDEXED;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8ceb4ca7ce63e601479e715afd19aaa5dedcd48a20c00e248dd098f29ff185e7",
+          "target": "stmt:packages/cli/src/cli.ts@L506",
+          "line": 506,
+          "expr": "const rt = openSoul(resolved);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c1f8272bfc8089a924404815ab11a244b1e28e8385ac728debbade76f30ae698",
+          "target": "sym:packages/cli/src/runtime.ts#openSoul@L100",
+          "expr": "openSoul",
+          "line": 506
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:770526f8d73b51f3526e1847a7d69117183aa45dc827dafd62fb84c1faa55967",
+          "target": "sym:packages/cli/src/cli.ts#openIndexForRead@L533",
+          "expr": "openIndexForRead",
+          "line": 507
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:369a9df7d944eed09ec890cc32cbdf991f099bdbf1ce16d6c586f2cee411e5ca",
+          "target": "stmt:packages/cli/src/cli.ts@L507",
+          "line": 507,
+          "expr": "const index = openIndexForRead(rt);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "guard": "cond:packages/cli/src/cli.ts@L508",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L508",
+            "expr": "!index",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ee73e001d3de000dee38ab95fe1cdd4c04be313bba07d9787e4b8911e7a542f7",
+          "target": "stmt:packages/cli/src/cli.ts@L508",
+          "line": 508,
+          "expr": "return EXIT.NOT_INDEXED;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0e0cd6a950e1633a3c3df99d02b73f5a1c49510ff03caaa338b71a34c37978a3",
+          "target": "stmt:packages/cli/src/cli.ts@L510",
+          "line": 510,
+          "expr": "process.stdout.write(\n    `${JSON.stringify(\n      verbs.query({\n        q,\n        ...(withSource ? { withSource: true } : {}),\n        ...(withRules ? { withRules: true } : {}),\n        ...(withFramework ? { withFramework: true } : {}),\n        ...(extractedOnly ? { extractedOnly: true } : {}),\n        ...(withLlm ? { withLlm: true } : {}),\n        ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),\n      }),\n      null,\n      2,\n    )}\\n`,\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bba11e071b5919c295b6e2dad219708ad498d56bdbb9bda4edd876892d3cad0d",
+          "target": "stmt:packages/cli/src/cli.ts@L525",
+          "line": 525,
+          "expr": "index.close();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+        "procedureName": "cmdQuery",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9d95cc841108d2cb2f34cb7fb06f42a70b83ab0eb5159fdf2db5070afb053eac",
+          "target": "stmt:packages/cli/src/cli.ts@L526",
+          "line": 526,
+          "expr": "return EXIT.OK;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 19,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 19,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 19,
+      "unresolved": 10
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "10 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+Knowledge-crib
+Copyright 2026 Knowledge-crib contributors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+This product includes software developed by the Knowledge-crib project
+(https://github.com/KnowledgeCrib).
+
+ACKNOWLEDGEMENTS — DESIGN INSPIRATION ONLY
+==========================================
+Knowledge-crib is a greenfield, independent work. No source code from the
+following projects is included or derived from; they served as design
+inspiration only:
+
+- GitNexus (https://github.com/abhigyanpatwari/GitNexus)
+  Deep code analysis: impact analysis, call chains, type resolution.
+  Licensed by its authors (PolyForm-Noncommercial). No code reused.
+
+- Graphify (https://github.com/safishamsi/graphify)
+  Broad multimodal indexing: any input to a queryable graph.
+  MIT licensed. No code reused; ideas studied under its permissive terms.
+
+THIRD-PARTY DEPENDENCIES (runtime, used under their respective licenses):
+- @noble/hashes (MIT) — pure-JS BLAKE3 hashing (no native bindings).
+- ajv (MIT) — JSON Schema validation.
+- node:sqlite (Node.js built-in, experimental) — derived IndexStore backend (sqlite + FTS5); no
+  native `better-sqlite3` build dependency.
+- @modelcontextprotocol/sdk (MIT) — MCP server SDK.
+- zod (MIT) — MCP request and response schema validation.
+- typescript (Apache-2.0) — the TypeScript compiler API used by the TS extractor.
+- web-tree-sitter (MIT) — WASM tree-sitter runtime; powers the PHP extractor only (see below).
+  No native build step (WASM, same install posture as the sqlite migration above).
+
+VENDORED WEB RUNTIME (distributed under its included license text):
+- React and React DOM (MIT), including the embedded Modernizr feature-detection code (MIT).
+
+VENDORED GRAMMARS (packages/parsers/grammars/, distributed under their included license text):
+- tree-sitter-php (MIT, https://github.com/tree-sitter/tree-sitter-php) — compiled to
+  tree-sitter-php.wasm via the upstream tree-sitter CLI; no source modifications. Used by the PHP
+  extractor (see below).
+
+LANGUAGE EXTRACTORS:
+- TypeScript: the official TypeScript compiler API (syntactic parse only).
+- PL/SQL (M10): hand-rolled zero-dependency lexer + parser.
+- Python (M8): hand-rolled zero-dependency INDENT/DEDENT tokenizer + structural parser.
+- Java, C#, Go, Rust: hand-rolled zero-dependency tokenizer + structural parser (pure-JS, offline).
+- Markdown (M4): hand-rolled section splitter.
+- PHP: wraps the vendored tree-sitter-php WASM grammar (see above) — the first tree-sitter-backed
+  extractor, proving the pattern the other hand-rolled parsers can migrate to over time.

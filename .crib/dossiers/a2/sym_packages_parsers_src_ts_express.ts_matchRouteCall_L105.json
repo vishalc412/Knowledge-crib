@@ -1,0 +1,493 @@
+{
+  "id": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c4ba4dfb931f2af728256cab0b462de3fd7da1ee2a8aa1002a31b87cace2a2da",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+    "kind": "symbol",
+    "type": "function",
+    "name": "matchRouteCall",
+    "qualifiedName": "matchRouteCall",
+    "signature": "matchRouteCall(call: ts.CallExpression, byKey: Map<string, string>, lineOf: (pos: number) => number): | {\n      verb: string;\n      paths: string[];\n      handlerId: string | undefined;\n      callLine: number;\n      callEnd: number;\n    }\n  | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/express.ts",
+    "span": {
+      "start": 105,
+      "end": 152
+    },
+    "callSites": [
+      {
+        "callee": "stringPaths",
+        "line": 129
+      },
+      {
+        "callee": "get",
+        "line": 138
+      },
+      {
+        "callee": "lineOf",
+        "line": 149
+      },
+      {
+        "callee": "getStart",
+        "line": 149
+      },
+      {
+        "callee": "lineOf",
+        "line": 150
+      },
+      {
+        "callee": "getEnd",
+        "line": 150
+      }
+    ]
+  },
+  "source": {
+    "text": "function matchRouteCall(\n  call: ts.CallExpression,\n  byKey: Map<string, string>,\n  lineOf: (pos: number) => number,\n):\n  | {\n      verb: string;\n      paths: string[];\n      handlerId: string | undefined;\n      callLine: number;\n      callEnd: number;\n    }\n  | undefined {\n  const callee = call.expression;\n  // Must be `<Identifier>.<verb>` — the receiver is the Express app/router/api instance.\n  if (!ts.isPropertyAccessExpression(callee)) return undefined;\n  if (!ts.isIdentifier(callee.name)) return undefined;\n  const verb = EXPRESS_VERBS[callee.name.text];\n  if (!verb) return undefined;\n  if (!ts.isIdentifier(callee.expression)) return undefined; // receiver must be a plain Identifier\n\n  const args = call.arguments;\n  if (args.length < 2) return undefined; // need at least a path + a handler\n\n  const paths = stringPaths(args[0]!);\n  if (paths.length === 0) return undefined; // first arg must be a path string/array-of-strings\n\n  const handlerArg = args[args.length - 1]!;\n  // The handler must be an inline function OR an identifier resolving to a known callable.\n  let handlerId: string | undefined;\n  if (isHandlerLike(handlerArg)) {\n    handlerId = undefined; // inline function: no symbol to link.\n  } else if (ts.isIdentifier(handlerArg)) {\n    const id = byKey.get(handlerArg.text);\n    if (!id) return undefined; // identifier that resolves to nothing known → not a route (cuts noise).\n    handlerId = id;\n  } else {\n    return undefined; // non-callable last arg (e.g. another route config object) → not a route.\n  }\n\n  return {\n    verb,\n    paths,\n    handlerId,\n    callLine: lineOf(call.getStart()),\n    callEnd: lineOf(call.getEnd()),\n  };\n}",
+    "truncated": false,
+    "totalLines": 48,
+    "startLine": 105
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L60",
+      "confidence": 1,
+      "name": "extractExpressRoutes",
+      "qualifiedName": "extractExpressRoutes",
+      "signature": "extractExpressRoutes(input: ExpressPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/express.ts",
+      "line": 60
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes.visit@L63",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "extractExpressRoutes.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/express.ts",
+      "line": 63
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/express.ts#isHandlerLike@L169",
+      "confidence": 1,
+      "name": "isHandlerLike",
+      "qualifiedName": "isHandlerLike",
+      "signature": "isHandlerLike(e: ts.Expression): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/ts/express.ts",
+      "line": 169
+    },
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#lineOf@L265",
+      "confidence": 1,
+      "name": "lineOf",
+      "qualifiedName": "lineOf",
+      "signature": "lineOf(soul: SoulStore, e: Edge, callLines: Map<string, number>): number",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 265
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/express.ts#stringPaths@L156",
+      "confidence": 1,
+      "name": "stringPaths",
+      "qualifiedName": "stringPaths",
+      "signature": "stringPaths(arg: ts.Expression): string[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/express.ts",
+      "line": 156
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/express.ts@L103",
+      "snippet": "/** Match an `app.<verb>(pathArg, ...handlerArg)` call. Returns the verb, resolved paths, an optional",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+    "procedureName": "matchRouteCall",
+    "conditions": [
+      "cond:packages/parsers/src/ts/express.ts@L120",
+      "cond:packages/parsers/src/ts/express.ts@L121",
+      "cond:packages/parsers/src/ts/express.ts@L123",
+      "cond:packages/parsers/src/ts/express.ts@L124",
+      "cond:packages/parsers/src/ts/express.ts@L127",
+      "cond:packages/parsers/src/ts/express.ts@L130",
+      "cond:packages/parsers/src/ts/express.ts@L135",
+      "cond:packages/parsers/src/ts/express.ts@L137",
+      "cond:packages/parsers/src/ts/express.ts@L139"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "guard": "cond:packages/parsers/src/ts/express.ts@L120",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L120",
+            "expr": "!ts.isPropertyAccessExpression(callee)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:90ec3a8d7fcc5930d183f304a0e9903ffbf86a71d494c476a46092e6704c8fe8",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L120",
+          "line": 120,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "guard": "cond:packages/parsers/src/ts/express.ts@L121",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L121",
+            "expr": "!ts.isIdentifier(callee.name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dda4a27c689502b18990c55549db9798ca3cf8e0c54ad7a753aa9c16fde4a06f",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L121",
+          "line": 121,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "guard": "cond:packages/parsers/src/ts/express.ts@L123",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L123",
+            "expr": "!verb",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b0e7aaff81f1efb952d1366706e8ff2e2221c635a751ab590cf46ed9b339e536",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L123",
+          "line": 123,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "guard": "cond:packages/parsers/src/ts/express.ts@L124",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L124",
+            "expr": "!ts.isIdentifier(callee.expression)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1b58aa8919d729d8aa206cf63d52554ac81bb8c744e98654096dc05eb3285cd4",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L124",
+          "line": 124,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "guard": "cond:packages/parsers/src/ts/express.ts@L127",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L127",
+            "expr": "args.length < 2",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0b4968c19bec7a4e90dcb03a6febe8bcfba495ba14467e2c2caec7f261747c29",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L127",
+          "line": 127,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:074b8f69a36940860ae391a8fefa9aa01a5a4cc6b1fe1f568511b9d21bf54991",
+          "target": "sym:packages/parsers/src/ts/express.ts#stringPaths@L156",
+          "expr": "stringPaths",
+          "line": 129
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:03a1f46a71bc4ceb054ba4ec1751c51e0836d820479dcae2cbcffd700b156d7c",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L129",
+          "line": 129,
+          "expr": "const paths = stringPaths(args[0]!);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "guard": "cond:packages/parsers/src/ts/express.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L130",
+            "expr": "paths.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f57e95f6304f3ea37033ec9b65f0e8ba75e2c5335eb7fa4c324169cf5748d5ac",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L130",
+          "line": 130,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "guard": "cond:packages/parsers/src/ts/express.ts@L135",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L135",
+            "expr": "isHandlerLike(handlerArg)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7df2777224139ba6eb7009b039c6ec313ab0e24fbe4d2024e61cabf4c23e0a2d",
+          "target": "assign:packages/parsers/src/ts/express.ts@L136",
+          "line": 136,
+          "expr": "handlerId = undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "guard": "cond:packages/parsers/src/ts/express.ts@L137",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L135",
+            "expr": "isHandlerLike(handlerArg)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L137",
+            "expr": "ts.isIdentifier(handlerArg)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e63e45728fab6f55dfe4f5521e0f02e1c41b96339fd8985c8b86626bfff3666e",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L138",
+          "line": 138,
+          "expr": "const id = byKey.get(handlerArg.text);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "guard": "cond:packages/parsers/src/ts/express.ts@L139",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L135",
+            "expr": "isHandlerLike(handlerArg)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L137",
+            "expr": "ts.isIdentifier(handlerArg)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L139",
+            "expr": "!id",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ae6b938c2d8e74da0a2bb586f0b46bc5fa76f41f8e3cc84ceef3a36bffb1c5e1",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L139",
+          "line": 139,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "guard": "cond:packages/parsers/src/ts/express.ts@L137",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L135",
+            "expr": "isHandlerLike(handlerArg)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L137",
+            "expr": "ts.isIdentifier(handlerArg)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:82d2055f5ee0d20aae118ebd4492804115e7adffadbeb9ea780ee05e14d96c4d",
+          "target": "assign:packages/parsers/src/ts/express.ts@L140",
+          "line": 140,
+          "expr": "handlerId = id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "guard": "cond:packages/parsers/src/ts/express.ts@L137",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L135",
+            "expr": "isHandlerLike(handlerArg)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/express.ts@L137",
+            "expr": "ts.isIdentifier(handlerArg)",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:678bb80d1c39be9e5bff1b98ddea6cd6a290e522fb71729e7d3a45364e392025",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L142",
+          "line": 142,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:21f89216f9bf7436751a40a8bde5e9ae9445f05b4aa0dddf3c1cefbfb65d3971",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L145",
+          "line": 145,
+          "expr": "return {\n    verb,\n    paths,\n    handlerId,\n    callLine: lineOf(call.getStart()),\n    callEnd: lineOf(call.getEnd()),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4308b5658ae6d9e6d7479c56eeedda6e9b9156b6bb37c7fec280f75fd8d48f3f",
+          "target": "sym:packages/core/src/rules/extract.ts#lineOf@L265",
+          "expr": "lineOf",
+          "line": 149
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+        "procedureName": "matchRouteCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:91c0ad7554d173dd2cc09079d6a8cc2d651c0b3c10cd14755374162acbfd7288",
+          "target": "sym:packages/parsers/src/ts/express.ts#isHandlerLike@L169",
+          "expr": "isHandlerLike"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 13,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/express.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 13,
+    "assignments": 2,
+    "conditions": 9,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 6,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

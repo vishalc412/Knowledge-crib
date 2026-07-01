@@ -1,0 +1,463 @@
+{
+  "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:a520e9576d0bac8dafaa25e23f4d431af0fbc7ab7b5f9f9c13f4e388ecc1cc92",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+    "kind": "symbol",
+    "type": "function",
+    "name": "contentHash",
+    "qualifiedName": "contentHash",
+    "signature": "contentHash(input: string): string",
+    "lang": "typescript",
+    "file": "packages/soul-schema/src/hash.ts",
+    "span": {
+      "start": 21,
+      "end": 23
+    },
+    "callSites": [
+      {
+        "callee": "blake3Hex",
+        "line": 22
+      }
+    ]
+  },
+  "source": {
+    "text": "export function contentHash(input: string): string {\n  return `blake3:${blake3Hex(input)}`;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 21
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/validate.test.ts#beanMethodNode@L92",
+      "confidence": 1,
+      "name": "beanMethodNode",
+      "qualifiedName": "beanMethodNode",
+      "signature": "beanMethodNode(): Node",
+      "type": "function",
+      "file": "packages/core/src/validate.test.ts",
+      "line": 92
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.test.ts#cls@L22",
+      "confidence": 1,
+      "name": "cls",
+      "qualifiedName": "cls",
+      "signature": "cls(q: string, line: number, stereotype: string, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.test.ts",
+      "line": 22
+    },
+    {
+      "id": "sym:packages/core/src/validate.test.ts#componentNode@L73",
+      "confidence": 1,
+      "name": "componentNode",
+      "qualifiedName": "componentNode",
+      "signature": "componentNode(): Node",
+      "type": "function",
+      "file": "packages/core/src/validate.test.ts",
+      "line": 73
+    },
+    {
+      "id": "sym:packages/core/src/dossier/reconstruct.test.ts#doc@L57",
+      "confidence": 1,
+      "name": "doc",
+      "qualifiedName": "doc",
+      "signature": "doc(path: string, anchor: string, heading: string, spanStart: number): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.test.ts",
+      "line": 57
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.test.ts#fieldNode@L53",
+      "confidence": 1,
+      "name": "fieldNode",
+      "qualifiedName": "fieldNode",
+      "signature": "fieldNode(q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.test.ts",
+      "line": 53
+    },
+    {
+      "id": "sym:packages/core/src/validate.test.ts#fieldNode@L58",
+      "confidence": 1,
+      "name": "fieldNode",
+      "qualifiedName": "fieldNode",
+      "signature": "fieldNode(): Node",
+      "type": "function",
+      "file": "packages/core/src/validate.test.ts",
+      "line": 58
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.test.ts#file@L30",
+      "confidence": 1,
+      "name": "file",
+      "qualifiedName": "file",
+      "signature": "file(path: string): Node",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.test.ts",
+      "line": 30
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.test.ts#fileNode@L18",
+      "confidence": 1,
+      "name": "fileNode",
+      "qualifiedName": "fileNode",
+      "signature": "fileNode(path: string): Node",
+      "type": "function",
+      "file": "packages/core/src/soul-store.test.ts",
+      "line": 18
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs-detect.test.ts#fileNode@L74",
+      "confidence": 1,
+      "name": "fileNode",
+      "qualifiedName": "fileNode",
+      "signature": "fileNode(path: string): Node",
+      "type": "function",
+      "file": "packages/mcp/src/verbs-detect.test.ts",
+      "line": 74
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.test.ts#fileNode@L187",
+      "confidence": 1,
+      "name": "fileNode",
+      "qualifiedName": "fileNode",
+      "signature": "fileNode(path: string): Node",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.test.ts",
+      "line": 187
+    },
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#fileNode@L179",
+      "confidence": 1,
+      "name": "fileNode",
+      "qualifiedName": "fileNode",
+      "signature": "fileNode(root: string, file: FileMeta): Node",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 179
+    },
+    {
+      "id": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+      "confidence": 1,
+      "name": "ingestStaging",
+      "qualifiedName": "ingestStaging",
+      "signature": "ingestStaging(soul: SoulStore, root: string, mediaPaths: string[], opts: WorkerOpts = {}): Promise<MultimodalStats>",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal/ingest.ts",
+      "line": 57
+    },
+    {
+      "id": "sym:packages/pipeline/src/extract-ctx.ts#makeExtractCtx@L11",
+      "confidence": 1,
+      "name": "makeExtractCtx",
+      "qualifiedName": "makeExtractCtx",
+      "signature": "makeExtractCtx(repoRoot: string, relPath: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/pipeline/src/extract-ctx.ts",
+      "line": 11
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.test.ts#method@L38",
+      "confidence": 1,
+      "name": "method",
+      "qualifiedName": "method",
+      "signature": "method(q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/cli/src/viz.test.ts#node@L154",
+      "confidence": 1,
+      "name": "node",
+      "qualifiedName": "node",
+      "signature": "node(partial: Partial<Node> & { id: string; kind: Node['kind'] }): Node",
+      "type": "function",
+      "file": "packages/cli/src/viz.test.ts",
+      "line": 154
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.test.ts#routeNode@L66",
+      "confidence": 1,
+      "name": "routeNode",
+      "qualifiedName": "routeNode",
+      "signature": "routeNode(verb: string, path: string, line: number, meta: Record<string, unknown> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.test.ts",
+      "line": 66
+    },
+    {
+      "id": "sym:packages/core/src/validate.test.ts#routeNode@L40",
+      "confidence": 1,
+      "name": "routeNode",
+      "qualifiedName": "routeNode",
+      "signature": "routeNode(): Node",
+      "type": "function",
+      "file": "packages/core/src/validate.test.ts",
+      "line": 40
+    },
+    {
+      "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L39",
+      "confidence": 1,
+      "name": "runCluster",
+      "qualifiedName": "runCluster",
+      "signature": "runCluster(soul: SoulStore): ClusterStats",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/cluster.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.test.ts#stmt@L32",
+      "confidence": 1,
+      "name": "stmt",
+      "qualifiedName": "stmt",
+      "signature": "stmt(path: string, line: number, sqlKind: string, expr: string): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.test.ts",
+      "line": 32
+    },
+    {
+      "id": "sym:packages/core/src/dossier/dossier.test.ts#stmt@L36",
+      "confidence": 1,
+      "name": "stmt",
+      "qualifiedName": "stmt",
+      "signature": "stmt(path: string, line: number, lang = 'plsql'): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/dossier.test.ts",
+      "line": 36
+    },
+    {
+      "id": "sym:packages/core/src/dossier/reconstruct.test.ts#stmt@L32",
+      "confidence": 1,
+      "name": "stmt",
+      "qualifiedName": "stmt",
+      "signature": "stmt(path: string, line: number, sqlKind: string, expr: string): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.test.ts",
+      "line": 32
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.test.ts#stmt@L1334",
+      "confidence": 1,
+      "name": "stmt",
+      "qualifiedName": "stmt",
+      "signature": "stmt(path: string, line: number, sqlKind = 'select'): Node",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.test.ts",
+      "line": 1334
+    },
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.test.ts#sym@L17",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.test.ts",
+      "line": 17
+    },
+    {
+      "id": "sym:packages/core/src/dossier/dossier.test.ts#sym@L22",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/dossier.test.ts",
+      "line": 22
+    },
+    {
+      "id": "sym:packages/core/src/dossier/reconstruct.test.ts#sym@L17",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.test.ts",
+      "line": 17
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.test.ts#sym@L16",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, name: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.test.ts",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.test.ts#sym@L173",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.test.ts",
+      "line": 173
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/recursion.test.ts#sym@L22",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/recursion.test.ts",
+      "line": 22
+    },
+    {
+      "id": "sym:packages/ui/src/viz.test.ts#sym@L12",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, qname: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/ui/src/viz.test.ts",
+      "line": 12
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.test.ts#symNode@L27",
+      "confidence": 1,
+      "name": "symNode",
+      "qualifiedName": "symNode",
+      "signature": "symNode(path: string, name: string, line: number): Node",
+      "type": "function",
+      "file": "packages/core/src/soul-store.test.ts",
+      "line": 27
+    },
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.test.ts#table@L46",
+      "confidence": 1,
+      "name": "table",
+      "qualifiedName": "table",
+      "signature": "table(schema: string, name: string, file: string): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.test.ts",
+      "line": 46
+    },
+    {
+      "id": "sym:packages/core/src/dossier/reconstruct.test.ts#table@L46",
+      "confidence": 1,
+      "name": "table",
+      "qualifiedName": "table",
+      "signature": "table(schema: string, name: string, file: string): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.test.ts",
+      "line": 46
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+      "confidence": 1,
+      "name": "blake3Hex",
+      "qualifiedName": "blake3Hex",
+      "signature": "blake3Hex(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 15
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/soul-schema/src/hash.ts@L20",
+      "snippet": "/** Prefixed content hash: \"blake3:<hex>\". Stored on Node.hash. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+    "procedureName": "contentHash",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+        "procedureName": "contentHash",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7931c72339d8aa018fe0a0a2fdc01bc3e4c02328628fbd07ca3a3223db9ddc0b",
+          "target": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+          "expr": "blake3Hex",
+          "line": 22
+        }
+      },
+      {
+        "procedure": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+        "procedureName": "contentHash",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3dc94560b376ce2190fb8682d6150ca63b05071a58d87107849e42e4d26acbb4",
+          "target": "stmt:packages/soul-schema/src/hash.ts@L22",
+          "line": 22,
+          "expr": "return `blake3:${blake3Hex(input)}`;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/cli/src/viz.test.ts",
+      "packages/core/src/dossier/by-scope.test.ts",
+      "packages/core/src/dossier/dossier.test.ts",
+      "packages/core/src/dossier/framework.test.ts",
+      "packages/core/src/dossier/reconstruct.test.ts",
+      "packages/core/src/index/sqlite-index.test.ts",
+      "packages/core/src/soul-store.test.ts",
+      "packages/core/src/validate.test.ts",
+      "packages/mcp/src/verbs-detect.test.ts",
+      "packages/mcp/src/verbs.test.ts",
+      "packages/pipeline/src/cluster/cluster.ts",
+      "packages/pipeline/src/extract-ctx.ts",
+      "packages/pipeline/src/multimodal/ingest.ts",
+      "packages/pipeline/src/resolve/recursion.test.ts",
+      "packages/pipeline/src/structure.ts",
+      "packages/ui/src/viz.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

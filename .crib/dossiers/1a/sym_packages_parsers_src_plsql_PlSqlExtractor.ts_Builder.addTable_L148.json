@@ -1,0 +1,373 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:fb1b435b159051110e94ea4d56f5c4e117778b2b82c82b9a431576818ce5f8df",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+    "kind": "symbol",
+    "type": "method",
+    "name": "addTable",
+    "qualifiedName": "Builder.addTable",
+    "signature": "addTable(def: TableDef): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 148,
+      "end": 180
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 149
+      },
+      {
+        "callee": "hash",
+        "line": 159
+      },
+      {
+        "callee": "map",
+        "line": 161
+      },
+      {
+        "callee": "push",
+        "line": 165
+      },
+      {
+        "callee": "indexTable",
+        "line": 166
+      },
+      {
+        "callee": "addColumn",
+        "line": 167
+      },
+      {
+        "callee": "resolveLocalTable",
+        "line": 173
+      },
+      {
+        "callee": "push",
+        "line": 175
+      },
+      {
+        "callee": "edge",
+        "line": 176
+      },
+      {
+        "callee": "join",
+        "line": 176
+      }
+    ]
+  },
+  "source": {
+    "text": "  private addTable(def: TableDef): void {\n    const id = this.ctx.idFor('table', { schema: def.schema, name: def.name });\n    const fks = def.foreignKeys ?? [];\n    const tableNode: Node = {\n      id,\n      kind: 'table',\n      schema: def.schema,\n      name: def.name,\n      file: this.path,\n      span: def.span,\n      lang: 'plsql',\n      hash: this.ctx.hash(`${def.schema}.${def.name}`),\n      meta: {\n        columns: def.columns.map((c) => c.name),\n        ...(fks.length > 0 ? { foreignKeys: fks } : {}),\n      },\n    };\n    this.nodes.push(tableNode);\n    this.indexTable(def.schema, def.name, id);\n    for (const col of def.columns) this.addColumn(def.schema, def.name, col, def.span.start, id);\n    // WS-7: emit a `references` edge child table → parent table for each FK whose parent resolves\n    // locally (same-file). Cross-file FK parents are emitted by the SqlResolver against the schema\n    // catalog (it reads `meta.foreignKeys`). Without this, the schema's referential structure is\n    // invisible to Plan A while Plan B reads the FKs straight from the DDL.\n    for (const fk of fks) {\n      const parent = this.resolveLocalTable(fk.refTable);\n      if (parent) {\n        this.edges.push(\n          this.edge(id, parent, 'references', `FK ${fk.columns.join(',')} -> ${fk.refTable}`),\n        );\n      }\n    }\n  }",
+    "truncated": false,
+    "totalLines": 33,
+    "startLine": 148
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+      "confidence": 1,
+      "name": "addTop",
+      "qualifiedName": "Builder.addTop",
+      "signature": "addTop(top: TopLevel): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 132
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addColumn@L182",
+      "confidence": 1,
+      "name": "addColumn",
+      "qualifiedName": "Builder.addColumn",
+      "signature": "addColumn(schema: string, table: string, col: ColumnDef, line: number, tableId: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 182
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L798",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "Builder.edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string): Edge",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 798
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.indexTable@L782",
+      "confidence": 1,
+      "name": "indexTable",
+      "qualifiedName": "Builder.indexTable",
+      "signature": "indexTable(schema: string, name: string, id: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 782
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.resolveLocalTable@L765",
+      "confidence": 1,
+      "name": "resolveLocalTable",
+      "qualifiedName": "Builder.resolveLocalTable",
+      "signature": "resolveLocalTable(ref: string): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 765
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+    "procedureName": "Builder.addTable",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L167",
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L172",
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L174"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+        "procedureName": "Builder.addTable",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:33e05bb54cd98ac9e8ae007e8261c0289f12079602ce3dcb5227a0d39dcacc72",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L149",
+          "line": 149,
+          "expr": "const id = this.ctx.idFor('table', { schema: def.schema, name: def.name });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+        "procedureName": "Builder.addTable",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:87e4915e7785e218129e3109679e4f7c67d1e17a9e24c8658a00b25e09a21331",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L151",
+          "line": 151,
+          "expr": "const tableNode: Node = {\n      id,\n      kind: 'table',\n      schema: def.schema,\n      name: def.name,\n      file: this.path,\n      span: def.span,\n      lang: 'plsql',\n      hash: this.ctx.hash(`${def.schema}.${def.name}`),\n      meta: {\n        columns: def.columns.map((c) => c.name),\n        ...(fks.length > 0 ? { foreignKeys: fks } : {}),\n      },\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+        "procedureName": "Builder.addTable",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ecba65c5af12ab2c0bb661a6c55127ffc37fb3a0010164883adb3fc454d58ddd",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L165",
+          "line": 165,
+          "expr": "this.nodes.push(tableNode);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+        "procedureName": "Builder.addTable",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:202f58c29104ca722e1c0c842a70c883fc9e50913a5ae40b6be29095ae04f723",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.indexTable@L782",
+          "expr": "indexTable",
+          "line": 166
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+        "procedureName": "Builder.addTable",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:18d21b02981f244a87d364f6a4e943b21f72a0547ad6a2c7c42ad033847b6759",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L166",
+          "line": 166,
+          "expr": "this.indexTable(def.schema, def.name, id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+        "procedureName": "Builder.addTable",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L167",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L167",
+            "expr": "def.columns",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3cb95c52eccf792b11cd70409775c0cc2db816fe462ab1a4a6b713c6891bd590",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addColumn@L182",
+          "expr": "addColumn",
+          "line": 167
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+        "procedureName": "Builder.addTable",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L167",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L167",
+            "expr": "def.columns",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b93bf9fede3330be9011eda1f195a58676a95e2b5732e75ef4a2d9e06fc592a2",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L167",
+          "line": 167,
+          "expr": "this.addColumn(def.schema, def.name, col, def.span.start, id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+        "procedureName": "Builder.addTable",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L172",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L172",
+            "expr": "fks",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4ef987c7d50f845ae4f1194f79db55b44fe31db6268ad3b9847dfa18cf2fad4e",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.resolveLocalTable@L765",
+          "expr": "resolveLocalTable",
+          "line": 173
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+        "procedureName": "Builder.addTable",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L172",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L172",
+            "expr": "fks",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6f81f3a1b3e9e19552f3608ab570b93d8080d3650d61e5004a2232aaa05214ba",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L173",
+          "line": 173,
+          "expr": "const parent = this.resolveLocalTable(fk.refTable);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+        "procedureName": "Builder.addTable",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L174",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L172",
+            "expr": "fks"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L174",
+            "expr": "parent",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9fa8bffc26414727541e62cf0934bc9354f551c53b2a0ad87b8e71a7a2133be3",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L175",
+          "line": 175,
+          "expr": "this.edges.push(\n          this.edge(id, parent, 'references', `FK ${fk.columns.join(',')} -> ${fk.refTable}`),\n        );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+        "procedureName": "Builder.addTable",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L174",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L172",
+            "expr": "fks"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L174",
+            "expr": "parent",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6fa7c6f2ba9aeb7a26f17dc5e9d8d97544f2f14a7df7a9c4612dc5fadbef3b98",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L798",
+          "expr": "edge",
+          "line": 176
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 10,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#soulFor@L16",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:af9e5ca2a90c740b827651094c8db846c24eface4f47c6ef36f8b3453cafc5e7",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#soulFor@L16",
+    "kind": "symbol",
+    "type": "function",
+    "name": "soulFor",
+    "qualifiedName": "soulFor",
+    "signature": "soulFor(): SoulStore",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/go-resolver.test.ts",
+    "span": {
+      "start": 16,
+      "end": 20
+    },
+    "callSites": [
+      {
+        "callee": "newManifest",
+        "line": 17
+      },
+      {
+        "callee": "load",
+        "line": 18
+      }
+    ]
+  },
+  "source": {
+    "text": "function soulFor(): SoulStore {\n  const s = new SoulStore(cribDir, { manifest: newManifest({ now: NOW }) });\n  s.load();\n  return s;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 16
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+      "confidence": 1,
+      "name": "newManifest",
+      "qualifiedName": "newManifest",
+      "signature": "newManifest(opts: NewManifestOpts = {}): Manifest",
+      "type": "function",
+      "file": "packages/core/src/manifest.ts",
+      "line": 28
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#soulFor@L16",
+    "procedureName": "soulFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#soulFor@L16",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:50c2753d8974d4215bfaa571c63f3ab1a35f5e60b2c5994a59c4ad648cb36db4",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.test.ts@L17",
+          "line": 17,
+          "expr": "const s = new SoulStore(cribDir, { manifest: newManifest({ now: NOW }) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#soulFor@L16",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a7a9bf1f6e2eb64f764e63fab3f1a13752a2db01d15f4b839562ff89c2297f0d",
+          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
+          "expr": "newManifest",
+          "line": 17
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#soulFor@L16",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:05128db0c1b5f0b5a8b4795e36e18cf99603c30b5ec6f0678340133fddf5de8e",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.test.ts@L18",
+          "line": 18,
+          "expr": "s.load();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#soulFor@L16",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:06fd34b2f99a2b7090a20d1acf738d977a0bc0e4756d506ffc51264454d76ab5",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.test.ts@L19",
+          "line": 19,
+          "expr": "return s;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

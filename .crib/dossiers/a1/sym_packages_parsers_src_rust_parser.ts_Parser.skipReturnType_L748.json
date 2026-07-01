@@ -1,0 +1,217 @@
+{
+  "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipReturnType@L748",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:72bcae4f7edfe3293d167cd90aab769dcc94c7e12e70edd80d5c8b88dcac180e",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipReturnType@L748",
+    "kind": "symbol",
+    "type": "method",
+    "name": "skipReturnType",
+    "qualifiedName": "Parser.skipReturnType",
+    "signature": "skipReturnType(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/parser.ts",
+    "span": {
+      "start": 748,
+      "end": 752
+    },
+    "callSites": [
+      {
+        "callee": "next",
+        "line": 750
+      },
+      {
+        "callee": "skipTypeUntilBody",
+        "line": 751
+      }
+    ]
+  },
+  "source": {
+    "text": "  private skipReturnType(): void {\n    if (!this.isOp('->')) return;\n    this.next();\n    this.skipTypeUntilBody();\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 748
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseFn@L519",
+      "confidence": 1,
+      "name": "parseFn",
+      "qualifiedName": "Parser.parseFn",
+      "signature": "parseFn(startLine: number, attributes: string[], modifiers: string[]): RustDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 519
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.isOp@L1465",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1465
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.next@L1478",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1478
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipTypeUntilBody@L758",
+      "confidence": 1,
+      "name": "skipTypeUntilBody",
+      "qualifiedName": "Parser.skipTypeUntilBody",
+      "signature": "skipTypeUntilBody(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 758
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/parser.ts@L747",
+      "snippet": "/** Skip the `-> RetType` of a fn; balances `<>` / `()` / `[]`, stops at `{` / `;` / `where`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipReturnType@L748",
+    "procedureName": "Parser.skipReturnType",
+    "conditions": [
+      "cond:packages/parsers/src/rust/parser.ts@L749"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipReturnType@L748",
+        "procedureName": "Parser.skipReturnType",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L749",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L749",
+            "expr": "!this.isOp('->')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:212de20647ef3bb20928a64359db8eee1e378e9880cfe5eef29e95ced68af5f9",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L749",
+          "line": 749,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipReturnType@L748",
+        "procedureName": "Parser.skipReturnType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ee39100f9a51d2ffb65802dee5962d286c8801e7870078980a92771e945221cc",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.next@L1478",
+          "expr": "next",
+          "line": 750
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipReturnType@L748",
+        "procedureName": "Parser.skipReturnType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4a0a458c1a78b53c012964c5d64221a872dee7bb9fdb5872f962d2aae14b00bc",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L750",
+          "line": 750,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipReturnType@L748",
+        "procedureName": "Parser.skipReturnType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8d17d2b041bfcf78144940c31eb3b7a8b92fe7d472f9b8d4cb60c25c1829c78b",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.skipTypeUntilBody@L758",
+          "expr": "skipTypeUntilBody",
+          "line": 751
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipReturnType@L748",
+        "procedureName": "Parser.skipReturnType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:13e5d4e1f24b91eacdb56cea4ab093c0ad12267b4001a868fa458674d23a071c",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L751",
+          "line": 751,
+          "expr": "this.skipTypeUntilBody();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipReturnType@L748",
+        "procedureName": "Parser.skipReturnType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:19129094874978960dfa6c04131de0e497059bb08109227e9c42d9d34255b3d6",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.isOp@L1465",
+          "expr": "isOp"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

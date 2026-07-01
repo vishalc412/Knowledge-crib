@@ -1,0 +1,523 @@
+{
+  "id": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ae997a6864c8643fa24979ddcb3a73d9194786dc55b96cd9a6d78823442000f6",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+    "kind": "symbol",
+    "type": "function",
+    "name": "resolveScopeNode",
+    "qualifiedName": "resolveScopeNode",
+    "signature": "resolveScopeNode(soul: SoulStore, scope: DossierScope, id: string): Node | undefined",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/by-scope.ts",
+    "span": {
+      "start": 173,
+      "end": 203
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 175
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 177
+      },
+      {
+        "callee": "getNode",
+        "line": 189
+      },
+      {
+        "callee": "startsWith",
+        "line": 191
+      },
+      {
+        "callee": "getNode",
+        "line": 192
+      },
+      {
+        "callee": "getNode",
+        "line": 197
+      },
+      {
+        "callee": "startsWith",
+        "line": 199
+      },
+      {
+        "callee": "getNode",
+        "line": 200
+      }
+    ]
+  },
+  "source": {
+    "text": "function resolveScopeNode(soul: SoulStore, scope: DossierScope, id: string): Node | undefined {\n  if (scope === 'package') {\n    const byId = soul.getNode(id);\n    if (byId?.type === 'package') return byId;\n    const needle = id.toLowerCase();\n    for (const n of soul.iterate('symbol')) {\n      if (n.type !== 'package') continue;\n      if (n.qualifiedName?.toLowerCase() === needle) return n;\n    }\n    for (const n of soul.iterate('symbol')) {\n      if (n.type !== 'package') continue;\n      if (n.name?.toLowerCase() === needle) return n;\n    }\n    return undefined;\n  }\n  if (scope === 'file') {\n    const byId = soul.getNode(id);\n    if (byId?.kind === 'file') return byId;\n    const fileNodeId = id.startsWith('file:') ? id : `file:${id}`;\n    const byConstructed = soul.getNode(fileNodeId);\n    if (byConstructed?.kind === 'file') return byConstructed;\n    return undefined;\n  }\n  // cluster\n  const byId = soul.getNode(id);\n  if (byId?.kind === 'cluster') return byId;\n  const clusterNodeId = id.startsWith('c:') ? id : `c:${id}`;\n  const byConstructed = soul.getNode(clusterNodeId);\n  if (byConstructed?.kind === 'cluster') return byConstructed;\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 31,
+    "startLine": 173
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L84",
+      "confidence": 1,
+      "name": "buildDossiersByScope",
+      "qualifiedName": "buildDossiersByScope",
+      "signature": "buildDossiersByScope(soul: SoulStore, repoRoot: string, scope: DossierScope, id: string, now: string, opts: DossiersByScopeOpts = {}): DossiersByScope | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.ts",
+      "line": 84
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/by-scope.ts@L172",
+      "snippet": "/** Resolve the scope node for a given scope + id (exact id, then qname/name/path/slug). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+    "procedureName": "resolveScopeNode",
+    "conditions": [
+      "cond:packages/core/src/dossier/by-scope.ts@L174",
+      "cond:packages/core/src/dossier/by-scope.ts@L176",
+      "cond:packages/core/src/dossier/by-scope.ts@L178",
+      "cond:packages/core/src/dossier/by-scope.ts@L180",
+      "cond:packages/core/src/dossier/by-scope.ts@L182",
+      "cond:packages/core/src/dossier/by-scope.ts@L184",
+      "cond:packages/core/src/dossier/by-scope.ts@L188",
+      "cond:packages/core/src/dossier/by-scope.ts@L190",
+      "cond:packages/core/src/dossier/by-scope.ts@L193",
+      "cond:packages/core/src/dossier/by-scope.ts@L198",
+      "cond:packages/core/src/dossier/by-scope.ts@L201"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L174",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L174",
+            "expr": "scope === 'package'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e392ca1f5d3dcc4c5c2f8c0e04c7b508e30e5bb9bac8d0cf2983f0420ddbef39",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L175",
+          "line": 175,
+          "expr": "const byId = soul.getNode(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L176",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L174",
+            "expr": "scope === 'package'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L176",
+            "expr": "byId?.type === 'package'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6ac63acc01131161e3b3f3eee5ee3a953c174d867c34a2bed6c27a206689c1ec",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L176",
+          "line": 176,
+          "expr": "return byId;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L174",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L174",
+            "expr": "scope === 'package'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2ad7d90f9e0d31fa1d06d28162a4a9dcfd887c50cf7e3ff3a0f10bf3dc2f0668",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L177",
+          "line": 177,
+          "expr": "const needle = id.toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L180",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L174",
+            "expr": "scope === 'package'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L178",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L180",
+            "expr": "n.qualifiedName?.toLowerCase() === needle",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:12c03505c661dd64c9a121387d63411cef2d193837924a39880373a2d20102b5",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L180",
+          "line": 180,
+          "expr": "return n;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L184",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L174",
+            "expr": "scope === 'package'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L182",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L184",
+            "expr": "n.name?.toLowerCase() === needle",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d91a0f7c5707946b660bf05c9505c592bb51ac6a18d33451494512575c870c07",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L184",
+          "line": 184,
+          "expr": "return n;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L174",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L174",
+            "expr": "scope === 'package'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:969eae625c23acaf1a8d1fd19793076b2433e4c22b0d22eacc6b7fa9c5221e99",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L186",
+          "line": 186,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L188",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L188",
+            "expr": "scope === 'file'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4a211219af1a4fb16e87989ed1e542675a0a32d0f7f83f7627c89582c3627741",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L189",
+          "line": 189,
+          "expr": "const byId = soul.getNode(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L190",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L188",
+            "expr": "scope === 'file'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L190",
+            "expr": "byId?.kind === 'file'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:172fc9c1502b9b68d76f9081d3a4d740e0cdd9f7388be978ce6c89fa6b32f2d3",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L190",
+          "line": 190,
+          "expr": "return byId;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L188",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L188",
+            "expr": "scope === 'file'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6b6cdeff0f270a9b377d06de0f8e3b5aa11504b38902a22e6f85af87b48c0d1f",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L191",
+          "line": 191,
+          "expr": "const fileNodeId = id.startsWith('file:') ? id : `file:${id}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L188",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L188",
+            "expr": "scope === 'file'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:016e1545c01c315cfffb80b03ddbd145cb01cb91be3a0df262f14af0ee02cc34",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L192",
+          "line": 192,
+          "expr": "const byConstructed = soul.getNode(fileNodeId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L193",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L188",
+            "expr": "scope === 'file'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L193",
+            "expr": "byConstructed?.kind === 'file'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9d071d6d633d68d5cd1ee84ec53ebeb0905eed3b34f578f20a1fd3a032be0abc",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L193",
+          "line": 193,
+          "expr": "return byConstructed;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L188",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L188",
+            "expr": "scope === 'file'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6eed242f21b525b80a52978fec5a6016fa77862f7164d8e046fd5e4ab07347ed",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L194",
+          "line": 194,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:38c84c5640512709f125d34027b8fd07685e1a26a3ff3f0e684213e4ac79b033",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L197",
+          "line": 197,
+          "expr": "const byId = soul.getNode(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L198",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L198",
+            "expr": "byId?.kind === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d22fc57df98998c682b58dda7898897d21081b491cb4152b7faf2e7ddc3ee24b",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L198",
+          "line": 198,
+          "expr": "return byId;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:03cf0469cc4252c90cab685c243a3be318a309c56d8185187f6f848dfec8efa9",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L199",
+          "line": 199,
+          "expr": "const clusterNodeId = id.startsWith('c:') ? id : `c:${id}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:76d18bd9b7323497561feefaf37d0d75532d7e33858972045554d7a43c79c2c2",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L200",
+          "line": 200,
+          "expr": "const byConstructed = soul.getNode(clusterNodeId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L201",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L201",
+            "expr": "byConstructed?.kind === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d76b0f610b4546098b23a9205f6aab6cde7451f3c61e3163f426075bcfa694cb",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L201",
+          "line": 201,
+          "expr": "return byConstructed;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L173",
+        "procedureName": "resolveScopeNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:42e66d777077830bedc9f0767d7b1396be0f738f2837966cd5d2085b7ab86c0e",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L202",
+          "line": 202,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 18,
+    "referencedByFiles": [
+      "packages/core/src/dossier/by-scope.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 18,
+    "assignments": 0,
+    "conditions": 9,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 8,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,223 @@
+{
+  "id": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:3f7738a436a6d4f1308826bc198f01be0f89b404bf9615f355bb7f7c14c71069",
+  "builtAt": "2026-06-27T16:00:56.397Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+    "kind": "symbol",
+    "type": "function",
+    "name": "walkUpForCrib",
+    "qualifiedName": "walkUpForCrib",
+    "signature": "walkUpForCrib(start: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/cli/src/runtime.ts",
+    "span": {
+      "start": 87,
+      "end": 97
+    },
+    "callSites": [
+      {
+        "callee": "resolve",
+        "line": 88
+      },
+      {
+        "callee": "dirname",
+        "line": 92
+      }
+    ]
+  },
+  "source": {
+    "text": "export function walkUpForCrib(start: string): string | undefined {\n  let dir = resolve(start);\n  // guard against a symlink/`..` loop: stop at the filesystem root.\n  for (let i = 0; i < 128; i++) {\n    if (existsSync(join(dir, '.crib', 'crib.json'))) return dir;\n    const parent = dirname(dir);\n    if (parent === dir) return undefined; // reached root\n    dir = parent;\n  }\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 87
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+      "confidence": 1,
+      "name": "resolveProjectRoot",
+      "qualifiedName": "resolveProjectRoot",
+      "signature": "resolveProjectRoot(opts: ResolveOpts): ResolvedRoot",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 53
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/runtime.ts@L86",
+      "snippet": "/** Walk upward from `start` returning the first dir containing `.crib/crib.json`, else `undefined`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+    "procedureName": "walkUpForCrib",
+    "conditions": [
+      "cond:packages/cli/src/runtime.ts@L90",
+      "cond:packages/cli/src/runtime.ts@L91",
+      "cond:packages/cli/src/runtime.ts@L93"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+        "procedureName": "walkUpForCrib",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b4321cc48fc26cb77730731087d1ee064fae67d2d11214b1d27665af8f000523",
+          "target": "stmt:packages/cli/src/runtime.ts@L88",
+          "line": 88,
+          "expr": "let dir = resolve(start);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+        "procedureName": "walkUpForCrib",
+        "guard": "cond:packages/cli/src/runtime.ts@L91",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L90",
+            "expr": "i < 128"
+          },
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L91",
+            "expr": "existsSync(join(dir, '.crib', 'crib.json'))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cda7104d4d52e7fa62fe0bc65a7cdc1a408f956b7007ab39a2af96a5a5c68ce5",
+          "target": "stmt:packages/cli/src/runtime.ts@L91",
+          "line": 91,
+          "expr": "return dir;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+        "procedureName": "walkUpForCrib",
+        "guard": "cond:packages/cli/src/runtime.ts@L90",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L90",
+            "expr": "i < 128",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dca75d33f65db0d787e30d25d57af76e0dc917f02685ddb00692970ba33195fb",
+          "target": "stmt:packages/cli/src/runtime.ts@L92",
+          "line": 92,
+          "expr": "const parent = dirname(dir);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+        "procedureName": "walkUpForCrib",
+        "guard": "cond:packages/cli/src/runtime.ts@L93",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L90",
+            "expr": "i < 128"
+          },
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L93",
+            "expr": "parent === dir",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6d3349fe11f3f99fd92bb04bedc48a7a44d6ef13ef1954966030049e5579d8d7",
+          "target": "stmt:packages/cli/src/runtime.ts@L93",
+          "line": 93,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+        "procedureName": "walkUpForCrib",
+        "guard": "cond:packages/cli/src/runtime.ts@L90",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L90",
+            "expr": "i < 128",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:59c6134d80e4233a7c62df33f132bf26c18ebd6cc391b5834beb90435dfe3b14",
+          "target": "assign:packages/cli/src/runtime.ts@L94",
+          "line": 94,
+          "expr": "dir = parent;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+        "procedureName": "walkUpForCrib",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9f088a861355b6915b946be7a66f2232b8024d7caadd435797ae4f7b08102c46",
+          "target": "stmt:packages/cli/src/runtime.ts@L96",
+          "line": 96,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/cli/src/runtime.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 1,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,383 @@
+{
+  "id": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:34a4d3b56518ad3866014c1bc3f12b20b9ab9e7452227a24b6b0b6a3d236a7ac",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+    "kind": "symbol",
+    "type": "function",
+    "name": "parseGo",
+    "qualifiedName": "parseGo",
+    "signature": "parseGo(src: string): GoModule",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/parser.ts",
+    "span": {
+      "start": 231,
+      "end": 242
+    },
+    "callSites": [
+      {
+        "callee": "tokenize",
+        "line": 233
+      },
+      {
+        "callee": "parseProgram",
+        "line": 235
+      },
+      {
+        "callee": "collectCallSites",
+        "line": 236
+      },
+      {
+        "callee": "collectImports",
+        "line": 237
+      }
+    ]
+  },
+  "source": {
+    "text": "export function parseGo(src: string): GoModule {\n  try {\n    const tokens = tokenize(src);\n    const p = new Parser(tokens, src);\n    const { defs, excluded } = p.parseProgram();\n    const calls = collectCallSites(tokens, excluded);\n    const { pkg, imports } = collectImports(tokens);\n    return { defs, calls, imports, pkg };\n  } catch {\n    return { defs: [], calls: [], imports: [], pkg: '' };\n  }\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 231
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.parse@L99",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "GoExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 99
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo@L50",
+      "confidence": 1,
+      "name": "resolveGo",
+      "qualifiedName": "resolveGo",
+      "signature": "resolveGo(table: SymbolTable, root: string, files: FileMeta[]): { edges: Edge[]; stats: ResolveStats }",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.ts",
+      "line": 50
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseProgram@L262",
+      "confidence": 1,
+      "name": "parseProgram",
+      "qualifiedName": "Parser.parseProgram",
+      "signature": "parseProgram(): { defs: GoDef[]; excluded: Set<number> }",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 262
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#collectCallSites@L1770",
+      "confidence": 1,
+      "name": "collectCallSites",
+      "qualifiedName": "collectCallSites",
+      "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): GoCallSite[]",
+      "type": "function",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1770
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+      "confidence": 1,
+      "name": "collectCallSites",
+      "qualifiedName": "collectCallSites",
+      "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): RustCallSite[]",
+      "type": "function",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1590
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#collectImports@L1810",
+      "confidence": 1,
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(tokens: Token[]): { pkg: string; imports: GoImport[] }",
+      "type": "function",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1810
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
+      "confidence": 1,
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(sf: ts.SourceFile, fromPath: string, table: SymbolTable): Map<string, ImportBinding>",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 150
+    },
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#tokenize@L193",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(src: string): Token[]",
+      "type": "function",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 193
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(text: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/tfidf.ts",
+      "line": 80
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/parser.ts@L230",
+      "snippet": "/** Parse Go source into a declaration tree + call sites + imports + package (never throws). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+    "procedureName": "parseGo",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+        "procedureName": "parseGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:05ec2f6e17933c4c7f27a58a45825c78a9008f5e75b95726dec9ef2221d32dba",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L233",
+          "line": 233,
+          "expr": "const tokens = tokenize(src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+        "procedureName": "parseGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d7eb2c7b6b2ee82e5f9ee8f9f4f53e6459fd089dc045c3a2628e2f9d2ed2b702",
+          "target": "sym:packages/parsers/src/go/lexer.ts#tokenize@L193",
+          "expr": "tokenize",
+          "line": 233
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+        "procedureName": "parseGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:64d5eb381f03725a5d71c84aa0d4e67400a5e9a124d69564c3ebf80f1c3808d0",
+          "target": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
+          "expr": "tokenize",
+          "line": 233
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+        "procedureName": "parseGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:345fe0a03bda37178beae7c6327c561c213ed8f65ccaf2deb1d65aa866f68abc",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseProgram@L262",
+          "expr": "parseProgram",
+          "line": 235
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+        "procedureName": "parseGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4a7f5897d9af16e56cd906053f1e39130df62617fa7238d108b27b4a9bb0d421",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L235",
+          "line": 235,
+          "expr": "const { defs, excluded } = p.parseProgram();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+        "procedureName": "parseGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:eb86320d0bf8b42fc44d94c4b50085eaf434dc456adae23a2516cb84acdbde0f",
+          "target": "sym:packages/parsers/src/go/parser.ts#collectCallSites@L1770",
+          "expr": "collectCallSites",
+          "line": 236
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+        "procedureName": "parseGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:559cf34a62dd9ebb59a30e1bdccc338c7b54fff6f007961c040eadc932683595",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L236",
+          "line": 236,
+          "expr": "const calls = collectCallSites(tokens, excluded);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+        "procedureName": "parseGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1219301fa98e1a11450d6c2f96708efcf7ef1b283fe1a16a74e638ae6cf2f6c3",
+          "target": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+          "expr": "collectCallSites",
+          "line": 236
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+        "procedureName": "parseGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:778241ceee0f18b68d36acba94b9e3bb41aa50547c586f08747c71452e840f61",
+          "target": "sym:packages/parsers/src/go/parser.ts#collectImports@L1810",
+          "expr": "collectImports",
+          "line": 237
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+        "procedureName": "parseGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e3b905db36277c0cb3f422b23d6c280b28c7d12e7fc8a6bb87cb309ca3f95aa2",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L237",
+          "line": 237,
+          "expr": "const { pkg, imports } = collectImports(tokens);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+        "procedureName": "parseGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:192d5970c6c0a40a762ebb3f7db084bfb5e87315aa4830ea5e5f5393fd8357c1",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
+          "expr": "collectImports",
+          "line": 237
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+        "procedureName": "parseGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6f3a6ce1dff25afa045d5315860f5ed20a4204d2b9ba07a2799c5aaee132f129",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L238",
+          "line": 238,
+          "expr": "return { defs, calls, imports, pkg };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+        "procedureName": "parseGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aaaf05928ad148a0e6c0431a3f88d6bdaed8c336bbfd97ec7379233cfa60d0a0",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L240",
+          "line": 240,
+          "expr": "return { defs: [], calls: [], imports: [], pkg: '' };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/parsers/src/go/parser.ts@L239",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/parsers/src/go/parser.ts",
+        "span": {
+          "start": 239,
+          "end": 239
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/go/GoExtractor.ts",
+      "packages/pipeline/src/resolve/go-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 7,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

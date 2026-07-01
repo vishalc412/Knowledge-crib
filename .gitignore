@@ -1,0 +1,35 @@
+# Node / pnpm
+node_modules/
+dist/
+coverage/
+*.tgz
+*.tsbuildinfo
+.pnpm-store/
+
+# Knowledge-crib derived artifacts (rebuildable from the committed soul)
+.crib/index/
+.crib/embeddings/
+.crib/.lock
+.crib/index/.lock
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
+.gstack/
+.worktrees/
+
+# Python / crib_worker (M13) — uv-managed sibling project; artifacts are rebuildable
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+# local model dirs for whisper/surya backends (never fetched by the worker; user-supplied)
+python/models/
+
+# Claude Code session state (machine-local)
+.claude/

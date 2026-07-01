@@ -1,0 +1,514 @@
+{
+  "id": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:32e43e9e99da4caa5073499234242509dd1fa7ba3bbc7770efa83605b352717c",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+    "kind": "symbol",
+    "type": "function",
+    "name": "ingestStaging",
+    "qualifiedName": "ingestStaging",
+    "signature": "ingestStaging(soul: SoulStore, root: string, mediaPaths: string[], opts: WorkerOpts = {}): Promise<MultimodalStats>",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/multimodal/ingest.ts",
+    "span": {
+      "start": 57,
+      "end": 112
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 72
+      },
+      {
+        "callee": "workerFn",
+        "line": 73
+      },
+      {
+        "callee": "runWorker",
+        "line": 73
+      },
+      {
+        "callee": "idFor",
+        "line": 78
+      },
+      {
+        "callee": "idFor",
+        "line": 80
+      },
+      {
+        "callee": "push",
+        "line": 81
+      },
+      {
+        "callee": "contentHash",
+        "line": 84
+      },
+      {
+        "callee": "push",
+        "line": 95
+      },
+      {
+        "callee": "edgeId",
+        "line": 96
+      },
+      {
+        "callee": "putNodes",
+        "line": 109
+      },
+      {
+        "callee": "putEdges",
+        "line": 110
+      }
+    ]
+  },
+  "source": {
+    "text": "export async function ingestStaging(\n  soul: SoulStore,\n  root: string,\n  mediaPaths: string[],\n  opts: WorkerOpts = {},\n): Promise<MultimodalStats> {\n  const stats: MultimodalStats = { files: mediaPaths.length, segments: 0, dropped: 0 };\n  if (mediaPaths.length === 0) return stats;\n\n  const nodes: Node[] = [];\n  const edges: Edge[] = [];\n\n  // process sequentially — the worker is a subprocess; a bounded concurrency could be added, but\n  // media extraction is off the hot path and determinism favours a stable order.\n  for (const mediaPath of mediaPaths) {\n    const abs = join(root, mediaPath);\n    const payload = opts.workerFn ? await opts.workerFn(abs) : await runWorker(abs, opts);\n    if (payload.segments.length === 0) {\n      stats.dropped++;\n      continue;\n    }\n    const fileId = idFor({ kind: 'file', path: mediaPath });\n    for (const seg of payload.segments) {\n      const id = idFor({ kind: 'media-seg', path: mediaPath, tStartMs: seg.tStartMs });\n      nodes.push({\n        id,\n        kind: 'media-seg',\n        hash: contentHash(seg.text),\n        file: mediaPath,\n        name: `seg@${seg.tStartMs}`,\n        meta: {\n          text: seg.text,\n          tStart: seg.tStartMs,\n          tEnd: seg.tEndMs,\n          modality: payload.modality,\n          ...(seg.lang ? { lang: seg.lang } : {}),\n        },\n      });\n      edges.push({\n        id: edgeId(id, fileId, 'member-of'),\n        src: id,\n        dst: fileId,\n        rel: 'member-of',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: 'crib-worker', modality: payload.modality },\n      });\n    }\n    stats.segments += payload.segments.length;\n  }\n\n  if (nodes.length > 0) soul.putNodes(nodes);\n  if (edges.length > 0) soul.putEdges(edges);\n  return stats;\n}",
+    "truncated": false,
+    "totalLines": 56,
+    "startLine": 57
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+      "confidence": 1,
+      "name": "runMultimodal",
+      "qualifiedName": "runMultimodal",
+      "signature": "runMultimodal(soul: SoulStore, root: string, opts: MultimodalPhaseOpts = {}, mediaPaths?: string[]): Promise<MultimodalReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal/index.ts",
+      "line": 36
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 122
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 77
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+      "confidence": 1,
+      "name": "runWorker",
+      "qualifiedName": "runWorker",
+      "signature": "runWorker(mediaAbsPath: string, opts: WorkerOpts = {}): Promise<WorkerPayload>",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal/worker.ts",
+      "line": 74
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/multimodal/ingest.ts@L53",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "heading": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "anchor": "m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "snippet": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+    "procedureName": "ingestStaging",
+    "conditions": [
+      "cond:packages/pipeline/src/multimodal/ingest.ts@L64",
+      "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+      "cond:packages/pipeline/src/multimodal/ingest.ts@L79",
+      "cond:packages/pipeline/src/multimodal/ingest.ts@L109",
+      "cond:packages/pipeline/src/multimodal/ingest.ts@L110"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "guard": "cond:packages/pipeline/src/multimodal/ingest.ts@L64",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L64",
+            "expr": "mediaPaths.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:26b023044aa29d0ad0df289e85aff5c97717c55a0d291856e5e99b17768bb8c3",
+          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L64",
+          "line": 64,
+          "expr": "return stats;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "guard": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+            "expr": "mediaPaths",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa41c4518d3c42ef109122baa1d610a292701de5a2c7bac702f54fdf32dd5a2f",
+          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L72",
+          "line": 72,
+          "expr": "const abs = join(root, mediaPath);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "guard": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+            "expr": "mediaPaths",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2bcf7b761fe17e8f48d6d9ff7520171cb5feda1333a56999be7590fb9435ca9c",
+          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L73",
+          "line": 73,
+          "expr": "const payload = opts.workerFn ? await opts.workerFn(abs) : await runWorker(abs, opts);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:10a5791828378a5bce9e112383b564a075cd461f44be5712165aacfdd101f987",
+          "target": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+          "expr": "runWorker",
+          "line": 73
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "guard": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+            "expr": "mediaPaths",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8a43718c66df881f7d0157416abe9c76a1a6ff5360e4bd86f00db5556d9ff72e",
+          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L78",
+          "line": 78,
+          "expr": "const fileId = idFor({ kind: 'file', path: mediaPath });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0eb8a32fc82a8a008d4e7f65811fb03ad5257977e3568b2600028ea0498412f1",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+          "expr": "idFor",
+          "line": 78
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "guard": "cond:packages/pipeline/src/multimodal/ingest.ts@L79",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+            "expr": "mediaPaths"
+          },
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L79",
+            "expr": "payload.segments",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ad94dbc3b240c2f2dfab31f84213131d112f4af23a22856b1ea26c6a1a927947",
+          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L80",
+          "line": 80,
+          "expr": "const id = idFor({ kind: 'media-seg', path: mediaPath, tStartMs: seg.tStartMs });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "guard": "cond:packages/pipeline/src/multimodal/ingest.ts@L79",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+            "expr": "mediaPaths"
+          },
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L79",
+            "expr": "payload.segments",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:61e4fb63dc7a8fcd50449f1fb3c8ab79aee29b6b0102671fbef062e35956e32e",
+          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L81",
+          "line": 81,
+          "expr": "nodes.push({\n        id,\n        kind: 'media-seg',\n        hash: contentHash(seg.text),\n        file: mediaPath,\n        name: `seg@${seg.tStartMs}`,\n        meta: {\n          text: seg.text,\n          tStart: seg.tStartMs,\n          tEnd: seg.tEndMs,\n          modality: payload.modality,\n          ...(seg.lang ? { lang: seg.lang } : {}),\n        },\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cd4ab61be55e83d1f557f51eb4a7a78aa2a57dcc1a69905754743387768edbdf",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 81
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ff20aba78aa2ecac3342a1426512f0b5aaebe2c2f43a2c3b4c581813c3ecc4c1",
+          "target": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+          "expr": "contentHash",
+          "line": 84
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "guard": "cond:packages/pipeline/src/multimodal/ingest.ts@L79",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+            "expr": "mediaPaths"
+          },
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L79",
+            "expr": "payload.segments",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8716c66afe02ed22a3a4df41ef44868d9a1d91f77f48450caae7252a7b1f84a5",
+          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L95",
+          "line": 95,
+          "expr": "edges.push({\n        id: edgeId(id, fileId, 'member-of'),\n        src: id,\n        dst: fileId,\n        rel: 'member-of',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: 'crib-worker', modality: payload.modality },\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fe3a6cbc936057833a1f4bfa07f03e8cee9c60bb3dfbd507455d19c6a677e5a5",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "expr": "edgeId",
+          "line": 96
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "guard": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+            "expr": "mediaPaths",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:abd8901aab959fa95a5fdff4f0e58ad49bf063ad1ef0f26967ef382430a362b0",
+          "target": "assign:packages/pipeline/src/multimodal/ingest.ts@L106",
+          "line": 106,
+          "expr": "stats.segments += payload.segments.length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "guard": "cond:packages/pipeline/src/multimodal/ingest.ts@L109",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L109",
+            "expr": "nodes.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cc91d41f618cab00fa51bc4dc566f1a62d930257fab326c2fb15370d7289740e",
+          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L109",
+          "line": 109,
+          "expr": "soul.putNodes(nodes);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "guard": "cond:packages/pipeline/src/multimodal/ingest.ts@L110",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L110",
+            "expr": "edges.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:271d89d4442d88e5ccfc346f1636fc6ed789c4a6c4eabbd249bd1962a35868f7",
+          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L110",
+          "line": 110,
+          "expr": "soul.putEdges(edges);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f0acaa29ecbf59631c30a860c6691ea43ad3685baa059320fe9bd5b0077b721a",
+          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L111",
+          "line": 111,
+          "expr": "return stats;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 11,
+    "referencedByFiles": [
+      "packages/pipeline/src/multimodal/index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 11,
+    "assignments": 1,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 11,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

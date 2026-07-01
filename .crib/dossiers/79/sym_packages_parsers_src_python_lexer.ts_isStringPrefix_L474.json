@@ -1,0 +1,120 @@
+{
+  "id": "sym:packages/parsers/src/python/lexer.ts#isStringPrefix@L474",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:a0bcfe32ad3f9a1ad98855d880437468f9788ff4ed9ebb9b4df6f45db2a46a32",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/lexer.ts#isStringPrefix@L474",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isStringPrefix",
+    "qualifiedName": "isStringPrefix",
+    "signature": "isStringPrefix(c: string): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/lexer.ts",
+    "span": {
+      "start": 474,
+      "end": 477
+    },
+    "callSites": [
+      {
+        "callee": "toLowerCase",
+        "line": 475
+      }
+    ]
+  },
+  "source": {
+    "text": "function isStringPrefix(c: string): boolean {\n  const l = c.toLowerCase();\n  return l === 'r' || l === 'b' || l === 'f' || l === 'u';\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 474
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+      "confidence": 1,
+      "name": "isStringStart",
+      "qualifiedName": "Lexer.isStringStart",
+      "signature": "isStringStart(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 409
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanString@L239",
+      "confidence": 1,
+      "name": "scanString",
+      "qualifiedName": "Lexer.scanString",
+      "signature": "scanString(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 239
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/lexer.ts#isStringPrefix@L474",
+    "procedureName": "isStringPrefix",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#isStringPrefix@L474",
+        "procedureName": "isStringPrefix",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c9440202692947a8492cfea530549aa608129b36a70101a2bb612bf00c27185b",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L475",
+          "line": 475,
+          "expr": "const l = c.toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#isStringPrefix@L474",
+        "procedureName": "isStringPrefix",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5944bae23a0295a9b139463f54cfcb85c48fdb109b0971e4bef14dfbd87c35ce",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L476",
+          "line": 476,
+          "expr": "return l === 'r' || l === 'b' || l === 'f' || l === 'u';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/python/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

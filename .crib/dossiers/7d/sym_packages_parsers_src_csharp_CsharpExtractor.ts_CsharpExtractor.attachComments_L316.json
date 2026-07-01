@@ -1,0 +1,225 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.attachComments@L316",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4ea8dbc0612513a1a8c5f9cf1dea022cadc10f425ca69adf281c9c4f8b0189f0",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.attachComments@L316",
+    "kind": "symbol",
+    "type": "method",
+    "name": "attachComments",
+    "qualifiedName": "CsharpExtractor.attachComments",
+    "signature": "attachComments(symbols: LocalSymbol[], comments: CsCommentBlock[], nodes: Node[], edges: Edge[], ctx: ExtractCtx, path: string): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 316,
+      "end": 355
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 329
+      },
+      {
+        "callee": "idFor",
+        "line": 331
+      },
+      {
+        "callee": "add",
+        "line": 333
+      },
+      {
+        "callee": "push",
+        "line": 334
+      },
+      {
+        "callee": "hash",
+        "line": 341
+      },
+      {
+        "callee": "push",
+        "line": 344
+      },
+      {
+        "callee": "edgeId",
+        "line": 345
+      }
+    ]
+  },
+  "source": {
+    "text": "  private attachComments(\n    symbols: LocalSymbol[],\n    comments: CsCommentBlock[],\n    nodes: Node[],\n    edges: Edge[],\n    ctx: ExtractCtx,\n    path: string,\n  ): void {\n    const seen = new Set<string>();\n    for (const s of symbols) {\n      if (s.node.type === 'namespace') continue; // namespaces: doc comments are not symbol docs\n      const startLine = s.node.span?.start;\n      if (startLine === undefined) continue;\n      const block = comments.find((c) => c.end === startLine - 1);\n      if (!block || !block.text) continue;\n      const id = ctx.idFor('explanation', { path, startLine: block.start });\n      if (seen.has(id)) continue;\n      seen.add(id);\n      nodes.push({\n        id,\n        kind: 'explanation',\n        commentRef: { file: path, span: { start: block.start, end: block.end } },\n        file: path,\n        span: { start: block.start, end: block.end },\n        lang: 'csharp',\n        hash: ctx.hash(`${path}:${block.start}:${block.text}`),\n        meta: { text: block.text },\n      });\n      edges.push({\n        id: edgeId(id, s.node.id, 'describes'),\n        src: id,\n        dst: s.node.id,\n        rel: 'describes',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet: 'COMMENT' },\n      });\n    }\n  }",
+    "truncated": false,
+    "totalLines": 40,
+    "startLine": 316
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.parse@L97",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "CsharpExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 97
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/CsharpExtractor.ts@L310",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.attachComments@L316",
+    "procedureName": "CsharpExtractor.attachComments",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L325"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.attachComments@L316",
+        "procedureName": "CsharpExtractor.attachComments",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L325",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L325",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:08a8f09f45e95b258ddea724bd959ecf23e5f47822a72291f160696d30e759fd",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L329",
+          "line": 329,
+          "expr": "const block = comments.find((c) => c.end === startLine - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.attachComments@L316",
+        "procedureName": "CsharpExtractor.attachComments",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L325",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L325",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:26745e5ceef5e18651467ca89eeb5eaf3fabbd5967dd435f4bef0de495dbe148",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L331",
+          "line": 331,
+          "expr": "const id = ctx.idFor('explanation', { path, startLine: block.start });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.attachComments@L316",
+        "procedureName": "CsharpExtractor.attachComments",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L325",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L325",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:22a080bc11a104e42fd42f888b90938ef670344901271386a328b73588ee0d7e",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L333",
+          "line": 333,
+          "expr": "seen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.attachComments@L316",
+        "procedureName": "CsharpExtractor.attachComments",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L325",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L325",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:88029faea7884525c42314eb31f1697e75f21cbff367ccbdd81e8baf0c08946b",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L334",
+          "line": 334,
+          "expr": "nodes.push({\n        id,\n        kind: 'explanation',\n        commentRef: { file: path, span: { start: block.start, end: block.end } },\n        file: path,\n        span: { start: block.start, end: block.end },\n        lang: 'csharp',\n        hash: ctx.hash(`${path}:${block.start}:${block.text}`),\n        meta: { text: block.text },\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.attachComments@L316",
+        "procedureName": "CsharpExtractor.attachComments",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L325",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L325",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7d48abb3eb5292c3d1f8674c9263f52222e30be6da9c569fc6896aacfa3884d2",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L344",
+          "line": 344,
+          "expr": "edges.push({\n        id: edgeId(id, s.node.id, 'describes'),\n        src: id,\n        dst: s.node.id,\n        rel: 'describes',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet: 'COMMENT' },\n      });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 7,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

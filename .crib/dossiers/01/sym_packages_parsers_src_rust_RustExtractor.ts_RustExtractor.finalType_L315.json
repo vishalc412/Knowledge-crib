@@ -1,0 +1,154 @@
+{
+  "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.finalType@L315",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:934bd9e28529cc88d254a0a72d0f25d969f3282e747654b137cf349e52e05046",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.finalType@L315",
+    "kind": "symbol",
+    "type": "method",
+    "name": "finalType",
+    "qualifiedName": "RustExtractor.finalType",
+    "signature": "finalType(d: RustDef, memberCtx: 'impl' | 'trait' | 'mod' | 'none'): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/RustExtractor.ts",
+    "span": {
+      "start": 315,
+      "end": 321
+    }
+  },
+  "source": {
+    "text": "  private finalType(d: RustDef, memberCtx: 'impl' | 'trait' | 'mod' | 'none'): string {\n    if (d.kind !== 'fn') return d.kind;\n    if (memberCtx === 'impl' || memberCtx === 'trait') {\n      return d.hasSelf ? 'method' : 'associated_fn';\n    }\n    return 'fn';\n  }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 315
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visit@L147",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "RustExtractor.parse.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 147
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visitImplBody@L236",
+      "confidence": 1,
+      "name": "visitImplBody",
+      "qualifiedName": "RustExtractor.parse.visitImplBody",
+      "signature": "visitImplBody(…)",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 236
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/RustExtractor.ts@L314",
+      "snippet": "/** Final symbol `type` for a fn item, given the enclosing container kind. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.finalType@L315",
+    "procedureName": "RustExtractor.finalType",
+    "conditions": [
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L316",
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L317"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.finalType@L315",
+        "procedureName": "RustExtractor.finalType",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L316",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L316",
+            "expr": "d.kind !== 'fn'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cb661f7d67c2638f5c8fe9d322181ff229e4ff2df0582fe7f1d2887014ef1023",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L316",
+          "line": 316,
+          "expr": "return d.kind;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.finalType@L315",
+        "procedureName": "RustExtractor.finalType",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L317",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L317",
+            "expr": "memberCtx === 'impl' || memberCtx === 'trait'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db486346f011cce0e018f15c9a1edf44ee8717a1e17de2207beccf84d4406c84",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L318",
+          "line": 318,
+          "expr": "return d.hasSelf ? 'method' : 'associated_fn';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.finalType@L315",
+        "procedureName": "RustExtractor.finalType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa2afe7ec638ef58a64ad01c2dc0ddc26903e0792b974826397ea61dd07e7d50",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L320",
+          "line": 320,
+          "expr": "return 'fn';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/RustExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

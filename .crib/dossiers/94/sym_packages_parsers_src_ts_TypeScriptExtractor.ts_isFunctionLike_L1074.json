@@ -1,0 +1,120 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLike@L1074",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:525ac416d78fe8b7fb7e6ed9cc758dd6a5e57ce2137eff497e1fc4b1e79de618",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLike@L1074",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isFunctionLike",
+    "qualifiedName": "isFunctionLike",
+    "signature": "isFunctionLike(node: ts.Node): node is ts.ArrowFunction | ts.FunctionExpression",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 1074,
+      "end": 1076
+    },
+    "callSites": [
+      {
+        "callee": "isArrowFunction",
+        "line": 1075
+      },
+      {
+        "callee": "isFunctionExpression",
+        "line": 1075
+      }
+    ]
+  },
+  "source": {
+    "text": "function isFunctionLike(node: ts.Node): node is ts.ArrowFunction | ts.FunctionExpression {\n  return ts.isArrowFunction(node) || ts.isFunctionExpression(node);\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1074
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#functionBodyOf@L770",
+      "confidence": 1,
+      "name": "functionBodyOf",
+      "qualifiedName": "functionBodyOf",
+      "signature": "functionBodyOf(node: ts.Node): ts.Node | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 770
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLikeSymbol@L790",
+      "confidence": 1,
+      "name": "isFunctionLikeSymbol",
+      "qualifiedName": "isFunctionLikeSymbol",
+      "signature": "isFunctionLikeSymbol(node: ts.Node): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 790
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+      "confidence": 1,
+      "name": "symbolInfo",
+      "qualifiedName": "symbolInfo",
+      "signature": "symbolInfo(node: ts.Node): SymInfo | null",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 1039
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLike@L1074",
+    "procedureName": "isFunctionLike",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLike@L1074",
+        "procedureName": "isFunctionLike",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3aacf6e3da27025408ad5116c01e598069672e7847c36543f70bc41374a789c6",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1075",
+          "line": 1075,
+          "expr": "return ts.isArrowFunction(node) || ts.isFunctionExpression(node);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

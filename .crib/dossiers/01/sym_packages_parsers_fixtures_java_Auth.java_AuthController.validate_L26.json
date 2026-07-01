@@ -1,0 +1,248 @@
+{
+  "id": "sym:packages/parsers/fixtures/java/Auth.java#AuthController.validate@L26",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:477a8ec83b8628a1e8716cf12a7cad46089d5b9a33f5eee1f86e617d7b6797e0",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/java/Auth.java#AuthController.validate@L26",
+    "kind": "symbol",
+    "type": "method",
+    "name": "validate",
+    "qualifiedName": "AuthController.validate",
+    "signature": "validate(user)",
+    "lang": "java",
+    "file": "packages/parsers/fixtures/java/Auth.java",
+    "span": {
+      "start": 26,
+      "end": 30
+    },
+    "callSites": [
+      {
+        "callee": "IllegalArgumentException",
+        "line": 28
+      }
+    ],
+    "params": [
+      "user"
+    ]
+  },
+  "source": {
+    "text": "    private void validate(String user) {\n        if (user.isEmpty()) {\n            throw new IllegalArgumentException(user);\n        }\n    }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 26
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/fixtures/java/Auth.java#AuthController.login@L13",
+      "confidence": 1,
+      "name": "login",
+      "qualifiedName": "AuthController.login",
+      "signature": "login(user)",
+      "type": "method",
+      "file": "packages/parsers/fixtures/java/Auth.java",
+      "line": 13
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m9-soul-reader-package-seeroflow-tier-1-read-contract",
+      "heading": "M9 — `soul-reader` package + SeeroFlow Tier-1 read contract",
+      "anchor": "m9-soul-reader-package-seeroflow-tier-1-read-contract",
+      "snippet": "M9 — `soul-reader` package + SeeroFlow Tier-1 read contract",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests-3",
+      "heading": "Tests",
+      "anchor": "tests-3",
+      "snippet": "Tests",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#schema-evolution",
+      "heading": "Schema evolution",
+      "anchor": "schema-evolution",
+      "snippet": "Schema evolution",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#nexus-user-research-interview-guide",
+      "heading": "Nexus — User Research Interview Guide",
+      "anchor": "nexus-user-research-interview-guide",
+      "snippet": "Nexus — User Research Interview Guide",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#9-user-research-plan-q27-q30",
+      "heading": "9. User Research Plan [Q27–Q30]",
+      "anchor": "9-user-research-plan-q27-q30",
+      "snippet": "9. User Research Plan [Q27–Q30]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#fixed-for-release",
+      "heading": "Fixed For Release",
+      "anchor": "fixed-for-release",
+      "snippet": "Fixed For Release",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-8-user-research-plan",
+      "heading": "Branch 8 — User Research Plan",
+      "anchor": "branch-8-user-research-plan",
+      "snippet": "Branch 8 — User Research Plan",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#6-versioning-migration",
+      "heading": "6. Versioning & migration",
+      "anchor": "6-versioning-migration",
+      "snippet": "6. Versioning & migration",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#1-test-pyramid",
+      "heading": "1. Test pyramid",
+      "anchor": "1-test-pyramid",
+      "snippet": "1. Test pyramid",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#7-ci",
+      "heading": "7. CI",
+      "anchor": "7-ci",
+      "snippet": "7. CI",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/java/Auth.java#AuthController.validate@L26",
+    "procedureName": "AuthController.validate",
+    "conditions": [
+      "cond:packages/parsers/fixtures/java/Auth.java@L27"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Auth.java#AuthController.validate@L26",
+        "procedureName": "AuthController.validate",
+        "guard": "cond:packages/parsers/fixtures/java/Auth.java@L27",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/java/Auth.java@L27",
+            "expr": "user.isEmpty()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cd62580a884a6d39a8f8539026da80032a621fc11eed39404010ea4caf1154a5",
+          "target": "stmt:packages/parsers/fixtures/java/Auth.java@L28",
+          "line": 28,
+          "expr": "throw new IllegalArgumentException(user)"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:packages/parsers/fixtures/java/Auth.java@L28",
+        "kind": "raise",
+        "name": "IllegalArgumentException",
+        "lang": "java",
+        "file": "packages/parsers/fixtures/java/Auth.java",
+        "span": {
+          "start": 28,
+          "end": 28
+        },
+        "errorMessage": "new IllegalArgumentException(user)",
+        "confidence": 1
+      }
+    ],
+    "handles": [],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/fixtures/java/Auth.java"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 1,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,561 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:dd3c0c974c83222976acd36edcf5fe26d0208cea079919e7bbb5e5f49a826ea9",
+  "builtAt": "2026-06-30T22:39:43.179Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+    "kind": "symbol",
+    "type": "function",
+    "name": "parse",
+    "qualifiedName": "parse",
+    "signature": "parse(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.test.ts",
+    "span": {
+      "start": 35,
+      "end": 35
+    }
+  },
+  "source": {
+    "text": "const parse = (src: string): JavaModule => parseJava(src);",
+    "truncated": false,
+    "totalLines": 1,
+    "startLine": 35
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
+      "confidence": 1,
+      "name": "bodyOf",
+      "qualifiedName": "bodyOf",
+      "signature": "bodyOf(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 488
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdEnrich@L1261",
+      "confidence": 1,
+      "name": "cmdEnrich",
+      "qualifiedName": "cmdEnrich",
+      "signature": "cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1261
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+      "confidence": 1,
+      "name": "detectLerna",
+      "qualifiedName": "detectLerna",
+      "signature": "detectLerna(root: string): WorkspaceLayout | null",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 78
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#detectNpmWorkspaces@L106",
+      "confidence": 1,
+      "name": "detectNpmWorkspaces",
+      "qualifiedName": "detectNpmWorkspaces",
+      "signature": "detectNpmWorkspaces(root: string): WorkspaceLayout | null",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 106
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L442",
+      "confidence": 1,
+      "name": "freshSoulForRebuild",
+      "qualifiedName": "freshSoulForRebuild",
+      "signature": "freshSoulForRebuild(cribDir: string): SoulStore",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 442
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#packageNameAt@L303",
+      "confidence": 1,
+      "name": "packageNameAt",
+      "qualifiedName": "packageNameAt",
+      "signature": "packageNameAt(dir: string, fallbackRel: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 303
+    },
+    {
+      "id": "sym:packages/cli/src/mcp-install.test.ts#parse@L31",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(path: string): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.test.ts",
+      "line": 31
+    },
+    {
+      "id": "sym:packages/core/src/merge.ts#parseChunk@L30",
+      "confidence": 1,
+      "name": "parseChunk",
+      "qualifiedName": "parseChunk",
+      "signature": "parseChunk(text: string): Map<string, ChunkRecord>",
+      "type": "function",
+      "file": "packages/core/src/merge.ts",
+      "line": 30
+    },
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+      "confidence": 1,
+      "name": "pruneDossiers",
+      "qualifiedName": "pruneDossiers",
+      "signature": "pruneDossiers(cribDir: string, liveNodeIds: ReadonlySet<string>): number",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 99
+    },
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#readDossier@L65",
+      "confidence": 1,
+      "name": "readDossier",
+      "qualifiedName": "readDossier",
+      "signature": "readDossier(cribDir: string, nodeId: string, live: { nodeHash?: string; schemaVersion: string }): DossierRead",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 65
+    },
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#readJson@L84",
+      "confidence": 1,
+      "name": "readJson",
+      "qualifiedName": "readJson",
+      "signature": "readJson(path: string): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 84
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#readJson@L1173",
+      "confidence": 1,
+      "name": "readJson",
+      "qualifiedName": "readJson",
+      "signature": "readJson(path: string): T | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1173
+    },
+    {
+      "id": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+      "confidence": 1,
+      "name": "readRegistry",
+      "qualifiedName": "readRegistry",
+      "signature": "readRegistry(env: NodeJS.ProcessEnv = process.env): Registry",
+      "type": "function",
+      "file": "packages/cli/src/registry.ts",
+      "line": 60
+    },
+    {
+      "id": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+      "confidence": 1,
+      "name": "runWorker",
+      "qualifiedName": "runWorker",
+      "signature": "runWorker(mediaAbsPath: string, opts: WorkerOpts = {}): Promise<WorkerPayload>",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal/worker.ts",
+      "line": 74
+    },
+    {
+      "id": "sym:packages/pipeline/src/dossiers.ts#sameDossierContent@L82",
+      "confidence": 1,
+      "name": "sameDossierContent",
+      "qualifiedName": "sameDossierContent",
+      "signature": "sameDossierContent(existing: Dossier, current: Dossier): boolean",
+      "type": "function",
+      "file": "packages/pipeline/src/dossiers.ts",
+      "line": 82
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+      "confidence": 1,
+      "name": "parseJava",
+      "qualifiedName": "parseJava",
+      "signature": "parseJava(src: string): JavaModule",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 194
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#1-contract",
+      "heading": "1. Contract",
+      "anchor": "1-contract",
+      "snippet": "1. Contract",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-4-pipeline-architecture-phased-write-to-soul-first",
+      "heading": "2.4 Pipeline architecture (phased, write-to-soul-first)",
+      "anchor": "2-4-pipeline-architecture-phased-write-to-soul-first",
+      "snippet": "2.4 Pipeline architecture (phased, write-to-soul-first)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#4-data-flow-indexing-pipeline",
+      "heading": "4. Data flow — indexing pipeline",
+      "anchor": "4-data-flow-indexing-pipeline",
+      "snippet": "4. Data flow — indexing pipeline",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-4-adding-a-new-pipeline-phase",
+      "heading": "4.4 Adding a New Pipeline Phase",
+      "anchor": "4-4-adding-a-new-pipeline-phase",
+      "snippet": "4.4 Adding a New Pipeline Phase",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
+      "heading": "What was built",
+      "anchor": "what-was-built-2",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-0-universal-cfg-parity-finish-s65-6-days",
+      "heading": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "anchor": "phase-0-universal-cfg-parity-finish-s65-6-days",
+      "snippet": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:README.md#architecture-dual-store",
+      "heading": "Architecture (dual store)",
+      "anchor": "architecture-dual-store",
+      "snippet": "Architecture (dual store)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a5aca268aa0995cac.md#caveats-why-medium-not-high",
+      "heading": "Caveats (why medium, not high)",
+      "anchor": "caveats-why-medium-not-high",
+      "snippet": "Caveats (why medium, not high)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a5aca268aa0995cac.md#conclusion",
+      "heading": "Conclusion",
+      "anchor": "conclusion",
+      "snippet": "Conclusion",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#knowledge-crib-implementation-plan-detailed",
+      "heading": "Knowledge-crib — Implementation Plan (detailed)",
+      "anchor": "knowledge-crib-implementation-plan-detailed",
+      "snippet": "Knowledge-crib — Implementation Plan (detailed)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "heading": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "anchor": "2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "snippet": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-5-tree-sitter-wasm-the-offline-core-tension",
+      "heading": "4.5 tree-sitter WASM + the offline-core tension",
+      "anchor": "4-5-tree-sitter-wasm-the-offline-core-tension",
+      "snippet": "4.5 tree-sitter WASM + the offline-core tension",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-6-migration-track-findings-from-the-migration-scope-run",
+      "heading": "4.6 Migration track findings (from the migration-scope run)",
+      "anchor": "4-6-migration-track-findings-from-the-migration-scope-run",
+      "snippet": "4.6 Migration track findings (from the migration-scope run)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#8-build-waves-parallelism",
+      "heading": "8. Build waves (parallelism)",
+      "anchor": "8-build-waves-parallelism",
+      "snippet": "8. Build waves (parallelism)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m2-parse-pipeline-1-lang-typescript-symbols-intra-file-edges",
+      "heading": "M2 — parse pipeline, 1 lang (TypeScript) → symbols + intra-file edges",
+      "anchor": "m2-parse-pipeline-1-lang-typescript-symbols-intra-file-edges",
+      "snippet": "M2 — parse pipeline, 1 lang (TypeScript) → symbols + intra-file edges",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests-3",
+      "heading": "Tests",
+      "anchor": "tests-3",
+      "snippet": "Tests",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#summary",
+      "heading": "Summary",
+      "anchor": "summary",
+      "snippet": "Summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-index-path",
+      "heading": "`crib index [path]`",
+      "anchor": "crib-index-path",
+      "snippet": "`crib index [path]`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#1-why-this-is-its-own-capability",
+      "heading": "1. Why this is its own capability",
+      "anchor": "1-why-this-is-its-own-capability",
+      "snippet": "1. Why this is its own capability",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "heading": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "anchor": "3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "snippet": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m8-tree-sitter-wasm-plugin-languages-python-first",
+      "heading": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "anchor": "m8-tree-sitter-wasm-plugin-languages-python-first",
+      "snippet": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-2-parse-tree-sitter-wasm",
+      "heading": "Phase 2 — Parse (tree-sitter, WASM)",
+      "anchor": "phase-2-parse-tree-sitter-wasm",
+      "snippet": "Phase 2 — Parse (tree-sitter, WASM)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
+      "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "anchor": "java-spring-boot-track-built-tested-schema-1-3",
+      "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-gold-pattern-already-proven-plsqlextractor",
+      "heading": "The gold pattern (already proven): `PlSqlExtractor`",
+      "anchor": "the-gold-pattern-already-proven-plsqlextractor",
+      "snippet": "The gold pattern (already proven): `PlSqlExtractor`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+    "procedureName": "parse",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+        "procedureName": "parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a2d79ea8772a938f58de59bcfb7b2bd7cadf382567cfc65969afffdce637486f",
+          "target": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+          "expr": "parseJava"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts",
+      "packages/cli/src/mcp-install.test.ts",
+      "packages/cli/src/mcp-install.ts",
+      "packages/cli/src/registry.ts",
+      "packages/core/src/dossier/persist.ts",
+      "packages/core/src/merge.ts",
+      "packages/mcp/src/enrichment.ts",
+      "packages/parsers/src/java/parser.test.ts",
+      "packages/pipeline/src/dossiers.ts",
+      "packages/pipeline/src/multimodal/worker.ts",
+      "packages/pipeline/src/workspace.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

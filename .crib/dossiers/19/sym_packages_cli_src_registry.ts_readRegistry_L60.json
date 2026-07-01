@@ -1,0 +1,297 @@
+{
+  "id": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:df0ea012fc427894e877b487b09c13b28a2f7d2451438ff793e846faade8a84e",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readRegistry",
+    "qualifiedName": "readRegistry",
+    "signature": "readRegistry(env: NodeJS.ProcessEnv = process.env): Registry",
+    "lang": "typescript",
+    "file": "packages/cli/src/registry.ts",
+    "span": {
+      "start": 60,
+      "end": 72
+    },
+    "callSites": [
+      {
+        "callee": "registryPath",
+        "line": 61
+      },
+      {
+        "callee": "parse",
+        "line": 64
+      },
+      {
+        "callee": "readFileSync",
+        "line": 64
+      }
+    ]
+  },
+  "source": {
+    "text": "export function readRegistry(env: NodeJS.ProcessEnv = process.env): Registry {\n  const path = registryPath(env);\n  if (!existsSync(path)) return { version: REGISTRY_VERSION, projects: {} };\n  try {\n    const parsed = JSON.parse(readFileSync(path, 'utf8')) as Partial<Registry>;\n    return {\n      version: typeof parsed.version === 'number' ? parsed.version : REGISTRY_VERSION,\n      projects: parsed.projects ?? {},\n    };\n  } catch {\n    return { version: REGISTRY_VERSION, projects: {} };\n  }\n}",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 60
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/registry.ts#listProjects@L92",
+      "confidence": 1,
+      "name": "listProjects",
+      "qualifiedName": "listProjects",
+      "signature": "listProjects(env: NodeJS.ProcessEnv = process.env): Array<[string, RegisteredProject]>",
+      "type": "function",
+      "file": "packages/cli/src/registry.ts",
+      "line": 92
+    },
+    {
+      "id": "sym:packages/cli/src/registry.ts#lookupProject@L84",
+      "confidence": 1,
+      "name": "lookupProject",
+      "qualifiedName": "lookupProject",
+      "signature": "lookupProject(absRoot: string, env: NodeJS.ProcessEnv = process.env): RegisteredProject | undefined",
+      "type": "function",
+      "file": "packages/cli/src/registry.ts",
+      "line": 84
+    },
+    {
+      "id": "sym:packages/cli/src/registry.ts#registerProject@L112",
+      "confidence": 1,
+      "name": "registerProject",
+      "qualifiedName": "registerProject",
+      "signature": "registerProject(absRoot: string, opts: RegisterOpts): RegisteredProject",
+      "type": "function",
+      "file": "packages/cli/src/registry.ts",
+      "line": 112
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+      "confidence": 1,
+      "name": "resolveProjectRoot",
+      "qualifiedName": "resolveProjectRoot",
+      "signature": "resolveProjectRoot(opts: ResolveOpts): ResolvedRoot",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 53
+    },
+    {
+      "id": "sym:packages/cli/src/registry.ts#unregisterProject@L128",
+      "confidence": 1,
+      "name": "unregisterProject",
+      "qualifiedName": "unregisterProject",
+      "signature": "unregisterProject(absRoot: string, env: NodeJS.ProcessEnv = process.env): boolean",
+      "type": "function",
+      "file": "packages/cli/src/registry.ts",
+      "line": 128
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 35
+    },
+    {
+      "id": "sym:packages/cli/src/registry.ts#registryPath@L55",
+      "confidence": 1,
+      "name": "registryPath",
+      "qualifiedName": "registryPath",
+      "signature": "registryPath(env: NodeJS.ProcessEnv = process.env): string",
+      "type": "function",
+      "file": "packages/cli/src/registry.ts",
+      "line": 55
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/registry.ts@L59",
+      "snippet": "/** Read the registry, returning an empty one if the file is absent or unparseable. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+    "procedureName": "readRegistry",
+    "conditions": [
+      "cond:packages/cli/src/registry.ts@L62"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+        "procedureName": "readRegistry",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:278ad5512a70e220f7a776218486ba7bf756b48c7b653878b6b0d742ec75d4ac",
+          "target": "sym:packages/cli/src/registry.ts#registryPath@L55",
+          "expr": "registryPath",
+          "line": 61
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+        "procedureName": "readRegistry",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:131bd5ced01ad30c209b7fc89432a504ef5fce9d684ae353347910ed0d579c68",
+          "target": "stmt:packages/cli/src/registry.ts@L61",
+          "line": 61,
+          "expr": "const path = registryPath(env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+        "procedureName": "readRegistry",
+        "guard": "cond:packages/cli/src/registry.ts@L62",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/registry.ts@L62",
+            "expr": "!existsSync(path)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0162e9b79fc5e4f0a396f934af13c36f0f369bc9f9292dbc6cb6ecffd4fb459f",
+          "target": "stmt:packages/cli/src/registry.ts@L62",
+          "line": 62,
+          "expr": "return { version: REGISTRY_VERSION, projects: {} };"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+        "procedureName": "readRegistry",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a1b65fa2bcd5dd78235f67819f008479ee8912b015168b9aae08b01df95a2796",
+          "target": "stmt:packages/cli/src/registry.ts@L64",
+          "line": 64,
+          "expr": "const parsed = JSON.parse(readFileSync(path, 'utf8')) as Partial<Registry>;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+        "procedureName": "readRegistry",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:814d62fa8f70e0f741a81ebf520a058b5324fcc72f716fecca966f688920ec80",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+          "expr": "parse",
+          "line": 64
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+        "procedureName": "readRegistry",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8ecac8781513f6c6e862a52137dfd895bb699afb48302a56bca6fcd115037f8d",
+          "target": "stmt:packages/cli/src/registry.ts@L65",
+          "line": 65,
+          "expr": "return {\n      version: typeof parsed.version === 'number' ? parsed.version : REGISTRY_VERSION,\n      projects: parsed.projects ?? {},\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+        "procedureName": "readRegistry",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bbc0d529769daebaf0194a4ec288c6875568511a8638f8c523bf525af5837458",
+          "target": "stmt:packages/cli/src/registry.ts@L70",
+          "line": 70,
+          "expr": "return { version: REGISTRY_VERSION, projects: {} };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/cli/src/registry.ts@L69",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/cli/src/registry.ts",
+        "span": {
+          "start": 69,
+          "end": 69
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/cli/src/registry.ts",
+      "packages/cli/src/runtime.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,213 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#findAssignOp@L991",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4b55d09370435d30b20db629c2772fbf0e91f6914068da6660fd3eb21660a11f",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#findAssignOp@L991",
+    "kind": "symbol",
+    "type": "function",
+    "name": "findAssignOp",
+    "qualifiedName": "findAssignOp",
+    "signature": "findAssignOp(toks: Token[]): { opStartLine: number; opStartCol: number } | null",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 991,
+      "end": 1007
+    },
+    "callSites": [
+      {
+        "callee": "max",
+        "line": 997
+      }
+    ]
+  },
+  "source": {
+    "text": "function findAssignOp(toks: Token[]): { opStartLine: number; opStartCol: number } | null {\n  let depth = 0;\n  for (let i = 0; i < toks.length; i++) {\n    const tk = toks[i]!;\n    if (tk.type === 'OP' && (tk.value === '(' || tk.value === '[' || tk.value === '{')) depth++;\n    else if (tk.type === 'OP' && (tk.value === ')' || tk.value === ']' || tk.value === '}')) {\n      depth = Math.max(0, depth - 1);\n    } else if (depth === 0 && tk.type === 'OP' && (tk.value === '=' || tk.value === ':=')) {\n      const prev = toks[i - 1];\n      if (prev && prev.type === 'OP' && AUGMENT_PREFIXES.has(prev.value)) {\n        return { opStartLine: prev.line, opStartCol: prev.col };\n      }\n      return { opStartLine: tk.line, opStartCol: tk.col };\n    }\n  }\n  return null;\n}",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 991
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+      "confidence": 1,
+      "name": "parseAction",
+      "qualifiedName": "Parser.parseAction",
+      "signature": "parseAction(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 595
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/parser.ts@L985",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#findAssignOp@L991",
+    "procedureName": "findAssignOp",
+    "conditions": [
+      "cond:packages/parsers/src/python/parser.ts@L993",
+      "cond:packages/parsers/src/python/parser.ts@L995",
+      "cond:packages/parsers/src/python/parser.ts@L996",
+      "cond:packages/parsers/src/python/parser.ts@L998",
+      "cond:packages/parsers/src/python/parser.ts@L1000"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#findAssignOp@L991",
+        "procedureName": "findAssignOp",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L996",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L993",
+            "expr": "i < toks.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L995",
+            "expr": "tk.type === 'OP' && (tk.value === '(' || tk.value === '[' || tk.value === '{')"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L996",
+            "expr": "tk.type === 'OP' && (tk.value === ')' || tk.value === ']' || tk.value === '}')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3ade7681daaefa5349037fc5518635813abd8673ef3016ad33bbd3f082d3a5fb",
+          "target": "assign:packages/parsers/src/python/parser.ts@L997",
+          "line": 997,
+          "expr": "depth = Math.max(0, depth - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#findAssignOp@L991",
+        "procedureName": "findAssignOp",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L1000",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L993",
+            "expr": "i < toks.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L995",
+            "expr": "tk.type === 'OP' && (tk.value === '(' || tk.value === '[' || tk.value === '{')"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L996",
+            "expr": "tk.type === 'OP' && (tk.value === ')' || tk.value === ']' || tk.value === '}')"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L998",
+            "expr": "depth === 0 && tk.type === 'OP' && (tk.value === '=' || tk.value === ':=')"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L1000",
+            "expr": "prev && prev.type === 'OP' && AUGMENT_PREFIXES.has(prev.value)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3abdb0982151ae0f05ca5b489d2fd7de76a2205f2e6954d018bb2cebc4788a4e",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L1001",
+          "line": 1001,
+          "expr": "return { opStartLine: prev.line, opStartCol: prev.col };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#findAssignOp@L991",
+        "procedureName": "findAssignOp",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L998",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L993",
+            "expr": "i < toks.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L995",
+            "expr": "tk.type === 'OP' && (tk.value === '(' || tk.value === '[' || tk.value === '{')"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L996",
+            "expr": "tk.type === 'OP' && (tk.value === ')' || tk.value === ']' || tk.value === '}')"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L998",
+            "expr": "depth === 0 && tk.type === 'OP' && (tk.value === '=' || tk.value === ':=')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:249c972236768cdfa071332f69578bbedf20c1a66c21be9e053a5b0fe8af9c47",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L1003",
+          "line": 1003,
+          "expr": "return { opStartLine: tk.line, opStartCol: tk.col };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#findAssignOp@L991",
+        "procedureName": "findAssignOp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:256f5e0a291df04169a6b64c6b075133dee4f0f83ddfb9bac176ca5bd8bf8809",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L1006",
+          "line": 1006,
+          "expr": "return null;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 1,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,257 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.firstTopInPkg@L107",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:f986d5dd64c5f07686ba0c3e08f8f8acb140d5c5fa38e1ee57accaf9e829afa5",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.firstTopInPkg@L107",
+    "kind": "symbol",
+    "type": "function",
+    "name": "firstTopInPkg",
+    "qualifiedName": "resolveGo.firstTopInPkg",
+    "signature": "firstTopInPkg(…)",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/go-resolver.ts",
+    "span": {
+      "start": 107,
+      "end": 124
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 108
+      },
+      {
+        "callee": "find",
+        "line": 111
+      },
+      {
+        "callee": "topLevelSymbol",
+        "line": 119
+      }
+    ]
+  },
+  "source": {
+    "text": "  const firstTopInPkg = (pkgName: string): string | undefined => {\n    const files = pkgFiles.get(pkgName);\n    if (!files) return undefined;\n    for (const f of [...files].sort()) {\n      const pf = parsed.find((p) => p.path === f);\n      if (!pf) continue;\n      for (const d of pf.mod.defs) {\n        // receiver methods (kind 'method', non-interface) are top-level decls but NOT top-level\n        // symbols by simple name (their parentQualifier is the receiver type) — skip so the\n        // imports edge points at a genuine top-level func/type. Interface methods are nested in\n        // body[] and never appear in pf.mod.defs.\n        if (d.kind === 'method') continue;\n        const sym = table.topLevelSymbol(f, d.name);\n        if (sym) return sym.id;\n      }\n    }\n    return undefined;\n  };",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 107
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo@L50",
+      "confidence": 1,
+      "name": "resolveGo",
+      "qualifiedName": "resolveGo",
+      "signature": "resolveGo(table: SymbolTable, root: string, files: FileMeta[]): { edges: Edge[]; stats: ResolveStats }",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.ts",
+      "line": 50
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/resolve/go-resolver.ts@L105",
+      "snippet": "// first top-level symbol in a package (imports-edge target). Iterates files in sorted order and,",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.firstTopInPkg@L107",
+    "procedureName": "resolveGo.firstTopInPkg",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/go-resolver.ts@L109",
+      "cond:packages/pipeline/src/resolve/go-resolver.ts@L110",
+      "cond:packages/pipeline/src/resolve/go-resolver.ts@L113",
+      "cond:packages/pipeline/src/resolve/go-resolver.ts@L120"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.firstTopInPkg@L107",
+        "procedureName": "resolveGo.firstTopInPkg",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4db40b78ef6549765700413babd1623c972c61ece3757337c3896693317ead75",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.ts@L108",
+          "line": 108,
+          "expr": "const files = pkgFiles.get(pkgName);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.firstTopInPkg@L107",
+        "procedureName": "resolveGo.firstTopInPkg",
+        "guard": "cond:packages/pipeline/src/resolve/go-resolver.ts@L109",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L109",
+            "expr": "!files",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4a3ea5e7117d66c72e7458fff3653ea2c465f759c5f2ffc50071383f713fe050",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.ts@L109",
+          "line": 109,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.firstTopInPkg@L107",
+        "procedureName": "resolveGo.firstTopInPkg",
+        "guard": "cond:packages/pipeline/src/resolve/go-resolver.ts@L110",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L110",
+            "expr": "[...files].sort()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:554217bb5bec42b82088677583726ae5db83bf5742fc34199e5959279209c393",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.ts@L111",
+          "line": 111,
+          "expr": "const pf = parsed.find((p) => p.path === f);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.firstTopInPkg@L107",
+        "procedureName": "resolveGo.firstTopInPkg",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:92a0506b6581e3aa21b3a7cb25f9030492a772e3afad249d822f65694e69cdd4",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 111
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.firstTopInPkg@L107",
+        "procedureName": "resolveGo.firstTopInPkg",
+        "guard": "cond:packages/pipeline/src/resolve/go-resolver.ts@L113",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L110",
+            "expr": "[...files].sort()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L113",
+            "expr": "pf.mod.defs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:90990ef581dc3851584eaa003878e762e4a0ca4658fb46608d7d89b1ce04eb46",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.ts@L119",
+          "line": 119,
+          "expr": "const sym = table.topLevelSymbol(f, d.name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.firstTopInPkg@L107",
+        "procedureName": "resolveGo.firstTopInPkg",
+        "guard": "cond:packages/pipeline/src/resolve/go-resolver.ts@L120",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L110",
+            "expr": "[...files].sort()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L113",
+            "expr": "pf.mod.defs"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L120",
+            "expr": "sym",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a0f9581ae84fd1111f644f6882af9c7c1e9128a7315938b59192fc3349b318e0",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.ts@L120",
+          "line": 120,
+          "expr": "return sym.id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.firstTopInPkg@L107",
+        "procedureName": "resolveGo.firstTopInPkg",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb0492fa2e687aeb94a32d2f0e51bf1be0a2b9209bce415e0865ecea4ca1b06c",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.ts@L123",
+          "line": 123,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/go-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

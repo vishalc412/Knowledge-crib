@@ -1,0 +1,106 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#isRecord@L1193",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:64bba851923d4e2dbab2a103c46cbced5c1fc144ba471af6980b62d46d919d54",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#isRecord@L1193",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isRecord",
+    "qualifiedName": "isRecord",
+    "signature": "isRecord(v: unknown): v is Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1193,
+      "end": 1195
+    },
+    "callSites": [
+      {
+        "callee": "isArray",
+        "line": 1194
+      }
+    ]
+  },
+  "source": {
+    "text": "function isRecord(v: unknown): v is Record<string, unknown> {\n  return typeof v === 'object' && v !== null && !Array.isArray(v);\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1193
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#presencedLastIssued@L1198",
+      "confidence": 1,
+      "name": "presencedLastIssued",
+      "qualifiedName": "presencedLastIssued",
+      "signature": "presencedLastIssued(v: unknown): v is Record<string, { batchId: string }>",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1198
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+      "confidence": 1,
+      "name": "validateSaveItem",
+      "qualifiedName": "validateSaveItem",
+      "signature": "validateSaveItem(item: EnrichSaveItem): string | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1060
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#isRecord@L1193",
+    "procedureName": "isRecord",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#isRecord@L1193",
+        "procedureName": "isRecord",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:50ffbe48096b22c467f7af8937ce39a1f2388a7785a1ae9d779ffaeff7c0d5f1",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1194",
+          "line": 1194,
+          "expr": "return typeof v === 'object' && v !== null && !Array.isArray(v);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

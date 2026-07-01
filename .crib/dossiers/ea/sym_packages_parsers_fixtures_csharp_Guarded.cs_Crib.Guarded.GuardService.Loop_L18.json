@@ -1,0 +1,127 @@
+{
+  "id": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Loop@L18",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e3b9f067fc82123be7e8d178ca149ec1f8bb4a775c4491af45e29be6eb99f304",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Loop@L18",
+    "kind": "symbol",
+    "type": "method",
+    "name": "Loop",
+    "qualifiedName": "Crib.Guarded.GuardService.Loop",
+    "signature": "Loop(xs)",
+    "lang": "csharp",
+    "file": "packages/parsers/fixtures/csharp/Guarded.cs",
+    "span": {
+      "start": 18,
+      "end": 24
+    },
+    "callSites": [
+      {
+        "callee": "Process",
+        "line": 22
+      }
+    ],
+    "params": [
+      "xs"
+    ]
+  },
+  "source": {
+    "text": "    public void Loop(int[] xs)\n    {\n        foreach (var x in xs)\n        {\n            Process(x);\n        }\n    }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 18
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Process@L28",
+      "confidence": 1,
+      "name": "Process",
+      "qualifiedName": "Crib.Guarded.GuardService.Process",
+      "signature": "Process(n)",
+      "type": "method",
+      "file": "packages/parsers/fixtures/csharp/Guarded.cs",
+      "line": 28
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Loop@L18",
+    "procedureName": "Crib.Guarded.GuardService.Loop",
+    "conditions": [
+      "cond:packages/parsers/fixtures/csharp/Guarded.cs@L20"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Loop@L18",
+        "procedureName": "Crib.Guarded.GuardService.Loop",
+        "guard": "cond:packages/parsers/fixtures/csharp/Guarded.cs@L20",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/csharp/Guarded.cs@L20",
+            "expr": "var x in xs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9947c52b0a90de61f8bb02703735ce084bf9556e7d4d7a4a02d4cd1c95fa0e54",
+          "target": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Process@L28",
+          "expr": "Process",
+          "line": 22
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/csharp/Guarded.cs#Crib.Guarded.GuardService.Loop@L18",
+        "procedureName": "Crib.Guarded.GuardService.Loop",
+        "guard": "cond:packages/parsers/fixtures/csharp/Guarded.cs@L20",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/csharp/Guarded.cs@L20",
+            "expr": "var x in xs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6a16672c4ef3dcdb06a4761ba8888c05007120bcb6e49aee4fa7ae0805c495db",
+          "target": "stmt:packages/parsers/fixtures/csharp/Guarded.cs@L22",
+          "line": 22,
+          "expr": "Process(x)"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

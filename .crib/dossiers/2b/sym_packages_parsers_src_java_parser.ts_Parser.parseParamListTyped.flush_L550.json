@@ -1,0 +1,171 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamListTyped.flush@L550",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:57cc4479cb392767e0bb159b369d93ba259df08f25ca5de60babc161da9db945",
+  "builtAt": "2026-06-26T05:09:36.599Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamListTyped.flush@L550",
+    "kind": "symbol",
+    "type": "function",
+    "name": "flush",
+    "qualifiedName": "Parser.parseParamListTyped.flush",
+    "signature": "flush(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 550,
+      "end": 564
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 552
+      }
+    ]
+  },
+  "source": {
+    "text": "    const flush = (): void => {\n      if (lastName)\n        out.push(\n          firstName && firstName !== lastName\n            ? {\n                name: lastName,\n                type: firstName,\n                ...(paramAnnos.length ? { annotations: paramAnnos } : {}),\n              }\n            : { name: lastName, ...(paramAnnos.length ? { annotations: paramAnnos } : {}) },\n        );\n      firstName = undefined;\n      lastName = undefined;\n      paramAnnos = [];\n    };",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 550
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamListTyped@L538",
+      "confidence": 1,
+      "name": "parseParamListTyped",
+      "qualifiedName": "Parser.parseParamListTyped",
+      "signature": "parseParamListTyped(): Array<{\n    name: string;\n    type?: string;\n    annotations?: string[];\n  }>",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 538
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamListTyped.flush@L550",
+    "procedureName": "Parser.parseParamListTyped.flush",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.ts@L551"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamListTyped.flush@L550",
+        "procedureName": "Parser.parseParamListTyped.flush",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L551",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L551",
+            "expr": "lastName",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d6e8fae5580f9cc23f7eef71c84ee3302793ea39acd118ae6cbe44a1435a4228",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L552",
+          "line": 552,
+          "expr": "out.push(\n          firstName && firstName !== lastName\n            ? {\n                name: lastName,\n                type: firstName,\n                ...(paramAnnos.length ? { annotations: paramAnnos } : {}),\n              }\n            : { name: lastName, ...(paramAnnos.length ? { annotations: paramAnnos } : {}) },\n        );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamListTyped.flush@L550",
+        "procedureName": "Parser.parseParamListTyped.flush",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0e73be737404488b64d7dafbe519cd32a9b9ab60963f96a126a1d57d36a2a308",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 552
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamListTyped.flush@L550",
+        "procedureName": "Parser.parseParamListTyped.flush",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5a26b97ee06c9e413533a483b94648bb4ae5a96d14ef855789a56f6569e89462",
+          "target": "assign:packages/parsers/src/java/parser.ts@L561",
+          "line": 561,
+          "expr": "firstName = undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamListTyped.flush@L550",
+        "procedureName": "Parser.parseParamListTyped.flush",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:abb124967771c7f88e42ac3196a38f2971dcf318089aeef15bbdb15d5b0b4bf1",
+          "target": "assign:packages/parsers/src/java/parser.ts@L562",
+          "line": 562,
+          "expr": "lastName = undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamListTyped.flush@L550",
+        "procedureName": "Parser.parseParamListTyped.flush",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e75d878aded944c4059f309f605ae7403c1aba4b07b6eef72eaefc32ce93e1a3",
+          "target": "assign:packages/parsers/src/java/parser.ts@L563",
+          "line": 563,
+          "expr": "paramAnnos = [];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 3,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

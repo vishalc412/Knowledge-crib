@@ -1,0 +1,226 @@
+{
+  "id": "sym:packages/parsers/src/md/markdown.ts#stripCode@L127",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:eb5b6c7d3c14e8b94a8e07804bb02cb4fbfab55c29e73bfc0d71876477b29da2",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/md/markdown.ts#stripCode@L127",
+    "kind": "symbol",
+    "type": "function",
+    "name": "stripCode",
+    "qualifiedName": "stripCode",
+    "signature": "stripCode(body: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/md/markdown.ts",
+    "span": {
+      "start": 127,
+      "end": 140
+    },
+    "callSites": [
+      {
+        "callee": "replace",
+        "line": 128
+      },
+      {
+        "callee": "split",
+        "line": 129
+      },
+      {
+        "callee": "push",
+        "line": 137
+      },
+      {
+        "callee": "join",
+        "line": 139
+      }
+    ]
+  },
+  "source": {
+    "text": "function stripCode(body: string): string {\n  const noInline = body.replace(INLINE_CODE, ' ');\n  const lines = noInline.split('\\n');\n  const out: string[] = [];\n  let inFence = false;\n  for (const line of lines) {\n    if (FENCE.test(line)) {\n      inFence = !inFence;\n      continue;\n    }\n    if (!inFence) out.push(line);\n  }\n  return out.join('\\n');\n}",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 127
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/md/markdown.ts#parseMarkdownSections@L36",
+      "confidence": 1,
+      "name": "parseMarkdownSections",
+      "qualifiedName": "parseMarkdownSections",
+      "signature": "parseMarkdownSections(text: string): MdSection[]",
+      "type": "function",
+      "file": "packages/parsers/src/md/markdown.ts",
+      "line": 36
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/md/markdown.ts@L126",
+      "snippet": "/** Remove inline + fenced code so identifier matching only sees prose. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/md/markdown.ts#stripCode@L127",
+    "procedureName": "stripCode",
+    "conditions": [
+      "cond:packages/parsers/src/md/markdown.ts@L132",
+      "cond:packages/parsers/src/md/markdown.ts@L133",
+      "cond:packages/parsers/src/md/markdown.ts@L137"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/md/markdown.ts#stripCode@L127",
+        "procedureName": "stripCode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a1999132f925a1de3616b6fdbf5863692711b164c33abc7a71484699347d42c6",
+          "target": "stmt:packages/parsers/src/md/markdown.ts@L128",
+          "line": 128,
+          "expr": "const noInline = body.replace(INLINE_CODE, ' ');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/markdown.ts#stripCode@L127",
+        "procedureName": "stripCode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9cca6713046fa4d04274161c1dc2be4667bfd2ff9d2ab3cc8ecd5bdc493e1b1b",
+          "target": "stmt:packages/parsers/src/md/markdown.ts@L129",
+          "line": 129,
+          "expr": "const lines = noInline.split('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/markdown.ts#stripCode@L127",
+        "procedureName": "stripCode",
+        "guard": "cond:packages/parsers/src/md/markdown.ts@L133",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/md/markdown.ts@L132",
+            "expr": "lines"
+          },
+          {
+            "id": "cond:packages/parsers/src/md/markdown.ts@L133",
+            "expr": "FENCE.test(line)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb7c5cf448ee718c988a3d93daab1a1c351c0c4456b887eff476d215a2202978",
+          "target": "assign:packages/parsers/src/md/markdown.ts@L134",
+          "line": 134,
+          "expr": "inFence = !inFence;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/markdown.ts#stripCode@L127",
+        "procedureName": "stripCode",
+        "guard": "cond:packages/parsers/src/md/markdown.ts@L137",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/md/markdown.ts@L132",
+            "expr": "lines"
+          },
+          {
+            "id": "cond:packages/parsers/src/md/markdown.ts@L137",
+            "expr": "!inFence",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb78036698ce3e9fafdc4217ce3eedfbc3f849e01badf20282055032d39bdd6a",
+          "target": "stmt:packages/parsers/src/md/markdown.ts@L137",
+          "line": 137,
+          "expr": "out.push(line);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/markdown.ts#stripCode@L127",
+        "procedureName": "stripCode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:afa580f7610e0b9a635735a7af0d4522d95eb6d1292a9e073e2a50b24b8b0600",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 137
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/markdown.ts#stripCode@L127",
+        "procedureName": "stripCode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2d091963d036f036d68b3462bc4aaba9545f9e7e524033adfbf4e28e579f3d20",
+          "target": "stmt:packages/parsers/src/md/markdown.ts@L139",
+          "line": 139,
+          "expr": "return out.join('\\n');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/md/markdown.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 4,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

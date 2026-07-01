@@ -1,0 +1,125 @@
+{
+  "id": "sym:packages/ui/src/viz.ts#vizAssetsDir@L256",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:bc510db9dea0f6c81230277c685af36fa4cbc06a436d4fc9da402b9bcc9854e1",
+  "builtAt": "2026-06-30T22:39:43.179Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/src/viz.ts#vizAssetsDir@L256",
+    "kind": "symbol",
+    "type": "function",
+    "name": "vizAssetsDir",
+    "qualifiedName": "vizAssetsDir",
+    "signature": "vizAssetsDir(): string",
+    "lang": "typescript",
+    "file": "packages/ui/src/viz.ts",
+    "span": {
+      "start": 256,
+      "end": 259
+    },
+    "callSites": [
+      {
+        "callee": "dirname",
+        "line": 258
+      }
+    ]
+  },
+  "source": {
+    "text": "export function vizAssetsDir(): string {\n  // src/viz.ts → ../web  (works against source at dev time; the CLI resolves via the built dist too)\n  return `${dirname(__dirname)}/web`;\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 256
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdViz@L1164",
+      "confidence": 1,
+      "name": "cmdViz",
+      "qualifiedName": "cmdViz",
+      "signature": "cmdViz(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1164
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/ui/src/viz.ts@L255",
+      "snippet": "/** Absolute path to the static web assets dir (index.html, main.js, vendor/). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/ui/src/viz.ts#vizAssetsDir@L256",
+    "procedureName": "vizAssetsDir",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#vizAssetsDir@L256",
+        "procedureName": "vizAssetsDir",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4bd10cf47dcc81e8a0e171256e98ec6fb897bda0d09c00b3c3656091c6b7fdb2",
+          "target": "stmt:packages/ui/src/viz.ts@L258",
+          "line": 258,
+          "expr": "return `${dirname(__dirname)}/web`;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

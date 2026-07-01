@@ -1,0 +1,97 @@
+{
+  "id": "sym:packages/pipeline/src/cluster/louvain.ts#gainFor@L149",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:93bec6d0ae859ce244e2efbf8f37a2c475264cfec2d1569ea351bf267cb8f3d9",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/cluster/louvain.ts#gainFor@L149",
+    "kind": "symbol",
+    "type": "function",
+    "name": "gainFor",
+    "qualifiedName": "gainFor",
+    "signature": "gainFor(kiIn: number, sigmaTot: number, ki: number, m2: number): number",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/cluster/louvain.ts",
+    "span": {
+      "start": 149,
+      "end": 152
+    }
+  },
+  "source": {
+    "text": "function gainFor(kiIn: number, sigmaTot: number, ki: number, m2: number): number {\n  // gain ≈ kiIn - (sigmaTot * ki) / m2   (constant 1/m2 factor omitted for comparison)\n  return kiIn - (sigmaTot * ki) / m2;\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 149
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/cluster/louvain.ts#oneLevel@L76",
+      "confidence": 1,
+      "name": "oneLevel",
+      "qualifiedName": "oneLevel",
+      "signature": "oneLevel(graph: LouvainGraph): {\n  moved: boolean;\n  node2supernode: Int32Array;\n  aggregated: LouvainGraph;\n}",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/louvain.ts",
+      "line": 76
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/cluster/louvain.ts@L148",
+      "snippet": "/** ΔQ numerator for moving node with degree ki into a community with Σtot and ki_in shared weight. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#gainFor@L149",
+    "procedureName": "gainFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#gainFor@L149",
+        "procedureName": "gainFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:306f8741ff6ce0758cd55a3fd844585733302878015b8482545c8c18421d7799",
+          "target": "stmt:packages/pipeline/src/cluster/louvain.ts@L151",
+          "line": 151,
+          "expr": "return kiIn - (sigmaTot * ki) / m2;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/cluster/louvain.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

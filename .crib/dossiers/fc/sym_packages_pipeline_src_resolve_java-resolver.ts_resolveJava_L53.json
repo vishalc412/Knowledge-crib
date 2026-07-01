@@ -1,0 +1,917 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:5b4c52ee1cd81f120fc543297cc8da1078435783a20bcbcad339edc53f14d73e",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+    "kind": "symbol",
+    "type": "function",
+    "name": "resolveJava",
+    "qualifiedName": "resolveJava",
+    "signature": "resolveJava(table: SymbolTable, root: string, files: FileMeta[]): { edges: Edge[]; stats: ResolveStats }",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/java-resolver.ts",
+    "span": {
+      "start": 53,
+      "end": 239
+    },
+    "callSites": [
+      {
+        "callee": "edgeId",
+        "line": 71
+      },
+      {
+        "callee": "has",
+        "line": 72
+      },
+      {
+        "callee": "add",
+        "line": 73
+      },
+      {
+        "callee": "push",
+        "line": 74
+      },
+      {
+        "callee": "safeRead",
+        "line": 90
+      },
+      {
+        "callee": "join",
+        "line": 90
+      },
+      {
+        "callee": "push",
+        "line": 92
+      },
+      {
+        "callee": "parseJava",
+        "line": 92
+      },
+      {
+        "callee": "set",
+        "line": 99
+      },
+      {
+        "callee": "get",
+        "line": 116
+      },
+      {
+        "callee": "findFileBySuffix",
+        "line": 117
+      },
+      {
+        "callee": "set",
+        "line": 122
+      },
+      {
+        "callee": "topLevelSymbol",
+        "line": 127
+      },
+      {
+        "callee": "push",
+        "line": 129
+      },
+      {
+        "callee": "fileId",
+        "line": 129
+      },
+      {
+        "callee": "enclosingSymbolId",
+        "line": 139
+      },
+      {
+        "callee": "resolveTypeName",
+        "line": 142
+      },
+      {
+        "callee": "push",
+        "line": 144
+      },
+      {
+        "callee": "resolveTypeName",
+        "line": 151
+      },
+      {
+        "callee": "push",
+        "line": 153
+      },
+      {
+        "callee": "nodeInFile",
+        "line": 162
+      },
+      {
+        "callee": "symbolByKind",
+        "line": 166
+      },
+      {
+        "callee": "resolveTypeName",
+        "line": 167
+      },
+      {
+        "callee": "push",
+        "line": 169
+      },
+      {
+        "callee": "enclosingSymbolId",
+        "line": 180
+      },
+      {
+        "callee": "nodeInFile",
+        "line": 182
+      },
+      {
+        "callee": "symbolByKind",
+        "line": 186
+      },
+      {
+        "callee": "resolveTypeName",
+        "line": 187
+      },
+      {
+        "callee": "push",
+        "line": 196
+      },
+      {
+        "callee": "enclosingSymbolId",
+        "line": 206
+      },
+      {
+        "callee": "resolveTypeName",
+        "line": 209
+      },
+      {
+        "callee": "push",
+        "line": 211
+      },
+      {
+        "callee": "visitDef",
+        "line": 219
+      },
+      {
+        "callee": "visitDef",
+        "line": 221
+      },
+      {
+        "callee": "get",
+        "line": 227
+      },
+      {
+        "callee": "topLevelSymbol",
+        "line": 229
+      },
+      {
+        "callee": "enclosingSymbolId",
+        "line": 231
+      },
+      {
+        "callee": "push",
+        "line": 233
+      }
+    ]
+  },
+  "source": {
+    "text": "export function resolveJava(\n  table: SymbolTable,\n  root: string,\n  files: FileMeta[],\n): { edges: Edge[]; stats: ResolveStats } {\n  const edges: Edge[] = [];\n  const stats: ResolveStats = {\n    imports: 0,\n    calls: 0,\n    inherits: 0,\n    implements: 0,\n    injects: 0,\n    produces: 0,\n    dropped: 0,\n  };\n  const seen = new Set<string>();\n\n  const push = (src: string, dst: string, rel: Rel, snippet: string): void => {\n    const id = edgeId(src, dst, rel);\n    if (seen.has(id)) return;\n    seen.add(id);\n    edges.push({\n      id,\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'java-resolver', snippet },\n    });\n  };\n\n  // parse every supported file once (re-used for the FQN map + per-file resolution).\n  const parsed: ParsedFile[] = [];\n  for (const file of files) {\n    if (!JAVA_EXTS.some((e) => file.path.endsWith(e))) continue;\n    const text = safeRead(join(root, file.path));\n    if (text === undefined) continue;\n    parsed.push({ path: file.path, mod: parseJava(text) });\n  }\n\n  // FQN → file: `${pkg}.${TopLevelType}` → file path (robust to source-root prefixes like src/main/java).\n  const fqnFile = new Map<string, string>();\n  for (const p of parsed) {\n    const pkg = p.mod.pkg ? `${p.mod.pkg}.` : '';\n    for (const d of p.mod.defs) fqnFile.set(`${pkg}${d.name}`, p.path);\n  }\n\n  for (const p of parsed) {\n    const { path, mod } = p;\n    const pkgPrefix = mod.pkg ? `${mod.pkg}.` : '';\n\n    // --- name bindings from `import a.b.C;` (non-star, non-static) ---\n    const nameBindings = new Map<string, NameBinding>();\n    for (const imp of mod.imports) {\n      if (imp.star || imp.static) {\n        stats.dropped++;\n        continue;\n      }\n      // `import a.b.C;` → fully-qualified type a.b.C → its file.\n      const fqn = imp.module ? `${imp.module}.${imp.name}` : imp.name;\n      const targetFile =\n        fqnFile.get(fqn) ??\n        (imp.module ? findFileBySuffix(imp.module, imp.name, parsed) : undefined);\n      if (!targetFile) {\n        stats.dropped++;\n        continue;\n      }\n      nameBindings.set(imp.name, { file: targetFile, name: imp.name });\n    }\n\n    // --- imports edges: file → imported top-level type ---\n    for (const [, binding] of nameBindings) {\n      const target = table.topLevelSymbol(binding.file, binding.name);\n      if (target) {\n        push(table.fileId(path), target.id, 'imports', `import ${binding.name}`);\n        stats.imports++;\n      } else {\n        stats.dropped++;\n      }\n    }\n\n    // --- inherits + implements + injects: walk the whole declaration tree ---\n    const visitDef = (d: JavaDef): void => {\n      if (d.kind === 'class' || d.kind === 'record' || d.kind === 'enum') {\n        const classId = table.enclosingSymbolId(path, d.startLine);\n        if (classId) {\n          for (const base of d.bases) {\n            const target = resolveTypeName(base, path, pkgPrefix, nameBindings, fqnFile, table);\n            if (target) {\n              push(classId, target, 'inherits', `extends ${base}`);\n              stats.inherits++;\n            } else {\n              stats.dropped++;\n            }\n          }\n          for (const iface of d.implements) {\n            const target = resolveTypeName(iface, path, pkgPrefix, nameBindings, fqnFile, table);\n            if (target) {\n              push(classId, target, 'implements', `implements ${iface}`);\n              stats.implements++;\n            } else {\n              stats.dropped++;\n            }\n          }\n          // 1.3: cross-file DI — a Spring bean's `meta.injects` (dependency types the Spring pass\n          // could NOT resolve intra-file) resolved here via imports / same-package / same-file. An\n          // intra-file-satisfied injection is skipped: the Spring pass already emitted that edge.\n          const classNode = table.nodeInFile(path, classId);\n          const injects = (classNode?.meta?.injects as string[] | undefined) ?? [];",
+    "truncated": true,
+    "totalLines": 187,
+    "startLine": 53,
+    "nextLine": 164
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#JavaResolver.resolve@L306",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "JavaResolver.resolve",
+      "signature": "resolve(ctx: ResolveContext): { edges: Edge[]; stats: ResolveStats }",
+      "type": "method",
+      "file": "packages/pipeline/src/resolve/java-resolver.ts",
+      "line": 306
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 122
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
+      "confidence": 1,
+      "name": "enclosingSymbolId",
+      "qualifiedName": "enclosingSymbolId",
+      "signature": "enclosingSymbolId(line: number, symbols: LocalSymbol[]): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 438
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#findFileBySuffix@L278",
+      "confidence": 1,
+      "name": "findFileBySuffix",
+      "qualifiedName": "findFileBySuffix",
+      "signature": "findFileBySuffix(module: string, name: string, parsed: readonly ParsedFile[]): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/java-resolver.ts",
+      "line": 278
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+      "confidence": 1,
+      "name": "parseJava",
+      "qualifiedName": "parseJava",
+      "signature": "parseJava(src: string): JavaModule",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 194
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "resolveJava.push",
+      "signature": "push(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/java-resolver.ts",
+      "line": 70
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.visitDef@L137",
+      "confidence": 1,
+      "name": "visitDef",
+      "qualifiedName": "resolveJava.visitDef",
+      "signature": "visitDef(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/java-resolver.ts",
+      "line": 137
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeName@L138",
+      "confidence": 1,
+      "name": "resolveTypeName",
+      "qualifiedName": "resolveTypeName",
+      "signature": "resolveTypeName(name: string, file: string, imports: Map<string, ImportBinding>, table: SymbolTable): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 138
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#safeRead@L292",
+      "confidence": 1,
+      "name": "safeRead",
+      "qualifiedName": "safeRead",
+      "signature": "safeRead(abs: string): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/java-resolver.ts",
+      "line": 292
+    },
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
+      "confidence": 1,
+      "name": "safeRead",
+      "qualifiedName": "safeRead",
+      "signature": "safeRead(abs: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 196
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/resolve/java-resolver.ts@L52",
+      "snippet": "/** Resolve cross-file edges for all Java files. Pure: returns edges; the caller persists them. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+    "procedureName": "resolveJava",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+      "cond:packages/pipeline/src/resolve/java-resolver.ts@L224",
+      "cond:packages/pipeline/src/resolve/java-resolver.ts@L88",
+      "cond:packages/pipeline/src/resolve/java-resolver.ts@L97",
+      "cond:packages/pipeline/src/resolve/java-resolver.ts@L99",
+      "cond:packages/pipeline/src/resolve/java-resolver.ts@L108",
+      "cond:packages/pipeline/src/resolve/java-resolver.ts@L126",
+      "cond:packages/pipeline/src/resolve/java-resolver.ts@L128",
+      "cond:packages/pipeline/src/resolve/java-resolver.ts@L221"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3943cbf91c358e04ad33e415063da4d7d83b4bc6aa5abec75c123dbc19399a1d",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L70",
+          "line": 70,
+          "expr": "const push = (src: string, dst: string, rel: Rel, snippet: string): void => {\n    const id = edgeId(src, dst, rel);\n    if (seen.has(id)) return;\n    seen.add(id);\n    edges.push({\n      id,\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'java-resolver', snippet },\n    });\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:54f28d3b1365bdb27b67ea2eeb4553436ed14b29888f9afa3e18d7a398d9d727",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "expr": "edgeId",
+          "line": 71
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:79de905db23a647327966802642917e10936fb1417e5da88c8048624c3cf4176",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 73
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L224",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+            "expr": "parsed"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L224",
+            "expr": "mod.calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:eadd2780a24f32e010d208a15b8441ebea31c8190f7a7bcd0bc5a55cc0052107",
+          "target": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
+          "expr": "push",
+          "line": 74
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:39d310023c0ce71e87abc5613d64c4fc1294b392813adfcd504d85f2a2174352",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 74
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L88",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L88",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ef5be0a488b2026eb5fa645d4f3dcff31f7f9131c48061807fcd18eeec73b059",
+          "target": "sym:packages/pipeline/src/resolve/java-resolver.ts#safeRead@L292",
+          "expr": "safeRead",
+          "line": 90
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L88",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L88",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cfe3261568ff08e4256dbd3c079ee63f4d65c2e777c5960d5d57dadcf48f6f1f",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L90",
+          "line": 90,
+          "expr": "const text = safeRead(join(root, file.path));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c51e241749ccc8c83816d3963588e14991c1582e4794aae8921220802107e18a",
+          "target": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
+          "expr": "safeRead",
+          "line": 90
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L88",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L88",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6cb5c8e25142cfe797f905314c10d140f1ecf7de1bb608cf41521624a47d69bd",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L92",
+          "line": 92,
+          "expr": "parsed.push({ path: file.path, mod: parseJava(text) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f4c1d1996f50c37f3567d397ed74cca1bb8d8093c4f99a65dce9e1ebb242332f",
+          "target": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+          "expr": "parseJava",
+          "line": 92
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L99",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L97",
+            "expr": "parsed"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L99",
+            "expr": "p.mod.defs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dce818dee7dcd12e7af816b26c298d5acb2cff468456b53ae62cf0f0c6ed7efa",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L99",
+          "line": 99,
+          "expr": "fqnFile.set(`${pkg}${d.name}`, p.path);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L108",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+            "expr": "parsed"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L108",
+            "expr": "mod.imports",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:68da852888309e589577650acf6bd67133394137d83f23cbe2da9e8abc972f84",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L115",
+          "line": 115,
+          "expr": "const targetFile =\n        fqnFile.get(fqn) ??\n        (imp.module ? findFileBySuffix(imp.module, imp.name, parsed) : undefined);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L108",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+            "expr": "parsed"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L108",
+            "expr": "mod.imports",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:97300dfc18ad2886eabdc320265981e2f4813717d63f22cac2e8973daa592edd",
+          "target": "sym:packages/pipeline/src/resolve/java-resolver.ts#findFileBySuffix@L278",
+          "expr": "findFileBySuffix",
+          "line": 117
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L108",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+            "expr": "parsed"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L108",
+            "expr": "mod.imports",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:74904163fa5ea52ea6fa8a24cbe4b7ab662fa8382080cd9aa5a91422a64e4fd9",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L122",
+          "line": 122,
+          "expr": "nameBindings.set(imp.name, { file: targetFile, name: imp.name });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L126",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+            "expr": "parsed"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L126",
+            "expr": "nameBindings",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cd0419ef116f8f2757c504fee4f37f65911a19ce7057615c01b21bd46a070836",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L127",
+          "line": 127,
+          "expr": "const target = table.topLevelSymbol(binding.file, binding.name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L128",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+            "expr": "parsed"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L126",
+            "expr": "nameBindings"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L128",
+            "expr": "target",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a007f4a5aca0258a1d147ce77bbbd232ebfa62460e398bb9bef6ab393987bc49",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L129",
+          "line": 129,
+          "expr": "push(table.fileId(path), target.id, 'imports', `import ${binding.name}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+            "expr": "parsed",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d6832f90a42e99a9ec32cf457660fff20279fc74e9683226a636ed4fc306d302",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L137",
+          "line": 137,
+          "expr": "const visitDef = (d: JavaDef): void => {\n      if (d.kind === 'class' || d.kind === 'record' || d.kind === 'enum') {\n        const classId = table.enclosingSymbolId(path, d.startLine);\n        if (classId) {\n          for (const base of d.bases) {\n            const target = resolveTypeName(base, path, pkgPrefix, nameBindings, fqnFile, table);\n            if (target) {\n              push(classId, target, 'inherits', `extends ${base}`);\n              stats.inherits++;\n            } else {\n              stats.dropped++;\n            }\n          }\n          for (const iface of d.implements) {\n            const target = resolveTypeName(iface, path, pkgPrefix, nameBindings, fqnFile, table);\n            if (target) {\n              push(classId, target, 'implements', `implements ${iface}`);\n              stats.implements++;\n            } else {\n              stats.dropped++;\n            }\n          }\n          // 1.3: cross-file DI — a Spring bean's `meta.injects` (dependency types the Spring pass\n          // could NOT resolve intra-file) resolved here via imports / same-package / same-file. An\n          // intra-file-satisfied injection is skipped: the Spring pass already emitted that edge.\n          const classNode = table.nodeInFile(path, classId);\n          const injects = (classNode?.meta?.injects as string[] | undefined) ?? [];\n          for (const depType of injects) {\n            if (!depType) continue;\n            if (table.symbolByKind(path, depType, TYPE_KINDS)) continue; // intra-file — already edged\n            const target = resolveTypeName(depType, path, pkgPrefix, nameBindings, fqnFile, table);\n            if (target) {\n              push(classId, target, 'injects', depType);\n              stats.injects = (stats.injects ?? 0) + 1;\n            } else {\n              stats.dropped++;\n            }\n          }\n          // 1.3: cross-file bean-production — a @Bean method's `meta.produces` (return types the\n          // Spring pass could NOT resolve intra-file)…"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:05901f93413227aa1ff387dc786ac022f5c945ddd902cd06d2c4bbb1c1793786",
+          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
+          "expr": "enclosingSymbolId",
+          "line": 139
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:239293c7ac42a29561b8bb87df08e8481e56893785477b1e17bc10178fadd40a",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeName@L138",
+          "expr": "resolveTypeName",
+          "line": 142
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L221",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+            "expr": "parsed"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L221",
+            "expr": "mod.defs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:14f4d3f825eea1e5b7b55249bcbb2698973ff347c24ed76d6be143a7407b4913",
+          "target": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.visitDef@L137",
+          "expr": "visitDef",
+          "line": 219
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L221",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+            "expr": "parsed"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L221",
+            "expr": "mod.defs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cdd3fa9bac5910015ce311c4098cbdf3185647dd22dba8efa1366f5328411246",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L221",
+          "line": 221,
+          "expr": "visitDef(d);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L224",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+            "expr": "parsed"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L224",
+            "expr": "mod.calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:77c8877a12b130bbcbfca89674e51370ce5064eec292a905774aace47021edac",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L227",
+          "line": 227,
+          "expr": "const b = nameBindings.get(c.head);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L224",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+            "expr": "parsed"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L224",
+            "expr": "mod.calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dec7c0b1dbbd867647ce7b3623a4f1edf3aee225581b1e3cc189308219900d43",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L229",
+          "line": 229,
+          "expr": "const targetId = table.topLevelSymbol(b.file, b.name)?.id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L224",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+            "expr": "parsed"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L224",
+            "expr": "mod.calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c607b3d60440475f1b5ae3cdc9d67d2e626f325c8d8796991719b01ba24b4447",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L231",
+          "line": 231,
+          "expr": "const caller = table.enclosingSymbolId(path, c.line);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L224",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L102",
+            "expr": "parsed"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L224",
+            "expr": "mod.calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f65d0ed722e9b214e3b3787413ddc522b1325fb8eb327a7c2918d18469290ec4",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L233",
+          "line": 233,
+          "expr": "push(caller, targetId, 'calls', c.head);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f76db1b4b90a3a375fdd1dcddd4caa76c6e3e8794185ad00eec4c6d383062803",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L238",
+          "line": 238,
+          "expr": "return { edges, stats };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 15,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/java-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 15,
+    "assignments": 0,
+    "conditions": 8,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 11,
+      "recorded": 38,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

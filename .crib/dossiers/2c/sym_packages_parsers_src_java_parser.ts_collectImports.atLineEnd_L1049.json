@@ -1,0 +1,100 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#collectImports.atLineEnd@L1049",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:f28a02e4cd1f290417fa49f9ab16bf24f01d6beb193cc6f50ab05b9af9651d87",
+  "builtAt": "2026-06-26T05:09:36.599Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#collectImports.atLineEnd@L1049",
+    "kind": "symbol",
+    "type": "function",
+    "name": "atLineEnd",
+    "qualifiedName": "collectImports.atLineEnd",
+    "signature": "atLineEnd(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 1049,
+      "end": 1049
+    }
+  },
+  "source": {
+    "text": "  const atLineEnd = (k: number) => !tokens[k] || isOp(k, ';');",
+    "truncated": false,
+    "totalLines": 1,
+    "startLine": 1049
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#collectImports@L1043",
+      "confidence": 1,
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(tokens: Token[]): { pkg: string; imports: JavaImport[] }",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1043
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L868",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 868
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports.atLineEnd@L1049",
+    "procedureName": "collectImports.atLineEnd",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports.atLineEnd@L1049",
+        "procedureName": "collectImports.atLineEnd",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:644e21146766039ad72cc13ae552b7f39f6c69bbfeed379cdfe6c108fb46e054",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L868",
+          "expr": "isOp"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

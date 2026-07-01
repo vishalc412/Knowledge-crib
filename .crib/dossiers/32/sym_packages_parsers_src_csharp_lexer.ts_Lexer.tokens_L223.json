@@ -1,0 +1,1189 @@
+{
+  "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:91d9210367b6dac4698a0806e87bbef8404561747113272a41c0212b2cc1a031",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+    "kind": "symbol",
+    "type": "method",
+    "name": "tokens",
+    "qualifiedName": "Lexer.tokens",
+    "signature": "tokens(): Token[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/lexer.ts",
+    "span": {
+      "start": 223,
+      "end": 282
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 225
+      },
+      {
+        "callee": "advance",
+        "line": 228
+      },
+      {
+        "callee": "skipLineComment",
+        "line": 233
+      },
+      {
+        "callee": "skipBlockComment",
+        "line": 238
+      },
+      {
+        "callee": "scanVerbatimString",
+        "line": 243
+      },
+      {
+        "callee": "scanInterpolatedString",
+        "line": 247
+      },
+      {
+        "callee": "scanVerbatimString",
+        "line": 251
+      },
+      {
+        "callee": "scanVerbatimString",
+        "line": 255
+      },
+      {
+        "callee": "scanRegularOrRawString",
+        "line": 259
+      },
+      {
+        "callee": "scanChar",
+        "line": 264
+      },
+      {
+        "callee": "scanNumber",
+        "line": 269
+      },
+      {
+        "callee": "scanIdent",
+        "line": 274
+      },
+      {
+        "callee": "scanOp",
+        "line": 278
+      },
+      {
+        "callee": "push",
+        "line": 280
+      }
+    ]
+  },
+  "source": {
+    "text": "  tokens(): Token[] {\n    while (this.pos < this.src.length) {\n      const ch = this.peek();\n      // whitespace\n      if (ch === ' ' || ch === '\\t' || ch === '\\r' || ch === '\\n' || ch === '\\f') {\n        this.advance();\n        continue;\n      }\n      // line comment\n      if (ch === '/' && this.peek(1) === '/') {\n        this.skipLineComment();\n        continue;\n      }\n      // block comment (NOT nested in C#)\n      if (ch === '/' && this.peek(1) === '*') {\n        this.skipBlockComment();\n        continue;\n      }\n      // string literal — four families, dispatched by the preceding `@`/`$` flags\n      if (ch === '@' && this.peek(1) === '\"') {\n        this.scanVerbatimString(1, false);\n        continue;\n      }\n      if (ch === '$' && this.peek(1) === '\"') {\n        this.scanInterpolatedString(1);\n        continue;\n      }\n      if (ch === '@' && this.peek(1) === '$' && this.peek(2) === '\"') {\n        this.scanVerbatimString(2, true);\n        continue;\n      }\n      if (ch === '$' && this.peek(1) === '@' && this.peek(2) === '\"') {\n        this.scanVerbatimString(2, true);\n        continue;\n      }\n      if (ch === '\"') {\n        this.scanRegularOrRawString();\n        continue;\n      }\n      // char literal\n      if (ch === \"'\") {\n        this.scanChar();\n        continue;\n      }\n      // number\n      if (this.isNumberStart(ch)) {\n        this.scanNumber();\n        continue;\n      }\n      // identifier / keyword (incl. `@` verbatim identifiers like `@class`)\n      if (this.isIdentStart(ch)) {\n        this.scanIdent();\n        continue;\n      }\n      // operator (longest match)\n      this.scanOp();\n    }\n    this.out.push({ type: 'EOF', value: '', line: this.line, col: this.col });\n    return this.out;\n  }",
+    "truncated": false,
+    "totalLines": 60,
+    "startLine": 223
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#tokenize@L173",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(src: string): Token[]",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 173
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 625
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.isIdentStart@L640",
+      "confidence": 1,
+      "name": "isIdentStart",
+      "qualifiedName": "Lexer.isIdentStart",
+      "signature": "isIdentStart(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 640
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.isNumberStart@L658",
+      "confidence": 1,
+      "name": "isNumberStart",
+      "qualifiedName": "Lexer.isNumberStart",
+      "signature": "isNumberStart(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 658
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.peek@L614",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 614
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanChar@L554",
+      "confidence": 1,
+      "name": "scanChar",
+      "qualifiedName": "Lexer.scanChar",
+      "signature": "scanChar(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 554
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanIdent@L286",
+      "confidence": 1,
+      "name": "scanIdent",
+      "qualifiedName": "Lexer.scanIdent",
+      "signature": "scanIdent(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 286
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanInterpolatedString@L402",
+      "confidence": 1,
+      "name": "scanInterpolatedString",
+      "qualifiedName": "Lexer.scanInterpolatedString",
+      "signature": "scanInterpolatedString(prefixLen: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 402
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanNumber@L297",
+      "confidence": 1,
+      "name": "scanNumber",
+      "qualifiedName": "Lexer.scanNumber",
+      "signature": "scanNumber(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 297
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanOp@L578",
+      "confidence": 1,
+      "name": "scanOp",
+      "qualifiedName": "Lexer.scanOp",
+      "signature": "scanOp(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 578
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+      "confidence": 1,
+      "name": "scanRegularOrRawString",
+      "qualifiedName": "Lexer.scanRegularOrRawString",
+      "signature": "scanRegularOrRawString(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 307
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanVerbatimString@L355",
+      "confidence": 1,
+      "name": "scanVerbatimString",
+      "qualifiedName": "Lexer.scanVerbatimString",
+      "signature": "scanVerbatimString(prefixLen: number, interpolated: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 355
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipBlockComment@L599",
+      "confidence": 1,
+      "name": "skipBlockComment",
+      "qualifiedName": "Lexer.skipBlockComment",
+      "signature": "skipBlockComment(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 599
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipLineComment@L594",
+      "confidence": 1,
+      "name": "skipLineComment",
+      "qualifiedName": "Lexer.skipLineComment",
+      "signature": "skipLineComment(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 594
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:README.md#the-token-cost-benefit-concretely",
+      "heading": "The token-cost benefit, concretely",
+      "anchor": "the-token-cost-benefit-concretely",
+      "snippet": "The token-cost benefit, concretely",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#knowledge-crib-prompting-guide-how-to-talk-to-your-local-llm-so-crib-does-the-work",
+      "heading": "Knowledge-crib — Prompting Guide (how to talk to your local LLM so crib does the work)",
+      "anchor": "knowledge-crib-prompting-guide-how-to-talk-to-your-local-llm-so-crib-does-the-work",
+      "snippet": "Knowledge-crib — Prompting Guide (how to talk to your local LLM so crib does the work)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/README.md#document-index-read-in-order",
+      "heading": "Document index (read in order)",
+      "anchor": "document-index-read-in-order",
+      "snippet": "Document index (read in order)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#knowledge-crib-implementation-plan-detailed",
+      "heading": "Knowledge-crib — Implementation Plan (detailed)",
+      "anchor": "knowledge-crib-implementation-plan-detailed",
+      "snippet": "Knowledge-crib — Implementation Plan (detailed)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-research-driven-corrections-what-the-internet-forces-us-to-change",
+      "heading": "4. Research-driven corrections (what the internet forces us to change)",
+      "anchor": "4-research-driven-corrections-what-the-internet-forces-us-to-change",
+      "snippet": "4. Research-driven corrections (what the internet forces us to change)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m4-doc-extractor-markdown-deterministic-cross-modal-linker-headline-gate-1",
+      "heading": "M4 — doc-extractor (Markdown) + deterministic cross-modal linker ← HEADLINE GATE #1",
+      "anchor": "m4-doc-extractor-markdown-deterministic-cross-modal-linker-headline-gate-1",
+      "snippet": "M4 — doc-extractor (Markdown) + deterministic cross-modal linker ← HEADLINE GATE #1",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#6-token-cut-proof-headline-metric-q25",
+      "heading": "6. Token-cut proof (headline metric [Q25])",
+      "anchor": "6-token-cut-proof-headline-metric-q25",
+      "snippet": "6. Token-cut proof (headline metric [Q25])",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#knowledge-crib-mcp-client-setup-guide",
+      "heading": "Knowledge-crib — MCP Client Setup Guide",
+      "anchor": "knowledge-crib-mcp-client-setup-guide",
+      "snippet": "Knowledge-crib — MCP Client Setup Guide",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#reaction-10-min-the-mvp-concept",
+      "heading": "Reaction (10 min) — the MVP concept",
+      "anchor": "reaction-10-min-the-mvp-concept",
+      "snippet": "Reaction (10 min) — the MVP concept",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-4-cross-modal-linker-the-differentiator",
+      "heading": "Phase 4 — Cross-modal linker (the differentiator)",
+      "anchor": "phase-4-cross-modal-linker-the-differentiator",
+      "snippet": "Phase 4 — Cross-modal linker (the differentiator)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#1-one-liner",
+      "heading": "1. One-liner",
+      "anchor": "1-one-liner",
+      "snippet": "1. One-liner",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#7-success-metrics-q25",
+      "heading": "7. Success Metrics [Q25]",
+      "anchor": "7-success-metrics-q25",
+      "snippet": "7. Success Metrics [Q25]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "heading": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "anchor": "5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "snippet": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-7-mvp-scope-roadmap",
+      "heading": "Branch 7 — MVP Scope & Roadmap",
+      "anchor": "branch-7-mvp-scope-roadmap",
+      "snippet": "Branch 7 — MVP Scope & Roadmap",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-2-product-manager",
+      "heading": "2.2 Product Manager",
+      "anchor": "2-2-product-manager",
+      "snippet": "2.2 Product Manager",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-6-ai-engineer",
+      "heading": "2.6 AI Engineer",
+      "anchor": "2-6-ai-engineer",
+      "snippet": "2.6 AI Engineer",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#planned-tracks-not-yet-built",
+      "heading": "Planned tracks (not yet built)",
+      "anchor": "planned-tracks-not-yet-built",
+      "snippet": "Planned tracks (not yet built)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#5-token-cut-benchmark-m5-the-headline-metric-q25",
+      "heading": "5. Token-cut benchmark (M5 — the headline metric [Q25])",
+      "anchor": "5-token-cut-benchmark-m5-the-headline-metric-q25",
+      "snippet": "5. Token-cut benchmark (M5 — the headline metric [Q25])",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#knowledge-crib-user-guide",
+      "heading": "Knowledge-crib — User Guide",
+      "anchor": "knowledge-crib-user-guide",
+      "snippet": "Knowledge-crib — User Guide",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-loop",
+      "heading": "The loop",
+      "anchor": "the-loop",
+      "snippet": "The loop",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#the-two-rules-that-prevent-the-infinite-loop",
+      "heading": "⚠️ The two rules that prevent the infinite loop",
+      "anchor": "the-two-rules-that-prevent-the-infinite-loop",
+      "snippet": "⚠️ The two rules that prevent the infinite loop",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+    "procedureName": "Lexer.tokens",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/lexer.ts@L224",
+      "cond:packages/parsers/src/csharp/lexer.ts@L227",
+      "cond:packages/parsers/src/csharp/lexer.ts@L232",
+      "cond:packages/parsers/src/csharp/lexer.ts@L237",
+      "cond:packages/parsers/src/csharp/lexer.ts@L254",
+      "cond:packages/parsers/src/csharp/lexer.ts@L242",
+      "cond:packages/parsers/src/csharp/lexer.ts@L246",
+      "cond:packages/parsers/src/csharp/lexer.ts@L250",
+      "cond:packages/parsers/src/csharp/lexer.ts@L258",
+      "cond:packages/parsers/src/csharp/lexer.ts@L263",
+      "cond:packages/parsers/src/csharp/lexer.ts@L268",
+      "cond:packages/parsers/src/csharp/lexer.ts@L273"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2402989a024ad41bb7e9b5d0706d678aa8784ae113320a48abe16ca2bcfb7b0b",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.peek@L614",
+          "expr": "peek",
+          "line": 225
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9a5f2d47403245d53d6e6eda4766802cb97afeb7dffcade2c224ca953f09c05d",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L225",
+          "line": 225,
+          "expr": "const ch = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L227",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L227",
+            "expr": "ch === ' ' || ch === '\\t' || ch === '\\r' || ch === '\\n' || ch === '\\f'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:038c7de94f94c35d231d6001087970af15cdc33e88e3eb606c280fe2058f696a",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
+          "expr": "advance",
+          "line": 228
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L227",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L227",
+            "expr": "ch === ' ' || ch === '\\t' || ch === '\\r' || ch === '\\n' || ch === '\\f'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1d15fa0e71a0db5ed949535dc7a236aa41199a9d7cd1c3af735193d58f60167d",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L228",
+          "line": 228,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L232",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L232",
+            "expr": "ch === '/' && this.peek(1) === '/'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:104b7cc4d5836ce2f6746e6f1fe6f725b250ae2d1d014721c9ed7624782d7d01",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipLineComment@L594",
+          "expr": "skipLineComment",
+          "line": 233
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L232",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L232",
+            "expr": "ch === '/' && this.peek(1) === '/'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7327b6320c29891a06572f38644b6ce248b43c007af0cdaf9051d27a9b40252c",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L233",
+          "line": 233,
+          "expr": "this.skipLineComment();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L237",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L237",
+            "expr": "ch === '/' && this.peek(1) === '*'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:58c36143b0a9b86487b272722f29db484dbea735066f41b676871ac32390c38a",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipBlockComment@L599",
+          "expr": "skipBlockComment",
+          "line": 238
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L237",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L237",
+            "expr": "ch === '/' && this.peek(1) === '*'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:22098fdba8274502a47e7c0b49397909264cb346c796b50a2fe13ebb0732f15e",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L238",
+          "line": 238,
+          "expr": "this.skipBlockComment();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L254",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L254",
+            "expr": "ch === '$' && this.peek(1) === '@' && this.peek(2) === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c5d936faf32f2611de0373b6d83f620700834eb5410213b06dad1f57949d7543",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanVerbatimString@L355",
+          "expr": "scanVerbatimString",
+          "line": 243
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L242",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L242",
+            "expr": "ch === '@' && this.peek(1) === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dc6ccaed06b4cbbd7c9482dab9dc3a44c21f2c6847d3fbc12eb128f344d59e12",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L243",
+          "line": 243,
+          "expr": "this.scanVerbatimString(1, false);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L246",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L246",
+            "expr": "ch === '$' && this.peek(1) === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e0b40893b4f4193821846181a471570a94a74a5e8bda317d8c23a9a03719641a",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanInterpolatedString@L402",
+          "expr": "scanInterpolatedString",
+          "line": 247
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L246",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L246",
+            "expr": "ch === '$' && this.peek(1) === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:41a8103b6543c8d3df67272eded17ffa43be3a42cd36166056909ce8dc020a71",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L247",
+          "line": 247,
+          "expr": "this.scanInterpolatedString(1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L250",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L250",
+            "expr": "ch === '@' && this.peek(1) === '$' && this.peek(2) === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6bcc0cde5092b124366b87ce92029c4b314b2733874f6637e701a7f7d746ddf6",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L251",
+          "line": 251,
+          "expr": "this.scanVerbatimString(2, true);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L254",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L254",
+            "expr": "ch === '$' && this.peek(1) === '@' && this.peek(2) === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1b4e4c5371753215c947f8f7da5241fa04b08156fafb1b36b0bffcb3bab752c",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L255",
+          "line": 255,
+          "expr": "this.scanVerbatimString(2, true);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L258",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L258",
+            "expr": "ch === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e5e7cbb8b45d172f6a00670c7bac6fccc29b0db36d162e6600fd262550c01130",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+          "expr": "scanRegularOrRawString",
+          "line": 259
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L258",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L258",
+            "expr": "ch === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:147229864348704110300abce0239be4b903dc87de04c3fbed4da93ef8909abd",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L259",
+          "line": 259,
+          "expr": "this.scanRegularOrRawString();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L263",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L263",
+            "expr": "ch === \"'\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:288369633df6f53a2b7007f01b9725c64ed86655f52f29cbf8a7cae4b45ce5ae",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanChar@L554",
+          "expr": "scanChar",
+          "line": 264
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L263",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L263",
+            "expr": "ch === \"'\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3dffe73e64abcddf2c13904d0d2f257354cd5519d614fba338f813e292b1675d",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L264",
+          "line": 264,
+          "expr": "this.scanChar();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L268",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L268",
+            "expr": "this.isNumberStart(ch)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:460cc38efaf9f70bebc1947ed6d7379f51c44050a635fcf413e1a04c9f27ccd0",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanNumber@L297",
+          "expr": "scanNumber",
+          "line": 269
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L268",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L268",
+            "expr": "this.isNumberStart(ch)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:882f14e289065e4cc6abf00885b844f0d930b99334aa23ef18d644c98f7b8fa2",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L269",
+          "line": 269,
+          "expr": "this.scanNumber();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L273",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L273",
+            "expr": "this.isIdentStart(ch)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dfe1de0e5f52e8b3458e26cc3c7356ea6dd976f238392deb2de81ca146ae607d",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanIdent@L286",
+          "expr": "scanIdent",
+          "line": 274
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L273",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L273",
+            "expr": "this.isIdentStart(ch)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f17fec216c9dbb2bd560faace28f8c86535d2f28bd85756fd33fb9b0c0e74e63",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L274",
+          "line": 274,
+          "expr": "this.scanIdent();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:48489d133e9d810670af794ab130cea26cbd3b48a0efd571b7988276d65ac2f1",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanOp@L578",
+          "expr": "scanOp",
+          "line": 278
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L224",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bf4ba1db4865a301ede8072fc2bae580debbeb36fd0fd3e8b6b3c7d8e0095672",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L278",
+          "line": 278,
+          "expr": "this.scanOp();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:43ef3265ed57575ac49b914d321764a7ff74e0f6baedb70b57f161a5e913ed14",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L280",
+          "line": 280,
+          "expr": "this.out.push({ type: 'EOF', value: '', line: this.line, col: this.col });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:098ff506979b3d3e089a7bf5d41bbd7dd225ca5960e8c0cb07801663e21dad1d",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L281",
+          "line": 281,
+          "expr": "return this.out;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:77eb0d0eb44eea9d488895c998e5f5071f28a4edbd15ed8771f3177841a7af53",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.isIdentStart@L640",
+          "expr": "isIdentStart"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ff24d60b57a0437f7b403167fd76a5a16a057f781e63eeb625428b2a7fb16a19",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.isNumberStart@L658",
+          "expr": "isNumberStart"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 15,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 15,
+    "assignments": 0,
+    "conditions": 12,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 13,
+      "recorded": 14,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

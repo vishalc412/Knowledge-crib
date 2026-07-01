@@ -1,0 +1,196 @@
+{
+  "id": "sym:packages/parsers/src/ts/react.ts#firstParamType@L348",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:61534458c455dec5c61b261eb5523e4f503783978692d5fbbf9ea557a34267d4",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/react.ts#firstParamType@L348",
+    "kind": "symbol",
+    "type": "function",
+    "name": "firstParamType",
+    "qualifiedName": "firstParamType",
+    "signature": "firstParamType(tsNode: ts.Node): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/react.ts",
+    "span": {
+      "start": 348,
+      "end": 359
+    },
+    "callSites": [
+      {
+        "callee": "getText",
+        "line": 358
+      }
+    ]
+  },
+  "source": {
+    "text": "function firstParamType(tsNode: ts.Node): string | undefined {\n  let params: ts.NodeArray<ts.ParameterDeclaration> | undefined;\n  if (ts.isFunctionDeclaration(tsNode)) params = tsNode.parameters;\n  else if (ts.isVariableStatement(tsNode)) {\n    const d = tsNode.declarationList.declarations[0];\n    if (d?.initializer && ts.isArrowFunction(d.initializer)) params = d.initializer.parameters;\n    else if (d?.initializer && ts.isFunctionExpression(d.initializer))\n      params = d.initializer.parameters;\n  }\n  const first = params?.[0];\n  return first?.type?.getText();\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 348
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#classify@L99",
+      "confidence": 1,
+      "name": "classify",
+      "qualifiedName": "classify",
+      "signature": "classify(s: ReactSymbolLike): {\n  kind: 'class' | 'function' | 'hook';\n  body?: ts.Node;\n  propsType?: string;\n  stateType?: string;\n} | null",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 99
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/react.ts@L345",
+      "snippet": "/** The first parameter's type-annotation text of a function component (`(props: FooProps) => …`),",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/react.ts#firstParamType@L348",
+    "procedureName": "firstParamType",
+    "conditions": [
+      "cond:packages/parsers/src/ts/react.ts@L350",
+      "cond:packages/parsers/src/ts/react.ts@L351",
+      "cond:packages/parsers/src/ts/react.ts@L353",
+      "cond:packages/parsers/src/ts/react.ts@L354"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#firstParamType@L348",
+        "procedureName": "firstParamType",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L350",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L350",
+            "expr": "ts.isFunctionDeclaration(tsNode)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:63fbc4b97120028f3506b99e240d92816a69b9ef3bda7752933a1278cd69fa25",
+          "target": "assign:packages/parsers/src/ts/react.ts@L350",
+          "line": 350,
+          "expr": "params = tsNode.parameters;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#firstParamType@L348",
+        "procedureName": "firstParamType",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L353",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L350",
+            "expr": "ts.isFunctionDeclaration(tsNode)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L351",
+            "expr": "ts.isVariableStatement(tsNode)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L353",
+            "expr": "d?.initializer && ts.isArrowFunction(d.initializer)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3647db761f23f86a2b69e9154e63ccd3bc3a0422a1d64e6a86f45957fcd740b5",
+          "target": "assign:packages/parsers/src/ts/react.ts@L353",
+          "line": 353,
+          "expr": "params = d.initializer.parameters;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#firstParamType@L348",
+        "procedureName": "firstParamType",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L354",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L350",
+            "expr": "ts.isFunctionDeclaration(tsNode)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L351",
+            "expr": "ts.isVariableStatement(tsNode)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L353",
+            "expr": "d?.initializer && ts.isArrowFunction(d.initializer)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L354",
+            "expr": "d?.initializer && ts.isFunctionExpression(d.initializer)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b27fbfa2a0ff8adc441c8eaa732045812cfcadd0c4b945b727e40cd243305d9a",
+          "target": "assign:packages/parsers/src/ts/react.ts@L355",
+          "line": 355,
+          "expr": "params = d.initializer.parameters;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#firstParamType@L348",
+        "procedureName": "firstParamType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c72562b8cef70df7dd6e1487ce43ae45f40279433e88789360eed810383e7ee1",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L358",
+          "line": 358,
+          "expr": "return first?.type?.getText();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/react.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 3,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

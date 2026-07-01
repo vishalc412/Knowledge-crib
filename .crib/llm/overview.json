@@ -1,0 +1,509 @@
+{
+  "version": 1,
+  "model": "claude-sonnet-5",
+  "builtAgainstHead": "c4e1a9fafb083ccb22bd7ac97043dcc2b7ea6e55",
+  "analyses": [
+    {
+      "layer": "symbol",
+      "targetId": "sym:packages/cli/src/cli.test.ts#fileCount@L315",
+      "analysis": {
+        "purpose": "Test helper that extracts the number of indexed files from a `crib index` CLI run's stdout, so cli.test.ts assertions can check the reported file count without parsing the whole log line by hand.",
+        "responsibilities": [
+          "Match stdout against /indexed (\\d+) files/",
+          "Return the captured count as a number, or -1 as a sentinel when the pattern is absent"
+        ],
+        "businessRules": [
+          {
+            "rule": "Returns -1 when stdout doesn't contain an 'indexed N files' line",
+            "rationale": "Ternary fallback `m ? Number(m[1]!) : -1`",
+            "sourceRef": "L317"
+          }
+        ],
+        "invariants": [
+          "Return value is either a non-negative integer parsed from stdout, or the sentinel -1"
+        ],
+        "preconditions": [
+          "stdout is the full captured output of a CLI invocation"
+        ],
+        "inputs": [
+          "stdout: string — captured CLI output"
+        ],
+        "outputs": [
+          "number — parsed file count, or -1 if no match"
+        ],
+        "sideEffects": [],
+        "errorBehavior": [
+          "Never throws; absence of a match degrades to -1 instead of throwing"
+        ],
+        "risks": [
+          "Silently returns -1 if the 'indexed N files' log line's wording ever changes, which could mask a real regression rather than failing loudly"
+        ],
+        "whatToDistrust": [
+          "2 call sites (match, Number) show as unresolved in coverage — these are JS built-ins, not an indexing gap"
+        ],
+        "confidence": 0.9
+      },
+      "graph": {
+        "nodes": [
+          {
+            "localId": "concept:index-count-parsing",
+            "kind": "concept",
+            "name": "CLI index-count extraction",
+            "summary": "Regex-based parse of the CLI's 'indexed N files' stdout line into an integer count for test assertions.",
+            "id": "llm:sym:packages/cli/src/cli.test.ts#fileCount@L315#concept:index-count-parsing",
+            "targetId": "sym:packages/cli/src/cli.test.ts#fileCount@L315"
+          }
+        ],
+        "edges": [
+          {
+            "from": "llm:sym:packages/cli/src/cli.test.ts#fileCount@L315#concept:index-count-parsing",
+            "to": "sym:packages/cli/src/cli.test.ts#fileCount@L315",
+            "rel": "realizes",
+            "rationale": "fileCount implements this parsing behavior.",
+            "confidence": 0.9,
+            "targetId": "sym:packages/cli/src/cli.test.ts#fileCount@L315"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "soulId": "sym:packages/cli/src/cli.test.ts#fileCount@L315",
+          "why": "sourceBody regex /indexed (\\d+) files/ at L316, ternary fallback at L317"
+        }
+      ]
+    },
+    {
+      "layer": "symbol",
+      "targetId": "sym:packages/cli/src/cli.test.ts#runCli@L53",
+      "analysis": {
+        "purpose": "runCli is a test helper that invokes the local CLI binary in a real repository with the provided arguments and returns the trimmed stdout as a string. It gives tests a synchronous, black-box way to exercise the CLI entry point and assert on its textual output.",
+        "responsibilities": [
+          "Spawn the CLI script as a child process using the current Node executable",
+          "Run in the configured test repository working directory",
+          "Capture stdout (and stderr) into a 32 MB buffer and return the trimmed stdout"
+        ],
+        "businessRules": [],
+        "inputs": [
+          {
+            "name": "args",
+            "type": "string[]",
+            "description": "CLI arguments to pass after the script path"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "stdout",
+            "type": "string",
+            "description": "Trimmed standard output of the CLI process"
+          }
+        ],
+        "sideEffects": [
+          "Spawns a synchronous child process via execFileSync",
+          "Reads up to 32 MB of combined output into memory"
+        ],
+        "errorBehavior": [
+          "Does not catch execFileSync failures; any non-zero exit or spawn error propagates to the caller as an exception"
+        ],
+        "invariants": [
+          "Always returns the stdout string with leading and trailing whitespace removed"
+        ],
+        "preconditions": [
+          "The CLI script at path `CLI` must be executable by `process.execPath`",
+          "The test repository `repo` must exist and be accessible"
+        ],
+        "postconditions": [
+          "The child process has terminated and its stdout is returned"
+        ],
+        "risks": [
+          "Large output could exceed the 32 MB maxBuffer and crash the helper",
+          "Unresolved call to Node built-in execFileSync means exact behavior is not modeled in the graph"
+        ],
+        "whatToDistrust": [
+          "execFileSync and trim are unresolved built-in calls; exact error semantics and trimming behavior are assumed from Node.js documentation, not from indexed code",
+          "CLI constant is not shown in the seed; actual script path is external to this symbol"
+        ],
+        "confidence": 0.75
+      },
+      "graph": {
+        "nodes": [
+          {
+            "localId": "cap:cli-test-runner",
+            "kind": "capability",
+            "name": "CLI test runner",
+            "summary": "Synchronous black-box invocation of the CLI binary for test assertions",
+            "id": "llm:sym:packages/cli/src/cli.test.ts#runCli@L53#cap:cli-test-runner",
+            "targetId": "sym:packages/cli/src/cli.test.ts#runCli@L53"
+          }
+        ],
+        "edges": [
+          {
+            "from": "sym:packages/cli/src/cli.test.ts#runCli@L53",
+            "to": "llm:sym:packages/cli/src/cli.test.ts#runCli@L53#cap:cli-test-runner",
+            "rel": "realizes",
+            "rationale": "The function directly spawns the CLI and returns its output, materializing the test-runner capability",
+            "targetId": "sym:packages/cli/src/cli.test.ts#runCli@L53"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "soulId": "sym:packages/cli/src/cli.test.ts#runCli@L53",
+          "why": "Lines 53-60: execFileSync call with cwd=repo and 32 MB maxBuffer, returning trimmed stdout"
+        }
+      ]
+    },
+    {
+      "layer": "symbol",
+      "targetId": "sym:packages/cli/src/cli.test.ts#runCliResult@L63",
+      "analysis": {
+        "purpose": "runCliResult is a test helper that runs the CLI binary and returns a structured result object containing exit status, stdout, and stderr. Unlike runCli, it catches non-zero exits and surfaces them as a normal status value, making it useful for testing error paths without throwing.",
+        "responsibilities": [
+          "Execute the CLI binary synchronously in the test repository",
+          "Normalize successful and failed executions into a single {status, stdout, stderr} shape",
+          "Trim captured stdout and stderr before returning them"
+        ],
+        "businessRules": [
+          {
+            "rule": "Successful executions report status 0",
+            "rationale": "The happy path explicitly returns status: 0 when execFileSync completes without throwing",
+            "sourceRef": "packages/cli/src/cli.test.ts@L71"
+          },
+          {
+            "rule": "Failed executions report status from the caught error or default to 1",
+            "rationale": "The catch branch uses err.status ?? 1 to preserve non-zero exit codes while ensuring a defined status",
+            "sourceRef": "packages/cli/src/cli.test.ts@L74"
+          }
+        ],
+        "inputs": [
+          {
+            "name": "args",
+            "type": "string[]",
+            "description": "CLI arguments to pass after the script path"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "result",
+            "type": "{status: number; stdout: string; stderr: string}",
+            "description": "Structured CLI execution result with normalized status and trimmed streams"
+          }
+        ],
+        "sideEffects": [
+          "Spawns a synchronous child process via execFileSync"
+        ],
+        "errorBehavior": [
+          "Catches execFileSync exceptions and converts them into a result object using the error's status, stdout, and stderr fields"
+        ],
+        "invariants": [
+          "Returned stdout and stderr are always trimmed",
+          "Returned status is always a number (0 on success, err.status or 1 on failure)"
+        ],
+        "preconditions": [
+          "The CLI script at path `CLI` must be executable by `process.execPath`",
+          "The caught error object, if any, may optionally expose status, stdout, and stderr properties"
+        ],
+        "postconditions": [
+          "A structured result is returned for both successful and failing CLI executions"
+        ],
+        "risks": [
+          "Type cast `e as {status?: number; ...}` could hide runtime shapes that do not match the ExecFileSync error contract",
+          "Unresolved execFileSync call means exact throw/catch behavior is not modeled in the graph"
+        ],
+        "whatToDistrust": [
+          "execFileSync and trim are unresolved built-in calls",
+          "The exact type/runtime shape of the caught error is cast, not validated"
+        ],
+        "confidence": 0.75
+      },
+      "graph": {
+        "nodes": [
+          {
+            "localId": "cap:cli-result-runner",
+            "kind": "capability",
+            "name": "CLI result runner",
+            "summary": "Synchronous CLI invocation that returns a structured execution result including error status",
+            "id": "llm:sym:packages/cli/src/cli.test.ts#runCliResult@L63#cap:cli-result-runner",
+            "targetId": "sym:packages/cli/src/cli.test.ts#runCliResult@L63"
+          },
+          {
+            "localId": "rule:status-normalization",
+            "kind": "business-rule",
+            "name": "CLI exit status normalization",
+            "summary": "Success yields 0; failures use err.status ?? 1",
+            "id": "llm:sym:packages/cli/src/cli.test.ts#runCliResult@L63#rule:status-normalization",
+            "targetId": "sym:packages/cli/src/cli.test.ts#runCliResult@L63"
+          },
+          {
+            "localId": "rule:stream-trimming",
+            "kind": "business-rule",
+            "name": "Output stream trimming",
+            "summary": "Both stdout and stderr are trimmed before inclusion in the result",
+            "id": "llm:sym:packages/cli/src/cli.test.ts#runCliResult@L63#rule:stream-trimming",
+            "targetId": "sym:packages/cli/src/cli.test.ts#runCliResult@L63"
+          }
+        ],
+        "edges": [
+          {
+            "from": "sym:packages/cli/src/cli.test.ts#runCliResult@L63",
+            "to": "llm:sym:packages/cli/src/cli.test.ts#runCliResult@L63#cap:cli-result-runner",
+            "rel": "realizes",
+            "rationale": "The function directly executes the CLI and returns the normalized result",
+            "targetId": "sym:packages/cli/src/cli.test.ts#runCliResult@L63"
+          },
+          {
+            "from": "llm:sym:packages/cli/src/cli.test.ts#runCliResult@L63#rule:status-normalization",
+            "to": "sym:packages/cli/src/cli.test.ts#runCliResult@L63",
+            "rel": "enforces",
+            "rationale": "The function implements status normalization on both happy and error paths",
+            "targetId": "sym:packages/cli/src/cli.test.ts#runCliResult@L63"
+          },
+          {
+            "from": "llm:sym:packages/cli/src/cli.test.ts#runCliResult@L63#rule:stream-trimming",
+            "to": "sym:packages/cli/src/cli.test.ts#runCliResult@L63",
+            "rel": "enforces",
+            "rationale": "The function trims stdout and stderr before returning them",
+            "targetId": "sym:packages/cli/src/cli.test.ts#runCliResult@L63"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "soulId": "sym:packages/cli/src/cli.test.ts#runCliResult@L63",
+          "why": "Lines 63-80: try/catch around execFileSync with status normalization and stream trimming"
+        }
+      ]
+    },
+    {
+      "layer": "symbol",
+      "targetId": "sym:packages/cli/src/cli.test.ts#runWs.stripNoise@L293",
+      "analysis": {
+        "purpose": "Test helper (a closure nested inside runWs) that strips Node's ExperimentalWarning/trace-warnings noise lines from captured subprocess output, so log noise doesn't leak into stdout/stderr assertions.",
+        "responsibilities": [
+          "Split output into lines",
+          "Filter out lines matching /ExperimentalWarning|trace-warnings/",
+          "Rejoin the remaining lines and trim the result"
+        ],
+        "businessRules": [],
+        "invariants": [
+          "Output never contains a line matching /ExperimentalWarning|trace-warnings/"
+        ],
+        "preconditions": [
+          "Called with the raw stdout or stderr string captured from a spawned CLI process"
+        ],
+        "inputs": [
+          "s: string — raw captured output"
+        ],
+        "outputs": [
+          "string — output with noise lines removed and trimmed"
+        ],
+        "sideEffects": [],
+        "errorBehavior": [
+          "No error handling; a non-string input would throw at .split, but callers always pass strings"
+        ],
+        "risks": [
+          "A future Node warning with different wording (not matching ExperimentalWarning|trace-warnings) would leak through unfiltered"
+        ],
+        "whatToDistrust": [
+          "seed.coverage reports readiness:'unimplemented' and bodyPresent:false despite sourceBody.text showing the full arrow-function body — the statement-level extractor didn't index this nested closure's control flow (no decisionTable rules were captured). This analysis is grounded in the visible sourceBody text, not a (missing) executes trace, so confidence is lowered accordingly."
+        ],
+        "confidence": 0.55
+      },
+      "graph": {
+        "nodes": [
+          {
+            "localId": "concept:subprocess-noise-filter",
+            "kind": "concept",
+            "name": "Node experimental-warning noise filter",
+            "summary": "Removes Node's SQLite/ExperimentalWarning stderr noise lines from captured test-subprocess output.",
+            "id": "llm:sym:packages/cli/src/cli.test.ts#runWs.stripNoise@L293#concept:subprocess-noise-filter",
+            "targetId": "sym:packages/cli/src/cli.test.ts#runWs.stripNoise@L293"
+          }
+        ],
+        "edges": [
+          {
+            "from": "llm:sym:packages/cli/src/cli.test.ts#runWs.stripNoise@L293#concept:subprocess-noise-filter",
+            "to": "sym:packages/cli/src/cli.test.ts#runWs.stripNoise@L293",
+            "rel": "realizes",
+            "rationale": "stripNoise implements the filter.",
+            "confidence": 0.55,
+            "targetId": "sym:packages/cli/src/cli.test.ts#runWs.stripNoise@L293"
+          },
+          {
+            "from": "sym:packages/cli/src/cli.test.ts#runWs.stripNoise@L293",
+            "to": "sym:packages/cli/src/cli.test.ts#runWs@L287",
+            "rel": "part-of-feature",
+            "rationale": "stripNoise is called by runWs (its only caller) to sanitize captured output before returning.",
+            "confidence": 0.9,
+            "targetId": "sym:packages/cli/src/cli.test.ts#runWs.stripNoise@L293"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "soulId": "sym:packages/cli/src/cli.test.ts#runWs.stripNoise@L293",
+          "why": "sourceBody regex /ExperimentalWarning|trace-warnings/ at L296; caller runWs@L287 per seed.callers"
+        }
+      ]
+    },
+    {
+      "layer": "symbol",
+      "targetId": "sym:packages/cli/src/cli.test.ts#runWs@L287",
+      "analysis": {
+        "purpose": "Test harness helper that spawns the built crib CLI as a subprocess with given args inside a workspace fixture repo, captures stdout/stderr, strips Node's experimental-warning noise via the nested stripNoise helper, and returns a normalized {status, stdout, stderr} result for assertions.",
+        "responsibilities": [
+          "Spawn `node <CLI> ...args` synchronously with cwd set to the workspace fixture root",
+          "Capture status/stdout/stderr with a 32MB output buffer cap",
+          "Strip noise lines from both stdout and stderr via stripNoise",
+          "Default status to 1 (failure) when spawnSync doesn't report one"
+        ],
+        "businessRules": [
+          {
+            "rule": "status defaults to 1 (failure) when spawnSync's status is missing",
+            "rationale": "`r.status ?? 1`",
+            "sourceRef": "L299"
+          }
+        ],
+        "invariants": [
+          "Returned stdout/stderr never contain ExperimentalWarning/trace-warnings lines"
+        ],
+        "preconditions": [
+          "wsRepo test fixture directory already exists (e.g. built by wsPkg)"
+        ],
+        "inputs": [
+          "args: string[] — CLI arguments to pass to the subprocess"
+        ],
+        "outputs": [
+          "{status: number, stdout: string, stderr: string}"
+        ],
+        "sideEffects": [
+          "Spawns a child process synchronously (blocking) for the duration of the CLI run"
+        ],
+        "errorBehavior": [
+          "spawnSync failures don't throw here — status falls back to 1 and stdout/stderr are still returned, possibly empty"
+        ],
+        "risks": [
+          "maxBuffer is capped at 32MB — a runaway CLI process producing more output would be truncated or fail at the Node child_process layer, a mode not surfaced by this helper's return shape"
+        ],
+        "whatToDistrust": [
+          "6 of 8 recorded call sites unresolved (spawnSync/trim/join/filter/split/test) — these are Node/lib built-ins, not a coverage gap"
+        ],
+        "confidence": 0.85
+      },
+      "graph": {
+        "nodes": [
+          {
+            "localId": "concept:cli-integration-test-harness",
+            "kind": "concept",
+            "name": "CLI subprocess test harness",
+            "summary": "Runs the built crib CLI as a real subprocess against a scratch workspace fixture and normalizes its output for assertions.",
+            "id": "llm:sym:packages/cli/src/cli.test.ts#runWs@L287#concept:cli-integration-test-harness",
+            "targetId": "sym:packages/cli/src/cli.test.ts#runWs@L287"
+          }
+        ],
+        "edges": [
+          {
+            "from": "llm:sym:packages/cli/src/cli.test.ts#runWs@L287#concept:cli-integration-test-harness",
+            "to": "sym:packages/cli/src/cli.test.ts#runWs@L287",
+            "rel": "realizes",
+            "rationale": "runWs is the harness entry point.",
+            "confidence": 0.85,
+            "targetId": "sym:packages/cli/src/cli.test.ts#runWs@L287"
+          },
+          {
+            "from": "sym:packages/cli/src/cli.test.ts#runWs@L287",
+            "to": "sym:packages/cli/src/cli.test.ts#runWs.stripNoise@L293",
+            "rel": "depends-on-concept",
+            "rationale": "runWs calls its nested stripNoise helper to clean captured output before returning.",
+            "confidence": 0.9,
+            "targetId": "sym:packages/cli/src/cli.test.ts#runWs@L287"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "soulId": "sym:packages/cli/src/cli.test.ts#runWs@L287",
+          "why": "spawnSync call L288-292; stripNoise invocations L301-302; return shape L299-303"
+        }
+      ]
+    },
+    {
+      "layer": "symbol",
+      "targetId": "sym:packages/cli/src/cli.test.ts#wsPkg@L280",
+      "analysis": {
+        "purpose": "Test fixture builder that scaffolds a minimal workspace package on disk (package.json + src/index.ts) so cli.test.ts can exercise multi-package workspace behavior (e.g. --package scoping) against a real filesystem tree instead of mocks.",
+        "responsibilities": [
+          "Create the package directory under wsRepo/rel",
+          "Write a package.json with the given name and a fixed version",
+          "Create a src/ subdirectory",
+          "Write src/index.ts exporting a const named after `name` (dashes replaced with underscores) equal to 1"
+        ],
+        "businessRules": [
+          {
+            "rule": "Package version is always hardcoded to 0.0.0",
+            "rationale": "JSON.stringify({name, version:'0.0.0'})",
+            "sourceRef": "L283"
+          },
+          {
+            "rule": "Exported const name replaces '-' with '_' so a package name like 'my-pkg' becomes the valid JS identifier my_pkg",
+            "rationale": "name.replace(/-/g,'_')",
+            "sourceRef": "L285"
+          }
+        ],
+        "invariants": [
+          "The created fixture package always has exactly one exported const, equal to the literal 1"
+        ],
+        "preconditions": [
+          "wsRepo is a valid, writable directory (the workspace fixture root)"
+        ],
+        "inputs": [
+          "name: string — package name",
+          "rel: string — relative path under wsRepo for this package"
+        ],
+        "outputs": [
+          "void — its effect is entirely the files it writes to disk"
+        ],
+        "sideEffects": [
+          "Creates directories and writes 2 files (package.json, src/index.ts) to disk"
+        ],
+        "errorBehavior": [
+          "No try/catch — mkdirSync/writeFileSync failures (e.g. permission errors) propagate as thrown exceptions"
+        ],
+        "risks": [
+          "A `name` containing identifier-invalid characters other than '-' (e.g. spaces, dots) would produce a syntactically invalid index.ts — only the '-' case is handled"
+        ],
+        "whatToDistrust": [
+          "10 call sites unresolved — all Node fs/path/JSON built-ins (join, mkdirSync, writeFileSync, stringify, replace), not an indexing gap"
+        ],
+        "confidence": 0.85
+      },
+      "graph": {
+        "nodes": [
+          {
+            "localId": "concept:workspace-fixture-scaffold",
+            "kind": "concept",
+            "name": "Workspace package fixture scaffold",
+            "summary": "Builds a minimal on-disk npm package (package.json + src/index.ts) for workspace-detection test fixtures.",
+            "id": "llm:sym:packages/cli/src/cli.test.ts#wsPkg@L280#concept:workspace-fixture-scaffold",
+            "targetId": "sym:packages/cli/src/cli.test.ts#wsPkg@L280"
+          }
+        ],
+        "edges": [
+          {
+            "from": "llm:sym:packages/cli/src/cli.test.ts#wsPkg@L280#concept:workspace-fixture-scaffold",
+            "to": "sym:packages/cli/src/cli.test.ts#wsPkg@L280",
+            "rel": "realizes",
+            "rationale": "wsPkg implements the scaffold.",
+            "confidence": 0.85,
+            "targetId": "sym:packages/cli/src/cli.test.ts#wsPkg@L280"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "soulId": "sym:packages/cli/src/cli.test.ts#wsPkg@L280",
+          "why": "writeFileSync calls at L283 (package.json) and L285 (src/index.ts) create the two fixture files"
+        }
+      ]
+    }
+  ]
+}

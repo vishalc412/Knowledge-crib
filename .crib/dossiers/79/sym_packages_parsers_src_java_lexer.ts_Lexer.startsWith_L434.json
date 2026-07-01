@@ -1,0 +1,127 @@
+{
+  "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.startsWith@L434",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:2f7aec1263a4d9d821b9c6aa2b11619f1b56d7d56a2741f3d00ff36e6bc2851d",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.startsWith@L434",
+    "kind": "symbol",
+    "type": "method",
+    "name": "startsWith",
+    "qualifiedName": "Lexer.startsWith",
+    "signature": "startsWith(s: string): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/lexer.ts",
+    "span": {
+      "start": 434,
+      "end": 439
+    }
+  },
+  "source": {
+    "text": "  private startsWith(s: string): boolean {\n    for (let i = 0; i < s.length; i++) {\n      if (this.src[this.pos + i] !== s[i]) return false;\n    }\n    return true;\n  }",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 434
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanOp@L394",
+      "confidence": 1,
+      "name": "scanOp",
+      "qualifiedName": "Lexer.scanOp",
+      "signature": "scanOp(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 394
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+      "confidence": 1,
+      "name": "collectComments",
+      "qualifiedName": "collectComments",
+      "signature": "collectComments(src: string): CommentBlock[]",
+      "type": "function",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 47
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.startsWith@L434",
+    "procedureName": "Lexer.startsWith",
+    "conditions": [
+      "cond:packages/parsers/src/java/lexer.ts@L435",
+      "cond:packages/parsers/src/java/lexer.ts@L436"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.startsWith@L434",
+        "procedureName": "Lexer.startsWith",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L436",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L435",
+            "expr": "i < s.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L436",
+            "expr": "this.src[this.pos + i] !== s[i]",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:13c47e26d3181355e90b6ec2150e92506dcd688e0280f4178d945170fad9f391",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L436",
+          "line": 436,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.startsWith@L434",
+        "procedureName": "Lexer.startsWith",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3fa71bce183baec6dc7790cb80e58efd379b79248efb9449036a353a7e19d4db",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L438",
+          "line": 438,
+          "expr": "return true;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/java/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

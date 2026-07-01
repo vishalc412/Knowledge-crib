@@ -1,0 +1,125 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#paramTypeOf@L544",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9cd70c4c137b3a2f2039a3e9d145935807ef2456fe0ea9e80dbd0b096fa74026",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#paramTypeOf@L544",
+    "kind": "symbol",
+    "type": "function",
+    "name": "paramTypeOf",
+    "qualifiedName": "paramTypeOf",
+    "signature": "paramTypeOf(p: ts.ParameterDeclaration | ts.PropertyDeclaration): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 544,
+      "end": 546
+    },
+    "callSites": [
+      {
+        "callee": "getText",
+        "line": 545
+      }
+    ]
+  },
+  "source": {
+    "text": "function paramTypeOf(p: ts.ParameterDeclaration | ts.PropertyDeclaration): string | undefined {\n  return p.type?.getText();\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 544
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L102",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 102
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+      "confidence": 1,
+      "name": "paramDepType",
+      "qualifiedName": "paramDepType",
+      "signature": "paramDepType(p: ts.ParameterDeclaration): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 351
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L412",
+      "confidence": 1,
+      "name": "routeParamsOf",
+      "qualifiedName": "routeParamsOf",
+      "signature": "routeParamsOf(m: ts.MethodDeclaration): Array<{ name: string; type?: string; in: string }>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 412
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L543",
+      "snippet": "/** The param/property's type annotation text, or undefined (`@Inject() x` with no type). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#paramTypeOf@L544",
+    "procedureName": "paramTypeOf",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#paramTypeOf@L544",
+        "procedureName": "paramTypeOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1707d3e4ed2132a8da551225ceb4aba7cc53cfbd4a63f51359d7c45aef4dbb54",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L545",
+          "line": 545,
+          "expr": "return p.type?.getText();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

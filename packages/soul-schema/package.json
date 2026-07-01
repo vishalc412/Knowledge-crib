@@ -1,0 +1,45 @@
+{
+  "name": "@knowledge-crib/soul-schema",
+  "version": "0.1.0",
+  "description": "The graph contract: TypeScript types, JSON Schema, and stable ids for souls, indexes, MCP, and external readers.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schemas/*": "./dist/schema/*"
+  },
+  "files": ["dist", "src", "LICENSE", "NOTICE", "!dist/**/*.test.*", "!src/**/*.test.ts"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --reporter=dot"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KnowledgeCrib/knowledge-crib.git",
+    "directory": "packages/soul-schema"
+  },
+  "bugs": {
+    "url": "https://github.com/KnowledgeCrib/knowledge-crib/issues"
+  },
+  "homepage": "https://github.com/KnowledgeCrib/knowledge-crib#readme",
+  "keywords": ["mcp", "knowledge-graph", "code-analysis", "ai-agents", "cli", "json-schema"],
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

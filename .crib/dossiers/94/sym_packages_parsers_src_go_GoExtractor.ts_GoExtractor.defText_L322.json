@@ -1,0 +1,137 @@
+{
+  "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.defText@L322",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:52873897c7700557abee203b2db890fb7babf59e0d0148c6a9d55663c00ddf63",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.defText@L322",
+    "kind": "symbol",
+    "type": "method",
+    "name": "defText",
+    "qualifiedName": "GoExtractor.defText",
+    "signature": "defText(d: GoDef, src: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/GoExtractor.ts",
+    "span": {
+      "start": 322,
+      "end": 325
+    },
+    "callSites": [
+      {
+        "callee": "split",
+        "line": 323
+      },
+      {
+        "callee": "join",
+        "line": 324
+      },
+      {
+        "callee": "slice",
+        "line": 324
+      }
+    ]
+  },
+  "source": {
+    "text": "  private defText(d: GoDef, src: string): string {\n    const lines = src.split('\\n');\n    return lines.slice(d.startLine - 1, d.endLine).join('\\n');\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 322
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.parse.visitIface@L149",
+      "confidence": 1,
+      "name": "visitIface",
+      "qualifiedName": "GoExtractor.parse.visitIface",
+      "signature": "visitIface(…)",
+      "type": "function",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 149
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.parse.visitTop@L110",
+      "confidence": 1,
+      "name": "visitTop",
+      "qualifiedName": "GoExtractor.parse.visitTop",
+      "signature": "visitTop(…)",
+      "type": "function",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 110
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/GoExtractor.ts@L321",
+      "snippet": "/** Best-effort source text for a def — used only for hashing (change detection), needs no precision. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.defText@L322",
+    "procedureName": "GoExtractor.defText",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.defText@L322",
+        "procedureName": "GoExtractor.defText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:128f95fc604ecd7aac3fcc24ec4daabf31a47b70970db7c0ee3af98cac3ca84b",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L323",
+          "line": 323,
+          "expr": "const lines = src.split('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.defText@L322",
+        "procedureName": "GoExtractor.defText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c1cf65d490554ca51b483177fd2b7fbd4f2a17ddf345adb52868264861df9573",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L324",
+          "line": 324,
+          "expr": "return lines.slice(d.startLine - 1, d.endLine).join('\\n');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/go/GoExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

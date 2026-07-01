@@ -1,0 +1,109 @@
+{
+  "id": "sym:packages/parsers/src/ts/express.ts#isHandlerLike@L169",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:13c2fe8606c6fb2c86c4ce9cf355b22d953ab9156a037a6c58c9589f32141329",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/express.ts#isHandlerLike@L169",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isHandlerLike",
+    "qualifiedName": "isHandlerLike",
+    "signature": "isHandlerLike(e: ts.Expression): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/express.ts",
+    "span": {
+      "start": 169,
+      "end": 171
+    },
+    "callSites": [
+      {
+        "callee": "isArrowFunction",
+        "line": 170
+      },
+      {
+        "callee": "isFunctionExpression",
+        "line": 170
+      }
+    ]
+  },
+  "source": {
+    "text": "function isHandlerLike(e: ts.Expression): boolean {\n  return ts.isArrowFunction(e) || ts.isFunctionExpression(e);\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 169
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+      "confidence": 1,
+      "name": "matchRouteCall",
+      "qualifiedName": "matchRouteCall",
+      "signature": "matchRouteCall(call: ts.CallExpression, byKey: Map<string, string>, lineOf: (pos: number) => number): | {\n      verb: string;\n      paths: string[];\n      handlerId: string | undefined;\n      callLine: number;\n      callEnd: number;\n    }\n  | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/express.ts",
+      "line": 105
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/express.ts@L168",
+      "snippet": "/** Whether an expression is an inline handler body: an arrow function or function expression. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/express.ts#isHandlerLike@L169",
+    "procedureName": "isHandlerLike",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#isHandlerLike@L169",
+        "procedureName": "isHandlerLike",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4de78e12ace434488561aa901d7bd096b60b7075e5ba0d8e9b25d7d136ca4ab8",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L170",
+          "line": 170,
+          "expr": "return ts.isArrowFunction(e) || ts.isFunctionExpression(e);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/express.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

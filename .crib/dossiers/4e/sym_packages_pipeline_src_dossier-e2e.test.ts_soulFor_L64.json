@@ -1,0 +1,138 @@
+{
+  "id": "sym:packages/pipeline/src/dossier-e2e.test.ts#soulFor@L64",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ebc4062f26432af79a933428414a90459404a6ba703e958590ccffb435479a4e",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/dossier-e2e.test.ts#soulFor@L64",
+    "kind": "symbol",
+    "type": "function",
+    "name": "soulFor",
+    "qualifiedName": "soulFor",
+    "signature": "soulFor(): SoulStore",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/dossier-e2e.test.ts",
+    "span": {
+      "start": 64,
+      "end": 68
+    },
+    "callSites": [
+      {
+        "callee": "newManifest",
+        "line": 65
+      },
+      {
+        "callee": "load",
+        "line": 66
+      }
+    ]
+  },
+  "source": {
+    "text": "function soulFor(): SoulStore {\n  const s = new SoulStore(crib, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });\n  s.load();\n  return s;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 64
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+      "confidence": 1,
+      "name": "newManifest",
+      "qualifiedName": "newManifest",
+      "signature": "newManifest(opts: NewManifestOpts = {}): Manifest",
+      "type": "function",
+      "file": "packages/core/src/manifest.ts",
+      "line": 28
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/dossier-e2e.test.ts#soulFor@L64",
+    "procedureName": "soulFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/dossier-e2e.test.ts#soulFor@L64",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cd1c112e10cbd4ac6bca20e025da7a0888c2182fd5e5bf487d1eed17626db62f",
+          "target": "stmt:packages/pipeline/src/dossier-e2e.test.ts@L65",
+          "line": 65,
+          "expr": "const s = new SoulStore(crib, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossier-e2e.test.ts#soulFor@L64",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b4ba0fb40b39f03a93e0b7b1982dc440b268cb0739c7033531f1bed507e7b9df",
+          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
+          "expr": "newManifest",
+          "line": 65
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossier-e2e.test.ts#soulFor@L64",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8757d8c032391676748d6aec5a1870a4231ba9e19a33b6fae9c4970ff179c140",
+          "target": "stmt:packages/pipeline/src/dossier-e2e.test.ts@L66",
+          "line": 66,
+          "expr": "s.load();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossier-e2e.test.ts#soulFor@L64",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c758af9a7ccf92a5bf7dcac4742ea6de264035e643c5f13ff84627bc2736d8a",
+          "target": "stmt:packages/pipeline/src/dossier-e2e.test.ts@L67",
+          "line": 67,
+          "expr": "return s;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,355 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:dacdd3cad6e22ae54b1de4765a588afdb1f8a241eebd054c31f6fb0fde202f43",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+    "kind": "symbol",
+    "type": "function",
+    "name": "validateSaveItem",
+    "qualifiedName": "validateSaveItem",
+    "signature": "validateSaveItem(item: EnrichSaveItem): string | undefined",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1060,
+      "end": 1083
+    }
+  },
+  "source": {
+    "text": "function validateSaveItem(item: EnrichSaveItem): string | undefined {\n  if (!isRecord(item.analysis)) return 'analysis must be an object';\n  if (!isRecord(item.graph)) return 'graph must be an object';\n  if (!Array.isArray(item.graph.nodes)) return 'graph.nodes must be an array';\n  if (!Array.isArray(item.graph.edges)) return 'graph.edges must be an array';\n  if (!Array.isArray(item.evidence)) return 'evidence must be an array';\n  for (const node of item.graph.nodes) {\n    if (!node.localId || !node.kind || !node.name)\n      return 'graph.nodes require localId, kind, and name';\n  }\n  for (const edge of item.graph.edges) {\n    if (!edge.from || !edge.to || !edge.rel) return 'graph.edges require from, to, and rel';\n    if (edge.confidence !== undefined && (edge.confidence < 0 || edge.confidence > 1)) {\n      return 'graph.edge confidence must be between 0 and 1';\n    }\n  }\n  if (\n    item.analysis.confidence !== undefined &&\n    (item.analysis.confidence < 0 || item.analysis.confidence > 1)\n  ) {\n    return 'analysis confidence must be between 0 and 1';\n  }\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 24,
+    "startLine": 1060
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L435",
+      "confidence": 1,
+      "name": "save",
+      "qualifiedName": "EnrichmentStore.save",
+      "signature": "save(args: EnrichSaveArgs): EnrichSaveResult",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 435
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#isRecord@L1193",
+      "confidence": 1,
+      "name": "isRecord",
+      "qualifiedName": "isRecord",
+      "signature": "isRecord(v: unknown): v is Record<string, unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1193
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-1-the-enrich-save-validation-pipeline",
+      "heading": "3.2.1 The `enrich_save` Validation Pipeline",
+      "anchor": "3-2-1-the-enrich-save-validation-pipeline",
+      "snippet": "3.2.1 The `enrich_save` Validation Pipeline",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+    "procedureName": "validateSaveItem",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1061",
+      "cond:packages/mcp/src/enrichment.ts@L1062",
+      "cond:packages/mcp/src/enrichment.ts@L1063",
+      "cond:packages/mcp/src/enrichment.ts@L1064",
+      "cond:packages/mcp/src/enrichment.ts@L1065",
+      "cond:packages/mcp/src/enrichment.ts@L1066",
+      "cond:packages/mcp/src/enrichment.ts@L1067",
+      "cond:packages/mcp/src/enrichment.ts@L1070",
+      "cond:packages/mcp/src/enrichment.ts@L1071",
+      "cond:packages/mcp/src/enrichment.ts@L1072",
+      "cond:packages/mcp/src/enrichment.ts@L1076"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+        "procedureName": "validateSaveItem",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1061",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1061",
+            "expr": "!isRecord(item.analysis)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3b827280f8121d0cc4ad9c88b3861166483be10f8a9e809eda22489055ac1c60",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1061",
+          "line": 1061,
+          "expr": "return 'analysis must be an object';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+        "procedureName": "validateSaveItem",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1062",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1062",
+            "expr": "!isRecord(item.graph)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa08f5773cb76934f3cc3266277c7be9ce9af6bf2ecd65d624af235649b06de0",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1062",
+          "line": 1062,
+          "expr": "return 'graph must be an object';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+        "procedureName": "validateSaveItem",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1063",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1063",
+            "expr": "!Array.isArray(item.graph.nodes)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8c1f8d19c646db9b12fa91ac71e5a7ff96007d0a6610ba2df1ccb2152414ecd",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1063",
+          "line": 1063,
+          "expr": "return 'graph.nodes must be an array';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+        "procedureName": "validateSaveItem",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1064",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1064",
+            "expr": "!Array.isArray(item.graph.edges)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa45ef3088144623e9dbfe847d743a17b3c7eae7b5c29e41bf121214e338b686",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1064",
+          "line": 1064,
+          "expr": "return 'graph.edges must be an array';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+        "procedureName": "validateSaveItem",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1065",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1065",
+            "expr": "!Array.isArray(item.evidence)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ffd6e0668f120a023ada2d7bf6ba4977ea091a47920e21f5ba344ef9e43b152a",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1065",
+          "line": 1065,
+          "expr": "return 'evidence must be an array';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+        "procedureName": "validateSaveItem",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1067",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1066",
+            "expr": "item.graph.nodes"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1067",
+            "expr": "!node.localId || !node.kind || !node.name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b42119ad9c828c546ee719694272a574cd0381fac7437cb7ce0b1bc199901069",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1068",
+          "line": 1068,
+          "expr": "return 'graph.nodes require localId, kind, and name';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+        "procedureName": "validateSaveItem",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1071",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1070",
+            "expr": "item.graph.edges"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1071",
+            "expr": "!edge.from || !edge.to || !edge.rel",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d58d4b7885c55a63ef13037026a4bd8141ae982e20fe378ce736e5a1d305659d",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1071",
+          "line": 1071,
+          "expr": "return 'graph.edges require from, to, and rel';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+        "procedureName": "validateSaveItem",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1072",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1070",
+            "expr": "item.graph.edges"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1072",
+            "expr": "edge.confidence !== undefined && (edge.confidence < 0 || edge.confidence > 1)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:892dea2ba633494c8c34959659683d0bfd030a1d3505493995db3b446bfc7037",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1073",
+          "line": 1073,
+          "expr": "return 'graph.edge confidence must be between 0 and 1';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+        "procedureName": "validateSaveItem",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1076",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1076",
+            "expr": "item.analysis.confidence !== undefined &&\n    (item.analysis.confidence < 0 || item.analysis.confidence > 1)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e6ffb0c89503b3ec059434a29bde96b9d95d8f14c56c2b1285fafe21ba5eff4d",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1080",
+          "line": 1080,
+          "expr": "return 'analysis confidence must be between 0 and 1';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+        "procedureName": "validateSaveItem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b35c2c2876f1afe7a34df4a4221fd9333a73d23081e14a57d9523c6a45fcc4fd",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1082",
+          "line": 1082,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#validateSaveItem@L1060",
+        "procedureName": "validateSaveItem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5e1db7966d2b81aa67a2012162bb8540f3c68cd1aa4010272b224500509b08aa",
+          "target": "sym:packages/mcp/src/enrichment.ts#isRecord@L1193",
+          "expr": "isRecord"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 0,
+    "conditions": 9,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "id": "sym:packages/core/src/dossier/persist.ts#deleteDossier@L87",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:d930f42d6f19d98173e04ad89de38bf8dd5ab62854b212aff31fbc1d005d925b",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/persist.ts#deleteDossier@L87",
+    "kind": "symbol",
+    "type": "function",
+    "name": "deleteDossier",
+    "qualifiedName": "deleteDossier",
+    "signature": "deleteDossier(cribDir: string, nodeId: string): void",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/persist.ts",
+    "span": {
+      "start": 87,
+      "end": 96
+    },
+    "callSites": [
+      {
+        "callee": "dossierPath",
+        "line": 88
+      },
+      {
+        "callee": "rmSync",
+        "line": 91
+      }
+    ]
+  },
+  "source": {
+    "text": "export function deleteDossier(cribDir: string, nodeId: string): void {\n  const path = dossierPath(cribDir, nodeId);\n  if (existsSync(path)) {\n    try {\n      rmSync(path, { force: true });\n    } catch {\n      // swallow — cleanup is best-effort\n    }\n  }\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 87
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#dossierPath@L34",
+      "confidence": 1,
+      "name": "dossierPath",
+      "qualifiedName": "dossierPath",
+      "signature": "dossierPath(cribDir: string, nodeId: string): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 34
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/persist.ts@L86",
+      "snippet": "/** Remove a dossier (used when a symbol disappears from the soul). No-op if absent. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/persist.ts#deleteDossier@L87",
+    "procedureName": "deleteDossier",
+    "conditions": [
+      "cond:packages/core/src/dossier/persist.ts@L89"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#deleteDossier@L87",
+        "procedureName": "deleteDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9e5e9ca7d160195bb24dc9457ed4d20d880379509844505da3dbc7a962ca1f01",
+          "target": "sym:packages/core/src/dossier/persist.ts#dossierPath@L34",
+          "expr": "dossierPath",
+          "line": 88
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#deleteDossier@L87",
+        "procedureName": "deleteDossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:03e355fd2ce7ba4cd0ef755a540d4cf3be1cd7e08e174e690101efccdbe77d19",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L88",
+          "line": 88,
+          "expr": "const path = dossierPath(cribDir, nodeId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#deleteDossier@L87",
+        "procedureName": "deleteDossier",
+        "guard": "cond:packages/core/src/dossier/persist.ts@L89",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/persist.ts@L89",
+            "expr": "existsSync(path)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:373d1b83489859ea15fbb7ad1bfcfcbf4dd07fe0591bd230c3312939a52daf61",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L91",
+          "line": 91,
+          "expr": "rmSync(path, { force: true });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

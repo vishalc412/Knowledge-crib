@@ -1,0 +1,674 @@
+{
+  "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:8d388aee10db7b1ba06112c47369e0bc133cf5d52d38554e8c5cf58563101bbe",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+    "kind": "symbol",
+    "type": "method",
+    "name": "collectCalls",
+    "qualifiedName": "RustExtractor.collectCalls",
+    "signature": "collectCalls(calls: RustCallSite[], symbols: LocalSymbol[], byKey: Map<string, string>, edges: Edge[], guardByCaller: Map<string, GuardedCallSite[]>): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/RustExtractor.ts",
+    "span": {
+      "start": 373,
+      "end": 428
+    },
+    "callSites": [
+      {
+        "callee": "set",
+        "line": 381
+      },
+      {
+        "callee": "get",
+        "line": 389
+      },
+      {
+        "callee": "join",
+        "line": 391
+      },
+      {
+        "callee": "get",
+        "line": 392
+      },
+      {
+        "callee": "get",
+        "line": 392
+      },
+      {
+        "callee": "enclosingSymbolId",
+        "line": 395
+      },
+      {
+        "callee": "join",
+        "line": 397
+      },
+      {
+        "callee": "edgeId",
+        "line": 399
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 409
+      },
+      {
+        "callee": "get",
+        "line": 409
+      },
+      {
+        "callee": "get",
+        "line": 410
+      },
+      {
+        "callee": "find",
+        "line": 412
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 412
+      },
+      {
+        "callee": "lastSeg",
+        "line": 412
+      },
+      {
+        "callee": "add",
+        "line": 424
+      },
+      {
+        "callee": "push",
+        "line": 425
+      }
+    ]
+  },
+  "source": {
+    "text": "  private collectCalls(\n    calls: RustCallSite[],\n    symbols: LocalSymbol[],\n    byKey: Map<string, string>,\n    edges: Edge[],\n    guardByCaller: Map<string, GuardedCallSite[]>,\n  ): void {\n    const idToSimple = new Map<string, string>();\n    for (const s of symbols) idToSimple.set(s.node.id, s.simpleName);\n    const seen = new Set<string>();\n    for (const c of calls) {\n      if (c.head === 'self' || c.head === 'Self') continue;\n      if (c.seps.includes('.')) continue; // receiver call — dropped\n\n      let dstId: string | undefined;\n      if (c.macro) {\n        dstId = byKey.get(c.head); // macro symbols keyed by simple name\n      } else {\n        const fullChain = [c.head, ...c.segments].join('::');\n        dstId = byKey.get(fullChain) ?? byKey.get(c.head);\n      }\n      if (!dstId) continue;\n      const caller = enclosingSymbolId(c.line, symbols);\n      if (!caller || caller === dstId) continue; // skip self-recursion\n      const calleeText = [c.head, ...c.segments].join(c.seps[0] === '.' ? '.' : '::');\n      const e: Edge = {\n        id: edgeId(caller, dstId, 'calls'),\n        src: caller,\n        dst: dstId,\n        rel: 'calls',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet: calleeText },\n      };\n      // Track 3: annotate with the guard chain of the first matching call site (best-effort).\n      const calleeSimple = (idToSimple.get(dstId) ?? '').toLowerCase();\n      const sites = guardByCaller.get(caller);\n      if (calleeSimple && sites) {\n        const site = sites.find((s) => lastSeg(s.callee).toLowerCase() === calleeSimple);\n        if (site) {\n          e.cfgPath = site.cfgPath;\n          if (site.guard) {\n            e.guard = site.guard;\n            e.branch = site.branch;\n          }\n          e.inLoop = site.inLoop;\n          e.inException = site.inException;\n        }\n      }\n      if (!seen.has(e.id)) {\n        seen.add(e.id);\n        edges.push(e);\n      }\n    }\n  }",
+    "truncated": false,
+    "totalLines": 56,
+    "startLine": 373
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse@L101",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "RustExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 101
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
+      "confidence": 1,
+      "name": "enclosingSymbolId",
+      "qualifiedName": "enclosingSymbolId",
+      "signature": "enclosingSymbolId(line: number, symbols: LocalSymbol[]): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 438
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#lastSeg@L453",
+      "confidence": 1,
+      "name": "lastSeg",
+      "qualifiedName": "lastSeg",
+      "signature": "lastSeg(callee: string): string",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 453
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/RustExtractor.ts@L361",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+    "procedureName": "RustExtractor.collectCalls",
+    "conditions": [
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L381",
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L388",
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L411",
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L413",
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L415",
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L423"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L381",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L381",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b3744fd46102b8ff2010e0083af8eeeab1b4fbae644010d360b263df5a02d16d",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L381",
+          "line": 381,
+          "expr": "idToSimple.set(s.node.id, s.simpleName);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L388",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L388",
+            "expr": "c.macro",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aa03e79ba0b4e255f6eb904ee70218258a9fe54918f52ebedef887c5f8f8aa33",
+          "target": "assign:packages/parsers/src/rust/RustExtractor.ts@L389",
+          "line": 389,
+          "expr": "dstId = byKey.get(c.head);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L388",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L388",
+            "expr": "c.macro",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0665c7a98ad66988e6dce106aacb4965976afd3a79c4b0ee1277954a668064ec",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L391",
+          "line": 391,
+          "expr": "const fullChain = [c.head, ...c.segments].join('::');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L388",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L388",
+            "expr": "c.macro",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a628ee1599824250d73a68c8dbc0a00474e34cb58744e606696c69c3e069e42c",
+          "target": "assign:packages/parsers/src/rust/RustExtractor.ts@L392",
+          "line": 392,
+          "expr": "dstId = byKey.get(fullChain) ?? byKey.get(c.head);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:54bb5bf49e523a067d046dfee896a5c3670401f067107659e3fc13d460b31d13",
+          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
+          "expr": "enclosingSymbolId",
+          "line": 395
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9b22569f944df84bd5b961089501cd59d4c1c97c05bfbb03147324087a585cd7",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L395",
+          "line": 395,
+          "expr": "const caller = enclosingSymbolId(c.line, symbols);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7eb5d5f81cbd6a6c35285aff869057415212393d6936266203ed2905ba0bd2d8",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L397",
+          "line": 397,
+          "expr": "const calleeText = [c.head, ...c.segments].join(c.seps[0] === '.' ? '.' : '::');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5209cac451464803b27c350254c20a2d85f090a7c527c1e3f26e248ee23d3d9",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L398",
+          "line": 398,
+          "expr": "const e: Edge = {\n        id: edgeId(caller, dstId, 'calls'),\n        src: caller,\n        dst: dstId,\n        rel: 'calls',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet: calleeText },\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8a8be6da6a48acc6a16a82edabe9461cffc5dd9ce131f3f295ad655cf7b16dee",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L409",
+          "line": 409,
+          "expr": "const calleeSimple = (idToSimple.get(dstId) ?? '').toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bbed9a5dca44a8c7df2a97fdc07e6203c673d2bb263e35024b6c8c23be57bf22",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L410",
+          "line": 410,
+          "expr": "const sites = guardByCaller.get(caller);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L411",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L411",
+            "expr": "calleeSimple && sites",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:25dc8662bcbdba96bd0049c861be129deba49e4a63d98c9f6fff7b3deb67e94e",
+          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#lastSeg@L453",
+          "expr": "lastSeg",
+          "line": 412
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L411",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L411",
+            "expr": "calleeSimple && sites",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:18fa2d127bbd355f89f686b0f45b96563520ea1f061b2dc4b1b64640a1734d2c",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L412",
+          "line": 412,
+          "expr": "const site = sites.find((s) => lastSeg(s.callee).toLowerCase() === calleeSimple);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L413",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L411",
+            "expr": "calleeSimple && sites"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L413",
+            "expr": "site",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2a3ccb281fcb5407e09c8db594c20bddfd51fdab0b7117ba637b038a8a962e16",
+          "target": "assign:packages/parsers/src/rust/RustExtractor.ts@L414",
+          "line": 414,
+          "expr": "e.cfgPath = site.cfgPath;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L415",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L411",
+            "expr": "calleeSimple && sites"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L413",
+            "expr": "site"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L415",
+            "expr": "site.guard",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9d2a975d60747a4d621d10bcaacefea79e8120ce15d7ddff691a73e9361d5fb7",
+          "target": "assign:packages/parsers/src/rust/RustExtractor.ts@L416",
+          "line": 416,
+          "expr": "e.guard = site.guard;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L415",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L411",
+            "expr": "calleeSimple && sites"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L413",
+            "expr": "site"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L415",
+            "expr": "site.guard",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:17091ccc23798a4859122a970ea7baccb81f91e95c559c5a7c5f9041c0615d9e",
+          "target": "assign:packages/parsers/src/rust/RustExtractor.ts@L417",
+          "line": 417,
+          "expr": "e.branch = site.branch;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L413",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L411",
+            "expr": "calleeSimple && sites"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L413",
+            "expr": "site",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29db532a8678439e1b788ee201573314116cc7c63a6d5199a9b1aa8424000182",
+          "target": "assign:packages/parsers/src/rust/RustExtractor.ts@L419",
+          "line": 419,
+          "expr": "e.inLoop = site.inLoop;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L413",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L411",
+            "expr": "calleeSimple && sites"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L413",
+            "expr": "site",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:419d463a8501599e975fc266af04485d43a0bcc0a89be978ca368b20b54f5082",
+          "target": "assign:packages/parsers/src/rust/RustExtractor.ts@L420",
+          "line": 420,
+          "expr": "e.inException = site.inException;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L423",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L423",
+            "expr": "!seen.has(e.id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:508a63059390440faca3253a0a472853784f5392fb1fbe7e0701772a2629009a",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L424",
+          "line": 424,
+          "expr": "seen.add(e.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
+        "procedureName": "RustExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L423",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L383",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L423",
+            "expr": "!seen.has(e.id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa2a26f9ef45981436feb3e3c2a1c70d51a37f1652264696cb6f09f4cbd95363",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L425",
+          "line": 425,
+          "expr": "edges.push(e);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 17,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/RustExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 17,
+    "assignments": 7,
+    "conditions": 7,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 16,
+      "unresolved": 10
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "10 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

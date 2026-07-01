@@ -1,0 +1,103 @@
+{
+  "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.typeOf@L624",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:5739675ed91894e5716deceffb1a58ecf8518529dda2afdc9d9a29347280204d",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.typeOf@L624",
+    "kind": "symbol",
+    "type": "method",
+    "name": "typeOf",
+    "qualifiedName": "PythonExtractor.typeOf",
+    "signature": "typeOf(qualifiedName: string, all: LocalSymbol[]): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/PythonExtractor.ts",
+    "span": {
+      "start": 624,
+      "end": 626
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 625
+      }
+    ]
+  },
+  "source": {
+    "text": "  private typeOf(qualifiedName: string, all: LocalSymbol[]): string | undefined {\n    return all.find((s) => s.node.qualifiedName === qualifiedName)?.node.type;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 624
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse.visit@L100",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "PythonExtractor.parse.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 100
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/PythonExtractor.ts@L623",
+      "snippet": "/** The `type` of an already-emitted symbol by qualifiedName (parent-type check for methods). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.typeOf@L624",
+    "procedureName": "PythonExtractor.typeOf",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.typeOf@L624",
+        "procedureName": "PythonExtractor.typeOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5ce4c34e138a74f2761c1d069be84afb4169a8009aecb33846eadc4a47246ac",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L625",
+          "line": 625,
+          "expr": "return all.find((s) => s.node.qualifiedName === qualifiedName)?.node.type;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/python/PythonExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,1346 @@
+{
+  "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:27d8b04a52c7415c2462640e705662cbd43463658d6cfe65c5c0c4788c99df6e",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+    "kind": "symbol",
+    "type": "method",
+    "name": "tokens",
+    "qualifiedName": "Lexer.tokens",
+    "signature": "tokens(): Token[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/lexer.ts",
+    "span": {
+      "start": 102,
+      "end": 157
+    },
+    "callSites": [
+      {
+        "callee": "scanInsideTriple",
+        "line": 105
+      },
+      {
+        "callee": "handleLineStart",
+        "line": 109
+      },
+      {
+        "callee": "peek",
+        "line": 113
+      },
+      {
+        "callee": "advance",
+        "line": 115
+      },
+      {
+        "callee": "emit",
+        "line": 116
+      },
+      {
+        "callee": "advance",
+        "line": 121
+      },
+      {
+        "callee": "advance",
+        "line": 122
+      },
+      {
+        "callee": "emit",
+        "line": 123
+      },
+      {
+        "callee": "advance",
+        "line": 128
+      },
+      {
+        "callee": "advance",
+        "line": 133
+      },
+      {
+        "callee": "advance",
+        "line": 134
+      },
+      {
+        "callee": "skipComment",
+        "line": 138
+      },
+      {
+        "callee": "scanString",
+        "line": 142
+      },
+      {
+        "callee": "scanNumber",
+        "line": 146
+      },
+      {
+        "callee": "scanIdent",
+        "line": 150
+      },
+      {
+        "callee": "scanOp",
+        "line": 153
+      },
+      {
+        "callee": "close",
+        "line": 155
+      }
+    ]
+  },
+  "source": {
+    "text": "  tokens(): Token[] {\n    while (this.pos < this.src.length) {\n      if (this.triple) {\n        this.scanInsideTriple();\n        continue;\n      }\n      if (this.atLineStart && this.bracketDepth === 0) {\n        this.handleLineStart();\n        // handleLineStart may consume the whole line (blank/comment) and set atLineStart again.\n        if (this.atLineStart) continue;\n      }\n      const ch = this.peek();\n      if (ch === '\\n') {\n        this.advance();\n        this.emit(this.bracketDepth > 0 ? 'NL' : 'NEWLINE', '\\n');\n        this.atLineStart = true;\n        continue;\n      }\n      if (ch === '\\r') {\n        this.advance();\n        if (this.peek() === '\\n') this.advance();\n        this.emit(this.bracketDepth > 0 ? 'NL' : 'NEWLINE', '\\n');\n        this.atLineStart = true;\n        continue;\n      }\n      if (ch === ' ' || ch === '\\t' || ch === '\\f') {\n        this.advance();\n        continue;\n      }\n      if (ch === '\\\\' && this.peek(1) === '\\n') {\n        // explicit line continuation — join the next line; no NEWLINE emitted.\n        this.advance();\n        this.advance();\n        continue;\n      }\n      if (ch === '#') {\n        this.skipComment();\n        continue;\n      }\n      if (this.isStringStart()) {\n        this.scanString();\n        continue;\n      }\n      if (isDigit(ch) || (ch === '.' && isDigit(this.peek(1)))) {\n        this.scanNumber();\n        continue;\n      }\n      if (isIdentStart(ch)) {\n        this.scanIdent();\n        continue;\n      }\n      this.scanOp();\n    }\n    this.close();\n    return this.out;\n  }",
+    "truncated": false,
+    "totalLines": 56,
+    "startLine": 102
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#tokenize@L79",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(src: string): Token[]",
+      "type": "function",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 79
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.advance@L394",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 394
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.close@L442",
+      "confidence": 1,
+      "name": "close",
+      "qualifiedName": "Lexer.close",
+      "signature": "close(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 442
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.emit@L405",
+      "confidence": 1,
+      "name": "emit",
+      "qualifiedName": "Lexer.emit",
+      "signature": "emit(type: TokenType, value: string, line?: number, col?: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 405
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.handleLineStart@L161",
+      "confidence": 1,
+      "name": "handleLineStart",
+      "qualifiedName": "Lexer.handleLineStart",
+      "signature": "handleLineStart(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 161
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+      "confidence": 1,
+      "name": "isStringStart",
+      "qualifiedName": "Lexer.isStringStart",
+      "signature": "isStringStart(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 409
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 390
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanIdent@L222",
+      "confidence": 1,
+      "name": "scanIdent",
+      "qualifiedName": "Lexer.scanIdent",
+      "signature": "scanIdent(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 222
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanInsideTriple@L305",
+      "confidence": 1,
+      "name": "scanInsideTriple",
+      "qualifiedName": "Lexer.scanInsideTriple",
+      "signature": "scanInsideTriple(startLine?: number, startCol?: number, openToken?: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 305
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanNumber@L230",
+      "confidence": 1,
+      "name": "scanNumber",
+      "qualifiedName": "Lexer.scanNumber",
+      "signature": "scanNumber(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 230
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanOp@L340",
+      "confidence": 1,
+      "name": "scanOp",
+      "qualifiedName": "Lexer.scanOp",
+      "signature": "scanOp(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 340
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanString@L239",
+      "confidence": 1,
+      "name": "scanString",
+      "qualifiedName": "Lexer.scanString",
+      "signature": "scanString(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 239
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.skipComment@L383",
+      "confidence": 1,
+      "name": "skipComment",
+      "qualifiedName": "Lexer.skipComment",
+      "signature": "skipComment(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 383
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#isDigit@L454",
+      "confidence": 1,
+      "name": "isDigit",
+      "qualifiedName": "isDigit",
+      "signature": "isDigit(c: string): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 454
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#isIdentStart@L457",
+      "confidence": 1,
+      "name": "isIdentStart",
+      "qualifiedName": "isIdentStart",
+      "signature": "isIdentStart(c: string): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 457
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:README.md#the-token-cost-benefit-concretely",
+      "heading": "The token-cost benefit, concretely",
+      "anchor": "the-token-cost-benefit-concretely",
+      "snippet": "The token-cost benefit, concretely",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#knowledge-crib-prompting-guide-how-to-talk-to-your-local-llm-so-crib-does-the-work",
+      "heading": "Knowledge-crib — Prompting Guide (how to talk to your local LLM so crib does the work)",
+      "anchor": "knowledge-crib-prompting-guide-how-to-talk-to-your-local-llm-so-crib-does-the-work",
+      "snippet": "Knowledge-crib — Prompting Guide (how to talk to your local LLM so crib does the work)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/README.md#document-index-read-in-order",
+      "heading": "Document index (read in order)",
+      "anchor": "document-index-read-in-order",
+      "snippet": "Document index (read in order)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#knowledge-crib-implementation-plan-detailed",
+      "heading": "Knowledge-crib — Implementation Plan (detailed)",
+      "anchor": "knowledge-crib-implementation-plan-detailed",
+      "snippet": "Knowledge-crib — Implementation Plan (detailed)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-research-driven-corrections-what-the-internet-forces-us-to-change",
+      "heading": "4. Research-driven corrections (what the internet forces us to change)",
+      "anchor": "4-research-driven-corrections-what-the-internet-forces-us-to-change",
+      "snippet": "4. Research-driven corrections (what the internet forces us to change)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m4-doc-extractor-markdown-deterministic-cross-modal-linker-headline-gate-1",
+      "heading": "M4 — doc-extractor (Markdown) + deterministic cross-modal linker ← HEADLINE GATE #1",
+      "anchor": "m4-doc-extractor-markdown-deterministic-cross-modal-linker-headline-gate-1",
+      "snippet": "M4 — doc-extractor (Markdown) + deterministic cross-modal linker ← HEADLINE GATE #1",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#6-token-cut-proof-headline-metric-q25",
+      "heading": "6. Token-cut proof (headline metric [Q25])",
+      "anchor": "6-token-cut-proof-headline-metric-q25",
+      "snippet": "6. Token-cut proof (headline metric [Q25])",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#knowledge-crib-mcp-client-setup-guide",
+      "heading": "Knowledge-crib — MCP Client Setup Guide",
+      "anchor": "knowledge-crib-mcp-client-setup-guide",
+      "snippet": "Knowledge-crib — MCP Client Setup Guide",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#reaction-10-min-the-mvp-concept",
+      "heading": "Reaction (10 min) — the MVP concept",
+      "anchor": "reaction-10-min-the-mvp-concept",
+      "snippet": "Reaction (10 min) — the MVP concept",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-4-cross-modal-linker-the-differentiator",
+      "heading": "Phase 4 — Cross-modal linker (the differentiator)",
+      "anchor": "phase-4-cross-modal-linker-the-differentiator",
+      "snippet": "Phase 4 — Cross-modal linker (the differentiator)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#1-one-liner",
+      "heading": "1. One-liner",
+      "anchor": "1-one-liner",
+      "snippet": "1. One-liner",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#7-success-metrics-q25",
+      "heading": "7. Success Metrics [Q25]",
+      "anchor": "7-success-metrics-q25",
+      "snippet": "7. Success Metrics [Q25]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "heading": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "anchor": "5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "snippet": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-7-mvp-scope-roadmap",
+      "heading": "Branch 7 — MVP Scope & Roadmap",
+      "anchor": "branch-7-mvp-scope-roadmap",
+      "snippet": "Branch 7 — MVP Scope & Roadmap",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-2-product-manager",
+      "heading": "2.2 Product Manager",
+      "anchor": "2-2-product-manager",
+      "snippet": "2.2 Product Manager",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-6-ai-engineer",
+      "heading": "2.6 AI Engineer",
+      "anchor": "2-6-ai-engineer",
+      "snippet": "2.6 AI Engineer",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#planned-tracks-not-yet-built",
+      "heading": "Planned tracks (not yet built)",
+      "anchor": "planned-tracks-not-yet-built",
+      "snippet": "Planned tracks (not yet built)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#5-token-cut-benchmark-m5-the-headline-metric-q25",
+      "heading": "5. Token-cut benchmark (M5 — the headline metric [Q25])",
+      "anchor": "5-token-cut-benchmark-m5-the-headline-metric-q25",
+      "snippet": "5. Token-cut benchmark (M5 — the headline metric [Q25])",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#knowledge-crib-user-guide",
+      "heading": "Knowledge-crib — User Guide",
+      "anchor": "knowledge-crib-user-guide",
+      "snippet": "Knowledge-crib — User Guide",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-loop",
+      "heading": "The loop",
+      "anchor": "the-loop",
+      "snippet": "The loop",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#the-two-rules-that-prevent-the-infinite-loop",
+      "heading": "⚠️ The two rules that prevent the infinite loop",
+      "anchor": "the-two-rules-that-prevent-the-infinite-loop",
+      "snippet": "⚠️ The two rules that prevent the infinite loop",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+    "procedureName": "Lexer.tokens",
+    "conditions": [
+      "cond:packages/parsers/src/python/lexer.ts@L103",
+      "cond:packages/parsers/src/python/lexer.ts@L104",
+      "cond:packages/parsers/src/python/lexer.ts@L108",
+      "cond:packages/parsers/src/python/lexer.ts@L131",
+      "cond:packages/parsers/src/python/lexer.ts@L114",
+      "cond:packages/parsers/src/python/lexer.ts@L120",
+      "cond:packages/parsers/src/python/lexer.ts@L122",
+      "cond:packages/parsers/src/python/lexer.ts@L127",
+      "cond:packages/parsers/src/python/lexer.ts@L137",
+      "cond:packages/parsers/src/python/lexer.ts@L141",
+      "cond:packages/parsers/src/python/lexer.ts@L145",
+      "cond:packages/parsers/src/python/lexer.ts@L149"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L104",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L104",
+            "expr": "this.triple",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:04cd4922db43868ef985ac3b095ae7b3182e10bb9e81596a270411e2ad1d13db",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanInsideTriple@L305",
+          "expr": "scanInsideTriple",
+          "line": 105
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L104",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L104",
+            "expr": "this.triple",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:80f6ec7e29114842d81862bbae1f287a6772c25de6c980a91a941914dd745599",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L105",
+          "line": 105,
+          "expr": "this.scanInsideTriple();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L108",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L108",
+            "expr": "this.atLineStart && this.bracketDepth === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3b3eb70d5d1c5ce5ee2b13759e09d6b383590a8c385503ceb51c3398b8f98852",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.handleLineStart@L161",
+          "expr": "handleLineStart",
+          "line": 109
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L108",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L108",
+            "expr": "this.atLineStart && this.bracketDepth === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:099ba6821781a3f04effcaa7b4b5f55f07719c581f4cb83d7ad6109605189311",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L109",
+          "line": 109,
+          "expr": "this.handleLineStart();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L103",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:19a4eba921f26eb34bbcffa9d8e0f055823f1f432e500ddbcec37391bc4afff0",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
+          "expr": "peek",
+          "line": 113
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L103",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1b5756be4d6e9e554c4bcc76d37408ccf8e72301ee7e93cbd7aa7b9e1a46f3b9",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L113",
+          "line": 113,
+          "expr": "const ch = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L131",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L131",
+            "expr": "ch === '\\\\' && this.peek(1) === '\\n'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c839cc9bcaff52f56c30c22045dbdf36060070d42e6a2891796db8f39de31df7",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.advance@L394",
+          "expr": "advance",
+          "line": 115
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L114",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L114",
+            "expr": "ch === '\\n'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:84ae8eee82c9165c14202774d1ae7e6b8c02951c279c3de5a010935d67fc6983",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L115",
+          "line": 115,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L120",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L120",
+            "expr": "ch === '\\r'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:53766a23b49677f1d7f897d503983b606c17c33114db83eb5bdb66b9f3c3a9ce",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.emit@L405",
+          "expr": "emit",
+          "line": 116
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L114",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L114",
+            "expr": "ch === '\\n'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:63fb4c86796c7c0c00b1191b66c9ac9d648691c429242a027e6afaa7ebd855a2",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L116",
+          "line": 116,
+          "expr": "this.emit(this.bracketDepth > 0 ? 'NL' : 'NEWLINE', '\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L114",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L114",
+            "expr": "ch === '\\n'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ff85342149bfe8349c81a7450916b0a64bc091529b1c89d0dc18a666e6d0180",
+          "target": "assign:packages/parsers/src/python/lexer.ts@L117",
+          "line": 117,
+          "expr": "this.atLineStart = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L120",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L120",
+            "expr": "ch === '\\r'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:daf5dd1dbb8b0c7370261cce517e4e2fceacd0a3a5ad16525a4fe8fbc3ea620a",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L121",
+          "line": 121,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L122",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L120",
+            "expr": "ch === '\\r'"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L122",
+            "expr": "this.peek() === '\\n'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bee6c34d9ced0b4a18efe18e80e9c9206365e2a7fa3483722671fea57d5a7140",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L122",
+          "line": 122,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L120",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L120",
+            "expr": "ch === '\\r'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2995bb4ba43528ff195480a818aee80c66263369def2b266cf5c93b59e485900",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L123",
+          "line": 123,
+          "expr": "this.emit(this.bracketDepth > 0 ? 'NL' : 'NEWLINE', '\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L120",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L120",
+            "expr": "ch === '\\r'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:704a1308d24a65273081d22f328ff611a2b8291c7089d87abd0b194f8de88f98",
+          "target": "assign:packages/parsers/src/python/lexer.ts@L124",
+          "line": 124,
+          "expr": "this.atLineStart = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L127",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L127",
+            "expr": "ch === ' ' || ch === '\\t' || ch === '\\f'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3779e58033fa54993c525d63f3df5d9247f6846a9a6d98fa7d2e4e3af2f99ca3",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L128",
+          "line": 128,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L131",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L131",
+            "expr": "ch === '\\\\' && this.peek(1) === '\\n'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2238128b45a101945626e8a7a8f151acb0d79852b3df05caa8c16482dddb85c8",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L133",
+          "line": 133,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L131",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L131",
+            "expr": "ch === '\\\\' && this.peek(1) === '\\n'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3da5bfbe8dcc0c535aa44676d6aa7f5f897205cd3804d463e5f22616bf0ef772",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L134",
+          "line": 134,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L137",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L137",
+            "expr": "ch === '#'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:01d57049879d97eac68b140d1d23e2aa850a329809c73ad7963c99cf9a685040",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.skipComment@L383",
+          "expr": "skipComment",
+          "line": 138
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L137",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L137",
+            "expr": "ch === '#'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a68ba2512787f4f1025cd943dae024e7046e57c20722a5c9dafd95a4e154dacb",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L138",
+          "line": 138,
+          "expr": "this.skipComment();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L141",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L141",
+            "expr": "this.isStringStart()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:569ae3637ecf72d6def5a38d67ea19cf99f543184c005535108404b0d8e81d49",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanString@L239",
+          "expr": "scanString",
+          "line": 142
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L141",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L141",
+            "expr": "this.isStringStart()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca90a94fc8c6e73c2df8aca30eb1bfb03635300ef72c82468af76e5b191c79f5",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L142",
+          "line": 142,
+          "expr": "this.scanString();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L145",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L145",
+            "expr": "isDigit(ch) || (ch === '.' && isDigit(this.peek(1)))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:933ca4abae6d6212ae1ef79ce00b92e9929849e2269d340270e0d2c810effe9d",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanNumber@L230",
+          "expr": "scanNumber",
+          "line": 146
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L145",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L145",
+            "expr": "isDigit(ch) || (ch === '.' && isDigit(this.peek(1)))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:861fd930b87ed6a95cd118cd92c90b26647ccf082bd7aef56797ed9a02e1659f",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L146",
+          "line": 146,
+          "expr": "this.scanNumber();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L149",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L149",
+            "expr": "isIdentStart(ch)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a7cacdb41e41972f58c1a40fdc288743b3b5547ac0c59e5580b14ba1e270a8ba",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanIdent@L222",
+          "expr": "scanIdent",
+          "line": 150
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L149",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L149",
+            "expr": "isIdentStart(ch)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:baf4274bd8470c3b440ffe16980b7ca2d90da943645d78927a2a634cc67ccb19",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L150",
+          "line": 150,
+          "expr": "this.scanIdent();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L103",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b43231fba35f5ed28e2c4c195d155cca9b472cac5db7cfba8b85aa901ddee631",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanOp@L340",
+          "expr": "scanOp",
+          "line": 153
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L103",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L103",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fe5b219b01f86a04346a943f035ee755fe83766aaeca5a56aa635c5c850e735a",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L153",
+          "line": 153,
+          "expr": "this.scanOp();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0c602edcee41e4c7c8f8a06391b6cb7b390e64b0c29e776f7af4d8a1df84e11c",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.close@L442",
+          "expr": "close",
+          "line": 155
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fc21613aa1b8b58cc461181c31be9dbd6a7057bb65611e537580a8bc05605b10",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L155",
+          "line": 155,
+          "expr": "this.close();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b7bde9d1b3b4657c6a521b818ebe81dd3cc83d339c03277907dd34d9c3d09856",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L156",
+          "line": 156,
+          "expr": "return this.out;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:df3b7966b660502f6d110bc5219a3aea2b934f4f8e36fdab5715032cbd08af6d",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+          "expr": "isStringStart"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4182b582ac2973299df26b2e93a67b46f01a9621170b416233ddbf2cd22ec893",
+          "target": "sym:packages/parsers/src/python/lexer.ts#isDigit@L454",
+          "expr": "isDigit"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+        "procedureName": "Lexer.tokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ed6d90fbaa09b5552521c3906a96914d757929b0c2ebbb5fa4b93b5630890917",
+          "target": "sym:packages/parsers/src/python/lexer.ts#isIdentStart@L457",
+          "expr": "isIdentStart"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 20,
+    "referencedByFiles": [
+      "packages/parsers/src/python/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 20,
+    "assignments": 2,
+    "conditions": 12,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 14,
+      "recorded": 17,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

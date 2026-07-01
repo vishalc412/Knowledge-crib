@@ -1,0 +1,232 @@
+/**
+ * Incremental update (M6) — a git-anchored scoped re-extract of the changed files PLUS their
+ * reverse-dependency closure, producing an `IndexDelta` the caller applies to the derived index.
+ *
+ * Why the reverse-dependency closure (the P0-1 fix): `SoulStore.removeByFile(A)` drops edges whose
+ * `dst` resolves into A, i.e. incoming `B→A` from unchanged files that import/call/describe A. A resolve
+ * over ONLY A would never re-emit `B→A` (the resolver emits edges whose `src` lives in the passed files),
+ * so the edge would be silently lost and pushed to the index `removed[]`. Instead we re-resolve the union
+ * of changed files and every file whose references reach into them: B is re-resolved too, `B→A` is
+ * re-emitted, and — because B's source is unchanged — its shard chunk rewrites with byte-identical
+ * content (no git diff). The honest gate is "only the edited file's shard chunks differ" for a body-only
+ * edit; an API change legitimately alters reverse-deps' edge shards, which is correct, not a violation.
+ *
+ * Returns `null` when there is no anchor (fresh soul) or the repo isn't git — the caller degrades to a
+ * full `indexRepo`. Does NOT touch the index; the caller applies `delta` via `index.applyDelta`.
+ */
+import { buildDelta, fileScopedIds, pathFromId } from '@knowledge-crib/core';
+import type { IndexDelta, SoulStore } from '@knowledge-crib/core';
+import { ExtractorRegistry } from '@knowledge-crib/parsers';
+import type { Extractor } from '@knowledge-crib/parsers';
+import { runCluster } from './cluster/index.js';
+import type { ClusterStats } from './cluster/index.js';
+import { runDossiers } from './dossiers.js';
+import type { DossierStats } from './dossiers.js';
+import { runLink } from './linker/index.js';
+import type { LinkStats } from './linker/index.js';
+import type { SemanticStats } from './linker/index.js';
+import { runSemanticLink } from './linker/index.js';
+import { runParse } from './parse.js';
+import type { ParseStats } from './parse.js';
+import { defaultExtractors } from './pipeline.js';
+import { runResolve } from './resolve/index.js';
+import type { ResolveStats } from './resolve/index.js';
+import { metaForPaths, runStructure } from './structure.js';
+import { changedFilesSince, currentHead, uncommittedChanges } from './vcs.js';
+
+export interface UpdateOpts {
+  /** commit timestamp (deterministic tests). */
+  now?: string;
+  /** link persist threshold. */
+  linkThreshold?: number;
+  /** override the incremental anchor sha (else manifest.incrementalSince ?? repo.vcsHead). */
+  since?: string;
+  /** extractors to register; defaults to the full shipped fleet (Markdown + TypeScript + PL/SQL +
+   *  + Python + Java + C# + Go + Rust) — shared with `indexRepo` so an incremental update re-extracts
+   *  the changed file's language, never silently dropping Java/C#/Go/Rust/Python/SQL symbols. */
+  extractors?: Extractor[];
+  /** re-run structural clustering after re-extraction; default true (M7). Clustering is a global,
+   *  deterministic, idempotent phase — re-running it keeps cluster nodes + member-of edges consistent
+   *  with the re-extracted symbols so a body-only edit produces no spurious cluster-edge delta. */
+  cluster?: boolean;
+  /** run the INFERRED TF-IDF semantic linker pass over scoped docs; default false (M7). */
+  semantic?: boolean;
+  /** Include staged and unstaged working-tree changes in the delta without advancing `repo.vcsHead`.
+   * The derived index/soul is refreshed, `stats.incrementalSince` is set to current HEAD so subsequent
+   * normal updates see no committed diff, but `repo.vcsHead` stays pinned to the last real commit so
+   * `crib status` can still report the dirty delta. */
+  dirty?: boolean;
+  /** Restrict this update to files under any of these repo-relative package roots (multi-package
+   *  federation: independently re-sync one package's slice of a shared, already-indexed monorepo
+   *  soul without touching the rest). Changed files OUTSIDE every root are left untouched AND —
+   *  critically — the incremental anchor (`vcsHead`/`incrementalSince`) is only advanced if there
+   *  were none, so a later scoped-or-unscoped update still sees the full diff for whatever this run
+   *  skipped. Undefined ⇒ unscoped, the existing whole-repo behavior. */
+  packageRoots?: string[];
+}
+
+export interface UpdateReport {
+  delta: IndexDelta;
+  changedPaths: string[];
+  /** changed files outside every `packageRoots` prefix, left unprocessed this run (empty when
+   *  unscoped, or when every changed file happened to fall inside the requested package(s)). */
+  excludedPaths: string[];
+  scopeFiles: string[];
+  head: string;
+  parse: ParseStats;
+  resolve: ResolveStats;
+  link: LinkStats;
+  cluster: ClusterStats;
+  semantic: SemanticStats;
+  dossiers: DossierStats;
+}
+
+export interface UpdateNoopReport {
+  changedPaths: string[];
+  excludedPaths: string[];
+  scopeFiles: [];
+  head: string;
+  noop: true;
+}
+
+export type UpdateResult = UpdateReport | UpdateNoopReport | null;
+
+const EMPTY_PARSE: ParseStats = { filesParsed: 0, nodes: 0, edges: 0 };
+const EMPTY_RESOLVE: ResolveStats = {
+  imports: 0,
+  calls: 0,
+  inherits: 0,
+  implements: 0,
+  dropped: 0,
+};
+const EMPTY_LINK: LinkStats = { describes: 0, references: 0 };
+
+/** Scoped re-extract since the manifest's VCS anchor. `null` ⇒ caller does a full `indexRepo`. */
+export async function updateRepo(
+  soul: SoulStore,
+  root: string,
+  opts: UpdateOpts = {},
+): Promise<UpdateResult> {
+  let head: string;
+  try {
+    head = currentHead(root);
+  } catch {
+    return null; // non-git → degrade to full index
+  }
+
+  const manifest = soul.getManifest();
+  const since = opts.since ?? manifest.stats.incrementalSince ?? manifest.repo.vcsHead;
+  if (!since) return null; // no anchor yet → full index
+
+  const allChangedPaths = changedFilesSince(root, since);
+
+  if (opts.dirty) {
+    for (const p of uncommittedChanges(root)) {
+      if (!allChangedPaths.includes(p)) allChangedPaths.push(p);
+    }
+  }
+
+  // Package-scoped update: only re-sync files under one of the given roots. `excludedPaths` is what
+  // this run intentionally leaves pending — the anchor-advance guard below uses it to decide whether
+  // it's safe to move `vcsHead`/`incrementalSince` forward (only when nothing was skipped).
+  const inRoot = (p: string, r: string): boolean => p === r || p.startsWith(`${r}/`);
+  const packageRoots = opts.packageRoots;
+  const changedPaths = packageRoots
+    ? allChangedPaths.filter((p) => packageRoots.some((r) => inRoot(p, r)))
+    : allChangedPaths;
+  const excludedPaths = packageRoots
+    ? allChangedPaths.filter((p) => !packageRoots.some((r) => inRoot(p, r)))
+    : [];
+
+  // No in-scope file changes: advance the anchor ONLY if nothing was excluded — a scoped run that
+  // skipped out-of-scope changes must NOT advance the shared anchor, or a later update (for another
+  // package, or unscoped) would wrongly believe those skipped changes were already accounted for.
+  if (changedPaths.length === 0) {
+    if (excludedPaths.length === 0) {
+      if (opts.dirty) {
+        // Dirty no-op: keep the committed vcsHead pinned, but record that the soul is now current with HEAD.
+        soul.setIncrementalSince(head);
+      } else {
+        soul.setVcsHead(head);
+      }
+      soul.commit(opts.now);
+    }
+    return { changedPaths, excludedPaths, scopeFiles: [], head, noop: true };
+  }
+
+  // Reverse-dependency closure: every file whose references reach into a changed file. Captured BEFORE
+  // removal (single pass over edges; covers imports/calls/inherits/describes/references — any edge whose
+  // dst resolves into a changed path).
+  const changed = new Set(changedPaths);
+  const scope = new Set(changedPaths);
+  for (const edge of soul.iterateEdges()) {
+    const d = pathFromId(edge.dst);
+    if (d !== undefined && changed.has(d)) {
+      const s = pathFromId(edge.src);
+      if (s !== undefined) scope.add(s);
+    }
+  }
+
+  const before = fileScopedIds(soul, scope);
+
+  // Drop only the CHANGED files' records (reverse-dep nodes persist — their source is unchanged).
+  for (const p of changedPaths) soul.removeByFile(p);
+
+  // Re-extract changed files: structure (file nodes) + parse (symbols + intra-file edges). The
+  // default fleet is the SAME set `indexRepo` ships (via `defaultExtractors`) so a body-only edit to a
+  // `.java` controller re-emits its Spring routes/exposes/DI rather than vanishing from the graph.
+  const registry = new ExtractorRegistry();
+  for (const e of opts.extractors ?? defaultExtractors()) {
+    registry.register(e);
+  }
+  const changedMetas = metaForPaths(root, changedPaths);
+  runStructure(soul, root, changedMetas);
+  const parse = await runParse(soul, registry, root, changedMetas);
+
+  // Re-resolve the whole closure (changed + reverse deps): re-emits incoming B→A edges. The resolver
+  // only processes files in the passed set; the SymbolTable spans the whole soul (B's symbols remain).
+  const scopeMetas = metaForPaths(root, [...scope]);
+  const resolve = runResolve(soul, root, scopeMetas);
+
+  // Re-link only the docs in scope (InvertedIndex still spans the whole soul).
+  const scopeDocFiles = scopeMetas.filter((m) => m.lang === 'markdown').map((m) => m.path);
+  const link = runLink(soul, root, opts.linkThreshold, scopeDocFiles);
+
+  // Re-cluster (M7): clustering is global + idempotent, so re-running it re-emits the member-of edges
+  // for symbols in the changed files — preventing a body-only edit from silently dropping a cluster
+  // edge into `delta.removed`. `before` captured these ids pre-removal; re-emission makes after==before.
+  const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul);
+
+  // Semantic pass (M7, INFERRED): scoped to the docs in scope, like the deterministic re-link.
+  const semantic = opts.semantic ? runSemanticLink(soul, root, scopeDocFiles) : { added: 0 };
+
+  // Advance the shared incremental anchor only if this run left nothing pending — a package-scoped
+  // update that excluded other packages' changes must NOT advance it (see UpdateOpts.packageRoots).
+  if (excludedPaths.length === 0) {
+    if (opts.dirty) {
+      // Dirty update: refresh the soul to match HEAD + working tree, but keep vcsHead on the last real
+      // commit so `crib status` can still detect/report the uncommitted delta.
+      soul.setIncrementalSince(head);
+    } else {
+      soul.setVcsHead(head);
+    }
+  }
+  soul.commit(opts.now);
+
+  const committedAt = opts.now ?? soul.getManifest().stats.lastUpdated;
+  const dossiers = runDossiers(soul, root, committedAt);
+  const delta = buildDelta(soul, before, scope);
+  return {
+    delta,
+    changedPaths,
+    excludedPaths,
+    scopeFiles: [...scope].sort(),
+    head,
+    parse,
+    resolve,
+    link,
+    cluster,
+    semantic,
+    dossiers,
+  };
+}

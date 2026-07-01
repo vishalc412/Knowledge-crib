@@ -1,0 +1,149 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#decors@L563",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4c3dfb9994b1edb11923fa42ea02cd452aea71f5102a0dae411152a20ac04947",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#decors@L563",
+    "kind": "symbol",
+    "type": "function",
+    "name": "decors",
+    "qualifiedName": "decors",
+    "signature": "decors(node: ts.Node): ts.Decorator[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 563,
+      "end": 565
+    },
+    "callSites": [
+      {
+        "callee": "canHaveDecorators",
+        "line": 564
+      },
+      {
+        "callee": "getDecorators",
+        "line": 564
+      }
+    ]
+  },
+  "source": {
+    "text": "function decors(node: ts.Node): ts.Decorator[] {\n  return ts.canHaveDecorators(node) ? [...(ts.getDecorators(node) ?? [])] : [];\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 563
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L102",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 102
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#findDecBy@L345",
+      "confidence": 1,
+      "name": "findDecBy",
+      "qualifiedName": "findDecBy",
+      "signature": "findDecBy(node: ts.Node, names: Record<string, unknown>): ts.Decorator | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 345
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L351",
+      "confidence": 1,
+      "name": "paramDepType",
+      "qualifiedName": "paramDepType",
+      "signature": "paramDepType(p: ts.ParameterDeclaration): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 351
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L402",
+      "confidence": 1,
+      "name": "routeMetaOf",
+      "qualifiedName": "routeMetaOf",
+      "signature": "routeMetaOf(m: ts.MethodDeclaration): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 402
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L412",
+      "confidence": 1,
+      "name": "routeParamsOf",
+      "qualifiedName": "routeParamsOf",
+      "signature": "routeParamsOf(m: ts.MethodDeclaration): Array<{ name: string; type?: string; in: string }>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 412
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L561",
+      "snippet": "/** The decorators of a node (TS 5+ API; empty for none / unsupported nodes). `canHaveDecorators`",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#decors@L563",
+    "procedureName": "decors",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#decors@L563",
+        "procedureName": "decors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:38e39e38c4c5d9ff93453c2006c3b6bebd1b4f2f62a087f1af9bdf1a03b485ab",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L564",
+          "line": 564,
+          "expr": "return ts.canHaveDecorators(node) ? [...(ts.getDecorators(node) ?? [])] : [];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,299 @@
+{
+  "id": "sym:packages/parsers/src/rust/parser.ts#Parser.atEnd@L1489",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:168e967c6a0966bb4b0a098a9985c3ef323cbde21e39ac6042cce2605749ec2d",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/parser.ts#Parser.atEnd@L1489",
+    "kind": "symbol",
+    "type": "method",
+    "name": "atEnd",
+    "qualifiedName": "Parser.atEnd",
+    "signature": "atEnd(): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/parser.ts",
+    "span": {
+      "start": 1489,
+      "end": 1491
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 1490
+      }
+    ]
+  },
+  "source": {
+    "text": "  private atEnd(): boolean {\n    return this.i >= this.t.length || this.peek().type === 'EOF';\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1489
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseDecl@L262",
+      "confidence": 1,
+      "name": "parseDecl",
+      "qualifiedName": "Parser.parseDecl",
+      "signature": "parseDecl(): RustDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 262
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseDecls@L236",
+      "confidence": 1,
+      "name": "parseDecls",
+      "qualifiedName": "Parser.parseDecls",
+      "signature": "parseDecls(topLevel: boolean): { defs: RustDef[]; closeLine: number }",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 236
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseMatch@L1111",
+      "confidence": 1,
+      "name": "parseMatch",
+      "qualifiedName": "Parser.parseMatch",
+      "signature": "parseMatch(line: number): RustStmt",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1111
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseMatchArm@L1138",
+      "confidence": 1,
+      "name": "parseMatchArm",
+      "qualifiedName": "Parser.parseMatchArm",
+      "signature": "parseMatchArm(): { line: number; pat: string; body: RustStmt[] } | null",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1138
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList@L645",
+      "confidence": 1,
+      "name": "parseParamList",
+      "qualifiedName": "Parser.parseParamList",
+      "signature": "parseParamList(): { params: string[]; hasSelf: boolean }",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 645
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parsePathSum@L713",
+      "confidence": 1,
+      "name": "parsePathSum",
+      "qualifiedName": "Parser.parsePathSum",
+      "signature": "parsePathSum(): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 713
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseStmtBlock@L1013",
+      "confidence": 1,
+      "name": "parseStmtBlock",
+      "qualifiedName": "Parser.parseStmtBlock",
+      "signature": "parseStmtBlock(): { stmts: RustStmt[]; closeLine: number }",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1013
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseTypeAlias@L566",
+      "confidence": 1,
+      "name": "parseTypeAlias",
+      "qualifiedName": "Parser.parseTypeAlias",
+      "signature": "parseTypeAlias(startLine: number, attributes: string[], modifiers: string[]): RustDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 566
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.readUntilBlock@L1293",
+      "confidence": 1,
+      "name": "readUntilBlock",
+      "qualifiedName": "Parser.readUntilBlock",
+      "signature": "readUntilBlock(): string",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1293
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedBrackets@L904",
+      "confidence": 1,
+      "name": "skipBalancedBrackets",
+      "qualifiedName": "Parser.skipBalancedBrackets",
+      "signature": "skipBalancedBrackets(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 904
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+      "confidence": 1,
+      "name": "skipBalancedParens",
+      "qualifiedName": "Parser.skipBalancedParens",
+      "signature": "skipBalancedParens(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 887
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBraces@L933",
+      "confidence": 1,
+      "name": "skipBraces",
+      "qualifiedName": "Parser.skipBraces",
+      "signature": "skipBraces(): number",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 933
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipGenericAngle@L797",
+      "confidence": 1,
+      "name": "skipGenericAngle",
+      "qualifiedName": "Parser.skipGenericAngle",
+      "signature": "skipGenericAngle(): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 797
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipToCommaOrClose@L1324",
+      "confidence": 1,
+      "name": "skipToCommaOrClose",
+      "qualifiedName": "Parser.skipToCommaOrClose",
+      "signature": "skipToCommaOrClose(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1324
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipToSemi@L953",
+      "confidence": 1,
+      "name": "skipToSemi",
+      "qualifiedName": "Parser.skipToSemi",
+      "signature": "skipToSemi(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 953
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipToSemiOrClose@L979",
+      "confidence": 1,
+      "name": "skipToSemiOrClose",
+      "qualifiedName": "Parser.skipToSemiOrClose",
+      "signature": "skipToSemiOrClose(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 979
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipTypeUntilAssign@L1373",
+      "confidence": 1,
+      "name": "skipTypeUntilAssign",
+      "qualifiedName": "Parser.skipTypeUntilAssign",
+      "signature": "skipTypeUntilAssign(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1373
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipTypeUntilBody@L758",
+      "confidence": 1,
+      "name": "skipTypeUntilBody",
+      "qualifiedName": "Parser.skipTypeUntilBody",
+      "signature": "skipTypeUntilBody(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 758
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipWhereClause@L782",
+      "confidence": 1,
+      "name": "skipWhereClause",
+      "qualifiedName": "Parser.skipWhereClause",
+      "signature": "skipWhereClause(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 782
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1483
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.atEnd@L1489",
+    "procedureName": "Parser.atEnd",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.atEnd@L1489",
+        "procedureName": "Parser.atEnd",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f6eabba0832dd502dd0fe6d2db95a593517c22752740b57f5a0b5978fea10526",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
+          "expr": "peek",
+          "line": 1490
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.atEnd@L1489",
+        "procedureName": "Parser.atEnd",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f799fbb1e35a11838680af26db2f561c3c78ef535fc423cf909328ee53e718a1",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1490",
+          "line": 1490,
+          "expr": "return this.i >= this.t.length || this.peek().type === 'EOF';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

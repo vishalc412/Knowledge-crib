@@ -1,0 +1,356 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:0f3ceb933e1f92ccb7372546b3776893c08dd78fc162b604ee2250c1e47a5b87",
+  "builtAt": "2026-06-30T15:54:03.404Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+    "kind": "symbol",
+    "type": "function",
+    "name": "label",
+    "qualifiedName": "label",
+    "signature": "label(soul: SoulStore, id: string): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/python-resolver.test.ts",
+    "span": {
+      "start": 223,
+      "end": 234
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 224
+      },
+      {
+        "callee": "iterate",
+        "line": 224
+      },
+      {
+        "callee": "shortFile",
+        "line": 230
+      }
+    ]
+  },
+  "source": {
+    "text": "function label(soul: SoulStore, id: string): string {\n  const n: Node | undefined = [...soul.iterate()].find((x) => x.id === id);\n  if (!n) return id;\n  switch (n.kind) {\n    case 'symbol':\n      return `sym:${n.qualifiedName ?? n.name}`;\n    case 'file':\n      return `file:${shortFile(n.file)}`;\n    default:\n      return n.kind;\n  }\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 223
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#pair@L219",
+      "confidence": 1,
+      "name": "pair",
+      "qualifiedName": "pair",
+      "signature": "pair(soul: SoulStore, srcId: string, dstId: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/python-resolver.test.ts",
+      "line": 219
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#shortFile@L236",
+      "confidence": 1,
+      "name": "shortFile",
+      "qualifiedName": "shortFile",
+      "signature": "shortFile(p: string | undefined): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/python-resolver.test.ts",
+      "line": 236
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#shortFile@L223",
+      "confidence": 1,
+      "name": "shortFile",
+      "qualifiedName": "shortFile",
+      "signature": "shortFile(p: string | undefined): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "line": 223
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#11-verification-strategy-end-to-end",
+      "heading": "11. Verification strategy (end-to-end)",
+      "anchor": "11-verification-strategy-end-to-end",
+      "snippet": "11. Verification strategy (end-to-end)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#4-link-precision-measurement-m4-the-trust-gate",
+      "heading": "4. Link-precision measurement (M4 — the trust gate)",
+      "anchor": "4-link-precision-measurement-m4-the-trust-gate",
+      "snippet": "4. Link-precision measurement (M4 — the trust gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#creative-direction-signal-grid",
+      "heading": "Creative Direction: Signal Grid",
+      "anchor": "creative-direction-signal-grid",
+      "snippet": "Creative Direction: Signal Grid",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#4-9-seconds-the-product",
+      "heading": "4-9 seconds: The Product",
+      "anchor": "4-9-seconds-the-product",
+      "snippet": "4-9 seconds: The Product",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+    "procedureName": "label",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/python-resolver.test.ts@L225",
+      "case:packages/pipeline/src/resolve/python-resolver.test.ts@L227",
+      "case:packages/pipeline/src/resolve/python-resolver.test.ts@L229"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:257b7d80c710d5bc47bfe63d038254fd387c0d0d91111628453c4bd0538e880b",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L224",
+          "line": 224,
+          "expr": "const n: Node | undefined = [...soul.iterate()].find((x) => x.id === id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6523b2dccd565bf2c227f8ec7a5832c14724d7bd4b6680d3044bfb3ff48e3e55",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 224
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+        "procedureName": "label",
+        "guard": "cond:packages/pipeline/src/resolve/python-resolver.test.ts@L225",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/python-resolver.test.ts@L225",
+            "expr": "!n",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9dbafd1f154087ee42ecf9db789d606dbdb8456734c5989c461eb768164d6dfd",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L225",
+          "line": 225,
+          "expr": "return id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4c025f43fba71bb406984e7205c1b245b41e15042724a45c18009f2cd70c3ea9",
+          "target": "case:packages/pipeline/src/resolve/python-resolver.test.ts@L227",
+          "line": 227,
+          "expr": "symbol"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/python-resolver.test.ts@L227",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/python-resolver.test.ts@L227",
+            "expr": "symbol",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5167a99f543c45d0fdd6e7f6cfdb9368d97d3ab97781a61b6f1f760797ae81a7",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L228",
+          "line": 228,
+          "expr": "return `sym:${n.qualifiedName ?? n.name}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ac3b7ffc302045256836901af260a4d0b4f826efe91c07d1fd049e480161b4c9",
+          "target": "case:packages/pipeline/src/resolve/python-resolver.test.ts@L229",
+          "line": 229,
+          "expr": "file"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/python-resolver.test.ts@L229",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/python-resolver.test.ts@L229",
+            "expr": "file",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9c39c7d01136f22b3c8d6ed0a8bf806ac019d4e1e984b75945d92a13918c1bc5",
+          "target": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#shortFile@L236",
+          "expr": "shortFile",
+          "line": 230
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/python-resolver.test.ts@L229",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/python-resolver.test.ts@L229",
+            "expr": "file",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cab5e28bd622d3def6c32a7978a98b337112bd2f4e1ed151f73a9666be0cb527",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L230",
+          "line": 230,
+          "expr": "return `file:${shortFile(n.file)}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d37708ddc30750c0159075bd1ff6d3501c7448eb2bb710ca0fc66f3a21f26c0f",
+          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#shortFile@L223",
+          "expr": "shortFile",
+          "line": 230
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7774ccb5e8e3a63e1aa38fc9f9b15df66bb2f3d115d3bb048310249aa8c38319",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L232",
+          "line": 232,
+          "expr": "return n.kind;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/python-resolver.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 2,
+    "calls": {
+      "resolved": 3,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

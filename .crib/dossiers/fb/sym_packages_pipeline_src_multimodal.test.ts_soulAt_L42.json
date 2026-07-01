@@ -1,0 +1,157 @@
+{
+  "id": "sym:packages/pipeline/src/multimodal.test.ts#soulAt@L42",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:5c667828e4548b7047fbf1d43386482dc825f83f89f10ce3246a250318504a47",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/multimodal.test.ts#soulAt@L42",
+    "kind": "symbol",
+    "type": "function",
+    "name": "soulAt",
+    "qualifiedName": "soulAt",
+    "signature": "soulAt(): SoulStore",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/multimodal.test.ts",
+    "span": {
+      "start": 42,
+      "end": 46
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 43
+      },
+      {
+        "callee": "newManifest",
+        "line": 43
+      },
+      {
+        "callee": "load",
+        "line": 44
+      }
+    ]
+  },
+  "source": {
+    "text": "function soulAt(): SoulStore {\n  const s = new SoulStore(join(crib, '.crib'), { manifest: newManifest({ now: NOW, root: '.' }) });\n  s.load();\n  return s;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 42
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/multimodal.test.ts#indexedSoul@L49",
+      "confidence": 1,
+      "name": "indexedSoul",
+      "qualifiedName": "indexedSoul",
+      "signature": "indexedSoul(): Promise<SoulStore>",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal.test.ts",
+      "line": 49
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+      "confidence": 1,
+      "name": "newManifest",
+      "qualifiedName": "newManifest",
+      "signature": "newManifest(opts: NewManifestOpts = {}): Manifest",
+      "type": "function",
+      "file": "packages/core/src/manifest.ts",
+      "line": 28
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/multimodal.test.ts#soulAt@L42",
+    "procedureName": "soulAt",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal.test.ts#soulAt@L42",
+        "procedureName": "soulAt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e6c75b9e37313475b18b5ce2b734b411ac66b34a07e002cad9a2dba42950bf9",
+          "target": "stmt:packages/pipeline/src/multimodal.test.ts@L43",
+          "line": 43,
+          "expr": "const s = new SoulStore(join(crib, '.crib'), { manifest: newManifest({ now: NOW, root: '.' }) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal.test.ts#soulAt@L42",
+        "procedureName": "soulAt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5a4c33942bccc525e5d5348b6b30448d1d428bc929c9fcbfbe650852f7c0fc2c",
+          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
+          "expr": "newManifest",
+          "line": 43
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal.test.ts#soulAt@L42",
+        "procedureName": "soulAt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:776293048ada4c3189942474d2d76670945e08dbab4668ec94d2d5ee84d53fd3",
+          "target": "stmt:packages/pipeline/src/multimodal.test.ts@L44",
+          "line": 44,
+          "expr": "s.load();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal.test.ts#soulAt@L42",
+        "procedureName": "soulAt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9e2aa52617d786c74b9bc9e032117643633c5ff3fd59878cffdf6807db151143",
+          "target": "stmt:packages/pipeline/src/multimodal.test.ts@L45",
+          "line": 45,
+          "expr": "return s;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/pipeline/src/multimodal.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

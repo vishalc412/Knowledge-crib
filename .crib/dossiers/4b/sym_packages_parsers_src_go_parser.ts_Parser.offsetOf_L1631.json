@@ -1,0 +1,105 @@
+{
+  "id": "sym:packages/parsers/src/go/parser.ts#Parser.offsetOf@L1631",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:60c2cbdd5f5ec2331aae80ed2ff833aa2d4ad18ea4c239014582bbc25fbdaac2",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/parser.ts#Parser.offsetOf@L1631",
+    "kind": "symbol",
+    "type": "method",
+    "name": "offsetOf",
+    "qualifiedName": "Parser.offsetOf",
+    "signature": "offsetOf(line: number, col: number): number",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/parser.ts",
+    "span": {
+      "start": 1631,
+      "end": 1633
+    },
+    "callSites": [
+      {
+        "callee": "max",
+        "line": 1632
+      }
+    ]
+  },
+  "source": {
+    "text": "  private offsetOf(line: number, col: number): number {\n    return this.lineStarts[Math.max(0, line - 1)]! + (col - 1);\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1631
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.tokensText@L1621",
+      "confidence": 1,
+      "name": "tokensText",
+      "qualifiedName": "Parser.tokensText",
+      "signature": "tokensText(run: Token[]): string",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1621
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/parser.ts@L1630",
+      "snippet": "/** Code-unit offset of a 1-based (line, col) in the source. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.offsetOf@L1631",
+    "procedureName": "Parser.offsetOf",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.offsetOf@L1631",
+        "procedureName": "Parser.offsetOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:60c66aee9ad75c25cfea663d9c47b7c9d78cbb39608615b138c5153abab01b5e",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L1632",
+          "line": 1632,
+          "expr": "return this.lineStarts[Math.max(0, line - 1)]! + (col - 1);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/go/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

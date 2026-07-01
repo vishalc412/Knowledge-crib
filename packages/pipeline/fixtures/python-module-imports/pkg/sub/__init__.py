@@ -1,0 +1,1 @@
+"""sub package — multi-part `import a.b` fixture (M8 NICE-2)."""

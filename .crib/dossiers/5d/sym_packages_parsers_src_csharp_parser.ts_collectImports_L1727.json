@@ -1,0 +1,799 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:5efac051a3190a571a95bea3d0063e663149b5f176deca4c83b6965776ec100c",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+    "kind": "symbol",
+    "type": "function",
+    "name": "collectImports",
+    "qualifiedName": "collectImports",
+    "signature": "collectImports(tokens: Token[]): { pkg: string; imports: CsharpImport[] }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 1727,
+      "end": 1814
+    },
+    "callSites": [
+      {
+        "callee": "isOp",
+        "line": 1733
+      },
+      {
+        "callee": "push",
+        "line": 1738
+      },
+      {
+        "callee": "isOp",
+        "line": 1740
+      },
+      {
+        "callee": "consumeDotted",
+        "line": 1757
+      },
+      {
+        "callee": "join",
+        "line": 1758
+      },
+      {
+        "callee": "isNameVal",
+        "line": 1774
+      },
+      {
+        "callee": "consumeDotted",
+        "line": 1776
+      },
+      {
+        "callee": "consumeDotted",
+        "line": 1782
+      },
+      {
+        "callee": "join",
+        "line": 1784
+      },
+      {
+        "callee": "push",
+        "line": 1785
+      },
+      {
+        "callee": "atLineEnd",
+        "line": 1794
+      },
+      {
+        "callee": "join",
+        "line": 1798
+      },
+      {
+        "callee": "slice",
+        "line": 1798
+      },
+      {
+        "callee": "push",
+        "line": 1799
+      },
+      {
+        "callee": "atLineEnd",
+        "line": 1808
+      }
+    ]
+  },
+  "source": {
+    "text": "export function collectImports(tokens: Token[]): { pkg: string; imports: CsharpImport[] } {\n  const imports: CsharpImport[] = [];\n  let pkg = '';\n  let i = 0;\n  const isNameVal = (k: number, v: string) => tokens[k]?.type === 'NAME' && tokens[k]?.value === v;\n  const isOp = (k: number, v: string) => tokens[k]?.type === 'OP' && tokens[k]?.value === v;\n  const atLineEnd = (k: number) => !tokens[k] || isOp(k, ';');\n  const consumeDotted = (k: number): { parts: string[]; j: number } => {\n    const parts: string[] = [];\n    let j = k;\n    while (j < tokens.length && tokens[j]!.type === 'NAME') {\n      parts.push(tokens[j]!.value);\n      j++;\n      if (isOp(j, '.')) {\n        j++;\n        continue;\n      }\n      break;\n    }\n    return { parts, j };\n  };\n\n  while (i < tokens.length) {\n    const tk = tokens[i]!;\n    if (tk.type !== 'NAME') {\n      i++;\n      continue;\n    }\n    if (tk.value === 'namespace' && !pkg) {\n      // capture the outermost namespace name (block or file-scoped) for the resolver's pkgPrefix.\n      const { parts, j } = consumeDotted(i + 1);\n      if (parts.length) pkg = parts.join('.');\n      i = j;\n      continue;\n    }\n    if (tk.value === 'using') {\n      const line = tk.line;\n      let j = i + 1;\n      let global = false;\n      // `global using` (and `global using X = Y`)\n      if (isNameVal(i + 1, 'global') && tokens[i + 2]?.type === 'NAME') {\n        // `global` here is the `global using` keyword, not the global namespace alias `global::`.\n        // Only treat as global-using when followed by another NAME (the import).\n        global = true;\n        j++;\n      }\n      // `using static A.B.C;`\n      const isStatic = isNameVal(j, 'static');\n      if (isStatic) j++;\n      const { parts, j: j2 } = consumeDotted(j);\n      j = j2;\n      // `using A = B.C.D;` alias — `parts` is the alias name (single segment), then `=`, then target.\n      if (isOp(j, '=')) {\n        const alias = parts[parts.length - 1] ?? '';\n        j++; // =\n        const { parts: tparts, j: j3 } = consumeDotted(j);\n        j = j3;\n        const target = tparts.join('.');\n        imports.push({\n          module: '',\n          name: alias,\n          static: isStatic,\n          alias: true,\n          target,\n          global,\n          line,\n        });\n        i = atLineEnd(j) ? j + 1 : j;\n        continue;\n      }\n      const last = parts[parts.length - 1] ?? '';\n      const module = parts.length > 1 ? parts.slice(0, -1).join('.') : '';\n      imports.push({\n        module,\n        name: last,\n        static: isStatic,\n        alias: false,\n        target: '',\n        global,\n        line,\n      });\n      i = atLineEnd(j) ? j + 1 : j;\n      continue;\n    }\n    i++;\n  }\n  return { pkg, imports };\n}",
+    "truncated": false,
+    "totalLines": 88,
+    "startLine": 1727
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+      "confidence": 1,
+      "name": "parseCsharp",
+      "qualifiedName": "parseCsharp",
+      "signature": "parseCsharp(src: string): CsharpModule",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 176
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1510",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1510
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports.atLineEnd@L1733",
+      "confidence": 1,
+      "name": "atLineEnd",
+      "qualifiedName": "collectImports.atLineEnd",
+      "signature": "atLineEnd(…)",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1733
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports.consumeDotted@L1734",
+      "confidence": 1,
+      "name": "consumeDotted",
+      "qualifiedName": "collectImports.consumeDotted",
+      "signature": "consumeDotted(…)",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1734
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports.isNameVal@L1731",
+      "confidence": 1,
+      "name": "isNameVal",
+      "qualifiedName": "collectImports.isNameVal",
+      "signature": "isNameVal(…)",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1731
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports.isOp@L1732",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "collectImports.isOp",
+      "signature": "isOp(…)",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1732
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/parser.ts@L1726",
+      "snippet": "/** Scan the token stream for `using` statements and the file's outermost namespace. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+    "procedureName": "collectImports",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/parser.ts@L1749",
+      "cond:packages/parsers/src/csharp/parser.ts@L1762",
+      "cond:packages/parsers/src/csharp/parser.ts@L1779",
+      "cond:packages/parsers/src/csharp/parser.ts@L1755",
+      "cond:packages/parsers/src/csharp/parser.ts@L1758",
+      "cond:packages/parsers/src/csharp/parser.ts@L1767"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e7c42cfe1a58c46bdbd876701c353e016075c14de7cd79c4eba1f73f499d6f88",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1510",
+          "expr": "isOp",
+          "line": 1733
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c3de1331e9268c604e8ee17f77e6835cd1930d56a1a73b9bcfa578ec3de99c6",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1733",
+          "line": 1733,
+          "expr": "const atLineEnd = (k: number) => !tokens[k] || isOp(k, ';');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5578749206725b52199f0d5bfd3d62d80281af55d7815e19569e9335477003bd",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#collectImports.isOp@L1732",
+          "expr": "isOp",
+          "line": 1733
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a2092e93bf58df3ddff6159b3b27f955e701aab135cfe58cb6adf3cb1db11703",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1734",
+          "line": 1734,
+          "expr": "const consumeDotted = (k: number): { parts: string[]; j: number } => {\n    const parts: string[] = [];\n    let j = k;\n    while (j < tokens.length && tokens[j]!.type === 'NAME') {\n      parts.push(tokens[j]!.value);\n      j++;\n      if (isOp(j, '.')) {\n        j++;\n        continue;\n      }\n      break;\n    }\n    return { parts, j };\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:95a388668fceb88c39f74d34ed948c896e02367ee01ccbb927a10541075a7956",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1738
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1779",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1779",
+            "expr": "isOp(j, '=')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:af89f016ef595850843ec5789e9669f1cd3464c74f798323e888e7f872f7a0a5",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#collectImports.consumeDotted@L1734",
+          "expr": "consumeDotted",
+          "line": 1757
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1755",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1755",
+            "expr": "tk.value === 'namespace' && !pkg",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ddbdbfe301a32b4d781d458995a0d115665241d8f9ef0a35d47df9b19dc93164",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1757",
+          "line": 1757,
+          "expr": "const { parts, j } = consumeDotted(i + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1758",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1755",
+            "expr": "tk.value === 'namespace' && !pkg"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1758",
+            "expr": "parts.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d4fe69baed7854fddc338c7e097b77767c517c6d41b791667fb1c5d6f9132fd9",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1758",
+          "line": 1758,
+          "expr": "pkg = parts.join('.');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1755",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1755",
+            "expr": "tk.value === 'namespace' && !pkg",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d4c8b1f2e2ead0e6a5de85283fca48ca78d8a96a227a82e2ea2274b0ef788975",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1759",
+          "line": 1759,
+          "expr": "i = j;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1767",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1767",
+            "expr": "isNameVal(i + 1, 'global') && tokens[i + 2]?.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:518a1939982892ddb31d4109fb232592927f7062c33b4677df70c481f8d7c1fb",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1770",
+          "line": 1770,
+          "expr": "global = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0134b15d9b3f5e326bdd2b4a659582b1db141d31352efc629e9fb42409bb573b",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#collectImports.isNameVal@L1731",
+          "expr": "isNameVal",
+          "line": 1774
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ceb089636b81cdb74323bbcbee0f2b033574509df608a031f362162d654ea44a",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1774",
+          "line": 1774,
+          "expr": "const isStatic = isNameVal(j, 'static');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca7a6080073522e1269cc96120aee767c0e98ddd4c0da63ce3d7748587a02ad6",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1776",
+          "line": 1776,
+          "expr": "const { parts, j: j2 } = consumeDotted(j);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b2c3bacac7a72db0b6a065f21f61305e2c01a5d139a5425990389677769f7d5b",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1777",
+          "line": 1777,
+          "expr": "j = j2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1779",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1779",
+            "expr": "isOp(j, '=')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aa05ab009f843656c866b03936ba61d08c971d5bedb0edb4200376a97006e620",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1782",
+          "line": 1782,
+          "expr": "const { parts: tparts, j: j3 } = consumeDotted(j);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1779",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1779",
+            "expr": "isOp(j, '=')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce44909399bb8dd9a1092be6583464adf8bdcd48f97b7c5deeb546d9f852bd19",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1783",
+          "line": 1783,
+          "expr": "j = j3;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1779",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1779",
+            "expr": "isOp(j, '=')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:67f2f771894f1cdbe04f416ca0bdb473f99942b502e7abfd7a1800b96033fc37",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1784",
+          "line": 1784,
+          "expr": "const target = tparts.join('.');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1779",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1779",
+            "expr": "isOp(j, '=')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c2414e2c2d5ed74aa9fa8acd1e8074103a17f189db399da6515f38bb0f4991b",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1785",
+          "line": 1785,
+          "expr": "imports.push({\n          module: '',\n          name: alias,\n          static: isStatic,\n          alias: true,\n          target,\n          global,\n          line,\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:79f814e23f922bba273fb5809f81da5fffe8a2c2ee0f926c1d7b14b17c3751fb",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#collectImports.atLineEnd@L1733",
+          "expr": "atLineEnd",
+          "line": 1794
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1779",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1779",
+            "expr": "isOp(j, '=')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:66dde3fa2d4cb67ad302fbb502dacdd8b5c7616181df0a1258b3ac3f7a5438fd",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1794",
+          "line": 1794,
+          "expr": "i = atLineEnd(j) ? j + 1 : j;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c96f3a9a366ae1194f85714727e53f642bbebc8009b8ac27fb36e1726d1c9ea6",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1798",
+          "line": 1798,
+          "expr": "const module = parts.length > 1 ? parts.slice(0, -1).join('.') : '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:850072502ab00a7a97ccefe0bf99a625d978e47e4da9074a0dbab3eeffc179ed",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1799",
+          "line": 1799,
+          "expr": "imports.push({\n        module,\n        name: last,\n        static: isStatic,\n        alias: false,\n        target: '',\n        global,\n        line,\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1749",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1762",
+            "expr": "tk.value === 'using'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:57a272f720257868d94894dbbf2f7712601e506724c91b60f9060387325db150",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1808",
+          "line": 1808,
+          "expr": "i = atLineEnd(j) ? j + 1 : j;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+        "procedureName": "collectImports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a2429ebe23b7b3e37bb9d85c222f8105b197246c68e4b3f9f4d3bce40aba9dfa",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1813",
+          "line": 1813,
+          "expr": "return { pkg, imports };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 18,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 18,
+    "assignments": 7,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 15,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

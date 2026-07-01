@@ -1,0 +1,127 @@
+{
+  "id": "sym:packages/pipeline/src/cluster.test.ts#tsRepo@L63",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:fd33869dc397b703cffcb1c124283710ebf24e10714a495728fba70adc256a4e",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/cluster.test.ts#tsRepo@L63",
+    "kind": "symbol",
+    "type": "function",
+    "name": "tsRepo",
+    "qualifiedName": "tsRepo",
+    "signature": "tsRepo(): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/cluster.test.ts",
+    "span": {
+      "start": 63,
+      "end": 76
+    },
+    "callSites": [
+      {
+        "callee": "mkdirSync",
+        "line": 64
+      },
+      {
+        "callee": "join",
+        "line": 64
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 65
+      },
+      {
+        "callee": "join",
+        "line": 66
+      },
+      {
+        "callee": "join",
+        "line": 67
+      }
+    ]
+  },
+  "source": {
+    "text": "  function tsRepo(): string {\n    mkdirSync(join(repo, 'src'), { recursive: true });\n    writeFileSync(\n      join(repo, 'src', 'auth.ts'),\n      [\n        'export class AuthService {',\n        '  login(): void { this.issue(); }',\n        '  issue(): void { log(); }',\n        '}',\n        'export function log(): void {}',\n      ].join('\\n'),\n    );\n    return repo;\n  }",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 63
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/cluster.test.ts#tsRepo@L63",
+    "procedureName": "tsRepo",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/cluster.test.ts#tsRepo@L63",
+        "procedureName": "tsRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6df544f1fc1c2ab2caa1948348b1dfb1fbb009693ce35eac704e368c30282fb2",
+          "target": "stmt:packages/pipeline/src/cluster.test.ts@L64",
+          "line": 64,
+          "expr": "mkdirSync(join(repo, 'src'), { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster.test.ts#tsRepo@L63",
+        "procedureName": "tsRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4958eafaa49a3f2c22fb711f8495ea40739c0e0304352633162aab622583a943",
+          "target": "stmt:packages/pipeline/src/cluster.test.ts@L65",
+          "line": 65,
+          "expr": "writeFileSync(\n      join(repo, 'src', 'auth.ts'),\n      [\n        'export class AuthService {',\n        '  login(): void { this.issue(); }',\n        '  issue(): void { log(); }',\n        '}',\n        'export function log(): void {}',\n      ].join('\\n'),\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster.test.ts#tsRepo@L63",
+        "procedureName": "tsRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1ecaecc06df1ba6f8229bf65e2631593ffac6d47d47d436b1275ca4102112f7b",
+          "target": "stmt:packages/pipeline/src/cluster.test.ts@L75",
+          "line": 75,
+          "expr": "return repo;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 5,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

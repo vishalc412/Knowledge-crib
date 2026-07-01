@@ -1,0 +1,236 @@
+{
+  "id": "sym:packages/pipeline/src/structure.ts#discoverFiles.inScopeDir@L108",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:3ad4566146761bc6da850efaabb51ad6256f96e256eb6b985563af9ed7d0a2bc",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/structure.ts#discoverFiles.inScopeDir@L108",
+    "kind": "symbol",
+    "type": "function",
+    "name": "inScopeDir",
+    "qualifiedName": "discoverFiles.inScopeDir",
+    "signature": "inScopeDir(…)",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/structure.ts",
+    "span": {
+      "start": 108,
+      "end": 117
+    }
+  },
+  "source": {
+    "text": "  const inScopeDir = (rel: string): boolean => {\n    if (!scoped) return true;\n    if (rel === '') return true;\n    for (const pr of packageRoots) {\n      if (rel === pr) return true;\n      if (pr.startsWith(`${rel}/`)) return true; // rel is an ancestor of a package root\n      if (rel.startsWith(`${pr}/`)) return true; // rel is inside a package root\n    }\n    return false;\n  };",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 108
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles@L98",
+      "confidence": 1,
+      "name": "discoverFiles",
+      "qualifiedName": "discoverFiles",
+      "signature": "discoverFiles(root: string, opts: DiscoverOpts = {}): FileMeta[]",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 98
+    },
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L119",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "discoverFiles.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 119
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/structure.ts@L106",
+      "snippet": "// True if dir `rel` should be descended into under package scoping: root always; otherwise `rel`",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.inScopeDir@L108",
+    "procedureName": "discoverFiles.inScopeDir",
+    "conditions": [
+      "cond:packages/pipeline/src/structure.ts@L109",
+      "cond:packages/pipeline/src/structure.ts@L110",
+      "cond:packages/pipeline/src/structure.ts@L111",
+      "cond:packages/pipeline/src/structure.ts@L112",
+      "cond:packages/pipeline/src/structure.ts@L113",
+      "cond:packages/pipeline/src/structure.ts@L114"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.inScopeDir@L108",
+        "procedureName": "discoverFiles.inScopeDir",
+        "guard": "cond:packages/pipeline/src/structure.ts@L109",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L109",
+            "expr": "!scoped",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2ac07663118020e92cdc79a5728a037c148f4ce45224825b81ef1b5d53fe3df1",
+          "target": "stmt:packages/pipeline/src/structure.ts@L109",
+          "line": 109,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.inScopeDir@L108",
+        "procedureName": "discoverFiles.inScopeDir",
+        "guard": "cond:packages/pipeline/src/structure.ts@L110",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L110",
+            "expr": "rel === ''",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:16bd3d989284a1f8f1e77592d9e9bcfee8c2f14b2b7d6744dc5f78376e9aaa37",
+          "target": "stmt:packages/pipeline/src/structure.ts@L110",
+          "line": 110,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.inScopeDir@L108",
+        "procedureName": "discoverFiles.inScopeDir",
+        "guard": "cond:packages/pipeline/src/structure.ts@L112",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L111",
+            "expr": "packageRoots"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L112",
+            "expr": "rel === pr",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0f2b2a4ba44a9a3dfb750c64d245f487878ce8795603eda60e0f27df26686a54",
+          "target": "stmt:packages/pipeline/src/structure.ts@L112",
+          "line": 112,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.inScopeDir@L108",
+        "procedureName": "discoverFiles.inScopeDir",
+        "guard": "cond:packages/pipeline/src/structure.ts@L113",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L111",
+            "expr": "packageRoots"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L113",
+            "expr": "pr.startsWith(`${rel}/`)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8a6ec001edbe8f926e3e2f0733ebc16913fc4d3a1fd369249821bed9df0827b1",
+          "target": "stmt:packages/pipeline/src/structure.ts@L113",
+          "line": 113,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.inScopeDir@L108",
+        "procedureName": "discoverFiles.inScopeDir",
+        "guard": "cond:packages/pipeline/src/structure.ts@L114",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L111",
+            "expr": "packageRoots"
+          },
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L114",
+            "expr": "rel.startsWith(`${pr}/`)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:82e3b15616391934a224f101a2f45bd9d49a2bf96c2f5c3c5399ed920df21c0b",
+          "target": "stmt:packages/pipeline/src/structure.ts@L114",
+          "line": 114,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles.inScopeDir@L108",
+        "procedureName": "discoverFiles.inScopeDir",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:deabe7847268f4cbbbe42f45964608a8d6ed45670ad433fccfef0c5270f6ffbb",
+          "target": "stmt:packages/pipeline/src/structure.ts@L116",
+          "line": 116,
+          "expr": "return false;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/pipeline/src/structure.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

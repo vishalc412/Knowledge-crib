@@ -1,0 +1,156 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#computeLineStarts@L1139",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ab352d5c9f93e65a51280acc97f30284c34526856052292d450e667c3eaa957c",
+  "builtAt": "2026-06-26T05:09:36.599Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#computeLineStarts@L1139",
+    "kind": "symbol",
+    "type": "function",
+    "name": "computeLineStarts",
+    "qualifiedName": "computeLineStarts",
+    "signature": "computeLineStarts(src: string): number[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 1139,
+      "end": 1145
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 1142
+      }
+    ]
+  },
+  "source": {
+    "text": "function computeLineStarts(src: string): number[] {\n  const starts = [0];\n  for (let i = 0; i < src.length; i++) {\n    if (src[i] === '\\n') starts.push(i + 1);\n  }\n  return starts;\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 1139
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser@L207",
+      "confidence": 1,
+      "name": "Parser",
+      "qualifiedName": "Parser",
+      "type": "class",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 207
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.ts@L1138",
+      "snippet": "/** Character offset of the start of each 1-based line. lineStarts[0] = 0 (start of line 1). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#computeLineStarts@L1139",
+    "procedureName": "computeLineStarts",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.ts@L1141",
+      "cond:packages/parsers/src/java/parser.ts@L1142"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#computeLineStarts@L1139",
+        "procedureName": "computeLineStarts",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1142",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1141",
+            "expr": "i < src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1142",
+            "expr": "src[i] === '\\n'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:724473f2054ac948a47f81c0a3619dc7483a8f2c3021aef61af9cd2e03ec8af1",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1142",
+          "line": 1142,
+          "expr": "starts.push(i + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#computeLineStarts@L1139",
+        "procedureName": "computeLineStarts",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:77656269fb12f0205de932e71653ff9189b1753e1030dfb12b72467212fb5bec",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1142
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#computeLineStarts@L1139",
+        "procedureName": "computeLineStarts",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dc98f6003f1a9aa2b375c305f7d4afc84badff014e4317a806bb526d9a17aaba",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1144",
+          "line": 1144,
+          "expr": "return starts;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

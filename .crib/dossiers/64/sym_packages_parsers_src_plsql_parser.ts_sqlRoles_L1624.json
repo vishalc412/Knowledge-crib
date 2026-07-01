@@ -1,0 +1,284 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:fb15f8c1c3fb2ac30e7b037d209f869565c4844484702f29b81c6371f3217027",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+    "kind": "symbol",
+    "type": "function",
+    "name": "sqlRoles",
+    "qualifiedName": "sqlRoles",
+    "signature": "sqlRoles(verb: string, tables: string[]): { reads: string[]; writes: string[] }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 1624,
+      "end": 1638
+    },
+    "callSites": [
+      {
+        "callee": "slice",
+        "line": 1630
+      },
+      {
+        "callee": "slice",
+        "line": 1630
+      },
+      {
+        "callee": "slice",
+        "line": 1632
+      },
+      {
+        "callee": "slice",
+        "line": 1632
+      },
+      {
+        "callee": "slice",
+        "line": 1634
+      }
+    ]
+  },
+  "source": {
+    "text": "export function sqlRoles(verb: string, tables: string[]): { reads: string[]; writes: string[] } {\n  switch (verb) {\n    case 'select':\n      return { reads: [...tables], writes: [] };\n    case 'insert':\n    case 'merge':\n      return { writes: tables.slice(0, 1), reads: tables.slice(1) };\n    case 'update':\n      return { writes: tables.slice(0, 1), reads: tables.slice(1) };\n    case 'delete':\n      return { writes: tables.slice(0, 1), reads: [] };\n    default:\n      return { reads: [], writes: [] };\n  }\n}",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 1624
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addSql@L453",
+      "confidence": 1,
+      "name": "addSql",
+      "qualifiedName": "Builder.addSql",
+      "signature": "addSql(s: SqlStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 453
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/parser.ts@L1613",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+    "procedureName": "sqlRoles",
+    "conditions": [
+      "case:packages/parsers/src/plsql/parser.ts@L1626",
+      "case:packages/parsers/src/plsql/parser.ts@L1629",
+      "case:packages/parsers/src/plsql/parser.ts@L1631",
+      "case:packages/parsers/src/plsql/parser.ts@L1633"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+        "procedureName": "sqlRoles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c79bdb5b5bd4ec1f29f4d0aa95c32ff8fe9ba501deea4b7d4583486cf16ce93",
+          "target": "case:packages/parsers/src/plsql/parser.ts@L1626",
+          "line": 1626,
+          "expr": "select"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+        "procedureName": "sqlRoles",
+        "guard": "case:packages/parsers/src/plsql/parser.ts@L1626",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/parser.ts@L1626",
+            "expr": "select",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:02692082a36b5df8b4e0bcff8cbe9dd1474d740268171b7eb9b6d030ebcada7f",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1627",
+          "line": 1627,
+          "expr": "return { reads: [...tables], writes: [] };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+        "procedureName": "sqlRoles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b8224141d0b4005aa06cd465ec82b220c52d28463911d878c4b978585df972a5",
+          "target": "case:packages/parsers/src/plsql/parser.ts@L1628",
+          "line": 1628,
+          "expr": "insert"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+        "procedureName": "sqlRoles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cdd025382195a8fa1a5538f99ecd9ee45c6d50ed68b4c93ba626a2ed44370f87",
+          "target": "case:packages/parsers/src/plsql/parser.ts@L1629",
+          "line": 1629,
+          "expr": "merge"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+        "procedureName": "sqlRoles",
+        "guard": "case:packages/parsers/src/plsql/parser.ts@L1629",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/parser.ts@L1629",
+            "expr": "merge",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a412fc5f75e6ce4b2c4fab6b86d885060f1d8c86df691019a07eb3a6e0120be7",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1630",
+          "line": 1630,
+          "expr": "return { writes: tables.slice(0, 1), reads: tables.slice(1) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+        "procedureName": "sqlRoles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0fececbb5b7a71f252c2aaca63acb7599b3aa2a417b41922cc11d9061e8db30b",
+          "target": "case:packages/parsers/src/plsql/parser.ts@L1631",
+          "line": 1631,
+          "expr": "update"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+        "procedureName": "sqlRoles",
+        "guard": "case:packages/parsers/src/plsql/parser.ts@L1631",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/parser.ts@L1631",
+            "expr": "update",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:84b2bee17686656492d7a417ae1268d13a2ae1b42a2e7ec222fa07be7b116a45",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1632",
+          "line": 1632,
+          "expr": "return { writes: tables.slice(0, 1), reads: tables.slice(1) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+        "procedureName": "sqlRoles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e731e7ef0e078b47093d90abb5d7797d61e3609d8fa0f7e023a1093ede845210",
+          "target": "case:packages/parsers/src/plsql/parser.ts@L1633",
+          "line": 1633,
+          "expr": "delete"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+        "procedureName": "sqlRoles",
+        "guard": "case:packages/parsers/src/plsql/parser.ts@L1633",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/plsql/parser.ts@L1633",
+            "expr": "delete",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af2bdb4b61dddf96a916a583c0c5bee9ecd66603d3a5bb1f25a28ab7ff12bbad",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1634",
+          "line": 1634,
+          "expr": "return { writes: tables.slice(0, 1), reads: [] };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#sqlRoles@L1624",
+        "procedureName": "sqlRoles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d6ede97950e94c071b2ce6d525a7e361ac0ade88cad77a72fbe83bc29e76f6a5",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1636",
+          "line": 1636,
+          "expr": "return { reads: [], writes: [] };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 5,
+    "calls": {
+      "resolved": 0,
+      "recorded": 5,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "id": "sym:packages/parsers/fixtures/rust/rules.rs#roles@L33",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:390ce7784717dfe9d7c978375b56fab6623fef8645274e0536d6cddef4a6f681",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/rust/rules.rs#roles@L33",
+    "kind": "symbol",
+    "type": "fn",
+    "name": "roles",
+    "qualifiedName": "roles",
+    "signature": "fn roles(user)",
+    "lang": "rust",
+    "file": "packages/parsers/fixtures/rust/rules.rs",
+    "span": {
+      "start": 33,
+      "end": 35
+    },
+    "params": [
+      "user"
+    ]
+  },
+  "source": {
+    "text": "pub fn roles(user: &str) -> Vec<String> {\n    vec![]\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 33
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/fixtures/rust/rules.rs#validate@L14",
+      "confidence": 1,
+      "name": "validate",
+      "qualifiedName": "validate",
+      "signature": "fn validate(user)",
+      "type": "fn",
+      "file": "packages/parsers/fixtures/rust/rules.rs",
+      "line": 14
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#3-overall-verdict",
+      "heading": "3. Overall verdict",
+      "anchor": "3-overall-verdict",
+      "snippet": "3. Overall verdict",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/rust/rules.rs#roles@L33",
+    "procedureName": "roles",
+    "conditions": [],
+    "rules": []
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": [
+      "packages/parsers/fixtures/rust/rules.rs"
+    ]
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

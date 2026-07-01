@@ -1,0 +1,179 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#instructionsFor@L1117",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:161eaa0734439b208fd3e7a8a75d53b368329bf4a50484ddc5966ab1328bc394",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#instructionsFor@L1117",
+    "kind": "symbol",
+    "type": "function",
+    "name": "instructionsFor",
+    "qualifiedName": "instructionsFor",
+    "signature": "instructionsFor(layer: EnrichLayer): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1117,
+      "end": 1127
+    }
+  },
+  "source": {
+    "text": "function instructionsFor(layer: EnrichLayer): string {\n  const common =\n    'Author detailed analysis plus semantic graph nodes/edges. Ground every claim in seed/lowerLayer evidence. Do not invent code facts. Edges may point only to real soul ids or localIds authored in this item or earlier saved items.';\n  if (layer === 'symbol')\n    return `${common} Focus on purpose, rules, invariants, IO, side effects, errors, and risks for this symbol.`;\n  if (layer === 'file')\n    return `${common} Synthesize the file purpose from its symbol analyses and identify feature/capability relationships.`;\n  if (layer === 'cluster')\n    return `${common} Name the module/cluster and describe responsibilities plus inter-module semantic dependencies.`;\n  return `${common} Produce the whole-system bible: architecture, subsystems, cross-cutting flows, glossary, stack, and risk map.`;\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 1117
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.workItem@L773",
+      "confidence": 1,
+      "name": "workItem",
+      "qualifiedName": "EnrichmentStore.workItem",
+      "signature": "workItem(target: {\n    layer: EnrichLayer;\n    id: string;\n    hash: string;\n    node?: Node;\n  }): EnrichWorkItem",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 773
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "heading": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "anchor": "3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "snippet": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#add-a-new-enrichment-layer",
+      "heading": "Add a New Enrichment Layer",
+      "anchor": "add-a-new-enrichment-layer",
+      "snippet": "Add a New Enrichment Layer",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#instructionsFor@L1117",
+    "procedureName": "instructionsFor",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1120",
+      "cond:packages/mcp/src/enrichment.ts@L1122",
+      "cond:packages/mcp/src/enrichment.ts@L1124"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#instructionsFor@L1117",
+        "procedureName": "instructionsFor",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1120",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1120",
+            "expr": "layer === 'symbol'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:47a3fbefcb469b05207f5bc625e6c21d8276d98eab5f29c123f20ca3225defb9",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1121",
+          "line": 1121,
+          "expr": "return `${common} Focus on purpose, rules, invariants, IO, side effects, errors, and risks for this symbol.`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#instructionsFor@L1117",
+        "procedureName": "instructionsFor",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1122",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1122",
+            "expr": "layer === 'file'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a3fb70ec7b95a2e9a41ce7d46b9b75dd386be6f37ccf4d5ab750ee228905ab45",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1123",
+          "line": 1123,
+          "expr": "return `${common} Synthesize the file purpose from its symbol analyses and identify feature/capability relationships.`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#instructionsFor@L1117",
+        "procedureName": "instructionsFor",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1124",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1124",
+            "expr": "layer === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:39866b709abc156b115f2771506fb2f8124c5b720bab76dd9238e4bc3dadea98",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1125",
+          "line": 1125,
+          "expr": "return `${common} Name the module/cluster and describe responsibilities plus inter-module semantic dependencies.`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#instructionsFor@L1117",
+        "procedureName": "instructionsFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c78ef4f72ef435b20d223b228a02396919ca3e403adbd47bb08c8011804faa5e",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1126",
+          "line": 1126,
+          "expr": "return `${common} Produce the whole-system bible: architecture, subsystems, cross-cutting flows, glossary, stack, and risk map.`;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,205 @@
+{
+  "id": "sym:packages/cli/src/registry.ts#unregisterProject@L128",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:5b8477988d1da1eb8529de5055a22656d77dd113f7d0d7e6d248db953d7048a8",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/registry.ts#unregisterProject@L128",
+    "kind": "symbol",
+    "type": "function",
+    "name": "unregisterProject",
+    "qualifiedName": "unregisterProject",
+    "signature": "unregisterProject(absRoot: string, env: NodeJS.ProcessEnv = process.env): boolean",
+    "lang": "typescript",
+    "file": "packages/cli/src/registry.ts",
+    "span": {
+      "start": 128,
+      "end": 134
+    },
+    "callSites": [
+      {
+        "callee": "readRegistry",
+        "line": 129
+      },
+      {
+        "callee": "writeRegistry",
+        "line": 132
+      }
+    ]
+  },
+  "source": {
+    "text": "export function unregisterProject(absRoot: string, env: NodeJS.ProcessEnv = process.env): boolean {\n  const reg = readRegistry(env);\n  if (!(absRoot in reg.projects)) return false;\n  delete reg.projects[absRoot];\n  writeRegistry(reg, env);\n  return true;\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 128
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+      "confidence": 1,
+      "name": "readRegistry",
+      "qualifiedName": "readRegistry",
+      "signature": "readRegistry(env: NodeJS.ProcessEnv = process.env): Registry",
+      "type": "function",
+      "file": "packages/cli/src/registry.ts",
+      "line": 60
+    },
+    {
+      "id": "sym:packages/cli/src/registry.ts#writeRegistry@L75",
+      "confidence": 1,
+      "name": "writeRegistry",
+      "qualifiedName": "writeRegistry",
+      "signature": "writeRegistry(reg: Registry, env: NodeJS.ProcessEnv = process.env): void",
+      "type": "function",
+      "file": "packages/cli/src/registry.ts",
+      "line": 75
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/registry.ts@L127",
+      "snippet": "/** Remove a project from the registry. Returns true if it was present. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/registry.ts#unregisterProject@L128",
+    "procedureName": "unregisterProject",
+    "conditions": [
+      "cond:packages/cli/src/registry.ts@L130"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#unregisterProject@L128",
+        "procedureName": "unregisterProject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:199feea3abd30ef14b266c3aaefadf9e798a3f4446d0cabd499d1205d2431080",
+          "target": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+          "expr": "readRegistry",
+          "line": 129
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#unregisterProject@L128",
+        "procedureName": "unregisterProject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1ec0f61d52b1d2810eea10ffcf43b852202f0d100a11db7a8d7ab30818abd95f",
+          "target": "stmt:packages/cli/src/registry.ts@L129",
+          "line": 129,
+          "expr": "const reg = readRegistry(env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#unregisterProject@L128",
+        "procedureName": "unregisterProject",
+        "guard": "cond:packages/cli/src/registry.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/registry.ts@L130",
+            "expr": "!(absRoot in reg.projects)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:14ce478fc7f962fdbb96b08e53af7b90e54298bc815c985adb0244a0087cd50b",
+          "target": "stmt:packages/cli/src/registry.ts@L130",
+          "line": 130,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#unregisterProject@L128",
+        "procedureName": "unregisterProject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:29a95813eb99e3de81d433f9fa154ccb74b8f3e45b384a1d31df8d307e6bbd43",
+          "target": "sym:packages/cli/src/registry.ts#writeRegistry@L75",
+          "expr": "writeRegistry",
+          "line": 132
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#unregisterProject@L128",
+        "procedureName": "unregisterProject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:382fbd5615d4a7d1c974284125bfa9a3f40fb5613ea6e3c26ea1f47519e1e027",
+          "target": "stmt:packages/cli/src/registry.ts@L132",
+          "line": 132,
+          "expr": "writeRegistry(reg, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/registry.ts#unregisterProject@L128",
+        "procedureName": "unregisterProject",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:50541fb4b354af047f45f211dd40a766adabce779bd000df603429bfaedf6a15",
+          "target": "stmt:packages/cli/src/registry.ts@L133",
+          "line": 133,
+          "expr": "return true;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

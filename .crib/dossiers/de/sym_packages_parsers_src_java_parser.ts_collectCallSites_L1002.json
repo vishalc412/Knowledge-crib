@@ -1,0 +1,251 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#collectCallSites@L1002",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:62561925453a2724734818dfc0588ce6f1ab6ac540a3fc9d87bb0b6f87097146",
+  "builtAt": "2026-06-26T05:09:36.599Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#collectCallSites@L1002",
+    "kind": "symbol",
+    "type": "function",
+    "name": "collectCallSites",
+    "qualifiedName": "collectCallSites",
+    "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): JavaCallSite[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 1002,
+      "end": 1040
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 1021
+      },
+      {
+        "callee": "push",
+        "line": 1027
+      },
+      {
+        "callee": "slice",
+        "line": 1029
+      }
+    ]
+  },
+  "source": {
+    "text": "export function collectCallSites(tokens: Token[], excluded: Set<number>): JavaCallSite[] {\n  const calls: JavaCallSite[] = [];\n  let i = 0;\n  while (i < tokens.length) {\n    const tk = tokens[i]!;\n    if (tk.type !== 'NAME') {\n      i++;\n      continue;\n    }\n    const chain: string[] = [tk.value];\n    const line = tk.line;\n    let j = i + 1;\n    while (\n      j < tokens.length &&\n      tokens[j]!.type === 'OP' &&\n      tokens[j]!.value === '.' &&\n      tokens[j + 1] &&\n      tokens[j + 1]!.type === 'NAME'\n    ) {\n      chain.push(tokens[j + 1]!.value);\n      j += 2;\n    }\n    // a `(` immediately after the chain (and not an excluded def/annotation paren) ⇒ a call\n    if (j < tokens.length && tokens[j]!.type === 'OP' && tokens[j]!.value === '(') {\n      if (!excluded.has(j)) {\n        calls.push({\n          head: chain[0]!,\n          tail: chain.slice(1),\n          name: chain[chain.length - 1]!,\n          line,\n        });\n      }\n      i = j + 1;\n      continue;\n    }\n    i++;\n  }\n  return calls;\n}",
+    "truncated": false,
+    "totalLines": 39,
+    "startLine": 1002
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+      "confidence": 1,
+      "name": "parseJava",
+      "qualifiedName": "parseJava",
+      "signature": "parseJava(src: string): JavaModule",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 194
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.ts@L996",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#collectCallSites@L1002",
+    "procedureName": "collectCallSites",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.ts@L1005",
+      "cond:packages/parsers/src/java/parser.ts@L1014",
+      "cond:packages/parsers/src/java/parser.ts@L1025",
+      "cond:packages/parsers/src/java/parser.ts@L1026"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectCallSites@L1002",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1014",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1014",
+            "expr": "j < tokens.length &&\n      tokens[j]!.type === 'OP' &&\n      tokens[j]!.value === '.' &&\n      tokens[j + 1] &&\n      tokens[j + 1]!.type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5ef661a0caeccca5f0dd9a2130a28d8808389382068a41849934d0fa6e48df1c",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1021",
+          "line": 1021,
+          "expr": "chain.push(tokens[j + 1]!.value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectCallSites@L1002",
+        "procedureName": "collectCallSites",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fb7c180d8f0c1cd8153c95dc6b5c6e08a6200f50189b7d5aa5d698eb34e65778",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1021
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectCallSites@L1002",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1014",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1014",
+            "expr": "j < tokens.length &&\n      tokens[j]!.type === 'OP' &&\n      tokens[j]!.value === '.' &&\n      tokens[j + 1] &&\n      tokens[j + 1]!.type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d3e9cdadfb1b288b397341f89a13cb6a863771145c0a61ee3ad6f7fcf00eaa64",
+          "target": "assign:packages/parsers/src/java/parser.ts@L1022",
+          "line": 1022,
+          "expr": "j += 2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectCallSites@L1002",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1026",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1025",
+            "expr": "j < tokens.length && tokens[j]!.type === 'OP' && tokens[j]!.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1026",
+            "expr": "!excluded.has(j)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:deac687b6f747f5b2ec883fdba39385b4fd666b2a6045b80f1b998a2b0980156",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1027",
+          "line": 1027,
+          "expr": "calls.push({\n          head: chain[0]!,\n          tail: chain.slice(1),\n          name: chain[chain.length - 1]!,\n          line,\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectCallSites@L1002",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1025",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1005",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1025",
+            "expr": "j < tokens.length && tokens[j]!.type === 'OP' && tokens[j]!.value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cc60ea6e3d33626bdc85df996ef5165588776ee25f87441b36f2a3513217f04d",
+          "target": "assign:packages/parsers/src/java/parser.ts@L1034",
+          "line": 1034,
+          "expr": "i = j + 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectCallSites@L1002",
+        "procedureName": "collectCallSites",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:858105724c0044d133bff937c9a7ce65e5fec713294f53ead92bba09c20abfec",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1039",
+          "line": 1039,
+          "expr": "return calls;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 2,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

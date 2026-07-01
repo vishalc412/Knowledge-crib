@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Offline-first: load vendored React/ReactDOM (SRI-verified, byte-identical to the
+     hashes support.js pins) BEFORE support.js so loadReactUmd()'s
+     `if (w.React && w.ReactDOM) return Promise.resolve()` short-circuits and the canvas
+     boots with zero network calls. The unpkg/SRI fallback path in support.js is preserved
+     for any future non-offline use. -->
+<script src="./vendor/react.production.min.js"></script>
+<script src="./vendor/react-dom.production.min.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: rgba(128,140,160,0.35); border-radius: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  @keyframes kc-panel-in { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes kc-fade-in { from { opacity: 0; } to { opacity: 1; } }
+  @media (max-width: 900px) {
+    .kc-topbar { gap: 8px !important; padding: 0 10px !important; }
+    .kc-brand { flex: 0 0 34px !important; min-width: 34px !important; overflow: hidden !important; }
+    .kc-brand-title, .kc-brand-stats { display: none !important; }
+    .kc-search input { width: 188px !important; }
+    .kc-hide-compact { display: none !important; }
+  }
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="position:fixed; inset:0; overflow:hidden; font-family:'IBM Plex Sans',system-ui,sans-serif; background: {{ t.bg }};">
+
+  <canvas ref="{{ canvasRef }}" style="position:absolute; inset:0; width:100%; height:100%; display:block; cursor:grab;"></canvas>
+
+  <!-- Top bar -->
+  <div class="kc-topbar" style="position:absolute; top:0; left:0; right:0; height:58px; display:flex; align-items:center; gap:14px; padding:0 20px; background: {{ t.panel }}; color: {{ t.text }}; border-bottom:1px solid {{ t.border }}; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 10px 34px rgba(0,0,0,0.18); z-index:20;">
+    <div class="kc-brand" style="display:flex; align-items:center; gap:10px; flex:0 0 280px; min-width:210px;">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" style="flex:none;">
+        <circle cx="6" cy="7" r="2.6" fill="#5b8cff"></circle>
+        <circle cx="18" cy="6" r="2.2" fill="#34d399"></circle>
+        <circle cx="16" cy="18" r="2.6" fill="#c084fc"></circle>
+        <circle cx="6" cy="17" r="2.2" fill="#f59e0b"></circle>
+        <path d="M6 7L18 6M18 6L16 18M16 18L6 17M6 17L6 7M6 7L16 18" stroke="{{ t.sub }}" stroke-width="1.1" opacity="0.55"></path>
+      </svg>
+      <div style="min-width:0;">
+        <div class="kc-brand-title" style="font-size:14px; font-weight:600; letter-spacing:-0.01em; line-height:1.1;">Knowledge&#8209;crib</div>
+        <div class="kc-brand-stats" style="font-size:11px; color: {{ t.sub }}; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ compactStats }}</div>
+      </div>
+    </div>
+
+    <div style="flex:1;"></div>
+
+    <div class="kc-search" style="position:relative; display:flex; align-items:center;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="position:absolute; left:11px; pointer-events:none; opacity:0.55;"><circle cx="10.5" cy="10.5" r="6.5" stroke="{{ t.text }}" stroke-width="2"></circle><path d="M20 20L16 16" stroke="{{ t.text }}" stroke-width="2" stroke-linecap="round"></path></svg>
+      <input ref="{{ searchRef }}" onInput="{{ onSearch }}" placeholder="Search code, docs, tables…" style="width:230px; height:36px; padding:0 12px 0 34px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 13px 'IBM Plex Sans'; outline:none;">
+    </div>
+
+    <div style="height:36px; display:flex; align-items:center; padding:3px; gap:3px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }};">
+      <button onClick="{{ showOverview }}" title="Architecture overview" style="height:28px; padding:0 10px; border-radius:7px; border:none; background: {{ overviewBg }}; color: {{ overviewFg }}; font:600 12px 'IBM Plex Sans'; cursor:pointer;">Overview</button>
+      <button onClick="{{ showFocus }}" title="Focused node graph" style="height:28px; padding:0 10px; border-radius:7px; border:none; background: {{ focusBg }}; color: {{ focusFg }}; font:600 12px 'IBM Plex Sans'; cursor:pointer;">Focus</button>
+    </div>
+
+    <button class="kc-hide-compact" onClick="{{ startTour }}" title="Guided tour through the project" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ tourBorder }}; background: {{ tourBg }}; color: {{ tourFg }}; font:600 12.5px 'IBM Plex Sans'; cursor:pointer;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M8 5v14l11-7z" fill="currentColor"></path></svg>
+      Tour
+    </button>
+
+    <button class="kc-hide-compact" onClick="{{ toggleBlast }}" title="Blast radius — what breaks if this changes" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ blastBorder }}; background: {{ blastBg }}; color: {{ blastFg }}; font:600 12.5px 'IBM Plex Sans'; cursor:pointer;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="currentColor"></path></svg>
+      Blast radius
+    </button>
+
+     <button onClick="{{ toggleTheme }}" title="Toggle theme" style="width:36px; height:36px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer;">
+      <span style="font-size:15px;">{{ themeIcon }}</span>
+    </button>
+
+    <div style="height:36px; display:flex; align-items:center; padding:3px; gap:3px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }};">
+      <button onClick="{{ zoomOut }}" title="Zoom out / shrink layout" style="width:30px; height:28px; border-radius:7px; border:none; background:transparent; color: {{ t.text }}; font:800 16px 'IBM Plex Sans'; cursor:pointer;">−</button>
+      <span style="min-width:42px; text-align:center; color: {{ t.sub }}; font:700 11px 'IBM Plex Sans';">{{ zoomLabel }}</span>
+      <button onClick="{{ zoomIn }}" title="Zoom in / expand layout" style="width:30px; height:28px; border-radius:7px; border:none; background:transparent; color: {{ t.text }}; font:800 16px 'IBM Plex Sans'; cursor:pointer;">+</button>
+    </div>
+
+    <button onClick="{{ resetView }}" title="Reset view" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:600 12.5px 'IBM Plex Sans'; cursor:pointer;">Fit</button>
+  </div>
+
+  <!-- Legend / kind filter -->
+    <div style="position:absolute; left:14px; bottom:14px; z-index:20; max-width:240px; padding:11px 12px 9px; border-radius:10px; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+    <div style="font-size:10.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:8px;">Node types — click to filter</div>
+    <div style="display:flex; flex-wrap:wrap; gap:6px;">
+      <sc-for list="{{ kindList }}" as="k" hint-placeholder-count="8">
+        <button onClick="{{ k.onToggle }}" style="display:flex; align-items:center; gap:6px; padding:4px 9px 4px 7px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 11.5px 'IBM Plex Sans'; cursor:pointer; opacity: {{ k.op }};">
+          <span style="width:9px; height:9px; border-radius:50%; background: {{ k.color }};"></span>{{ k.label }}
+        </button>
+      </sc-for>
+    </div>
+    <div style="margin-top:9px; font-size:10.5px; color: {{ t.sub }}; line-height:1.5;">Scroll to zoom · drag to pan · click a node, then <b style="color: {{ t.text }};">← →</b> to walk neighbors, <b style="color: {{ t.text }};">↵</b> to jump</div>
+  </div>
+
+  <!-- Inspector panel -->
+  <sc-if value="{{ sel }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; top:80px; right:14px; bottom:14px; width:360px; max-width:360px; z-index:21; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 18px 50px rgba(0,0,0,0.3); animation: kc-panel-in 0.26s cubic-bezier(0.2,0.7,0.2,1);">
+      <!-- header -->
+      <div style="padding:16px 16px 14px; border-bottom:1px solid {{ t.border }};">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+            <span style="width:11px; height:11px; border-radius:50%; flex:none; background: {{ sel.color }}; box-shadow:0 0 0 4px {{ sel.glow }};"></span>
+            <span style="font-size:10.5px; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color: {{ sel.color }};">{{ sel.kindLabel }}</span>
+          </div>
+          <div style="display:flex; gap:6px; flex:none;">
+            <button onClick="{{ exportSub }}" title="Export this focused view as JSON" style="height:26px; padding:0 9px; display:flex; align-items:center; gap:5px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              Export
+            </button>
+            <button onClick="{{ closePanel }}" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
+          </div>
+        </div>
+        <div style="font-size:18px; font-weight:600; letter-spacing:-0.01em; margin-top:9px; word-break:break-word;">{{ sel.name }}</div>
+        <sc-if value="{{ sel.qualified }}" hint-placeholder-val="{{ true }}">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color: {{ t.sub }}; margin-top:3px;">{{ sel.qualified }}</div>
+        </sc-if>
+      </div>
+
+      <div style="flex:1; overflow-y:auto; padding:15px 16px 18px;">
+        <!-- blast banner -->
+        <sc-if value="{{ sel.blastOn }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; gap:10px; align-items:flex-start; padding:11px 12px; border-radius:11px; background: rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); margin-bottom:15px;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style="flex:none; margin-top:1px;"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#f87171"></path></svg>
+            <div style="font-size:12.5px; line-height:1.45;"><b style="color:#f87171;">{{ sel.blastCount }} nodes affected.</b> <span style="color: {{ t.sub }};">Changing this can ripple out to everything that depends on it.</span></div>
+          </div>
+        </sc-if>
+
+        <!-- summary -->
+        <div style="font-size:13.5px; line-height:1.55; color: {{ t.text }};">{{ sel.summary }}</div>
+
+        <!-- signature -->
+        <sc-if value="{{ sel.signature }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:13px; padding:11px 12px; border-radius:10px; background: {{ t.code }}; border:1px solid {{ t.border }}; font-family:'IBM Plex Mono',monospace; font-size:12px; line-height:1.5; color: {{ t.codeText }}; overflow-x:auto; white-space:pre;">{{ sel.signature }}</div>
+        </sc-if>
+
+        <!-- meta row -->
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:13px;">
+          <sc-if value="{{ sel.file }}" hint-placeholder-val="{{ true }}">
+            <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-family:'IBM Plex Mono',monospace; font-size:11px; color: {{ t.sub }};">{{ sel.file }}</span>
+          </sc-if>
+          <sc-if value="{{ sel.lang }}" hint-placeholder-val="{{ true }}">
+            <span style="display:inline-flex; align-items:center; padding:4px 9px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:11px; color: {{ t.sub }};">{{ sel.lang }}</span>
+          </sc-if>
+        </div>
+
+        <!-- connection sections -->
+        <sc-for list="{{ sel.sections }}" as="sec" hint-placeholder-count="3">
+          <div style="margin-top:20px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:9px;">
+              <span style="font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ sec.color }};">{{ sec.title }}</span>
+              <span style="font-size:10.5px; color: {{ t.sub }}; background: {{ t.chip }}; padding:1px 7px; border-radius:20px;">{{ sec.count }}</span>
+              <div style="flex:1; height:1px; background: {{ t.border }};"></div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:3px;">
+              <sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="2">
+                <button onClick="{{ it.onGo }}" style="display:flex; align-items:center; gap:9px; width:100%; text-align:left; padding:8px 9px; border-radius:9px; border:1px solid transparent; background:transparent; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Sans';" style-hover="background: rgba(127,127,127,0.12); border-color: rgba(127,127,127,0.25);">
+                  <span style="width:9px; height:9px; border-radius:50%; flex:none; background: {{ it.color }};"></span>
+                  <span style="flex:1; min-width:0;">
+                    <span style="display:block; font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ it.label }}</span>
+                    <span style="display:block; font-size:11px; color: {{ t.sub }}; margin-top:1px;"><span style="color: {{ it.relColor }}; font-weight:500;">{{ it.phrase }}</span>{{ it.tail }}</span>
+                  </span>
+                  <sc-if value="{{ it.badge }}" hint-placeholder-val="{{ true }}">
+                    <span style="flex:none; font-size:9.5px; font-weight:600; padding:2px 6px; border-radius:5px; background: {{ it.badgeBg }}; color: {{ it.badgeFg }};">{{ it.badge }}</span>
+                  </sc-if>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+
+        <!-- evidence -->
+        <sc-if value="{{ sel.evidence }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:20px;">
+            <div style="font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:9px;">Evidence</div>
+            <div style="padding:11px 12px; border-radius:10px; border-left:3px solid {{ sel.color }}; background: {{ t.chip }}; font-size:12.5px; line-height:1.5; color: {{ t.sub }}; font-style:italic;">“{{ sel.evidence }}”</div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Focus empty-state hint — no selection, no search: tell the user how to start. -->
+  <sc-if value="{{ focusEmpty }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:15; max-width:380px; padding:18px 22px; border-radius:14px; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 14px 40px rgba(0,0,0,0.22); text-align:center; animation: kc-fade-in 0.22s ease; pointer-events:none;">
+      <div style="font-size:15px; font-weight:600; margin-bottom:5px;">Focus view</div>
+      <div style="font-size:13px; line-height:1.5; color: {{ t.sub }};">Search above, or switch to Overview and click a module to start exploring its neighborhood.</div>
+    </div>
+  </sc-if>
+
+  <!-- guided tour card -->
+  <sc-if value="{{ tour.on }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; left:50%; bottom:22px; transform:translateX(-50%); z-index:25; width:440px; max-width:calc(100% - 320px); padding:15px 16px 14px; border-radius:14px; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 18px 50px rgba(0,0,0,0.34); animation: kc-fade-in 0.22s ease;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+        <span style="font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#5b8cff;">Guided tour · {{ tour.step }} / {{ tour.total }}</span>
+        <button onClick="{{ tour.onExit }}" style="width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font-size:14px; line-height:1;">×</button>
+      </div>
+      <div style="font-size:15.5px; font-weight:600; letter-spacing:-0.01em; margin-bottom:5px;">{{ tour.title }}</div>
+      <div style="font-size:13px; line-height:1.5; color: {{ t.sub }};">{{ tour.text }}</div>
+      <div style="display:flex; gap:8px; margin-top:14px;">
+        <button onClick="{{ tour.onPrev }}" style="flex:1; height:34px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:600 12.5px 'IBM Plex Sans'; cursor:pointer; opacity: {{ tour.prevOp }};">Back</button>
+        <button onClick="{{ tour.onNext }}" style="flex:1.5; height:34px; border-radius:9px; border:none; background:#5b8cff; color:#fff; font:600 12.5px 'IBM Plex Sans'; cursor:pointer;">{{ tour.nextLabel }}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- tooltip -->
+  <div ref="{{ tipRef }}" style="position:absolute; z-index:30; pointer-events:none; display:none; max-width:260px; padding:9px 11px; border-radius:10px; background: {{ t.tip }}; color: {{ t.tipText }}; border:1px solid {{ t.border }}; box-shadow:0 8px 26px rgba(0,0,0,0.32); font-family:'IBM Plex Sans'; animation: kc-fade-in 0.12s ease;"></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;linkDistance&quot;:{&quot;editor&quot;:&quot;float&quot;,&quot;default&quot;:1.6,&quot;min&quot;:0.6,&quot;max&quot;:1.6,&quot;step&quot;:0.1,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  // focusDepth: how many hops of context Focus renders around the selected node. Defaults to 1
+  // (root + direct neighbors only) — lean by default, deep on demand — instead of always drawing
+  // the full 2-hop neighborhood, which on a real repo can be hundreds of nodes with no "you are
+  // here" (see toggleFocusDepth / the Horizon panel's expand control).
+  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedTrail: [], blast: false, query: '', hidden: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1 };
+
+  KIND = { file:'#7c8aa5', symbol:'#5b8cff', method:'#6f9bff', function:'#8aa8ff', class:'#5b8cff', interface:'#a78bfa', 'doc-section':'#34d399', table:'#f59e0b', column:'#fbbf24', statement:'#2dd4bf', condition:'#f87171',
+           // producer-emitted kinds (viz.ts deriveNodeKind + enums.ts) that were missing → gray + 'undefined' tooltip
+           enum:'#a78bfa', type:'#22d3ee', getter:'#8aa8ff', setter:'#8aa8ff', property:'#6f9bff', 'media-seg':'#fbbf24', explanation:'#34d399' };
+  KLABEL = { file:'File', symbol:'Symbol', method:'Method', function:'Function', class:'Class', interface:'Interface', 'doc-section':'Doc', table:'Table', column:'Column', statement:'SQL', condition:'Condition',
+           enum:'Enum', type:'Type', getter:'Getter', setter:'Setter', property:'Property', 'media-seg':'Media', explanation:'Explanation' };
+  REL = { calls:'#6f9bff', imports:'#7c8aa5', inherits:'#a78bfa', implements:'#a78bfa', describes:'#34d399', references:'#34d399', 'member-of':'#646f80', executes:'#2dd4bf', reads:'#38bdf8', writes:'#0ea5e9', 'guarded-by':'#f87171' };
+  PHRASE = { calls:'calls', imports:'imports', inherits:'inherits from', implements:'implements', describes:'documents', references:'mentions', 'member-of':'part of', executes:'runs', reads:'reads from', writes:'writes to', 'guarded-by':'guarded by' };
+  RPHRASE = { calls:'called by', imports:'imported by', inherits:'extended by', implements:'implemented by', describes:'documented in', references:'mentioned in', 'member-of':'contains', executes:'run by', reads:'read by', writes:'written by', 'guarded-by':'guards' };
+  DEPTH_COLORS = { 0:'#f8fafc', 1:'#38bdf8', 2:'#f59e0b' };
+  DEP = new Set(['calls','imports','reads','writes','executes','implements','inherits']);
+  // Statement-level / control-flow kinds — mirrors packages/ui/src/viz.ts NOISE_KINDS. Real signal,
+  // but not architecture. Kept visible ("show everything, rank hard") yet faded by default so the
+  // architectural layer (file/class/interface/method/route/table/component) reads first; a
+  // sel/hover/search-match/horizon node always snaps back to full opacity.
+  NOISE_KINDS = new Set(['assignment','case-branch','condition','cursor','raise','exception-handler','statement']);
+  TOUR = [
+    { id:'registerRoutes', title:'The front door', text:'Every HTTP request enters through registerRoutes, which wires each endpoint to the service method behind it.' },
+    { id:'requireAuth', title:'Gatekeeping', text:'Protected routes pass through requireAuth — middleware that rejects anyone without a valid session token.' },
+    { id:'login', title:'Logging in', text:'AuthService.login is the heart of authentication: it checks the password, then issues a session.' },
+    { id:'verifyPassword', title:'Checking credentials', text:'First it calls verifyPassword, comparing the input against the stored bcrypt hash in constant time.' },
+    { id:'sign', title:'Issuing a token', text:'On success, TokenService.sign encodes the user’s claims into a signed JWT.' },
+    { id:'t_sessions', title:'Remembering the session', text:'The new token is written to the sessions table so later requests can be verified quickly.' },
+    { id:'d_login', title:'Documented for humans', text:'All of this is described in the Login-flow doc — the graph links prose straight to the code it explains.' },
+    { id:'charge', title:'Following the money', text:'Payments mirror the pattern: PaymentService.charge runs the gateway, then records a receipt.' },
+    { id:'createCharge', title:'Talking to Stripe', text:'It delegates to StripeGateway.createCharge — the concrete implementation of the PaymentGateway contract.' },
+  ];
+
+  constructor(props){ super(props); this.canvasRef=React.createRef(); this.tipRef=React.createRef(); this.rootRef=React.createRef(); this.searchRef=React.createRef(); this.view={cx:0,cy:0,k:1}; this.alpha=1; this.hoverId=null; this.highlight=null;
+    // graph state — initialised empty so the RAF draw loop no-ops safely before loadGraph() resolves.
+    this.nodes=[]; this.edges=[]; this.clusters=[]; this.byId={}; this.deg={}; this.adj={}; this.revDep={}; this.anchors={}; this.layoutScale=1; this.stats=''; this.largeGraph=false; this.overview=[]; this.overviewById={}; this.overviewEdges=[]; this.overviewZoom=1;
+  }
+
+  componentDidMount(){
+    const it=(this.props.theme==='light'||this.props.theme==='dark')?this.props.theme:this.state.theme;
+    if(it!==this.state.theme) this.setState({theme:it});
+    this.theme=this.themeP(it);
+    this.canvas=this.canvasRef.current; this.ctx=this.canvas.getContext('2d');
+    this.resize();
+    this.ro=new ResizeObserver(()=>this.resize()); this.ro.observe(this.rootRef.current);
+    this.bind();
+    this._tick=0;
+    const loop=()=>{ this.step(); this.tween(); this.draw(); this._tick++; this.raf=requestAnimationFrame(loop); };
+    this.raf=requestAnimationFrame(loop);
+    this.loadGraph();
+    this.setState({ready:true});
+  }
+  componentWillUnmount(){ cancelAnimationFrame(this.raf); if(this.ro)this.ro.disconnect(); this.unbind(); }
+
+  // ---------- data ----------
+  async loadGraph(){
+    this.setState({loading:true,error:null});
+    try {
+      const res = await fetch('/graph.json');
+      if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+      const g = await res.json();
+      const nodes = (g.nodes || []).map(item => {
+        const d = item.data || item;
+        return {
+          id: d.id, kind: d.kind || 'symbol',
+          cluster: d.clusterId || d.cluster || 'default',
+          label: d.label || d.name || d.id,
+          name: d.name, qualified: d.qualified,
+          file: d.file, lang: d.lang,
+          signature: d.signature,
+          summary: d.summary || d.label || '',
+          type: d.type,
+          // server-computed ranking signal (P5 declutter) — see packages/ui/src/viz.ts.
+          // Trust these over re-deriving from the edge list; `deg` below is a SEPARATE
+          // client-only undirected count kept for layout/physics (node radius, force strength).
+          importance: typeof d.importance === 'number' ? d.importance : 0,
+          serverDegree: typeof d.degree === 'number' ? d.degree : 0,
+          tier: d.tier === 'primary' ? 'primary' : 'detail',
+          x:0, y:0, vx:0, vy:0,
+        };
+      });
+      const nodeIds = new Set(nodes.map(n => n.id));
+      const edges = (g.edges || []).map(item => {
+        const d = item.data || item;
+        return {
+          src: d.source || d.src, dst: d.target || d.dst,
+          rel: d.rel || d.label || 'references',
+          method: d.method, provenance: d.provenance,
+          confidence: d.confidence,
+          evidence: typeof d.evidence === 'string' ? d.evidence : (d.evidence && d.evidence.snippet) || undefined,
+        };
+      }).filter(e => e.src && e.dst && nodeIds.has(e.src) && nodeIds.has(e.dst));
+      const clusters = (g.clusters || []).map(c => ({
+        id: c.id, label: c.label || c.id,
+        color: c.color || '#5b8cff', blurb: c.blurb || '',
+      }));
+      this.clusters = clusters.length ? clusters : [{id:'default',label:'Project',color:'#5b8cff',blurb:'All nodes'}];
+      // Ensure every node cluster has an anchor; orphan nodes land in a fallback cluster.
+      const clusterIds = new Set(this.clusters.map(c => c.id));
+      let fallback = clusterIds.has('default') ? 'default' : null;
+      for (const n of nodes) {
+        if (!clusterIds.has(n.cluster)) {
+          if (!fallback) {
+            fallback = n.cluster;
+            this.clusters.push({ id: fallback, label: 'Other', color: '#64748b', blurb: 'Unclustered nodes' });
+            clusterIds.add(fallback);
+          }
+          n.cluster = fallback;
+        }
+      }
+      // Overview (buildOverview) treats orphans specially: instead of one giant muted bucket, it
+      // surfaces the top orphan symbols by importance as their own small cards.
+      this._orphanClusterId = fallback;
+      this.nodes = nodes; this.edges = edges;
+      this.byId = {}; nodes.forEach(n => this.byId[n.id] = n);
+      this.deg = {}; this.adj = {}; this.revDep = {};
+      nodes.forEach(n => { this.deg[n.id] = 0; this.adj[n.id] = []; this.revDep[n.id] = []; });
+      // Architectural-only adjacency mirrors packages/ui/src/viz.ts ARCHITECTURAL_RELS and drives
+      // Focus/Horizon/keyboard navigation. We keep it separate from `adj` (which mixes every edge
+      // type for physics/search) so a method's "neighbors" are callers/callees/importers, not
+      // every sibling in the same file via `member-of`.
+      const ARCH_RELS = new Set(['calls','imports','inherits','implements','exposes','injects','renders','produces']);
+      this.archAdj = {};
+      nodes.forEach(n => { this.archAdj[n.id] = []; });
+      edges.forEach(e => {
+        this.deg[e.src]++; this.deg[e.dst]++;
+        this.adj[e.src].push(e.dst); this.adj[e.dst].push(e.src);
+        if (this.DEP.has(e.rel)) this.revDep[e.dst].push(e.src);
+        if (ARCH_RELS.has(e.rel)) { this.archAdj[e.src].push(e.dst); this.archAdj[e.dst].push(e.src); }
+      });
+      // Build a per-repo guided tour from the highest-degree non-file nodes. The static
+      // TOUR below hardcodes one demo project's BARE names, but buildVizGraph emits
+      // namespaced ids (sym:<path>#<qualified>@L<line>) — so select()/centerOn() silently
+      // no-op'd for every other repo. Deriving here makes the tour work for any soul and
+      // degrades gracefully (empty TOUR) for an empty graph.
+      const ranked = nodes.filter(n => n.kind !== 'file').sort((a,b)=>(b.importance||0)-(a.importance||0)).slice(0,9);
+      this.TOUR = ranked.map(n => ({ id:n.id, title:(this.KLABEL[n.kind]||n.kind)+' · '+(n.qualified||n.label), text:n.summary||n.label }));
+      const N = nodes.length;
+      this.layoutScale = Math.max(1, Math.pow(Math.max(1, N / 25), 0.62));
+      this.largeGraph = N > 1800;
+      this.buildOverview();
+      const ca = {}; const R = 480 * this.layoutScale;
+      this.clusters.forEach((c,i)=>{ const a=(i/this.clusters.length)*Math.PI*2 - Math.PI/2; ca[c.id]={x:Math.cos(a)*R,y:Math.sin(a)*R*0.82}; });
+      this.anchors = ca;
+      nodes.forEach(n=>{ const a=ca[n.cluster] || ca[Object.keys(ca)[0]] || {x:0,y:0}; const ang=Math.random()*Math.PI*2, r=70+Math.random()*130*this.layoutScale; n.x=a.x+Math.cos(ang)*r; n.y=a.y+Math.sin(ang)*r; });
+      nodes.forEach(n=>{ const base={file:10,class:9,interface:8,method:7,function:7,symbol:8,'doc-section':8.5,table:10,column:6.5,statement:6.5,condition:6.5,enum:8,type:8,getter:7,setter:7,property:7,'media-seg':7,explanation:7}[n.kind]||7; n.r=base+Math.min(this.deg[n.id],9)*0.85; });
+      this.stats = g.stats ? (g.stats.nodes + ' nodes · ' + g.stats.edges + ' edges · ' + g.stats.clusters + ' clusters') : (nodes.length + ' nodes · ' + edges.length + ' edges · ' + this.clusters.length + ' clusters');
+      const warmSteps = Math.min(120, Math.max(30, Math.floor(90000 / (N || 1))));
+      for (let i=0; i<warmSteps; i++) { this.alpha = Math.max(0.15, this.alpha); this.step(); }
+      this.fit();
+      this.alpha = 0.15;
+      this.setState({loading:false, mode:this.largeGraph?'overview':'focus'});
+    } catch (err) {
+      this.setState({error: String(err && err.message || err), loading:false});
+    }
+  }
+
+  // ---------- layout ----------
+  step(){
+    if(this.alpha<0.025) return;
+    if(this.largeGraph && this.state.mode === 'overview') return;
+    const ns=this.visibleNodes(), hid=this.state.hidden;
+    if(!ns || !ns.length) return;
+    const ld=(this.props.linkDistance ?? 1.6);
+    const largeGraph = ns.length > 1800;
+    const forceScale = this.largeGraph ? 1 : this.layoutScale;
+    for(const n of ns){ n.fx=0; n.fy=0; }
+    if(!largeGraph){
+      for(let i=0;i<ns.length;i++){ const a=ns[i]; if(hid[a.kind])continue;
+        for(let j=i+1;j<ns.length;j++){ const b=ns[j]; if(hid[b.kind])continue;
+          let dx=a.x-b.x, dy=a.y-b.y, d2=dx*dx+dy*dy; if(d2<0.01){d2=0.01;dx=Math.random();} const d=Math.sqrt(d2);
+          const f=(4200*forceScale)/d2; const ux=dx/d, uy=dy/d; a.fx+=ux*f; a.fy+=uy*f; b.fx-=ux*f; b.fy-=uy*f; } }
+    }
+    const L={'member-of':46,calls:92,imports:108,describes:124,references:138,implements:92,executes:70,reads:78,writes:78,'guarded-by':64};
+    const visibleIds = new Set(ns.map(n=>n.id));
+    for(const e of this.edges){ if(!visibleIds.has(e.src)||!visibleIds.has(e.dst))continue; const a=this.byId[e.src], b=this.byId[e.dst]; if(hid[a.kind]||hid[b.kind])continue;
+      let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||0.01; const tl=(L[e.rel]||95)*ld*forceScale; const f=(d-tl)*0.052; const ux=dx/d, uy=dy/d;
+      a.fx+=ux*f; a.fy+=uy*f; b.fx-=ux*f; b.fy-=uy*f; }
+    for(const n of ns){ if(hid[n.kind])continue; const an=this.largeGraph?{x:0,y:0}:(this.anchors[n.cluster] || this.anchors[Object.keys(this.anchors)[0]] || {x:0,y:0}); n.fx+=(an.x-n.x)*0.026; n.fy+=(an.y-n.y)*0.026; n.fx+=(-n.x)*0.0018; n.fy+=(-n.y)*0.0018; }
+    // Collision is quadratic; keep it for smaller graphs where it improves readability, and skip it
+    // for repo-scale graphs so the first frame is not blocked by millions of pair checks.
+    if(!largeGraph){
+      for(let i=0;i<ns.length;i++){ const a=ns[i]; if(hid[a.kind])continue;
+        for(let j=i+1;j<ns.length;j++){ const b=ns[j]; if(hid[b.kind])continue;
+          let dx=b.x-a.x, dy=b.y-a.y, d2=dx*dx+dy*dy; const min=(a.r+b.r+22)*1.05; if(d2>=min*min||d2<0.01)continue; const d=Math.sqrt(d2)||0.01; const push=(min-d)*0.35; const ux=dx/d, uy=dy/d; a.fx-=ux*push; a.fy-=uy*push; b.fx+=ux*push; b.fy+=uy*push; } }
+    }
+    for(const n of ns){ if(n.pin||hid[n.kind])continue; n.vx=(n.vx+n.fx)*0.84; n.vy=(n.vy+n.fy)*0.84;
+      const sp=Math.hypot(n.vx,n.vy); if(sp>35){n.vx*=35/sp;n.vy*=35/sp;} n.x+=n.vx*(0.25+this.alpha*0.75); n.y+=n.vy*(0.25+this.alpha*0.75); }
+    this.alpha*=0.986;
+  }
+  reheat(v){ this.alpha=Math.max(this.alpha,v||0.5); }
+  tween(){ const v=this.view, t=this._vt; if(!t)return; v.cx+=(t.cx-v.cx)*0.16; v.cy+=(t.cy-v.cy)*0.16; v.k+=(t.k-v.k)*0.16; if(Math.hypot(t.cx-v.cx,t.cy-v.cy)<0.6 && Math.abs(t.k-v.k)<0.003){ v.cx=t.cx; v.cy=t.cy; v.k=t.k; this._vt=null; } }
+  centerOn(id,zoom){ const n=this.byId[id]; if(!n)return; this._vt={cx:n.x, cy:n.y-12, k:zoom||Math.max(this.view.k,1)}; }
+  startTour(){ this.setState({tour:true,tourStep:0}); if(!this.TOUR.length) return; const s=this.TOUR[0]; this.select(s.id); this.centerOn(s.id,1.15); }
+  exitTour(){ this.setState({tour:false}); }
+  tourGo(i){ if(i<0)return; if(i>=this.TOUR.length){ this.exitTour(); return; } this.setState({tourStep:i}); if(!this.TOUR.length) return; const s=this.TOUR[i]; this.select(s.id); this.centerOn(s.id,1.15); }
+  exportSubgraph(){ const hl=this.highlight; if(!hl)return; const ids=hl.set;
+    const ns=[...ids].map(id=>{ const n=this.byId[id]; return {id:n.id,kind:n.kind,label:n.label,qualified:n.qualified,file:n.file,signature:n.signature,summary:n.summary,cluster:n.cluster}; });
+    const es=this.edges.filter(e=>ids.has(e.src)&&ids.has(e.dst)).map(e=>{ const o={src:e.src,dst:e.dst,rel:e.rel}; if(e.provenance){o.provenance=e.provenance;o.confidence=e.confidence;} return o; });
+    const payload={ focus:this.state.selectedId, view:this.state.blast?'blast-radius':'neighborhood', exportedAt:new Date().toISOString(), stats:{nodes:ns.length,edges:es.length}, nodes:ns, edges:es };
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=(this.state.selectedId||'subgraph')+(this.state.blast?'.blast':'')+'.crib.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); }
+
+  buildOverview(){
+    const orphanId = this._orphanClusterId;
+    const byCluster = new Map();
+    for(const c of this.clusters) byCluster.set(c.id,{...c,count:0,degree:0,importance:0,kinds:new Map(),x:0,y:0,w:0,h:0});
+    for(const n of this.nodes){
+      const c = byCluster.get(n.cluster);
+      if(!c) continue;
+      c.count++;
+      c.degree += this.deg[n.id] || 0;
+      c.importance += n.importance || 0;
+      c.kinds.set(n.kind,(c.kinds.get(n.kind)||0)+1);
+    }
+    // Rank by summed server importance (kind-weighted directed in-degree, see viz.ts) — replaces
+    // the old client-side `count + degree*0.04` heuristic with the same signal Focus/labels use,
+    // so "what's a big module" and "what's an important node" agree with each other.
+    const ranked = [...byCluster.values()]
+      .filter(c=>c.count>0 && c.id!==orphanId)
+      .sort((a,b)=>b.importance-a.importance);
+    const maxBlocks = this.largeGraph ? 26 : ranked.length;
+    const blocks = ranked.slice(0,maxBlocks);
+
+    // Orphan nodes (no real cluster — 91% of a typical repo's nodes are statement-level symbols
+    // with no cluster membership) used to collapse into one giant muted "Unclustered" card that
+    // told the user nothing. Instead: surface the handful of highest-importance orphan SYMBOLS as
+    // their own small cards (clicking one jumps straight to that node's Focus view), and fold
+    // anything left over into a single unobtrusive summary card at the very end.
+    const orphanNodes = orphanId ? this.nodes.filter(n=>n.cluster===orphanId) : [];
+    const topOrphans = [...orphanNodes].sort((a,b)=>(b.importance||0)-(a.importance||0)).slice(0,6);
+    for(const n of topOrphans){
+      blocks.push({
+        id:'orphan:'+n.id, isNode:true, nodeId:n.id,
+        label:n.qualified||n.label||n.id, color:this.KIND[n.kind]||'#5b8cff',
+        count:1, degree:n.serverDegree||0, importance:n.importance||0,
+        kinds:new Map([[n.kind,1]]), topKind:n.kind, muted:false, x:0,y:0,w:0,h:0,
+      });
+    }
+    const remainingOrphans = orphanNodes.length - topOrphans.length;
+    if(remainingOrphans > 0){
+      blocks.push({
+        id:orphanId, label:remainingOrphans+' more uncategorized', color:'#64748b',
+        count:remainingOrphans, degree:0, importance:0, kinds:new Map(), topKind:'symbol',
+        muted:true, x:0,y:0,w:0,h:0,
+      });
+    }
+    const shown = new Set(blocks.map(b=>b.id));
+    const muted = new Set(blocks.filter(b=>b.muted).map(b=>b.id));
+    const cols = Math.max(3,Math.ceil(Math.sqrt(blocks.length*1.35)));
+    const gap = 30, bw = 210, bh = 132;
+    const rows = Math.ceil(blocks.length/cols);
+    const ox = -((cols-1)*(bw+gap))/2;
+    const oy = -((rows-1)*(bh+gap))/2;
+    blocks.forEach((b,i)=>{
+      const col = i % cols, row = Math.floor(i/cols);
+      b.x = ox + col*(bw+gap);
+      b.y = oy + row*(bh+gap);
+      b.w = bw;
+      b.h = bh;
+      b.topKind = [...b.kinds.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0] || 'symbol';
+      if(!b.isNode){
+        b.topMembers = this.nodes.filter(n=>n.cluster===b.id).sort((a,b)=>(b.importance||0)-(a.importance||0)).slice(0,3).map(n=>({id:n.id,kind:n.kind,label:n.qualified||n.label||n.id}));
+      } else {
+        b.topMembers = [];
+      }
+    });
+    const edgeMap = new Map();
+    for(const e of this.edges){
+      const a = this.byId[e.src], b = this.byId[e.dst];
+      if(!a || !b || a.cluster===b.cluster || !shown.has(a.cluster) || !shown.has(b.cluster)) continue;
+      if(muted.has(a.cluster) || muted.has(b.cluster)) continue;
+      const key = a.cluster < b.cluster ? a.cluster+'|'+b.cluster : b.cluster+'|'+a.cluster;
+      const cur = edgeMap.get(key) || {src:a.cluster,dst:b.cluster,count:0,rel:e.rel};
+      cur.count++;
+      if(this.DEP.has(e.rel)) cur.rel=e.rel;
+      edgeMap.set(key,cur);
+    }
+    this.overview = blocks;
+    this.overviewById = {};
+    blocks.forEach(b=>this.overviewById[b.id]=b);
+    this.overviewEdges = [...edgeMap.values()].sort((a,b)=>b.count-a.count).slice(0,120);
+  }
+
+  visibleNodes(){
+    if(!this.largeGraph) return this.nodes;
+    const q=(this.state.query||'').trim().toLowerCase();
+    let ids = new Set();
+    if(q){
+      const matches=this.nodes.filter(n=>(n.label||'').toLowerCase().includes(q)||(n.qualified||'').toLowerCase().includes(q)||(n.file||'').toLowerCase().includes(q)).slice(0,160);
+      for(const n of matches){ ids.add(n.id); for(const nb of this.adj[n.id]||[]) ids.add(nb); }
+    } else if(this.state.selectedId){
+      // Same capped, ranked ring set arrangeNodeFocus laid out — never draw a node that wasn't
+      // also positioned (and vice versa). depth respects the user's expand/collapse choice.
+      const rings=this.focusRingIds(this.state.selectedId,this.state.focusDepth||1);
+      ids = new Set([rings.root,...rings.ring1,...rings.ring2]);
+    } else if(this.state.selectedClusterId){
+      for(const n of this.nodes){ if(n.cluster===this.state.selectedClusterId) ids.add(n.id); }
+      for(const e of this.edges){ if(ids.has(e.src)) ids.add(e.dst); if(ids.has(e.dst)) ids.add(e.src); }
+    } else {
+      const top = [...this.nodes].filter(n=>n.kind!=='file').sort((a,b)=>(b.importance||0)-(a.importance||0)).slice(0,260);
+      for(const n of top) ids.add(n.id);
+    }
+    const out = [];
+    for(const id of ids){ const n=this.byId[id]; if(n) out.push(n); if(out.length>=900) break; }
+    return out;
+  }
+
+  arrangeClusterFocus(clusterId){
+    const ids = new Set();
+    for(const n of this.nodes){ if(n.cluster===clusterId) ids.add(n.id); }
+    const core=[...ids].map(id=>this.byId[id]).filter(Boolean);
+    for(const e of this.edges){ if(ids.has(e.src)) ids.add(e.dst); if(ids.has(e.dst)) ids.add(e.src); if(ids.size>720) break; }
+    const ns=[...ids].map(id=>this.byId[id]).filter(Boolean).slice(0,720);
+    const coreIds=new Set(core.map(n=>n.id));
+    const R0=120, R1=280, R2=440;
+    let ci=0, oi=0;
+    for(const n of ns){
+      const isCore=coreIds.has(n.id);
+      const idx=isCore?ci++:oi++;
+      const total=isCore?Math.max(core.length,1):Math.max(ns.length-core.length,1);
+      const ring=isCore?R0:(idx%2?R1:R2);
+      const a=(idx/total)*Math.PI*2 + (isCore?0:Math.PI/total);
+      const jitter=isCore?28:55;
+      n.x=Math.cos(a)*ring + Math.sin(idx*2.17)*jitter;
+      n.y=Math.sin(a)*ring*0.72 + Math.cos(idx*1.73)*jitter;
+      n.vx=0; n.vy=0;
+    }
+  }
+
+  graphFocusZoom(count){
+    if(count>520) return 0.62;
+    if(count>260) return 0.74;
+    if(count>120) return 0.86;
+    return 1.02;
+  }
+
+  // Caps per ring so a single well-connected node can't repaint the whole screen as an
+  // unreadable hairball. When a ring is over cap, only the top-N BY IMPORTANCE are kept — same
+  // signal buildOverview ranks modules by (see viz.ts) — and the rest are surfaced as a count in
+  // the Horizon panel rather than silently vanishing.
+  RING1_CAP=60; RING2_CAP=120;
+
+  /** The capped, ranked id set for a focus at `rootId`/`depth` — the SINGLE source of truth both
+   *  `arrangeNodeFocus` (layout) and `visibleNodes` (what's actually drawn/hit-tested) read from,
+   *  so a node is never positioned without also being visible, or visible without a position. */
+  focusRingIds(rootId,depth){
+    const depthMap=this.computeDepthMap(rootId,depth);
+    const byDepth={1:[],2:[]};
+    for(const [nid,dep] of depthMap.entries()){ if(byDepth[dep]) byDepth[dep].push(nid); }
+    const capRing=(ids,cap)=>{
+      if(ids.length<=cap) return {kept:ids,hidden:0};
+      const sorted=[...ids].sort((a,b)=>((this.byId[b]&&this.byId[b].importance)||0)-((this.byId[a]&&this.byId[a].importance)||0));
+      return {kept:sorted.slice(0,cap),hidden:sorted.length-cap};
+    };
+    const r1=capRing(byDepth[1],this.RING1_CAP);
+    const r2=capRing(byDepth[2],this.RING2_CAP);
+    return {root:rootId,ring1:r1.kept,ring2:r2.kept,ring1Hidden:r1.hidden,ring2Hidden:r2.hidden,depthMap};
+  }
+
+  arrangeNodeFocus(id,depth){
+    const d=depth||this.state.focusDepth||1;
+    const rings=this.focusRingIds(id,d);
+    this._ring1Hidden=rings.ring1Hidden; this._ring2Hidden=rings.ring2Hidden;
+    const focusRing={1:rings.ring1.map(nid=>this.byId[nid]).filter(Boolean),2:rings.ring2.map(nid=>this.byId[nid]).filter(Boolean)};
+    const place=(items,rx,ry,phase)=>{
+      const total=Math.max(items.length,1);
+      items.forEach((n,i)=>{
+        const a=(i/total)*Math.PI*2 + phase;
+        const spread=1 + Math.min(total,80) / 140;
+        n.x=Math.cos(a)*rx*spread + Math.sin(i*1.77)*18;
+        n.y=Math.sin(a)*ry*spread + Math.cos(i*1.31)*16;
+        n.vx=0; n.vy=0;
+      });
+    };
+    const root=this.byId[id];
+    if(root){ root.x=0; root.y=0; root.vx=0; root.vy=0; }
+    place(focusRing[1],150,100,-Math.PI/2);
+    place(focusRing[2],330,225,-Math.PI/2 + 0.28);
+    const shownCount=1+focusRing[1].length+focusRing[2].length;
+    const zoom=this.graphFocusZoom(shownCount);
+    const sideOffset=this.W>880?175:(this.W>620?95:0);
+    this.view={cx:sideOffset/zoom,cy:0,k:zoom};
+    this._vt=null;
+    return rings.depthMap;
+  }
+
+  // ---------- view ----------
+  resize(){ const c=this.canvas; if(!c)return; const dpr=window.devicePixelRatio||1; this.dpr=dpr; this.W=c.clientWidth; this.H=c.clientHeight; c.width=this.W*dpr; c.height=this.H*dpr; }
+  w2s(x,y){ return [ (x-this.view.cx)*this.view.k + this.W/2, (y-this.view.cy)*this.view.k + this.H/2 ]; }
+  s2w(x,y){ return [ (x-this.W/2)/this.view.k + this.view.cx, (y-this.H/2)/this.view.k + this.view.cy ]; }
+  fit(){ const vis=this.visibleNodes().filter(n=>!this.state.hidden[n.kind]); if(!vis.length)return; let m={x0:1e9,y0:1e9,x1:-1e9,y1:-1e9}; for(const n of vis){m.x0=Math.min(m.x0,n.x-n.r);m.y0=Math.min(m.y0,n.y-n.r);m.x1=Math.max(m.x1,n.x+n.r);m.y1=Math.max(m.y1,n.y+n.r);} const w=m.x1-m.x0, h=m.y1-m.y0; const pad=140; const k=Math.min((this.W-pad)/w,(this.H-pad-60)/h,1.8); this.view.k=Math.max(0.2,k); this.view.cx=(m.x0+m.x1)/2; this.view.cy=(m.y0+m.y1)/2+20; }
+  /** The selected root renders (and hit-tests) larger than everything else — "you are here"
+   *  should be legible from size alone, not just a glow ring. */
+  nodeRadius(n){ return n.r * (n.id===this.state.selectedId ? 1.35 : 1); }
+
+  // ---------- drawing ----------
+  draw(){
+    const ctx=this.ctx; if(!ctx)return; const th=this.theme; const dpr=this.dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,this.W,this.H);
+    ctx.fillStyle=th.bg; ctx.fillRect(0,0,this.W,this.H);
+    // dot grid
+    const k=this.view.k; const gs=34*k; if(gs>14){ const [ox,oy]=this.w2s(0,0); ctx.fillStyle=th.dot; for(let x=ox%gs; x<this.W; x+=gs){ for(let y=oy%gs; y<this.H; y+=gs){ ctx.beginPath(); ctx.arc(x,y,1,0,7); ctx.fill(); } } }
+    const hid=this.state.hidden; const sel=this.state.selectedId; const hl=this.highlight;
+    const q=(this.state.query||'').trim().toLowerCase();
+    const isMatch=(n)=>q&&(n.label.toLowerCase().includes(q)||(n.qualified||'').toLowerCase().includes(q)||(n.file||'').toLowerCase().includes(q));
+    if(this.largeGraph && this.state.mode === 'overview' && !q){
+      this.drawOverview(ctx,th);
+      return;
+    }
+    const visible = this.visibleNodes();
+    const visibleIds = new Set(visible.map(n=>n.id));
+    // cluster blobs
+    for(const c of this.clusters){ const mem=visible.filter(n=>n.cluster===c.id&&!hid[n.kind]); if(mem.length<1)continue; let cx=0,cy=0; mem.forEach(n=>{cx+=n.x;cy+=n.y;}); cx/=mem.length; cy/=mem.length; let rad=0; mem.forEach(n=>{rad=Math.max(rad,Math.hypot(n.x-cx,n.y-cy)+n.r);}); rad+=26;
+      const [sx,sy]=this.w2s(cx,cy); const sr=rad*k; const grd=ctx.createRadialGradient(sx,sy,sr*0.2,sx,sy,sr); const a=th.name==='dark'?0.16:0.13; grd.addColorStop(0,this.hex(c.color,a)); grd.addColorStop(1,this.hex(c.color,0)); ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(sx,sy,sr,0,7); ctx.fill();
+      // label
+      ctx.font='600 '+Math.max(10,11*Math.min(k,1.3))+"px 'IBM Plex Sans', system-ui, sans-serif"; ctx.fillStyle=this.hex(c.color,0.92); ctx.textAlign='center'; ctx.textBaseline='middle'; const dim=sel&&hl&&!mem.some(n=>hl.set.has(n.id)); ctx.globalAlpha=dim?0.25:1; ctx.fillText(c.label.toUpperCase(),sx,sy-sr-2); ctx.globalAlpha=1; }
+    // edges
+    ctx.lineCap='round';
+    for(const e of this.edges){ if(!visibleIds.has(e.src)||!visibleIds.has(e.dst))continue; const a=this.byId[e.src], b=this.byId[e.dst]; if(hid[a.kind]||hid[b.kind])continue;
+      const [ax,ay]=this.w2s(a.x,a.y), [bx,by]=this.w2s(b.x,b.y);
+      const sd=hl&&hl.depthMap?hl.depthMap.get(e.src):undefined, td=hl&&hl.depthMap?hl.depthMap.get(e.dst):undefined;
+      const inHorizon = sd!==undefined && td!==undefined;
+      const direct = inHorizon && (sd===0 || td===0);
+      const active = sel && hl && (this.state.blast? ((hl.set.has(e.src)&&hl.set.has(e.dst)) && this.DEP.has(e.rel)) : inHorizon);
+      let col=this.REL[e.rel]||'#888'; let alpha;
+      if(this.state.blast && active) col='#f87171';
+      else if(sel && inHorizon) col=direct?this.DEPTH_COLORS[1]:this.DEPTH_COLORS[2];
+      if(sel){ alpha = active?(direct?0.86:0.32):0.045; } else { alpha = 0.22; }
+      ctx.strokeStyle=this.hex(col,alpha); ctx.lineWidth=active?(direct?2.2:1.35):1;
+      if(e.rel==='member-of'||e.rel==='references'){ ctx.setLineDash([3,4]); } else ctx.setLineDash([]);
+      // slight curve
+      const mx=(ax+bx)/2, my=(ay+by)/2; const dx=bx-ax, dy=by-ay; const nlen=Math.hypot(dx,dy)||1; const cxp=mx-dy/nlen*nlen*0.06, cyp=my+dx/nlen*nlen*0.06;
+      ctx.beginPath(); ctx.moveTo(ax,ay); ctx.quadraticCurveTo(cxp,cyp,bx,by); ctx.stroke(); ctx.setLineDash([]);
+      // arrowhead for directed (not member-of) when active or no-sel
+      if(e.rel!=='member-of' && (active|| (!sel))){ const t=0.82; const qx=(1-t)*(1-t)*ax+2*(1-t)*t*cxp+t*t*bx; const qy=(1-t)*(1-t)*ay+2*(1-t)*t*cyp+t*t*by; const ang=Math.atan2(by-cyp,bx-cxp); const sz=active?7:5; const ex=bx-Math.cos(ang)*(b.r*k+2), ey=by-Math.sin(ang)*(b.r*k+2); ctx.fillStyle=this.hex(col,alpha); ctx.beginPath(); ctx.moveTo(ex,ey); ctx.lineTo(ex-Math.cos(ang-0.4)*sz,ey-Math.sin(ang-0.4)*sz); ctx.lineTo(ex-Math.cos(ang+0.4)*sz,ey-Math.sin(ang+0.4)*sz); ctx.closePath(); ctx.fill(); }
+      // edge label (plain english) when active
+      if(active&&direct){ const lab=this.state.blast?'breaks if changed':(this.PHRASE[e.rel]||e.rel); ctx.font="500 10.5px 'IBM Plex Sans', system-ui, sans-serif"; const tw=ctx.measureText(lab).width; ctx.save(); ctx.translate(cxp,cyp); let ar=Math.atan2(by-ay,bx-ax); if(ar>Math.PI/2)ar-=Math.PI; if(ar<-Math.PI/2)ar+=Math.PI; ctx.rotate(ar); ctx.fillStyle=th.labelPill; ctx.strokeStyle=this.hex(col,0.5); ctx.lineWidth=1; this.rr(ctx,-tw/2-6,-9,tw+12,18,5); ctx.fill(); ctx.stroke(); ctx.fillStyle=this.state.blast?'#f87171':th.label; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lab,0,0); ctx.restore(); }
+    }
+    // nodes
+    for(const n of visible){ if(hid[n.kind])continue; const [x,y]=this.w2s(n.x,n.y);
+      const isSel=n.id===sel; const isHover=n.id===this.hoverId; const inHL=hl&&hl.set.has(n.id); const depth=hl&&hl.depthMap?hl.depthMap.get(n.id):undefined; const match=isMatch(n);
+      const r=this.nodeRadius(n)*k;
+      let dim = (sel&&!inHL) || (q&&!match&&!isSel);
+      // Fill always answers "what kind of thing is this" — kind color is never overwritten by
+      // distance-from-root or blast state, so the legend stays true inside the exact neighborhood
+      // the user is inspecting. Distance/blast is a separate ring-only signal (ringCol) instead of
+      // hijacking the same channel as node identity.
+      const col=this.KIND[n.kind]||'#888';
+      let ringCol;
+      if(this.state.blast && hl && hl.blast.has(n.id) && hl.blast.get(n.id)>0){ ringCol='#f87171'; }
+      else if(depth!==undefined){ ringCol=this.DEPTH_COLORS[depth]; }
+      // Statement-level kinds fade by default so the architectural layer reads first — but never
+      // when they're the focus, hovered, in the horizon, or a search match (then full opacity).
+      const noiseFade = !isSel && !isHover && depth===undefined && !match && this.NOISE_KINDS.has(n.kind);
+      ctx.globalAlpha = dim?0.16:(noiseFade?0.4:1);
+      // glow for selected / hover / search match
+      if(isSel||isHover||match||ringCol){ ctx.beginPath(); ctx.arc(x,y,r+ (isSel?8:(depth===1?6:4)),0,7); ctx.fillStyle=this.hex(ringCol||col,isSel?0.28:(depth===1?0.18:0.1)); ctx.fill(); }
+      ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fillStyle=col; ctx.fill();
+      ctx.lineWidth=isSel?3.2:(depth===1?2.2:1.5); ctx.strokeStyle=ringCol?this.hex(ringCol,0.96):th.nodeStroke; ctx.stroke();
+      if(n.id===this._cand && !isSel){ ctx.save(); ctx.setLineDash([3,3]); ctx.lineWidth=2; ctx.strokeStyle=th.label; ctx.beginPath(); ctx.arc(x,y,r+5,0,7); ctx.stroke(); ctx.restore(); }
+      // doc/table icon hints via inner mark
+      if(n.kind==='table'||n.kind==='column'){ ctx.strokeStyle=this.hex('#000',0.25); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x-r*0.5,y); ctx.lineTo(x+r*0.5,y); ctx.stroke(); }
+      ctx.globalAlpha=1;
+    }
+    // labels: priority draw with overlap culling for cleaner zoomed-in view
+    const labelRects = [];
+    const labelNodes = visible.filter(n => !hid[n.kind]).sort((a,b)=>{
+      const da=hl&&hl.depthMap?hl.depthMap.get(a.id):undefined, db=hl&&hl.depthMap?hl.depthMap.get(b.id):undefined;
+      // Rank labels by the SERVER importance/tier (see viz.ts), not the client undirected `deg` —
+      // `deg` counts member-of/reads/writes too, so it inflated statement-node labels and drowned
+      // the architecture layer. `tier:'primary'` + high importance now win the overlap cull.
+      const imp=(n)=>n.importance||0;
+      const pa = (a.id===sel || a.id===this.hoverId || isMatch(a)) ? 5 : (da===1 ? 4 : (da===2 ? 2 : (a.tier==='primary' ? (imp(a)>=10?2:1) : 0)));
+      const pb = (b.id===sel || b.id===this.hoverId || isMatch(b)) ? 5 : (db===1 ? 4 : (db===2 ? 2 : (b.tier==='primary' ? (imp(b)>=10?2:1) : 0)));
+      return pb - pa;
+    });
+    const labelZoomMin = Math.max(1.15, Math.min(3.2, 0.9 + this.layoutScale * 0.28));
+    for(const n of labelNodes){
+      const [x,y]=this.w2s(n.x,n.y); const r=this.nodeRadius(n)*k;
+      const isSel=n.id===sel; const isHover=n.id===this.hoverId; const inHL=hl&&hl.set.has(n.id); const match=isMatch(n);
+      const dim = (sel&&!inHL) || (q&&!match&&!isSel);
+      if(dim) continue;
+      const depth=hl&&hl.depthMap?hl.depthMap.get(n.id):undefined;
+      // At low zoom, only the primary tier (plus sel/hover/horizon/match) gets labels — the long
+      // detail tail is still shipped and rendered, just not labeled until you zoom in. Depth-2
+      // labels likewise require primary-tier or high importance, so an expanded 2-hop ring doesn't
+      // re-clutter the view with low-importance statement labels.
+      if(!isSel && !isHover && !inHL && !match && k < labelZoomMin && n.tier !== 'primary') continue;
+      if(depth===2 && !isHover && n.tier !== 'primary' && (n.importance||0) < 10) continue;
+      ctx.font=(isSel?'600 ':'500 ')+Math.max(10.5,12*Math.min(k,1.25))+"px 'IBM Plex Sans', system-ui, sans-serif"; const lab=n.label; const tw=ctx.measureText(lab).width;
+      const ly=y+r+(13*Math.min(k,1.2)); const lh=17; const lx=x-tw/2-5; const lw=tw+10;
+      let overlap=false;
+      for(const rr of labelRects){ if(!(lx+lw < rr.x || lx > rr.x+rr.w || ly+lh < rr.y || ly > rr.y+rr.h)){ overlap=true; break; } }
+      if(overlap) continue;
+      labelRects.push({x:lx,y:ly,w:lw,h:lh});
+      ctx.globalAlpha=dim?0.3:1;
+      ctx.fillStyle=th.labelPill; this.rr(ctx,lx,ly-9,lw,lh,5); ctx.fill();
+      ctx.fillStyle=isSel?th.label:th.label; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lab,x,ly); ctx.globalAlpha=1;
+    }
+    // On-canvas "expand to 2-hop" chip — additive to the Horizon panel row (buildDetail()), so the
+    // expand affordance is visible without opening/scrolling the side panel. Only shown when
+    // collapsed (focusDepth:1) and there's actually a 2-hop ring to reveal.
+    this._expandChipRect = null;
+    if(sel && !this.state.blast && (this.state.focusDepth||1)===1 && hl && hl.depthMap){
+      let count2=0; for(const d of hl.depthMap.values()) if(d===2) count2++;
+      if(count2>0){
+        const lab='+'+count2+' more · expand';
+        ctx.font="600 12px 'IBM Plex Sans', system-ui, sans-serif";
+        const tw=ctx.measureText(lab).width; const pw=tw+30, ph=34;
+        const px=this.W/2-pw/2, py=this.H-ph-20;
+        ctx.fillStyle=th.labelPill; ctx.strokeStyle=this.hex(this.DEPTH_COLORS[2],0.6); ctx.lineWidth=1.4;
+        this.rr(ctx,px,py,pw,ph,17); ctx.fill(); ctx.stroke();
+        ctx.fillStyle=this.DEPTH_COLORS[2]; ctx.beginPath(); ctx.arc(px+18,py+ph/2,4,0,7); ctx.fill();
+        ctx.fillStyle=th.label; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(lab,px+pw/2+7,py+ph/2+0.5);
+        this._expandChipRect={x0:px,y0:py,x1:px+pw,y1:py+ph};
+      }
+    }
+  }
+
+  drawOverview(ctx,th){
+    const blocks=this.overview;
+    if(!blocks.length) return;
+    ctx.save();
+    ctx.translate(this.W/2,this.H/2+28);
+    const maxX=Math.max(...blocks.map(b=>Math.abs(b.x)+b.w/2),1);
+    const maxY=Math.max(...blocks.map(b=>Math.abs(b.y)+b.h/2),1);
+    const scale=Math.min((this.W-120)/(maxX*2),(this.H-190)/(maxY*2),1.25)*this.overviewZoom;
+    ctx.scale(scale,scale);
+    ctx.lineCap='round';
+    for(const e of this.overviewEdges){
+      const a=this.overviewById[e.src], b=this.overviewById[e.dst];
+      if(!a||!b)continue;
+      const ax=a.x+a.w/2, ay=a.y+a.h/2, bx=b.x+b.w/2, by=b.y+b.h/2;
+      const col=this.REL[e.rel]||'#64748b';
+      ctx.strokeStyle=this.hex(col,Math.min(0.38,0.08+e.count/35));
+      ctx.lineWidth=Math.min(4,1+Math.log2(e.count+1)*0.45);
+      ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+    }
+    for(const b of blocks){
+      const selected=b.id===this.state.selectedClusterId;
+      const col=b.muted?'#64748b':(b.color||this.KIND[b.topKind]||'#5b8cff');
+      ctx.save();
+      ctx.fillStyle=this.hex(col,b.muted?0.07:(selected?0.22:0.12));
+      ctx.strokeStyle=this.hex(col,b.muted?0.24:(selected?0.95:0.42));
+      ctx.lineWidth=selected?2.5:1.2;
+      this.rr(ctx,b.x,b.y,b.w,b.h,10); ctx.fill(); ctx.stroke();
+      this.rr(ctx,b.x+7,b.y+7,b.w-14,b.h-14,7); ctx.clip();
+      ctx.fillStyle=this.hex(col,0.95);
+      ctx.beginPath(); ctx.arc(b.x+18,b.y+20,6,0,7); ctx.fill();
+      ctx.fillStyle=th.label;
+      ctx.font="700 13px 'IBM Plex Sans', system-ui, sans-serif";
+      ctx.textAlign='left'; ctx.textBaseline='middle';
+      const label=this.ellipsize(ctx,String(b.label||b.id).replace(/^cluster:/,''),b.w-48);
+      ctx.fillText(label,b.x+32,b.y+20);
+      ctx.fillStyle=th.sub||'#8b97a8';
+      ctx.font="500 11px 'IBM Plex Sans', system-ui, sans-serif";
+      const line1=b.isNode?(Math.round(b.degree)+' caller'+(Math.round(b.degree)===1?'':'s')):(b.count+' nodes · '+(b.muted?'summary':Math.round(b.degree)+' links'));
+      ctx.fillText(this.ellipsize(ctx,line1,b.w-28),b.x+14,b.y+50);
+      b.memberHits = [];
+      if(b.isNode || b.muted || !b.topMembers || !b.topMembers.length){
+        const line2=b.isNode?(this.KLABEL[b.topKind]||b.topKind):(b.muted?'Hidden from overview links':(this.KLABEL[b.topKind]||b.topKind)+' heavy');
+        ctx.fillText(this.ellipsize(ctx,line2,b.w-28),b.x+14,b.y+72);
+      } else {
+        ctx.font="500 10.5px 'IBM Plex Sans', system-ui, sans-serif";
+        b.topMembers.forEach((m,i)=>{
+          const mx=b.x+14, my=b.y+68+i*18;
+          const mcol=this.KIND[m.kind]||'#888';
+          ctx.fillStyle=mcol;
+          ctx.beginPath(); ctx.arc(mx+5,my,4,0,7); ctx.fill();
+          ctx.fillStyle=th.label;
+          const lab=this.ellipsize(ctx,m.label,b.w-38);
+          ctx.fillText(lab,mx+14,my+1);
+          b.memberHits.push({id:m.id, x:mx-b.x, y:my-7-b.y, w:b.w-28, h:14});
+        });
+      }
+      ctx.fillStyle=this.hex(col,0.18);
+      // Bar reflects importance relative to the top-ranked block, not raw count — so a single
+      // high-importance orphan card and a 40-member module read on the same meaningful scale.
+      const topImportance=blocks[0].importance||1;
+      const bar=Math.min(b.w-28,Math.max(18,((b.importance||0)/topImportance)*(b.w-28)));
+      this.rr(ctx,b.x+14,b.y+b.h-22,bar,6,4); ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+    ctx.fillStyle=th.label;
+    ctx.font="700 18px 'IBM Plex Sans', system-ui, sans-serif";
+    ctx.textAlign='center';
+    ctx.fillText('Architecture overview',this.W/2,102);
+    ctx.fillStyle=th.sub||'#8b97a8';
+    ctx.font="500 12px 'IBM Plex Sans', system-ui, sans-serif";
+    ctx.fillText(this.ellipsize(ctx,'Click a block to focus. Search narrows to matching neighborhoods. Showing top '+blocks.length+' modules from '+this.nodes.length+' nodes.',this.W-80),this.W/2,124);
+  }
+  ellipsize(ctx,text,maxWidth){ text=String(text||''); if(ctx.measureText(text).width<=maxWidth) return text; const ell='…'; let lo=0, hi=text.length; while(lo<hi){ const mid=Math.ceil((lo+hi)/2); if(ctx.measureText(text.slice(0,mid)+ell).width<=maxWidth) lo=mid; else hi=mid-1; } return text.slice(0,Math.max(0,lo))+ell; }
+  rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  hex(c,a){ if(c[0]!=='#') return c; const n=parseInt(c.slice(1),16); const r=(n>>16)&255,g=(n>>8)&255,b=n&255; return 'rgba('+r+','+g+','+b+','+a+')'; }
+  // Escape dynamic node text before splicing into the tooltip's innerHTML. qualified/label/summary
+  // flow from extracted source text (signatures carry <T> generics, docstrings can carry HTML chars) —
+  // unescaped, they corrupt the tooltip DOM or inject markup.
+  esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // ---------- interaction ----------
+  bind(){ const c=this.canvas;
+    this.onWheel=(e)=>{ e.preventDefault(); this._vt=null; const [wx,wy]=this.s2w(e.offsetX,e.offsetY); const f=Math.exp(-e.deltaY*0.0014); this.view.k=Math.min(3.5,Math.max(0.18,this.view.k*f)); const [nx,ny]=this.s2w(e.offsetX,e.offsetY); this.view.cx+=wx-nx; this.view.cy+=wy-ny; };
+    this.onDown=(e)=>{ c.setPointerCapture(e.pointerId); const chip=this.hitExpandChip(e.offsetX,e.offsetY); const block=!chip&&this.largeGraph&&this.state.mode==='overview'?this.hitOverview(e.offsetX,e.offsetY):null; const n=(chip||block)?null:this.hit(e.offsetX,e.offsetY); this._p={x:e.offsetX,y:e.offsetY,sx:e.offsetX,sy:e.offsetY,node:n,block,chip,moved:false}; if(n){ n.pin=true; c.style.cursor='grabbing'; } else c.style.cursor='grabbing'; };
+    this.onMove=(e)=>{ const p=this._p;
+      if(p){ const dx=e.offsetX-p.x, dy=e.offsetY-p.y; if(Math.abs(e.offsetX-p.sx)+Math.abs(e.offsetY-p.sy)>3)p.moved=true;
+        if(p.chip){ p.x=e.offsetX; p.y=e.offsetY; return; }
+        if(p.block){ p.x=e.offsetX; p.y=e.offsetY; return; }
+        if(p.node){ const [wx,wy]=this.s2w(e.offsetX,e.offsetY); p.node.x=wx; p.node.y=wy; p.node.vx=0; p.node.vy=0; this.reheat(0.3); } else { this._vt=null; this.view.cx-=dx/this.view.k; this.view.cy-=dy/this.view.k; } p.x=e.offsetX; p.y=e.offsetY; return; }
+      const chip=this.hitExpandChip(e.offsetX,e.offsetY); const block=!chip&&this.largeGraph&&this.state.mode==='overview'?this.hitOverview(e.offsetX,e.offsetY):null; const n=(chip||block)?null:this.hit(e.offsetX,e.offsetY); this.hoverId=n?n.id:null; c.style.cursor=(chip||n||block)?'pointer':'grab'; this.tip(n,e.offsetX,e.offsetY);
+    };
+    this.onUp=(e)=>{ const p=this._p; this._p=null; c.style.cursor='grab'; if(!p)return; if(p.node)p.node.pin=false; if(!p.moved){ if(p.chip) this.toggleFocusDepth(); else if(p.block&&p.block.isNode) this.select(p.block.nodeId); else if(p.block) this.selectCluster(p.block.id); else if(p.node) this.select(p.node.id); else this.closePanel(); } };
+    this.onKey=(e)=>{ const k=e.key; const tag=(e.target&&e.target.tagName)||''; if(tag==='INPUT'){ if(k==='Escape')e.target.blur(); return; }
+      if(this.state.tour){ if(k==='ArrowRight'||k===' '||k==='ArrowDown'){e.preventDefault(); this.tourGo(this.state.tourStep+1);} else if(k==='ArrowLeft'||k==='ArrowUp'){e.preventDefault(); this.tourGo(this.state.tourStep-1);} else if(k==='Escape'){this.exitTour();} return; }
+      if(k==='Escape'){ this._cand=null; this.closePanel(); return; }
+      const sel=this.state.selectedId; if(!sel)return; const nb=this._nb||[]; if(!nb.length)return;
+      if(k==='ArrowRight'||k==='ArrowDown'){ e.preventDefault(); this._nIdx=((this._nIdx==null?-1:this._nIdx)+1)%nb.length; this._cand=nb[this._nIdx]; }
+      else if(k==='ArrowLeft'||k==='ArrowUp'){ e.preventDefault(); this._nIdx=((this._nIdx==null?0:this._nIdx)-1+nb.length)%nb.length; this._cand=nb[this._nIdx]; }
+      else if(k==='Enter'&&this._cand){ e.preventDefault(); const c=this._cand; this.select(c); this.centerOn(c,Math.max(this.view.k,0.95)); }
+    };
+    c.addEventListener('wheel',this.onWheel,{passive:false}); c.addEventListener('pointerdown',this.onDown); c.addEventListener('pointermove',this.onMove); c.addEventListener('pointerup',this.onUp); window.addEventListener('keydown',this.onKey);
+  }
+  unbind(){ const c=this.canvas; if(!c)return; c.removeEventListener('wheel',this.onWheel); c.removeEventListener('pointerdown',this.onDown); c.removeEventListener('pointermove',this.onMove); c.removeEventListener('pointerup',this.onUp); window.removeEventListener('keydown',this.onKey); }
+  hit(sx,sy){ let best=null,bd=1e9; for(const n of this.visibleNodes()){ if(this.state.hidden[n.kind])continue; const [x,y]=this.w2s(n.x,n.y); const d=Math.hypot(x-sx,y-sy); if(d<this.nodeRadius(n)*this.view.k+5 && d<bd){bd=d;best=n;} } return best; }
+  hitExpandChip(sx,sy){ const r=this._expandChipRect; if(!r) return false; return sx>=r.x0 && sx<=r.x1 && sy>=r.y0 && sy<=r.y1; }
+  hitOverview(sx,sy){
+    const blocks=this.overview; if(!blocks.length)return null;
+    const maxX=Math.max(...blocks.map(b=>Math.abs(b.x)+b.w/2),1);
+    const maxY=Math.max(...blocks.map(b=>Math.abs(b.y)+b.h/2),1);
+    const scale=Math.min((this.W-120)/(maxX*2),(this.H-190)/(maxY*2),1.25)*this.overviewZoom;
+    const x=(sx-this.W/2)/scale, y=(sy-(this.H/2+28))/scale;
+    for(let i=blocks.length-1;i>=0;i--){ const b=blocks[i]; if(x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h){
+      if(b.muted) return null;
+      if(b.memberHits){ for(const m of b.memberHits){ if(x>=b.x+m.x&&x<=b.x+m.x+m.w&&y>=b.y+m.y&&y<=b.y+m.y+m.h) return {isNode:true, nodeId:m.id, id:m.id}; } }
+      return b;
+    } }
+    return null;
+  }
+  tip(n,x,y){ const el=this.tipRef.current; if(!el)return; if(!n){ el.style.display='none'; return; } const col=this.KIND[n.kind]||'#888'; el.style.display='block'; el.style.left=Math.min(x+16,this.W-270)+'px'; el.style.top=(y+16)+'px';
+    el.innerHTML='<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px"><span style="width:8px;height:8px;border-radius:50%;background:'+col+'"></span><span style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:'+col+'">'+this.esc(this.KLABEL[n.kind]||n.kind)+'</span></div><div style="font-size:13px;font-weight:600;margin-bottom:3px">'+this.esc(n.qualified||n.label)+'</div><div style="font-size:11.5px;line-height:1.45;opacity:.75">'+this.esc(n.summary)+'</div>'; }
+
+  // A fresh selection always starts at 1-hop (focusDepth:1) — lean by default — regardless of
+  // whether the previous node had been expanded to 2-hop; expansion is a per-node choice, not a
+  // sticky mode. arrangeNodeFocus is passed depth=1 explicitly so it doesn't read the (about to be
+  // stale) previous state.focusDepth before setState lands.
+  select(id){ if(!this.byId[id]) return; const n=this.byId[id]; this._cand=null; this._nb=[...new Set(this.archAdj[id]||[])]; this._nIdx=null; this.arrangeNodeFocus(id,1);
+    const trail=[...(this.state.selectedTrail||[]).filter(t=>t.id!==id),{id,label:n.qualified||n.label||id}].slice(-4);
+    this.setState({selectedId:id, selectedClusterId:n.cluster, selectedTrail:trail, mode:'focus', focusDepth:1}); this.reheat(0.08); }
+  /** Toggle between 1-hop and 2-hop context for the currently selected node — the explicit
+   *  "expand neighbors" affordance (Horizon panel's depth-2 row), replacing the old always-on
+   *  2-hop hairball with an opt-in reveal. */
+  toggleFocusDepth(){
+    const sel=this.state.selectedId; if(!sel) return;
+    const next=(this.state.focusDepth||1)>=2?1:2;
+    this.arrangeNodeFocus(sel,next);
+    this.setState({focusDepth:next});
+    this.reheat(0.3);
+  }
+  selectCluster(id){ if(!this.overviewById[id]) return; this._cand=null; this._nb=[]; this._nIdx=null; this.arrangeClusterFocus(id); this.view={cx:0,cy:0,k:0.95}; this._vt=null; this.setState({selectedId:null, selectedClusterId:id, selectedTrail:[], mode:'focus'}); this.reheat(0.35); }
+  closePanel(){ this._cand=null; this._nb=[]; this._nIdx=null; this.setState({selectedId:null, selectedClusterId:null, selectedTrail:[]}); }
+  toggleTheme(){ this.setState(s=>({theme:s.theme==='dark'?'light':'dark'})); }
+  toggleBlast(){ this.setState(s=>({blast:!s.blast})); this.reheat(0.2); }
+  showOverview(){ if(!this.largeGraph)return; this.setState({mode:'overview', selectedId:null, selectedTrail:[]}); }
+  showFocus(){ if(this.state.selectedId){ this.arrangeNodeFocus(this.state.selectedId); this.setState({mode:'focus'}); this.reheat(0.08); return; } this.setState({mode:'focus'}); setTimeout(()=>this.fit(),0); this.reheat(0.25); }
+  bumpZoom(){ this.setState(s=>({zoomTick:(s.zoomTick||0)+1})); }
+  zoomOut(){ if(this.largeGraph&&this.state.mode==='overview'){ this.overviewZoom=Math.max(0.45,this.overviewZoom/1.18); this.bumpZoom(); return; } this.view.k=Math.max(0.12,this.view.k/1.18); this.bumpZoom(); }
+  zoomIn(){ if(this.largeGraph&&this.state.mode==='overview'){ this.overviewZoom=Math.min(2.8,this.overviewZoom*1.18); this.bumpZoom(); return; } this.view.k=Math.min(4.5,this.view.k*1.18); this.bumpZoom(); }
+  resetView(){ if(this.largeGraph&&this.state.mode==='overview'){ this.overviewZoom=1; this.bumpZoom(); return; } this.fit(); this.bumpZoom(); }
+  onSearch(e){ const query=e.target.value; this.setState({query, mode:query.trim()?'focus':(this.largeGraph?'overview':'focus')}); setTimeout(()=>this.fit(),0); }
+  toggleKind(k){ this.setState(s=>({hidden:{...s.hidden,[k]:!s.hidden[k]}})); this.reheat(0.3); }
+
+  computeDepthMap(root,maxDepth=2){
+    const depthMap=new Map();
+    if(!root || !this.byId[root]) return depthMap;
+    depthMap.set(root,0);
+    const queue=[root];
+    while(queue.length){
+      const cur=queue.shift();
+      const d=depthMap.get(cur);
+      if(d>=maxDepth) continue;
+      // Walk only the architectural adjacency map so focus rings and Horizon counts reflect
+      // real code references (calls/imports/inherits/implements/exposes/injects/renders/produces)
+      // rather than structural or statement-level edges like `member-of` or `executes`.
+      for(const nb of this.archAdj[cur]||[]){
+        if(depthMap.has(nb)) continue;
+        depthMap.set(nb,d+1);
+        queue.push(nb);
+        if(depthMap.size>=900) return depthMap;
+      }
+    }
+    return depthMap;
+  }
+
+  // `depthMap` here is always the FULL 2-hop reach (informational — powers the Horizon panel's
+  // "N direct neighbors" / "N wider nodes" counts and the pre-expand preview), independent of what
+  // is actually drawn. `set` (what canvas highlighting/fade reads) instead reflects the CAPPED,
+  // current-focusDepth ring — the same thing `visibleNodes()` returns — so highlighting never
+  // references a node that isn't on screen.
+  computeHL(){ const sel=this.state.selectedId; if(!sel) return null; const set=new Set([sel]); const blast=new Map(); const depthMap=this.computeDepthMap(sel,2);
+    if(this.state.blast){ // reverse-dependency BFS — shows the full ripple, not ring-capped
+      blast.set(sel,0); const queue=[sel]; while(queue.length){ const cur=queue.shift(); const d=blast.get(cur); for(const dep of this.revDep[cur]){ if(!blast.has(dep)){ blast.set(dep,d+1); set.add(dep); queue.push(dep); } } }
+    } else {
+      const rings=this.focusRingIds(sel,this.state.focusDepth||1);
+      for(const id of rings.ring1) set.add(id);
+      for(const id of rings.ring2) set.add(id);
+    }
+    return {set,blast,depthMap};
+  }
+
+  buildDetail(){ const sel=this.state.selectedId; if(!sel) return this.buildClusterDetail(); const n=this.byId[sel]; const col=this.KIND[n.kind]||'#888';
+    const mk=(rel,otherId,dir)=>{ const o=this.byId[otherId]; const e=this._lastE; return { id:otherId, label:o.qualified||o.label, color:this.KIND[o.kind]||'#888', relColor:this.REL[rel]||'#888', phrase:(dir==='out'?this.PHRASE[rel]:this.RPHRASE[rel])||rel, tail:' '+(o.qualified||o.label), onGo:()=>this.select(otherId), badge: e&&e.provenance? (e.provenance==='INFERRED'?'inferred':'verified'):null, badgeBg: e&&e.provenance==='INFERRED'?'rgba(245,158,11,0.18)':'rgba(52,211,153,0.18)', badgeFg: e&&e.provenance==='INFERRED'?'#f59e0b':'#34d399' }; };
+    const buckets={deps:[],depBy:[],docs:[],struct:[],guards:[]}; let evidence=null;
+    for(const e of this.edges){ this._lastE=e; if(e.src===sel){ const it=mk(e.rel,e.dst,'out');
+        if(this.DEP.has(e.rel)) buckets.deps.push(it); else if(e.rel==='describes'||e.rel==='references'){ buckets.docs.push(it); if(e.evidence&&!evidence)evidence=e.evidence; } else if(e.rel==='guarded-by') buckets.guards.push(it); else if(e.rel==='member-of') buckets.struct.push(it);
+      } else if(e.dst===sel){ const it=mk(e.rel,e.src,'in');
+        if(this.DEP.has(e.rel)) buckets.depBy.push(it); else if(e.rel==='describes'||e.rel==='references'){ buckets.docs.push(it); if(e.evidence&&!evidence)evidence=e.evidence; } else if(e.rel==='guarded-by') buckets.struct.push(it); else if(e.rel==='member-of') buckets.struct.push(it); }
+    }
+    const sections=[]; const add=(title,color,items)=>{ if(items.length) sections.push({title,color,count:items.length,items}); };
+    const hl=this.computeHL();
+    if(hl&&hl.depthMap){
+      const counts={0:0,1:0,2:0};
+      for(const depth of hl.depthMap.values()) if(counts[depth]!=null) counts[depth]++;
+      const trail=(this.state.selectedTrail||[]).map((t,i)=>({
+        id:t.id,
+        label:t.label,
+        color:i===(this.state.selectedTrail||[]).length-1?this.DEPTH_COLORS[0]:'#94a3b8',
+        relColor:i===(this.state.selectedTrail||[]).length-1?this.DEPTH_COLORS[0]:'#64748b',
+        phrase:i===(this.state.selectedTrail||[]).length-1?'current':'trail',
+        tail:'',
+        onGo:()=>this.select(t.id),
+        badge:null,
+      }));
+      // depth-2 is the explicit expand/collapse affordance (P5 declutter): default focus shows only
+      // depth-1, so this row is the ONLY way to reveal wider context — its label/action must say so,
+      // not just silently report a count with a no-op click (the old behavior).
+      const expanded=(this.state.focusDepth||1)>=2;
+      const ring1Hidden=this._ring1Hidden||0;
+      const horizon=[
+        { id:'depth-0', label:'Selected node', color:this.DEPTH_COLORS[0], relColor:this.DEPTH_COLORS[0], phrase:String(counts[0]||1), tail:' in focus', onGo:()=>this.select(sel), badge:null },
+        { id:'depth-1', label:'Direct neighbors', color:this.DEPTH_COLORS[1], relColor:this.DEPTH_COLORS[1], phrase:String(counts[1]||0), tail:ring1Hidden>0?(' 1-hop links · showing top '+(this.RING1_CAP)+' by importance'):' 1-hop links', onGo:()=>this.select(sel), badge:null },
+        { id:'depth-2', label:expanded?'2-hop context (shown)':'Expand to 2-hop context', color:this.DEPTH_COLORS[2], relColor:this.DEPTH_COLORS[2], phrase:String(counts[2]||0), tail:expanded?' wider nodes — click to collapse':' wider nodes available — click to reveal', onGo:()=>this.toggleFocusDepth(), badge:null },
+        ...trail,
+      ];
+      add('Horizon',this.DEPTH_COLORS[1],horizon);
+    }
+    add('Depends on','#6f9bff',buckets.deps); add('Depended on by','#a78bfa',buckets.depBy); add('Guarded by','#f87171',buckets.guards); add('Documentation','#34d399',buckets.docs); add('Structure', '#7c8aa5', buckets.struct);
+     const blastCount=hl?Math.max(0,hl.blast.size-1):0;
+     return { id:sel, name:n.label, qualified:n.qualified, kindLabel:this.KLABEL[n.kind]||n.kind, color:col, glow:this.hex(col,0.22), summary:n.summary, signature:n.signature, file:n.file, lang:n.lang, sections, evidence, blastOn:this.state.blast, blastCount };
+   }
+
+  buildClusterDetail(){
+    const id=this.state.selectedClusterId;
+    if(!id) return null;
+    const c=this.overviewById[id];
+    if(!c) return null;
+    const members=this.nodes.filter(n=>n.cluster===id);
+    const counts=[...c.kinds.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const sections=[{
+      title:'Composition',
+      color:c.color||'#5b8cff',
+      count:members.length,
+      items:counts.map(([kind,count])=>({
+        id:kind,
+        label:this.KLABEL[kind]||kind,
+        color:this.KIND[kind]||'#888',
+        relColor:this.KIND[kind]||'#888',
+        phrase:String(count),
+        tail:' nodes',
+        onGo:()=>{},
+        badge:null,
+      })),
+    }];
+    return {
+      id,
+      name:c.label||id,
+      qualified:null,
+      kindLabel:'Module',
+      color:c.color||'#5b8cff',
+      glow:this.hex(c.color||'#5b8cff',0.22),
+      summary:`${members.length} nodes grouped here. Focus mode shows this module plus directly connected neighbors so the project stays readable.`,
+      signature:null,
+      file:null,
+      lang:null,
+      sections,
+      evidence:null,
+      blastOn:false,
+      blastCount:0,
+    };
+  }
+
+  themeP(name){ if(name==='light') return { name:'light', bg:'#f4f6f9', dot:'rgba(15,23,42,0.07)', label:'#1e293b', labelPill:'rgba(255,255,255,0.82)', nodeStroke:'#ffffff' };
+    return { name:'dark', bg:'#0c0f16', dot:'rgba(255,255,255,0.05)', label:'#dbe4f0', labelPill:'rgba(12,15,22,0.72)', nodeStroke:'#0c0f16' }; }
+  chrome(name){ if(name==='light') return { bg:'#f4f6f9', panel:'rgba(255,255,255,0.9)', text:'#1e293b', sub:'#64748b', border:'rgba(15,23,42,0.1)', chip:'rgba(15,23,42,0.04)', tip:'rgba(255,255,255,0.97)', tipText:'#1e293b', code:'#0c0f16', codeText:'#dbe4f0' };
+    return { bg:'#0c0f16', panel:'rgba(18,22,31,0.86)', text:'#e6edf6', sub:'#8b97a8', border:'rgba(255,255,255,0.09)', chip:'rgba(255,255,255,0.05)', tip:'rgba(20,24,34,0.96)', tipText:'#e6edf6', code:'rgba(0,0,0,0.35)', codeText:'#cbd5e1' }; }
+
+  renderVals(){
+    const theme=this.state.theme; this.theme=this.themeP(theme); const t=this.chrome(theme);
+    this.highlight=this.computeHL();
+    // Derive the legend from the kinds actually present in the loaded graph (sorted for
+    // stable order) instead of a hardcoded list that omitted symbol/media-seg/explanation/
+    // enum/type/getter/setter/property — those nodes rendered but had no filter toggle.
+    const kinds=[...new Set(this.nodes.map(n=>n.kind))].sort();
+    const kindList=kinds.map(k=>({ key:k, label:this.KLABEL[k]||k, color:this.KIND[k]||'#888', op:this.state.hidden[k]?0.32:(this.NOISE_KINDS.has(k)?0.5:1), onToggle:()=>this.toggleKind(k) }));
+    const sel=this.buildDetail();
+     const blastOn=this.state.blast;
+     const overviewOn=this.largeGraph&&this.state.mode==='overview';
+     const focusOn=!overviewOn;
+    // Focus empty-state: large repo, focus mode, nothing selected and no search — show the "how to
+    // start" hint. Small graphs default to focus with nodes already visible, so no hint there.
+    const focusEmpty = this.largeGraph && focusOn && !this.state.selectedId && !this.state.selectedClusterId && !(this.state.query||'').trim();
+    const zoomLabel=Math.round((overviewOn?this.overviewZoom:this.view.k)*100)+'%';
+    const compactStats=(this.stats||'…').replace(/\s+·\s+/g,' · ');
+     const tOn=this.state.tour; const ts=this.TOUR[this.state.tourStep]||{title:'No tour available',text:'This project has no indexed symbols to tour yet.'}; const isLast=this.state.tourStep>=this.TOUR.length-1; const isFirst=this.state.tourStep<=0;
+     return {
+      tour:{ on:tOn, step:this.state.tourStep+1, total:this.TOUR.length, title:ts.title, text:ts.text, nextLabel:isLast?'Finish':'Next', prevOp:isFirst?0.4:1, onNext:()=>this.tourGo(this.state.tourStep+1), onPrev:()=>this.tourGo(this.state.tourStep-1), onExit:()=>this.exitTour() },
+      startTour:()=>this.startTour(), exportSub:()=>this.exportSubgraph(),
+      tourBg: tOn?'rgba(91,140,255,0.16)':t.chip, tourBorder: tOn?'rgba(91,140,255,0.5)':t.border, tourFg: tOn?'#5b8cff':t.text,
+       rootRef:this.rootRef, canvasRef:this.canvasRef, tipRef:this.tipRef, searchRef:this.searchRef,
+        t, stats:this.stats||'…', compactStats, kindList, sel, focusEmpty,
+      zoomLabel,
+      overviewBg: overviewOn?'#5b8cff':'transparent', overviewFg: overviewOn?'#fff':t.text,
+      focusBg: focusOn?'#5b8cff':'transparent', focusFg: focusOn?'#fff':t.text,
+       themeIcon: theme==='dark'?'☾':'☀',
+       blastBg: blastOn?'rgba(248,113,113,0.16)':t.chip, blastBorder: blastOn?'rgba(248,113,113,0.5)':t.border, blastFg: blastOn?'#f87171':t.text,
+      showOverview:()=>this.showOverview(), showFocus:()=>this.showFocus(),
+      zoomOut:()=>this.zoomOut(), zoomIn:()=>this.zoomIn(),
+      toggleTheme:()=>this.toggleTheme(), toggleBlast:()=>this.toggleBlast(), resetView:()=>this.resetView(), onSearch:(e)=>this.onSearch(e), closePanel:()=>this.closePanel(),
+     };
+   }
+}
+</script>
+</body>
+</html>

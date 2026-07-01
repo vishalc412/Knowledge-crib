@@ -1,0 +1,97 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/index.ts#defaultCfgPasses@L66",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:2ed30d6959777a58a14897a54a29d8a8bab08482bfa08e0e5e01b5aec1ddb523",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/index.ts#defaultCfgPasses@L66",
+    "kind": "symbol",
+    "type": "function",
+    "name": "defaultCfgPasses",
+    "qualifiedName": "defaultCfgPasses",
+    "signature": "defaultCfgPasses(): CfgPass[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/index.ts",
+    "span": {
+      "start": 66,
+      "end": 68
+    }
+  },
+  "source": {
+    "text": "export function defaultCfgPasses(): CfgPass[] {\n  return [new PlSqlCfgPass()];\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 66
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/index.ts#runCfg@L176",
+      "confidence": 1,
+      "name": "runCfg",
+      "qualifiedName": "runCfg",
+      "signature": "runCfg(soul: SoulStore, root: string, files: FileMeta[], passes?: CfgPass[]): { annotated: number; skipped: number }",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/index.ts",
+      "line": 176
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/resolve/index.ts@L65",
+      "snippet": "/** Default CFG passes when the caller doesn't override: PL/SQL (M11). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/index.ts#defaultCfgPasses@L66",
+    "procedureName": "defaultCfgPasses",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/index.ts#defaultCfgPasses@L66",
+        "procedureName": "defaultCfgPasses",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5eafbfe287eabf990ed0b0a2da96248e07d3e02a58327ebe2c06b7a36827284",
+          "target": "stmt:packages/pipeline/src/resolve/index.ts@L67",
+          "line": 67,
+          "expr": "return [new PlSqlCfgPass()];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knowledge-crib — Complete Product Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0f1117;
+      --bg-surface:   #161b27;
+      --bg-card:      #1c2333;
+      --bg-code:      #111827;
+      --border:       #2a3245;
+      --border-light: #1e2a3d;
+      --accent:       #4f8ef7;
+      --accent-dim:   #2563eb22;
+      --accent-hover: #6ba3ff;
+      --green:        #22c55e;
+      --green-dim:    #22c55e18;
+      --amber:        #f59e0b;
+      --amber-dim:    #f59e0b18;
+      --red:          #ef4444;
+      --red-dim:      #ef444418;
+      --purple:       #a78bfa;
+      --purple-dim:   #a78bfa18;
+      --cyan:         #22d3ee;
+      --cyan-dim:     #22d3ee18;
+      --text:         #e2e8f0;
+      --text-muted:   #94a3b8;
+      --text-faint:   #4b5a6f;
+      --sidebar-w:    290px;
+      --header-h:     64px;
+      --font-sans:    'Inter', system-ui, sans-serif;
+      --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+      --radius:       8px;
+      --radius-lg:    12px;
+    }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ─── Top Header ─── */
+    .top-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      z-index: 100;
+      gap: 16px;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: #fff;
+      letter-spacing: -0.5px; flex-shrink: 0;
+    }
+
+    .logo-name { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+
+    .logo-tag {
+      font-size: 11px; font-weight: 500; color: var(--text-muted);
+      background: var(--bg-card); border: 1px solid var(--border);
+      padding: 2px 7px; border-radius: 20px;
+    }
+
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+    .version-badge {
+      font-size: 11px; font-weight: 600; color: var(--green);
+      background: var(--green-dim); border: 1px solid var(--green)44;
+      padding: 3px 9px; border-radius: 20px;
+    }
+
+    .req-badge {
+      font-size: 10px; font-weight: 700; color: var(--purple);
+      background: var(--purple-dim); border: 1px solid var(--purple)44;
+      padding: 3px 9px; border-radius: 20px;
+    }
+
+    /* ─── Layout ─── */
+    .layout { display: flex; padding-top: var(--header-h); min-height: 100vh; }
+
+    /* ─── Sidebar ─── */
+    .sidebar {
+      width: var(--sidebar-w);
+      position: fixed; top: var(--header-h); left: 0; bottom: 0;
+      background: var(--bg-surface); border-right: 1px solid var(--border);
+      overflow-y: auto; padding: 20px 0 40px;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .nav-section { margin-bottom: 4px; }
+
+    .nav-section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--text-faint); padding: 14px 20px 6px;
+    }
+
+    .nav-link {
+      display: flex; align-items: center; gap: 9px;
+      padding: 7px 20px; color: var(--text-muted); text-decoration: none;
+      font-size: 13.5px; font-weight: 400; border-left: 2px solid transparent;
+      transition: all 0.15s; line-height: 1.4;
+    }
+
+    .nav-link:hover { color: var(--text); background: var(--bg-card); border-left-color: var(--border); }
+
+    .nav-link.active { color: var(--accent); background: var(--accent-dim); border-left-color: var(--accent); font-weight: 500; }
+
+    .nav-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
+
+    .nav-sub {
+      padding-left: 46px; font-size: 12.5px; color: var(--text-faint);
+    }
+    .nav-sub:hover { color: var(--text-muted); background: transparent; }
+
+    .nav-new {
+      font-size: 9px; font-weight: 700; color: var(--purple);
+      background: var(--purple-dim); border: 1px solid var(--purple)44;
+      padding: 1px 5px; border-radius: 8px; margin-left: auto;
+    }
+
+    /* ─── Main Content ─── */
+    .main { margin-left: var(--sidebar-w); flex: 1; min-width: 0; }
+
+    .content { max-width: 880px; margin: 0 auto; padding: 48px 48px 80px; }
+
+    /* ─── Hero ─── */
+    .hero {
+      background: linear-gradient(135deg, #0f1831 0%, #131a2e 50%, #0d1520 100%);
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 40px; margin-bottom: 48px; position: relative; overflow: hidden;
+    }
+
+    .hero::before {
+      content: ''; position: absolute; top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, var(--accent)18, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: ''; position: absolute; bottom: -40px; left: 30%;
+      width: 160px; height: 160px;
+      background: radial-gradient(circle, var(--purple)12, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+
+    .hero-title { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 14px; letter-spacing: -0.5px; }
+
+    .hero-title span { background: linear-gradient(135deg, var(--accent), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    .hero-desc { font-size: 15px; color: var(--text-muted); max-width: 620px; line-height: 1.6; margin-bottom: 24px; }
+
+    .hero-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .hero-pill { font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; border: 1px solid; }
+
+    .pill-blue   { color: var(--accent);  background: var(--accent-dim);  border-color: var(--accent)44;  }
+    .pill-green  { color: var(--green);   background: var(--green-dim);   border-color: var(--green)44;   }
+    .pill-amber  { color: var(--amber);   background: var(--amber-dim);   border-color: var(--amber)44;   }
+    .pill-purple { color: var(--purple);  background: var(--purple-dim);  border-color: var(--purple)44;  }
+    .pill-cyan   { color: var(--cyan);    background: var(--cyan-dim);    border-color: var(--cyan)44;    }
+
+    /* ─── New Feature Banner ─── */
+    .new-feature-banner {
+      display: flex; align-items: flex-start; gap: 14px;
+      background: linear-gradient(135deg, var(--purple-dim), var(--accent-dim));
+      border: 1px solid var(--purple)44; border-radius: var(--radius-lg);
+      padding: 18px 22px; margin-bottom: 48px;
+    }
+
+    .new-feature-banner .nfb-icon { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+
+    .nfb-body strong { display: block; font-size: 14px; font-weight: 700; color: var(--purple); margin-bottom: 4px; }
+
+    .nfb-body p { font-size: 13.5px; color: var(--text-muted); margin: 0; }
+
+    .nfb-body p + p { margin-top: 6px; }
+
+    /* ─── Section Headings ─── */
+    .doc-section { scroll-margin-top: calc(var(--header-h) + 24px); margin-bottom: 64px; }
+    .section-anchor { scroll-margin-top: calc(var(--header-h) + 24px); }
+
+    h2.section-title {
+      font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.3px;
+      margin-bottom: 6px; display: flex; align-items: center; gap: 10px;
+    }
+
+    h2.section-title .sec-icon {
+      width: 32px; height: 32px; background: var(--accent-dim);
+      border: 1px solid var(--accent)33; border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+
+    .new-tag {
+      font-size: 10px; font-weight: 700; color: var(--purple);
+      background: var(--purple-dim); border: 1px solid var(--purple)44;
+      padding: 2px 8px; border-radius: 10px; margin-left: 4px;
+    }
+
+    .updated-tag {
+      font-size: 10px; font-weight: 700; color: var(--amber);
+      background: var(--amber-dim); border: 1px solid var(--amber)44;
+      padding: 2px 8px; border-radius: 10px; margin-left: 4px;
+    }
+
+    .section-divider { height: 1px; background: linear-gradient(90deg, var(--border), transparent); margin: 12px 0 24px; }
+
+    h3 { font-size: 16px; font-weight: 600; color: var(--text); margin: 28px 0 12px; letter-spacing: -0.2px; }
+
+    h4 { font-size: 14px; font-weight: 600; color: var(--text-muted); margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    p { color: var(--text-muted); margin-bottom: 14px; font-size: 14.5px; }
+
+    /* ─── Code Blocks ─── */
+    pre {
+      background: var(--bg-code); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; overflow-x: auto;
+      margin: 16px 0; position: relative;
+    }
+
+    pre code { font-family: var(--font-mono); font-size: 13px; color: #c9d1d9; line-height: 1.7; }
+
+    :not(pre) > code {
+      font-family: var(--font-mono); font-size: 12.5px; color: var(--accent-hover);
+      background: var(--accent-dim); border: 1px solid var(--accent)22;
+      padding: 2px 6px; border-radius: 4px;
+    }
+
+    .token-comment { color: #6b7280; font-style: italic; }
+    .token-string  { color: #a3e635; }
+    .token-keyword { color: #7dd3fc; }
+    .token-fn      { color: #c084fc; }
+    .token-num     { color: #fb923c; }
+    .token-key     { color: #67e8f9; }
+    .token-val     { color: #a3e635; }
+    .token-flag    { color: #f9a8d4; }
+    .token-path    { color: #fdba74; }
+    .token-prompt  { color: #4b5a6f; user-select: none; }
+    .token-impl    { color: #22c55e; }
+    .token-plan    { color: #94a3b8; }
+
+    .code-wrapper { position: relative; }
+    .copy-btn {
+      position: absolute; top: 10px; right: 10px;
+      font-size: 11px; font-weight: 600; color: var(--text-faint);
+      background: var(--bg-card); border: 1px solid var(--border);
+      padding: 3px 9px; border-radius: 4px; cursor: pointer; transition: all 0.15s;
+      font-family: var(--font-sans);
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+    .copy-btn.copied { color: var(--green); border-color: var(--green)44; }
+
+    /* ─── Tables ─── */
+    .table-wrap { overflow-x: auto; margin: 16px 0; border-radius: var(--radius); border: 1px solid var(--border); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+
+    thead tr { background: var(--bg-card); }
+
+    th { padding: 11px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 12px; letter-spacing: 0.3px; border-bottom: 1px solid var(--border); }
+
+    td { padding: 10px 16px; color: var(--text-muted); border-bottom: 1px solid var(--border-light); vertical-align: top; line-height: 1.5; }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg-card); }
+    td code { font-size: 12px; }
+    td strong { color: var(--text); font-weight: 600; }
+
+    /* Status badges in tables */
+    .impl-badge { color: var(--green); font-size: 11px; font-weight: 600; }
+    .plan-badge { color: var(--text-faint); font-size: 11px; font-weight: 500; }
+
+    /* ─── Callout Boxes ─── */
+    .callout { border-radius: var(--radius); padding: 14px 18px; margin: 18px 0; display: flex; gap: 12px; font-size: 13.5px; line-height: 1.6; }
+    .callout-icon { font-size: 17px; flex-shrink: 0; margin-top: 1px; }
+    .callout-body { flex: 1; }
+    .callout-body strong { display: block; margin-bottom: 3px; font-size: 13px; }
+    .callout-body p { margin: 0; font-size: 13.5px; }
+    .callout-body p + p { margin-top: 6px; }
+    .callout-info    { background: var(--accent-dim);  border: 1px solid var(--accent)33;  }
+    .callout-info    .callout-body strong { color: var(--accent); }
+    .callout-warn    { background: var(--amber-dim);   border: 1px solid var(--amber)33;   }
+    .callout-warn    .callout-body strong { color: var(--amber); }
+    .callout-tip     { background: var(--green-dim);   border: 1px solid var(--green)33;   }
+    .callout-tip     .callout-body strong { color: var(--green); }
+    .callout-caution { background: var(--red-dim);     border: 1px solid var(--red)33;     }
+    .callout-caution .callout-body strong { color: var(--red); }
+    .callout-new     { background: var(--purple-dim);  border: 1px solid var(--purple)33;  }
+    .callout-new     .callout-body strong { color: var(--purple); }
+
+    /* ─── Steps ─── */
+    .steps { display: flex; flex-direction: column; gap: 0; margin: 20px 0; }
+
+    .step { display: flex; gap: 18px; position: relative; padding-bottom: 24px; }
+    .step:last-child { padding-bottom: 0; }
+    .step::before { content: ''; position: absolute; left: 19px; top: 40px; bottom: 0; width: 1px; background: var(--border); }
+    .step:last-child::before { display: none; }
+    .step-num { width: 40px; height: 40px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--accent); flex-shrink: 0; position: relative; z-index: 1; }
+    .step-body { flex: 1; padding-top: 8px; }
+    .step-body h4 { margin-top: 0; font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: 0; text-transform: none; }
+    .step-body p { font-size: 13.5px; margin-bottom: 10px; }
+
+    /* ─── Root Resolution Chain ─── */
+    .resolution-chain { margin: 20px 0; }
+
+    .chain-step {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 12px 16px;
+      border-left: 2px solid var(--border);
+      margin-left: 16px;
+      position: relative;
+    }
+
+    .chain-step::before {
+      content: '';
+      position: absolute;
+      left: -7px; top: 18px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+    }
+
+    .chain-step.highlight::before { border-color: var(--accent); background: var(--accent-dim); }
+
+    .chain-step:last-child { border-left: 2px solid transparent; }
+
+    .chain-priority {
+      font-size: 10px; font-weight: 700; color: var(--text-faint);
+      background: var(--bg-card); border: 1px solid var(--border);
+      padding: 2px 7px; border-radius: 10px; flex-shrink: 0; margin-top: 2px;
+    }
+
+    .chain-step.highlight .chain-priority { color: var(--accent); border-color: var(--accent)44; background: var(--accent-dim); }
+
+    .chain-body { flex: 1; }
+    .chain-body strong { font-size: 13.5px; color: var(--text); display: block; margin-bottom: 2px; }
+    .chain-body p { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+    /* ─── Verb Cards ─── */
+    .verb-grid { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+
+    .verb-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; transition: border-color 0.15s; }
+    .verb-card:hover { border-color: var(--accent)55; }
+
+    .verb-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+
+    .verb-name { font-family: var(--font-mono); font-size: 13.5px; font-weight: 600; color: var(--accent); background: var(--accent-dim); padding: 3px 10px; border-radius: 4px; }
+
+    .verb-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: var(--text-faint); border: 1px solid var(--border); padding: 2px 7px; border-radius: 10px; }
+
+    .verb-badge.key { color: var(--amber); border-color: var(--amber)44; background: var(--amber-dim); }
+
+    .verb-desc { font-size: 13.5px; color: var(--text-muted); margin-bottom: 10px; }
+
+    .verb-card pre { margin: 0; }
+
+    /* ─── Client Tabs ─── */
+    .client-tabs { margin: 20px 0; }
+
+    .tab-bar { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 0; }
+
+    .tab-btn { padding: 9px 18px; font-size: 13px; font-weight: 500; color: var(--text-faint); background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; transition: all 0.15s; font-family: var(--font-sans); }
+
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-panel { display: none; padding: 20px 0 0; }
+    .tab-panel.active { display: block; }
+
+    /* ─── crib mcp options visual ─── */
+    .mcp-options { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+
+    .mcp-option {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 18px;
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+
+    .mcp-option.recommended { border-color: var(--green)44; background: var(--green-dim); }
+    .mcp-option.recommended .mop-label { color: var(--green); }
+
+    .mop-letter { font-size: 13px; font-weight: 700; color: var(--accent); background: var(--accent-dim); border: 1px solid var(--accent)33; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+
+    .mcp-option.recommended .mop-letter { color: var(--green); background: var(--green-dim); border-color: var(--green)44; }
+
+    .mop-body { flex: 1; }
+    .mop-label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+    .mop-body p { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+    .mop-body pre { margin: 0; }
+
+    .rec-badge { font-size: 9px; font-weight: 700; color: var(--green); background: var(--green-dim); border: 1px solid var(--green)44; padding: 1px 6px; border-radius: 8px; }
+
+    /* ─── Stats Bar ─── */
+    .stats-bar { display: flex; gap: 16px; flex-wrap: wrap; margin: 16px 0; }
+
+    .stat-card { flex: 1; min-width: 120px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; }
+
+    .stat-value { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.2; }
+    .stat-label { font-size: 11px; color: var(--text-faint); margin-top: 3px; }
+
+    /* ─── Doc Index Table ─── */
+    .doc-index { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin: 20px 0; }
+
+    .doc-index-header { padding: 14px 18px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 600; color: var(--text-muted); }
+
+    .doc-index table { font-size: 13px; }
+
+    .doc-index td:first-child { color: var(--accent); font-family: var(--font-mono); font-size: 12px; width: 40px; }
+
+    /* ─── Architecture ─── */
+    .arch-diagram { background: var(--bg-code); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin: 16px 0; font-family: var(--font-mono); font-size: 13px; color: #94a3b8; line-height: 1.8; overflow-x: auto; }
+
+    .arch-highlight { color: var(--accent); font-weight: 600; }
+    .arch-comment   { color: #4b5a6f; font-style: italic; }
+    .arch-new       { color: var(--purple); font-weight: 600; }
+
+    /* ─── Troubleshoot ─── */
+    .trouble-row td:first-child { color: var(--red); font-family: var(--font-mono); font-size: 12.5px; }
+
+    /* ─── Footer ─── */
+    .footer { border-top: 1px solid var(--border); padding: 32px 48px; margin-left: var(--sidebar-w); color: var(--text-faint); font-size: 12.5px; display: flex; align-items: center; justify-content: space-between; }
+    .footer a { color: var(--accent); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .footer { margin-left: 0; }
+      .content { padding: 32px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════ TOP HEADER ════ -->
+<header class="top-header">
+  <a class="header-logo" href="#">
+    <div class="logo-icon">KC</div>
+    <span class="logo-name">Knowledge-crib</span>
+    <span class="logo-tag">docs</span>
+  </a>
+  <div class="header-right">
+    <span class="req-badge">REQ-1 · REQ-2</span>
+    <span class="version-badge">v1.1 · Schema 1.1</span>
+  </div>
+</header>
+
+<!-- ════ SIDEBAR ════ -->
+<div class="layout">
+<nav class="sidebar">
+
+  <div class="nav-section">
+    <div class="nav-section-label">Overview</div>
+    <a class="nav-link active" href="#overview"><span class="nav-icon">🏠</span> Overview</a>
+    <a class="nav-link" href="#doc-index"><span class="nav-icon">📚</span> Document Index</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Getting Started</div>
+    <a class="nav-link" href="#install"><span class="nav-icon">📦</span> Installation</a>
+    <a class="nav-link" href="#per-project"><span class="nav-icon">📁</span> Per-project Setup</a>
+    <a class="nav-link" href="#root-resolution"><span class="nav-icon">🔍</span> Root Resolution <span class="nav-new">REQ-1</span></a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">CLI Reference</div>
+    <a class="nav-link" href="#cli"><span class="nav-icon">⌨️</span> CLI Commands</a>
+    <a class="nav-link nav-sub" href="#cli-index">  crib index</a>
+    <a class="nav-link nav-sub" href="#cli-serve">  crib serve</a>
+    <a class="nav-link nav-sub" href="#cli-mcp">  crib mcp <span class="nav-new">REQ-2</span></a>
+    <a class="nav-link nav-sub" href="#cli-update">  crib update</a>
+    <a class="nav-link nav-sub" href="#cli-export">  crib export / viz</a>
+    <a class="nav-link nav-sub" href="#cli-other">  status / query / hooks</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">MCP Server</div>
+    <a class="nav-link" href="#mcp"><span class="nav-icon">🔌</span> The 9 MCP Verbs</a>
+    <a class="nav-link nav-sub" href="#verb-status">  status</a>
+    <a class="nav-link nav-sub" href="#verb-query">  query</a>
+    <a class="nav-link nav-sub" href="#verb-context">  context</a>
+    <a class="nav-link nav-sub" href="#verb-impact">  impact</a>
+    <a class="nav-link nav-sub" href="#verb-others">  + 5 more verbs</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Client Setup</div>
+    <a class="nav-link" href="#clients"><span class="nav-icon">🛠️</span> IDE Wiring</a>
+    <a class="nav-link nav-sub" href="#client-claude">  Claude Code</a>
+    <a class="nav-link nav-sub" href="#client-cursor">  Cursor</a>
+    <a class="nav-link nav-sub" href="#client-copilot">  GitHub Copilot</a>
+    <a class="nav-link nav-sub" href="#client-codex">  OpenAI Codex CLI</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Worked Example</div>
+    <a class="nav-link" href="#example"><span class="nav-icon">🔬</span> FTC Repo Walkthrough</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Operations</div>
+    <a class="nav-link" href="#soul"><span class="nav-icon">🔄</span> Keeping Soul Fresh</a>
+    <a class="nav-link" href="#export"><span class="nav-icon">📤</span> Exporting the Graph</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Reference</div>
+    <a class="nav-link" href="#troubleshoot"><span class="nav-icon">🩺</span> Troubleshooting</a>
+    <a class="nav-link" href="#limits"><span class="nav-icon">⚠️</span> Known Limits</a>
+    <a class="nav-link" href="#architecture"><span class="nav-icon">🏗️</span> Architecture</a>
+  </div>
+
+</nav>
+
+<!-- ════ MAIN CONTENT ════ -->
+<main class="main">
+<div class="content">
+
+  <!-- ── HERO ── -->
+  <div class="hero" id="overview">
+    <div class="hero-eyebrow">Complete Product Guide · Updated June 2026</div>
+    <h1 class="hero-title">Knowledge-crib<br><span>Project Soul for AI Agents</span></h1>
+    <p class="hero-desc">
+      A local-first knowledge graph of your codebase — served to any AI coding agent over one MCP server.
+      Agents get full architectural context (call graphs, blast radius, doc↔code links, search) in far
+      fewer tokens, and stop making architecture-breaking changes.
+    </p>
+    <div class="hero-pills">
+      <span class="hero-pill pill-blue">Claude Code</span>
+      <span class="hero-pill pill-blue">Cursor</span>
+      <span class="hero-pill pill-blue">GitHub Copilot</span>
+      <span class="hero-pill pill-blue">OpenAI Codex</span>
+      <span class="hero-pill pill-green">TypeScript</span>
+      <span class="hero-pill pill-green">Python</span>
+      <span class="hero-pill pill-green">PL/SQL</span>
+      <span class="hero-pill pill-green">Markdown</span>
+      <span class="hero-pill pill-amber">9 MCP Tools</span>
+      <span class="hero-pill pill-purple">REQ-1: Root Resolution</span>
+      <span class="hero-pill pill-cyan">REQ-2: crib mcp auto-wire</span>
+      <span class="hero-pill pill-purple">Local-first · Apache-2.0</span>
+    </div>
+  </div>
+
+  <!-- ── NEW FEATURES BANNER ── -->
+  <div class="new-feature-banner">
+    <span class="nfb-icon">🆕</span>
+    <div class="nfb-body">
+      <strong>What's new in this revision — REQ-1 &amp; REQ-2</strong>
+      <p><strong style="color:var(--accent)">REQ-1 — Root Resolution:</strong> <code>crib index</code> now registers every project in <code>~/.crib/registry.json</code>. <code>crib serve</code> resolves the right soul per workspace through a 6-step priority chain (explicit arg → <code>--cwd</code> → <code>KCRIB_ROOT</code> → <code>CLAUDE_PROJECT_DIR</code> → upward walk → CWD). One user-scope IDE entry can now serve every project — no per-project config needed.</p>
+      <p><strong style="color:var(--cyan)">REQ-2 — <code>crib mcp</code>:</strong> New command auto-wires the MCP server into each IDE's config file — no hand-editing JSON/TOML. Idempotent, non-clobbering, embeds the absolute <code>which crib</code> path. Run <code>crib mcp install --ide claude --global</code> once and you're done for all projects.</p>
+    </div>
+  </div>
+
+  <!-- ── WHAT IT IS ── -->
+  <section class="doc-section" id="what-it-is">
+    <h2 class="section-title"><span class="sec-icon">💡</span> What it is</h2>
+    <div class="section-divider"></div>
+
+    <p>AI coding agents burn tokens re-reading files every session because they lack durable architectural context.
+    Knowledge-crib indexes a project <strong style="color:var(--text)">once</strong> into a queryable graph (the <em>soul</em>),
+    then serves it to any agent over MCP. The agent asks <code>context</code>, <code>impact</code>, <code>query</code>,
+    <code>describes</code> and gets a token-bounded, provenance-tagged answer — no more re-reading the whole codebase.</p>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🧠</span>
+      <div class="callout-body">
+        <strong>The one-sentence model</strong>
+        <p>Parse → graph → persist as a committable "soul" → build a fast index from it → serve to agents over MCP.</p>
+      </div>
+    </div>
+
+    <h3>Two Stores</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Store</th><th>What it is</th><th>Committed?</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>SoulStore</strong></td>
+            <td>Chunked JSONL graph — source of truth, cross-IDE, engine-free, diff-friendly</td>
+            <td><span style="color:var(--green)">✓ Yes — commit <code>.crib/*.jsonl</code></span></td>
+          </tr>
+          <tr>
+            <td><strong>IndexStore</strong></td>
+            <td>Derived fast-query layer (SQLite + FTS5), rebuildable from the soul</td>
+            <td><span style="color:var(--text-faint)">✗ gitignore <code>.crib/index/</code></span></td>
+          </tr>
+          <tr>
+            <td><strong>~/.crib/registry.json</strong></td>
+            <td>Machine-local pointer table: absolute project path → <code>.crib/</code> dir. Populated by <code>crib index</code></td>
+            <td><span style="color:var(--text-faint)">✗ machine-local, gitignored</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The deterministic core (parse / graph / impact / search) <strong style="color:var(--text)">never needs a network</strong>. LLM enrichment is opt-in and off the query hot path.</p>
+  </section>
+
+  <!-- ── DOCUMENT INDEX ── -->
+  <section class="doc-section" id="doc-index">
+    <h2 class="section-title"><span class="sec-icon">📚</span> Document Index</h2>
+    <div class="section-divider"></div>
+    <p>Read the spec docs in this order for full context. This guide covers the operational subset — install, workflow, verbs, IDE wiring.</p>
+
+    <div class="doc-index">
+      <div class="doc-index-header">knowledge-crib spec documents</div>
+      <table>
+        <thead><tr><th>#</th><th>Document</th><th>What it covers</th></tr></thead>
+        <tbody>
+          <tr><td>—</td><td><code>README.md</code></td><td>Overview, repo layout, vision quickstart</td></tr>
+          <tr><td>0</td><td><code>knowledge-crib-prd.md</code></td><td>Product vision, users, scope, metrics</td></tr>
+          <tr><td>1</td><td><code>knowledge-crib-architecture.md</code></td><td>System design + diagrams</td></tr>
+          <tr><td>2</td><td><code>knowledge-crib-data-model.md</code></td><td>Ontology: node kinds, edge rels, ID grammar</td></tr>
+          <tr><td>2b</td><td><code>knowledge-crib-deep-extraction.md</code></td><td>Deep code/SQL extraction + CFG/conditions</td></tr>
+          <tr><td>3</td><td><code>knowledge-crib-soul-format.md</code></td><td>On-disk soul format (the spine)</td></tr>
+          <tr><td>4</td><td><code>knowledge-crib-storage.md</code></td><td><code>SoulStore</code> + <code>IndexStore</code> design</td></tr>
+          <tr><td>5</td><td><code>knowledge-crib-pipeline.md</code></td><td>Extract→resolve→link→cluster→index + algorithms</td></tr>
+          <tr><td>6</td><td><code>knowledge-crib-extractor-plugins.md</code></td><td>Plugin contract; add a language/format</td></tr>
+          <tr><td>7</td><td><code>knowledge-crib-mcp-api.md</code></td><td>MCP verb request/response specs</td></tr>
+          <tr><td>8</td><td><code>knowledge-crib-cli.md</code></td><td>CLI commands</td></tr>
+          <tr><td>9</td><td><code>knowledge-crib-build-plan.md</code></td><td>Milestones M0→M9 (agent tasks)</td></tr>
+          <tr><td>—</td><td><code>knowledge-crib-changelog-req1-req2.md</code></td><td>Changelog: root resolution + <code>crib mcp</code> auto-wiring</td></tr>
+          <tr><td>—</td><td><code>knowledge-crib-m6-m13-build-plan.md</code></td><td>Milestones M6→M13 (post-foundation build plan)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── INSTALL ── -->
+  <section class="doc-section" id="install">
+    <h2 class="section-title"><span class="sec-icon">📦</span> Installation</h2>
+    <div class="section-divider"></div>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon">⚙️</span>
+      <div class="callout-body">
+        <strong>Requirements</strong>
+        <p>Node ≥ 20 · pnpm 9.15.0 via Corepack · macOS / Linux</p>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Clone &amp; install dependencies</h4>
+          <div class="code-wrapper">
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code><span class="token-prompt">$</span> git clone &lt;knowledge-crib repo&gt; ~/Documents/Knowlege-crib
+<span class="token-prompt">$</span> cd ~/Documents/Knowlege-crib
+<span class="token-prompt">$</span> corepack pnpm@9.15.0 install</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Build all 7 packages</h4>
+          <div class="code-wrapper">
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code><span class="token-prompt">$</span> corepack pnpm@9.15.0 build     <span class="token-comment"># builds all 7 packages → dist/</span>
+<span class="token-prompt">$</span> corepack pnpm@9.15.0 release:verify    <span class="token-comment"># production release gate</span></code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Link the CLI globally</h4>
+          <div class="code-wrapper">
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code><span class="token-prompt">$</span> corepack pnpm@9.15.0 --filter knowledge-crib link --global
+
+<span class="token-comment"># Verify:</span>
+<span class="token-prompt">$</span> which crib      <span class="token-comment"># /Users/&lt;you&gt;/Library/pnpm/crib</span>
+<span class="token-prompt">$</span> crib --help     <span class="token-comment"># prints the command list</span></code></pre>
+          </div>
+          <p>The global link points back at the repo's <code>dist/</code>. To upgrade: <code>git pull &amp;&amp; corepack pnpm@9.15.0 build</code> — no reinstall. The CLI is published as two names, <code>crib</code> and <code>knowledge-crib</code> (identical).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon">🔍</span>
+      <div class="callout-body">
+        <strong>PATH gotcha for GUI-launched clients</strong>
+        <p>IDEs launched from the Finder/Dock don't inherit your shell PATH. If a client can't start the server, use the absolute path: <code>/Users/&lt;you&gt;/Library/pnpm/crib</code></p>
+        <p><code>crib mcp install</code> (§CLI) embeds the absolute path automatically to avoid this issue.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PER-PROJECT ── -->
+  <section class="doc-section" id="per-project">
+    <h2 class="section-title"><span class="sec-icon">📁</span> Per-project Setup</h2>
+    <div class="section-divider"></div>
+
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-prompt">$</span> cd /path/to/your/project
+<span class="token-prompt">$</span> crib index .     <span class="token-comment"># 1. full index → .crib/ + registers in ~/.crib/registry.json</span>
+<span class="token-prompt">$</span> crib status .    <span class="token-comment"># 2. confirm: nodes, edges, clusters, vcsHead</span>
+<span class="token-comment">#  3. auto-wire your IDE:  crib mcp install --ide all (or --global)</span></code></pre>
+    </div>
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">✅</span>
+      <div class="callout-body">
+        <strong>Commit the soul, not the index</strong>
+        <p>Commit <code>.crib/*.jsonl</code>, <code>.crib/crib.json</code>, and <code>.crib/schema/</code> to git. Add <code>.crib/index/</code> (derived SQLite) to <code>.gitignore</code>. The registry (<code>~/.crib/registry.json</code>) is machine-local — never commit it.</p>
+      </div>
+    </div>
+
+    <h3>Supported Languages</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Language</th><th>Extensions</th><th>Graph produced</th></tr></thead>
+        <tbody>
+          <tr><td><strong>TypeScript</strong></td><td><code>.ts .tsx .mts .cts</code></td><td>Symbols, calls, imports, member-of</td></tr>
+          <tr><td><strong>Python</strong></td><td><code>.py .pyi</code></td><td>Symbols, module imports, calls, classes</td></tr>
+          <tr><td><strong>PL/SQL</strong></td><td><code>.sql .pkb .pks .pck .pls .pkh .typ</code></td><td>Procedures, tables, columns, executes, data-flow</td></tr>
+          <tr><td><strong>Markdown</strong></td><td><code>.md .markdown</code></td><td>Doc-sections, linked to symbols (describes / references)</td></tr>
+          <tr><td style="color:var(--text-faint)">JS / JSX</td><td><code>.js .jsx</code></td><td>File nodes only — no symbol extraction (use .ts/.tsx)</td></tr>
+          <tr><td><strong>Java</strong></td><td><code>.java</code></td><td>Symbols, member-of, intra-file calls (imports/cross-file via resolver)</td></tr>
+          <tr><td><strong>C#</strong></td><td><code>.cs</code></td><td>Symbols, member-of, intra-file calls (imports/cross-file via resolver)</td></tr>
+          <tr><td><strong>Go</strong></td><td><code>.go</code></td><td>Symbols, member-of, intra-file calls (imports/cross-file via resolver)</td></tr>
+          <tr><td><strong>Rust</strong></td><td><code>.rs</code></td><td>Symbols, member-of, intra-file calls (imports/cross-file via resolver)</td></tr>
+          <tr><td style="color:var(--text-faint)">Kotlin</td><td><code>.kt .kts</code></td><td>File nodes only — extractor not yet shipped</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Excluding Directories</h3>
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-prompt">$</span> crib index . --exclude vendor,third_party,generated</code></pre>
+    </div>
+    <p>Default ignored dirs: <code>.git</code>, <code>node_modules</code>, <code>.crib</code>, <code>dist</code>, <code>coverage</code>, <code>.next</code>, <code>build</code>, <code>.yarn</code>, <code>.gradle</code>, <code>target</code>, <code>out</code>, <code>.turbo</code>, <code>.parcel-cache</code>, <code>.nuxt</code>, <code>.svelte-kit</code>, <code>.remix</code>, <code>.astro</code>, <code>.angular</code>, <code>.cache</code>, <code>.idea</code>, <code>.vscode</code>, <code>.cursor</code>, <code>tmp</code>, <code>temp</code>, <code>logs</code></p>
+  </section>
+
+  <!-- ── ROOT RESOLUTION ── -->
+  <section class="doc-section" id="root-resolution">
+    <h2 class="section-title"><span class="sec-icon">🔍</span> Root Resolution <span class="new-tag">REQ-1</span></h2>
+    <div class="section-divider"></div>
+
+    <p>Path-taking commands (<code>serve</code>, <code>status</code>, <code>update</code>, <code>export</code>, <code>viz</code>, <code>query</code>) resolve the project root through a priority chain. This is what enables <strong style="color:var(--text)">one user-scope IDE entry to serve every project</strong>.</p>
+
+    <div class="resolution-chain">
+      <div class="chain-step">
+        <span class="chain-priority">1 — highest</span>
+        <div class="chain-body">
+          <strong>Explicit positional arg</strong>
+          <p><code>crib serve /abs/path</code> — an arg other than <code>.</code> always wins.</p>
+        </div>
+      </div>
+      <div class="chain-step">
+        <span class="chain-priority">2</span>
+        <div class="chain-body">
+          <strong><code>--cwd &lt;path&gt;</code> flag</strong>
+          <p>Override from the command line. May appear before or after the command.</p>
+        </div>
+      </div>
+      <div class="chain-step">
+        <span class="chain-priority">3</span>
+        <div class="chain-body">
+          <strong><code>KCRIB_ROOT</code> env var</strong>
+          <p>Set this in scripts or CI environments to pin the project root.</p>
+        </div>
+      </div>
+      <div class="chain-step highlight">
+        <span class="chain-priority">4 — key for Claude</span>
+        <div class="chain-body">
+          <strong><code>CLAUDE_PROJECT_DIR</code> env var</strong>
+          <p>Claude Code's real workspace signal. The <code>cwd</code> field is ignored (Claude Code issue #42883). This env var is what makes a single user-scope Claude entry serve every project.</p>
+        </div>
+      </div>
+      <div class="chain-step">
+        <span class="chain-priority">5</span>
+        <div class="chain-body">
+          <strong>Upward walk from CWD for <code>.crib/crib.json</code></strong>
+          <p>Handles monorepo subdirs — walks up the directory tree until it finds an indexed root.</p>
+        </div>
+      </div>
+      <div class="chain-step">
+        <span class="chain-priority">6 — fallback</span>
+        <div class="chain-body">
+          <strong>CWD</strong>
+          <p>Preserves pre-REQ-1 behaviour for existing setups.</p>
+        </div>
+      </div>
+    </div>
+
+    <p>After resolution, <code>~/.crib/registry.json</code> is consulted as an <strong style="color:var(--text)">overlay</strong>: if the discovered root is registered with a custom <code>.crib</code> location, the soul is opened from there. The registry is a pointer layer, not a second store — the soul stays committed inside each project's <code>.crib/</code>.</p>
+
+    <div class="callout callout-new">
+      <span class="callout-icon">⭐</span>
+      <div class="callout-body">
+        <strong>Practical upshot</strong>
+        <p>Run <code>crib mcp install --ide claude --global</code> once. From then on, every project is served through the <code>CLAUDE_PROJECT_DIR</code> → upward walk → registry chain — no per-project config files, no re-wiring when you start a new project.</p>
+        <p>Existing per-project entries that pass an explicit root keep working unchanged (explicit arg always wins).</p>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">ℹ️</span>
+      <div class="callout-body">
+        <strong><code>crib query</code> note</strong>
+        <p>Positionals to <code>crib query</code> are the <em>search text</em>, not a root path. Use <code>--cwd</code>, <code>KCRIB_ROOT</code>, or let the chain pick the root from CWD.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CLI ── -->
+  <section class="doc-section" id="cli">
+    <h2 class="section-title"><span class="sec-icon">⌨️</span> CLI Reference <span class="updated-tag">updated</span></h2>
+    <div class="section-divider"></div>
+
+    <h3>Global Flags</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Flag</th><th>Status</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>--cwd &lt;path&gt;</code></td><td><span class="impl-badge">✅ Implemented</span></td><td>Highest-priority explicit root (see Root resolution). May appear before or after the command.</td></tr>
+          <tr><td><code>--exclude a,b,…</code></td><td><span class="impl-badge">✅ Implemented</span></td><td>Discovery ignore set on top of <code>DEFAULT_IGNORES</code>. Repeatable.</td></tr>
+          <tr><td><code>--semantic</code></td><td><span class="impl-badge">✅ Implemented</span></td><td>Run the M7 INFERRED TF-IDF semantic linker (adds capped <code>references</code> edges, provenance INFERRED, conf ≤0.6). Zero-dep; off by default so <code>--extracted-only</code> stays deterministic.</td></tr>
+          <tr><td><code>--port &lt;N&gt;</code></td><td><span class="impl-badge">✅ Implemented</span></td><td>Port for <code>crib viz</code>.</td></tr>
+          <tr><td><code>--json</code></td><td><span class="plan-badge">planned</span></td><td>Machine-readable output (not yet wired).</td></tr>
+          <tr><td><code>--quiet / --verbose</code></td><td><span class="plan-badge">planned</span></td><td>Log level (not yet wired).</td></tr>
+          <tr><td><code>--link-threshold &lt;0..1&gt;</code></td><td><span class="plan-badge">planned</span></td><td>Min confidence to persist a cross-modal edge (not yet wired).</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="cli-index"><code>crib index [path]</code></h3>
+    <p>Full index — writes soul + builds derived index. Targets the exact given dir (no upward walk). <strong style="color:var(--text)">Registers the project in <code>~/.crib/registry.json</code></strong>.</p>
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-prompt">$</span> crib index .                               <span class="token-comment"># index + register</span>
+<span class="token-prompt">$</span> crib index . --semantic                       <span class="token-comment"># + run INFERRED TF-IDF semantic linker (references edges)</span>
+<span class="token-prompt">$</span> crib index . --exclude vendor,third_party   <span class="token-comment"># skip dirs</span></code></pre>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Flag</th><th>Status</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>--semantic</code></td><td><span class="impl-badge">✅</span></td><td>Run the INFERRED TF-IDF semantic linker (adds capped <code>references</code> edges)</td></tr>
+          <tr><td><code>--exclude &lt;a,b,…&gt;</code></td><td><span class="impl-badge">✅</span></td><td>Add dirs to the discovery ignore set (repeatable)</td></tr>
+          <tr><td><code>--include &lt;glob&gt;</code></td><td><span class="plan-badge">planned</span></td><td>Scope files (not yet wired)</td></tr>
+          <tr><td><code>--lang &lt;a,b&gt;</code></td><td><span class="plan-badge">planned</span></td><td>Restrict languages (not yet wired)</td></tr>
+          <tr><td><code>--worker-timeout &lt;ms&gt;</code></td><td><span class="plan-badge">planned</span></td><td>Per-file parse timeout (not yet wired)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="cli-serve"><code>crib serve [path]</code></h3>
+    <p>Start the MCP server on stdio. Root resolved per the priority chain. What IDE clients connect to.</p>
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-prompt">$</span> crib serve                    <span class="token-comment"># root from chain (CLAUDE_PROJECT_DIR / walk / cwd)</span>
+<span class="token-prompt">$</span> crib serve /abs/path/to/proj  <span class="token-comment"># explicit root (always wins)</span></code></pre>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Flag</th><th>Status</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>--transport stdio</code></td><td><span class="plan-badge">planned</span></td><td>Only stdio in v1 (flag accepted, no-op)</td></tr>
+          <tr><td><code>--extracted-only</code></td><td><span class="plan-badge">planned</span></td><td>Serve EXTRACTED edges only (not yet wired)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- crib mcp -->
+    <h3 id="cli-mcp"><code>crib mcp &lt;install|list|remove&gt;</code> <span class="new-tag">REQ-2</span></h3>
+    <p>Auto-wires the MCP server into each IDE's config file. No hand-editing JSON/TOML. Idempotent (re-running is a no-op), preserves sibling servers byte-for-byte, embeds the absolute <code>which crib</code> path so GUI-launched IDEs that don't inherit PATH still work.</p>
+
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-comment"># Project-scope (committable per-repo configs):</span>
+<span class="token-prompt">$</span> crib mcp install --ide all
+
+<span class="token-comment"># User-scope (one machine-wide entry — serves every project):</span>
+<span class="token-prompt">$</span> crib mcp install --ide claude --global
+
+<span class="token-comment"># Inspect and remove:</span>
+<span class="token-prompt">$</span> crib mcp list                         <span class="token-comment"># show present/absent per IDE + scope</span>
+<span class="token-prompt">$</span> crib mcp remove --ide cursor           <span class="token-comment"># strip managed entry, keep siblings</span></code></pre>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Flag</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>--ide &lt;claude|cursor|vscode|codex|all&gt;</code></td><td>IDE target (default <code>all</code> for install/list)</td></tr>
+          <tr><td><code>--global</code></td><td>Write the user-scope config instead of the project-scope one</td></tr>
+          <tr><td><code>--bin &lt;path&gt;</code></td><td>Override the embedded <code>command</code> (default: absolute <code>which crib</code>)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>What each IDE writes</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>IDE</th><th>Project-scope file</th><th>Global behavior</th></tr></thead>
+        <tbody>
+          <tr><td><strong>claude</strong></td><td><code>.mcp.json</code> (<code>mcpServers</code>, <code>["serve","."]</code>)</td><td>Shells out to <code>claude mcp add -s user</code> with <code>["serve"]</code> (no path → resolution chain)</td></tr>
+          <tr><td><strong>cursor</strong></td><td><code>.cursor/mcp.json</code> (<code>mcpServers</code>, <code>${workspaceFolder}</code>)</td><td><code>~/.cursor/mcp.json</code></td></tr>
+          <tr><td><strong>vscode</strong></td><td><code>.vscode/mcp.json</code> (<code>servers</code> + <code>type:"stdio"</code>, <code>${workspaceFolder}</code>)</td><td>Unsupported (notes + skips)</td></tr>
+          <tr><td><strong>codex</strong></td><td><code>.codex/config.toml</code> (<code>[mcp_servers.knowledge-crib]</code>, absolute path)</td><td><code>~/.codex/config.toml</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="cli-update"><code>crib update</code> &amp; <code>crib reindex</code></h3>
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-prompt">$</span> crib update .                    <span class="token-comment"># incremental — changed files only; refreshes registry</span>
+<span class="token-prompt">$</span> crib update . --since &lt;git-sha&gt;  <span class="token-comment"># explicit anchor</span>
+<span class="token-prompt">$</span> crib reindex .                   <span class="token-comment"># clean rebuild (alias for index)</span></code></pre>
+    </div>
+
+    <h3 id="cli-export"><code>crib export</code> &amp; <code>crib viz</code></h3>
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-prompt">$</span> crib export --format graph.json .   <span class="token-comment"># flat JSON: nodes + edges + stats</span>
+<span class="token-prompt">$</span> crib export --format mermaid .      <span class="token-comment"># architecture diagram</span>
+<span class="token-prompt">$</span> crib export --format report .       <span class="token-comment"># GRAPH_REPORT.md (clusters, god-nodes)</span>
+<span class="token-prompt">$</span> crib export --format rules --procedure &lt;id&gt; .  <span class="token-comment"># decision table</span>
+
+<span class="token-prompt">$</span> crib viz .                          <span class="token-comment"># offline web UI (Cytoscape canvas)</span></code></pre>
+    </div>
+
+    <h3 id="cli-other">Other Commands</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>crib status [path]</code></td><td>Health + node/edge/cluster counts + VCS anchor + staleness</td></tr>
+          <tr><td><code>crib query "&lt;text&gt;"</code></td><td>One-shot hybrid BM25 query (same engine as MCP verb). Positionals = search text, not root.</td></tr>
+          <tr><td><code>crib install-hooks [path]</code></td><td>Wire post-commit hook + <code>.gitattributes</code> merge driver</td></tr>
+          <tr><td><code>crib merge-driver %O %A %B %P</code></td><td>Git custom merge driver for <code>.crib</code> chunks</td></tr>
+          <tr><td><code>crib migrate</code></td><td>Upgrade older soul to current schemaVersion — <span class="plan-badge">planned, not yet wired</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Exit Codes</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code></td><td>OK</td></tr>
+          <tr><td><code>1</code></td><td>Generic error</td></tr>
+          <tr><td><code>2</code></td><td>Bad arguments</td></tr>
+          <tr><td><code>3</code></td><td>Not indexed — run <code>crib index</code> first</td></tr>
+          <tr><td><code>4</code></td><td>Migration required</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Typical Lifecycle</h3>
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-prompt">$</span> crib index .                          <span class="token-comment"># once (registers in ~/.crib/registry.json)</span>
+<span class="token-prompt">$</span> crib install-hooks                     <span class="token-comment"># keep soul fresh on every commit</span>
+<span class="token-prompt">$</span> crib mcp install --ide claude --global <span class="token-comment"># one user-scope entry → serves every project</span>
+<span class="token-prompt">$</span> crib serve                             <span class="token-comment"># agents connect (resolution chain picks the soul)</span>
+<span class="token-prompt">$</span> crib export --format graph.json        <span class="token-comment"># share / feed SeeroFlow</span></code></pre>
+    </div>
+  </section>
+
+  <!-- ── MCP VERBS ── -->
+  <section class="doc-section" id="mcp">
+    <h2 class="section-title"><span class="sec-icon">🔌</span> The MCP Server &amp; 9 Verbs</h2>
+    <div class="section-divider"></div>
+
+    <p><code>crib serve &lt;root&gt;</code> starts one MCP server over stdio. All results are <strong style="color:var(--text)">token-bounded</strong> (default <code>docLimit=3</code>, <code>limit=10</code>, with <code>truncated</code> + <code>cursor</code>) and <strong style="color:var(--text)">provenance-tagged</strong> (<code>method</code>, <code>provenance</code> = <code>EXTRACTED</code> | <code>INFERRED</code>, <code>confidence</code>, <code>evidence</code>) so the agent can filter to deterministic-only (<code>extractedOnly: true</code>).</p>
+
+    <div class="verb-grid">
+
+      <div class="verb-card" id="verb-status">
+        <div class="verb-header">
+          <span class="verb-name">status</span>
+          <span class="verb-badge">health check</span>
+        </div>
+        <p class="verb-desc">Returns health + whether indexed. Always call this first to verify the soul is loaded.</p>
+        <div class="code-wrapper">
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          <pre><code>{
+  <span class="token-key">"indexed"</span>: <span class="token-val">true</span>,  <span class="token-key">"schemaVersion"</span>: <span class="token-val">"1.1"</span>,
+  <span class="token-key">"stats"</span>: { <span class="token-key">"nodes"</span>: <span class="token-num">1576</span>, <span class="token-key">"edges"</span>: <span class="token-num">1831</span>, <span class="token-key">"clusters"</span>: <span class="token-num">104</span> },
+  <span class="token-key">"vcsHead"</span>: <span class="token-val">"41d60f60..."</span>,
+  <span class="token-key">"capabilities"</span>: { <span class="token-key">"embeddings"</span>: <span class="token-val">false</span>, <span class="token-key">"vector"</span>: <span class="token-val">false</span> }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="verb-card" id="verb-query">
+        <div class="verb-header">
+          <span class="verb-name">query</span>
+          <span class="verb-badge">hybrid BM25 search</span>
+        </div>
+        <p class="verb-desc">Hybrid BM25 search over code + docs. Use to find relevant symbols or doc sections by natural language.</p>
+        <div class="code-wrapper">
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          <pre><code><span class="token-comment">// request</span>
+{ <span class="token-key">"q"</span>: <span class="token-val">"where is the session token issued?"</span>, <span class="token-key">"limit"</span>: <span class="token-num">10</span> }
+
+<span class="token-comment">// response</span>
+{
+  <span class="token-key">"hits"</span>: [{ <span class="token-key">"id"</span>: <span class="token-val">"sym:...#TokenService.issue@L88"</span>, <span class="token-key">"score"</span>: <span class="token-num">0.81</span>,
+              <span class="token-key">"snippet"</span>: <span class="token-val">"issue(userId):Session"</span>, <span class="token-key">"clusterId"</span>: <span class="token-val">"c:auth"</span> }],
+  <span class="token-key">"truncated"</span>: <span class="token-val">false</span>
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="verb-card" id="verb-context">
+        <div class="verb-header">
+          <span class="verb-name">context</span>
+          <span class="verb-badge key">⭐ start here</span>
+        </div>
+        <p class="verb-desc">360° view for one symbol: signature, callers, callees, linked docs. The cheapest "give me everything about this symbol" call.</p>
+        <div class="code-wrapper">
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          <pre><code><span class="token-comment">// request</span>
+{ <span class="token-key">"id"</span>: <span class="token-val">"sym:src/auth/AuthService.ts#AuthService.login@L42"</span>, <span class="token-key">"docLimit"</span>: <span class="token-num">3</span> }
+
+<span class="token-comment">// response</span>
+{
+  <span class="token-key">"node"</span>: { <span class="token-key">"signature"</span>: ..., <span class="token-key">"file"</span>: ..., <span class="token-key">"span"</span>: ..., <span class="token-key">"clusterId"</span>: ... },
+  <span class="token-key">"callers"</span>: [...], <span class="token-key">"callees"</span>: [...], <span class="token-key">"docs"</span>: [...], <span class="token-key">"truncated"</span>: <span class="token-val">false</span>
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="verb-card" id="verb-impact">
+        <div class="verb-header">
+          <span class="verb-name">impact</span>
+          <span class="verb-badge key">🔥 prevents breaking changes</span>
+        </div>
+        <p class="verb-desc"><strong>This is the verb that prevents architecture-breaking changes.</strong> Ask it before any refactor. <code>dir: "up"</code> = dependents, <code>dir: "down"</code> = dependencies. <code>risk</code> is <code>high</code>/<code>medium</code>/<code>low</code> by distance.</p>
+        <div class="code-wrapper">
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          <pre><code>{ <span class="token-key">"id"</span>: <span class="token-val">"sym:...#login@L42"</span>, <span class="token-key">"dir"</span>: <span class="token-val">"up"</span>, <span class="token-key">"depth"</span>: <span class="token-num">2</span>, <span class="token-key">"limit"</span>: <span class="token-num">10</span> }
+<span class="token-comment">// → { "affected": [{ "rel": "calls", "distance": 1, "risk": "high" }], "truncated": true }</span></code></pre>
+        </div>
+      </div>
+
+      <div class="verb-card" id="verb-others">
+        <div class="verb-header"><span class="verb-name">describes</span><span class="verb-badge">doc ↔ code links</span></div>
+        <p class="verb-desc">Doc-sections linked to a symbol. Cheap, high value.</p>
+        <pre><code>{ <span class="token-key">"id"</span>: <span class="token-val">"sym:...#login@L42"</span>, <span class="token-key">"minConfidence"</span>: <span class="token-num">0.4</span> }</code></pre>
+      </div>
+
+      <div class="verb-card">
+        <div class="verb-header"><span class="verb-name">neighbors</span><span class="verb-badge">raw adjacency</span></div>
+        <p class="verb-desc">Graph-walking primitive. <code>dir</code>: <code>in</code> / <code>out</code> / <code>both</code>.</p>
+        <pre><code>{ <span class="token-key">"id"</span>: <span class="token-val">"..."</span>, <span class="token-key">"rel"</span>: <span class="token-val">"calls"</span>, <span class="token-key">"dir"</span>: <span class="token-val">"out"</span>, <span class="token-key">"limit"</span>: <span class="token-num">50</span> }</code></pre>
+      </div>
+
+      <div class="verb-card">
+        <div class="verb-header"><span class="verb-name">shortest_path</span><span class="verb-badge">path finding</span></div>
+        <p class="verb-desc">Shortest directed path between two nodes.</p>
+        <pre><code>{ <span class="token-key">"from"</span>: <span class="token-val">"sym:..."</span>, <span class="token-key">"to"</span>: <span class="token-val">"sym:..."</span>, <span class="token-key">"maxHops"</span>: <span class="token-num">6</span> }</code></pre>
+      </div>
+
+      <div class="verb-card">
+        <div class="verb-header"><span class="verb-name">detect_changes</span><span class="verb-badge">diff analysis</span></div>
+        <p class="verb-desc">Dry-run delta since a git ref. Read-only. Use to review a PR against the base ref.</p>
+        <pre><code>{ <span class="token-key">"since"</span>: <span class="token-val">"&lt;git sha&gt;"</span> }  <span class="token-comment">// defaults to manifest.incrementalSince</span></code></pre>
+      </div>
+
+      <div class="verb-card">
+        <div class="verb-header"><span class="verb-name">extract_rules</span><span class="verb-badge">decision table</span></div>
+        <p class="verb-desc">Flattens a PL/SQL procedure's guard-annotated CFG into a decision table. The migration deliverable.</p>
+        <pre><code>{ <span class="token-key">"procedure"</span>: <span class="token-val">"sym:claims.pkb#process_claim@L10"</span>, <span class="token-key">"includeTables"</span>: <span class="token-val">true</span> }</code></pre>
+      </div>
+
+    </div>
+
+    <h3>Error Shape</h3>
+    <pre><code>{ <span class="token-key">"error"</span>: { <span class="token-key">"code"</span>: <span class="token-val">"NOT_FOUND"</span> | <span class="token-val">"NOT_INDEXED"</span> | <span class="token-val">"AMBIGUOUS"</span> | <span class="token-val">"BAD_ARGS"</span> | <span class="token-val">"INTERNAL"</span>, <span class="token-key">"message"</span>: <span class="token-val">"..."</span> } }</code></pre>
+  </section>
+
+  <!-- ── CLIENT SETUP ── -->
+  <section class="doc-section" id="clients">
+    <h2 class="section-title"><span class="sec-icon">🛠️</span> IDE Client Setup <span class="updated-tag">updated</span></h2>
+    <div class="section-divider"></div>
+
+    <p>All four clients launch the same MCP server: <code>crib serve</code>. With REQ-1 + REQ-2, the recommended path is <strong style="color:var(--text)">one global command, once, and you're done</strong> — no per-project files.</p>
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">🚀</span>
+      <div class="callout-body">
+        <strong>Fastest path (all IDEs)</strong>
+        <p>Index your project, then run one of these to auto-wire everything — no hand-editing config files:</p>
+        <p><code>crib mcp install --ide all</code> — project-scope configs for all 4 IDEs (committable)</p>
+        <p><code>crib mcp install --ide claude --global</code> — one machine-wide entry for Claude that serves every project</p>
+      </div>
+    </div>
+
+    <div class="client-tabs">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab(this, 'claude')">Claude Code</button>
+        <button class="tab-btn" onclick="switchTab(this, 'cursor')">Cursor</button>
+        <button class="tab-btn" onclick="switchTab(this, 'copilot')">GitHub Copilot</button>
+        <button class="tab-btn" onclick="switchTab(this, 'codex')">Codex CLI</button>
+      </div>
+
+      <!-- Claude Code -->
+      <div class="tab-panel active" id="tab-claude">
+        <div id="client-claude" class="section-anchor"></div>
+        <p>Claude Code reads MCP servers from project-scoped <code>.mcp.json</code> (committable) or from <code>claude mcp add</code> (user-scoped). The global user-scope option is now the recommended path — one entry serves all projects via <code>CLAUDE_PROJECT_DIR</code>.</p>
+
+        <div class="mcp-options">
+          <div class="mcp-option">
+            <div class="mop-letter">A</div>
+            <div class="mop-body">
+              <div class="mop-label">Auto-wire project-scope (crib mcp)</div>
+              <p>Writes <code>.mcp.json</code> with <code>["serve","."]</code> — committable, portable.</p>
+              <div class="code-wrapper">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code><span class="token-prompt">$</span> crib mcp install --ide claude</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="mcp-option recommended">
+            <div class="mop-letter">B</div>
+            <div class="mop-body">
+              <div class="mop-label">Global user-scope — one entry for every project <span class="rec-badge">Recommended</span></div>
+              <p>Shells out to <code>claude mcp add -s user</code> with <code>crib serve</code> (no path). Root-resolution chain picks the right soul per workspace via <code>CLAUDE_PROJECT_DIR</code>.</p>
+              <div class="code-wrapper">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code><span class="token-prompt">$</span> crib mcp install --ide claude --global</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="mcp-option">
+            <div class="mop-letter">C</div>
+            <div class="mop-body">
+              <div class="mop-label">Manual — hand-edit .mcp.json</div>
+              <p>Create <code>.mcp.json</code> in the project root:</p>
+              <div class="code-wrapper">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>{
+  <span class="token-key">"mcpServers"</span>: {
+    <span class="token-key">"knowledge-crib"</span>: {
+      <span class="token-key">"command"</span>: <span class="token-val">"crib"</span>,
+      <span class="token-key">"args"</span>: [<span class="token-val">"serve"</span>, <span class="token-val">"."</span>]
+    }
+  }
+}</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h4>Verify</h4>
+        <div class="code-wrapper">
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          <pre><code>/mcp    <span class="token-comment"># lists connected servers + tools; knowledge-crib should show 11 tools</span></code></pre>
+        </div>
+
+        <div class="callout callout-info">
+          <span class="callout-icon">ℹ️</span>
+          <div class="callout-body">
+            <strong>Why <code>.</code> works in args</strong>
+            <p>Claude Code ignores the <code>cwd</code> field (issue #42883). <code>crib</code>'s resolution chain falls through to <code>CLAUDE_PROJECT_DIR</code> (Claude's real workspace signal) then the upward walk from CWD. That chain is also why the global no-arg entry serves every project.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cursor -->
+      <div class="tab-panel" id="tab-cursor">
+        <div id="client-cursor" class="section-anchor"></div>
+        <p>Cursor reads <code>.cursor/mcp.json</code> (project, committable) or <code>~/.cursor/mcp.json</code> (global).</p>
+
+        <div class="mcp-options">
+          <div class="mcp-option">
+            <div class="mop-letter">A</div>
+            <div class="mop-body">
+              <div class="mop-label">Auto-wire (crib mcp)</div>
+              <div class="code-wrapper">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code><span class="token-prompt">$</span> crib mcp install --ide cursor             <span class="token-comment"># project-scope</span>
+<span class="token-prompt">$</span> crib mcp install --ide cursor --global     <span class="token-comment"># global: ~/.cursor/mcp.json</span></code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="mcp-option">
+            <div class="mop-letter">B</div>
+            <div class="mop-body">
+              <div class="mop-label">Manual — create <code>.cursor/mcp.json</code></div>
+              <div class="code-wrapper">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>{
+  <span class="token-key">"mcpServers"</span>: {
+    <span class="token-key">"knowledge-crib"</span>: {
+      <span class="token-key">"command"</span>: <span class="token-val">"crib"</span>,
+      <span class="token-key">"args"</span>: [<span class="token-val">"serve"</span>, <span class="token-val">"${workspaceFolder}"</span>]
+    }
+  }
+}</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p>After either option, <strong>Reload Window</strong> (<code>Cmd+Shift+P</code> → "Reload Window") and verify in <strong>Settings → Tools &amp; MCP</strong> — <code>knowledge-crib</code> should show a green connected status.</p>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">💡</span>
+          <div class="callout-body">
+            <strong>Portable</strong>
+            <p><code>${workspaceFolder}</code> resolves to the project root — the same file works in every repo.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- GitHub Copilot -->
+      <div class="tab-panel" id="tab-copilot">
+        <div id="client-copilot" class="section-anchor"></div>
+        <p>GitHub Copilot Chat in VS Code supports MCP via <code>.vscode/mcp.json</code> (GA in VS Code 1.102+). Tools only run in Copilot <strong>Agent mode</strong>. VS Code user-scoped MCP config is not documented upstream, so only project-scope is offered.</p>
+
+        <div class="callout callout-caution">
+          <span class="callout-icon">🚨</span>
+          <div class="callout-body">
+            <strong>Two critical differences from Cursor / Claude</strong>
+            <p>Root key must be <code>servers</code> (not <code>mcpServers</code>), and <code>type: "stdio"</code> is required. Using <code>mcpServers</code> here silently loads nothing.</p>
+          </div>
+        </div>
+
+        <div class="mcp-options">
+          <div class="mcp-option">
+            <div class="mop-letter">A</div>
+            <div class="mop-body">
+              <div class="mop-label">Auto-wire (crib mcp)</div>
+              <div class="code-wrapper">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code><span class="token-prompt">$</span> crib mcp install --ide vscode    <span class="token-comment"># writes .vscode/mcp.json (servers + type:stdio)</span></code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="mcp-option">
+            <div class="mop-letter">B</div>
+            <div class="mop-body">
+              <div class="mop-label">Manual — create <code>.vscode/mcp.json</code></div>
+              <div class="code-wrapper">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>{
+  <span class="token-key">"servers"</span>: {
+    <span class="token-key">"knowledge-crib"</span>: {
+      <span class="token-key">"type"</span>: <span class="token-val">"stdio"</span>,
+      <span class="token-key">"command"</span>: <span class="token-val">"crib"</span>,
+      <span class="token-key">"args"</span>: [<span class="token-val">"serve"</span>, <span class="token-val">"${workspaceFolder}"</span>]
+    }
+  }
+}</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p>Reload the VS Code window. Switch Copilot Chat to <strong>Agent mode</strong>. Verify in Output panel (<code>Cmd+Shift+U</code>) → "MCP Logs".</p>
+      </div>
+
+      <!-- Codex -->
+      <div class="tab-panel" id="tab-codex">
+        <div id="client-codex" class="section-anchor"></div>
+        <p>Codex CLI reads <code>~/.codex/config.toml</code> (user) or <code>.codex/config.toml</code> (project, trusted projects only). Table must be <code>[mcp_servers.&lt;name&gt;]</code> — <code>[mcpServers]</code> / <code>[mcp.servers]</code> is silently ignored.</p>
+
+        <div class="callout callout-warn">
+          <span class="callout-icon">⚠️</span>
+          <div class="callout-body">
+            <strong>Codex limitation — single-project-per-entry</strong>
+            <p>Codex does <strong>not</strong> interpolate <code>${workspaceFolder}</code>, so each entry must embed an absolute project path. A single global Codex entry cannot transparently serve multiple projects the way Claude/Cursor user-scope entries can.</p>
+            <p>Options: (a) one project-scoped <code>.codex/config.toml</code> per repo (committable, after marking repo trusted), or (b) one global entry per project in <code>~/.codex/config.toml</code>. This is the one IDE where the "single entry for every project" goal is not fully achievable.</p>
+          </div>
+        </div>
+
+        <div class="mcp-options">
+          <div class="mcp-option">
+            <div class="mop-letter">A</div>
+            <div class="mop-body">
+              <div class="mop-label">Auto-wire (crib mcp)</div>
+              <div class="code-wrapper">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code><span class="token-prompt">$</span> crib mcp install --ide codex          <span class="token-comment"># project: .codex/config.toml</span>
+<span class="token-prompt">$</span> crib mcp install --ide codex --global  <span class="token-comment"># global: ~/.codex/config.toml</span></code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="mcp-option">
+            <div class="mop-letter">B</div>
+            <div class="mop-body">
+              <div class="mop-label">Manual — add to <code>~/.codex/config.toml</code></div>
+              <div class="code-wrapper">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>[mcp_servers.knowledge-crib]
+command = <span class="token-val">"crib"</span>
+args = [<span class="token-val">"serve"</span>, <span class="token-val">"/absolute/path/to/project"</span>]
+startup_timeout_sec = <span class="token-num">20</span>
+tool_timeout_sec = <span class="token-num">60</span></code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p>Inside the Codex TUI, <code>/mcp</code> lists active servers and their tools.</p>
+      </div>
+    </div><!-- /tabs -->
+
+    <h3>Verification (Any Client)</h3>
+    <div class="callout callout-info">
+      <span class="callout-icon">💬</span>
+      <div class="callout-body">
+        <strong>Test query to confirm it works</strong>
+        <p>"What calls <code>ScheduleFilterBar</code>, and what's the blast radius if I change its props?"</p>
+        <p>The agent should call <code>query</code> → <code>context</code> → <code>impact(dir=up)</code> and return callers + dependents without re-reading your source files. If it can't see Knowledge-crib tools, the server didn't start: check the client's MCP log and the PATH gotcha in §Install.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WORKED EXAMPLE ── -->
+  <section class="doc-section" id="example">
+    <h2 class="section-title"><span class="sec-icon">🔬</span> Worked Example: FTC Repo</h2>
+    <div class="section-divider"></div>
+
+    <p>A real walkthrough on <code>~/Projects/event_management_software</code> — a polyglot Gradle/Yarn-PnP monorepo (TypeScript + Java + SQL). Records the exact steps, root causes, and fixes.</p>
+
+    <h3>Source composition</h3>
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-comment"># 1313 java · 292 tsx · 225 sql · 58 ts · 46 js · 37 jsx · 14 kts · 11 kt · 5 md</span>
+<span class="token-comment"># Knowledge-crib extracts: TS/TSX, SQL, Markdown, Java (M14 extractor)</span>
+<span class="token-comment"># Kotlin → file nodes only (no Kotlin extractor yet)</span></code></pre>
+    </div>
+
+    <h3>First attempt — failure and root causes</h3>
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-prompt">$</span> crib index .
+<span class="token-comment"># Hung at 100% CPU, 12+ min, no .crib written</span></code></pre>
+    </div>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon">🔎</span>
+      <div class="callout-body">
+        <strong>Root causes identified</strong>
+        <p><strong>Cause 1:</strong> Default discovery ignore set didn't include <code>.yarn</code> (9832 files / 261 MB) or <code>.gradle</code> (174 MB). Discovery read+hashed every cache file before reaching source.</p>
+        <p><strong>Cause 2 (historical):</strong> PL/SQL extractor entered an <em>infinite loop</em> on stray <code>WHEN</code>/<code>ELSE</code>/<code>EXCEPTION</code> tokens at top level (<code>recover()</code> bailed on a BLOCK_END keyword without advancing) — not an O(n²) path. Fixed in commit <code>0961e5b</code> with a forward-progress guard + regression test; the extractor is now O(tokens)/file.</p>
+      </div>
+    </div>
+
+    <h3>Fixes applied to Knowledge-crib</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Fix</th><th>File</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Extended <code>DEFAULT_IGNORES</code> with <code>.yarn</code>, <code>.gradle</code>, <code>target</code>, <code>out</code>, <code>.turbo</code>, <code>.parcel-cache</code>, …</td><td><code>packages/pipeline/src/structure.ts</code></td></tr>
+          <tr><td>2</td><td>Added <code>--exclude</code> CLI flag + <code>ignores</code> option through <code>IndexOpts</code></td><td><code>packages/cli/src/cli.ts</code>, <code>packages/pipeline/src/pipeline.ts</code></td></tr>
+          <tr><td>3</td><td>Fixed <code>crib serve</code> exiting immediately — <code>serveStdio</code> now blocks until stdin EOF</td><td><code>packages/mcp/src/server.ts</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Successful index</h3>
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-prompt">$</span> crib index FTCCloud --exclude resources,graphify-out
+<span class="token-comment"># indexed 786 files → 1576 nodes, 1831 edges (59 describes, 38 references) in 1322ms</span></code></pre>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-value" style="color:var(--accent)">1,576</div><div class="stat-label">Total nodes</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--purple)">1,831</div><div class="stat-label">Total edges</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--green)">621</div><div class="stat-label">Symbols</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--amber)">104</div><div class="stat-label">Clusters</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--accent-hover)">97</div><div class="stat-label">Doc↔code links</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--green)">1.3s</div><div class="stat-label">Build time</div></div>
+    </div>
+
+    <h3>MCP server verification</h3>
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code>initialize  → serverInfo { name: "knowledge-crib", version: "0.1.0" }
+tools/list  → 11 tools (status, query, context, source, dossier, impact,
+                         describes, neighbors, shortest_path, detect_changes, extract_rules)
+status      → { nodes:1576, edges:1831, clusters:104, vcsHead:... }
+
+query "schedule"
+  → ScheduleFilterBar (score -4.01), ScheduleStatsCards, ScheduleItemRequest
+
+impact(ScheduleFilterBar, up, depth 2)
+  → FllSchedulePage.tsx imports @ distance 1, risk high
+    + member-of dependents @ distance 2</code></pre>
+    </div>
+
+    <h3>Wiring the IDEs (with REQ-2)</h3>
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-comment"># Project-scope — committable configs for all 4 IDEs:</span>
+<span class="token-prompt">$</span> crib mcp install --ide all
+
+<span class="token-comment"># Or user-scope — one entry that serves every project:</span>
+<span class="token-prompt">$</span> crib mcp install --ide claude --global</code></pre>
+    </div>
+  </section>
+
+  <!-- ── SOUL FRESH ── -->
+  <section class="doc-section" id="soul">
+    <h2 class="section-title"><span class="sec-icon">🔄</span> Keeping the Soul Fresh</h2>
+    <div class="section-divider"></div>
+
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-comment"># After editing code:</span>
+<span class="token-prompt">$</span> crib update .              <span class="token-comment"># re-extract changed files + refresh registry</span>
+
+<span class="token-comment"># Automatic refresh on every commit:</span>
+<span class="token-prompt">$</span> crib install-hooks .       <span class="token-comment"># post-commit → crib update; .gitattributes merge driver</span>
+
+<span class="token-comment"># Clean rebuild:</span>
+<span class="token-prompt">$</span> crib reindex .</code></pre>
+    </div>
+
+    <p><code>crib update</code> uses the git HEAD stamped in the manifest as the anchor; if there's no anchor, it falls back to a full re-index. <code>.crib</code> chunks are mergeable via the <code>kcrib</code> custom merge driver, so concurrent index updates across branches don't conflict.</p>
+  </section>
+
+  <!-- ── EXPORT ── -->
+  <section class="doc-section" id="export">
+    <h2 class="section-title"><span class="sec-icon">📤</span> Exporting the Graph</h2>
+    <div class="section-divider"></div>
+
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-prompt">$</span> crib export --format graph.json . > graph.json    <span class="token-comment"># full soul as JSON</span>
+<span class="token-prompt">$</span> crib export --format report .                     <span class="token-comment"># human-readable summary</span>
+<span class="token-prompt">$</span> crib export --format mermaid --procedure &lt;id&gt; .  <span class="token-comment"># CFG mermaid for procedure</span>
+<span class="token-prompt">$</span> crib export --format rules --procedure &lt;id&gt; .    <span class="token-comment"># decision table</span>
+
+<span class="token-prompt">$</span> crib viz .                                        <span class="token-comment"># offline Cytoscape web UI</span></code></pre>
+    </div>
+  </section>
+
+  <!-- ── TROUBLESHOOTING ── -->
+  <section class="doc-section" id="troubleshoot">
+    <h2 class="section-title"><span class="sec-icon">🩺</span> Troubleshooting</h2>
+    <div class="section-divider"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Symptom</th><th>Cause / Fix</th></tr></thead>
+        <tbody class="trouble-row">
+          <tr><td><code>not indexed — run crib index first</code></td><td>No <code>.crib/</code> at that path. Run <code>crib index &lt;path&gt;</code>.</td></tr>
+          <tr><td><code>crib serve</code> exits immediately</td><td>Old <code>dist/</code> — run <code>corepack pnpm@9.15.0 build</code> again. Fixed in current build.</td></tr>
+          <tr><td>IDE says server failed to start / <code>crib</code> not found</td><td>IDE didn't inherit PATH. Use absolute path or run <code>crib mcp install</code> (it embeds the absolute path automatically).</td></tr>
+          <tr><td>Index hangs at 100% CPU</td><td>Cache dir not ignored (e.g. <code>.yarn</code>/<code>.gradle</code>). Re-run with <code>--exclude &lt;dir&gt;</code>. (A historical PL/SQL parser infinite-loop on <code>V*.sql</code> was fixed in commit <code>0961e5b</code> — no longer a cause.)</td></tr>
+          <tr><td><code>query</code> returns nothing</td><td>Symbol not extracted (e.g. <code>.js</code> / <code>.jsx</code> / <code>.cjs</code> / <code>.mjs</code>, or <code>.kt</code>). Re-index as <code>.ts</code>/<code>.tsx</code> or extend the extractor registry.</td></tr>
+          <tr><td>Tools visible but agent doesn't use them</td><td>Copilot "Ask" mode — switch to <strong>Agent</strong> mode.</td></tr>
+          <tr><td><code>.cursor</code> / <code>.vscode</code> MCP loads nothing</td><td>Wrong root key: Cursor uses <code>mcpServers</code>, Copilot uses <code>servers</code> + <code>type: "stdio"</code>.</td></tr>
+          <tr><td>Codex ignores the server</td><td>Use snake_case <code>[mcp_servers.name]</code>, not <code>[mcpServers]</code> or <code>[mcp.servers]</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Debug the server directly</h3>
+    <div class="code-wrapper">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><code><span class="token-prompt">$</span> printf '%s\n' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"p","version":"0"}}}' \
+  '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"status","arguments":{}}}' \
+  | crib serve /path/to/project
+<span class="token-comment"># Expect two JSON-RPC responses: initialize + status</span></code></pre>
+    </div>
+  </section>
+
+  <!-- ── KNOWN LIMITS ── -->
+  <section class="doc-section" id="limits">
+    <h2 class="section-title"><span class="sec-icon">⚠️</span> Known Issues &amp; Limits</h2>
+    <div class="section-divider"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Limitation</th><th>Workaround</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>No Kotlin symbol extraction — file nodes only (Java, C#, Go, Rust shipped in M14)</td><td>Registry is extensible; contribute a Kotlin extractor</td></tr>
+          <tr><td>2</td><td><code>.js</code> / <code>.jsx</code> / <code>.cjs</code> / <code>.mjs</code> not symbol-extracted — intentional</td><td>Use <code>.ts</code> / <code>.tsx</code> / <code>.mts</code> / <code>.cts</code> (those <em>are</em> extracted)</td></tr>
+          <tr><td>3</td><td>No vector embeddings ship (no sqlite-vec; <code>capabilities().vector</code> hard-coded false)</td><td>Deterministic core is BM25 + FTS5 only. The INFERRED TF-IDF semantic linker is opt-in via <code>--semantic</code></td></tr>
+          <tr><td>4</td><td>Multimodal (PDF/image/audio) is opt-in</td><td><code>crib_worker</code> Python subprocess never spawned on default path; enablement is library-API only (no <code>--multimodal</code> CLI flag yet)</td></tr>
+          <tr><td>5</td><td>Codex: one global entry can't serve multiple projects path-lessly</td><td>Use per-project <code>.codex/config.toml</code> or one global entry per project</td></tr>
+          <tr><td>6</td><td>Several CLI flags are "planned" — accepted but no-op</td><td>See CLI spec flag status column</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── ARCHITECTURE ── -->
+  <section class="doc-section" id="architecture">
+    <h2 class="section-title"><span class="sec-icon">🏗️</span> Architecture</h2>
+    <div class="section-divider"></div>
+
+    <h3>Package Structure</h3>
+    <div class="arch-diagram">
+<span class="arch-highlight">knowledge-crib/</span>                 <span class="arch-comment"># pnpm monorepo</span>
+  packages/
+    <span class="arch-highlight">soul-schema/</span>   <span class="arch-comment"># JSON Schema + TS types (the contract)</span>
+    <span class="arch-highlight">core/</span>          <span class="arch-comment"># GraphModel, SoulStore (chunked JSONL) + IndexStore (SQLite + FTS5)</span>
+    <span class="arch-highlight">parsers/</span>       <span class="arch-comment"># hand-rolled recursive-descent — TS / Python / PL-SQL / Markdown / Java / C# / Go / Rust</span>
+    <span class="arch-highlight">pipeline/</span>      <span class="arch-comment"># extract → resolve → link → cluster → index (phased)</span>
+    <span class="arch-highlight">mcp/</span>           <span class="arch-comment"># one MCP server (stdio) + 11 verbs (pure functions)</span>
+    <span class="arch-highlight">cli/</span>           <span class="arch-comment"># crib index|status|query|serve|mcp|update|export|viz|install-hooks</span>
+    <span class="arch-highlight">ui/</span>            <span class="arch-comment"># offline web viz (vendored Cytoscape)</span>
+    <span class="arch-new">soul-reader/</span>   <span class="arch-comment"># engine-free reader for SeeroFlow / external consumers</span>
+  docs/            <span class="arch-comment"># spec + this guide</span>
+    </div>
+
+    <h3>Data Flow</h3>
+    <div class="arch-diagram">
+<span class="arch-highlight">discoverFiles</span>
+  → <span class="arch-highlight">runStructure</span>
+  → <span class="arch-highlight">runParse</span>        <span class="arch-comment"># tree-sitter per language</span>
+  → <span class="arch-highlight">runResolve</span>
+  → <span class="arch-highlight">runCfg</span>          <span class="arch-comment"># guard-annotated CFG for PL/SQL</span>
+  → <span class="arch-highlight">runLink</span>
+  → <span class="arch-highlight">runCluster</span>
+  → (runSemanticLink)     <span class="arch-comment"># opt-in TF-IDF</span>
+  → <span class="arch-highlight">commit soul</span>           <span class="arch-comment"># SoulStore — source of truth</span>
+  → <span class="arch-highlight">buildIndex</span>            <span class="arch-comment"># IndexStore (SQLite) — rebuildable</span>
+  → <span class="arch-new">register ~/.crib/registry.json</span>  <span class="arch-comment"># REQ-1 — pointer layer</span>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🔒</span>
+      <div class="callout-body">
+        <strong>Determinism &amp; Provenance</strong>
+        <p>The deterministic core never touches the network. Edges carry <code>{method, provenance, confidence, evidence}</code>. <code>provenance: EXTRACTED</code> is the deterministic subset; <code>INFERRED</code> is opt-in (<code>semantic: true</code>) and strictly recall-adding. Every MCP verb is a pure function over <code>{soul, index, repoRoot, vcs?}</code> — the server is thin wiring.</p>
+      </div>
+    </div>
+
+    <h3>Sources &amp; References</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Client</th><th>Documentation</th></tr></thead>
+        <tbody>
+          <tr><td>Claude Code</td><td><a href="https://docs.claude.com/en/docs/claude-code/mcp" style="color:var(--accent)">docs.claude.com/en/docs/claude-code/mcp</a></td></tr>
+          <tr><td>Cursor</td><td><a href="https://cursor.com/docs/mcp.md" style="color:var(--accent)">cursor.com/docs/mcp.md</a></td></tr>
+          <tr><td>GitHub Copilot / VS Code</td><td><a href="https://code.visualstudio.com/docs/copilot/reference/mcp-configuration" style="color:var(--accent)">code.visualstudio.com/docs/copilot/reference/mcp-configuration</a></td></tr>
+          <tr><td>OpenAI Codex CLI</td><td><a href="https://developers.openai.com/codex/mcp" style="color:var(--accent)">developers.openai.com/codex/mcp</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="font-size:12.5px; color:var(--text-faint); margin-top:24px;">Knowledge-crib is Apache-2.0, greenfield, all-new. GitNexus and Graphify are design inspiration only — no code is derived from either.</p>
+  </section>
+
+</div><!-- /content -->
+
+<footer class="footer">
+  <span>Knowledge-crib v1.1 · Schema 1.1 · Apache-2.0 · REQ-1 &amp; REQ-2 included</span>
+  <span>Updated for <a href="#">Vishal Chawla</a> · June 2026</span>
+</footer>
+
+</main>
+</div><!-- /layout -->
+
+<script>
+  function switchTab(btn, id) {
+    const bar = btn.closest('.tab-bar');
+    const container = btn.closest('.client-tabs');
+    bar.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    container.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    container.querySelector('#tab-' + id).classList.add('active');
+  }
+
+  function copyCode(btn) {
+    const code = btn.nextElementSibling.querySelector('code');
+    navigator.clipboard.writeText(code.innerText).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  const allSections = document.querySelectorAll('.doc-section, .section-anchor');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const offset = 64 + 32;
+
+  function updateActive() {
+    let current = '';
+    allSections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - offset) current = s.id;
+    });
+    navLinks.forEach(l => {
+      l.classList.remove('active');
+      if (l.getAttribute('href') === '#' + current) l.classList.add('active');
+    });
+  }
+
+  window.addEventListener('scroll', updateActive, { passive: true });
+  updateActive();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,148 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#firstCallWithin@L863",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:fc8e8ca71347ffd7a9509dc52290fc53d158146bb821fae1cac2acf81a20c796",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#firstCallWithin@L863",
+    "kind": "symbol",
+    "type": "function",
+    "name": "firstCallWithin",
+    "qualifiedName": "firstCallWithin",
+    "signature": "firstCallWithin(node: ts.Node): ts.CallExpression | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 863,
+      "end": 870
+    },
+    "recursive": true,
+    "callSites": [
+      {
+        "callee": "forEachChild",
+        "line": 866
+      },
+      {
+        "callee": "firstCallWithin",
+        "line": 867
+      }
+    ]
+  },
+  "source": {
+    "text": "function firstCallWithin(node: ts.Node): ts.CallExpression | undefined {\n  if (ts.isCallExpression(node)) return node;\n  let found: ts.CallExpression | undefined;\n  ts.forEachChild(node, (c) => {\n    if (!found) found = firstCallWithin(c);\n  });\n  return found;\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 863
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L806",
+      "confidence": 1,
+      "name": "actionInfo",
+      "qualifiedName": "actionInfo",
+      "signature": "actionInfo(stmt: ts.Statement): ActionInfo | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 806
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L862",
+      "snippet": "/** The first CallExpression within this expression tree (pre-order), or undefined. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#firstCallWithin@L863",
+    "procedureName": "firstCallWithin",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L864"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#firstCallWithin@L863",
+        "procedureName": "firstCallWithin",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L864",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L864",
+            "expr": "ts.isCallExpression(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1f067498c2d969ca90da899a71eef18607764e68a877efc4092b3dcdaef17b7",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L864",
+          "line": 864,
+          "expr": "return node;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#firstCallWithin@L863",
+        "procedureName": "firstCallWithin",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fbc488fd6ec20d6fb430cba61a606c93f4b2fb731a701bfcca75f4f6f3318be3",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L866",
+          "line": 866,
+          "expr": "ts.forEachChild(node, (c) => {\n    if (!found) found = firstCallWithin(c);\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#firstCallWithin@L863",
+        "procedureName": "firstCallWithin",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:744e8fa9ce79b7bc7c7cdecc1b3f4c8dafac7b96a94870017709b0368ae4569c",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L869",
+          "line": 869,
+          "expr": "return found;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": true,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,318 @@
+{
+  "id": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:eab4147c219453baecbf09f78a6adb312e99ed6d86e71811695dcbde313f0220",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runWorker",
+    "qualifiedName": "runWorker",
+    "signature": "runWorker(mediaAbsPath: string, opts: WorkerOpts = {}): Promise<WorkerPayload>",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/multimodal/worker.ts",
+    "span": {
+      "start": 74,
+      "end": 124
+    },
+    "callSites": [
+      {
+        "callee": "defaultWorkerDir",
+        "line": 76
+      },
+      {
+        "callee": "push",
+        "line": 79
+      },
+      {
+        "callee": "spawn",
+        "line": 84
+      },
+      {
+        "callee": "resolve",
+        "line": 86
+      },
+      {
+        "callee": "clearTimeout",
+        "line": 94
+      },
+      {
+        "callee": "resolve",
+        "line": 95
+      },
+      {
+        "callee": "setTimeout",
+        "line": 97
+      },
+      {
+        "callee": "kill",
+        "line": 99
+      },
+      {
+        "callee": "finish",
+        "line": 103
+      },
+      {
+        "callee": "setEncoding",
+        "line": 106
+      },
+      {
+        "callee": "on",
+        "line": 107
+      },
+      {
+        "callee": "on",
+        "line": 110
+      },
+      {
+        "callee": "finish",
+        "line": 110
+      },
+      {
+        "callee": "on",
+        "line": 111
+      },
+      {
+        "callee": "finish",
+        "line": 113
+      },
+      {
+        "callee": "parse",
+        "line": 117
+      },
+      {
+        "callee": "finish",
+        "line": 118
+      },
+      {
+        "callee": "finish",
+        "line": 120
+      }
+    ]
+  },
+  "source": {
+    "text": "export function runWorker(mediaAbsPath: string, opts: WorkerOpts = {}): Promise<WorkerPayload> {\n  const python = opts.python ?? 'python3';\n  const workerDir = opts.workerPath ?? defaultWorkerDir();\n  const args = ['-m', 'crib_worker.cli', '--backend', opts.backend ?? 'fake', mediaAbsPath];\n  if (opts.modelPath) {\n    args.push('--model-path', opts.modelPath);\n  }\n  return new Promise((resolve) => {\n    let child: ReturnType<typeof spawn>;\n    try {\n      child = spawn(python, args, { cwd: workerDir, stdio: ['ignore', 'pipe', 'pipe'] });\n    } catch {\n      resolve({ ...EMPTY, file: mediaAbsPath });\n      return;\n    }\n    let stdout = '';\n    let settled = false;\n    const finish = (payload: WorkerPayload): void => {\n      if (settled) return;\n      settled = true;\n      clearTimeout(timer);\n      resolve(payload);\n    };\n    const timer = setTimeout(() => {\n      try {\n        child.kill('SIGKILL');\n      } catch {\n        /* ignore */\n      }\n      finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 });\n    }, opts.timeoutMs ?? 30_000);\n\n    child.stdout?.setEncoding('utf8');\n    child.stdout?.on('data', (chunk: string) => {\n      stdout += chunk;\n    });\n    child.on('error', () => finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 }));\n    child.on('close', (code) => {\n      if (code !== 0) {\n        finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 });\n        return;\n      }\n      try {\n        const payload = JSON.parse(stdout) as WorkerPayload;\n        finish({ ...EMPTY, ...payload, file: mediaAbsPath });\n      } catch {\n        finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 });\n      }\n    });\n  });\n}",
+    "truncated": false,
+    "totalLines": 51,
+    "startLine": 74
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+      "confidence": 1,
+      "name": "ingestStaging",
+      "qualifiedName": "ingestStaging",
+      "signature": "ingestStaging(soul: SoulStore, root: string, mediaPaths: string[], opts: WorkerOpts = {}): Promise<MultimodalStats>",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal/ingest.ts",
+      "line": 57
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/multimodal/worker.ts#defaultWorkerDir@L57",
+      "confidence": 1,
+      "name": "defaultWorkerDir",
+      "qualifiedName": "defaultWorkerDir",
+      "signature": "defaultWorkerDir(): string",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal/worker.ts",
+      "line": 57
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 35
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker.finish@L91",
+      "confidence": 1,
+      "name": "finish",
+      "qualifiedName": "runWorker.finish",
+      "signature": "finish(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal/worker.ts",
+      "line": 91
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/multimodal/worker.ts@L70",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#multimodal-worker-m13-shipped",
+      "heading": "Multimodal worker (M13 — shipped)",
+      "anchor": "multimodal-worker-m13-shipped",
+      "snippet": "Multimodal worker (M13 — shipped)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+    "procedureName": "runWorker",
+    "conditions": [
+      "cond:packages/pipeline/src/multimodal/worker.ts@L78"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+        "procedureName": "runWorker",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5ed23caff7b08feaf5a7b24457ace401ff1438a06ab9264d14aed9642a87d9dd",
+          "target": "sym:packages/pipeline/src/multimodal/worker.ts#defaultWorkerDir@L57",
+          "expr": "defaultWorkerDir",
+          "line": 76
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+        "procedureName": "runWorker",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:113ae1fb7caeb0748c37ab177c1c395af64f188cfde3ced3c86af4bc234ff2ba",
+          "target": "stmt:packages/pipeline/src/multimodal/worker.ts@L76",
+          "line": 76,
+          "expr": "const workerDir = opts.workerPath ?? defaultWorkerDir();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+        "procedureName": "runWorker",
+        "guard": "cond:packages/pipeline/src/multimodal/worker.ts@L78",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/multimodal/worker.ts@L78",
+            "expr": "opts.modelPath",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d125580988aea60ff0175259321a8aac67e8a7994bf26c20502f2144db2a8fbc",
+          "target": "stmt:packages/pipeline/src/multimodal/worker.ts@L79",
+          "line": 79,
+          "expr": "args.push('--model-path', opts.modelPath);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+        "procedureName": "runWorker",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ca08d4fd34645a6bc6a1b12e775000b8a8cc5911f31f6936721dec836c688399",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 79
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+        "procedureName": "runWorker",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:48cca50fa4d6b8fb0f298b6d22f80f5a28a5c745dbdfc0ae1276fd03be0488c8",
+          "target": "stmt:packages/pipeline/src/multimodal/worker.ts@L81",
+          "line": 81,
+          "expr": "return new Promise((resolve) => {\n    let child: ReturnType<typeof spawn>;\n    try {\n      child = spawn(python, args, { cwd: workerDir, stdio: ['ignore', 'pipe', 'pipe'] });\n    } catch {\n      resolve({ ...EMPTY, file: mediaAbsPath });\n      return;\n    }\n    let stdout = '';\n    let settled = false;\n    const finish = (payload: WorkerPayload): void => {\n      if (settled) return;\n      settled = true;\n      clearTimeout(timer);\n      resolve(payload);\n    };\n    const timer = setTimeout(() => {\n      try {\n        child.kill('SIGKILL');\n      } catch {\n        /* ignore */\n      }\n      finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 });\n    }, opts.timeoutMs ?? 30_000);\n\n    child.stdout?.setEncoding('utf8');\n    child.stdout?.on('data', (chunk: string) => {\n      stdout += chunk;\n    });\n    child.on('error', () => finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 }));\n    child.on('close', (code) => {\n      if (code !== 0) {\n        finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 });\n        return;\n      }\n      try {\n        const payload = JSON.parse(stdout) as WorkerPayload;\n        finish({ ...EMPTY, ...payload, file: mediaAbsPath });\n      } catch {\n        finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 });\n      }\n    });\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+        "procedureName": "runWorker",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d83d19378978c1178f784af9a133a15407131bab689105ded8bea54d4b637038",
+          "target": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker.finish@L91",
+          "expr": "finish",
+          "line": 103
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+        "procedureName": "runWorker",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4233d6087cf07a6e7c56fa4ae493fe04ea683a717419c9ebee2d1ce9f856770f",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+          "expr": "parse",
+          "line": 117
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/pipeline/src/multimodal/ingest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 18,
+      "unresolved": 8
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "8 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

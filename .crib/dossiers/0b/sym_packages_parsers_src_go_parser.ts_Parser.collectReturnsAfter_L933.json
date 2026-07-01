@@ -1,0 +1,117 @@
+{
+  "id": "sym:packages/parsers/src/go/parser.ts#Parser.collectReturnsAfter@L933",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:b26de4dd8b23e7436ca59d5b99a31d3467376e544afc6305edd40308adaba269",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/parser.ts#Parser.collectReturnsAfter@L933",
+    "kind": "symbol",
+    "type": "method",
+    "name": "collectReturnsAfter",
+    "qualifiedName": "Parser.collectReturnsAfter",
+    "signature": "collectReturnsAfter(seg: Token[], openIdx: number): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/parser.ts",
+    "span": {
+      "start": 933,
+      "end": 948
+    },
+    "callSites": [
+      {
+        "callee": "trim",
+        "line": 943
+      },
+      {
+        "callee": "join",
+        "line": 943
+      },
+      {
+        "callee": "map",
+        "line": 943
+      },
+      {
+        "callee": "slice",
+        "line": 943
+      }
+    ]
+  },
+  "source": {
+    "text": "  private collectReturnsAfter(seg: Token[], openIdx: number): string {\n    // skip balanced `(...)` starting at openIdx\n    let i = openIdx + 1;\n    let pdepth = 1;\n    while (i < seg.length && pdepth > 0) {\n      const tk = seg[i]!;\n      if (tk.type === 'OP' && tk.value === '(') pdepth++;\n      else if (tk.type === 'OP' && tk.value === ')') pdepth--;\n      i++;\n    }\n    return seg\n      .slice(i)\n      .map((tk) => tk.value)\n      .join('')\n      .trim();\n  }",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 933
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+      "confidence": 1,
+      "name": "analyzeIfaceSegment",
+      "qualifiedName": "Parser.analyzeIfaceSegment",
+      "signature": "analyzeIfaceSegment(seg: Token[], segIdx: number[], startLine: number, ifaceName: string, methods: GoDef[], bases: string[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 715
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/parser.ts@L932",
+      "snippet": "/** Collect the return-type text from a segment after the method `(` index (skipping the params). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.collectReturnsAfter@L933",
+    "procedureName": "Parser.collectReturnsAfter",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.collectReturnsAfter@L933",
+        "procedureName": "Parser.collectReturnsAfter",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:64bf90b88d5bdf4aebed8c273c11d6ac2f70824e74c243b9e2a0c2ef93dd307c",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L943",
+          "line": 943,
+          "expr": "return seg\n      .slice(i)\n      .map((tk) => tk.value)\n      .join('')\n      .trim();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/go/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,243 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.resolveCall@L836",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:b8f83f6fb2539259a6a853ba288991c8c11b2f80c12ba78f198602c39286f3fc",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.resolveCall@L836",
+    "kind": "symbol",
+    "type": "method",
+    "name": "resolveCall",
+    "qualifiedName": "BodyWalker.resolveCall",
+    "signature": "resolveCall(c: CsharpCallSite, procId: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 836,
+      "end": 847
+    },
+    "callSites": [
+      {
+        "callee": "methodInEnclosingClass",
+        "line": 840
+      },
+      {
+        "callee": "get",
+        "line": 844
+      },
+      {
+        "callee": "get",
+        "line": 844
+      }
+    ]
+  },
+  "source": {
+    "text": "  private resolveCall(c: CsharpCallSite, procId: string): string | undefined {\n    if (c.head === 'base') return undefined; // parent-class member / ctor-call — resolver's job\n    if (c.head === 'this') {\n      if (c.tail.length === 0) return undefined; // this(...) ctor-call → no method named 'this'\n      return methodInEnclosingClass(c.line, c.name, this.symbols);\n    }\n    if (c.tail.length === 0) {\n      // bare `M()` or `new Cls()` → same-file symbol by simple / qualified name.\n      return this.byKey.get(c.name) ?? this.byKey.get(c.head);\n    }\n    return undefined; // `obj.M()` / `Type.M()` — needs inference / cross-file; leave to the resolver.\n  }",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 836
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.annotateCallEdge@L821",
+      "confidence": 1,
+      "name": "annotateCallEdge",
+      "qualifiedName": "BodyWalker.annotateCallEdge",
+      "signature": "annotateCallEdge(c: CsharpCallSite, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 821
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+      "confidence": 1,
+      "name": "methodInEnclosingClass",
+      "qualifiedName": "methodInEnclosingClass",
+      "signature": "methodInEnclosingClass(line: number, name: string, symbols: LocalSymbol[]): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 395
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/CsharpExtractor.ts@L835",
+      "snippet": "/** Intra-file call resolution, matching {@link CsharpExtractor.collectCalls} exactly. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.resolveCall@L836",
+    "procedureName": "BodyWalker.resolveCall",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L837",
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L838",
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L839",
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L842"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.resolveCall@L836",
+        "procedureName": "BodyWalker.resolveCall",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L837",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L837",
+            "expr": "c.head === 'base'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4b9586c8bb234f223e166a5eea0de892e2e8b92b4c4c3067ed1ac629a3074354",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L837",
+          "line": 837,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.resolveCall@L836",
+        "procedureName": "BodyWalker.resolveCall",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L839",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L838",
+            "expr": "c.head === 'this'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L839",
+            "expr": "c.tail.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:14cd4df5da84613a1babc2263994d5f7786a1b857d69dfef892353b3ea7a0c8a",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L839",
+          "line": 839,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.resolveCall@L836",
+        "procedureName": "BodyWalker.resolveCall",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L838",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L838",
+            "expr": "c.head === 'this'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:074bf4564bb678eaecd489dbf8e80bbc4b2c8b19932fc21b0181be73944d22a8",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+          "expr": "methodInEnclosingClass",
+          "line": 840
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.resolveCall@L836",
+        "procedureName": "BodyWalker.resolveCall",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L838",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L838",
+            "expr": "c.head === 'this'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dec599b5bd2742bcd3ad2a1be99135bfdb9acfb9048ef7cb8ebec1c165cf0450",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L840",
+          "line": 840,
+          "expr": "return methodInEnclosingClass(c.line, c.name, this.symbols);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.resolveCall@L836",
+        "procedureName": "BodyWalker.resolveCall",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L842",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L842",
+            "expr": "c.tail.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1432dfe1e1a26bfcb90cf6bc2c816e1d486248ca50195881e429c17e02e6c10a",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L844",
+          "line": 844,
+          "expr": "return this.byKey.get(c.name) ?? this.byKey.get(c.head);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.resolveCall@L836",
+        "procedureName": "BodyWalker.resolveCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:770816042532934d67d3e1a04958b5fb783dc2596ec3ed109585820703c3396f",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L846",
+          "line": 846,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

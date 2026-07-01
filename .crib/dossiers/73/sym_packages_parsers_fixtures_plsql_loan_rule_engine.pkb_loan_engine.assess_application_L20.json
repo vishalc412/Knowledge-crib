@@ -1,0 +1,394 @@
+{
+  "id": "sym:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#loan_engine.assess_application@L20",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:e1dacd31b3c15aa0bc6268735f10ddd3a19c2635eb91cb03ecd97904b1929fdc",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#loan_engine.assess_application@L20",
+    "kind": "symbol",
+    "type": "procedure",
+    "name": "assess_application",
+    "qualifiedName": "loan_engine.assess_application",
+    "signature": "assess_applicationp_id NUMBER",
+    "lang": "plsql",
+    "file": "packages/parsers/fixtures/plsql/loan_rule_engine.pkb",
+    "span": {
+      "start": 20,
+      "end": 51
+    },
+    "variables": [
+      {
+        "name": "v_amount",
+        "dataType": "NUMBER"
+      },
+      {
+        "name": "v_status",
+        "dataType": "VARCHAR2(20)"
+      },
+      {
+        "name": "v_score",
+        "dataType": "NUMBER"
+      },
+      {
+        "name": "v_decision",
+        "dataType": "VARCHAR2(20)"
+      }
+    ]
+  },
+  "source": {
+    "text": "  PROCEDURE assess_application(p_id NUMBER) IS\n    v_amount       NUMBER;\n    v_status       VARCHAR2(20);\n    v_score        NUMBER;\n    v_decision     VARCHAR2(20);\n    CURSOR c_app IS SELECT amount, status, credit_score FROM loan_applications WHERE id = p_id;\n  BEGIN\n    FOR rec IN c_app LOOP\n      v_amount := rec.amount;\n      v_status := rec.status;\n      v_score  := rec.credit_score;\n      CASE\n        WHEN v_amount > 50000 AND v_score >= 700 THEN\n          v_decision := 'APPROVE';\n        WHEN v_score >= 600 THEN\n          v_decision := 'APPROVE';\n        ELSE\n          v_decision := 'REJECT';\n      END CASE;\n      IF v_decision = 'REJECT' THEN\n        RAISE_APPLICATION_ERROR(-20001, 'application rejected: insufficient credit');\n      END IF;\n      UPDATE loan_applications SET status = v_decision WHERE id = p_id;\n    END LOOP;\n  EXCEPTION\n    WHEN NO_DATA_FOUND THEN\n      v_decision := 'MISSING';\n      UPDATE loan_applications SET status = 'MISSING' WHERE id = p_id;\n    WHEN OTHERS THEN\n      RAISE_APPLICATION_ERROR(-20002, 'assess_application failed');\n  END assess_application;\nEND loan_engine;",
+    "truncated": false,
+    "totalLines": 32,
+    "startLine": 20
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L18",
+      "snippet": "-- Assess one loan application: approve, reject, or escalate.",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-2-concrete-before-after-the-loan-rule-engine-procedure",
+      "heading": "1.2 Concrete before/after — the loan-rule-engine procedure",
+      "anchor": "1-2-concrete-before-after-the-loan-rule-engine-procedure",
+      "snippet": "1.2 Concrete before/after — the loan-rule-engine procedure",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#dossier-one-call-deep-context-the-migration-verb",
+      "heading": "`dossier` — one-call deep context (the migration verb)",
+      "anchor": "dossier-one-call-deep-context-the-migration-verb",
+      "snippet": "`dossier` — one-call deep context (the migration verb)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#loan_engine.assess_application@L20",
+    "procedureName": "loan_engine.assess_application",
+    "conditions": [
+      "cond:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L27",
+      "case:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L32",
+      "case:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L34",
+      "case:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L36"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#loan_engine.assess_application@L20",
+        "procedureName": "loan_engine.assess_application",
+        "guard": "cond:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L27",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L27",
+            "expr": "rec IN c_app"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a5543593e4b8ce6a24ef6080fd24bcc969c15e2ae5fa7aeb680ab317cc0518b2",
+          "target": "assign:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L28",
+          "line": 28,
+          "expr": "rec.amount;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#loan_engine.assess_application@L20",
+        "procedureName": "loan_engine.assess_application",
+        "guard": "cond:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L27",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L27",
+            "expr": "rec IN c_app"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a26a8db134dab205695ff5b3a55608144a6fd3c98f172b40e24edf4fbb94cf22",
+          "target": "assign:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L29",
+          "line": 29,
+          "expr": "rec.status;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#loan_engine.assess_application@L20",
+        "procedureName": "loan_engine.assess_application",
+        "guard": "cond:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L27",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L27",
+            "expr": "rec IN c_app"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:154dcaaf33827ef13040a42cb1eebfc96d8c940425e666ee1facec9ea1d9604c",
+          "target": "assign:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L30",
+          "line": 30,
+          "expr": "rec.credit_score;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#loan_engine.assess_application@L20",
+        "procedureName": "loan_engine.assess_application",
+        "guard": "case:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L32",
+        "branch": "WHEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L27",
+            "expr": "rec IN c_app"
+          },
+          {
+            "id": "case:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L32",
+            "expr": "v_amount > 50000 AND v_score >= 700",
+            "polarity": "WHEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5252131f99c3baa98b51e06bab7869fae467c29320143e6bd492922ab55e3ce2",
+          "target": "assign:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L33",
+          "line": 33,
+          "expr": "'APPROVE';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#loan_engine.assess_application@L20",
+        "procedureName": "loan_engine.assess_application",
+        "guard": "case:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L34",
+        "branch": "WHEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L27",
+            "expr": "rec IN c_app"
+          },
+          {
+            "id": "case:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L34",
+            "expr": "v_score >= 600",
+            "polarity": "WHEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce606f26c9ed2cd3adc0abfcc01a71630d3d412199a66bb52d2afde480566c64",
+          "target": "assign:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L35",
+          "line": 35,
+          "expr": "'APPROVE';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#loan_engine.assess_application@L20",
+        "procedureName": "loan_engine.assess_application",
+        "guard": "case:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L36",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L27",
+            "expr": "rec IN c_app"
+          },
+          {
+            "id": "case:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L36",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e38ed99ed93cea36368a7823d931cb853c18b23455b0f9f5b3b166d8f9cfc9f6",
+          "target": "assign:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L37",
+          "line": 37,
+          "expr": "'REJECT';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#loan_engine.assess_application@L20",
+        "procedureName": "loan_engine.assess_application",
+        "guard": "cond:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L27",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L27",
+            "expr": "rec IN c_app"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:42711d8c3ff3636eb94b84ddfae40be23ac65586c73d4e1df3a0dc218e52a42f",
+          "target": "stmt:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L42",
+          "line": 42,
+          "sqlKind": "update",
+          "expr": "UPDATE loan_applications SET status = v_decision WHERE id = p_id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#loan_engine.assess_application@L20",
+        "procedureName": "loan_engine.assess_application",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:97b2608d061f22df0ecbf806127a29c38cf7eeb52a6e538b6399c8b783db1744",
+          "target": "assign:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L46",
+          "line": 46,
+          "expr": "'MISSING';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#loan_engine.assess_application@L20",
+        "procedureName": "loan_engine.assess_application",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c6bf4df88b453d096954f4b900b23f6209b65487006789638add6d271f41584d",
+          "target": "stmt:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L47",
+          "line": 47,
+          "sqlKind": "update",
+          "expr": "UPDATE loan_applications SET status = 'MISSING' WHERE id = p_id;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L40",
+        "kind": "raise",
+        "name": "RAISE_APPLICATION_ERROR",
+        "lang": "plsql",
+        "file": "packages/parsers/fixtures/plsql/loan_rule_engine.pkb",
+        "span": {
+          "start": 40,
+          "end": 41
+        },
+        "errorCode": "-20001",
+        "errorMessage": "application rejected: insufficient credit",
+        "confidence": 1
+      },
+      {
+        "id": "raise:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L49",
+        "kind": "raise",
+        "name": "RAISE_APPLICATION_ERROR",
+        "lang": "plsql",
+        "file": "packages/parsers/fixtures/plsql/loan_rule_engine.pkb",
+        "span": {
+          "start": 49,
+          "end": 50
+        },
+        "errorCode": "-20002",
+        "errorMessage": "assess_application failed",
+        "confidence": 1
+      }
+    ],
+    "handles": [
+      {
+        "id": "exc:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L45",
+        "kind": "exception-handler",
+        "lang": "plsql",
+        "file": "packages/parsers/fixtures/plsql/loan_rule_engine.pkb",
+        "span": {
+          "start": 45,
+          "end": 45
+        },
+        "whenSelector": "NO_DATA_FOUND",
+        "confidence": 1
+      },
+      {
+        "id": "exc:packages/parsers/fixtures/plsql/loan_rule_engine.pkb@L48",
+        "kind": "exception-handler",
+        "lang": "plsql",
+        "file": "packages/parsers/fixtures/plsql/loan_rule_engine.pkb",
+        "span": {
+          "start": 48,
+          "end": 48
+        },
+        "whenSelector": "OTHERS",
+        "confidence": 1
+      }
+    ],
+    "iterates": [
+      {
+        "id": "cursor:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#c_app@L25",
+        "kind": "cursor",
+        "name": "c_app",
+        "lang": "plsql",
+        "file": "packages/parsers/fixtures/plsql/loan_rule_engine.pkb",
+        "span": {
+          "start": 25,
+          "end": 26
+        },
+        "cursorQuery": "SELECT amount, status, credit_score FROM loan_applications WHERE id = p_id",
+        "tables": [
+          "loan_applications"
+        ],
+        "confidence": 1
+      }
+    ],
+    "declares": [
+      {
+        "id": "cursor:packages/parsers/fixtures/plsql/loan_rule_engine.pkb#c_app@L25",
+        "kind": "cursor",
+        "name": "c_app",
+        "lang": "plsql",
+        "file": "packages/parsers/fixtures/plsql/loan_rule_engine.pkb",
+        "span": {
+          "start": 25,
+          "end": 26
+        },
+        "cursorQuery": "SELECT amount, status, credit_score FROM loan_applications WHERE id = p_id",
+        "tables": [
+          "loan_applications"
+        ],
+        "confidence": 1
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 7,
+    "conditions": 5,
+    "raises": 2,
+    "handlers": 2,
+    "cursors": 1,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

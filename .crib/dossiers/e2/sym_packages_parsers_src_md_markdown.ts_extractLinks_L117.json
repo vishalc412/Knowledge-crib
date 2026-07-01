@@ -1,0 +1,176 @@
+{
+  "id": "sym:packages/parsers/src/md/markdown.ts#extractLinks@L117",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:933d63af92eefdfddd8f3f3ea0afbad89a0d4a1b82410f771520ac1ccb0ec67f",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/md/markdown.ts#extractLinks@L117",
+    "kind": "symbol",
+    "type": "function",
+    "name": "extractLinks",
+    "qualifiedName": "extractLinks",
+    "signature": "extractLinks(body: string): string[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/md/markdown.ts",
+    "span": {
+      "start": 117,
+      "end": 124
+    },
+    "callSites": [
+      {
+        "callee": "trim",
+        "line": 120
+      },
+      {
+        "callee": "add",
+        "line": 121
+      }
+    ]
+  },
+  "source": {
+    "text": "function extractLinks(body: string): string[] {\n  const links = new Set<string>();\n  for (const m of body.matchAll(MD_LINK)) {\n    const target = (m[1] ?? '').trim();\n    if (target && !target.startsWith('#') && !target.startsWith('http')) links.add(target);\n  }\n  return [...links];\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 117
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/md/markdown.ts#parseMarkdownSections@L36",
+      "confidence": 1,
+      "name": "parseMarkdownSections",
+      "qualifiedName": "parseMarkdownSections",
+      "signature": "parseMarkdownSections(text: string): MdSection[]",
+      "type": "function",
+      "file": "packages/parsers/src/md/markdown.ts",
+      "line": 36
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/md/markdown.ts#extractLinks@L117",
+    "procedureName": "extractLinks",
+    "conditions": [
+      "cond:packages/parsers/src/md/markdown.ts@L119",
+      "cond:packages/parsers/src/md/markdown.ts@L121"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/md/markdown.ts#extractLinks@L117",
+        "procedureName": "extractLinks",
+        "guard": "cond:packages/parsers/src/md/markdown.ts@L119",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/md/markdown.ts@L119",
+            "expr": "body.matchAll(MD_LINK)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8642d3ae259fcf237c6a7c0538421ccc8bc43b77668f2f9784f36d975abeb052",
+          "target": "stmt:packages/parsers/src/md/markdown.ts@L120",
+          "line": 120,
+          "expr": "const target = (m[1] ?? '').trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/markdown.ts#extractLinks@L117",
+        "procedureName": "extractLinks",
+        "guard": "cond:packages/parsers/src/md/markdown.ts@L121",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/md/markdown.ts@L119",
+            "expr": "body.matchAll(MD_LINK)"
+          },
+          {
+            "id": "cond:packages/parsers/src/md/markdown.ts@L121",
+            "expr": "target && !target.startsWith('#') && !target.startsWith('http')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:91fa8a2ae71c0c9eaf0bd482509d1d41a461f7efb5c073e22409dc09fbd8822f",
+          "target": "stmt:packages/parsers/src/md/markdown.ts@L121",
+          "line": 121,
+          "expr": "links.add(target);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/markdown.ts#extractLinks@L117",
+        "procedureName": "extractLinks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7317d3344fb0803b08065fd52011b1e52a8d75aaf1e1311d3e06a9353530785a",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 121
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/markdown.ts#extractLinks@L117",
+        "procedureName": "extractLinks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c2d6c748af1b3f82620dc1cbe6628b931568fd78f951df088a1fefc43fd77aac",
+          "target": "stmt:packages/parsers/src/md/markdown.ts@L123",
+          "line": 123,
+          "expr": "return [...links];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/md/markdown.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#buildProducerOf@L498",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:fa7062a9bd11944022d226bc507e5f40b6f638530b9f9e3387b9e89cbd893123",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#buildProducerOf@L498",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildProducerOf",
+    "qualifiedName": "buildProducerOf",
+    "signature": "buildProducerOf(incoming: Map<string, Edge[]> | undefined): Map<string, string>",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 498,
+      "end": 508
+    },
+    "callSites": [
+      {
+        "callee": "set",
+        "line": 504
+      }
+    ]
+  },
+  "source": {
+    "text": "function buildProducerOf(incoming: Map<string, Edge[]> | undefined): Map<string, string> {\n  const m = new Map<string, string>();\n  if (!incoming) return m;\n  for (const edges of incoming.values()) {\n    for (const e of edges) {\n      if (e.rel !== 'produces') continue;\n      if (!m.has(e.dst)) m.set(e.dst, e.src);\n    }\n  }\n  return m;\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 498
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 203
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/framework.ts@L496",
+      "snippet": "/** Derive produced-type-id → producer-method-id from an incoming adjacency (which already holds every",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#buildProducerOf@L498",
+    "procedureName": "buildProducerOf",
+    "conditions": [
+      "cond:packages/core/src/dossier/framework.ts@L500",
+      "cond:packages/core/src/dossier/framework.ts@L501",
+      "cond:packages/core/src/dossier/framework.ts@L502",
+      "cond:packages/core/src/dossier/framework.ts@L504"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#buildProducerOf@L498",
+        "procedureName": "buildProducerOf",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L500",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L500",
+            "expr": "!incoming",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:73e608bcb03c7310a547858f3d1e48002396f786bb04b68fa56bb6e7898fdd39",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L500",
+          "line": 500,
+          "expr": "return m;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#buildProducerOf@L498",
+        "procedureName": "buildProducerOf",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L504",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L501",
+            "expr": "incoming.values()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L502",
+            "expr": "edges"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L504",
+            "expr": "!m.has(e.dst)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2f93332ba81673e4992877dbec231504709063b0f9d289ff20d3cddcf0dc40c5",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L504",
+          "line": 504,
+          "expr": "m.set(e.dst, e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#buildProducerOf@L498",
+        "procedureName": "buildProducerOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b92e63a8a4eb0e0f3b4d58159694022383de4a5ec1ff238111ebc7f97bee77fd",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L507",
+          "line": 507,
+          "expr": "return m;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

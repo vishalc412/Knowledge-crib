@@ -1,0 +1,768 @@
+{
+  "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c06351eaa4978bbc92bc770b80a7fe92894a1d718611b5f39c84672dde95270b",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parse",
+    "qualifiedName": "PythonExtractor.parse",
+    "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/PythonExtractor.ts",
+    "span": {
+      "start": 87,
+      "end": 177
+    },
+    "callSites": [
+      {
+        "callee": "parsePython",
+        "line": 88
+      },
+      {
+        "callee": "collectPythonComments",
+        "line": 89
+      },
+      {
+        "callee": "join",
+        "line": 102
+      },
+      {
+        "callee": "idFor",
+        "line": 103
+      },
+      {
+        "callee": "join",
+        "line": 105
+      },
+      {
+        "callee": "typeOf",
+        "line": 106
+      },
+      {
+        "callee": "join",
+        "line": 112
+      },
+      {
+        "callee": "join",
+        "line": 114
+      },
+      {
+        "callee": "hash",
+        "line": 124
+      },
+      {
+        "callee": "defText",
+        "line": 124
+      },
+      {
+        "callee": "push",
+        "line": 134
+      },
+      {
+        "callee": "push",
+        "line": 136
+      },
+      {
+        "callee": "has",
+        "line": 137
+      },
+      {
+        "callee": "set",
+        "line": 137
+      },
+      {
+        "callee": "push",
+        "line": 138
+      },
+      {
+        "callee": "memberOf",
+        "line": 138
+      },
+      {
+        "callee": "parentIdFor",
+        "line": 138
+      },
+      {
+        "callee": "attachExplanation",
+        "line": 140
+      },
+      {
+        "callee": "push",
+        "line": 142
+      },
+      {
+        "callee": "visit",
+        "line": 145
+      },
+      {
+        "callee": "visit",
+        "line": 148
+      },
+      {
+        "callee": "collectCalls",
+        "line": 151
+      },
+      {
+        "callee": "set",
+        "line": 157
+      },
+      {
+        "callee": "walkBody",
+        "line": 172
+      },
+      {
+        "callee": "stampCallSites",
+        "line": 173
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult {\n    const mod = parsePython(text);\n    const comments = collectPythonComments(text);\n    const symbols: LocalSymbol[] = [];\n    const nodes: Node[] = [];\n    const edges: Edge[] = [];\n    const byKey = new Map<string, string>(); // qualifiedName | simpleName → symbol id\n    /** walkable function/method defs (classes are skipped; their methods are recursed). */\n    const walkable: Array<{ def: PyDef; procId: string }> = [];\n    const explSeen = new Set<string>();\n\n    // --- pass 1: declarations + member-of, walking the nesting tree; attach docstring + preceding\n    //     comment block as `explanation` nodes (schema 1.2, mirrors PlSqlExtractor.attachComment). ---\n    const visit = (defs: PyDef[], qualifier: string[]): void => {\n      for (const d of defs) {\n        const qualifiedName = [...qualifier, d.name].join('.');\n        const id = ctx.idFor('symbol', { path, qualifiedName, startLine: d.startLine });\n        // A function nested directly under a class is a method; under a function/file it's a function.\n        const parentQ = qualifier.join('.');\n        const parentType = parentQ === '' ? undefined : this.typeOf(parentQ, symbols);\n        const isMethod = d.kind === 'function' && parentType === 'class';\n        const type = d.kind === 'class' ? 'class' : isMethod ? 'method' : 'function';\n        const signature =\n          d.kind === 'class'\n            ? d.bases.length\n              ? `class ${d.name}(${d.bases.join(', ')})`\n              : `class ${d.name}`\n            : `${d.name}(${d.params.join(', ')})`;\n        const node: Node = {\n          id,\n          kind: 'symbol',\n          type,\n          name: d.name,\n          qualifiedName,\n          file: path,\n          span: { start: d.startLine, end: d.endLine },\n          lang: 'python',\n          hash: ctx.hash(this.defText(d, text)),\n          signature,\n          meta: {\n            parentQualifier: parentQ,\n            ...(d.async ? { async: true } : {}),\n            ...(d.decorators.length ? { decorators: d.decorators } : {}),\n            ...(d.bases.length ? { bases: d.bases } : {}),\n            ...(d.params.length ? { params: d.params } : {}),\n          },\n        };\n        nodes.push(node);\n        const sym: LocalSymbol = { node, keys: [qualifiedName, d.name], simpleName: d.name };\n        symbols.push(sym);\n        for (const k of [qualifiedName, d.name]) if (!byKey.has(k)) byKey.set(k, id);\n        edges.push(this.memberOf(node, this.parentIdFor(sym, byKey, fileId)));\n        // 1.2: docstring (suite's first string) + `#` block immediately above → explanation + describes.\n        this.attachExplanation(id, d, path, ctx, nodes, edges, explSeen, comments);\n        // a function/method (not a class) carries a procedure body the extractor walks for the CFG.\n        if (d.kind === 'function') walkable.push({ def: d, procId: id });\n        // recurse: a class's children are methods (qualifier grows); a function's children are\n        // nested functions (qualifier grows too, but they stay kind 'function').\n        visit(d.body, [...qualifier, d.name]);\n      }\n    };\n    visit(mod.defs, []);\n\n    // --- pass 2: intra-file calls (self.method / bare fn; module.fn is the resolver's job) ---\n    this.collectCalls(mod.calls, symbols, byKey, edges);\n\n    // --- pass 3 (Track 3): statement/condition/CFG body-walk. STRICTLY ADDITIVE — emits statement\n    // nodes + executes/guarded-by edges, annotates the pass-2 calls edges with the guard chain, and\n    // records call sites on each proc's meta.calls. The guard stack is tracked inline (one pass). ---\n    const callsEdges = new Map<string, Edge>();\n    for (const e of edges) if (e.rel === 'calls') callsEdges.set(e.id, e);\n    const w: WalkCtx = {\n      path,\n      ctx,\n      nodes,\n      edges,\n      byKey,\n      callsEdges,\n      condSeen: new Set(),\n      caseBranchSeen: new Set(),\n      excSeen: new Set(),",
+    "truncated": true,
+    "totalLines": 91,
+    "startLine": 87,
+    "nextLine": 168
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.extract@L74",
+      "confidence": 1,
+      "name": "extract",
+      "qualifiedName": "PythonExtractor.extract",
+      "signature": "extract(file: FileMeta, ctx: ExtractCtx): Promise<ExtractResult>",
+      "type": "method",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 74
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.collectCalls@L664",
+      "confidence": 1,
+      "name": "collectCalls",
+      "qualifiedName": "PythonExtractor.collectCalls",
+      "signature": "collectCalls(calls: PyCallSite[], symbols: LocalSymbol[], byKey: Map<string, string>, edges: Edge[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 664
+    },
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse.visit@L100",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "PythonExtractor.parse.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.stampCallSites@L616",
+      "confidence": 1,
+      "name": "stampCallSites",
+      "qualifiedName": "PythonExtractor.stampCallSites",
+      "signature": "stampCallSites(procId: string, w: WalkCtx): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 616
+    },
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "PythonExtractor.walkBody",
+      "signature": "walkBody(stmts: PyStmt[], procId: string, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean, w: WalkCtx): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 186
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#collectPythonComments@L495",
+      "confidence": 1,
+      "name": "collectPythonComments",
+      "qualifiedName": "collectPythonComments",
+      "signature": "collectPythonComments(src: string): CommentBlock[]",
+      "type": "function",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 495
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#parsePython@L177",
+      "confidence": 1,
+      "name": "parsePython",
+      "qualifiedName": "parsePython",
+      "signature": "parsePython(src: string): PyModule",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 177
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "heading": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "anchor": "2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "snippet": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-6-migration-track-findings-from-the-migration-scope-run",
+      "heading": "4.6 Migration track findings (from the migration-scope run)",
+      "anchor": "4-6-migration-track-findings-from-the-migration-scope-run",
+      "snippet": "4.6 Migration track findings (from the migration-scope run)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests-3",
+      "heading": "Tests",
+      "anchor": "tests-3",
+      "snippet": "Tests",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-index-path",
+      "heading": "`crib index [path]`",
+      "anchor": "crib-index-path",
+      "snippet": "`crib index [path]`",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "heading": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "anchor": "3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "snippet": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
+      "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "anchor": "java-spring-boot-track-built-tested-schema-1-3",
+      "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-0-universal-cfg-parity-finish-s65-6-days",
+      "heading": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "anchor": "phase-0-universal-cfg-parity-finish-s65-6-days",
+      "snippet": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:README.md#architecture-dual-store",
+      "heading": "Architecture (dual store)",
+      "anchor": "architecture-dual-store",
+      "snippet": "Architecture (dual store)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a5aca268aa0995cac.md#caveats-why-medium-not-high",
+      "heading": "Caveats (why medium, not high)",
+      "anchor": "caveats-why-medium-not-high",
+      "snippet": "Caveats (why medium, not high)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a5aca268aa0995cac.md#conclusion",
+      "heading": "Conclusion",
+      "anchor": "conclusion",
+      "snippet": "Conclusion",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#knowledge-crib-implementation-plan-detailed",
+      "heading": "Knowledge-crib — Implementation Plan (detailed)",
+      "anchor": "knowledge-crib-implementation-plan-detailed",
+      "snippet": "Knowledge-crib — Implementation Plan (detailed)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-5-tree-sitter-wasm-the-offline-core-tension",
+      "heading": "4.5 tree-sitter WASM + the offline-core tension",
+      "anchor": "4-5-tree-sitter-wasm-the-offline-core-tension",
+      "snippet": "4.5 tree-sitter WASM + the offline-core tension",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#8-build-waves-parallelism",
+      "heading": "8. Build waves (parallelism)",
+      "anchor": "8-build-waves-parallelism",
+      "snippet": "8. Build waves (parallelism)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m2-parse-pipeline-1-lang-typescript-symbols-intra-file-edges",
+      "heading": "M2 — parse pipeline, 1 lang (TypeScript) → symbols + intra-file edges",
+      "anchor": "m2-parse-pipeline-1-lang-typescript-symbols-intra-file-edges",
+      "snippet": "M2 — parse pipeline, 1 lang (TypeScript) → symbols + intra-file edges",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
+      "heading": "What was built",
+      "anchor": "what-was-built-2",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#summary",
+      "heading": "Summary",
+      "anchor": "summary",
+      "snippet": "Summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#1-why-this-is-its-own-capability",
+      "heading": "1. Why this is its own capability",
+      "anchor": "1-why-this-is-its-own-capability",
+      "snippet": "1. Why this is its own capability",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#1-contract",
+      "heading": "1. Contract",
+      "anchor": "1-contract",
+      "snippet": "1. Contract",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m8-tree-sitter-wasm-plugin-languages-python-first",
+      "heading": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "anchor": "m8-tree-sitter-wasm-plugin-languages-python-first",
+      "snippet": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-2-parse-tree-sitter-wasm",
+      "heading": "Phase 2 — Parse (tree-sitter, WASM)",
+      "anchor": "phase-2-parse-tree-sitter-wasm",
+      "snippet": "Phase 2 — Parse (tree-sitter, WASM)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-gold-pattern-already-proven-plsqlextractor",
+      "heading": "The gold pattern (already proven): `PlSqlExtractor`",
+      "anchor": "the-gold-pattern-already-proven-plsqlextractor",
+      "snippet": "The gold pattern (already proven): `PlSqlExtractor`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+    "procedureName": "PythonExtractor.parse",
+    "conditions": [
+      "cond:packages/parsers/src/python/PythonExtractor.ts@L157",
+      "cond:packages/parsers/src/python/PythonExtractor.ts@L171"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c073f02b14aa7438744a53b6b5b97d006960a924fe7fc07d442b4d0a83313bf5",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L88",
+          "line": 88,
+          "expr": "const mod = parsePython(text);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:511d1b6093487fa89c08d46ae325fa6f6bae96750ac07667fbea2112a3fdf498",
+          "target": "sym:packages/parsers/src/python/parser.ts#parsePython@L177",
+          "expr": "parsePython",
+          "line": 88
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2bc512ce36fb6d396576af4e10b4896a1f145d4c3cd5b3c5bc8a32dc04a2b4b3",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L89",
+          "line": 89,
+          "expr": "const comments = collectPythonComments(text);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f09e2be6331e4442aef07cbe9a6c3d28a073a3ae8b33805bf48446731fe58160",
+          "target": "sym:packages/parsers/src/python/lexer.ts#collectPythonComments@L495",
+          "expr": "collectPythonComments",
+          "line": 89
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4129f405d3b91a89e767ebde62568f32a7c9e146db89e4059e4f4eaa127f1303",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L100",
+          "line": 100,
+          "expr": "const visit = (defs: PyDef[], qualifier: string[]): void => {\n      for (const d of defs) {\n        const qualifiedName = [...qualifier, d.name].join('.');\n        const id = ctx.idFor('symbol', { path, qualifiedName, startLine: d.startLine });\n        // A function nested directly under a class is a method; under a function/file it's a function.\n        const parentQ = qualifier.join('.');\n        const parentType = parentQ === '' ? undefined : this.typeOf(parentQ, symbols);\n        const isMethod = d.kind === 'function' && parentType === 'class';\n        const type = d.kind === 'class' ? 'class' : isMethod ? 'method' : 'function';\n        const signature =\n          d.kind === 'class'\n            ? d.bases.length\n              ? `class ${d.name}(${d.bases.join(', ')})`\n              : `class ${d.name}`\n            : `${d.name}(${d.params.join(', ')})`;\n        const node: Node = {\n          id,\n          kind: 'symbol',\n          type,\n          name: d.name,\n          qualifiedName,\n          file: path,\n          span: { start: d.startLine, end: d.endLine },\n          lang: 'python',\n          hash: ctx.hash(this.defText(d, text)),\n          signature,\n          meta: {\n            parentQualifier: parentQ,\n            ...(d.async ? { async: true } : {}),\n            ...(d.decorators.length ? { decorators: d.decorators } : {}),\n            ...(d.bases.length ? { bases: d.bases } : {}),\n            ...(d.params.length ? { params: d.params } : {}),\n          },\n        };\n        nodes.push(node);\n        const sym: LocalSymbol = { node, keys: [qualifiedName, d.name], simpleName: d.name };\n        symbols.push(sym);\n        for (const k of [qualifiedName, d.name]) if (!byKey.has(k)) byKey.set(k, id);\n        edges.push(this.memberOf(node, this.parentIdFor(sym, byKey, fileId)));\n        // 1.2: docstring (suite's first string) + `#` block immediately above → explanation + describes.\n        this.attachExplanation(id, d, path, ctx, nodes, edges, explSeen, comments)…"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6fa3ea84fa67b9230dc3369d3a673360a3e379a132efcfac9376f5956aad4279",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse.visit@L100",
+          "expr": "visit",
+          "line": 145
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e24c601deedb32d304b713301c7e024b9c4358afa440dfefad15ae25cf9018f5",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L148",
+          "line": 148,
+          "expr": "visit(mod.defs, []);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a40cb0d1c3ed07f6e37df621196d669ccc84014311077956be2fa973cc092ad2",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.collectCalls@L664",
+          "expr": "collectCalls",
+          "line": 151
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0e59b9311576d687bae1b37ac3e57c2663934c01676c6de706cbc3a5de2d52e3",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L151",
+          "line": 151,
+          "expr": "this.collectCalls(mod.calls, symbols, byKey, edges);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L157",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L157",
+            "expr": "edges"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L157",
+            "expr": "edges",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:877b0ae1a158d7e126acfadce54436685581a3358cd90932400e29226689f58f",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L157",
+          "line": 157,
+          "expr": "callsEdges.set(e.id, e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L171",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L171",
+            "expr": "walkable",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:85ae6cd6f01c29610bd3aa4ec6b869e776c598f421684355c5c39b1ce33a35bc",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
+          "expr": "walkBody",
+          "line": 172
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L171",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L171",
+            "expr": "walkable",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1418517a759ec5488709908ee895b6a8b6efba9c88512684ec0fbc6eaadf6469",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L172",
+          "line": 172,
+          "expr": "this.walkBody(def.statements, procId, [], undefined, false, false, w);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L171",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L171",
+            "expr": "walkable",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3a48c383477ce3f65c1c170ee6fedf3e758fa16baa6288e455d5a0221f1fee06",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.stampCallSites@L616",
+          "expr": "stampCallSites",
+          "line": 173
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L171",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L171",
+            "expr": "walkable",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:44b4fe70a984c58d35a2143f266917bd5a577f544ee255d4a6b6522df3b6b518",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L173",
+          "line": 173,
+          "expr": "this.stampCallSites(procId, w);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse@L87",
+        "procedureName": "PythonExtractor.parse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8fef25b7cf424720be727118ca912cbbc62d2d386185f5a7e23fe859351d496a",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L176",
+          "line": 176,
+          "expr": "return { nodes, edges };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/parsers/src/python/PythonExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 25,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

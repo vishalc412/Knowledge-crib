@@ -1,0 +1,101 @@
+{
+  "id": "sym:packages/cli/src/cli.test.ts#fileCount@L315",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:454251f74e9cac3b895bc6ed5bbe8ad823795388852f0fc748fc5348b760fd72",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.test.ts#fileCount@L315",
+    "kind": "symbol",
+    "type": "function",
+    "name": "fileCount",
+    "qualifiedName": "fileCount",
+    "signature": "fileCount(…)",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.test.ts",
+    "span": {
+      "start": 315,
+      "end": 318
+    },
+    "callSites": [
+      {
+        "callee": "match",
+        "line": 316
+      },
+      {
+        "callee": "Number",
+        "line": 317
+      }
+    ]
+  },
+  "source": {
+    "text": "  const fileCount = (stdout: string): number => {\n    const m = stdout.match(/indexed (\\d+) files/);\n    return m ? Number(m[1]!) : -1;\n  };",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 315
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.test.ts#fileCount@L315",
+    "procedureName": "fileCount",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.test.ts#fileCount@L315",
+        "procedureName": "fileCount",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8d9efc20aff8047fad9571e411ccbf7fa7b47d4d0f211dbe69709417327556c5",
+          "target": "stmt:packages/cli/src/cli.test.ts@L316",
+          "line": 316,
+          "expr": "const m = stdout.match(/indexed (\\d+) files/);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.test.ts#fileCount@L315",
+        "procedureName": "fileCount",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:13aa02324423401186b2b6f4bf06bfdcffd317a6d2c9cc5462f7f540c7c9e41a",
+          "target": "stmt:packages/cli/src/cli.test.ts@L317",
+          "line": 317,
+          "expr": "return m ? Number(m[1]!) : -1;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

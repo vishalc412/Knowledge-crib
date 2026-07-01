@@ -1,0 +1,311 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:fc0466c1eb6dcbbfe56e1f39faa7d471f2d80f77537f89fad623437ad304243f",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readTableRef",
+    "qualifiedName": "readTableRef",
+    "signature": "readTableRef(toks: Token[], i: number): { name: string; next: number } | null",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 1336,
+      "end": 1351
+    },
+    "callSites": [
+      {
+        "callee": "tokAt",
+        "line": 1340
+      },
+      {
+        "callee": "tokAt",
+        "line": 1344
+      },
+      {
+        "callee": "tokAt",
+        "line": 1345
+      },
+      {
+        "callee": "push",
+        "line": 1347
+      },
+      {
+        "callee": "join",
+        "line": 1350
+      }
+    ]
+  },
+  "source": {
+    "text": "function readTableRef(toks: Token[], i: number): { name: string; next: number } | null {\n  let j = i;\n  // skip leading punctuation (except '.', which is part of a qualified name)\n  for (let t = tokAt(toks, j); t && t.type === 'punct' && t.text !== '.'; t = tokAt(toks, j)) j++;\n  const head = tokAt(toks, j);\n  if (!head || head.type !== 'word') return null;\n  const parts: string[] = [head.raw];\n  j++;\n  const dot = tokAt(toks, j);\n  const second = tokAt(toks, j + 1);\n  if (dot && dot.type === 'punct' && dot.text === '.' && second && second.type === 'word') {\n    parts.push(second.raw);\n    j += 2;\n  }\n  return { name: parts.join('.'), next: j };\n}",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 1336
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseTableFk@L369",
+      "confidence": 1,
+      "name": "parseTableFk",
+      "qualifiedName": "Parser.parseTableFk",
+      "signature": "parseTableFk(): ForeignKey | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 369
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#extractInlineFk@L1493",
+      "confidence": 1,
+      "name": "extractInlineFk",
+      "qualifiedName": "extractInlineFk",
+      "signature": "extractInlineFk(colName: string, cToks: Token[]): ForeignKey | null",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1493
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs@L1373",
+      "confidence": 1,
+      "name": "extractSqlRefs",
+      "qualifiedName": "extractSqlRefs",
+      "signature": "extractSqlRefs(verb: string, toks: Token[]): { tables: string[]; columns: string[]; intoTarget?: string }",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1373
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#pushFromTable@L1354",
+      "confidence": 1,
+      "name": "pushFromTable",
+      "qualifiedName": "pushFromTable",
+      "signature": "pushFromTable(toks: Token[], i: number, tables: string[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1354
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#tokAt@L1331",
+      "confidence": 1,
+      "name": "tokAt",
+      "qualifiedName": "tokAt",
+      "signature": "tokAt(toks: Token[], k: number): Token | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1331
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/parser.ts@L1335",
+      "snippet": "/** Read a qualified table ref starting at index `i`: skip leading punct, then `name` or `schema.name`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+    "procedureName": "readTableRef",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/parser.ts@L1341",
+      "cond:packages/parsers/src/plsql/parser.ts@L1346"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+        "procedureName": "readTableRef",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9a5cbb426ea17714b0b2a3e7746f91c03384b2284e8d98bdeb2aaa388a11e4e6",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#tokAt@L1331",
+          "expr": "tokAt",
+          "line": 1340
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+        "procedureName": "readTableRef",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c312a2dbbf96aef376b25f880469ca0129c326d6df56f859b7b39505e418fae3",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1340",
+          "line": 1340,
+          "expr": "const head = tokAt(toks, j);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+        "procedureName": "readTableRef",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1341",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1341",
+            "expr": "!head || head.type !== 'word'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:442a971bc3a0cea57b1ad0098e86af2a35428e87e2a6ae70a041b48d2cbd9d3d",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1341",
+          "line": 1341,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+        "procedureName": "readTableRef",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b24c08155748deed53838a59f038de6c3082391efbce471fbed3f39e4df05758",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1344",
+          "line": 1344,
+          "expr": "const dot = tokAt(toks, j);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+        "procedureName": "readTableRef",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5b2edf8b1bb2cf809b535462e806d8763d5d6bb9ed109c3fd05f0652e0220cf",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1345",
+          "line": 1345,
+          "expr": "const second = tokAt(toks, j + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+        "procedureName": "readTableRef",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1346",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1346",
+            "expr": "dot && dot.type === 'punct' && dot.text === '.' && second && second.type === 'word'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:22ba95c653448d4c604cdc63ada109a23e6659ac732015aed31bab21449b741d",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1347",
+          "line": 1347,
+          "expr": "parts.push(second.raw);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+        "procedureName": "readTableRef",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8d39982443930b44e596784ecb77279ea99525d1c4ca3a150ec75e1654630bb2",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1347
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+        "procedureName": "readTableRef",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1346",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1346",
+            "expr": "dot && dot.type === 'punct' && dot.text === '.' && second && second.type === 'word'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d077644d4533436f11e795ac32709296dcaa1b40e9bc3fc3531af9c406f72e29",
+          "target": "assign:packages/parsers/src/plsql/parser.ts@L1348",
+          "line": 1348,
+          "expr": "j += 2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+        "procedureName": "readTableRef",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:78fd02480d6672b58787bba0f6172ae96639fac78d39cce08ebe42a8605cd254",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1350",
+          "line": 1350,
+          "expr": "return { name: parts.join('.'), next: j };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 5,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,614 @@
+{
+  "id": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:7b345908844359946b33e6ed1eb50589162bc6a533bab6850fff6bd6fad1f323",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+    "kind": "symbol",
+    "type": "method",
+    "name": "analyzeIfaceSegment",
+    "qualifiedName": "Parser.analyzeIfaceSegment",
+    "signature": "analyzeIfaceSegment(seg: Token[], segIdx: number[], startLine: number, ifaceName: string, methods: GoDef[], bases: string[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/parser.ts",
+    "span": {
+      "start": 715,
+      "end": 800
+    },
+    "callSites": [
+      {
+        "callee": "max",
+        "line": 745
+      },
+      {
+        "callee": "max",
+        "line": 746
+      },
+      {
+        "callee": "add",
+        "line": 753
+      },
+      {
+        "callee": "parseParamTokens",
+        "line": 755
+      },
+      {
+        "callee": "collectReturnsAfter",
+        "line": 757
+      },
+      {
+        "callee": "push",
+        "line": 758
+      },
+      {
+        "callee": "push",
+        "line": 799
+      }
+    ]
+  },
+  "source": {
+    "text": "  private analyzeIfaceSegment(\n    seg: Token[],\n    segIdx: number[],\n    startLine: number,\n    ifaceName: string,\n    methods: GoDef[],\n    bases: string[],\n  ): void {\n    if (seg.length === 0) return;\n    // type-set constraint: leading `~` or any `|` at depth 0 ⇒ skip\n    if (seg[0]!.type === 'OP' && seg[0]!.value === '~') return;\n    let hasPipe = false;\n    for (const tk of seg) {\n      if (tk.type === 'OP' && tk.value === '|') {\n        hasPipe = true;\n        break;\n      }\n    }\n    if (hasPipe) return;\n    // find a `(` preceded by a NAME at depth 0 ⇒ method\n    let pdepth = 0;\n    let bdepth = 0;\n    for (let i = 0; i < seg.length; i++) {\n      const tk = seg[i]!;\n      if (tk.type === 'OP' && (tk.value === '(' || tk.value === '[')) {\n        if (tk.value === '(') pdepth++;\n        else bdepth++;\n        continue;\n      }\n      if (tk.type === 'OP' && (tk.value === ')' || tk.value === ']')) {\n        if (tk.value === ')') pdepth = Math.max(0, pdepth - 1);\n        else bdepth = Math.max(0, bdepth - 1);\n        continue;\n      }\n      if (tk.type === 'NAME' && pdepth === 0 && bdepth === 0) {\n        const next = seg[i + 1];\n        if (next && next.type === 'OP' && next.value === '(') {\n          // method: Name(params) [rets] — exclude the spec `(` from call collection\n          this.excluded.add(segIdx[i + 1]!);\n          const name = tk.value;\n          const params = this.parseParamTokens(seg, i + 1);\n          // return-type text: tokens after the matching `)` until end of segment\n          const ret = this.collectReturnsAfter(seg, i + 1);\n          methods.push({\n            kind: 'method',\n            name,\n            startLine,\n            endLine: seg[seg.length - 1]!.line,\n            modifiers: [],\n            annotations: [],\n            bases: [],\n            implements: [],\n            params,\n            typeParams: [],\n            receiverType: '',\n            receiverName: '',\n            receiverTypeParams: [],\n            body: [],\n            interfaceMethod: true,\n            returns: ret,\n            underlying: '',\n            stmts: [],\n          });\n          return;\n        }\n      }\n    }\n    // no method `(` ⇒ a single embedded interface (dotted ok): `Other` / `pkg.Other`\n    let i = 0;\n    if (seg[i]!.type === 'OP' && seg[i]!.value === '*') i++; // rare pointer-embedded interface\n    if (i >= seg.length || seg[i]!.type !== 'NAME') return;\n    let name = seg[i]!.value;\n    i++;\n    while (\n      i + 1 < seg.length &&\n      seg[i]!.type === 'OP' &&\n      seg[i]!.value === '.' &&\n      seg[i + 1]!.type === 'NAME'\n    ) {\n      name = seg[i + 1]!.value;\n      i += 2;\n    }\n    // must consume the entire segment (no trailing type) for a clean embedding\n    if (i !== seg.length) return;\n    bases.push(name);\n  }",
+    "truncated": false,
+    "totalLines": 86,
+    "startLine": 715
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseInterfaceBody@L673",
+      "confidence": 1,
+      "name": "parseInterfaceBody",
+      "qualifiedName": "Parser.parseInterfaceBody",
+      "signature": "parseInterfaceBody(ifaceName: string): {\n    methods: GoDef[];\n    bases: string[];\n    closeLine: number;\n  }",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 673
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.collectReturnsAfter@L933",
+      "confidence": 1,
+      "name": "collectReturnsAfter",
+      "qualifiedName": "Parser.collectReturnsAfter",
+      "signature": "collectReturnsAfter(seg: Token[], openIdx: number): string",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 933
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseParamTokens@L874",
+      "confidence": 1,
+      "name": "parseParamTokens",
+      "qualifiedName": "Parser.parseParamTokens",
+      "signature": "parseParamTokens(tokens: Token[], openIdx: number): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 874
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/parser.ts@L710",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+    "procedureName": "Parser.analyzeIfaceSegment",
+    "conditions": [
+      "cond:packages/parsers/src/go/parser.ts@L723",
+      "cond:packages/parsers/src/go/parser.ts@L725",
+      "cond:packages/parsers/src/go/parser.ts@L727",
+      "cond:packages/parsers/src/go/parser.ts@L728",
+      "cond:packages/parsers/src/go/parser.ts@L733",
+      "cond:packages/parsers/src/go/parser.ts@L737",
+      "cond:packages/parsers/src/go/parser.ts@L744",
+      "cond:packages/parsers/src/go/parser.ts@L745",
+      "cond:packages/parsers/src/go/parser.ts@L749",
+      "cond:packages/parsers/src/go/parser.ts@L751",
+      "cond:packages/parsers/src/go/parser.ts@L785",
+      "cond:packages/parsers/src/go/parser.ts@L788",
+      "cond:packages/parsers/src/go/parser.ts@L798"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L723",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L723",
+            "expr": "seg.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1de3b4e81af9e766a3d2128f3813e883bfaa64cc99dbbc1bc00134c43a03a37",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L723",
+          "line": 723,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L725",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L725",
+            "expr": "seg[0]!.type === 'OP' && seg[0]!.value === '~'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca9bff68df5b26d179544083d9a43efc53c81670d7de52215f8840dbb4f80863",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L725",
+          "line": 725,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L728",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L727",
+            "expr": "seg"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L728",
+            "expr": "tk.type === 'OP' && tk.value === '|'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9220c5e709b756a1a53dda4be56783e12935c3b7356b9a7bd8e04189a915978b",
+          "target": "assign:packages/parsers/src/go/parser.ts@L729",
+          "line": 729,
+          "expr": "hasPipe = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L733",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L733",
+            "expr": "hasPipe",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1268d7d8b9026632349a76b6b4ddcfb2f775b5051a7724fffc68225136c9138a",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L733",
+          "line": 733,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L745",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L737",
+            "expr": "i < seg.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L744",
+            "expr": "tk.type === 'OP' && (tk.value === ')' || tk.value === ']')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L745",
+            "expr": "tk.value === ')'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0e72e1ec195e39fa51a2da344bb562841877830127f0fc90bd537e50bd8e8478",
+          "target": "assign:packages/parsers/src/go/parser.ts@L745",
+          "line": 745,
+          "expr": "pdepth = Math.max(0, pdepth - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L745",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L737",
+            "expr": "i < seg.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L744",
+            "expr": "tk.type === 'OP' && (tk.value === ')' || tk.value === ']')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L745",
+            "expr": "tk.value === ')'",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:882892bb5e473ffc9af1e359af1302a4dab5da806d12dc46d0223a3734c22d39",
+          "target": "assign:packages/parsers/src/go/parser.ts@L746",
+          "line": 746,
+          "expr": "bdepth = Math.max(0, bdepth - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L751",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L737",
+            "expr": "i < seg.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L749",
+            "expr": "tk.type === 'NAME' && pdepth === 0 && bdepth === 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L751",
+            "expr": "next && next.type === 'OP' && next.value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:829717d7af2b16ed200a4df552f1c2dc0e7d2d06b2b982f66cefd100dae6e067",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L753",
+          "line": 753,
+          "expr": "this.excluded.add(segIdx[i + 1]!);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L751",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L737",
+            "expr": "i < seg.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L749",
+            "expr": "tk.type === 'NAME' && pdepth === 0 && bdepth === 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L751",
+            "expr": "next && next.type === 'OP' && next.value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8049955f2211d6ce27d2ff5efbbcba6aa0d0cdfccd9a3308c35c7d64436e1b28",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseParamTokens@L874",
+          "expr": "parseParamTokens",
+          "line": 755
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L751",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L737",
+            "expr": "i < seg.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L749",
+            "expr": "tk.type === 'NAME' && pdepth === 0 && bdepth === 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L751",
+            "expr": "next && next.type === 'OP' && next.value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce6f58a438e34e53c04db81cfd6a03a1860d94b228579a50f1c29c9c15c0d2fd",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L755",
+          "line": 755,
+          "expr": "const params = this.parseParamTokens(seg, i + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L751",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L737",
+            "expr": "i < seg.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L749",
+            "expr": "tk.type === 'NAME' && pdepth === 0 && bdepth === 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L751",
+            "expr": "next && next.type === 'OP' && next.value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c111088f17db8e24c454104d3255a5f237df63d8b5099ff131d62f72df7da124",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.collectReturnsAfter@L933",
+          "expr": "collectReturnsAfter",
+          "line": 757
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L751",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L737",
+            "expr": "i < seg.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L749",
+            "expr": "tk.type === 'NAME' && pdepth === 0 && bdepth === 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L751",
+            "expr": "next && next.type === 'OP' && next.value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0a6c485e9ec7fb862597c82708e62eab7da747769ebfa0f98b2ae7bb9c027e7b",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L757",
+          "line": 757,
+          "expr": "const ret = this.collectReturnsAfter(seg, i + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L751",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L737",
+            "expr": "i < seg.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L749",
+            "expr": "tk.type === 'NAME' && pdepth === 0 && bdepth === 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L751",
+            "expr": "next && next.type === 'OP' && next.value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5ebb94a7a0e85f3354757d89fc8697ca13737562a1a47dacf2975e9a4a39c547",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L758",
+          "line": 758,
+          "expr": "methods.push({\n            kind: 'method',\n            name,\n            startLine,\n            endLine: seg[seg.length - 1]!.line,\n            modifiers: [],\n            annotations: [],\n            bases: [],\n            implements: [],\n            params,\n            typeParams: [],\n            receiverType: '',\n            receiverName: '',\n            receiverTypeParams: [],\n            body: [],\n            interfaceMethod: true,\n            returns: ret,\n            underlying: '',\n            stmts: [],\n          });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L751",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L737",
+            "expr": "i < seg.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L749",
+            "expr": "tk.type === 'NAME' && pdepth === 0 && bdepth === 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L751",
+            "expr": "next && next.type === 'OP' && next.value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:857cc736568d6933c8e3376a8c178b849ede239fb4e0e8a6813857ddff5b6fcb",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L778",
+          "line": 778,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L785",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L785",
+            "expr": "i >= seg.length || seg[i]!.type !== 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db6319b09b194e1e2f3deee7509993ff32af293f6fa7ac15baf05d378a962e32",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L785",
+          "line": 785,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L788",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L788",
+            "expr": "i + 1 < seg.length &&\n      seg[i]!.type === 'OP' &&\n      seg[i]!.value === '.' &&\n      seg[i + 1]!.type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ad3a37a13765cfc8de518fd575e76a14db03163e4ca328e13e1dcbbe7cba379f",
+          "target": "assign:packages/parsers/src/go/parser.ts@L794",
+          "line": 794,
+          "expr": "name = seg[i + 1]!.value;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L788",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L788",
+            "expr": "i + 1 < seg.length &&\n      seg[i]!.type === 'OP' &&\n      seg[i]!.value === '.' &&\n      seg[i + 1]!.type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f27aec70487e2f6bf2f39ac560ded592a3bd127722774740456257bdc9f592df",
+          "target": "assign:packages/parsers/src/go/parser.ts@L795",
+          "line": 795,
+          "expr": "i += 2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L798",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L798",
+            "expr": "i !== seg.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c79f9ab6b7127d48825d2ecedf88b559b82c0eba58325bbe04bddacd6e66525f",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L798",
+          "line": 798,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
+        "procedureName": "Parser.analyzeIfaceSegment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d6a047d9e7a90f423ddd806c62bb6da40d8e4efa4240659ba11b8fc1767c2955",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L799",
+          "line": 799,
+          "expr": "bases.push(name);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 16,
+    "referencedByFiles": [
+      "packages/parsers/src/go/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 16,
+    "assignments": 5,
+    "conditions": 9,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 7,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

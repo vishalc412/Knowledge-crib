@@ -1,0 +1,175 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#stampPackageMeta@L189",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:2e36c318528ddb943bcc4a0ada2ebfba9e97604b5c3b5c38aeb6b3e462ce6b46",
+  "builtAt": "2026-06-30T22:39:43.179Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#stampPackageMeta@L189",
+    "kind": "symbol",
+    "type": "function",
+    "name": "stampPackageMeta",
+    "qualifiedName": "stampPackageMeta",
+    "signature": "stampPackageMeta(soul: SoulStore, scope: { layout: WorkspaceLayout | null; indexedPackages: string[] }): void",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 189,
+      "end": 202
+    },
+    "callSites": [
+      {
+        "callee": "getManifest",
+        "line": 193
+      },
+      {
+        "callee": "map",
+        "line": 197
+      },
+      {
+        "callee": "getManifest",
+        "line": 201
+      }
+    ]
+  },
+  "source": {
+    "text": "function stampPackageMeta(\n  soul: SoulStore,\n  scope: { layout: WorkspaceLayout | null; indexedPackages: string[] },\n): void {\n  const meta: Record<string, unknown> = { ...(soul.getManifest().meta ?? {}) };\n  if (scope.layout) {\n    meta.workspace = {\n      tool: scope.layout.tool,\n      packages: scope.layout.packages.map((p) => ({ name: p.name, rel: p.rel })),\n    };\n  }\n  meta.indexedPackages = scope.indexedPackages;\n  soul.getManifest().meta = meta;\n}",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 189
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdIndex@L398",
+      "confidence": 1,
+      "name": "cmdIndex",
+      "qualifiedName": "cmdIndex",
+      "signature": "cmdIndex(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 398
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdReindex@L974",
+      "confidence": 1,
+      "name": "cmdReindex",
+      "qualifiedName": "cmdReindex",
+      "signature": "cmdReindex(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 974
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L188",
+      "snippet": "/** Stamp the detected workspace + the package roots actually indexed onto the soul manifest's `meta`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#stampPackageMeta@L189",
+    "procedureName": "stampPackageMeta",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L194"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#stampPackageMeta@L189",
+        "procedureName": "stampPackageMeta",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:43a6ef11f64327ab31eaaf22ae8574077bf9c6a76b1efa161fbbdbe14be38f06",
+          "target": "stmt:packages/cli/src/cli.ts@L193",
+          "line": 193,
+          "expr": "const meta: Record<string, unknown> = { ...(soul.getManifest().meta ?? {}) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#stampPackageMeta@L189",
+        "procedureName": "stampPackageMeta",
+        "guard": "cond:packages/cli/src/cli.ts@L194",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L194",
+            "expr": "scope.layout",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6bfc67d58919356338367f9c31dd3385e6d25edcbd360083502f01de3e72440f",
+          "target": "assign:packages/cli/src/cli.ts@L195",
+          "line": 195,
+          "expr": "meta.workspace = {\n      tool: scope.layout.tool,\n      packages: scope.layout.packages.map((p) => ({ name: p.name, rel: p.rel })),\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#stampPackageMeta@L189",
+        "procedureName": "stampPackageMeta",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1fedbafb326adb63ce527c2a280d0d59351bf750665fa576d1b6e07d79f98ee3",
+          "target": "assign:packages/cli/src/cli.ts@L200",
+          "line": 200,
+          "expr": "meta.indexedPackages = scope.indexedPackages;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#stampPackageMeta@L189",
+        "procedureName": "stampPackageMeta",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bf894f5e4ee106e574e4271ff86ebf3153c4a697f8295626b226edd2ded18a79",
+          "target": "assign:packages/cli/src/cli.ts@L201",
+          "line": 201,
+          "expr": "soul.getManifest().meta = meta;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 3,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

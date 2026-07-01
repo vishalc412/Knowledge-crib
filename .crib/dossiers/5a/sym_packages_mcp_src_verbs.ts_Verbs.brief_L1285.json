@@ -1,0 +1,203 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.brief@L1285",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:feb3356b71a74637e07c588ce6e0b774191331b147099eb5f9e04d820f1aff8c",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.brief@L1285",
+    "kind": "symbol",
+    "type": "method",
+    "name": "brief",
+    "qualifiedName": "Verbs.brief",
+    "signature": "brief(id: string, confidence: number): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1285,
+      "end": 1298
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 1286
+      }
+    ]
+  },
+  "source": {
+    "text": "  private brief(id: string, confidence: number): Record<string, unknown> {\n    const n = this.deps.soul.getNode(id);\n    if (!n) return { id, confidence };\n    return {\n      id,\n      ...(n.name ? { name: n.name } : {}),\n      ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),\n      ...(n.signature ? { signature: n.signature } : {}),\n      ...(n.type ? { type: n.type } : {}),\n      ...(n.file ? { file: n.file } : {}),\n      ...(n.span ? { line: n.span.start } : {}),\n      confidence,\n    };\n  }",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 1285
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.context@L225",
+      "confidence": 1,
+      "name": "context",
+      "qualifiedName": "Verbs.context",
+      "signature": "context(args: {\n    id: string;\n    docLimit?: number;\n    extractedOnly?: boolean;\n    /** include the full source text of the node's span (rehydrated from disk, budgeted) */\n    withSource?: boolean;\n    /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */\n    withRules?: boolean;\n    /** fold in the schema-1.3 framework-semantics relationships: routes exposed, beans produced,\n     *  DI dependencies/dependents, JPA relations, component renders. Auto-scopes by node — a class\n     *  (controller/@Configuration/@Entity) aggregates its members' route table / bean inventory /\n     *  DI graph / relation model via `member-of`; a callable/component/field returns its own direct\n     *  edges. A @Bean-supplied dependency is surfaced with `kind: 'produces'` + the producer in one\n     *  trip (no round-trip). Unresolved `meta.injects`/`meta.produces` type names surface as\n     *  `⚠ unresolved` entries (parity with `gaps`). */\n    withFramework?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */\n    sourceMaxChars?: number;\n    /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 225
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:README.md#the-token-cost-benefit-concretely",
+      "heading": "The token-cost benefit, concretely",
+      "anchor": "the-token-cost-benefit-concretely",
+      "snippet": "The token-cost benefit, concretely",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "heading": "3.1 Framework-semantics tier (schema 1.3)",
+      "anchor": "3-1-framework-semantics-tier-schema-1-3",
+      "snippet": "3.1 Framework-semantics tier (schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "heading": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "anchor": "surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "snippet": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.brief@L1285",
+    "procedureName": "Verbs.brief",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L1287"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.brief@L1285",
+        "procedureName": "Verbs.brief",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:efa14b9f7587f6c70f06dfd6ce79fbe2343ae44e8e196594a585ed4c82c6bf43",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1286",
+          "line": 1286,
+          "expr": "const n = this.deps.soul.getNode(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.brief@L1285",
+        "procedureName": "Verbs.brief",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1287",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1287",
+            "expr": "!n",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:733f12de5c9fe8a6aaed231d46984782a5ffc21cceed99a784302cac8b001812",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1287",
+          "line": 1287,
+          "expr": "return { id, confidence };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.brief@L1285",
+        "procedureName": "Verbs.brief",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:118ed4513ba446d6f2fe7762865c47739d7bd14d2e4316a942e64570b5bed382",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1288",
+          "line": 1288,
+          "expr": "return {\n      id,\n      ...(n.name ? { name: n.name } : {}),\n      ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),\n      ...(n.signature ? { signature: n.signature } : {}),\n      ...(n.type ? { type: n.type } : {}),\n      ...(n.file ? { file: n.file } : {}),\n      ...(n.span ? { line: n.span.start } : {}),\n      confidence,\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

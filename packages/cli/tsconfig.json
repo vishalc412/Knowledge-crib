@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "composite": true
+  },
+  "references": [
+    { "path": "../soul-schema" },
+    { "path": "../core" },
+    { "path": "../pipeline" },
+    { "path": "../mcp" },
+    { "path": "../ui" }
+  ],
+  "include": ["src/**/*.ts"]
+}

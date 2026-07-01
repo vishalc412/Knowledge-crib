@@ -1,0 +1,231 @@
+{
+  "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanNumber@L303",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:49f74861a0768089e87b5203b3303f32ee4c6175a4566c03f6ac30e042d82cd8",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanNumber@L303",
+    "kind": "symbol",
+    "type": "method",
+    "name": "scanNumber",
+    "qualifiedName": "Lexer.scanNumber",
+    "signature": "scanNumber(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/lexer.ts",
+    "span": {
+      "start": 303,
+      "end": 310
+    },
+    "callSites": [
+      {
+        "callee": "advance",
+        "line": 308
+      },
+      {
+        "callee": "emit",
+        "line": 309
+      },
+      {
+        "callee": "slice",
+        "line": 309
+      }
+    ]
+  },
+  "source": {
+    "text": "  private scanNumber(): void {\n    const start = this.pos;\n    const sl = this.line;\n    const sc = this.col;\n    // tolerant: hex/bin/oct/decimal, underscores, exponent, L/F/D suffix — eat the legal run.\n    while (this.pos < this.src.length && this.isNumberPart(this.peek())) this.advance();\n    this.emit('NUMBER', this.src.slice(start, this.pos), sl, sc);\n  }",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 303
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.tokens@L248",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 248
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.advance@L441",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 441
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.emit@L452",
+      "confidence": 1,
+      "name": "emit",
+      "qualifiedName": "Lexer.emit",
+      "signature": "emit(type: TokenType, value: string, line: number, col: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 452
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.isNumberPart@L471",
+      "confidence": 1,
+      "name": "isNumberPart",
+      "qualifiedName": "Lexer.isNumberPart",
+      "signature": "isNumberPart(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 471
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.peek@L430",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 430
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanNumber@L303",
+    "procedureName": "Lexer.scanNumber",
+    "conditions": [
+      "cond:packages/parsers/src/java/lexer.ts@L308"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanNumber@L303",
+        "procedureName": "Lexer.scanNumber",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L308",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L308",
+            "expr": "this.pos < this.src.length && this.isNumberPart(this.peek())",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d67eb0a55a695a94c27a79ccebea736161c6940d81695e9ac4f4a92fed9f079b",
+          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.advance@L441",
+          "expr": "advance",
+          "line": 308
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanNumber@L303",
+        "procedureName": "Lexer.scanNumber",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L308",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L308",
+            "expr": "this.pos < this.src.length && this.isNumberPart(this.peek())",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1a6382b15e645bf23b770cb97adc8806e7fd82859a621902124a7edef028b55a",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L308",
+          "line": 308,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanNumber@L303",
+        "procedureName": "Lexer.scanNumber",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1121d675b6e5ec45799c4b722dacda6cd41543782ab43043176589fafa4407d7",
+          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.emit@L452",
+          "expr": "emit",
+          "line": 309
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanNumber@L303",
+        "procedureName": "Lexer.scanNumber",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a6f9afa6fae7d5980a535f37fe010e72159207adfc10ba1d4243d2450e165d25",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L309",
+          "line": 309,
+          "expr": "this.emit('NUMBER', this.src.slice(start, this.pos), sl, sc);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanNumber@L303",
+        "procedureName": "Lexer.scanNumber",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d136b9671c1f97105576aea6248dea616e77c9b6b70136a074d071ca425a4d4e",
+          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.peek@L430",
+          "expr": "peek"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanNumber@L303",
+        "procedureName": "Lexer.scanNumber",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4d579bbc07b798a7b066cd835d0999f88b5371dffed06590d098361a7bae3682",
+          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.isNumberPart@L471",
+          "expr": "isNumberPart"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/java/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

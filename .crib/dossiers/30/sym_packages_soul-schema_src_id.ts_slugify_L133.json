@@ -1,0 +1,117 @@
+{
+  "id": "sym:packages/soul-schema/src/id.ts#slugify@L133",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:75792cb70f7d1d04b0bd00a192f14090f7bc660c6a94791e9f6e55ccc8e7919f",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/soul-schema/src/id.ts#slugify@L133",
+    "kind": "symbol",
+    "type": "function",
+    "name": "slugify",
+    "qualifiedName": "slugify",
+    "signature": "slugify(label: string): string",
+    "lang": "typescript",
+    "file": "packages/soul-schema/src/id.ts",
+    "span": {
+      "start": 133,
+      "end": 139
+    },
+    "callSites": [
+      {
+        "callee": "replace",
+        "line": 134
+      },
+      {
+        "callee": "replace",
+        "line": 134
+      },
+      {
+        "callee": "replace",
+        "line": 134
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 134
+      }
+    ]
+  },
+  "source": {
+    "text": "export function slugify(label: string): string {\n  return label\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/^-+|-+$/g, '')\n    .replace(/-{2,}/g, '-');\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 133
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/md/markdown.ts#parseMarkdownSections@L36",
+      "confidence": 1,
+      "name": "parseMarkdownSections",
+      "qualifiedName": "parseMarkdownSections",
+      "signature": "parseMarkdownSections(text: string): MdSection[]",
+      "type": "function",
+      "file": "packages/parsers/src/md/markdown.ts",
+      "line": 36
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/soul-schema/src/id.ts@L132",
+      "snippet": "/** Slugify an arbitrary label into a cluster slug: lowercase, alnum + dashes, collapsed. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/soul-schema/src/id.ts#slugify@L133",
+    "procedureName": "slugify",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/soul-schema/src/id.ts#slugify@L133",
+        "procedureName": "slugify",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0320b9d1ec98610ce2dd9e2192299c59d75ea13e4a3984db7620a614f760f591",
+          "target": "stmt:packages/soul-schema/src/id.ts@L134",
+          "line": 134,
+          "expr": "return label\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/^-+|-+$/g, '')\n    .replace(/-{2,}/g, '-');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/md/markdown.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

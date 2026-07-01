@@ -1,0 +1,199 @@
+{
+  "id": "sym:packages/parsers/src/ts/react.ts#collectHooks.visit@L171",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9da253fccb540a496f46efb8e24e87e8c727d21130bb27ec5e9460ae9cc4a6c8",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/react.ts#collectHooks.visit@L171",
+    "kind": "symbol",
+    "type": "function",
+    "name": "visit",
+    "qualifiedName": "collectHooks.visit",
+    "signature": "visit(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/react.ts",
+    "span": {
+      "start": 171,
+      "end": 177
+    },
+    "callSites": [
+      {
+        "callee": "hookCallName",
+        "line": 173
+      },
+      {
+        "callee": "push",
+        "line": 174
+      },
+      {
+        "callee": "forEachChild",
+        "line": 176
+      }
+    ]
+  },
+  "source": {
+    "text": "  const visit = (node: ts.Node): void => {\n    if (ts.isCallExpression(node)) {\n      const h = hookCallName(node);\n      if (h) out.push(h);\n    }\n    ts.forEachChild(node, visit);\n  };",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 171
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#hookCallName@L241",
+      "confidence": 1,
+      "name": "hookCallName",
+      "qualifiedName": "hookCallName",
+      "signature": "hookCallName(call: ts.CallExpression): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 241
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/react.ts#collectHooks.visit@L171",
+    "procedureName": "collectHooks.visit",
+    "conditions": [
+      "cond:packages/parsers/src/ts/react.ts@L172",
+      "cond:packages/parsers/src/ts/react.ts@L174"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectHooks.visit@L171",
+        "procedureName": "collectHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L172",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L172",
+            "expr": "ts.isCallExpression(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:656a95589a66d054b4021f3128d0ac2cdf5b28c2724f88052878fa32c9fe2074",
+          "target": "sym:packages/parsers/src/ts/react.ts#hookCallName@L241",
+          "expr": "hookCallName",
+          "line": 173
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectHooks.visit@L171",
+        "procedureName": "collectHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L172",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L172",
+            "expr": "ts.isCallExpression(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:994209093c4e5498820acaf7aef9d235e523e89049340e1198c28d786de048d4",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L173",
+          "line": 173,
+          "expr": "const h = hookCallName(node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectHooks.visit@L171",
+        "procedureName": "collectHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L174",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L172",
+            "expr": "ts.isCallExpression(node)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L174",
+            "expr": "h",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:304cdfd04dbfa6bb98665fdee4720debfedd0841b4552b498853548845f840f8",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L174",
+          "line": 174,
+          "expr": "out.push(h);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectHooks.visit@L171",
+        "procedureName": "collectHooks.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:717a8a3840fbdf6cd03c0940f3442437f99ff9faa8d0042ef15d9148ddcf773f",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 174
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectHooks.visit@L171",
+        "procedureName": "collectHooks.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7bb471bfdce0d417f88f265e5e706df6b557aaf7ac2513627f27b15345abeba0",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L176",
+          "line": 176,
+          "expr": "ts.forEachChild(node, visit);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

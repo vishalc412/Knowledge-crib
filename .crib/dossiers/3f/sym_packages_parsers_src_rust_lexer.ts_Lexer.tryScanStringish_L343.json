@@ -1,0 +1,992 @@
+{
+  "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:df8eb501d20e7deccb808cde6e59d9c3a8810de0dcbe7c1005bf9a7fca8a9d09",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+    "kind": "symbol",
+    "type": "method",
+    "name": "tryScanStringish",
+    "qualifiedName": "Lexer.tryScanStringish",
+    "signature": "tryScanStringish(): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/lexer.ts",
+    "span": {
+      "start": 343,
+      "end": 391
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 344
+      },
+      {
+        "callee": "countRawHashes",
+        "line": 346
+      },
+      {
+        "callee": "scanRawString",
+        "line": 348
+      },
+      {
+        "callee": "peek",
+        "line": 354
+      },
+      {
+        "callee": "advance",
+        "line": 356
+      },
+      {
+        "callee": "scanString",
+        "line": 357
+      },
+      {
+        "callee": "advance",
+        "line": 361
+      },
+      {
+        "callee": "scanCharOrLifetime",
+        "line": 362
+      },
+      {
+        "callee": "countRawHashes",
+        "line": 366
+      },
+      {
+        "callee": "scanRawString",
+        "line": 368
+      },
+      {
+        "callee": "peek",
+        "line": 375
+      },
+      {
+        "callee": "advance",
+        "line": 377
+      },
+      {
+        "callee": "scanString",
+        "line": 378
+      },
+      {
+        "callee": "countRawHashes",
+        "line": 382
+      },
+      {
+        "callee": "scanRawString",
+        "line": 384
+      }
+    ]
+  },
+  "source": {
+    "text": "  private tryScanStringish(): boolean {\n    const c = this.peek();\n    if (c === 'r') {\n      const hashCount = this.countRawHashes(1);\n      if (hashCount !== undefined) {\n        this.scanRawString(1, hashCount);\n        return true;\n      }\n      return false; // `r#ident` (raw identifier) or plain `r` ident — let scanIdent handle it\n    }\n    if (c === 'b') {\n      const c1 = this.peek(1);\n      if (c1 === '\"') {\n        this.advance(); // b\n        this.scanString();\n        return true;\n      }\n      if (c1 === \"'\") {\n        this.advance(); // b\n        this.scanCharOrLifetime(true);\n        return true;\n      }\n      if (c1 === 'r') {\n        const hashCount = this.countRawHashes(2);\n        if (hashCount !== undefined) {\n          this.scanRawString(2, hashCount);\n          return true;\n        }\n      }\n      return false; // plain `b` / `br` ident\n    }\n    if (c === 'c') {\n      const c1 = this.peek(1);\n      if (c1 === '\"') {\n        this.advance(); // c\n        this.scanString();\n        return true;\n      }\n      if (c1 === 'r') {\n        const hashCount = this.countRawHashes(2);\n        if (hashCount !== undefined) {\n          this.scanRawString(2, hashCount);\n          return true;\n        }\n      }\n      return false; // plain `c` / `cr` ident\n    }\n    return false;\n  }",
+    "truncated": false,
+    "totalLines": 49,
+    "startLine": 343
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 157
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.advance@L466",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 466
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.countRawHashes@L397",
+      "confidence": 1,
+      "name": "countRawHashes",
+      "qualifiedName": "Lexer.countRawHashes",
+      "signature": "countRawHashes(from: number): number | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 397
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.peek@L455",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 455
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanCharOrLifetime@L287",
+      "confidence": 1,
+      "name": "scanCharOrLifetime",
+      "qualifiedName": "Lexer.scanCharOrLifetime",
+      "signature": "scanCharOrLifetime(byte = false): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 287
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanRawString@L250",
+      "confidence": 1,
+      "name": "scanRawString",
+      "qualifiedName": "Lexer.scanRawString",
+      "signature": "scanRawString(prefixLen: number, hashCount: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 250
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanString@L221",
+      "confidence": 1,
+      "name": "scanString",
+      "qualifiedName": "Lexer.scanString",
+      "signature": "scanString(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 221
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/lexer.ts@L342",
+      "snippet": "/** Try to scan a string/char literal prefixed by `r` / `b` / `c`; returns true if it consumed one. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+    "procedureName": "Lexer.tryScanStringish",
+    "conditions": [
+      "cond:packages/parsers/src/rust/lexer.ts@L374",
+      "cond:packages/parsers/src/rust/lexer.ts@L381",
+      "cond:packages/parsers/src/rust/lexer.ts@L345",
+      "cond:packages/parsers/src/rust/lexer.ts@L383",
+      "cond:packages/parsers/src/rust/lexer.ts@L347",
+      "cond:packages/parsers/src/rust/lexer.ts@L353",
+      "cond:packages/parsers/src/rust/lexer.ts@L376",
+      "cond:packages/parsers/src/rust/lexer.ts@L355",
+      "cond:packages/parsers/src/rust/lexer.ts@L360",
+      "cond:packages/parsers/src/rust/lexer.ts@L365",
+      "cond:packages/parsers/src/rust/lexer.ts@L367"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L374",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d59a6ee3bb6f9002ba1b90abdd58cedd0253b0fdf93997df1352fa147d452611",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.peek@L455",
+          "expr": "peek",
+          "line": 344
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bc268c4cd3c139ebd3ce8d61459a31acfe6d34e88e0b54b60b0698ba1d3b4448",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L344",
+          "line": 344,
+          "expr": "const c = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L381",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L381",
+            "expr": "c1 === 'r'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:947c30395c78e52a43dc6ece05d34b1c530508e50f5f390a450c46ed26df49be",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.countRawHashes@L397",
+          "expr": "countRawHashes",
+          "line": 346
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L345",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L345",
+            "expr": "c === 'r'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f576600fd574692a0c83246d179a7f17e71c9bdab000deba41d509e91ef4201",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L346",
+          "line": 346,
+          "expr": "const hashCount = this.countRawHashes(1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L383",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L381",
+            "expr": "c1 === 'r'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L383",
+            "expr": "hashCount !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d965e3067e927fa5f46f376b63e021a4c612407877d7d361dbd62ed85e7897f3",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanRawString@L250",
+          "expr": "scanRawString",
+          "line": 348
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L347",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L345",
+            "expr": "c === 'r'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L347",
+            "expr": "hashCount !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f7d157dab45b6d1d2f06c25248bfb7059247c993cba67203dd7b3959e0ddd8cf",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L348",
+          "line": 348,
+          "expr": "this.scanRawString(1, hashCount);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L347",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L345",
+            "expr": "c === 'r'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L347",
+            "expr": "hashCount !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cd7dd5b4e602d456a24aecd471588301426b4597e49b5b5c31e17d1851a59e53",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L349",
+          "line": 349,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L345",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L345",
+            "expr": "c === 'r'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dab722ebc8a31429ee615d8c5949b56aaf7f161affeb302113d2e6fecc04d39c",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L351",
+          "line": 351,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L353",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L353",
+            "expr": "c === 'b'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:efe78eacceea7478c3e3432f857c0b34090e195fc4d035af4a74e128c296ee2e",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L354",
+          "line": 354,
+          "expr": "const c1 = this.peek(1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L376",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L376",
+            "expr": "c1 === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6e532818aae5e02f85ee371e8d695bfebd36c49f721cc4872a53f38137b6c15b",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.advance@L466",
+          "expr": "advance",
+          "line": 356
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L355",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L353",
+            "expr": "c === 'b'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L355",
+            "expr": "c1 === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:72cd9aac040fe01184d34ef45ff64ae3fe5156f5874cfe8833c02d346b366e71",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L356",
+          "line": 356,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L376",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L376",
+            "expr": "c1 === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7bf6e878e9c9dd5612c999fb7b653d0362bb436885d92857ce3b3e33e7d567be",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanString@L221",
+          "expr": "scanString",
+          "line": 357
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L355",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L353",
+            "expr": "c === 'b'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L355",
+            "expr": "c1 === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:643cd7ee0134d15a148374ad225024f4af332a8e59c23d6c9af4c21658a11067",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L357",
+          "line": 357,
+          "expr": "this.scanString();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L355",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L353",
+            "expr": "c === 'b'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L355",
+            "expr": "c1 === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:88be6da0813a3f68594cf214d970addb0645483c61d79c3a9c2637311940291e",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L358",
+          "line": 358,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L360",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L353",
+            "expr": "c === 'b'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L360",
+            "expr": "c1 === \"'\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:934e359a752107c2972fb7ed3bf77d446086253acabd7e016c36f35ff3a45b5c",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L361",
+          "line": 361,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L360",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L353",
+            "expr": "c === 'b'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L360",
+            "expr": "c1 === \"'\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:55bdf299214df2d4e5f94165fa4e2498a410be5c4bfb0caa09e07a6f28d97403",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanCharOrLifetime@L287",
+          "expr": "scanCharOrLifetime",
+          "line": 362
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L360",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L353",
+            "expr": "c === 'b'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L360",
+            "expr": "c1 === \"'\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f16201e8411bfe0843f62e26a6d979d7ad7b4f1d017c7ccedb34e601fb17d699",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L362",
+          "line": 362,
+          "expr": "this.scanCharOrLifetime(true);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L360",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L353",
+            "expr": "c === 'b'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L360",
+            "expr": "c1 === \"'\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c3d7c21c477ecde3e34e68bce30893e613872cdd2be5a4ebb35cd527cdbbb8e7",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L363",
+          "line": 363,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L365",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L353",
+            "expr": "c === 'b'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L365",
+            "expr": "c1 === 'r'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a05c7955208b89685405096ce817b2e1a44ab4862c817106203c6683b932ed50",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L366",
+          "line": 366,
+          "expr": "const hashCount = this.countRawHashes(2);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L367",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L353",
+            "expr": "c === 'b'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L365",
+            "expr": "c1 === 'r'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L367",
+            "expr": "hashCount !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:61d6991d2e9be52274250edb2c2fb2d28fc6c16afcf6857f7a58aba4c4e7378a",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L368",
+          "line": 368,
+          "expr": "this.scanRawString(2, hashCount);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L367",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L353",
+            "expr": "c === 'b'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L365",
+            "expr": "c1 === 'r'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L367",
+            "expr": "hashCount !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9457a8c9cf348e5c56e8bfd918df989fc4cd3eed4602825a7e6cb428e30c1848",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L369",
+          "line": 369,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L353",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L353",
+            "expr": "c === 'b'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a8834f39cebdc7691f7fb7e089acfa574b013c15fdf8255414b9164aa1e4e02e",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L372",
+          "line": 372,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L374",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b8ddf41ec50145b5b17977f4a4d1dbb0f7e74bee8b90144519fdb0b29a6c7616",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L375",
+          "line": 375,
+          "expr": "const c1 = this.peek(1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L376",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L376",
+            "expr": "c1 === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0f6cfbe7627e922d0dedc355a52972feded2739cde1174a28bae282dd5557b02",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L377",
+          "line": 377,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L376",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L376",
+            "expr": "c1 === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f1a3c5055b5ad9ec50217dd0c4e6ed8df96097a6f7a4115fe584dcb020bc42db",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L378",
+          "line": 378,
+          "expr": "this.scanString();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L376",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L376",
+            "expr": "c1 === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c5b3ed834ff0659c0bae4bc8dc0dd28b4052723a2e34f5a882d37e0789f60169",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L379",
+          "line": 379,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L381",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L381",
+            "expr": "c1 === 'r'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:54c7d9e70e2c06458afe8400118555b590bd84bf0658f800aff2144fc9ad94c3",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L382",
+          "line": 382,
+          "expr": "const hashCount = this.countRawHashes(2);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L383",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L381",
+            "expr": "c1 === 'r'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L383",
+            "expr": "hashCount !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:112c527ba1e31af1d106a225089e64317ce83ad781bf5bbee5c1503521bca250",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L384",
+          "line": 384,
+          "expr": "this.scanRawString(2, hashCount);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L383",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L381",
+            "expr": "c1 === 'r'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L383",
+            "expr": "hashCount !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dbf225b5197cedd707ef8d41b0e98bf5fe1ba87a4ae2f3e1a6d9bce116f60d67",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L385",
+          "line": 385,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L374",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d2587236bf4119ee17157ae0e65da79aeb638d7c349ceabfe16005d0624fa5e1",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L388",
+          "line": 388,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5c2278ffe73e752224ce4bc986cc9ba28f30cf9c0b8c5b7d519bf58b2010701b",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L390",
+          "line": 390,
+          "expr": "return false;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 25,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 25,
+    "assignments": 0,
+    "conditions": 11,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 15,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,235 @@
+{
+  "id": "sym:packages/parsers/src/ts/react.ts#containsCreateElementCall@L266",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:b809a80c4b9366fd5d641cec7a0c373fb2e7e9d460e1db6eb83189edb74b896b",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/react.ts#containsCreateElementCall@L266",
+    "kind": "symbol",
+    "type": "function",
+    "name": "containsCreateElementCall",
+    "qualifiedName": "containsCreateElementCall",
+    "signature": "containsCreateElementCall(node: ts.Node | undefined): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/react.ts",
+    "span": {
+      "start": 266,
+      "end": 277
+    },
+    "recursive": true,
+    "callSites": [
+      {
+        "callee": "identifierText",
+        "line": 269
+      },
+      {
+        "callee": "forEachChild",
+        "line": 273
+      },
+      {
+        "callee": "containsCreateElementCall",
+        "line": 274
+      }
+    ]
+  },
+  "source": {
+    "text": "function containsCreateElementCall(node: ts.Node | undefined): boolean {\n  if (!node) return false;\n  if (ts.isCallExpression(node)) {\n    const t = identifierText(node.expression);\n    if (t === 'createElement' || t === 'React.createElement') return true;\n  }\n  let found = false;\n  ts.forEachChild(node, (c) => {\n    if (!found) found = containsCreateElementCall(c);\n  });\n  return found;\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 266
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#classify@L99",
+      "confidence": 1,
+      "name": "classify",
+      "qualifiedName": "classify",
+      "signature": "classify(s: ReactSymbolLike): {\n  kind: 'class' | 'function' | 'hook';\n  body?: ts.Node;\n  propsType?: string;\n  stateType?: string;\n} | null",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 99
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#identifierText@L223",
+      "confidence": 1,
+      "name": "identifierText",
+      "qualifiedName": "identifierText",
+      "signature": "identifierText(e: ts.Expression): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 223
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/react.ts@L264",
+      "snippet": "/** Does a body contain a `createElement(…)` / `React.createElement(…)` call (the raw form of JSX —",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/react.ts#containsCreateElementCall@L266",
+    "procedureName": "containsCreateElementCall",
+    "conditions": [
+      "cond:packages/parsers/src/ts/react.ts@L267",
+      "cond:packages/parsers/src/ts/react.ts@L268",
+      "cond:packages/parsers/src/ts/react.ts@L270"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#containsCreateElementCall@L266",
+        "procedureName": "containsCreateElementCall",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L267",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L267",
+            "expr": "!node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0d0a4f5370ec1ab255d8bce694408755dae47724614120e56597a5b2391a9588",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L267",
+          "line": 267,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#containsCreateElementCall@L266",
+        "procedureName": "containsCreateElementCall",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L268",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L268",
+            "expr": "ts.isCallExpression(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c81bdabb1ab0a232b25d58cbef01cd991976a49a77cc488586eba8f465f7d33f",
+          "target": "sym:packages/parsers/src/ts/react.ts#identifierText@L223",
+          "expr": "identifierText",
+          "line": 269
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#containsCreateElementCall@L266",
+        "procedureName": "containsCreateElementCall",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L268",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L268",
+            "expr": "ts.isCallExpression(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1b7e5645757ea730247a5a76e7eb2f54c718d9ee9f19f2c4809b2f683b4145c7",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L269",
+          "line": 269,
+          "expr": "const t = identifierText(node.expression);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#containsCreateElementCall@L266",
+        "procedureName": "containsCreateElementCall",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L270",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L268",
+            "expr": "ts.isCallExpression(node)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L270",
+            "expr": "t === 'createElement' || t === 'React.createElement'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4928e7b7fb2bca4c0b9ab93ddb676b3a03061c24c199c8baed151056390c8540",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L270",
+          "line": 270,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#containsCreateElementCall@L266",
+        "procedureName": "containsCreateElementCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ae4c4e2f6b2924210ebf3ffd1fc174996e15a5875345461c41c787b438b13aba",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L273",
+          "line": 273,
+          "expr": "ts.forEachChild(node, (c) => {\n    if (!found) found = containsCreateElementCall(c);\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#containsCreateElementCall@L266",
+        "procedureName": "containsCreateElementCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2af90c8422dd73cae486399ba5bc3dd238460e9360623de8fec0a00afda0ce47",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L276",
+          "line": 276,
+          "expr": "return found;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/react.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": true,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

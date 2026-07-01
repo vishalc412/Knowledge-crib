@@ -1,0 +1,155 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkIf@L153",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c44fefcd15612d182e341e4eaf81dd2a0d3ae949924fc648b72c707cb394bc40",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkIf@L153",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkIf",
+    "qualifiedName": "Walker.walkIf",
+    "signature": "walkIf(s: IfStmt, procId: string, frames: GuardFrame[]): void",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/plsql-cfg.ts",
+    "span": {
+      "start": 153,
+      "end": 166
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 156
+      },
+      {
+        "callee": "walkBlock",
+        "line": 164
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkIf(s: IfStmt, procId: string, frames: GuardFrame[]): void {\n    // the IF contributes ONE condition node (keyed by the IF's start line) shared across branches;\n    // the branch label records polarity.\n    const ifCondId = idFor({ kind: 'condition', file: this.path, line: s.span.start });\n    for (const branch of s.branches) {\n      const frame: GuardFrame = {\n        condId: ifCondId,\n        branch: branch.label,\n        loop: false,\n        exception: false,\n      };\n      this.walkBlock(branch.body, procId, [...frames, frame]);\n    }\n  }",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 153
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkBlock@L138",
+      "confidence": 1,
+      "name": "walkBlock",
+      "qualifiedName": "Walker.walkBlock",
+      "signature": "walkBlock(block: Block, procId: string, frames: GuardFrame[]): void",
+      "type": "method",
+      "file": "packages/pipeline/src/resolve/plsql-cfg.ts",
+      "line": 138
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkBlock@L138",
+      "confidence": 1,
+      "name": "walkBlock",
+      "qualifiedName": "Walker.walkBlock",
+      "signature": "walkBlock(block: Block, procId: string, frames: GuardFrame[]): void",
+      "type": "method",
+      "file": "packages/pipeline/src/resolve/plsql-cfg.ts",
+      "line": 138
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkIf@L153",
+    "procedureName": "Walker.walkIf",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L157"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkIf@L153",
+        "procedureName": "Walker.walkIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:22556954390e38a0d6f558b5c2045852342a0d0f780abb3ea3a9be06c2d17ada",
+          "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L156",
+          "line": 156,
+          "expr": "const ifCondId = idFor({ kind: 'condition', file: this.path, line: s.span.start });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkIf@L153",
+        "procedureName": "Walker.walkIf",
+        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L157",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L157",
+            "expr": "s.branches",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0b71f5e2609148208eb06b7d09a0f8a93936a00e93dd50d828fcbbd33127de25",
+          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkBlock@L138",
+          "expr": "walkBlock",
+          "line": 164
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkIf@L153",
+        "procedureName": "Walker.walkIf",
+        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L157",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L157",
+            "expr": "s.branches",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:436d1176534fef38752e4a8b0d27bb700fa915741a95752d5f224634af552c48",
+          "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L164",
+          "line": 164,
+          "expr": "this.walkBlock(branch.body, procId, [...frames, frame]);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/plsql-cfg.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}
