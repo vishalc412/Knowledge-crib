@@ -17,6 +17,16 @@ They re-read files every session to rebuild understanding. Knowledge-crib indexe
 into a queryable graph (the *soul*), then serves it to any agent over MCP — so the agent gets full
 project context **fast**, with **far fewer tokens**, and stops making architecture-breaking changes.
 
+### The token-cost benefit, concretely
+The default `query`/`context`/`dossier` response is deliberately **lightweight**: a one-line
+snippet per hit plus, when an LLM analysis exists, a 5-field pointer (`provenance` / `model` /
+`stale` / `confidence` / `purpose`) — **not** the multi-KB analysis+graph+evidence blob. On the
+self-index a `query` hit carrying an LLM artifact is ~1.3 KB by default vs ~10.3 KB with the full
+blob — **~7.7× smaller per hit**, so a 10-hit discovery call costs ~90 KB (~23 K tokens) less than
+folding the full brief. The full brief is still one flag away (`--with-llm` / `withLlm: true`) when
+you actually want it. This is the difference between "the crib pays for itself" and "the crib adds
+cost": lean by default, deep on demand.
+
 Two existing tools each prove half and serve as **design inspiration only (no code copied)**:
 - **GitNexus** — how to dig deep (impact, call chains, type resolution).
 - **Graphify** — how to index broadly and portably (any input → a queryable graph).
