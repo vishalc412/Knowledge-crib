@@ -1,0 +1,500 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.seed@L788",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:8fe7485c4e459e4e673dbf08606760e5bdbb4f49bb9c4b627ce4ef7b4689f8fb",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.seed@L788",
+    "kind": "symbol",
+    "type": "method",
+    "name": "seed",
+    "qualifiedName": "EnrichmentStore.seed",
+    "signature": "seed(target: { layer: EnrichLayer; id: string; node?: Node }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 788,
+      "end": 839
+    },
+    "callSites": [
+      {
+        "callee": "getManifest",
+        "line": 790
+      },
+      {
+        "callee": "buildDossier",
+        "line": 791
+      },
+      {
+        "callee": "decisionTable",
+        "line": 806
+      },
+      {
+        "callee": "computeCoverage",
+        "line": 809
+      },
+      {
+        "callee": "map",
+        "line": 816
+      },
+      {
+        "callee": "sort",
+        "line": 816
+      },
+      {
+        "callee": "filter",
+        "line": 816
+      },
+      {
+        "callee": "iterate",
+        "line": 816
+      },
+      {
+        "callee": "map",
+        "line": 829
+      },
+      {
+        "callee": "clusterMembers",
+        "line": 829
+      },
+      {
+        "callee": "getManifest",
+        "line": 832
+      },
+      {
+        "callee": "getManifest",
+        "line": 833
+      },
+      {
+        "callee": "map",
+        "line": 834
+      },
+      {
+        "callee": "slice",
+        "line": 834
+      },
+      {
+        "callee": "filter",
+        "line": 834
+      },
+      {
+        "callee": "iterate",
+        "line": 834
+      },
+      {
+        "callee": "includes",
+        "line": 835
+      }
+    ]
+  },
+  "source": {
+    "text": "  private seed(target: { layer: EnrichLayer; id: string; node?: Node }): Record<string, unknown> {\n    if (target.layer === 'symbol' && target.node) {\n      const manifest = this.soul.getManifest();\n      const dossier = buildDossier(\n        this.soul,\n        this.repoRoot,\n        target.id,\n        manifest.stats.lastUpdated,\n        {\n          includeTables: true,\n        },\n      );\n      return {\n        node: target.node,\n        sourceBody: dossier?.source,\n        callers: dossier?.callers ?? [],\n        callees: dossier?.callees ?? [],\n        decisionTable: target.node.type\n          ? decisionTable(this.soul, target.id, { includeTables: true })\n          : undefined,\n        controlFlow: dossier?.controlFlow,\n        coverage: target.node.type ? computeCoverage(this.soul, target.id) : undefined,\n        caveats: [\n          'Respect only facts grounded in this seed and the supplied lower-layer analyses.',\n        ],\n      };\n    }\n    if (target.layer === 'file' && target.node) {\n      const symbols = [...this.soul.iterate('symbol')]\n        .filter((n) => n.file === target.node?.file)\n        .sort(byId)\n        .map((n) => ({\n          id: n.id,\n          name: n.name,\n          qualifiedName: n.qualifiedName,\n          type: n.type,\n          hash: n.hash,\n        }));\n      return { node: target.node, symbols };\n    }\n    if (target.layer === 'cluster' && target.node) {\n      return { node: target.node, members: this.clusterMembers(target.node).map((n) => n.id) };\n    }\n    return {\n      repo: this.soul.getManifest().repo,\n      stats: this.soul.getManifest().stats,\n      entryPoints: [...this.soul.iterate('symbol')]\n        .filter((n) => n.type && ['function', 'method', 'procedure'].includes(n.type))\n        .slice(0, 50)\n        .map((n) => ({ id: n.id, name: n.name, qualifiedName: n.qualifiedName, file: n.file })),\n    };\n  }",
+    "truncated": false,
+    "totalLines": 52,
+    "startLine": 788
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.workItem@L773",
+      "confidence": 1,
+      "name": "workItem",
+      "qualifiedName": "EnrichmentStore.workItem",
+      "signature": "workItem(target: {\n    layer: EnrichLayer;\n    id: string;\n    hash: string;\n    node?: Node;\n  }): EnrichWorkItem",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 773
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterMembers@L999",
+      "confidence": 1,
+      "name": "clusterMembers",
+      "qualifiedName": "EnrichmentStore.clusterMembers",
+      "signature": "clusterMembers(cluster: Node): Node[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 999
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-loop",
+      "heading": "The loop",
+      "anchor": "the-loop",
+      "snippet": "The loop",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "heading": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "anchor": "3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "snippet": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-3-run-the-loop-headlessly-cursor-copilot-codex-or-any-cli",
+      "heading": "10.3 Run the loop headlessly (Cursor / Copilot / Codex, or any CLI)",
+      "anchor": "10-3-run-the-loop-headlessly-cursor-copilot-codex-or-any-cli",
+      "snippet": "10.3 Run the loop headlessly (Cursor / Copilot / Codex, or any CLI)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#driving-the-loop",
+      "heading": "Driving the loop",
+      "anchor": "driving-the-loop",
+      "snippet": "Driving the loop",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-author-contract-per-item",
+      "heading": "The author contract (per item)",
+      "anchor": "the-author-contract-per-item",
+      "snippet": "The author contract (per item)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
+      "heading": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
+      "anchor": "c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
+      "snippet": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#phase-1-one-batch-author-save-stop-the-loop-per-turn",
+      "heading": "Phase 1 — one batch, author, save, stop (the loop, per turn)",
+      "anchor": "phase-1-one-batch-author-save-stop-the-loop-per-turn",
+      "snippet": "Phase 1 — one batch, author, save, stop (the loop, per turn)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#the-author-contract-what-you-write-per-item",
+      "heading": "The author contract — what you write per item",
+      "anchor": "the-author-contract-what-you-write-per-item",
+      "snippet": "The author contract — what you write per item",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#per-layer-guidance",
+      "heading": "Per-layer guidance",
+      "anchor": "per-layer-guidance",
+      "snippet": "Per-layer guidance",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-2-product-manager",
+      "heading": "2.2 Product Manager",
+      "anchor": "2-2-product-manager",
+      "snippet": "2.2 Product Manager",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#1-executive-summary",
+      "heading": "1. Executive Summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-3-4-zero-progress-detection-preventing-infinite-churn",
+      "heading": "3.3.4 Zero-Progress Detection — Preventing Infinite Churn",
+      "anchor": "3-3-4-zero-progress-detection-preventing-infinite-churn",
+      "snippet": "3.3.4 Zero-Progress Detection — Preventing Infinite Churn",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#add-a-new-enrichment-layer",
+      "heading": "Add a New Enrichment Layer",
+      "anchor": "add-a-new-enrichment-layer",
+      "snippet": "Add a New Enrichment Layer",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#8-confidence-self-assessment",
+      "heading": "8. Confidence Self-Assessment",
+      "anchor": "8-confidence-self-assessment",
+      "snippet": "8. Confidence Self-Assessment",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#crib-enrich-author-knowledge-crib-s-llm-semantic-graph",
+      "heading": "crib-enrich — author knowledge-crib's LLM semantic graph",
+      "anchor": "crib-enrich-author-knowledge-crib-s-llm-semantic-graph",
+      "snippet": "crib-enrich — author knowledge-crib's LLM semantic graph",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.seed@L788",
+    "procedureName": "EnrichmentStore.seed",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L789",
+      "cond:packages/mcp/src/enrichment.ts@L815",
+      "cond:packages/mcp/src/enrichment.ts@L828"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.seed@L788",
+        "procedureName": "EnrichmentStore.seed",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L789",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L789",
+            "expr": "target.layer === 'symbol' && target.node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:85b9a198d3ca1151803922da45fd7c853d91a11468dada1b08ccc4025ac0a9a6",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L790",
+          "line": 790,
+          "expr": "const manifest = this.soul.getManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.seed@L788",
+        "procedureName": "EnrichmentStore.seed",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L789",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L789",
+            "expr": "target.layer === 'symbol' && target.node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:161c032e738b5fc351eff2babb3f152581316115d7b46406c5e77a85b44b81e8",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L791",
+          "line": 791,
+          "expr": "const dossier = buildDossier(\n        this.soul,\n        this.repoRoot,\n        target.id,\n        manifest.stats.lastUpdated,\n        {\n          includeTables: true,\n        },\n      );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.seed@L788",
+        "procedureName": "EnrichmentStore.seed",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L789",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L789",
+            "expr": "target.layer === 'symbol' && target.node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eea10d0c1d8b733ce7d7ce3c14e3785cfd227b1330cb91cc7da2d1b1a4b988ab",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L800",
+          "line": 800,
+          "expr": "return {\n        node: target.node,\n        sourceBody: dossier?.source,\n        callers: dossier?.callers ?? [],\n        callees: dossier?.callees ?? [],\n        decisionTable: target.node.type\n          ? decisionTable(this.soul, target.id, { includeTables: true })\n          : undefined,\n        controlFlow: dossier?.controlFlow,\n        coverage: target.node.type ? computeCoverage(this.soul, target.id) : undefined,\n        caveats: [\n          'Respect only facts grounded in this seed and the supplied lower-layer analyses.',\n        ],\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.seed@L788",
+        "procedureName": "EnrichmentStore.seed",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L815",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L815",
+            "expr": "target.layer === 'file' && target.node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a4b691bf71ff4da55eedc7c6d608682ff47f4fc51ee8e449a9ff02355fb06d77",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L816",
+          "line": 816,
+          "expr": "const symbols = [...this.soul.iterate('symbol')]\n        .filter((n) => n.file === target.node?.file)\n        .sort(byId)\n        .map((n) => ({\n          id: n.id,\n          name: n.name,\n          qualifiedName: n.qualifiedName,\n          type: n.type,\n          hash: n.hash,\n        }));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.seed@L788",
+        "procedureName": "EnrichmentStore.seed",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L815",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L815",
+            "expr": "target.layer === 'file' && target.node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1be4576895a653a8e64a469d49c6d13b42d9f96d4e64a5f7204f67caff5238e0",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L826",
+          "line": 826,
+          "expr": "return { node: target.node, symbols };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.seed@L788",
+        "procedureName": "EnrichmentStore.seed",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L828",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L828",
+            "expr": "target.layer === 'cluster' && target.node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b0454472910a482fd8050eabcf8d3a434fe7cabae19e1deb74820e0930077a18",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterMembers@L999",
+          "expr": "clusterMembers",
+          "line": 829
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.seed@L788",
+        "procedureName": "EnrichmentStore.seed",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L828",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L828",
+            "expr": "target.layer === 'cluster' && target.node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7ff21502e1d24f643a8850042ee2288ffef30cbae42e2756472d3d2a71116abc",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L829",
+          "line": 829,
+          "expr": "return { node: target.node, members: this.clusterMembers(target.node).map((n) => n.id) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.seed@L788",
+        "procedureName": "EnrichmentStore.seed",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:300004af1faf4c9feabf7c8a336474ddf8a262f122b43e01a2926d64f558d2e5",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L831",
+          "line": 831,
+          "expr": "return {\n      repo: this.soul.getManifest().repo,\n      stats: this.soul.getManifest().stats,\n      entryPoints: [...this.soul.iterate('symbol')]\n        .filter((n) => n.type && ['function', 'method', 'procedure'].includes(n.type))\n        .slice(0, 50)\n        .map((n) => ({ id: n.id, name: n.name, qualifiedName: n.qualifiedName, file: n.file })),\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 17,
+      "unresolved": 8
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "8 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

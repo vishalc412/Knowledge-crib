@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "layer": "symbol",
+  "targetId": "sym:packages/cli/src/cli.ts#CliVcsAdapter.currentHead@L161",
+  "nodeHash": "blake3:2519cf5275453c59bd2a56db563dfac941b368747c50a1b0f3e055881a65e50a",
+  "schemaVersion": "1.3",
+  "builtAt": "2026-06-29T09:54:51.463Z",
+  "model": "kimi-k2.7-code:cloud",
+  "analysis": {
+    "purpose": "CliVcsAdapter.currentHead is an adapter method that returns the current HEAD commit reference for a repository by delegating to a standalone `currentHead` utility. It implements the VCS adapter's contract for discovering the current revision.",
+    "responsibilities": [
+      "Expose a VCS method to read the current HEAD of a repository",
+      "Delegate to the underlying currentHead implementation"
+    ],
+    "businessRules": [],
+    "inputs": [
+      {
+        "name": "root",
+        "type": "string",
+        "description": "Repository root path"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "headRef",
+        "type": "string",
+        "description": "Current HEAD reference (sha, branch name, or tag)"
+      }
+    ],
+    "sideEffects": [
+      "May read git metadata via the delegated utility"
+    ],
+    "errorBehavior": [
+      "Does not handle errors here; any failure from the delegated utility propagates"
+    ],
+    "invariants": [
+      "Return value is exactly what the delegated currentHead utility returns"
+    ],
+    "preconditions": [
+      "The delegated `currentHead` function must be importable and callable",
+      "The repository at `root` must be a valid git workspace if the utility depends on git"
+    ],
+    "postconditions": [
+      "Returns a string identifying the current HEAD"
+    ],
+    "risks": [
+      "Behavior and failure modes depend on the unresolved callee",
+      "No input validation before delegation"
+    ],
+    "whatToDistrust": [
+      "The delegated `currentHead` call is unresolved; its exact semantics and error handling are not in the seed"
+    ],
+    "confidence": 0.7
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "cap:vcs-current-head",
+        "kind": "capability",
+        "name": "VCS current HEAD query",
+        "summary": "Read the current HEAD reference of a repository",
+        "id": "llm:sym:packages/cli/src/cli.ts#CliVcsAdapter.currentHead@L161#cap:vcs-current-head",
+        "targetId": "sym:packages/cli/src/cli.ts#CliVcsAdapter.currentHead@L161"
+      }
+    ],
+    "edges": [
+      {
+        "from": "sym:packages/cli/src/cli.ts#CliVcsAdapter.currentHead@L161",
+        "to": "llm:sym:packages/cli/src/cli.ts#CliVcsAdapter.currentHead@L161#cap:vcs-current-head",
+        "rel": "realizes",
+        "rationale": "The adapter method exposes the current-HEAD capability by delegating to the concrete utility",
+        "targetId": "sym:packages/cli/src/cli.ts#CliVcsAdapter.currentHead@L161"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/cli.ts#CliVcsAdapter.currentHead@L161",
+      "why": "Lines 161-163: returns currentHead(root)"
+    }
+  ]
+}

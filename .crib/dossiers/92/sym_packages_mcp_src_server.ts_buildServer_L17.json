@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/mcp/src/server.ts#buildServer@L17",
   "schemaVersion": "1.3",
-  "nodeHash": "blake3:40efe51df63de1609d2b79352650f22fb04146ae6ee4966749ec4f4ba7a4a096",
-  "builtAt": "2026-06-27T16:00:56.397Z",
+  "nodeHash": "blake3:49f2631e8e16fd850c2f24e5612abcc07f169914bc1888fedd8b3b5ce441ad9b",
+  "builtAt": "2026-06-30T16:18:20.420Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/mcp/src/server.ts#buildServer@L17",
@@ -1171,6 +1171,56 @@
       "method": "static",
       "provenance": "EXTRACTED",
       "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#8-confidence-self-assessment",
+      "heading": "8. Confidence Self-Assessment",
+      "anchor": "8-confidence-self-assessment",
+      "snippet": "8. Confidence Self-Assessment",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-2-adding-a-new-mcp-verb",
+      "heading": "4.2 Adding a New MCP Verb",
+      "anchor": "4-2-adding-a-new-mcp-verb",
+      "snippet": "4.2 Adding a New MCP Verb",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
     }
   ],
   "rules": {
@@ -1301,7 +1351,7 @@
           "edgeId": "e:8d63ba6e7d4a0a21d5044b19e1bf27f131e6a9a876e36b01e982112a5489138e",
           "target": "stmt:packages/mcp/src/server.ts@L132",
           "line": 132,
-          "expr": "server.registerTool(\n    'query',\n    {\n      description:\n        'Hybrid BM25 search over code + docs, including rehydrated source bodies (WS-1: matches rule content, not just signatures). By default returns one-line snippets; set withSource to fold the full source body into each hit, withRules to fold a callable decision table + coverage readiness, withFramework to fold routes/beans/DI/relations. One query --with-source --with-rules returns what a full file read surfaces.',\n      inputSchema: {\n        q: z.string(),\n        kinds: z.array(z.string()).optional(),\n        limit: z.number().int().positive().optional(),\n        extractedOnly: z.boolean().optional(),\n        withSource: z.boolean().optional(),\n        sourceMaxChars: z.number().int().positive().optional(),\n        sourceMaxLines: z.number().int().positive().optional(),\n        withRules: z.boolean().optional(),\n        withFramework: z.boolean().optional(),\n        withLlm: z.boolean().optional(),\n      },\n    },\n    async (a) =>\n      TOOL_RESULT(\n        verbs.query({\n          q: a.q,\n          ...(a.kinds ? { kinds: a.kinds as NodeKind[] } : {}),\n          ...(a.limit ? { limit: a.limit } : {}),\n          ...(a.extractedOnly !== undefined ? { extractedOnly: a.extractedOnly } : {}),\n          ...(a.withSource !== undefined ? { withSource: a.withSource } : {}),\n          ...(a.sourceMaxChars ? { sourceMaxChars: a.sourceMaxChars } : {}),\n          ...(a.sourceMaxLines ? { sourceMaxLines: a.sourceMaxLines } : {}),\n          ...(a.withRules !== undefined ? { withRules: a.withRules } : {}),\n          ...(a.withFramework !== undefined ? { withFramework: a.withFramework } : {}),\n          ...(a.withLlm !== undefined ? { withLlm: a.withLlm } : {}),\n        }),\n      ),\n  );"
+          "expr": "server.registerTool(\n    'query',\n    {\n      description:\n        'Hybrid BM25 search over code + docs, including rehydrated source bodies (WS-1: matches rule content, not just signatures). Returns { hits, llmHits, truncated }. `hits` are BM25-ranked symbols/docs each carrying a one-line snippet + a LIGHTWEIGHT LLM pointer (provenance/confidence/purpose) when an LLM analysis exists — this is the cheap default that keeps token cost low. `llmHits` are semantic discoveries from the LLM graph layer that BM25 missed, ranked by term-overlap, de-duplicated against `hits` (they never override BM25 ranking). Set withSource to fold the rehydrated source body into each hit, withRules to fold a callable decision table + coverage readiness, withFramework to fold routes/beans/DI/relations, and withLlm to upgrade the LLM pointer to the FULL analysis+graph+evidence blob. One query --with-source --with-rules --with-llm returns what a full file read + an LLM brief surfaces, but the default call stays tiny.',\n      inputSchema: {\n        q: z.string(),\n        kinds: z.array(z.string()).optional(),\n        limit: z.number().int().positive().optional(),\n        extractedOnly: z.boolean().optional(),\n        withSource: z.boolean().optional(),\n        sourceMaxChars: z.number().int().positive().optional(),\n        sourceMaxLines: z.number().int().positive().optional(),\n        withRules: z.boolean().optional(),\n        withFramework: z.boolean().optional(),\n        withLlm: z.boolean().optional(),\n      },\n    },\n    async (a) =>\n      TOOL_RESULT(\n        verbs.query({\n          q: a.q,\n          ...(a.kinds ? { kinds: a.kinds as NodeKind[] } : {}),\n          ...(a.limit ? { limit: a.limit } : {}),\n          ...(a.extractedOnly !== undefined ? { extractedOnly: a.extractedOnly } : {}),\n          ...(a.withSource !== undefined ? { withSource: a.withSource } : {}),\n          ...(a.sourceMaxChars ? { sourceMaxChars: a.sourceMaxChars } : {}),\n          ...(a.sourceMaxLines ? { sourceMaxLi…"
         }
       },
       {

@@ -1,0 +1,219 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.groupByPathPrefix@L729",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:f36ae867447d3639d5307e1018e2c0318232a221f03a4086429b6d5c4c72befc",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.groupByPathPrefix@L729",
+    "kind": "symbol",
+    "type": "method",
+    "name": "groupByPathPrefix",
+    "qualifiedName": "EnrichmentStore.groupByPathPrefix",
+    "signature": "groupByPathPrefix(symbols: Node[], depth: number): Array<{ pathPrefix: string; symbols: Node[] }>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 729,
+      "end": 744
+    },
+    "callSites": [
+      {
+        "callee": "split",
+        "line": 737
+      },
+      {
+        "callee": "join",
+        "line": 738
+      },
+      {
+        "callee": "slice",
+        "line": 738
+      },
+      {
+        "callee": "set",
+        "line": 740
+      },
+      {
+        "callee": "push",
+        "line": 741
+      },
+      {
+        "callee": "get",
+        "line": 741
+      },
+      {
+        "callee": "map",
+        "line": 743
+      },
+      {
+        "callee": "entries",
+        "line": 743
+      }
+    ]
+  },
+  "source": {
+    "text": "  private groupByPathPrefix(\n    symbols: Node[],\n    depth: number,\n  ): Array<{ pathPrefix: string; symbols: Node[] }> {\n    const map = new Map<string, Node[]>();\n    for (const n of symbols) {\n      const p = n.file;\n      if (!p) continue;\n      const parts = p.split('/');\n      const prefix = parts.slice(0, depth).join('/');\n      if (!prefix || parts.length < depth) continue;\n      if (!map.has(prefix)) map.set(prefix, []);\n      map.get(prefix)!.push(n);\n    }\n    return [...map.entries()].map(([pathPrefix, syms]) => ({ pathPrefix, symbols: syms }));\n  }",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 729
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+      "confidence": 1,
+      "name": "scopes",
+      "qualifiedName": "EnrichmentStore.scopes",
+      "signature": "scopes(): EnrichScopeInfo[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 679
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.groupByPathPrefix@L729",
+    "procedureName": "EnrichmentStore.groupByPathPrefix",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L734",
+      "cond:packages/mcp/src/enrichment.ts@L740"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.groupByPathPrefix@L729",
+        "procedureName": "EnrichmentStore.groupByPathPrefix",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L734",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L734",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:450e987731c9b8da5d864c54c4fae5f8979bf9ecb4af81e44746b3ec69e689f5",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L737",
+          "line": 737,
+          "expr": "const parts = p.split('/');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.groupByPathPrefix@L729",
+        "procedureName": "EnrichmentStore.groupByPathPrefix",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L734",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L734",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b446ecdc9b431b5fb2a74ad68a21e8431db3dc7a3fa02ef4c6c9f45f4a16cac8",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L738",
+          "line": 738,
+          "expr": "const prefix = parts.slice(0, depth).join('/');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.groupByPathPrefix@L729",
+        "procedureName": "EnrichmentStore.groupByPathPrefix",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L740",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L734",
+            "expr": "symbols"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L740",
+            "expr": "!map.has(prefix)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1a10697aaac6bdde697b4ecebecf1df3f6b8efef62523d42b5f663b932ebbbee",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L740",
+          "line": 740,
+          "expr": "map.set(prefix, []);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.groupByPathPrefix@L729",
+        "procedureName": "EnrichmentStore.groupByPathPrefix",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L734",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L734",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:85340b54e57649453886d72ba0e49ceb3e7f63178337b69f7a970b37ae75d604",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L741",
+          "line": 741,
+          "expr": "map.get(prefix)!.push(n);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.groupByPathPrefix@L729",
+        "procedureName": "EnrichmentStore.groupByPathPrefix",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:431ab1ce1480e222581a5fa88d6afdeb0b63cb4f952a673bbf47e7cbe6a6eafe",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L743",
+          "line": 743,
+          "expr": "return [...map.entries()].map(([pathPrefix, syms]) => ({ pathPrefix, symbols: syms }));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 8,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

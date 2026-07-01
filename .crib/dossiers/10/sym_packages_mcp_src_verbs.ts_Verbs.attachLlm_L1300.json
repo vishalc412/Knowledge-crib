@@ -1,0 +1,263 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:3f7cccd6a4c9d2d47ca76851b96b39abeda8f6d0d53c2ab57e5f23cd7cb0ed36",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+    "kind": "symbol",
+    "type": "method",
+    "name": "attachLlm",
+    "qualifiedName": "Verbs.attachLlm",
+    "signature": "attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1300,
+      "end": 1309
+    },
+    "callSites": [
+      {
+        "callee": "readForTarget",
+        "line": 1306
+      },
+      {
+        "callee": "llmProjection",
+        "line": 1307
+      },
+      {
+        "callee": "llmPointer",
+        "line": 1307
+      }
+    ]
+  },
+  "source": {
+    "text": "  private attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void {\n    if (withLlm === false) return;\n    // Default (withLlm undefined): fold the LIGHTWEIGHT pointer only — provenance + confidence +\n    // one-line purpose — so a hit signals \"LLM insight exists\" without paying the multi-KB\n    // analysis+graph+evidence blob. Full projection is opt-in via withLlm: true; this is the\n    // token-cost discipline that keeps query/context/dossier lightweight by default.\n    const read = this.llm.readForTarget(targetId);\n    const projection = withLlm === true ? llmProjection(read) : llmPointer(read);\n    if (projection) result.llm = projection;\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 1300
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+      "confidence": 1,
+      "name": "ask",
+      "qualifiedName": "Verbs.ask",
+      "signature": "ask(args: {\n    q: string;\n    limit?: number;\n    format?: 'json' | 'markdown';\n    withSource?: boolean;\n    withRules?: boolean;\n    withFramework?: boolean;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 682
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.context@L225",
+      "confidence": 1,
+      "name": "context",
+      "qualifiedName": "Verbs.context",
+      "signature": "context(args: {\n    id: string;\n    docLimit?: number;\n    extractedOnly?: boolean;\n    /** include the full source text of the node's span (rehydrated from disk, budgeted) */\n    withSource?: boolean;\n    /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */\n    withRules?: boolean;\n    /** fold in the schema-1.3 framework-semantics relationships: routes exposed, beans produced,\n     *  DI dependencies/dependents, JPA relations, component renders. Auto-scopes by node — a class\n     *  (controller/@Configuration/@Entity) aggregates its members' route table / bean inventory /\n     *  DI graph / relation model via `member-of`; a callable/component/field returns its own direct\n     *  edges. A @Bean-supplied dependency is surfaced with `kind: 'produces'` + the producer in one\n     *  trip (no round-trip). Unresolved `meta.injects`/`meta.produces` type names surface as\n     *  `⚠ unresolved` entries (parity with `gaps`). */\n    withFramework?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */\n    sourceMaxChars?: number;\n    /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 225
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+      "confidence": 1,
+      "name": "dossier",
+      "qualifiedName": "Verbs.dossier",
+      "signature": "dossier(args: {\n    id: string;\n    includeTables?: boolean;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n    extractedOnly?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    format?: 'json' | 'markdown';\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 329
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.query@L567",
+      "confidence": 1,
+      "name": "query",
+      "qualifiedName": "Verbs.query",
+      "signature": "query(args: {\n    q: string;\n    kinds?: NodeKind[];\n    limit?: number;\n    /** restrict rules/framework edges to EXTRACTED provenance (parity with `context`). */\n    extractedOnly?: boolean;\n    /** include the full rehydrated source body per hit (budgeted; see sourceMaxChars/Lines). */\n    withSource?: boolean;\n    /** char cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}). */\n    sourceMaxChars?: number;\n    /** line cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}). */\n    sourceMaxLines?: number;\n    /** for a callable hit, fold in its decision table + coverage readiness. */\n    withRules?: boolean;\n    /** fold in framework-semantics (routes/beans/DI/relations) per hit, when present. */\n    withFramework?: boolean;\n    /** include saved LLM semantic analysis on hits and search LLM analysis text too. */\n    withLlm?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 567
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#llmPointer@L1048",
+      "confidence": 1,
+      "name": "llmPointer",
+      "qualifiedName": "llmPointer",
+      "signature": "llmPointer(read: LlmRead): Record<string, unknown> | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1048
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1028",
+      "confidence": 1,
+      "name": "llmProjection",
+      "qualifiedName": "llmProjection",
+      "signature": "llmProjection(read: LlmRead): Record<string, unknown> | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1028
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+    "procedureName": "Verbs.attachLlm",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L1301",
+      "cond:packages/mcp/src/verbs.ts@L1308"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+        "procedureName": "Verbs.attachLlm",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1301",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1301",
+            "expr": "withLlm === false",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ff4cb98c647092800c95365bd65422b8bed07d77d554c46be00394d912399d0b",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1301",
+          "line": 1301,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+        "procedureName": "Verbs.attachLlm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2ec12ed8c56f30700b8d93862e3b8cb48ca1a73bc42d6eaaf0e381158590b375",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1306",
+          "line": 1306,
+          "expr": "const read = this.llm.readForTarget(targetId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+        "procedureName": "Verbs.attachLlm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e7383383685a22845be9f7eccb91af0abbdb18a9095b8b4561c9f5ed06b98b4",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1307",
+          "line": 1307,
+          "expr": "const projection = withLlm === true ? llmProjection(read) : llmPointer(read);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+        "procedureName": "Verbs.attachLlm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:09ce0c7dd3f57a09941c406219e8f4f544f786e9fc7fd33c670931885816a28b",
+          "target": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1028",
+          "expr": "llmProjection",
+          "line": 1307
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+        "procedureName": "Verbs.attachLlm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0c8d18468876ff58384e3d3dc84c87c5dba30ee5038b406ab62b9b85223a8830",
+          "target": "sym:packages/mcp/src/enrichment.ts#llmPointer@L1048",
+          "expr": "llmPointer",
+          "line": 1307
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+        "procedureName": "Verbs.attachLlm",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1308",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1308",
+            "expr": "projection",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:51998b57f4757e641ffccf706838d54ac84b44c146f44f5ea628172299e45dcd",
+          "target": "assign:packages/mcp/src/verbs.ts@L1308",
+          "line": 1308,
+          "expr": "result.llm = projection;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

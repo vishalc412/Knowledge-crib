@@ -1,0 +1,1043 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:6248944feb0bad759b6e5bb7f0aef316504c05d5cef2394d2e3b97fca2e41a77",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+    "kind": "symbol",
+    "type": "method",
+    "name": "dossier",
+    "qualifiedName": "Verbs.dossier",
+    "signature": "dossier(args: {\n    id: string;\n    includeTables?: boolean;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n    extractedOnly?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    format?: 'json' | 'markdown';\n  }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 329,
+      "end": 385
+    },
+    "callSites": [
+      {
+        "callee": "resolveNodeId",
+        "line": 342
+      },
+      {
+        "callee": "notFound",
+        "line": 343
+      },
+      {
+        "callee": "getNode",
+        "line": 344
+      },
+      {
+        "callee": "notFound",
+        "line": 345
+      },
+      {
+        "callee": "getManifest",
+        "line": 346
+      },
+      {
+        "callee": "readDossier",
+        "line": 364
+      },
+      {
+        "callee": "buildDossier",
+        "line": 371
+      },
+      {
+        "callee": "writeDossier",
+        "line": 372
+      },
+      {
+        "callee": "buildDossier",
+        "line": 376
+      },
+      {
+        "callee": "notFound",
+        "line": 378
+      },
+      {
+        "callee": "dossierToMarkdown",
+        "line": 380
+      },
+      {
+        "callee": "attachLlm",
+        "line": 383
+      }
+    ]
+  },
+  "source": {
+    "text": "  dossier(args: {\n    id: string;\n    includeTables?: boolean;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n    extractedOnly?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    format?: 'json' | 'markdown';\n  }): Record<string, unknown> {\n    const soul = this.deps.soul;\n    const id = this.resolveNodeId(args.id);\n    if (!id) return notFound(args.id);\n    const node = soul.getNode(id);\n    if (!node) return notFound(args.id);\n    const manifest = soul.getManifest();\n    const paged =\n      args.sourceMaxChars !== undefined ||\n      args.sourceMaxLines !== undefined ||\n      args.sourceStartLine !== undefined;\n    const buildOpts = {\n      ...(args.includeTables ? { includeTables: true } : {}),\n      ...(args.extractedOnly ? { extractedOnly: true } : {}),\n      ...(args.sourceMaxChars !== undefined ? { sourceMaxChars: args.sourceMaxChars } : {}),\n      ...(args.sourceMaxLines !== undefined ? { sourceMaxLines: args.sourceMaxLines } : {}),\n      ...(args.sourceStartLine !== undefined ? { sourceStartLine: args.sourceStartLine } : {}),\n    };\n\n    let dossier: Dossier | undefined;\n    if (!paged) {\n      // default-shape: prefer the persisted artifact when fresh, else build + persist.\n      // Cache is keyed by the canonical id, so a request by qualified/simple name and one by full\n      // id share one dossier file (no duplicate artifacts).\n      const read = readDossier(soul.cribDir, id, {\n        nodeHash: node.hash,\n        schemaVersion: manifest.schemaVersion,\n      });\n      if (!read.missing && !read.stale && read.dossier) {\n        dossier = read.dossier;\n      } else {\n        dossier = buildDossier(soul, this.deps.repoRoot, id, manifest.stats.lastUpdated, buildOpts);\n        if (dossier) writeDossier(soul.cribDir, dossier);\n      }\n    } else {\n      // paged view: always rebuild (the cache holds the default page only).\n      dossier = buildDossier(soul, this.deps.repoRoot, id, manifest.stats.lastUpdated, buildOpts);\n    }\n    if (!dossier) return notFound(args.id);\n    if (args.format === 'markdown') {\n      return { id, markdown: dossierToMarkdown(dossier) };\n    }\n    const result = dossier as unknown as Record<string, unknown>;\n    this.attachLlm(result, id, args.withLlm);\n    return result;\n  }",
+    "truncated": false,
+    "totalLines": 57,
+    "startLine": 329
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+      "confidence": 1,
+      "name": "attachLlm",
+      "qualifiedName": "Verbs.attachLlm",
+      "signature": "attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1272",
+      "confidence": 1,
+      "name": "resolveNodeId",
+      "qualifiedName": "Verbs.resolveNodeId",
+      "signature": "resolveNodeId(idOrName: string): string | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1272
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#notFound@L1409",
+      "confidence": 1,
+      "name": "notFound",
+      "qualifiedName": "notFound",
+      "signature": "notFound(id: string): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1409
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L313",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "heading": "3.1 Framework-semantics tier (schema 1.3)",
+      "anchor": "3-1-framework-semantics-tier-schema-1-3",
+      "snippet": "3.1 Framework-semantics tier (schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "heading": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "anchor": "1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "snippet": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#4-deep-dive-one-symbol-the-dossier-prompt-highest-leverage",
+      "heading": "4. Deep-dive one symbol — *the dossier prompt (highest leverage)*",
+      "anchor": "4-deep-dive-one-symbol-the-dossier-prompt-highest-leverage",
+      "snippet": "4. Deep-dive one symbol — *the dossier prompt (highest leverage)*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "heading": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "anchor": "5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "snippet": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "heading": "9. Prompt skeleton you can keep at the top of a session",
+      "anchor": "9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "snippet": "9. Prompt skeleton you can keep at the top of a session",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-1-what-each-model-can-answer-about-one-procedure",
+      "heading": "1.1 What each model can answer about ONE procedure",
+      "anchor": "1-1-what-each-model-can-answer-about-one-procedure",
+      "snippet": "1.1 What each model can answer about ONE procedure",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "heading": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "anchor": "surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "snippet": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "heading": "1.3 The gaps that make Plan A < Plan B today",
+      "anchor": "1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "snippet": "1.3 The gaps that make Plan A < Plan B today",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-5-expose-rich-verbs-on-the-cli-closes-g5",
+      "heading": "WS-5 — Expose rich verbs on the CLI (closes G5)",
+      "anchor": "ws-5-expose-rich-verbs-on-the-cli-closes-g5",
+      "snippet": "WS-5 — Expose rich verbs on the CLI (closes G5)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "heading": "7. Risks",
+      "anchor": "7-risks",
+      "snippet": "7. Risks",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:README.md#the-token-cost-benefit-concretely",
+      "heading": "The token-cost benefit, concretely",
+      "anchor": "the-token-cost-benefit-concretely",
+      "snippet": "The token-cost benefit, concretely",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#schema-evolution",
+      "heading": "Schema evolution",
+      "anchor": "schema-evolution",
+      "snippet": "Schema evolution",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4d-dossier-the-persisted-reusable-deep-context-workstream-d-e",
+      "heading": "4d. Dossier — the persisted reusable deep context (Workstream D/E)",
+      "anchor": "4d-dossier-the-persisted-reusable-deep-context-workstream-d-e",
+      "snippet": "4d. Dossier — the persisted reusable deep context (Workstream D/E)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#0-the-mental-model-what-to-ask-for-when",
+      "heading": "0. The mental model — what to ask for, when",
+      "anchor": "0-the-mental-model-what-to-ask-for-when",
+      "snippet": "0. The mental model — what to ask for, when",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#8-anti-patterns-what-burns-tokens-misleads-a-local-model",
+      "heading": "8. Anti-patterns (what burns tokens / misleads a local model)",
+      "anchor": "8-anti-patterns-what-burns-tokens-misleads-a-local-model",
+      "snippet": "8. Anti-patterns (what burns tokens / misleads a local model)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-2-product-manager",
+      "heading": "2.2 Product Manager",
+      "anchor": "2-2-product-manager",
+      "snippet": "2.2 Product Manager",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-5-ai-architect",
+      "heading": "2.5 AI Architect",
+      "anchor": "2-5-ai-architect",
+      "snippet": "2.5 AI Architect",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#dossier-one-call-deep-context-the-migration-verb",
+      "heading": "`dossier` — one-call deep context (the migration verb)",
+      "anchor": "dossier-one-call-deep-context-the-migration-verb",
+      "snippet": "`dossier` — one-call deep context (the migration verb)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-7-mcp-server-verification-the-real-test",
+      "heading": "5.7 MCP server verification (the real test)",
+      "anchor": "5-7-mcp-server-verification-the-real-test",
+      "snippet": "5.7 MCP server verification (the real test)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#query-time-merge-lightweight-by-default-full-on-withllm",
+      "heading": "Query-time merge — lightweight by default, full on `withLlm`",
+      "anchor": "query-time-merge-lightweight-by-default-full-on-withllm",
+      "snippet": "Query-time merge — lightweight by default, full on `withLlm`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "heading": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "anchor": "3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "snippet": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
+      "heading": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
+      "anchor": "c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
+      "snippet": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#fixed",
+      "heading": "Fixed",
+      "anchor": "fixed",
+      "snippet": "Fixed",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B.md#plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
+      "heading": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
+      "anchor": "plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
+      "snippet": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B.md#ws-a3-migration-target-awareness",
+      "heading": "WS-A3 — Migration target awareness",
+      "anchor": "ws-a3-migration-target-awareness",
+      "snippet": "WS-A3 — Migration target awareness",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#1-why-plan-a-still-loses-to-plan-b-today-universal-gaps",
+      "heading": "1. Why Plan A still loses to Plan B today (universal gaps)",
+      "anchor": "1-why-plan-a-still-loses-to-plan-b-today-universal-gaps",
+      "snippet": "1. Why Plan A still loses to Plan B today (universal gaps)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-1-language-agnostic-migration-core-8-days",
+      "heading": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "anchor": "phase-1-language-agnostic-migration-core-8-days",
+      "snippet": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-6-reconstruction-artifact-closes-g6",
+      "heading": "WS-6 — Reconstruction artifact (closes G6)",
+      "anchor": "ws-6-reconstruction-artifact-closes-g6",
+      "snippet": "WS-6 — Reconstruction artifact (closes G6)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#5-phasing-effort",
+      "heading": "5. Phasing & effort",
+      "anchor": "5-phasing-effort",
+      "snippet": "5. Phasing & effort",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#knowledge-crib-prompting-guide-how-to-talk-to-your-local-llm-so-crib-does-the-work",
+      "heading": "Knowledge-crib — Prompting Guide (how to talk to your local LLM so crib does the work)",
+      "anchor": "knowledge-crib-prompting-guide-how-to-talk-to-your-local-llm-so-crib-does-the-work",
+      "snippet": "Knowledge-crib — Prompting Guide (how to talk to your local LLM so crib does the work)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#7-codex-specific-notes-local-openai-codex-cli",
+      "heading": "7. Codex-specific notes (local OpenAI/Codex CLI)",
+      "anchor": "7-codex-specific-notes-local-openai-codex-cli",
+      "snippet": "7. Codex-specific notes (local OpenAI/Codex CLI)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-2-concrete-before-after-the-loan-rule-engine-procedure",
+      "heading": "1.2 Concrete before/after — the loan-rule-engine procedure",
+      "anchor": "1-2-concrete-before-after-the-loan-rule-engine-procedure",
+      "snippet": "1.2 Concrete before/after — the loan-rule-engine procedure",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-6-ai-engineer",
+      "heading": "2.6 AI Engineer",
+      "anchor": "2-6-ai-engineer",
+      "snippet": "2.6 AI Engineer",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#1-executive-summary",
+      "heading": "1. Executive Summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#5-package-significance-matrix",
+      "heading": "5. Package Significance Matrix",
+      "anchor": "5-package-significance-matrix",
+      "snippet": "5. Package Significance Matrix",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-3-capture-real-product-evidence",
+      "heading": "Task 3: Capture Real Product Evidence",
+      "anchor": "task-3-capture-real-product-evidence",
+      "snippet": "Task 3: Capture Real Product Evidence",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#24-33-seconds-ask-deeper-questions",
+      "heading": "24-33 seconds: Ask Deeper Questions",
+      "anchor": "24-33-seconds-ask-deeper-questions",
+      "snippet": "24-33 seconds: Ask Deeper Questions",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#3-how-this-closes-plan-a-vs-plan-b",
+      "heading": "3. How this closes Plan A vs Plan B",
+      "anchor": "3-how-this-closes-plan-a-vs-plan-b",
+      "snippet": "3. How this closes Plan A vs Plan B",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#backward-compatibility-2",
+      "heading": "Backward compatibility",
+      "anchor": "backward-compatibility-2",
+      "snippet": "Backward compatibility",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4c-cross-language-parity-track-3-workstream-b",
+      "heading": "4c. Cross-language parity (Track 3 + Workstream B)",
+      "anchor": "4c-cross-language-parity-track-3-workstream-b",
+      "snippet": "4c. Cross-language parity (Track 3 + Workstream B)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#knowledge-crib-refined-vs-existing-detailed-level-analysis-assessment",
+      "heading": "Knowledge-crib — Refined vs Existing: Detailed-Level Analysis Assessment",
+      "anchor": "knowledge-crib-refined-vs-existing-detailed-level-analysis-assessment",
+      "snippet": "Knowledge-crib — Refined vs Existing: Detailed-Level Analysis Assessment",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-1-principal-engineer",
+      "heading": "2.1 Principal Engineer",
+      "anchor": "2-1-principal-engineer",
+      "snippet": "2.1 Principal Engineer",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-3-solution-architect",
+      "heading": "2.3 Solution Architect",
+      "anchor": "2-3-solution-architect",
+      "snippet": "2.3 Solution Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-4-technical-architect",
+      "heading": "2.4 Technical Architect",
+      "anchor": "2-4-technical-architect",
+      "snippet": "2.4 Technical Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#3-overall-verdict",
+      "heading": "3. Overall verdict",
+      "anchor": "3-overall-verdict",
+      "snippet": "3. Overall verdict",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#per-layer-guidance",
+      "heading": "Per-layer guidance",
+      "anchor": "per-layer-guidance",
+      "snippet": "Per-layer guidance",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+    "procedureName": "Verbs.dossier",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L378",
+      "cond:packages/mcp/src/verbs.ts@L343",
+      "cond:packages/mcp/src/verbs.ts@L345",
+      "cond:packages/mcp/src/verbs.ts@L360",
+      "cond:packages/mcp/src/verbs.ts@L368",
+      "cond:packages/mcp/src/verbs.ts@L372",
+      "cond:packages/mcp/src/verbs.ts@L379"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5b2950b9d4db78f7c6679c938119c6ea3155dee29b9082f382c02afbc0ee0712",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1272",
+          "expr": "resolveNodeId",
+          "line": 342
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:19a708e2b72aa8a03b6a4fe141b3eb28b675c197e51db1b7ad589174003145b8",
+          "target": "stmt:packages/mcp/src/verbs.ts@L342",
+          "line": 342,
+          "expr": "const id = this.resolveNodeId(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "guard": "cond:packages/mcp/src/verbs.ts@L378",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L378",
+            "expr": "!dossier",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:28db2265b282181f03e1748ca68d43b27b8f29673e34568f0d19f10f24fc086b",
+          "target": "sym:packages/mcp/src/verbs.ts#notFound@L1409",
+          "expr": "notFound",
+          "line": 343
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "guard": "cond:packages/mcp/src/verbs.ts@L343",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L343",
+            "expr": "!id",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb1bfc0e4b3598c00c9feee0586ca74d6d26eceb37f7a1bca86985df7447d430",
+          "target": "stmt:packages/mcp/src/verbs.ts@L343",
+          "line": 343,
+          "expr": "return notFound(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:62abeb525b5fdbb023efe14c9c675b3bc24ba900f12c5c02d5eda4f47d5d9abe",
+          "target": "stmt:packages/mcp/src/verbs.ts@L344",
+          "line": 344,
+          "expr": "const node = soul.getNode(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "guard": "cond:packages/mcp/src/verbs.ts@L345",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L345",
+            "expr": "!node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:93d8281903eeed9d126529e4c3fdc19bd0c1d6faad74e98205ca9528047fb4e2",
+          "target": "stmt:packages/mcp/src/verbs.ts@L345",
+          "line": 345,
+          "expr": "return notFound(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0842ac9beea0c57e83b3abc3a426d7c051b6c9961a24fac17380ae02a26cec7b",
+          "target": "stmt:packages/mcp/src/verbs.ts@L346",
+          "line": 346,
+          "expr": "const manifest = soul.getManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "guard": "cond:packages/mcp/src/verbs.ts@L360",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L360",
+            "expr": "!paged",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca414cc0fa90f403dde6895f07304f748711a7859fc0643211ca1065e3184a6b",
+          "target": "stmt:packages/mcp/src/verbs.ts@L364",
+          "line": 364,
+          "expr": "const read = readDossier(soul.cribDir, id, {\n        nodeHash: node.hash,\n        schemaVersion: manifest.schemaVersion,\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "guard": "cond:packages/mcp/src/verbs.ts@L368",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L360",
+            "expr": "!paged"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L368",
+            "expr": "!read.missing && !read.stale && read.dossier",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aa2ca13c405008b07f124aaa42cf0e9b09d4f61d0aaa34186d8e9117e812d5e7",
+          "target": "assign:packages/mcp/src/verbs.ts@L369",
+          "line": 369,
+          "expr": "dossier = read.dossier;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "guard": "cond:packages/mcp/src/verbs.ts@L368",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L360",
+            "expr": "!paged"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L368",
+            "expr": "!read.missing && !read.stale && read.dossier",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:efc25786f20b75e018454552edc8dcb701335faede8e64ab413fe02dc9f96699",
+          "target": "assign:packages/mcp/src/verbs.ts@L371",
+          "line": 371,
+          "expr": "dossier = buildDossier(soul, this.deps.repoRoot, id, manifest.stats.lastUpdated, buildOpts);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "guard": "cond:packages/mcp/src/verbs.ts@L372",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L360",
+            "expr": "!paged"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L368",
+            "expr": "!read.missing && !read.stale && read.dossier"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L372",
+            "expr": "dossier",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:50d416480b61f8a64b964f4abbccb05646a1f2faa9153c29f419a5abc900b130",
+          "target": "stmt:packages/mcp/src/verbs.ts@L372",
+          "line": 372,
+          "expr": "writeDossier(soul.cribDir, dossier);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "guard": "cond:packages/mcp/src/verbs.ts@L360",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L360",
+            "expr": "!paged",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0b690d04ae78d4724ae7edcfb51a4197e10170119cadc1ffeab48b0d4a5d5f7b",
+          "target": "assign:packages/mcp/src/verbs.ts@L376",
+          "line": 376,
+          "expr": "dossier = buildDossier(soul, this.deps.repoRoot, id, manifest.stats.lastUpdated, buildOpts);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "guard": "cond:packages/mcp/src/verbs.ts@L378",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L378",
+            "expr": "!dossier",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5477d114f86c221111bf3ec5accae0bdb670b09f2ca4959af7c7c32c604404ca",
+          "target": "stmt:packages/mcp/src/verbs.ts@L378",
+          "line": 378,
+          "expr": "return notFound(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "guard": "cond:packages/mcp/src/verbs.ts@L379",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L379",
+            "expr": "args.format === 'markdown'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:23545e54c0f366f0ee52e38b2dad8fee889ac2cc7601b6233b7204a5e34d341c",
+          "target": "stmt:packages/mcp/src/verbs.ts@L380",
+          "line": 380,
+          "expr": "return { id, markdown: dossierToMarkdown(dossier) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d7895c5c90d31db6dbc738e478eea9c751355ec3bd73d1e33ca42f8f9f2d868a",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+          "expr": "attachLlm",
+          "line": 383
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af92320ca9c1e6a48d06941749bc37e4ad107ca4ca4a28d8ba41e8515ff58066",
+          "target": "stmt:packages/mcp/src/verbs.ts@L383",
+          "line": 383,
+          "expr": "this.attachLlm(result, id, args.withLlm);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L329",
+        "procedureName": "Verbs.dossier",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e03f33fe8db828117133102f679a617e16850254fdbb557295a5ee5bdb00bd78",
+          "target": "stmt:packages/mcp/src/verbs.ts@L384",
+          "line": 384,
+          "expr": "return result;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 14,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 14,
+    "assignments": 3,
+    "conditions": 7,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 12,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

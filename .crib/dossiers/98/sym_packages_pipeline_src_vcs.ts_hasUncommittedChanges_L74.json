@@ -1,0 +1,115 @@
+{
+  "id": "sym:packages/pipeline/src/vcs.ts#hasUncommittedChanges@L74",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ab292f61e6bed3f4bc9ab777c853c09c7900ae4c5dcadb3b18bbce0db7deb1f1",
+  "builtAt": "2026-06-30T15:54:03.404Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/vcs.ts#hasUncommittedChanges@L74",
+    "kind": "symbol",
+    "type": "function",
+    "name": "hasUncommittedChanges",
+    "qualifiedName": "hasUncommittedChanges",
+    "signature": "hasUncommittedChanges(root: string): boolean",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/vcs.ts",
+    "span": {
+      "start": 74,
+      "end": 76
+    },
+    "callSites": [
+      {
+        "callee": "uncommittedChanges",
+        "line": 75
+      }
+    ]
+  },
+  "source": {
+    "text": "export function hasUncommittedChanges(root: string): boolean {\n  return uncommittedChanges(root).length > 0;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 74
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+      "confidence": 1,
+      "name": "uncommittedChanges",
+      "qualifiedName": "uncommittedChanges",
+      "signature": "uncommittedChanges(root: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 60
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/vcs.ts@L73",
+      "snippet": "/** True if the work tree has staged or unstaged changes relative to HEAD. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/vcs.ts#hasUncommittedChanges@L74",
+    "procedureName": "hasUncommittedChanges",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#hasUncommittedChanges@L74",
+        "procedureName": "hasUncommittedChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:93dcf2466fa95607932f9d9f88d6387ac1955e36d475e266f4b458cb2b30aaf6",
+          "target": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+          "expr": "uncommittedChanges",
+          "line": 75
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#hasUncommittedChanges@L74",
+        "procedureName": "hasUncommittedChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a384e4914cb786be3da18e95884c96353ed7eea6f86fef74b409d28282e7178a",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L75",
+          "line": 75,
+          "expr": "return uncommittedChanges(root).length > 0;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

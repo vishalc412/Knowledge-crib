@@ -1,0 +1,108 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#initGapCategories@L117",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:85cb07d8ede7f9b3103e7522386e538e6988d027e00101e13ff606d9f87c7b30",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#initGapCategories@L117",
+    "kind": "symbol",
+    "type": "function",
+    "name": "initGapCategories",
+    "qualifiedName": "initGapCategories",
+    "signature": "initGapCategories(): GapCategoryCounts",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 117,
+      "end": 119
+    }
+  },
+  "source": {
+    "text": "function initGapCategories(): GapCategoryCounts {\n  return { project: 0, tests: 0, fixtures: 0, builtin: 0, external: 0 };\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 117
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L1008",
+      "confidence": 1,
+      "name": "gaps",
+      "qualifiedName": "Verbs.gaps",
+      "signature": "gaps(args: { extractedOnly?: boolean; includeBuiltins?: boolean } = {}): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1008
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#countByFileCategory@L146",
+      "confidence": 1,
+      "name": "countByFileCategory",
+      "qualifiedName": "countByFileCategory",
+      "signature": "countByFileCategory(rows: Array<Record<string, unknown>>): GapCategoryCounts",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 146
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#sumGapCategories@L160",
+      "confidence": 1,
+      "name": "sumGapCategories",
+      "qualifiedName": "sumGapCategories",
+      "signature": "sumGapCategories(parts: GapCategoryCounts[]): GapCategoryCounts",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 160
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#initGapCategories@L117",
+    "procedureName": "initGapCategories",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#initGapCategories@L117",
+        "procedureName": "initGapCategories",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d986aeb76bd8f28d068a7a6e65ddaf3522202eb9d562f98f4f0883101878108a",
+          "target": "stmt:packages/mcp/src/verbs.ts@L118",
+          "line": 118,
+          "expr": "return { project: 0, tests: 0, fixtures: 0, builtin: 0, external: 0 };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

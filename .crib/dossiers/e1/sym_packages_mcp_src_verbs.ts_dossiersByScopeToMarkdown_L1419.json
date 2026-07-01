@@ -1,0 +1,399 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:467e9015093c2958e67387fd6cb017eedb2c42d22b7e2abf6db8a2a6d40ad71f",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+    "kind": "symbol",
+    "type": "function",
+    "name": "dossiersByScopeToMarkdown",
+    "qualifiedName": "dossiersByScopeToMarkdown",
+    "signature": "dossiersByScopeToMarkdown(r: DossiersByScopeShape): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1419,
+      "end": 1435
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 1421
+      },
+      {
+        "callee": "push",
+        "line": 1422
+      },
+      {
+        "callee": "push",
+        "line": 1423
+      },
+      {
+        "callee": "push",
+        "line": 1424
+      },
+      {
+        "callee": "push",
+        "line": 1425
+      },
+      {
+        "callee": "push",
+        "line": 1426
+      },
+      {
+        "callee": "push",
+        "line": 1427
+      },
+      {
+        "callee": "push",
+        "line": 1429
+      },
+      {
+        "callee": "push",
+        "line": 1430
+      },
+      {
+        "callee": "push",
+        "line": 1431
+      },
+      {
+        "callee": "dossierToMarkdown",
+        "line": 1431
+      },
+      {
+        "callee": "push",
+        "line": 1432
+      },
+      {
+        "callee": "join",
+        "line": 1434
+      }
+    ]
+  },
+  "source": {
+    "text": "function dossiersByScopeToMarkdown(r: DossiersByScopeShape): string {\n  const parts: string[] = [];\n  parts.push(`# Dossier-by-scope: ${r.label}`);\n  parts.push('');\n  parts.push(`- scope: ${r.scope}`);\n  parts.push(`- id: ${r.id}`);\n  parts.push(`- symbols: ${r.symbolCount}${r.truncated ? ` (capped at ${r.symbols.length})` : ''}`);\n  if (r.skipped.length > 0) parts.push(`- skipped: ${r.skipped.length}`);\n  parts.push('');\n  for (const d of r.symbols) {\n    parts.push('---');\n    parts.push('');\n    parts.push(dossierToMarkdown(d));\n    parts.push('');\n  }\n  return parts.join('\\n');\n}",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 1419
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L441",
+      "confidence": 1,
+      "name": "dossierByScope",
+      "qualifiedName": "Verbs.dossierByScope",
+      "signature": "dossierByScope(args: {\n    /** the scope kind: 'package' (the package's member symbols), 'file' (a file's symbols), or\n     *  'cluster' (a cluster's symbols). */\n    scope: 'package' | 'file' | 'cluster';\n    /** the scope node id, OR — for a package — the qualified/simple name (parity with the other node\n     *  verbs); for a file, the path (with or without the `file:` prefix); for a cluster, the slug. */\n    id: string;\n    extractedOnly?: boolean;\n    /** resolve reads/writes table names in each callable's decision table (extra lookups). */\n    includeTables?: boolean;\n    /** cap on the number of per-symbol dossiers returned (default 1000; `truncated` flags a cap). */\n    maxSymbols?: number;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    format?: 'json' | 'markdown';\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 441
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
+      "confidence": 1,
+      "name": "dossierToMarkdown",
+      "qualifiedName": "dossierToMarkdown",
+      "signature": "dossierToMarkdown(d: Dossier): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/serializer.ts",
+      "line": 15
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L1413",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+    "procedureName": "dossiersByScopeToMarkdown",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L1426",
+      "cond:packages/mcp/src/verbs.ts@L1428"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:974bce5c1612eceab1bfab4bf1ccd88feddbd95ce7805efa8be63a7a9541b590",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1421",
+          "line": 1421,
+          "expr": "parts.push(`# Dossier-by-scope: ${r.label}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6984c3f5155982556fc5e1b08cbffebc20823176f66d795406b9b7b072ef0c82",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1421
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e9f8488a944ebed083c51fe28cddc22d73b497ad07e5b06d6759d42e4c2998b0",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1422",
+          "line": 1422,
+          "expr": "parts.push('');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3151e2f6d56780d5b1e1ce226b48a2d767e71f66d7f7b6308c945afa931f5a15",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1423",
+          "line": 1423,
+          "expr": "parts.push(`- scope: ${r.scope}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5c6e3aec44835b50b816a258df9b693f68d1bd8336da6e2db2b7362253c6f136",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1424",
+          "line": 1424,
+          "expr": "parts.push(`- id: ${r.id}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:00a7867fd0bf301cd12b02c10f66c246d4c81c594aee45b36c09ce6da3544f4a",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1425",
+          "line": 1425,
+          "expr": "parts.push(`- symbols: ${r.symbolCount}${r.truncated ? ` (capped at ${r.symbols.length})` : ''}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1426",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1426",
+            "expr": "r.skipped.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3582dc15fe8dcbf3d1a83539220996009a78ac56838466f8aba298734c62fe5e",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1426",
+          "line": 1426,
+          "expr": "parts.push(`- skipped: ${r.skipped.length}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:252f7677fcaa9cba80be577d38913e3ace2598442a58920e18dd20b13e117d74",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1427",
+          "line": 1427,
+          "expr": "parts.push('');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1428",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1428",
+            "expr": "r.symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:089bbb91b833f66d77aec2fa7b32c4a534577678995e820c928a6d04ea5a1620",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1429",
+          "line": 1429,
+          "expr": "parts.push('---');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1428",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1428",
+            "expr": "r.symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4d3882a6d2e6a4fa1a5be9e93ab78b8b519cf635b8bd7b08c96f2fce654bf9fb",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1430",
+          "line": 1430,
+          "expr": "parts.push('');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1428",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1428",
+            "expr": "r.symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2cda5ead99c77dbb7be17603074cb52e570d2d5d8fec11428c77457806d51ef7",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1431",
+          "line": 1431,
+          "expr": "parts.push(dossierToMarkdown(d));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7f2176cac069c54c5f85863926b435920b3ec533040b0f171c543552523b6407",
+          "target": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
+          "expr": "dossierToMarkdown",
+          "line": 1431
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1428",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1428",
+            "expr": "r.symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:833e827c5d772fca62845a1042e826d3a0be68b528b55c019e50a25cfdde1c86",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1432",
+          "line": 1432,
+          "expr": "parts.push('');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+        "procedureName": "dossiersByScopeToMarkdown",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b29918c811b2bb96d20ad06534249491522d40bb3c9195c858e749a69b85c833",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1434",
+          "line": 1434,
+          "expr": "return parts.join('\\n');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 13,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

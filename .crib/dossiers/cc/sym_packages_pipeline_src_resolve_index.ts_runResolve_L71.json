@@ -2,7 +2,7 @@
   "id": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
   "schemaVersion": "1.3",
   "nodeHash": "blake3:386ed27452645cf6945e6e8ac6f709774359b898b496a342ef67843dbb5e8b50",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-06-30T22:32:35.510Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
@@ -56,24 +56,24 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L104",
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L108",
       "confidence": 1,
       "name": "indexRepo",
       "qualifiedName": "indexRepo",
       "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
       "type": "function",
       "file": "packages/pipeline/src/pipeline.ts",
-      "line": 104
+      "line": 108
     },
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L89",
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L94",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 89
+      "line": 94
     }
   ],
   "callees": [
@@ -132,6 +132,36 @@
       "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
       "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
       "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-4-adding-a-new-pipeline-phase",
+      "heading": "4.4 Adding a New Pipeline Phase",
+      "anchor": "4-4-adding-a-new-pipeline-phase",
+      "snippet": "4.4 Adding a New Pipeline Phase",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "heading": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "anchor": "a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "snippet": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",

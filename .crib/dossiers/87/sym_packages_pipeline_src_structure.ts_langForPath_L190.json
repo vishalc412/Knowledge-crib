@@ -1,0 +1,169 @@
+{
+  "id": "sym:packages/pipeline/src/structure.ts#langForPath@L190",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:0e1c23868b6a02d9ea6a9c1a51aae7a369df2a73c7e14ea030f227a945fafa79",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/structure.ts#langForPath@L190",
+    "kind": "symbol",
+    "type": "function",
+    "name": "langForPath",
+    "qualifiedName": "langForPath",
+    "signature": "langForPath(path: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/structure.ts",
+    "span": {
+      "start": 190,
+      "end": 194
+    },
+    "callSites": [
+      {
+        "callee": "lastIndexOf",
+        "line": 191
+      },
+      {
+        "callee": "slice",
+        "line": 193
+      }
+    ]
+  },
+  "source": {
+    "text": "export function langForPath(path: string): string | undefined {\n  const dot = path.lastIndexOf('.');\n  if (dot === -1) return undefined;\n  return LANG_BY_EXT[path.slice(dot)];\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 190
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles@L98",
+      "confidence": 1,
+      "name": "discoverFiles",
+      "qualifiedName": "discoverFiles",
+      "signature": "discoverFiles(root: string, opts: DiscoverOpts = {}): FileMeta[]",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 98
+    },
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L119",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "discoverFiles.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 119
+    },
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#metaForPaths@L164",
+      "confidence": 1,
+      "name": "metaForPaths",
+      "qualifiedName": "metaForPaths",
+      "signature": "metaForPaths(root: string, paths: string[]): FileMeta[]",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 164
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/structure.ts#langForPath@L190",
+    "procedureName": "langForPath",
+    "conditions": [
+      "cond:packages/pipeline/src/structure.ts@L192"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#langForPath@L190",
+        "procedureName": "langForPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:01c52c8216de0ac21ba126f54af674e09950638e880afd9223faef72dc4e9558",
+          "target": "stmt:packages/pipeline/src/structure.ts@L191",
+          "line": 191,
+          "expr": "const dot = path.lastIndexOf('.');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#langForPath@L190",
+        "procedureName": "langForPath",
+        "guard": "cond:packages/pipeline/src/structure.ts@L192",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/structure.ts@L192",
+            "expr": "dot === -1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d3daddb24c3b464f0659ff123c6f9dd338770d2861148f078d6eb01349c11703",
+          "target": "stmt:packages/pipeline/src/structure.ts@L192",
+          "line": 192,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#langForPath@L190",
+        "procedureName": "langForPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:80f37274745d3e6cbc4fadcb3e1d349ffdd71debfbf616f06a28e876464f494c",
+          "target": "stmt:packages/pipeline/src/structure.ts@L193",
+          "line": 193,
+          "expr": "return LANG_BY_EXT[path.slice(dot)];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/pipeline/src/structure.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

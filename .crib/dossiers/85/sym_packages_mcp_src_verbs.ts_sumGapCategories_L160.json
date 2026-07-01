@@ -1,0 +1,162 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#sumGapCategories@L160",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:a355d81170eea978587b2e328a02e5e695d88952c1320ac9914e508aa7088f43",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#sumGapCategories@L160",
+    "kind": "symbol",
+    "type": "function",
+    "name": "sumGapCategories",
+    "qualifiedName": "sumGapCategories",
+    "signature": "sumGapCategories(parts: GapCategoryCounts[]): GapCategoryCounts",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 160,
+      "end": 166
+    },
+    "callSites": [
+      {
+        "callee": "initGapCategories",
+        "line": 161
+      }
+    ]
+  },
+  "source": {
+    "text": "function sumGapCategories(parts: GapCategoryCounts[]): GapCategoryCounts {\n  const out = initGapCategories();\n  for (const part of parts) {\n    for (const category of GAP_CATEGORIES) out[category] += part[category];\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 160
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L1008",
+      "confidence": 1,
+      "name": "gaps",
+      "qualifiedName": "Verbs.gaps",
+      "signature": "gaps(args: { extractedOnly?: boolean; includeBuiltins?: boolean } = {}): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1008
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#initGapCategories@L117",
+      "confidence": 1,
+      "name": "initGapCategories",
+      "qualifiedName": "initGapCategories",
+      "signature": "initGapCategories(): GapCategoryCounts",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 117
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#sumGapCategories@L160",
+    "procedureName": "sumGapCategories",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L162",
+      "cond:packages/mcp/src/verbs.ts@L163"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#sumGapCategories@L160",
+        "procedureName": "sumGapCategories",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9e2a5917dddaaaff7d8336132afef4b3329f37e855c49781400894d9fa9e63b1",
+          "target": "sym:packages/mcp/src/verbs.ts#initGapCategories@L117",
+          "expr": "initGapCategories",
+          "line": 161
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#sumGapCategories@L160",
+        "procedureName": "sumGapCategories",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:02a7434e9902ff1d708476e1e5db8de6e9c04e160e76c0b4cdddd41ade2e4e5f",
+          "target": "stmt:packages/mcp/src/verbs.ts@L161",
+          "line": 161,
+          "expr": "const out = initGapCategories();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#sumGapCategories@L160",
+        "procedureName": "sumGapCategories",
+        "guard": "cond:packages/mcp/src/verbs.ts@L163",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L162",
+            "expr": "parts"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L163",
+            "expr": "GAP_CATEGORIES",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c34f2e38ae44fd191e0f7b12b6f9cb16a2b22cc044bd3cef43b6290b5a608b5",
+          "target": "assign:packages/mcp/src/verbs.ts@L163",
+          "line": 163,
+          "expr": "out[category] += part[category];"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#sumGapCategories@L160",
+        "procedureName": "sumGapCategories",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f3cdeedee3def4834303d345d697cec9656cd38f756a5b18e14e06a30667fca5",
+          "target": "stmt:packages/mcp/src/verbs.ts@L165",
+          "line": 165,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -2,7 +2,7 @@
   "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
   "schemaVersion": "1.3",
   "nodeHash": "blake3:0b48c2fde2578cefcd7dad889be1f94f13d4b564e7eb922282214e5ee6dcb471",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-06-30T22:32:35.510Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
@@ -51,24 +51,44 @@
       "line": 124
     },
     {
-      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles@L93",
+      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles@L98",
       "confidence": 1,
       "name": "discoverFiles",
       "qualifiedName": "discoverFiles",
       "signature": "discoverFiles(root: string, opts: DiscoverOpts = {}): FileMeta[]",
       "type": "function",
       "file": "packages/pipeline/src/structure.ts",
-      "line": 93
+      "line": 98
     },
     {
-      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L98",
+      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L119",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "discoverFiles.walk",
       "signature": "walk(…)",
       "type": "function",
       "file": "packages/pipeline/src/structure.ts",
-      "line": 98
+      "line": 119
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#globDirs@L227",
+      "confidence": 1,
+      "name": "globDirs",
+      "qualifiedName": "globDirs",
+      "signature": "globDirs(root: string, pattern: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 227
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#globDirs.walk@L229",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "globDirs.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 229
     },
     {
       "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
@@ -114,6 +134,46 @@
   "callees": [],
   "docs": [
     {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-index-path",
+      "heading": "`crib index [path]`",
+      "anchor": "crib-index-path",
+      "snippet": "`crib index [path]`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#monorepos-index-one-package-at-a-time-package",
+      "heading": "Monorepos: index one package at a time (`--package`)",
+      "anchor": "monorepos-index-one-package-at-a-time-package",
+      "snippet": "Monorepos: index one package at a time (`--package`)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#monorepos-scope-indexing-to-one-package-package",
+      "heading": "Monorepos: scope indexing to one package (`--package`)",
+      "anchor": "monorepos-scope-indexing-to-one-package-package",
+      "snippet": "Monorepos: scope indexing to one package (`--package`)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
       "heading": "What was built",
       "anchor": "what-was-built",
@@ -138,6 +198,16 @@
       "heading": "2.3 Solution Architect",
       "anchor": "2-3-solution-architect",
       "snippet": "2.3 Solution Architect",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
       "edgeType": "describes",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -194,10 +264,10 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-index-path",
-      "heading": "`crib index [path]`",
-      "anchor": "crib-index-path",
-      "snippet": "`crib index [path]`",
+      "sectionId": "doc:docs/knowledge-crib-cli.md#global-flags",
+      "heading": "Global flags",
+      "anchor": "global-flags",
+      "snippet": "Global flags",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -282,6 +352,16 @@
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "heading": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "anchor": "3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "snippet": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
     }
   ],
   "rules": {
@@ -326,7 +406,8 @@
       "packages/cli/src/skill-install.ts",
       "packages/core/src/soul-store.test.ts",
       "packages/pipeline/src/resolve/ts-resolver.ts",
-      "packages/pipeline/src/structure.ts"
+      "packages/pipeline/src/structure.ts",
+      "packages/pipeline/src/workspace.ts"
     ]
   },
   "coverage": {

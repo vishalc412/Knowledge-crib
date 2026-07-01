@@ -1,0 +1,375 @@
+{
+  "id": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:65fec5b99829644e8956f4a5304409b31f903553eb240b5abadd07dff9b62edc",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+    "kind": "symbol",
+    "type": "function",
+    "name": "detectLerna",
+    "qualifiedName": "detectLerna",
+    "signature": "detectLerna(root: string): WorkspaceLayout | null",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/workspace.ts",
+    "span": {
+      "start": 78,
+      "end": 93
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 79
+      },
+      {
+        "callee": "parse",
+        "line": 83
+      },
+      {
+        "callee": "readFileSync",
+        "line": 83
+      },
+      {
+        "callee": "toStringArray",
+        "line": 87
+      },
+      {
+        "callee": "expandPatterns",
+        "line": 89
+      },
+      {
+        "callee": "existsSync",
+        "line": 91
+      },
+      {
+        "callee": "join",
+        "line": 91
+      }
+    ]
+  },
+  "source": {
+    "text": "function detectLerna(root: string): WorkspaceLayout | null {\n  const file = join(root, 'lerna.json');\n  if (!existsSync(file)) return null;\n  let raw: unknown;\n  try {\n    raw = JSON.parse(readFileSync(file, 'utf8'));\n  } catch {\n    return null;\n  }\n  const patterns = toStringArray((raw as { packages?: unknown }).packages);\n  if (patterns.length === 0) return null;\n  const packages = expandPatterns(root, patterns);\n  if (packages.length === 0) return null;\n  const tool = existsSync(join(root, 'nx.json')) ? 'nx' : 'lerna';\n  return { tool, packages };\n}",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 78
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#detectNx@L95",
+      "confidence": 1,
+      "name": "detectNx",
+      "qualifiedName": "detectNx",
+      "signature": "detectNx(root: string): WorkspaceLayout | null",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 95
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#detectWorkspace@L40",
+      "confidence": 1,
+      "name": "detectWorkspace",
+      "qualifiedName": "detectWorkspace",
+      "signature": "detectWorkspace(root: string): WorkspaceLayout | null",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 40
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L210",
+      "confidence": 1,
+      "name": "expandPatterns",
+      "qualifiedName": "expandPatterns",
+      "signature": "expandPatterns(root: string, patterns: string[]): WorkspacePackage[]",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 210
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 35
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#toStringArray@L321",
+      "confidence": 1,
+      "name": "toStringArray",
+      "qualifiedName": "toStringArray",
+      "signature": "toStringArray(v: unknown): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 321
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+    "procedureName": "detectLerna",
+    "conditions": [
+      "cond:packages/pipeline/src/workspace.ts@L80",
+      "cond:packages/pipeline/src/workspace.ts@L88",
+      "cond:packages/pipeline/src/workspace.ts@L90"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+        "procedureName": "detectLerna",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:26e5e832ce18b8f26b9d2c0b493cc58982539c13a0de07f63e0913991b6c7614",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L79",
+          "line": 79,
+          "expr": "const file = join(root, 'lerna.json');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+        "procedureName": "detectLerna",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L80",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L80",
+            "expr": "!existsSync(file)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cb022ad27ee42be2238783cddf8e5ab890dc1ada4132080d40ed7e789cd738d0",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L80",
+          "line": 80,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+        "procedureName": "detectLerna",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:914db44d01bd20a303dad4cbe6ab04dbb1135fbe1378b79e28a6754f65600485",
+          "target": "assign:packages/pipeline/src/workspace.ts@L83",
+          "line": 83,
+          "expr": "raw = JSON.parse(readFileSync(file, 'utf8'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+        "procedureName": "detectLerna",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8829dfcc1b38c67dbf6e18735db0ec1b7db03fca9467faa27485184bcba3ca1a",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+          "expr": "parse",
+          "line": 83
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+        "procedureName": "detectLerna",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1e7d1305bf214843feb02e9fe9522c8f35c698a6d45ce977b78da4caa29fe0e1",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L85",
+          "line": 85,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+        "procedureName": "detectLerna",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2461a8383d4922f50212b5a7ea3b82dde5718c30cfa88c8e1b4b9effaa106634",
+          "target": "sym:packages/pipeline/src/workspace.ts#toStringArray@L321",
+          "expr": "toStringArray",
+          "line": 87
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+        "procedureName": "detectLerna",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dbc449a57b173de03e45f7479810b4f78f72285fa02f7ee4b4510717aea37d33",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L87",
+          "line": 87,
+          "expr": "const patterns = toStringArray((raw as { packages?: unknown }).packages);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+        "procedureName": "detectLerna",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L88",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L88",
+            "expr": "patterns.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6511a3b99415da15c29a41356d241a2185b3201fbc97d3170c90f20c9a22fcc8",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L88",
+          "line": 88,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+        "procedureName": "detectLerna",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5b5626171adc4f4c749e4ae0d7a1d4bb155706c639ea9716956eb1f914b463b8",
+          "target": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L210",
+          "expr": "expandPatterns",
+          "line": 89
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+        "procedureName": "detectLerna",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ebc3295200044494bcfcc1d41ad43e4461aa175bed1e834f0afdf70bbf44cd8f",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L89",
+          "line": 89,
+          "expr": "const packages = expandPatterns(root, patterns);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+        "procedureName": "detectLerna",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L90",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L90",
+            "expr": "packages.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ceeb0a4748b3c0c4f6d6a9d692a219f89b445783ae3893e935052dfdc8f7bbd6",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L90",
+          "line": 90,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+        "procedureName": "detectLerna",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c8934389ea5703ef4643201b9a85354b1c997178916a615f22c468c426f7a24",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L91",
+          "line": 91,
+          "expr": "const tool = existsSync(join(root, 'nx.json')) ? 'nx' : 'lerna';"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
+        "procedureName": "detectLerna",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a4ec64766b59a1777cab21a5cb221e2decec2e116d67da43c58d3fd04b9473f",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L92",
+          "line": 92,
+          "expr": "return { tool, packages };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/pipeline/src/workspace.ts@L84",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/pipeline/src/workspace.ts",
+        "span": {
+          "start": 84,
+          "end": 84
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/pipeline/src/workspace.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 1,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 7,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

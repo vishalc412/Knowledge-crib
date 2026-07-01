@@ -1,0 +1,240 @@
+{
+  "id": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:7ec3a76b3afc913518c9d066e74333353bac034d09dce83c5e7c5015c2256fe6",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
+    "kind": "symbol",
+    "type": "function",
+    "name": "resolvePackageArg",
+    "qualifiedName": "resolvePackageArg",
+    "signature": "resolvePackageArg(root: string, arg: string | undefined, layout: WorkspaceLayout | null): { packageRoots: string[] | undefined; all: boolean; unknown?: string }",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/workspace.ts",
+    "span": {
+      "start": 55,
+      "end": 67
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 62
+      },
+      {
+        "callee": "toPosix",
+        "line": 63
+      }
+    ]
+  },
+  "source": {
+    "text": "export function resolvePackageArg(\n  root: string,\n  arg: string | undefined,\n  layout: WorkspaceLayout | null,\n): { packageRoots: string[] | undefined; all: boolean; unknown?: string } {\n  if (!arg || arg === 'all') return { packageRoots: undefined, all: true };\n  if (!layout) return { packageRoots: undefined, all: false, unknown: arg };\n  const match = layout.packages.find(\n    (p) => p.name === arg || p.rel === arg || p.rel === toPosix(arg),\n  );\n  if (!match) return { packageRoots: undefined, all: false, unknown: arg };\n  return { packageRoots: [match.rel], all: false };\n}",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 55
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#resolvePackageScope@L146",
+      "confidence": 1,
+      "name": "resolvePackageScope",
+      "qualifiedName": "resolvePackageScope",
+      "signature": "resolvePackageScope(repoRoot: string, args: string[]): { status: number; packageRoots?: string[]; layout: WorkspaceLayout | null; indexedPackages: string[] }",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 146
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#toPosix@L338",
+      "confidence": 1,
+      "name": "toPosix",
+      "qualifiedName": "toPosix",
+      "signature": "toPosix(p: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 338
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/workspace.ts@L54",
+      "snippet": "/** Resolve a `--package` arg (name, rel path, or `all`) against a layout → repo-relative roots. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
+    "procedureName": "resolvePackageArg",
+    "conditions": [
+      "cond:packages/pipeline/src/workspace.ts@L60",
+      "cond:packages/pipeline/src/workspace.ts@L61",
+      "cond:packages/pipeline/src/workspace.ts@L65"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
+        "procedureName": "resolvePackageArg",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L60",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L60",
+            "expr": "!arg || arg === 'all'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:88449991185a645498228197192524391ce2fb64d8307a9769d7e3f528fc1fd3",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L60",
+          "line": 60,
+          "expr": "return { packageRoots: undefined, all: true };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
+        "procedureName": "resolvePackageArg",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L61",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L61",
+            "expr": "!layout",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:49ca8966e2217b9c225a24f388e528f5fea55ba574f31e5a0a126c45b9d3568e",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L61",
+          "line": 61,
+          "expr": "return { packageRoots: undefined, all: false, unknown: arg };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
+        "procedureName": "resolvePackageArg",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:998615af0eab1ce1947ef2a5e7620c3c488c68b1b48ff514287babb9c1bb1daf",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L62",
+          "line": 62,
+          "expr": "const match = layout.packages.find(\n    (p) => p.name === arg || p.rel === arg || p.rel === toPosix(arg),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
+        "procedureName": "resolvePackageArg",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:143adf5d6d10839e42ef210ed0544e1a21eca7f12c924dca017af421de37bbe1",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 62
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
+        "procedureName": "resolvePackageArg",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:db4204a250d0a87637618b83775a6da07ef17b57517a162b70a62b6fef5284b8",
+          "target": "sym:packages/pipeline/src/workspace.ts#toPosix@L338",
+          "expr": "toPosix",
+          "line": 63
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
+        "procedureName": "resolvePackageArg",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L65",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L65",
+            "expr": "!match",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a005dc3687099f11e27b0703cb56aaf444bcba5f6a21317e8b7d978c98ecfbb",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L65",
+          "line": 65,
+          "expr": "return { packageRoots: undefined, all: false, unknown: arg };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
+        "procedureName": "resolvePackageArg",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6ca76a5ff175b140b08f34685e926beb25e6e142a4c9ad69a2760a33c4ba21c3",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L66",
+          "line": 66,
+          "expr": "return { packageRoots: [match.rel], all: false };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}
