@@ -22,7 +22,7 @@
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { sessionCost, usd } from './lib/pricing.mjs';
+import { coldCost, sessionCost, usd } from './lib/pricing.mjs';
 
 const CLI = resolve('packages/cli/dist/cli.js');
 const TURNS = 6;
@@ -95,6 +95,10 @@ for (const sym of SYMBOLS) {
 const cribCost = sessionCost({ contextTokens: cribTokens, turns: TURNS });
 const noCribCost = sessionCost({ contextTokens: noCribTokens, turns: TURNS, stable: false });
 const noCribCostCached = sessionCost({ contextTokens: noCribTokens, turns: TURNS });
+// Cold lens: cache cleared, one pass, everything fresh input. No cache-read discount either way, so
+// the dollar difference is exactly the token difference — the "actual difference" the user asked for.
+const cribCold = coldCost(cribTokens);
+const noCribCold = coldCost(noCribTokens);
 
 const report = {
   task: 'understand the query pipeline (SoulStore + index build + query verb + relationships)',
@@ -104,6 +108,7 @@ const report = {
     filesRead: noCribFiles.size,
     files: [...noCribFiles],
     contextTokens: noCribTokens,
+    coldCostUsd: usd(noCribCold),
     costUsd: usd(noCribCost),
     costCachedUsd: usd(noCribCostCached),
   },
@@ -111,10 +116,14 @@ const report = {
     strategy: 'crib query + neighbors (pinpoint snippets + graph edges, no file bodies)',
     calls: cribCalls,
     contextTokens: cribTokens,
+    coldCostUsd: usd(cribCold),
     costUsd: usd(cribCost),
   },
   verdict: {
     tokenReduction: cribTokens > 0 ? +(noCribTokens / cribTokens).toFixed(2) : null,
+    // Cold: cache cleared, actual difference. Equals the token ratio by construction — that IS the point.
+    coldCostSaving: cribCold > 0 ? +(noCribCold / cribCold).toFixed(2) : null,
+    coldExtraDollarsNoCrib: usd(noCribCold - cribCold),
     costSavingVsChurn: cribCost > 0 ? +(noCribCost / cribCost).toFixed(2) : null,
     costSavingCached: cribCost > 0 ? +(noCribCostCached / cribCost).toFixed(2) : null,
   },
@@ -123,7 +132,9 @@ const report = {
 process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 process.stdout.write(
   `\nReal measured context for the SAME task: no-crib ${noCribTokens} tokens ` +
-    `(${noCribFiles.size} whole files) vs crib ${cribTokens} tokens → ` +
-    `${report.verdict.tokenReduction}x fewer tokens, ${report.verdict.costSavingVsChurn}x cheaper ` +
-    `(${report.verdict.costSavingCached}x even if the no-crib reads were perfectly cached).\n`,
+    `(${noCribFiles.size} whole files) vs crib ${cribTokens} tokens.\n` +
+    `COLD (cache cleared, actual difference): no-crib $${usd(noCribCold)} vs crib $${usd(cribCold)} ` +
+    `→ ${report.verdict.coldCostSaving}x cheaper, +$${report.verdict.coldExtraDollarsNoCrib} wasted per no-crib task.\n` +
+    `WARM 6-turn session: ${report.verdict.costSavingVsChurn}x cheaper ` +
+    `(${report.verdict.costSavingCached}x even if no-crib reads were perfectly cached).\n`,
 );

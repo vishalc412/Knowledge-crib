@@ -39,6 +39,16 @@ export function bucketCost(tokens, rate) {
 }
 
 /**
+ * COLD cost — cache cleared, no reuse. Every token is priced as fresh input, one pass. This is the
+ * "actual difference" lens: with the prompt cache emptied there is no cache-read discount to subsidize
+ * a larger context, so the dollar gap collapses to exactly the token gap. It is the floor the whole
+ * thesis rests on — if crib doesn't win cold, its cache-warm win is just an accounting artifact.
+ */
+export function coldCost(tokens, r = rates()) {
+  return bucketCost(tokens, r.input);
+}
+
+/**
  * Model the dollar cost of using a retrieved context block across a multi-turn agent task.
  *
  * The realistic lifecycle of a piece of retrieved context in a live agent session:
