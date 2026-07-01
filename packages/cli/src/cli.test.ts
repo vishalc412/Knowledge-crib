@@ -399,7 +399,9 @@ describe('crib index — token-savings hero output (P1 instant value)', () => {
     mkdirSync(join(heroRepo, 'src'), { recursive: true });
     // a deliberately central function (high in-degree) called from several other files padded with
     // unrelated content, so the raw-file-read cost meaningfully exceeds the one-line query response.
-    const filler = Array.from({ length: 40 }, (_, i) => `export const filler${i} = ${i};`).join('\n');
+    const filler = Array.from({ length: 40 }, (_, i) => `export const filler${i} = ${i};`).join(
+      '\n',
+    );
     writeFileSync(
       join(heroRepo, 'src', 'core.ts'),
       `${filler}\nexport function widgetCore(id: string): string {\n  return id.toUpperCase();\n}\n`,
@@ -412,7 +414,9 @@ describe('crib index — token-savings hero output (P1 instant value)', () => {
     }
     const r = runHero(['index', '.']);
     expect(r.status).toBe(0);
-    expect(r.stdout).toMatch(/≈\d+(\.\d+)?x fewer tokens per discovery query than reading files directly/);
+    expect(r.stdout).toMatch(
+      /≈\d+(\.\d+)?x fewer tokens per discovery query than reading files directly/,
+    );
     expect(r.stdout).toContain('via crib query');
   });
 
@@ -420,7 +424,10 @@ describe('crib index — token-savings hero output (P1 instant value)', () => {
     heroRepo = mkdtempSync(join(tmpdir(), 'crib-cli-hero-tiny-'));
     writeFileSync(join(heroRepo, 'package.json'), JSON.stringify({ name: 'tiny', type: 'module' }));
     mkdirSync(join(heroRepo, 'src'), { recursive: true });
-    writeFileSync(join(heroRepo, 'src', 'a.ts'), 'export function one(): number {\n  return 1;\n}\n');
+    writeFileSync(
+      join(heroRepo, 'src', 'a.ts'),
+      'export function one(): number {\n  return 1;\n}\n',
+    );
     const r = runHero(['index', '.']);
     expect(r.status).toBe(0);
     expect(r.stdout).not.toMatch(/fewer tokens per discovery query/);
@@ -441,7 +448,11 @@ describe('crib update --package (P4 multi-package federation) — CLI dispatch',
         .filter((l) => !/ExperimentalWarning|trace-warnings/.test(l))
         .join('\n')
         .trim();
-    return { status: r.status ?? 1, stdout: stripNoise(r.stdout ?? ''), stderr: stripNoise(r.stderr ?? '') };
+    return {
+      status: r.status ?? 1,
+      stdout: stripNoise(r.stdout ?? ''),
+      stderr: stripNoise(r.stderr ?? ''),
+    };
   };
   const git = (args: string[]): string =>
     execFileSync('git', ['-C', fedRepo, ...args], { encoding: 'utf8' }).trim();
@@ -455,7 +466,10 @@ describe('crib update --package (P4 multi-package federation) — CLI dispatch',
     ] as const) {
       mkdirSync(join(fedRepo, rel, 'src'), { recursive: true });
       writeFileSync(join(fedRepo, rel, 'package.json'), JSON.stringify({ name, version: '0.0.0' }));
-      writeFileSync(join(fedRepo, rel, 'src', 'index.ts'), `export const ${name.replace('-', '_')} = 1;\n`);
+      writeFileSync(
+        join(fedRepo, rel, 'src', 'index.ts'),
+        `export const ${name.replace('-', '_')} = 1;\n`,
+      );
     }
     git(['init', '-q']);
     git(['add', '-A']);
@@ -468,8 +482,14 @@ describe('crib update --package (P4 multi-package federation) — CLI dispatch',
     expect(indexed.status).toBe(0);
     const h1 = git(['rev-parse', 'HEAD']);
 
-    writeFileSync(join(fedRepo, 'packages', 'pkg-a', 'src', 'index.ts'), 'export const pkg_a = 2;\n');
-    writeFileSync(join(fedRepo, 'packages', 'pkg-b', 'src', 'index.ts'), 'export const pkg_b = 2;\n');
+    writeFileSync(
+      join(fedRepo, 'packages', 'pkg-a', 'src', 'index.ts'),
+      'export const pkg_a = 2;\n',
+    );
+    writeFileSync(
+      join(fedRepo, 'packages', 'pkg-b', 'src', 'index.ts'),
+      'export const pkg_b = 2;\n',
+    );
     git(['add', 'packages/pkg-a/src/index.ts', 'packages/pkg-b/src/index.ts']);
     git(['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'edit both']);
 

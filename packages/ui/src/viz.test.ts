@@ -103,10 +103,7 @@ describe('buildVizGraph — importance/tier ranking (declutter)', () => {
     const lonely = sym('src/c.ts', 'C.go', 1);
 
     soul.putNodes([hub, caller1, caller2, lonely]);
-    soul.putEdges([
-      edge(caller1.id, hub.id, 'calls'),
-      edge(caller2.id, hub.id, 'calls'),
-    ]);
+    soul.putEdges([edge(caller1.id, hub.id, 'calls'), edge(caller2.id, hub.id, 'calls')]);
     soul.commit('2026-01-01T00:00:00.000Z');
 
     const graph = buildVizGraph(soul);

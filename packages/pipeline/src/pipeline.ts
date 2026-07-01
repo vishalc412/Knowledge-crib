@@ -121,7 +121,8 @@ export async function indexRepo(
 
   const discoverOpts: { ignores?: Set<string>; packageRoots?: string[] } = {};
   if (opts.ignores) discoverOpts.ignores = opts.ignores;
-  if (opts.packageRoots && opts.packageRoots.length > 0) discoverOpts.packageRoots = opts.packageRoots;
+  if (opts.packageRoots && opts.packageRoots.length > 0)
+    discoverOpts.packageRoots = opts.packageRoots;
   const files = discoverFiles(root, discoverOpts);
   runStructure(soul, root, files); // Phase 1
   const parse = await runParse(soul, registry, root, files); // Phase 2 + 3b (Markdown extractor)
