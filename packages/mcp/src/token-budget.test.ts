@@ -2,17 +2,21 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_DOC_LIMIT,
   DEFAULT_LIMIT,
+  DEFAULT_MAX_TOKENS,
   MAX_DEPTH,
   MAX_DOC_LIMIT,
   MAX_HOPS,
   MAX_LIMIT,
+  MAX_MAX_TOKENS,
   MAX_SCOPE_SYMBOLS,
   MAX_SOURCE_CHARS,
   MAX_SOURCE_LINES,
   bound,
   capInt,
+  capMaxTokens,
   clampMax,
   estimateTokens,
+  fitTokenBudget,
 } from './token-budget.js';
 
 describe('token-budget hard caps', () => {
@@ -106,5 +110,78 @@ describe('estimateTokens (unchanged behavior)', () => {
     expect(estimateTokens('abcd')).toBe(1);
     expect(estimateTokens(undefined)).toBe(0);
     expect(estimateTokens(null)).toBe(0);
+  });
+});
+
+describe('capMaxTokens (M1.2 response-wide budget)', () => {
+  it('resolves a missing value to the default', () => {
+    expect(capMaxTokens(undefined)).toBe(DEFAULT_MAX_TOKENS);
+  });
+
+  it('passes a present value under the cap through unchanged', () => {
+    expect(capMaxTokens(1000)).toBe(1000);
+    expect(capMaxTokens(MAX_MAX_TOKENS)).toBe(MAX_MAX_TOKENS);
+  });
+
+  it('clamps an absurd value down to the hard cap', () => {
+    expect(capMaxTokens(99_999_999)).toBe(MAX_MAX_TOKENS);
+  });
+
+  it('floors zero and negatives at 1 so the guard can never be silently disabled', () => {
+    expect(capMaxTokens(0)).toBe(1);
+    expect(capMaxTokens(-5)).toBe(1);
+  });
+});
+
+describe('fitTokenBudget (M1.2 response-wide prefix fit)', () => {
+  // serialize = the candidate response string for a given prefix. Each item is a short string so
+  // token counts are small + predictable; the skeleton `{"hits":` overhead is counted too.
+  const serialize = (prefix: string[]) => JSON.stringify({ hits: prefix });
+
+  it('returns the whole list + no exhaustion when everything fits', () => {
+    const items = ['a', 'b', 'c'];
+    const fitted = fitTokenBudget(items, 1000, serialize);
+    expect(fitted.items).toEqual(items);
+    expect(fitted.budgetExhausted).toBe(false);
+    expect(fitted.cursor).toBeUndefined();
+  });
+
+  it('keeps the largest leading prefix that fits + signals exhaustion + a count cursor', () => {
+    // each item adds 4 chars ('"x",') = 1 token; the 6-item list + skeleton is 9 tokens, so a budget
+    // of 6 forces a leading prefix to survive (3 items = 6 tokens; the 4th would push it to 7).
+    const items = ['a', 'b', 'c', 'd', 'e', 'f'];
+    const budget = 6;
+    const fitted = fitTokenBudget(items, budget, serialize);
+    expect(fitted.budgetExhausted).toBe(true);
+    expect(fitted.cursor).toBe(String(fitted.items.length));
+    // the kept prefix must actually fit the budget.
+    expect(estimateTokens(serialize(fitted.items))).toBeLessThanOrEqual(budget);
+    // adding one more item would overflow (largest-prefix property).
+    if (fitted.items.length < items.length) {
+      expect(estimateTokens(serialize(items.slice(0, fitted.items.length + 1)))).toBeGreaterThan(
+        budget,
+      );
+    }
+  });
+
+  it('returns an empty prefix + cursor 0 when a single item overflows', () => {
+    const fitted = fitTokenBudget(['xxxxxxxxxxxxxxxxxxxxxxxx'], 1, serialize);
+    expect(fitted.items).toEqual([]);
+    expect(fitted.budgetExhausted).toBe(true);
+    expect(fitted.cursor).toBe('0');
+  });
+
+  it('returns an empty list unexhausted when there are no items', () => {
+    const fitted = fitTokenBudget([], 1000, serialize);
+    expect(fitted.items).toEqual([]);
+    expect(fitted.budgetExhausted).toBe(false);
+    expect(fitted.cursor).toBeUndefined();
+  });
+
+  it('is deterministic — same inputs always yield the same cut', () => {
+    const items = Array.from({ length: 20 }, (_, i) => `item${i}`);
+    const a = fitTokenBudget(items, 30, serialize);
+    const b = fitTokenBudget(items, 30, serialize);
+    expect(a).toEqual(b);
   });
 });

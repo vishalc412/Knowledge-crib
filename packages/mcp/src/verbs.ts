@@ -51,7 +51,10 @@ import {
   MAX_SOURCE_LINES,
   bound,
   capInt,
+  capMaxTokens,
   clampMax,
+  estimateTokens,
+  fitTokenBudget,
 } from './token-budget.js';
 
 /**
@@ -262,6 +265,10 @@ export class Verbs {
     sourceMaxLines?: number;
     /** absolute file line to start the source page at (paging cursor; default = span start) */
     sourceStartLine?: number;
+    /** response-wide token budget (chars/4). When set with `withSource`, the source body is shrunk
+     *  to fit the remaining budget and `budgetExhausted:true` is set; page via `source.nextLine`.
+     *  (M1.2) */
+    maxTokens?: number;
   }): Record<string, unknown> {
     const soul = this.deps.soul;
     const id = this.resolveNodeId(args.id);
@@ -303,6 +310,49 @@ export class Verbs {
       if (fw) result.framework = fw;
     }
     this.attachLlm(result, id, args.withLlm);
+    // M1.2 response-wide token budget (opt-in). When set with `withSource`, guarantee the serialized
+    // response fits `maxTokens` (chars/4). The source body is the variable part; the node + callers +
+    // callees + docs + llm skeleton is counted once and the source is shrunk to the remaining budget.
+    // `budgetExhausted` signals the body was cut; the body's existing `nextLine` cursor pages it.
+    if (args.maxTokens !== undefined && args.withSource && result.source !== undefined) {
+      const maxTokens = capMaxTokens(args.maxTokens);
+      const { source: _drop, ...withoutSource } = result;
+      const tokensWithout = estimateTokens(withoutSource);
+      const remaining = maxTokens - tokensWithout;
+      result.budgetExhausted = false;
+      if (remaining < 1) {
+        // skeleton alone overflows: drop the body, keep the budgetExhausted signal so a tighter-
+        // budgeted retry can page it via the body's own span-start cursor.
+        result.source = undefined;
+        result.budgetExhausted = true;
+      } else {
+        // The char budget bounds `source.text`, but the source OBJECT carries JSON overhead
+        // (totalLines/startLine/nextLine/truncated) the char budget does not count. Re-estimate the
+        // full response after the first shrink and halve the char budget until it fits (bounded loop
+        // — chars/4 is monotonic, so this converges in a few steps).
+        let charBudget = Math.max(1, remaining * 4);
+        let shrunk = this.bodyOf(node, { ...args, sourceMaxChars: charBudget });
+        let guard = 0;
+        while (
+          estimateTokens({ ...result, source: shrunk }) > maxTokens &&
+          charBudget > 1 &&
+          guard++ < 8
+        ) {
+          charBudget = Math.max(1, Math.floor(charBudget / 2));
+          shrunk = this.bodyOf(node, { ...args, sourceMaxChars: charBudget });
+        }
+        if (estimateTokens({ ...result, source: shrunk }) > maxTokens) {
+          // even a 1-char body overflows (budget sits below skeleton + the source-object's irreducible
+          // JSON wrapper) — drop the body so the response still honors the budget; budgetExhausted
+          // signals a tighter-budgeted retry can page it via the body's span-start cursor.
+          result.source = undefined;
+          result.budgetExhausted = true;
+        } else {
+          result.source = shrunk;
+          result.budgetExhausted = guard > 0 || shrunk.truncated;
+        }
+      }
+    }
     return result;
   }
 
@@ -478,12 +528,21 @@ export class Verbs {
     sourceMaxChars?: number;
     sourceMaxLines?: number;
     format?: 'json' | 'markdown';
+    /** resume cursor (a prior response's `cursor`) — skip the first N resolved symbols. Decoupled
+     *  from `maxTokens` (paging works without a budget), but a cursor is only RETURNED when `maxTokens`
+     *  is set (the opt-in budget path). (M1.2) */
+    cursor?: string;
+    /** response-wide token budget (chars/4). When set, the dossiers list is trimmed to the largest
+     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.
+     *  (M1.2) */
+    maxTokens?: number;
   }): Record<string, unknown> {
     const soul = this.deps.soul;
     // package: use the standard qname resolver for parity with `dossier`/`context`; file/cluster: pass
     // the raw id (buildDossiersByScope handles the file:/c: prefix + path/slug resolution itself).
     const resolved = args.scope === 'package' ? (this.resolveNodeId(args.id) ?? args.id) : args.id;
     const manifest = soul.getManifest();
+    const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);
     const result = buildDossiersByScope(
       soul,
       this.deps.repoRoot,
@@ -502,13 +561,36 @@ export class Verbs {
         ...(args.sourceMaxLines !== undefined
           ? { sourceMaxLines: clampMax(args.sourceMaxLines, MAX_SOURCE_LINES) }
           : {}),
+        offset,
       },
     );
     if (!result) return notFound(args.id);
     if (args.format === 'markdown') {
       return { id: result.id, markdown: dossiersByScopeToMarkdown(result) };
     }
-    return result as unknown as Record<string, unknown>;
+    // M1.2 response-wide token budget (opt-in). Fit the per-symbol dossiers to the largest leading
+    // prefix whose serialized response fits (chars/4). The scope metadata + symbolCount + truncated
+    // + skipped are fixed; symbols is the variable. `truncated` (core cap/offset) is unchanged;
+    // `budgetExhausted` is the new token-cut signal; `cursor` resumes at the next dossier.
+    if (args.maxTokens === undefined) {
+      return result as unknown as Record<string, unknown>;
+    }
+    const maxTokens = capMaxTokens(args.maxTokens);
+    const symbols = result.symbols;
+    const fitted = fitTokenBudget(symbols, maxTokens, (prefix) =>
+      JSON.stringify({
+        ...result,
+        symbols: prefix,
+        budgetExhausted: true,
+        cursor: String(offset + prefix.length),
+      }),
+    );
+    const out = { ...result, symbols: fitted.items } as unknown as Record<string, unknown>;
+    const more = fitted.budgetExhausted || result.truncated;
+    // when maxTokens is opted in, always report budgetExhausted (true/false); cursor only when more.
+    out.budgetExhausted = fitted.budgetExhausted;
+    if (more) out.cursor = String(offset + fitted.items.length);
+    return out;
   }
 
   /** Rehydrate a node's full span, mapping the budget + paging args onto the snippet defaults. */
@@ -623,15 +705,26 @@ export class Verbs {
     withFramework?: boolean;
     /** include saved LLM semantic analysis on hits and search LLM analysis text too. */
     withLlm?: boolean;
+    /** resume cursor (a prior response's `cursor`) — skip the first N BM25-ranked hits (FTS5 OFFSET).
+     *  Decoupled from `maxTokens`: paging works without a budget, but a cursor is only RETURNED when
+     *  `maxTokens` is set (the opt-in budget path). (M1.2) */
+    cursor?: string;
+    /** response-wide token budget (chars/4). When set, the hits list is trimmed to the largest
+     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.
+     *  (M1.2) */
+    maxTokens?: number;
   }): Record<string, unknown> {
     const soul = this.deps.soul;
     const limit = capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT);
+    // cursor → offset into the BM25-ranked set (FTS5 OFFSET). Floor at 0; non-numeric → 0.
+    const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);
     // Over-fetch by one to detect whether the BM25 result set was capped (honest `truncated` flag)
     // without an extra count query; we slice back to `limit` after the overflow check.
     const rawHits = this.deps.index.query({
       text: args.q,
       ...(args.kinds ? { kinds: args.kinds } : {}),
       limit: limit + 1,
+      offset,
     });
     const bm25Truncated = rawHits.length > limit;
     const hits0 = bm25Truncated ? rawHits.slice(0, limit) : rawHits;
@@ -709,7 +802,33 @@ export class Verbs {
       });
     }
 
-    return { hits, llmHits, truncated: bm25Truncated || llmTruncated };
+    const baseTruncated = bm25Truncated || llmTruncated;
+    // M1.2 response-wide token budget (opt-in). When maxTokens is set, fit the hits list to the
+    // largest leading prefix whose serialized response fits (chars/4); llmHits + the fixed
+    // `truncated` flag are counted in the estimate. The non-maxTokens path is byte-identical to
+    // before (no cursor / no budgetExhausted) so existing callers + tests are unchanged.
+    if (args.maxTokens === undefined) {
+      return { hits, llmHits, truncated: baseTruncated };
+    }
+    const maxTokens = capMaxTokens(args.maxTokens);
+    const fitted = fitTokenBudget(hits, maxTokens, (prefix) =>
+      JSON.stringify({
+        hits: prefix,
+        llmHits,
+        truncated: baseTruncated,
+        budgetExhausted: true,
+        cursor: String(offset + prefix.length),
+      }),
+    );
+    const more = fitted.budgetExhausted || bm25Truncated;
+    return {
+      hits: fitted.items,
+      llmHits,
+      truncated: baseTruncated,
+      // when maxTokens is opted in, always report budgetExhausted (true/false); cursor only when more.
+      budgetExhausted: fitted.budgetExhausted,
+      ...(more ? { cursor: String(offset + fitted.items.length) } : {}),
+    };
   }
 
   /**

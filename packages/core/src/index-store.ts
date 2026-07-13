@@ -36,6 +36,8 @@ export interface HybridQuery {
   /** restrict to these node kinds. */
   kinds?: NodeKind[];
   limit?: number;
+  /** skip the first `offset` ranked rows (FTS5 OFFSET) — the resume cursor for `query` paging (M1.2). */
+  offset?: number;
 }
 
 export interface Hit {

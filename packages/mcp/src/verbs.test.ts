@@ -5,6 +5,7 @@ import { SoulStore, SqliteIndexStore, newManifest } from '@knowledge-crib/core';
 import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge, Node, Rel } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { estimateTokens } from './token-budget.js';
 import { Verbs } from './verbs.js';
 
 // Minimal result shapes for the verb calls below so the tests can drop `as any`.
@@ -30,6 +31,7 @@ interface ContextResult {
   docs: Array<{ edgeType: string }>;
   source?: { text: string; truncated: boolean; totalLines: number };
   rules?: { rules: Array<{ action: { kind: string } }> };
+  budgetExhausted?: boolean;
   framework?: {
     routes?: Array<{
       httpMethod?: string;
@@ -64,6 +66,8 @@ interface QueryResult {
   }>;
   llmHits: Array<{ id: string; snippet: string }>;
   truncated: boolean;
+  budgetExhausted?: boolean;
+  cursor?: string;
 }
 interface NeighborsResult {
   edges: Array<{ src: string; dst: string }>;
@@ -111,6 +115,8 @@ interface DossiersByScopeResult {
   truncated: boolean;
   skipped: string[];
   markdown?: string;
+  budgetExhausted?: boolean;
+  cursor?: string;
 }
 interface RulesResult {
   rules: Array<{
@@ -2405,6 +2411,92 @@ describe('dossierByScope — bulk per-symbol dossiers (WS-4)', () => {
     const soEx = ex.symbols.find((d) => d.node.qualifiedName === 'PKG_RULES.SPEC_ONLY')!;
     expect(soEx.callees.map((c) => c.qualifiedName)).not.toContain('PKG_RULES.HELPER');
   });
+
+  // M1.2 — response-wide token budget on dossier_by_scope. The 3-member PKG_RULES fixture is the
+  // ground truth here. A budget is "realistic" when it sits above the scope-metadata skeleton (so the
+  // gate can hold) but below the full 3-dossier response (so the fit trims). We pick such a budget by
+  // measuring the full response first, then halving it.
+  it('M1.2: the non-maxTokens path is unchanged (no budgetExhausted / no cursor)', () => {
+    const res = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+    }) as unknown as DossiersByScopeResult;
+    expect(res.budgetExhausted).toBeUndefined();
+    expect(res.cursor).toBeUndefined();
+    expect(res.symbolCount).toBe(3);
+  });
+
+  it('M1.2: maxTokens trims the dossiers to fit + signals budgetExhausted + a cursor', () => {
+    const full = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+    }) as unknown as DossiersByScopeResult;
+    const fullTokens = estimateTokens(JSON.stringify(full));
+    // A budget just above ONE dossier + the scope skeleton (so ≥1 survives) but below the full
+    // 3-dossier response (so the fit trims). Measured from the real 1-dossier response + a margin
+    // for the budgetExhausted/cursor signal fields the non-maxTokens path omits.
+    const oneDossierTokens = estimateTokens(
+      JSON.stringify({ ...full, symbols: [full.symbols[0]] }),
+    );
+    const tight = oneDossierTokens + 16;
+    expect(tight).toBeLessThan(fullTokens);
+    const res = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+      maxTokens: tight,
+    }) as unknown as DossiersByScopeResult;
+    expect(estimateTokens(JSON.stringify(res))).toBeLessThanOrEqual(tight);
+    expect(res.budgetExhausted).toBe(true);
+    expect(typeof res.cursor).toBe('string');
+    expect(res.symbols.length).toBeLessThan(3);
+    expect(res.symbols.length).toBeGreaterThan(0);
+  });
+
+  it('M1.2: a generous maxTokens keeps all 3 dossiers + budgetExhausted:false + no cursor', () => {
+    const res = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+      maxTokens: 1_000_000,
+    }) as unknown as DossiersByScopeResult;
+    expect(res.budgetExhausted).toBe(false);
+    expect(res.cursor).toBeUndefined();
+    expect(res.symbols.length).toBe(3);
+  });
+
+  it('M1.2: cursor paging resumes past a budget cut (offset advances past page1 head)', () => {
+    const full = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+    }) as unknown as DossiersByScopeResult;
+    // Same budget basis as the trim test: just above ONE dossier + skeleton so page1 carries exactly
+    // one dossier (the head), and the cursor advances past it.
+    const oneDossierTokens = estimateTokens(
+      JSON.stringify({ ...full, symbols: [full.symbols[0]] }),
+    );
+    const tight = oneDossierTokens + 16;
+    const page1 = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+      maxTokens: tight,
+    }) as unknown as DossiersByScopeResult;
+    expect(estimateTokens(JSON.stringify(page1))).toBeLessThanOrEqual(tight);
+    expect(page1.budgetExhausted).toBe(true);
+    expect(typeof page1.cursor).toBe('string');
+    expect(page1.symbols.length).toBeGreaterThan(0);
+
+    // resume at the cursor — the offset advanced, so page2's leading symbol differs from page1's.
+    const page2 = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+      maxTokens: tight,
+      cursor: page1.cursor,
+    }) as unknown as DossiersByScopeResult;
+    expect(estimateTokens(JSON.stringify(page2))).toBeLessThanOrEqual(tight);
+    const p1Head = page1.symbols[0]?.node.id;
+    const p2Head = page2.symbols[0]?.node.id;
+    expect(p1Head).toBeDefined();
+    expect(p2Head).not.toBe(p1Head);
+  });
 });
 
 describe('M0.5 verb hard caps — absurd params are clamped, not honored', () => {
@@ -2449,5 +2541,106 @@ describe('M0.5 verb hard caps — absurd params are clamped, not honored', () =>
     }) as unknown as SourceResult;
     expect(res.source.text.length).toBeLessThanOrEqual(512 * 1024);
     expect(res.source.truncated).toBe(false); // the on-disk body is tiny, so nothing is dropped
+  });
+});
+
+// M1.2 — token-true budgets: every opt-in `maxTokens` response must fit the budget (chars/4), and
+// signal `budgetExhausted` + a `cursor` when content was dropped. The non-maxTokens path is
+// byte-identical to before (asserted once per verb) so the feature is strictly additive.
+describe('M1.2 token-true budgets — no verb response exceeds maxTokens', () => {
+  it('query: the non-maxTokens path is unchanged (no cursor / no budgetExhausted)', () => {
+    const res = verbs.query({ q: 'login' }) as unknown as QueryResult;
+    expect(res.budgetExhausted).toBeUndefined();
+    expect(res.cursor).toBeUndefined();
+    expect(res.truncated).toBe(false);
+    expect(res.hits.length).toBeGreaterThan(0);
+  });
+
+  it('query --with-source: a tight maxTokens trims hits to fit + signals exhaustion + cursor', () => {
+    // query that matches at least one symbol so the fit has something to trim.
+    const tiny = 20;
+    const res = verbs.query({
+      q: 'login',
+      withSource: true,
+      maxTokens: tiny,
+    }) as unknown as QueryResult;
+    expect(estimateTokens(JSON.stringify(res))).toBeLessThanOrEqual(tiny);
+    // either the body fit within the tiny budget (no exhaustion) or it was trimmed (exhausted).
+    if (res.budgetExhausted) {
+      expect(typeof res.cursor).toBe('string');
+    }
+  });
+
+  it('query --with-source: a generous maxTokens leaves the hits intact + no exhaustion', () => {
+    const res = verbs.query({
+      q: 'login',
+      withSource: true,
+      maxTokens: 1_000_000,
+    }) as unknown as QueryResult;
+    expect(res.budgetExhausted).toBe(false);
+    expect(res.cursor).toBeUndefined();
+    expect(res.hits.length).toBeGreaterThan(0);
+  });
+
+  it('context withSource: the non-maxTokens path is unchanged', () => {
+    const res = verbs.context({ id: login.id, withSource: true }) as unknown as ContextResult;
+    expect(res.budgetExhausted).toBeUndefined();
+    expect(res.source).toBeDefined();
+  });
+
+  it('context withSource: a tight maxTokens shrinks the body to fit + signals exhaustion', () => {
+    // Build a symbol with a LARGE body so the budget shrink is real (the login body is only ~40
+    // chars — too small to trim meaningfully). A 60-line body (~3 KiB) gives the fit something to cut.
+    const bigPath = 'src/big.ts';
+    const lines = Array.from(
+      { length: 60 },
+      (_, i) => `  const v${i} = ${i}; // padding line ${i}`,
+    );
+    writeFileSync(join(repo, bigPath), `function bigBody() {\n${lines.join('\n')}\n}\n`);
+    const big = sym(bigPath, 'bigBody', 1, {
+      type: 'function',
+      // sym()'s default span is 1 line; the real body is 62 lines (the wrapper + 60 padding lines),
+      // so pass the full span — otherwise rehydration yields 2 lines and the budget has no body to cut.
+      span: { start: 1, end: 62 },
+    });
+    soul.putNodes([big]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+    index.close();
+    index = new SqliteIndexStore();
+    index.buildFromSoul(soul, repo);
+    verbs = new Verbs({ soul, index, repoRoot: repo });
+
+    const full = verbs.context({ id: big.id, withSource: true }) as unknown as ContextResult;
+    const noSrc = verbs.context({ id: big.id }) as unknown as ContextResult;
+    const skeletonTokens = estimateTokens(JSON.stringify(noSrc));
+    const fullTokens = estimateTokens(JSON.stringify(full));
+    expect(fullTokens).toBeGreaterThan(skeletonTokens); // the body adds real mass
+    // a budget above the skeleton + the source-object's irreducible JSON wrapper but well below the
+    // full response → the body shrinks to fit. The wrapper (totalLines/startLine/nextLine/truncated)
+    // is ~30 tokens the no-source skeleton does not count, so a body slice (1/4 of the body mass) is
+    // the smallest budget that still leaves room for a (truncated) body.
+    const bodyMass = fullTokens - skeletonTokens;
+    const tight = skeletonTokens + Math.ceil(bodyMass / 4);
+    expect(tight).toBeLessThan(fullTokens);
+    const res = verbs.context({
+      id: big.id,
+      withSource: true,
+      maxTokens: tight,
+    }) as unknown as ContextResult;
+    expect(estimateTokens(JSON.stringify(res))).toBeLessThanOrEqual(tight);
+    expect(res.budgetExhausted).toBe(true);
+    expect(res.source).toBeDefined();
+    expect(res.source!.truncated).toBe(true);
+  });
+
+  it('context withSource: a generous maxTokens keeps the full body + no exhaustion', () => {
+    const res = verbs.context({
+      id: login.id,
+      withSource: true,
+      maxTokens: 1_000_000,
+    }) as unknown as ContextResult;
+    expect(res.budgetExhausted).toBe(false);
+    expect(res.source).toBeDefined();
+    expect(res.source!.truncated).toBe(false);
   });
 });

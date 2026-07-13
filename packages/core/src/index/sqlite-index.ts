@@ -99,6 +99,7 @@ export class SqliteIndexStore implements IndexStore {
     const kindFilter = q.kinds?.length
       ? ` AND n.kind IN (${q.kinds.map(() => '?').join(',')})`
       : '';
+    const offset = q.offset ?? 0;
     const rows = this.db
       .prepare(
         `SELECT n.id AS id, n.kind AS kind, n.name AS name, n.file AS file, bm25(nodes_fts) AS score
@@ -106,9 +107,9 @@ export class SqliteIndexStore implements IndexStore {
          JOIN nodes n ON n.id = nodes_fts.id
          WHERE nodes_fts MATCH ?${kindFilter}
          ORDER BY score ASC
-         LIMIT ?`,
+         LIMIT ? OFFSET ?`,
       )
-      .all(match, ...(q.kinds ?? []), limit) as Array<{
+      .all(match, ...(q.kinds ?? []), limit, offset) as Array<{
       id: string;
       kind: NodeKind;
       name: string | null;
