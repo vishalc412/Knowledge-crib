@@ -188,7 +188,9 @@ export async function updateRepo(
   }
   const changedMetas = metaForPaths(root, changedPaths);
   runStructure(soul, root, changedMetas);
-  const parse = await runParse(soul, registry, root, changedMetas);
+  // Incremental: the changed set is small (often 1-3 files). Worker-boot cost would dominate, and
+  // the pool is torn down per call, so force the serial path here — parallel is for full-index only.
+  const parse = await runParse(soul, registry, root, changedMetas, { parallel: false });
 
   // Re-resolve the whole closure (changed + reverse deps): re-emits incoming B→A edges. The resolver
   // only processes files in the passed set; the SymbolTable spans the whole soul (B's symbols remain).

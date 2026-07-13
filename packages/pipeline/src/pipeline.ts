@@ -5,19 +5,10 @@
  * Later phases (cluster, semantic link) slot in before/after commit as they land.
  */
 import type { IndexStore, SoulStore } from '@knowledge-crib/core';
-import {
-  CsharpExtractor,
-  ExtractorRegistry,
-  GoExtractor,
-  JavaExtractor,
-  MarkdownExtractor,
-  PhpExtractor,
-  PlSqlExtractor,
-  PythonExtractor,
-  RustExtractor,
-  TypeScriptExtractor,
-} from '@knowledge-crib/parsers';
+import { ExtractorRegistry } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
+import { defaultExtractors } from './extractors.js';
+export { defaultExtractors } from './extractors.js';
 import { runCluster } from './cluster/index.js';
 import type { ClusterStats } from './cluster/index.js';
 import { runDossiers } from './dossiers.js';
@@ -78,6 +69,12 @@ export interface IndexOpts {
    *  inside a git work tree (a clean no-op in a non-git repo, so the deterministic path is unchanged).
    *  Set false to skip blame (benches / `--extracted-only` reproducibility checks that want no git). */
   ownership?: boolean;
+  /** M3.4 parallel parse: run Phase 2 extraction across a worker-thread pool. Default ON when the
+   *  built worker script is present, ≥2 files are discovered, and `KCRIB_PARALLEL != '0'`. The pool
+   *  ships the DEFAULT fleet only; a non-default `extractors` opt forces the serial loop regardless.
+   *  Output is byte-identical to serial (results persist in discovery order). Set false to force
+   *  serial (determinism cross-check, single-file index, environments without worker_threads). */
+  parallel?: boolean;
 }
 
 export interface IndexReport {
@@ -91,28 +88,6 @@ export interface IndexReport {
   cluster: ClusterStats;
   semantic: SemanticStats;
   ownership: OwnershipStats;
-}
-
-/** The default extractor fleet shipped with a fresh index — Markdown first so doc files never fall
- *  through to a code extractor, then every language extractor (TypeScript + PL/SQL + Python + Java +
- *  C# + Go + Rust + PHP). The SINGLE source of truth shared by `indexRepo` (full) and `updateRepo`
- *  (incremental): a `crib update` on an edited `.java`/`.cs`/`.go`/`.rs`/`.py`/`.sql`/`.php` file
- *  re-extracts that language's symbols + framework semantics (routes/DI/JPA) instead of silently
- *  dropping them. `Supports()` are disjoint by extension, so the order is only load-bearing for
- *  `.md`. PHP (`.php`) is the only tree-sitter-backed extractor; `runParse` preloads its grammar
- *  lazily — see `grammarsNeededFor` — so repos with no `.php` files never pay the WASM boot cost. */
-export function defaultExtractors(): Extractor[] {
-  return [
-    new MarkdownExtractor(),
-    new TypeScriptExtractor(),
-    new PlSqlExtractor(),
-    new PythonExtractor(),
-    new JavaExtractor(),
-    new CsharpExtractor(),
-    new GoExtractor(),
-    new RustExtractor(),
-    new PhpExtractor(),
-  ];
 }
 
 /** Full index of a repo through the deterministic linker, then (optional) index build. */
@@ -132,7 +107,12 @@ export async function indexRepo(
     discoverOpts.packageRoots = opts.packageRoots;
   const files = discoverFiles(root, discoverOpts);
   runStructure(soul, root, files); // Phase 1
-  const parse = await runParse(soul, registry, root, files); // Phase 2 + 3b (Markdown extractor)
+  // defaultRegistry = the fleet came from defaultExtractors() (no custom opts.extractors) → the
+  // parallel pool can ship it. Custom extractors force the serial path (workers can't receive them).
+  const parse = await runParse(soul, registry, root, files, {
+    parallel: opts.parallel,
+    defaultRegistry: !opts.extractors,
+  }); // Phase 2 + 3b (Markdown extractor)
   const resolve = runResolve(soul, root, files, opts.resolvers); // Phase 3 (TS + PL/SQL + Python)
   const cfg = runCfg(soul, root, files, opts.cfgPasses); // Phase 3d (M11 guard-chain annotation)
   // Phase 3e (M13, OFF by default): ingest media segments via the offline worker + link them to

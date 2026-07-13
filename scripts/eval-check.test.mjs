@@ -59,6 +59,11 @@ assert.match(
   /stats:check/,
   'release gate must run the M3.3 server-observability gate (stats-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /parallel:check/,
+  'release gate must run the M3.4 parallel-parse gate (parallel-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -109,6 +114,11 @@ assert.match(
   pkg,
   /"stats:check":\s*"node scripts\/stats-check\.mjs"/,
   'package.json must define stats:check',
+);
+assert.match(
+  pkg,
+  /"parallel:check":\s*"node scripts\/parallel-check\.mjs"/,
+  'package.json must define parallel:check',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');
