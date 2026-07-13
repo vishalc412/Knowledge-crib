@@ -167,6 +167,7 @@ interface EnrichNextResult {
     targetId: string;
     seed: { node?: { id: string }; sourceBody?: { text: string } };
     outputSchema: Record<string, unknown>;
+    suggestedTier?: 'fast' | 'balanced' | 'powerful';
   }>;
   remaining: number;
 }
@@ -614,13 +615,19 @@ describe('verbs', () => {
       costEstimate: {
         currency: string;
         batch: number;
-        perItem: Array<{ targetId: string; tokens: number }>;
+        perItem: Array<{
+          targetId: string;
+          tokens: number;
+          tier: 'fast' | 'balanced' | 'powerful';
+        }>;
         totalPending: number;
       };
     };
     expect(batch.progress.pending).toBeGreaterThan(0);
     expect(batch.costEstimate.batch).toBeGreaterThan(0);
     expect(batch.costEstimate.perItem).toHaveLength(1);
+    // M2.7 — every perItem carries the tier the host dispatcher routes on.
+    expect(batch.costEstimate.perItem[0]!.tier).toBe('fast');
 
     const blocked = verbs.enrichNext({
       layer: 'symbol',
@@ -633,6 +640,27 @@ describe('verbs', () => {
     expect(blocked.budgetExceeded).toBe(true);
     expect(blocked.budget).toBe(1);
     expect(blocked.items).toHaveLength(0);
+  });
+
+  it('M2.7 — enrich_next items carry a suggestedTier mapped by layer (symbol=fast)', () => {
+    const batch = verbs.enrichNext({ layer: 'symbol', limit: 1 }) as unknown as EnrichNextResult;
+    expect(batch.items[0]!.suggestedTier).toBe('fast');
+    // the costEstimate perItem mirrors the tier so a host dispatcher can route from either surface
+    const withCost = batch as unknown as {
+      costEstimate?: { perItem: Array<{ tier: 'fast' | 'balanced' | 'powerful' }> };
+    };
+    expect(withCost.costEstimate?.perItem[0]!.tier).toBe('fast');
+  });
+
+  it('M2.7 — skeleton system pass carries suggestedTier balanced (lightweight draft, not powerful)', () => {
+    const skel = verbs.enrichNext({
+      layer: 'system',
+      skeleton: true,
+    }) as unknown as EnrichNextResult;
+    // skeleton is whole-repo only; if the soul has a system target it yields one balanced item.
+    if (skel.items.length > 0) {
+      expect(skel.items[0]!.suggestedTier).toBe('balanced');
+    }
   });
 
   it('context, dossier, query, overview, and llm_neighbors surface saved LLM graph context', () => {

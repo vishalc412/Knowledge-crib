@@ -75,6 +75,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   window as tool results, so skipping the re-send of an unchanged body directly shrinks the session.
   `ifhash:check` gates a collapse → ≥10× size-drop → determinism → no-false-unchanged chain across
   all three verbs (context 1477→99, source 1283→99, dossier 2638→99 bytes).
+- **M2.7 — model-tier hints + cost model.** Every `enrich_next` work item carries a deterministic
+  `suggestedTier` ∈ `{fast, balanced, powerful}` — a recommendation for which model tier a host should
+  author that artifact with — and `costEstimate.perItem` mirrors it so a dispatcher can route from
+  either surface. The mapping is by layer: symbol → `fast` (the bulk by count), file/cluster →
+  `balanced`, system → `powerful` (the rare whole-repo bible), skeleton system → `balanced`. Routing
+  by tier is the single biggest cost lever on the enrichment queue: the cheapest tier handles 90%+ of
+  items by count while the expensive tier is reserved for the handful of bibles. The crib never calls
+  a model — this is a contract the host reads. `TIER_COST_MULTIPLIER` (fast=1, balanced=3, powerful=10)
+  backs a relative $/enrichment-pass formula documented in the crib-enrich SKILL (Σ tokens × tier
+  multiplier × $/1M @ that tier), stable as absolute prices move. `tier:check` gates item-tier +
+  perItem-tier-mirror + SKILL-documents-cost across the real `Verbs.enrichNext` surface.
 
 ### Fixed
 

@@ -39,6 +39,11 @@ assert.match(
   /ifhash:check/,
   'release gate must run the M2.6 ifHash change-aware cache gate (ifhash-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /tier:check/,
+  'release gate must run the M2.7 model-tier-hints gate (tier-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -69,6 +74,11 @@ assert.match(
   pkg,
   /"ifhash:check":\s*"node scripts\/ifhash-check\.mjs"/,
   'package.json must define ifhash:check',
+);
+assert.match(
+  pkg,
+  /"tier:check":\s*"node scripts\/tier-check\.mjs"/,
+  'package.json must define tier:check',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');
@@ -138,6 +148,29 @@ assert.match(
   ifhashCheck,
   /0\.1|10%/,
   'ifhash-check.mjs must enforce a measurable size-drop floor (the token-cost gate)',
+);
+const tierCheck = readFileSync('scripts/tier-check.mjs', 'utf8');
+assert.match(
+  tierCheck,
+  /suggestedTier/,
+  'tier-check.mjs must assert enrich_next items carry suggestedTier',
+);
+assert.match(
+  tierCheck,
+  /enrichNext/,
+  'tier-check.mjs must drive the real Verbs.enrichNext surface over a built soul',
+);
+assert.match(tierCheck, /'fast'|fast/, 'tier-check.mjs must pin the symbol→fast mapping');
+assert.match(
+  tierCheck,
+  /'balanced'/,
+  'tier-check.mjs must pin the skeleton-system→balanced mapping',
+);
+assert.match(tierCheck, /perItem/, 'tier-check.mjs must assert costEstimate.perItem carries tier');
+assert.match(
+  tierCheck,
+  /SKILL\.md|skills\/crib-enrich/,
+  'tier-check.mjs must assert the crib-enrich SKILL documents the cost model',
 );
 const semanticCheck = readFileSync('scripts/semantic-check.mjs', 'utf8');
 assert.match(semanticCheck, /MIN_RECOVERY/, 'semantic-check.mjs must enforce a recovery floor');

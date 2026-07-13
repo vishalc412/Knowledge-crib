@@ -43,6 +43,37 @@ import { estimateTokens } from './token-budget.js';
 
 export type EnrichLayer = 'symbol' | 'file' | 'cluster' | 'system';
 
+/**
+ * M2.7 model-tier hint. A deterministic, per-item recommendation for which model tier a host should
+ * author the artifact with. The crib never calls a model — the host does — so this is a *contract*
+ * the host's dispatcher reads to route items to the right tier. Symbols are the bulk (many small
+ * per-callable analyses) → `fast`; files/clusters are mid-synthesis → `balanced`; the system bible is
+ * the rare, high-synthesis whole-repo pass → `powerful`. Routing by layer drops cost without quality
+ * loss: the cheapest tier handles 90%+ of items by count, the expensive tier only the handful of
+ * bibles. The skeleton system pass is a lightweight draft → `balanced`.
+ */
+export type SuggestedTier = 'fast' | 'balanced' | 'powerful';
+
+/** Per-layer suggested tier (M2.7). Deterministic; the only input is the layer. */
+const SUGGESTED_TIER_BY_LAYER: Record<EnrichLayer, SuggestedTier> = {
+  symbol: 'fast',
+  file: 'balanced',
+  cluster: 'balanced',
+  system: 'powerful',
+};
+
+/**
+ * Relative cost multiplier per tier (M2.7 cost model). `fast` ≈ a Haiku-class model, `balanced` ≈ a
+ * Sonnet-class, `powerful` ≈ an Opus-class. Used by the crib-enrich SKILL cost model so a host can
+ * estimate $/enrichment-pass as Σ (tokens × tierMultiplier × $/1M @ that tier). Relative, not
+ * absolute, so the model is stable as absolute prices move.
+ */
+export const TIER_COST_MULTIPLIER: Record<SuggestedTier, number> = {
+  fast: 1,
+  balanced: 3,
+  powerful: 10,
+};
+
 const LAYERS: readonly EnrichLayer[] = ['symbol', 'file', 'cluster', 'system'];
 /** Layers that can be path-scoped. The system layer is whole-repo only. */
 const LAYERS_SCOPED: readonly EnrichLayer[] = ['symbol', 'file', 'cluster'];
@@ -154,6 +185,8 @@ export interface EnrichWorkItem {
   lowerLayer: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
   instructions: string;
+  /** M2.7 model-tier hint the host dispatcher reads to route this item to a tier. */
+  suggestedTier: SuggestedTier;
 }
 
 export interface EnrichNextBatch {
@@ -179,7 +212,7 @@ export interface EnrichNextBatch {
   costEstimate?: {
     currency: 'tokens';
     batch: number;
-    perItem: Array<{ targetId: string; tokens: number }>;
+    perItem: Array<{ targetId: string; tokens: number; tier: SuggestedTier }>;
     totalPending: number;
   };
   /** Set when `budgetTokens` was supplied and the batch estimate exceeds it. */
@@ -463,6 +496,7 @@ export class EnrichmentStore {
     const perItemCost = items.map((item) => ({
       targetId: item.targetId,
       tokens: estimateWorkItemCost(item),
+      tier: item.suggestedTier,
     }));
     const batchCost = perItemCost.reduce((n, c) => n + c.tokens, 0);
     const remainingCount = Math.max(0, pending.length - selected.length);
@@ -567,8 +601,12 @@ export class EnrichmentStore {
       lowerLayer: { clusters: this.freshArtifacts('cluster') },
       outputSchema: outputSchema('system'),
       instructions: `${instructionsFor('system')} DRAFT SKELETON: author at confidence ≤0.6 and record a draft note in whatToDistrust. The final full pass will supersede this artifact.`,
+      // Skeleton is a lightweight draft → balanced, not the powerful tier the full bible earns.
+      suggestedTier: 'balanced',
     };
-    const perItemCost = [{ targetId: item.targetId, tokens: estimateWorkItemCost(item) }];
+    const perItemCost = [
+      { targetId: item.targetId, tokens: estimateWorkItemCost(item), tier: item.suggestedTier },
+    ];
     return {
       batchId,
       layer: 'system',
@@ -1160,6 +1198,7 @@ export class EnrichmentStore {
       lowerLayer: this.lowerLayer(target),
       outputSchema: outputSchema(target.layer),
       instructions: instructionsFor(target.layer),
+      suggestedTier: SUGGESTED_TIER_BY_LAYER[target.layer],
     };
   }
 

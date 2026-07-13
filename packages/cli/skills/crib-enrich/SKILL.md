@@ -123,7 +123,7 @@ STOP — return to the user. Re-run /crib-enrich to continue.
 
 ## The author contract — what you write per item
 
-For each `item` from `enrich_next`, read `item.seed` (grounding), `item.lowerLayer` (saved child analyses for file/cluster/system), `item.outputSchema` (the JSON Schema your output MUST satisfy), and `item.instructions`. Then author ONE object:
+For each `item` from `enrich_next`, read `item.seed` (grounding), `item.lowerLayer` (saved child analyses for file/cluster/system), `item.outputSchema` (the JSON Schema your output MUST satisfy), and `item.instructions`. **Honor `item.suggestedTier`** — route the item to the model tier it names (`fast`/`balanced`/`powerful`); a multi-tier host fans a batch's items across tiers by this field (see the cost model below for the mapping and why it is the biggest cost lever). Then author ONE object:
 
 ```json
 {
@@ -179,6 +179,36 @@ Every `graph.edge` endpoint must resolve to **(a)** a real soul node id present 
 - **file** — `lowerLayer.symbols` = the saved symbol analyses for symbols in this file. Synthesize the file's purpose and `part-of-feature` / `capability` edges. Do NOT re-derive what each symbol does — compose from the child analyses.
 - **cluster** — `seed.members` + `lowerLayer.files`. Name the module, describe its responsibility, emit `capability` nodes + `depends-on-concept` edges to other clusters' concepts. A cluster in-scope via one prefix may have member files OUTSIDE the prefix — note in `whatToDistrust` which member files lack a fresh analysis.
 - **system** — `lowerLayer.clusters` + `seed.entryPoints`. Produce the **bible**: architecture, subsystems, **cross-cutting flows** (a `flow` node like `flow:loan-approval` chaining symbols across files via `triggers`/`transforms` edges), **domain glossary** (`entity` nodes: DTI, LTV, AML, KYC…), tech stack, and a risk map. This is the headline artifact; spend the most reasoning here. **The system layer is whole-repo only — it is never offered under a scope.** When authoring the domain glossary, also emit the alias dictionary (below) so acronym queries resolve.
+
+## Model-tier hints + cost model (M2.7)
+
+Every `enrich_next` item carries `suggestedTier` ∈ `{fast, balanced, powerful}` — a deterministic
+recommendation for which model tier to author that item with. `costEstimate.perItem` mirrors it so a
+host dispatcher can route from either surface. **Honor the tier:** routing each item to its suggested
+tier is the single biggest cost lever on the enrichment queue (symbols are the bulk; the bible is
+rare). A multi-tier host (Claude Code, Codex, Copilot CLI) should fan a batch's items across tiers by
+this field; a single-tier host uses it only to anticipate per-item effort.
+
+| layer | suggestedTier | why | rel. cost × |
+|-------|---------------|-----|-------------|
+| symbol | `fast` | many small per-callable analyses; the bulk by count | 1× |
+| file | `balanced` | mid-synthesis: compose the child symbol analyses | 3× |
+| cluster | `balanced` | mid-synthesis: name a module, cross-cluster concepts | 3× |
+| system | `powerful` | the bible — the rare, high-synthesis whole-repo pass | 10× |
+| system (skeleton) | `balanced` | a lightweight Phase-0.5 draft, not the full bible | 3× |
+
+**Cost model (relative, not absolute — stable as prices move).** Per enrichment pass:
+
+```
+$pass ≈ Σ_items ( tokens_item × tierMultiplier_item × $/1M @ that tier )
+       = Σ_items ( tokens_item × {fast:1, balanced:3, powerful:10}[item.suggestedTier] × $/1M @ tier )
+```
+
+`tokens_item` is the per-item estimate from `costEstimate.perItem[i].tokens`. Because `fast` handles
+the bulk by count, a full pass costs roughly `fast_count × 2500 × 1× + file_count × 5000 × 3× +
+cluster_count × 8000 × 3× + 1 × 12000 × 10×` — i.e. the per-symbol line dominates by count, the
+system line dominates by per-item cost, and the total stays a small multiple of the symbol-tier cost.
+The crib never calls a model; this is the estimate a host uses to budget a pass before it starts.
 
 ## Alias dictionary (`.crib/llm/aliases.json`)
 
