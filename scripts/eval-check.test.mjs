@@ -24,6 +24,11 @@ assert.match(
   /linker:check/,
   'release gate must run the M2.3 embedding-linker recall-up gate (linker-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /alias:check/,
+  'release gate must run the M2.4 alias-dictionary gate (alias-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -39,6 +44,11 @@ assert.match(
   pkg,
   /"linker:check":\s*"node scripts\/linker-check\.mjs"/,
   'package.json must define linker:check',
+);
+assert.match(
+  pkg,
+  /"alias:check":\s*"node scripts\/alias-check\.mjs"/,
+  'package.json must define alias:check',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');
@@ -60,6 +70,18 @@ assert.match(
   'linker-check.mjs must run both embedding and tfidf modes',
 );
 assert.match(linkerCheck, /deterministic/i, 'linker-check.mjs must assert determinism across runs');
+const aliasCheck = readFileSync('scripts/alias-check.mjs', 'utf8');
+assert.match(
+  aliasCheck,
+  /writeAliases/,
+  'alias-check.mjs must author the alias dictionary via writeAliases',
+);
+assert.match(
+  aliasCheck,
+  /DebtToIncomeCalculator/,
+  'alias-check.mjs must target the camelCase class the alias case is built around',
+);
+assert.match(aliasCheck, /deterministic/i, 'alias-check.mjs must assert determinism across runs');
 const semanticCheck = readFileSync('scripts/semantic-check.mjs', 'utf8');
 assert.match(semanticCheck, /MIN_RECOVERY/, 'semantic-check.mjs must enforce a recovery floor');
 assert.match(

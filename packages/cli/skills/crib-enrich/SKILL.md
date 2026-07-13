@@ -178,7 +178,42 @@ Every `graph.edge` endpoint must resolve to **(a)** a real soul node id present 
 - **symbol** — `seed` = full dossier (`node`, `sourceBody`, `callers`, `callees`, `decisionTable`, `controlFlow`, `coverage`). Author purpose, business rules, invariants, IO, side effects, errors, risks. Emit `business-rule`/`invariant`/`concept` nodes + `realizes`/`validates`/`enforces` edges to the symbol's own soul id and its callees.
 - **file** — `lowerLayer.symbols` = the saved symbol analyses for symbols in this file. Synthesize the file's purpose and `part-of-feature` / `capability` edges. Do NOT re-derive what each symbol does — compose from the child analyses.
 - **cluster** — `seed.members` + `lowerLayer.files`. Name the module, describe its responsibility, emit `capability` nodes + `depends-on-concept` edges to other clusters' concepts. A cluster in-scope via one prefix may have member files OUTSIDE the prefix — note in `whatToDistrust` which member files lack a fresh analysis.
-- **system** — `lowerLayer.clusters` + `seed.entryPoints`. Produce the **bible**: architecture, subsystems, **cross-cutting flows** (a `flow` node like `flow:loan-approval` chaining symbols across files via `triggers`/`transforms` edges), **domain glossary** (`entity` nodes: DTI, LTV, AML, KYC…), tech stack, and a risk map. This is the headline artifact; spend the most reasoning here. **The system layer is whole-repo only — it is never offered under a scope.**
+- **system** — `lowerLayer.clusters` + `seed.entryPoints`. Produce the **bible**: architecture, subsystems, **cross-cutting flows** (a `flow` node like `flow:loan-approval` chaining symbols across files via `triggers`/`transforms` edges), **domain glossary** (`entity` nodes: DTI, LTV, AML, KYC…), tech stack, and a risk map. This is the headline artifact; spend the most reasoning here. **The system layer is whole-repo only — it is never offered under a scope.** When authoring the domain glossary, also emit the alias dictionary (below) so acronym queries resolve.
+
+## Alias dictionary (`.crib/llm/aliases.json`)
+
+Acronyms and domain shorthand ("DTI", "LTV", "AML") rarely share a token with the symbol that
+implements them: `DebtToIncomeCalculator` tokenizes (FTS5 `unicode61`, no camelCase split) to a
+single token `debttoincomecalculator`, so a user query "DTI" (prefix `dti*`) misses it entirely.
+The alias dictionary maps each shorthand to a phrase that DOES share a token-prefix with the
+canonical symbol surface; a deterministic rewrite pass appends the expansion to the query before
+it reaches the index (`query` and `ask` verbs only — the index itself stays alias-agnostic).
+
+**File** (committed, per-repo, agent-authorable, same layer as the rest of the LLM graph):
+
+```json
+{
+  "version": 1,
+  "aliases": [
+    { "alias": "DTI", "expand": "debt to income" },
+    { "alias": "LTV", "expand": "loan to value" }
+  ]
+}
+```
+
+**Author it from the system-layer glossary.** When you emit `entity` nodes for DTI/LTV/AML/KYC,
+write the matching `aliases.json` via `writeAliases(cribDir, entries)` (exported from
+`@knowledge-crib/core`) — or just write the JSON by hand. Rules:
+
+- The `alias` is matched as a **case-sensitive whole word** (word boundaries on both sides), so
+  "DTI" fires but a lowercase "dti" inside another token does not. Carry the canonical casing the
+  user types.
+- The `expand` phrase should contain a token-prefix that hits the implementing symbol's surface
+  ("debt" hits `debttoincomecalculator`). Multi-word expansions are fine.
+- First write wins on a duplicated alias. An absent or malformed file is treated as an empty
+  dictionary — every query path is byte-identical when no aliases are configured (zero regression
+  for repos without a dictionary). Determinism is preserved: the rewrite is a pure function, and
+  the file lives in the committed `.crib/llm/` layer, never the derived index.
 
 ## Honesty
 

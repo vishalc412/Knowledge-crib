@@ -1,5 +1,6 @@
 import { pathFromId } from '@knowledge-crib/core';
 import { LockBusyError, withCribLock } from '@knowledge-crib/core';
+import { type AliasMap, loadAliases, rewriteQuery } from '@knowledge-crib/core';
 import type { Dir, Dossier, IndexStore, SoulStore } from '@knowledge-crib/core';
 import {
   CALLABLE_SYMBOL_TYPES,
@@ -186,9 +187,12 @@ function sumGapCategories(parts: GapCategoryCounts[]): GapCategoryCounts {
 
 export class Verbs {
   private readonly llm: EnrichmentStore;
+  /** M2.4 — per-repo alias dictionary loaded once at construction; empty when no file is committed. */
+  private readonly aliases: AliasMap;
 
   constructor(private readonly deps: VerbDeps) {
     this.llm = new EnrichmentStore(deps.soul, deps.repoRoot);
+    this.aliases = loadAliases(deps.soul.cribDir);
   }
 
   status(opts?: { dirty?: boolean }): Record<string, unknown> {
@@ -718,10 +722,13 @@ export class Verbs {
     const limit = capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT);
     // cursor → offset into the BM25-ranked set (FTS5 OFFSET). Floor at 0; non-numeric → 0.
     const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);
+    // M2.4 — rewrite the query with the per-repo alias dictionary before it reaches the index.
+    // Empty dict (the common case) is a pure no-op, so queries without aliases are byte-identical.
+    const q = rewriteQuery(args.q, this.aliases);
     // Over-fetch by one to detect whether the BM25 result set was capped (honest `truncated` flag)
     // without an extra count query; we slice back to `limit` after the overflow check.
     const rawHits = this.deps.index.query({
-      text: args.q,
+      text: q,
       ...(args.kinds ? { kinds: args.kinds } : {}),
       limit: limit + 1,
       offset,
@@ -892,8 +899,10 @@ export class Verbs {
     }
 
     // 3. Discovery question: search the index and gather deep context per hit.
+    // M2.4 — rewrite the discovery query with the alias dict (no-op when empty); `q` (original) is
+    // still used above for node-id resolution + overview detection and echoed as the question.
     const hits = this.deps.index.query({
-      text: q,
+      text: rewriteQuery(q, this.aliases),
       limit: capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT),
     });
     const needEdges = args.withRules || args.withFramework;

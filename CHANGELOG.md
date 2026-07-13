@@ -51,6 +51,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   Same [0.4, 0.6] confidence cap, same INFERRED `references` contract, deterministic-only subset
   untouched. `linker:check` gates a strict inflection catch TF-IDF misses + recall-up + precision
   held + 2-run determinism on the docs-semantic fixture.
+- **M2.4 — alias dictionary + query rewrite.** A committed, per-repo, agent-authorable alias
+  dictionary at `.crib/llm/aliases.json` maps domain shorthand ("DTI" → "debt to income") to a
+  phrase that shares a token-prefix with the implementing symbol's surface, and a deterministic
+  rewrite pass appends the expansion to `query` / `ask` before the text reaches the index. This
+  resolves the camelCase acronym case (`DebtToIncomeCalculator` tokenizes to one FTS token
+  `debttoincomecalculator`; "DTI" prefix-matches nothing, "debt to income" does). The index stays
+  alias-agnostic; an absent/empty dictionary is a pure no-op so queries without aliases are
+  byte-identical (zero regression). `alias:check` gates a strict miss → resolve → no-op →
+  determinism chain through the real `Verbs.query` surface.
 
 ### Fixed
 
