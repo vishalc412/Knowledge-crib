@@ -54,6 +54,11 @@ assert.match(
   /federation:check/,
   'release gate must run the M3.2 cross-repo federation gate (federation-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /stats:check/,
+  'release gate must run the M3.3 server-observability gate (stats-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -99,6 +104,11 @@ assert.match(
   pkg,
   /"federation:check":\s*"node scripts\/federation-check\.mjs"/,
   'package.json must define federation:check',
+);
+assert.match(
+  pkg,
+  /"stats:check":\s*"node scripts\/stats-check\.mjs"/,
+  'package.json must define stats:check',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');
@@ -251,6 +261,32 @@ assert.match(
   federationCheck,
   /soul\.getNode\(e\.src\)|soul\.getNode\(e\.dst\)/,
   'federation-check.mjs must verify no committed cross-repo edge by resolving every edge endpoint in-soul',
+);
+const statsCheck = readFileSync('scripts/stats-check.mjs', 'utf8');
+assert.match(
+  statsCheck,
+  /await indexRepo\(/,
+  'stats-check.mjs must AWAIT the real indexRepo pipeline (drive the real Verbs surface, not a stub)',
+);
+assert.match(
+  statsCheck,
+  /verbs\.getStats\(\)\.snapshot\(\)/,
+  'stats-check.mjs must read the live snapshot via verbs.getStats().snapshot()',
+);
+assert.match(
+  statsCheck,
+  /verbs\.context\(/,
+  'stats-check.mjs must drive a real verb (context) to populate per-verb counts',
+);
+assert.match(
+  statsCheck,
+  /ifHash/,
+  'stats-check.mjs must exercise the ifHash cache hit/miss path for the cache hit rate',
+);
+assert.match(
+  statsCheck,
+  /applyIfHash/,
+  'stats-check.mjs must assert the private applyIfHash helper is NOT counted as a verb',
 );
 const semanticCheck = readFileSync('scripts/semantic-check.mjs', 'utf8');
 assert.match(semanticCheck, /MIN_RECOVERY/, 'semantic-check.mjs must enforce a recovery floor');

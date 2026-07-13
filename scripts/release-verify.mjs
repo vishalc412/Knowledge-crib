@@ -30,6 +30,7 @@ pnpm(['ifhash:check']);
 pnpm(['tier:check']);
 pnpm(['ownership:check']);
 pnpm(['federation:check']);
+pnpm(['stats:check']);
 pnpm(['publish:dry-run']);
 pnpm(['installer:test']);
 pnpm(['installer:build']);

@@ -2921,3 +2921,70 @@ describe('M3.2 — federatedImpact verb crosses the route-layer bridge', () => {
     rmSync(badRoot, { recursive: true, force: true });
   });
 });
+
+describe('M3.3 stats — Proxy interceptor wires live counters to real verb calls', () => {
+  it('getStats() returns a Stats instance with the live-numbers snapshot shape', () => {
+    const snap = verbs.getStats().snapshot();
+    expect(typeof snap.totalCalls).toBe('number');
+    expect(snap.cache).toBeDefined();
+    expect(snap.verbs).toBeDefined();
+  });
+
+  it('counts per-verb calls across direct + (simulated) MCP entry paths (the Proxy wraps both)', () => {
+    verbs.context({ id: login.id });
+    verbs.context({ id: login.id });
+    verbs.impact({ id: login.id, dir: 'down' });
+    const snap = verbs.getStats().snapshot();
+    expect(snap.verbs.context!.count).toBe(2);
+    expect(snap.verbs.impact!.count).toBe(1);
+    expect(snap.totalCalls).toBe(3);
+    // latency recorded as a non-negative real — determinism lives in verb OUTPUTS, not these counters.
+    expect(snap.verbs.context!.totalMs).toBeGreaterThanOrEqual(0);
+    expect(snap.verbs.context!.minMs).toBeLessThanOrEqual(snap.verbs.context!.maxMs);
+  });
+
+  it('does NOT double-count private helpers (applyIfHash is absent from the verbs map)', () => {
+    verbs.context({ id: login.id }); // calls this.applyIfHash internally
+    const snap = verbs.getStats().snapshot();
+    expect(snap.verbs.applyIfHash).toBeUndefined();
+    expect(snap.verbs.attachLlm).toBeUndefined();
+    expect(snap.verbs.context!.count).toBe(1);
+  });
+
+  it('ifHash cache hit rate: a matching hash is a hit, a mismatch is a miss', () => {
+    const first = verbs.context({ id: login.id }) as unknown as {
+      hash: string;
+      unchanged?: boolean;
+    };
+    expect(first.unchanged).toBeUndefined(); // first fetch is NOT a cache probe
+    // echo the prior hash → cache HIT (body collapses to {unchanged:true, hash})
+    const hit = verbs.context({ id: login.id, ifHash: first.hash }) as unknown as {
+      unchanged: boolean;
+      hash: string;
+    };
+    expect(hit.unchanged).toBe(true);
+    // a wrong hash → cache MISS (full body returned)
+    const miss = verbs.context({ id: login.id, ifHash: 'deadbeef' }) as unknown as {
+      unchanged?: boolean;
+      hash: string;
+    };
+    expect(miss.unchanged).toBeUndefined();
+    const c = verbs.getStats().snapshot().cache;
+    expect(c.hits).toBe(1);
+    expect(c.misses).toBe(1);
+    expect(c.hitRate).toBeCloseTo(0.5);
+  });
+
+  it("deterministic verb outputs are byte-identical with the interceptor on (it's transparent)", () => {
+    // The Proxy must not alter a verb result. Two calls with the same args (no ifHash) return the
+    // same body — the interceptor only times + counts, it never touches the payload.
+    const a = verbs.context({ id: login.id }) as unknown as Record<string, unknown>;
+    const b = verbs.context({ id: login.id }) as unknown as Record<string, unknown>;
+    // Strip the `hash` field (it is deterministic BLAKE3 so equal anyway) — compare the bodies.
+    const { hash: _ha, ...bodyA } = a;
+    const { hash: _hb, ...bodyB } = b;
+    expect(bodyA).toEqual(bodyB);
+    // And the hash itself is stable (deterministic fingerprint, interceptor-transparent).
+    expect(a.hash).toEqual(b.hash);
+  });
+});

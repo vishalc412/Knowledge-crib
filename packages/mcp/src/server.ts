@@ -391,6 +391,16 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     async (a) => TOOL_RESULT(verbs.gaps(a)),
   );
 
+  server.registerTool(
+    'stats',
+    {
+      description:
+        'M3.3 server observability — live per-verb call counts + latency (min/mean/max) and the ifHash change-aware cache hit rate for this running process. Pure runtime counters; not persisted, not part of the deterministic soul. Useful for capacity tuning and cache-effectiveness checks.',
+      inputSchema: {},
+    },
+    async () => TOOL_RESULT(verbs.getStats().snapshot()),
+  );
+
   return server;
 }
 

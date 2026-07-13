@@ -46,6 +46,7 @@ import {
   rehydrate,
   rehydrateBody,
 } from './snippet.js';
+import { Stats, trackCall } from './stats.js';
 import {
   DEFAULT_DOC_LIMIT,
   DEFAULT_LIMIT,
@@ -192,14 +193,72 @@ function sumGapCategories(parts: GapCategoryCounts[]): GapCategoryCounts {
   return out;
 }
 
+/**
+ * M3.3 — the public verb methods the Proxy interceptor wraps for per-verb stats. This is the
+ * exhaustive set of `verbs.X(...)` entry points registered as MCP tools in server.ts; private
+ * helpers (`applyIfHash`, `attachLlm`, …) are deliberately absent so internal calls bypass the trap
+ * and aren't double-counted. Keep in sync with server.ts tool registrations.
+ */
+const PUBLIC_VERBS = new Set<string>([
+  'status',
+  'context',
+  'source',
+  'dossier',
+  'reconstruct',
+  'dossierByScope',
+  'impact',
+  'federatedImpact',
+  'query',
+  'enrichStatus',
+  'enrichNext',
+  'enrichSave',
+  'auditLlm',
+  'overview',
+  'llmNeighbors',
+  'describes',
+  'neighbors',
+  'ownership',
+  'shortestPath',
+  'detectChanges',
+  'extractRules',
+  'gaps',
+]);
+
 export class Verbs {
   private readonly llm: EnrichmentStore;
   /** M2.4 — per-repo alias dictionary loaded once at construction; empty when no file is committed. */
   private readonly aliases: AliasMap;
+  /** M3.3 — runtime observability counters (per-verb count/latency + ifHash cache hit rate). */
+  private readonly stats = new Stats();
 
   constructor(private readonly deps: VerbDeps) {
     this.llm = new EnrichmentStore(deps.soul, deps.repoRoot);
     this.aliases = loadAliases(deps.soul.cribDir);
+    // M3.3 — Proxy interceptor: wrap every PUBLIC verb method with `trackCall` so per-verb
+    // count + latency is recorded for BOTH entry paths (direct in-process calls AND MCP tool
+    // calls, since the MCP handler is `verbs.X(a)`). Internal helper calls (`this.applyIfHash`,
+    // `this.attachLlm`) resolve on the real `target` and bypass the trap — only the names in
+    // PUBLIC_VERBS get wrapped, so private helpers are NOT double-counted. The interceptor times
+    // the call and passes the result through verbatim; deterministic verb outputs are byte-identical
+    // with or without it (stats are in-memory side-channel, never persisted — see stats.ts).
+    // Returning a Proxy wrapping `this` is the canonical single-point instrumentation pattern:
+    // external `verbs.X(a)` hits the trap (timed), internal `this.foo()` resolves on the real
+    // `target` and bypasses it. The constructor still fully initializes `this` before returning.
+    // biome-ignore lint/correctness/noConstructorReturn: intentional Proxy interceptor — see above.
+    return new Proxy(this, {
+      get(target, prop, receiver) {
+        const value = Reflect.get(target, prop, receiver);
+        if (typeof value !== 'function') return value;
+        if (typeof prop !== 'string' || !PUBLIC_VERBS.has(prop)) return value;
+        return (...args: unknown[]) =>
+          trackCall(target.stats, prop, () => value.apply(target, args));
+      },
+    }) as unknown as this;
+  }
+
+  /** M3.3 — accessor for the live stats counters (used by the `stats` MCP tool / CLI). NOT wrapped. */
+  getStats(): Stats {
+    return this.stats;
   }
 
   status(opts?: { dirty?: boolean }): Record<string, unknown> {
@@ -1636,8 +1695,13 @@ export class Verbs {
   ): Record<string, unknown> {
     const hash = ifHash(result);
     if (args.ifHash !== undefined && args.ifHash === hash) {
+      // M3.3 — a cache probe that HIT: caller echoed the prior hash → collapsed body. Only count
+      // when `ifHash` was provided (a first fetch with no `ifHash` is not a cache probe, so it is
+      // excluded from the hit-rate denominator).
+      this.stats.recordCacheHit(true);
       return { unchanged: true, hash };
     }
+    if (args.ifHash !== undefined) this.stats.recordCacheHit(false);
     return { ...result, hash };
   }
 
