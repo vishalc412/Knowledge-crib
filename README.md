@@ -27,6 +27,34 @@ folding the full brief. The full brief is still one flag away (`--with-llm` / `w
 you actually want it. This is the difference between "the crib pays for itself" and "the crib adds
 cost": lean by default, deep on demand.
 
+### Measured, not projected (run it yourself)
+Two reproducible harnesses measure the real token and dollar gap against Knowledge-crib's own
+indexed source (18,050 nodes · 32,600 edges · 351 clusters). Prices: input $3, output $15,
+cache-write $3.75, cache-read $0.30 per 1M tokens (Sonnet-class list; overridable via env).
+
+**One cross-package task** — "understand the query pipeline" — answered two ways
+(`node scripts/crib-ab-task.mjs`):
+
+| path | strategy | context tokens | cold cost (cache cleared) | warm 6-turn cost |
+|---|---|---|---|---|
+| no-crib | grep + read 3 whole defining files | 26,286 | $0.0789 | $0.591 |
+| crib | `query`+`neighbors` (snippets + graph edges) | 1,415 | $0.0042 | $0.0074 |
+| **saving** | | **18.58×** | **18.58×** | **79.61×** |
+
+**Six discovery queries across the whole graph** (`node scripts/crib-bench.mjs`):
+
+| | crib default tokens | raw file-read tokens | vs raw | crib $/task | no-crib $/task (churn) | no-crib $/task (cached) |
+|---|---|---|---|---|---|---|
+| **6 queries total** | 3,339 | 151,072 | **45.24×** leaner | $0.0175 | $3.399 | $0.793 |
+| **cost saving** | | | | | **193.91×** cheaper | **45.25×** cheaper |
+
+The "cache cleared" column is the honest floor: every token priced as fresh input, so the dollar
+gap equals the token gap exactly — **you can't be billed for tokens you never needed to read.**
+Caching only widens it (193.91× vs 45.25×). These same numbers gate CI (`node scripts/budget-check.mjs`
+requires ≥3× cost saving) and a cache-stability regression test
+(`node scripts/crib-cache-stability.test.mjs`) — both green. Full reports: `pnpm bench` /
+`pnpm ab:task` (or pass `--out <path>` for a markdown file).
+
 Two existing tools each prove half and serve as **design inspiration only (no code copied)**:
 - **GitNexus** — how to dig deep (impact, call chains, type resolution).
 - **Graphify** — how to index broadly and portably (any input → a queryable graph).

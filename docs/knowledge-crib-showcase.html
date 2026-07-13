@@ -116,8 +116,9 @@
     </div>
     <h1><span class="k">Knowledge-crib</span> — Technical Showcase</h1>
     <p class="tagline">A portable "project soul" for AI coding agents. Index a codebase once into a
-      local knowledge graph, serve it to any agent over MCP — <b>~22× fewer tokens</b> per task,
-      <b>~22× lower cost</b> even with the cache cleared. Every number below is measured, not projected.</p>
+      local knowledge graph, serve it to any agent over MCP — <b>~18.6× fewer tokens</b> per task,
+      <b>~45× fewer tokens</b> across the whole graph. Every number below is measured, not projected —
+      reproduce with <span class="kv">node scripts/crib-ab-task.mjs</span> and <span class="kv">node scripts/crib-bench.mjs</span>.</p>
   </div>
 </header>
 
@@ -127,24 +128,25 @@
 <section>
   <h2><span class="n">TL;DR</span> The headline, measured on this repo</h2>
   <p class="sub">One real cross-package task — <span class="kv">"understand the query pipeline"</span> —
-    answered two ways against Knowledge-crib's own source tree. Command: <span class="kv">pnpm ab:task</span>.</p>
+    answered two ways against Knowledge-crib's own source tree (18,050 nodes · 32,600 edges · 351 clusters).
+    Command: <span class="kv">node scripts/crib-ab-task.mjs</span>.</p>
   <div class="cards">
-    <div class="card"><div class="big g">21.98×</div><div class="lbl">fewer tokens per task</div><div class="foot">23,014 → 1,047</div></div>
-    <div class="card"><div class="big g">21.98×</div><div class="lbl">cheaper — cache cleared</div><div class="foot">$0.069 → $0.003</div></div>
-    <div class="card"><div class="big b">94.2×</div><div class="lbl">cheaper — warm session</div><div class="foot">6-turn task</div></div>
-    <div class="card"><div class="big w">$0.066</div><div class="lbl">wasted per no-crib task</div><div class="foot">pure token burn</div></div>
+    <div class="card"><div class="big g">18.58×</div><div class="lbl">fewer tokens per task</div><div class="foot">26,286 → 1,415</div></div>
+    <div class="card"><div class="big g">18.58×</div><div class="lbl">cheaper — cache cleared</div><div class="foot">$0.079 → $0.004</div></div>
+    <div class="card"><div class="big b">79.6×</div><div class="lbl">cheaper — warm session</div><div class="foot">6-turn task</div></div>
+    <div class="card"><div class="big w">$0.075</div><div class="lbl">wasted per no-crib task</div><div class="foot">pure token burn</div></div>
   </div>
   <div class="note good"><b>Why this is the honest floor:</b> the "cache cleared" number prices every
     token as fresh input — no prompt-cache discount either way. With the cache emptied the dollar gap
     equals the token gap exactly, because <b>you cannot be billed for tokens you never needed to read.</b>
-    Caching only widens the gap (94× warm).</div>
+    Caching only widens the gap (79.6× warm).</div>
 </section>
 
 <!-- ================= THE PRODUCT, LIVE ================= -->
 <section>
   <h2><span class="n">00</span> The product, live — the actual knowledge graph</h2>
   <p class="sub">Screenshots from the shipped offline viewer (<span class="kv">crib viz</span>) running
-    against Knowledge-crib's own indexed source: <b>17,699 nodes · 32,600 edges · 351 clusters</b>.
+    against Knowledge-crib's own indexed source: <b>18,050 nodes · 32,600 edges · 351 clusters</b>.
     This <em>is</em> the soul — the structured context the agent queries instead of re-reading files.</p>
 
   <figure>
@@ -214,8 +216,8 @@
     as graph edges. Byte counts are measured from actual tool output.</p>
 
   <div class="term">
-    <div class="bar"><i class="dot-r"></i><i class="dot-y"></i><i class="dot-g"></i><span class="t">pnpm ab:task — knowledge-crib</span></div>
-<pre><span class="p">$</span> <span class="c">pnpm ab:task</span>
+    <div class="bar"><i class="dot-r"></i><i class="dot-y"></i><i class="dot-g"></i><span class="t">crib-ab-task — knowledge-crib</span></div>
+<pre><span class="p">$</span> <span class="c">node scripts/crib-ab-task.mjs</span>
 
   task     understand the query pipeline (SoulStore + index build + query verb + relationships)
   turns    6
@@ -223,49 +225,50 @@
   <span class="r">no-crib</span>  grep + read whole defining files
            files  <span class="m">packages/core/src/soul-store.ts, packages/cli/src/runtime.ts,</span>
                   <span class="m">packages/mcp/src/verbs.ts</span>   (3 whole files)
-           context tokens  <span class="r">23,014</span>
-           cold cost       <span class="r">$0.069042</span>
+           context tokens  <span class="r">26,286</span>
+           cold cost       <span class="r">$0.078858</span>
 
   <span class="g">crib</span>     query + neighbors  (pinpoint snippets + graph edges, no file bodies)
            calls  <span class="m">query/neighbors × {SoulStore, buildIndex, Verbs}</span>
-           context tokens  <span class="g">1,047</span>
-           cold cost       <span class="g">$0.003141</span>
+           context tokens  <span class="g">1,415</span>
+           cold cost       <span class="g">$0.004245</span>
 
-  <span class="k">verdict</span>  tokenReduction   <span class="g">21.98×</span>
-           coldCostSaving   <span class="g">21.98×</span>   (cache cleared — actual difference)
-           costSavingCached 21.98×    costSavingVsChurn <span class="c">94.20×</span>
-           wasted per no-crib task    <span class="r">+$0.065901</span>
+  <span class="k">verdict</span>  tokenReduction   <span class="g">18.58×</span>
+           coldCostSaving   <span class="g">18.58×</span>   (cache cleared — actual difference)
+           costSavingCached 18.58×    costSavingVsChurn <span class="c">79.61×</span>
+           wasted per no-crib task    <span class="r">+$0.074613</span>
 </pre>
   </div>
 
   <h3>Context size — the mechanism, visualized</h3>
-  <div class="barrow"><div class="lb">no-crib</div><div class="track"><div class="fill raw" style="width:100%">23,014 tok</div></div><div class="rt">3 files</div></div>
-  <div class="barrow"><div class="lb">crib</div><div class="track"><div class="fill crib" style="width:4.55%">1,047</div></div><div class="rt">6 verbs</div></div>
+  <div class="barrow"><div class="lb">no-crib</div><div class="track"><div class="fill raw" style="width:100%">26,286 tok</div></div><div class="rt">3 files</div></div>
+  <div class="barrow"><div class="lb">crib</div><div class="track"><div class="fill crib" style="width:5.38%">1,415</div></div><div class="rt">6 verbs</div></div>
   <p style="color:var(--dim);font-size:12.5px;margin-top:4px">Bar width ∝ tokens pulled into the model's context to answer the same question.</p>
 </section>
 
 <!-- ================= BENCH DATASET ================= -->
 <section>
   <h2><span class="n">03</span> Breadth dataset — six discovery queries</h2>
-  <p class="sub">Command: <span class="kv">pnpm bench</span>. Each query compares the crib default response
-    against reading every whole file that contains a hit. Prices: input $3, output $15, cache-write
-    $3.75, cache-read $0.30 per 1M tokens (Sonnet-class list; overridable via env).</p>
+  <p class="sub">Command: <span class="kv">node scripts/crib-bench.mjs</span> (or <span class="kv">pnpm bench</span>). Each query
+    compares the crib default response against reading every whole file that contains a hit. Prices: input $3,
+    output $15, cache-write $3.75, cache-read $0.30 per 1M tokens (Sonnet-class list; overridable via env).</p>
   <table>
     <thead><tr><th class="name">Query</th><th class="num">Hits</th><th class="num">Raw-read tokens</th><th class="num">Crib tokens</th><th class="num">vs raw</th><th class="num">Crib $/task</th><th class="num">No-crib $/task</th></tr></thead>
     <tbody>
-      <tr><td class="name">SoulStore</td><td class="num">10</td><td class="num">25,038</td><td class="num">514</td><td class="num win">48.7×</td><td class="num">$0.0027</td><td class="num">$0.563</td></tr>
-      <tr><td class="name">indexRepo</td><td class="num">10</td><td class="num">10,860</td><td class="num">506</td><td class="num win">21.5×</td><td class="num">$0.0027</td><td class="num">$0.244</td></tr>
-      <tr><td class="name">Verbs</td><td class="num">10</td><td class="num">36,221</td><td class="num">537</td><td class="num win">67.5×</td><td class="num">$0.0028</td><td class="num">$0.815</td></tr>
-      <tr><td class="name">buildIndex</td><td class="num">10</td><td class="num">17,560</td><td class="num">524</td><td class="num win">33.5×</td><td class="num">$0.0028</td><td class="num">$0.395</td></tr>
-      <tr><td class="name">estimateTokens</td><td class="num">6</td><td class="num">27,177</td><td class="num">337</td><td class="num win">80.6×</td><td class="num">$0.0018</td><td class="num">$0.611</td></tr>
-      <tr><td class="name">cmdIndex</td><td class="num">7</td><td class="num">15,509</td><td class="num">384</td><td class="num win">40.4×</td><td class="num">$0.0020</td><td class="num">$0.349</td></tr>
+      <tr><td class="name">SoulStore</td><td class="num">10</td><td class="num">26,656</td><td class="num">727</td><td class="num win">36.67×</td><td class="num">$0.0038</td><td class="num">$0.600</td></tr>
+      <tr><td class="name">indexRepo</td><td class="num">10</td><td class="num">10,888</td><td class="num">710</td><td class="num win">15.34×</td><td class="num">$0.0037</td><td class="num">$0.245</td></tr>
+      <tr><td class="name">Verbs</td><td class="num">10</td><td class="num">40,916</td><td class="num">670</td><td class="num win">61.07×</td><td class="num">$0.0035</td><td class="num">$0.921</td></tr>
+      <tr><td class="name">buildIndex</td><td class="num">10</td><td class="num">19,283</td><td class="num">536</td><td class="num win">35.98×</td><td class="num">$0.0028</td><td class="num">$0.434</td></tr>
+      <tr><td class="name">estimateTokens</td><td class="num">6</td><td class="num">36,097</td><td class="num">325</td><td class="num win">111.07×</td><td class="num">$0.0017</td><td class="num">$0.812</td></tr>
+      <tr><td class="name">cmdIndex</td><td class="num">7</td><td class="num">17,232</td><td class="num">371</td><td class="num win">46.45×</td><td class="num">$0.0019</td><td class="num">$0.388</td></tr>
     </tbody>
-    <tfoot><tr><td class="name">TOTAL (6 queries)</td><td class="num">—</td><td class="num">132,365</td><td class="num">2,802</td><td class="num win">47.2×</td><td class="num">$0.0147</td><td class="num">$2.978</td></tr></tfoot>
+    <tfoot><tr><td class="name">TOTAL (6 queries)</td><td class="num">—</td><td class="num">151,072</td><td class="num">3,339</td><td class="num win">45.24×</td><td class="num">$0.0175</td><td class="num">$3.399</td></tr></tfoot>
   </table>
-  <div class="note"><b>Across six queries:</b> crib's default responses total <b>2,802 tokens</b> vs
-    <b>132,365 tokens</b> of raw file reads — <b>47.2× leaner</b>. Modeled over 6-turn sessions:
-    <b>$0.015 vs $2.98</b> (churn) — a <b>202×</b> cost gap, <b>47×</b> even if the no-crib reads were
-    perfectly cached.</div>
+  <div class="note"><b>Across six queries:</b> crib's default responses total <b>3,339 tokens</b> vs
+    <b>151,072 tokens</b> of raw file reads — <b>45.24× leaner</b>. Modeled over 6-turn sessions:
+    <b>$0.0175 vs $3.40</b> (churn) — a <b>193.91×</b> cost gap, <b>45.25×</b> even if the no-crib reads were
+    perfectly cached. The same harness gates CI: <span class="kv">node scripts/budget-check.mjs</span> requires
+    ≥3× cost saving (green), <span class="kv">node scripts/crib-cache-stability.test.mjs</span> holds (green).</div>
 </section>
 
 <!-- ================= COST MODEL ================= -->
@@ -277,13 +280,13 @@
   <table>
     <thead><tr><th class="name">Lens</th><th class="name">Assumption</th><th class="num">crib</th><th class="num">no-crib</th><th class="num">Saving</th></tr></thead>
     <tbody>
-      <tr><td class="name">Cold</td><td class="name">cache cleared, every token fresh input</td><td class="num">$0.0031</td><td class="num">$0.069</td><td class="num win">21.98×</td></tr>
-      <tr><td class="name">Warm — fair</td><td class="name">both sides cached identically</td><td class="num">$0.0055</td><td class="num">$0.121</td><td class="num win">21.98×</td></tr>
-      <tr><td class="name">Warm — realistic</td><td class="name">no-crib working set churns (re-primed)</td><td class="num">$0.0055</td><td class="num">$0.518</td><td class="num win">94.2×</td></tr>
+      <tr><td class="name">Cold</td><td class="name">cache cleared, every token fresh input</td><td class="num">$0.0042</td><td class="num">$0.079</td><td class="num win">18.58×</td></tr>
+      <tr><td class="name">Warm — fair</td><td class="name">both sides cached identically</td><td class="num">$0.0074</td><td class="num">$0.138</td><td class="num win">18.58×</td></tr>
+      <tr><td class="name">Warm — realistic</td><td class="name">no-crib working set churns (re-primed)</td><td class="num">$0.0074</td><td class="num">$0.591</td><td class="num win">79.6×</td></tr>
     </tbody>
   </table>
   <div class="note good"><b>Bottom line:</b> crib wins on every lens. The conservative floor is the
-    cold 22×; caching and multi-turn reuse only make it better. The paradox in §01 is the "warm
+    cold 18.6×; caching and multi-turn reuse only make it better. The paradox in §01 is the "warm
     realistic" reality — but the product's promise rests on the cold floor, which no pricing plan can erase.</div>
 </section>
 
@@ -321,7 +324,7 @@
   <p class="sub">"Lightweight" and "cheaper" are build-breaking facts, not opinions. Command:
     <span class="kv">pnpm budget:check</span>. Any regression fails the build.</p>
   <div class="gates">
-    <div class="gate"><span class="ok">✓</span> Cost saving floor<span class="v">≥ 3× (measures ~47×)</span></div>
+    <div class="gate"><span class="ok">✓</span> Cost saving floor<span class="v">≥ 3× (measures ~45×)</span></div>
     <div class="gate"><span class="ok">✓</span> Default hit size<span class="v">≤ 1.5 KB/hit</span></div>
     <div class="gate"><span class="ok">✓</span> Warm query p50<span class="v">&lt; 150 ms</span></div>
     <div class="gate"><span class="ok">✓</span> Cold index (50 files)<span class="v">&lt; 20 s</span></div>
@@ -337,11 +340,11 @@
   <h2><span class="n">07</span> Reproduce every number yourself</h2>
   <div class="term">
     <div class="bar"><i class="dot-r"></i><i class="dot-y"></i><i class="dot-g"></i><span class="t">verify — from an indexed checkout</span></div>
-<pre><span class="p">$</span> <span class="c">pnpm ab:task</span>          <span class="m"># real task A/B — 22× cold, 94× warm</span>
-<span class="p">$</span> <span class="c">pnpm bench</span>            <span class="m"># six-query breadth — 47× leaner</span>
-<span class="p">$</span> <span class="c">pnpm budget:check</span>     <span class="m"># build-breaking cost/latency/size gates</span>
-<span class="p">$</span> <span class="c">pnpm cache:stability</span>  <span class="m"># served context is byte-identical (cache-safe)</span>
-<span class="p">$</span> <span class="c">pnpm cost:report</span>       <span class="m"># reconcile real /usage $ from two live sessions</span>
+<pre><span class="p">$</span> <span class="c">node scripts/crib-ab-task.mjs</span>   <span class="m"># real task A/B — 18.6× cold, 79.6× warm</span>
+<span class="p">$</span> <span class="c">node scripts/crib-bench.mjs</span>     <span class="m"># six-query breadth — 45.2× leaner, 193.9× cheaper</span>
+<span class="p">$</span> <span class="c">node scripts/budget-check.mjs</span>   <span class="m"># build-breaking cost/latency/size gates</span>
+<span class="p">$</span> <span class="c">node scripts/crib-cache-stability.test.mjs</span>  <span class="m"># served context is byte-identical (cache-safe)</span>
+<span class="p">$</span> <span class="c">node scripts/crib-cost-report.mjs</span>  <span class="m"># reconcile real /usage $ from two live sessions</span>
 </pre>
   </div>
   <div class="note"><b>Full 4-bucket live capture:</b> the host <span class="kv">/usage</span> panel isn't
@@ -357,7 +360,7 @@
      exec brief: <span class="kv">docs/knowledge-crib-executive-brief.md</span> ·
      benchmarks in <span class="kv">scripts/</span> ·
      every figure regenerated from <span class="kv">pnpm ab:task / bench / budget:check</span>.</p>
-  <p style="color:var(--dim)">Datasets captured 2026-07-01 against the self-indexed repository. Numbers
+  <p style="color:var(--dim)">Datasets captured 2026-07-13 against the self-indexed repository. Numbers
      will vary by codebase; the methodology and the cold-lens floor do not.</p>
 </footer>
 
