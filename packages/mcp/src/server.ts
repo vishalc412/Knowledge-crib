@@ -7,6 +7,15 @@ import type { NodeKind } from '@knowledge-crib/soul-schema';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
+import {
+  MAX_DEPTH,
+  MAX_DOC_LIMIT,
+  MAX_HOPS,
+  MAX_LIMIT,
+  MAX_SCOPE_SYMBOLS,
+  MAX_SOURCE_CHARS,
+  MAX_SOURCE_LINES,
+} from './token-budget.js';
 import type { Verbs } from './verbs.js';
 
 const TOOL_RESULT = (obj: unknown) => ({
@@ -30,13 +39,13 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         '360° context for one symbol: deep fields, callers, callees, and linked docs. Set withSource to include the full source body (rehydrated from disk, budgeted) and withRules to fold in a procedure decision table (conditions/actions/reads/writes).',
       inputSchema: {
         id: z.string(),
-        docLimit: z.number().int().positive().optional(),
+        docLimit: z.number().int().positive().max(MAX_DOC_LIMIT).optional(),
         extractedOnly: z.boolean().optional(),
         withSource: z.boolean().optional(),
         withRules: z.boolean().optional(),
         withLlm: z.boolean().optional(),
-        sourceMaxChars: z.number().int().positive().optional(),
-        sourceMaxLines: z.number().int().positive().optional(),
+        sourceMaxChars: z.number().int().positive().max(MAX_SOURCE_CHARS).optional(),
+        sourceMaxLines: z.number().int().positive().max(MAX_SOURCE_LINES).optional(),
         sourceStartLine: z.number().int().positive().optional(),
       },
     },
@@ -50,8 +59,8 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         'Full source text of one node span, rehydrated from disk and char/line-budgeted. Use this to read the actual code body / DDL / statement / doc-section that the lean soul references but never copies. truncated=true means the on-disk span exceeded the budget.',
       inputSchema: {
         id: z.string(),
-        maxChars: z.number().int().positive().optional(),
-        maxLines: z.number().int().positive().optional(),
+        maxChars: z.number().int().positive().max(MAX_SOURCE_CHARS).optional(),
+        maxLines: z.number().int().positive().max(MAX_SOURCE_LINES).optional(),
         startLine: z.number().int().positive().optional(),
       },
     },
@@ -66,8 +75,8 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       inputSchema: {
         id: z.string(),
         includeTables: z.boolean().optional(),
-        sourceMaxChars: z.number().int().positive().optional(),
-        sourceMaxLines: z.number().int().positive().optional(),
+        sourceMaxChars: z.number().int().positive().max(MAX_SOURCE_CHARS).optional(),
+        sourceMaxLines: z.number().int().positive().max(MAX_SOURCE_LINES).optional(),
         sourceStartLine: z.number().int().positive().optional(),
         extractedOnly: z.boolean().optional(),
         withLlm: z.boolean().optional(),
@@ -86,7 +95,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         id: z.string(),
         extractedOnly: z.boolean().optional(),
         includeTables: z.boolean().optional(),
-        maxSymbols: z.number().int().positive().optional(),
+        maxSymbols: z.number().int().positive().max(MAX_SCOPE_SYMBOLS).optional(),
         format: z.enum(['json', 'markdown']).optional(),
       },
     },
@@ -103,9 +112,9 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         id: z.string(),
         extractedOnly: z.boolean().optional(),
         includeTables: z.boolean().optional(),
-        maxSymbols: z.number().int().positive().optional(),
-        sourceMaxChars: z.number().int().positive().optional(),
-        sourceMaxLines: z.number().int().positive().optional(),
+        maxSymbols: z.number().int().positive().max(MAX_SCOPE_SYMBOLS).optional(),
+        sourceMaxChars: z.number().int().positive().max(MAX_SOURCE_CHARS).optional(),
+        sourceMaxLines: z.number().int().positive().max(MAX_SOURCE_LINES).optional(),
         format: z.enum(['json', 'markdown']).optional(),
       },
     },
@@ -120,9 +129,9 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       inputSchema: {
         id: z.string(),
         dir: z.enum(['up', 'down']),
-        depth: z.number().int().positive().optional(),
-        docLimit: z.number().int().positive().optional(),
-        limit: z.number().int().positive().optional(),
+        depth: z.number().int().positive().max(MAX_DEPTH).optional(),
+        docLimit: z.number().int().positive().max(MAX_DOC_LIMIT).optional(),
+        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
         extractedOnly: z.boolean().optional(),
       },
     },
@@ -137,11 +146,11 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       inputSchema: {
         q: z.string(),
         kinds: z.array(z.string()).optional(),
-        limit: z.number().int().positive().optional(),
+        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
         extractedOnly: z.boolean().optional(),
         withSource: z.boolean().optional(),
-        sourceMaxChars: z.number().int().positive().optional(),
-        sourceMaxLines: z.number().int().positive().optional(),
+        sourceMaxChars: z.number().int().positive().max(MAX_SOURCE_CHARS).optional(),
+        sourceMaxLines: z.number().int().positive().max(MAX_SOURCE_LINES).optional(),
         withRules: z.boolean().optional(),
         withFramework: z.boolean().optional(),
         withLlm: z.boolean().optional(),
@@ -190,7 +199,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         'Return the next missing/stale grounded work batch for the IDE agent model to author. Includes seed facts, lower-layer analyses, schema, and instructions. Pass scope:{pathPrefix} to restrict the batch to in-scope targets. batchId is deterministic (same pending set => same id) so a zero-progress re-issue is detectable by id equality. The system layer is never offered under a scope. Pass skeleton:true with layer:"system" for the Phase-0.5 draft skeleton bible (a single work item seeded from the functional map + top READMEs + top symbols; a skeleton never satisfies the system layer — the full pass is still offered).',
       inputSchema: {
         layer: z.enum(['symbol', 'file', 'cluster', 'system']).optional(),
-        limit: z.number().int().positive().optional(),
+        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
         scope: z
           .object({
             pathPrefix: z.string().optional(),
@@ -276,7 +285,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         id: z.string(),
         rel: z.string().optional(),
         dir: z.enum(['in', 'out', 'both']).optional(),
-        limit: z.number().int().positive().optional(),
+        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
         extractedOnly: z.boolean().optional(),
       },
     },
@@ -290,7 +299,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       inputSchema: {
         from: z.string(),
         to: z.string(),
-        maxHops: z.number().int().positive().optional(),
+        maxHops: z.number().int().positive().max(MAX_HOPS).optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.shortestPath(a)),

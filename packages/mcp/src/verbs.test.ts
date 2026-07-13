@@ -2406,3 +2406,48 @@ describe('dossierByScope — bulk per-symbol dossiers (WS-4)', () => {
     expect(soEx.callees.map((c) => c.qualifiedName)).not.toContain('PKG_RULES.HELPER');
   });
 });
+
+describe('M0.5 verb hard caps — absurd params are clamped, not honored', () => {
+  it('impact clamps limit/depth/docLimit without throwing', () => {
+    const res = verbs.impact({
+      id: login.id,
+      dir: 'down',
+      limit: 1_000_000,
+      depth: 1_000_000,
+      docLimit: 1_000_000,
+    }) as unknown as ImpactResult;
+    // only `issue` is reachable downward; the absurd depth/limit never explodes the traversal
+    expect(res.affected.map((a) => a.id)).toEqual([issue.id]);
+  });
+
+  it('query clamps an absurd limit to MAX_LIMIT', () => {
+    const res = verbs.query({ q: 'login', limit: 1_000_000 }) as unknown as QueryResult;
+    expect(res.hits.length).toBeLessThanOrEqual(200);
+    expect(res.truncated).toBe(false);
+  });
+
+  it('neighbors clamps an absurd limit to MAX_LIMIT', () => {
+    const res = verbs.neighbors({ id: login.id, limit: 1_000_000 }) as unknown as NeighborsResult;
+    expect(res.edges.length).toBeLessThanOrEqual(200);
+  });
+
+  it('shortestPath clamps an absurd maxHops to MAX_HOPS and still resolves', () => {
+    const res = verbs.shortestPath({
+      from: handle.id,
+      to: issue.id,
+      maxHops: 1_000_000,
+    }) as unknown as ShortestPathResult;
+    expect(res.found).toBe(true);
+    expect(res.path.length).toBeLessThanOrEqual(64 + 1);
+  });
+
+  it('source clamps absurd maxChars/maxLines to the source caps', () => {
+    const res = verbs.source({
+      id: login.id,
+      maxChars: 99_999_999,
+      maxLines: 99_999_999,
+    }) as unknown as SourceResult;
+    expect(res.source.text.length).toBeLessThanOrEqual(512 * 1024);
+    expect(res.source.truncated).toBe(false); // the on-disk body is tiny, so nothing is dropped
+  });
+});

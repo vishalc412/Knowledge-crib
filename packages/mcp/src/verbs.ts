@@ -38,7 +38,20 @@ import {
   rehydrate,
   rehydrateBody,
 } from './snippet.js';
-import { DEFAULT_DOC_LIMIT, DEFAULT_LIMIT, bound } from './token-budget.js';
+import {
+  DEFAULT_DOC_LIMIT,
+  DEFAULT_LIMIT,
+  MAX_DEPTH,
+  MAX_DOC_LIMIT,
+  MAX_HOPS,
+  MAX_LIMIT,
+  MAX_SCOPE_SYMBOLS,
+  MAX_SOURCE_CHARS,
+  MAX_SOURCE_LINES,
+  bound,
+  capInt,
+  clampMax,
+} from './token-budget.js';
 
 /**
  * Infer the body file a package spec SHOULD live next to, from the spec file path. Covers the common
@@ -260,7 +273,10 @@ export class Verbs {
     const callees = this.callEdges(id, 'down', args.extractedOnly).map((e) =>
       this.brief(e.dst, e.confidence),
     );
-    const docs = bound(this.docsFor(id, 0, args.extractedOnly), args.docLimit ?? DEFAULT_DOC_LIMIT);
+    const docs = bound(
+      this.docsFor(id, 0, args.extractedOnly),
+      capInt(args.docLimit, DEFAULT_DOC_LIMIT, MAX_DOC_LIMIT),
+    );
     const result: Record<string, unknown> = {
       node: this.publicNode(node),
       callers,
@@ -353,8 +369,12 @@ export class Verbs {
     const buildOpts = {
       ...(args.includeTables ? { includeTables: true } : {}),
       ...(args.extractedOnly ? { extractedOnly: true } : {}),
-      ...(args.sourceMaxChars !== undefined ? { sourceMaxChars: args.sourceMaxChars } : {}),
-      ...(args.sourceMaxLines !== undefined ? { sourceMaxLines: args.sourceMaxLines } : {}),
+      ...(args.sourceMaxChars !== undefined
+        ? { sourceMaxChars: clampMax(args.sourceMaxChars, MAX_SOURCE_CHARS) }
+        : {}),
+      ...(args.sourceMaxLines !== undefined
+        ? { sourceMaxLines: clampMax(args.sourceMaxLines, MAX_SOURCE_LINES) }
+        : {}),
       ...(args.sourceStartLine !== undefined ? { sourceStartLine: args.sourceStartLine } : {}),
     };
 
@@ -417,7 +437,9 @@ export class Verbs {
       {
         ...(args.extractedOnly ? { extractedOnly: true } : {}),
         ...(args.includeTables !== undefined ? { includeTables: args.includeTables } : {}),
-        ...(args.maxSymbols !== undefined ? { maxSymbols: args.maxSymbols } : {}),
+        ...(args.maxSymbols !== undefined
+          ? { maxSymbols: clampMax(args.maxSymbols, MAX_SCOPE_SYMBOLS) }
+          : {}),
       },
     );
     if (!reconstruction) return notFound(args.id);
@@ -470,9 +492,15 @@ export class Verbs {
       {
         ...(args.extractedOnly ? { extractedOnly: true } : {}),
         ...(args.includeTables ? { includeTables: true } : {}),
-        ...(args.maxSymbols !== undefined ? { maxSymbols: args.maxSymbols } : {}),
-        ...(args.sourceMaxChars !== undefined ? { sourceMaxChars: args.sourceMaxChars } : {}),
-        ...(args.sourceMaxLines !== undefined ? { sourceMaxLines: args.sourceMaxLines } : {}),
+        ...(args.maxSymbols !== undefined
+          ? { maxSymbols: clampMax(args.maxSymbols, MAX_SCOPE_SYMBOLS) }
+          : {}),
+        ...(args.sourceMaxChars !== undefined
+          ? { sourceMaxChars: clampMax(args.sourceMaxChars, MAX_SOURCE_CHARS) }
+          : {}),
+        ...(args.sourceMaxLines !== undefined
+          ? { sourceMaxLines: clampMax(args.sourceMaxLines, MAX_SOURCE_LINES) }
+          : {}),
       },
     );
     if (!result) return notFound(args.id);
@@ -495,8 +523,16 @@ export class Verbs {
     },
   ): RehydratedBody {
     return rehydrateBody(this.deps.repoRoot, node, {
-      maxChars: args.sourceMaxChars ?? args.maxChars ?? DEFAULT_BODY_MAX_CHARS,
-      maxLines: args.sourceMaxLines ?? args.maxLines ?? DEFAULT_BODY_MAX_LINES,
+      maxChars: capInt(
+        args.sourceMaxChars ?? args.maxChars,
+        DEFAULT_BODY_MAX_CHARS,
+        MAX_SOURCE_CHARS,
+      ),
+      maxLines: capInt(
+        args.sourceMaxLines ?? args.maxLines,
+        DEFAULT_BODY_MAX_LINES,
+        MAX_SOURCE_LINES,
+      ),
       ...(args.sourceStartLine !== undefined ? { startLine: args.sourceStartLine } : {}),
       ...(args.startLine !== undefined ? { startLine: args.startLine } : {}),
     });
@@ -512,7 +548,7 @@ export class Verbs {
   }): Record<string, unknown> {
     const id = this.resolveNodeId(args.id);
     if (!id || !this.deps.soul.getNode(id)) return notFound(args.id);
-    const depth = args.depth ?? 2;
+    const depth = capInt(args.depth, 2, MAX_DEPTH);
     const visited = new Set<string>([id]);
     const affected: Array<{
       id: string;
@@ -535,14 +571,16 @@ export class Verbs {
             rel: e.rel,
             distance: d,
             risk: d === 1 ? 'high' : d === 2 ? 'medium' : 'low',
-            docs: bound(this.docsFor(nb, 0, args.extractedOnly), args.docLimit ?? DEFAULT_DOC_LIMIT)
-              .items,
+            docs: bound(
+              this.docsFor(nb, 0, args.extractedOnly),
+              capInt(args.docLimit, DEFAULT_DOC_LIMIT, MAX_DOC_LIMIT),
+            ).items,
           });
         }
       }
       frontier = next;
     }
-    const page = bound(affected, args.limit ?? DEFAULT_LIMIT);
+    const page = bound(affected, capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT));
     return {
       root: id,
       dir: args.dir,
@@ -586,7 +624,7 @@ export class Verbs {
     withLlm?: boolean;
   }): Record<string, unknown> {
     const soul = this.deps.soul;
-    const limit = args.limit ?? DEFAULT_LIMIT;
+    const limit = capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT);
     // Over-fetch by one to detect whether the BM25 result set was capped (honest `truncated` flag)
     // without an extra count query; we slice back to `limit` after the overflow check.
     const rawHits = this.deps.index.query({
@@ -734,7 +772,10 @@ export class Verbs {
     }
 
     // 3. Discovery question: search the index and gather deep context per hit.
-    const hits = this.deps.index.query({ text: q, limit: args.limit ?? DEFAULT_LIMIT });
+    const hits = this.deps.index.query({
+      text: q,
+      limit: capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT),
+    });
     const needEdges = args.withRules || args.withFramework;
     let outgoing: Map<string, Edge[]> | undefined;
     let incoming: Map<string, Edge[]> | undefined;
@@ -779,7 +820,7 @@ export class Verbs {
     // Also surface saved LLM analyses whose text matches the question. Lightweight pointers only —
     // `ask` is the deterministic discovery path and never folds the full analysis/graph blob.
     const existing = new Set(enriched.map((h) => String(h.id)));
-    const limit = args.limit ?? DEFAULT_LIMIT;
+    const limit = capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT);
     const llmArtifacts = this.llm.matchText(q, limit + 1);
     const llmTruncated = llmArtifacts.length > limit;
     const llmHits: Array<Record<string, unknown>> = [];
@@ -892,7 +933,7 @@ export class Verbs {
     const edges = this.adjacency(id, apiDir(args.dir), args.extractedOnly).filter(
       (e) => !args.rel || e.rel === args.rel,
     );
-    const page = bound(edges.map(publicEdge), args.limit ?? 50);
+    const page = bound(edges.map(publicEdge), capInt(args.limit, 50, MAX_LIMIT));
     return {
       edges: page.items,
       truncated: page.truncated,
@@ -905,7 +946,7 @@ export class Verbs {
     // back to the raw input so index.shortestPath reports a clean not-found instead of throwing.
     const from = this.resolveNodeId(args.from) ?? args.from;
     const to = this.resolveNodeId(args.to) ?? args.to;
-    const r = this.deps.index.shortestPath(from, to, args.maxHops ?? 6);
+    const r = this.deps.index.shortestPath(from, to, capInt(args.maxHops, 6, MAX_HOPS));
     return { path: r.path, edges: r.edges.map(publicEdge), found: r.found };
   }
 
