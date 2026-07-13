@@ -32,6 +32,12 @@ import {
 import type { SoulStore } from '@knowledge-crib/core';
 import { blake3Hex, contentHash } from '@knowledge-crib/soul-schema';
 import type { Node } from '@knowledge-crib/soul-schema';
+import {
+  type EvidenceCheck,
+  type GroundingResult,
+  verifyArtifact,
+  verifyEvidence,
+} from './grounding.js';
 import { estimateTokens } from './token-budget.js';
 
 export type EnrichLayer = 'symbol' | 'file' | 'cluster' | 'system';
@@ -217,6 +223,14 @@ export interface LlmGraphEdge {
 export interface LlmEvidence {
   soulId: string;
   why?: string;
+  /** verbatim text lifted from the anchor node's rehydrated span — the grounding quote (M1.3). The
+   *  validator rehydrates the span and requires this to overlap; a missing/failed quote downgrades
+   *  or rejects the artifact. Optional for backward compat with pre-M1.3 artifacts. */
+  quote?: string;
+  /** 1-based absolute file line the quote starts at (hint; the validator still rehydrates the span). */
+  startLine?: number;
+  /** 1-based absolute file line the quote ends at (inclusive). */
+  endLine?: number;
 }
 
 export interface EnrichSaveItem {
@@ -239,6 +253,11 @@ export interface EnrichAccepted {
   targetId: string;
   path: string;
   droppedEdges?: Array<{ edge: LlmGraphEdge; reason: string }>;
+  /** evidence items whose quotes failed the grounding check (M1.3). Dropped from the persisted
+   *  artifact so the on-disk record only ever carries verifiable claims. */
+  droppedEvidence?: Array<{ soulId: string; reason: string }>;
+  /** true iff ≥1 evidence quote was verified against a rehydrated span (M1.3). */
+  grounded?: boolean;
 }
 
 export interface EnrichRejected {
@@ -249,6 +268,33 @@ export interface EnrichRejected {
 export interface EnrichSaveResult {
   accepted: EnrichAccepted[];
   rejected: EnrichRejected[];
+}
+
+/** Per-target verdict from {@link EnrichmentStore.auditLlm} (M1.3 re-verify). */
+export interface AuditTarget {
+  targetId: string;
+  layer: EnrichLayer;
+  stale: boolean;
+  /** the artifact's stamped save-time verdict (absent on pre-M1.3 artifacts). */
+  stampedGrounded?: boolean;
+  /** the recomputed verdict (rehydrated against the CURRENT soul). */
+  grounded: boolean;
+  score: number;
+  groundedCount: number;
+  ungroundedCount: number;
+  unsupportedCount: number;
+  checks: EvidenceCheck[];
+}
+
+/** Result of {@link EnrichmentStore.auditLlm} — re-verifies every persisted artifact on disk. */
+export interface AuditLlmResult {
+  checked: number;
+  grounded: number;
+  ungrounded: number;
+  /** artifacts whose save-time `grounded` stamp disagrees with the recomputed verdict (drift). */
+  drifted: number;
+  stale: number;
+  targets: AuditTarget[];
 }
 
 export interface LlmArtifact {
@@ -268,6 +314,9 @@ export interface LlmArtifact {
     edges: Array<LlmGraphEdge & { from: string; to: string; targetId: string }>;
   };
   evidence: LlmEvidence[];
+  /** M1.3 grounding verdict stamped at save time: true iff ≥1 evidence quote was verified against a
+   *  rehydrated span. Absent on pre-M1.3 artifacts (audit-llm recomputes). */
+  grounded?: boolean;
 }
 
 export interface LlmRead {
@@ -585,6 +634,35 @@ export class EnrichmentStore {
         continue;
       }
 
+      // M1.3 grounding (the moat): verify every evidence quote against the rehydrated anchor span.
+      //   • any quote present, none grounded → hallucination → reject the whole item.
+      //   • otherwise drop the ungrounded quotes, keep grounded + unsupported, stamp `grounded`.
+      // Unsupported (no quote / unverifiable anchor) is a downgrade, not a reject — preserves
+      // backward compat with pre-M1.3 artifacts whose evidence carried only {soulId, why}.
+      const evidenceList = item.evidence ?? [];
+      const evidenceChecks = evidenceList.map((ev) => verifyEvidence(this.soul, this.repoRoot, ev));
+      const groundedEv: LlmEvidence[] = [];
+      const droppedEvidence: Array<{ soulId: string; reason: string }> = [];
+      let anyQuoted = false;
+      for (const [i, check] of evidenceChecks.entries()) {
+        const ev = evidenceList[i];
+        if (!ev) continue;
+        if (ev.quote?.trim()) anyQuoted = true;
+        if (check.verdict === 'grounded') groundedEv.push(ev);
+        else if (check.verdict === 'ungrounded')
+          droppedEvidence.push({ soulId: ev.soulId, reason: check.reason ?? 'ungrounded' });
+        // unsupported → keep (downgrade, not a reject)
+      }
+      const groundedCount = groundedEv.length;
+      if (anyQuoted && groundedCount === 0) {
+        rejected.push({
+          targetId: item.targetId,
+          reason:
+            'no evidence grounded — every quoted claim failed overlap with its anchor span (hallucination)',
+        });
+        continue;
+      }
+
       const localIds = new Set(item.graph.nodes.map((node) => node.localId));
       const droppedEdges: Array<{ edge: LlmGraphEdge; reason: string }> = [];
       const keptEdges: Array<LlmGraphEdge & { from: string; to: string; targetId: string }> = [];
@@ -622,7 +700,9 @@ export class EnrichmentStore {
           })),
           edges: keptEdges,
         },
-        evidence: item.evidence,
+        // persist only grounded + unsupported evidence; ungrounded quotes were dropped above.
+        evidence: groundedEv,
+        ...(groundedCount > 0 ? { grounded: true } : { grounded: false }),
       };
       const path = this.writeArtifact(artifact);
       this.writeGraphProjection(artifact);
@@ -631,6 +711,8 @@ export class EnrichmentStore {
         targetId: item.targetId,
         path,
         ...(droppedEdges.length > 0 ? { droppedEdges } : {}),
+        ...(droppedEvidence.length > 0 ? { droppedEvidence } : {}),
+        grounded: groundedCount > 0,
       });
     }
 
@@ -655,6 +737,48 @@ export class EnrichmentStore {
       if (artifact) artifacts.push(artifact);
     }
     return artifacts.sort((a, b) => a.targetId.localeCompare(b.targetId));
+  }
+
+  /**
+   * `audit-llm` (M1.3 — the moat): re-verify every persisted artifact on disk against the CURRENT
+   * soul. Re-runs the same grounding check that ran at `enrich_save` time, so a post-refactor re-verify
+   * (the soul changed, the on-disk artifact is stale) is identical to the original verdict. Reports
+   * per-target verdicts + drift (a save-time `grounded` stamp that disagrees with the recomputed one)
+   * + staleness. PURE over the soul + repoRoot — never calls a model, never mutates the on-disk artifacts.
+   */
+  auditLlm(): AuditLlmResult {
+    const targets: AuditTarget[] = [];
+    let grounded = 0;
+    let ungrounded = 0;
+    let drifted = 0;
+    let stale = 0;
+    for (const artifact of this.allArtifacts()) {
+      const target = this.targetFor(artifact.targetId);
+      const isStale = target
+        ? artifact.nodeHash !== target.hash ||
+          artifact.schemaVersion !== this.soul.getManifest().schemaVersion
+        : true;
+      if (isStale) stale++;
+      const result: GroundingResult = verifyArtifact(this.soul, this.repoRoot, artifact);
+      const recomputedGrounded = result.verified;
+      if (recomputedGrounded) grounded++;
+      else ungrounded++;
+      const stamped = artifact.grounded;
+      if (stamped !== undefined && stamped !== recomputedGrounded) drifted++;
+      targets.push({
+        targetId: artifact.targetId,
+        layer: artifact.layer,
+        stale: isStale,
+        ...(stamped !== undefined ? { stampedGrounded: stamped } : {}),
+        grounded: recomputedGrounded,
+        score: result.score,
+        groundedCount: result.grounded,
+        ungroundedCount: result.ungrounded,
+        unsupportedCount: result.unsupported,
+        checks: result.checks,
+      });
+    }
+    return { checked: targets.length, grounded, ungrounded, drifted, stale, targets };
   }
 
   overview(args: EnrichOverviewArgs = {}): Record<string, unknown> {

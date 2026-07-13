@@ -245,6 +245,16 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
   );
 
   server.registerTool(
+    'audit_llm',
+    {
+      description:
+        "Re-verify every persisted LLM artifact on disk against the current soul (M1.3 — the grounding moat). Re-runs the save-time grounding check: rehydrates each evidence quote's anchor span and requires overlap. A post-refactor re-verify is identical to the original verdict. PURE — never calls a model, never mutates artifacts. Returns per-target verdicts (grounded/ungrounded/unsupported), drift (save-time stamp vs recomputed), and staleness. Use after a refactor or index rebuild to confirm the LLM graph is still traceable to disk.",
+      inputSchema: {},
+    },
+    async () => TOOL_RESULT(verbs.auditLlm()),
+  );
+
+  server.registerTool(
     'overview',
     {
       description:

@@ -291,6 +291,8 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdViz(rest, ctx);
     case 'enrich':
       return cmdEnrich(rest, ctx);
+    case 'audit-llm':
+      return cmdAuditLlm(rest, ctx);
     case 'mcp':
       return cmdMcp(rest, ctx);
     case 'skill':
@@ -1533,6 +1535,46 @@ function pathInPrefix(path: string, scope: EnrichScope): boolean {
 }
 
 /**
+ * `crib audit-llm` (M1.3 — the moat): re-verify every persisted LLM artifact on disk against the
+ * current soul. Re-runs the save-time grounding check (rehydrate each evidence quote's anchor span,
+ * require overlap), so a post-refactor re-verify is identical to the original verdict. PURE — the
+ * CLI never calls a model and never mutates the on-disk artifacts. Prints a per-target table + the
+ * aggregate verdict; exits non-zero when any artifact is ungrounded or drifted so CI can gate on it.
+ *
+ *   crib audit-llm [path]
+ */
+async function cmdAuditLlm(args: string[], ctx?: CmdCtx): Promise<number> {
+  const resolved = resolveRoot(args, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const enrich = new EnrichmentStore(rt.soul, resolved.repoRoot);
+  const result = enrich.auditLlm();
+  if (result.checked === 0) {
+    process.stdout.write(
+      'no LLM artifacts on disk — run `crib enrich --next` then `--save` first.\n',
+    );
+    return EXIT.OK;
+  }
+  const rows = result.targets.map((t) => {
+    const stamp = t.stampedGrounded === undefined ? '-' : t.stampedGrounded ? 'g' : 'u';
+    const verdict = t.grounded ? 'g' : 'u';
+    const drift =
+      t.stampedGrounded !== undefined && t.stampedGrounded !== t.grounded ? ' DRIFT' : '';
+    const stale = t.stale ? ' stale' : '';
+    return `${verdict}/${stamp}  g=${t.groundedCount} u=${t.ungroundedCount} unsup=${t.unsupportedCount}  ${t.layer}  ${t.targetId}${drift}${stale}`;
+  });
+  process.stdout.write(
+    `audited ${result.checked} artifact(s): ${result.grounded} grounded, ${result.ungrounded} ungrounded, ${result.drifted} drifted, ${result.stale} stale\n`,
+  );
+  for (const row of rows) process.stdout.write(`  ${row}\n`);
+  if (result.ungrounded > 0 || result.drifted > 0) return EXIT.ERROR;
+  return EXIT.OK;
+}
+
+/**
  * `crib skill <install|list> [name] [--dest <dir>]` — install the bundled `/crib-enrich` skill into
  * `~/.claude/skills/` by default, or another client's skill root via `--dest`.
  * Mirrors `crib mcp install` (idempotent, non-clobbering). `list` prints the bundled skills.
@@ -1623,6 +1665,7 @@ function printHelp(): void {
       '  crib export [--format F] [--procedure P] render soul: rules|mermaid|graph.json|report',
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
       '  crib enrich [path] [--budget-tokens N]    LLM-graph work queue + driver: coverage, --next (grounded batch), --save <file>, --overview, --scope PFX, --scopes',
+      '  crib audit-llm [path]                    re-verify every LLM artifact against the soul (grounding moat); exits non-zero on ungrounded/drift',
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]',
       '                                          auto-wire the MCP server into each IDE config (REQ-2)',
       '  crib skill <install|list> [name] [--dest <dir>]   install bundled skills (default ~/.claude/skills; Codex: --dest ~/.codex/skills)',

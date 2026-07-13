@@ -1035,6 +1035,16 @@ export class Verbs {
     }
   }
 
+  /**
+   * `audit_llm` (M1.3 — the moat): re-verify every persisted LLM artifact on disk against the current
+   * soul. Re-runs the grounding check (rehydrate each evidence quote's anchor span, require overlap)
+   * so a post-refactor re-verify is identical to the original save-time verdict. PURE — never calls a
+   * model, never mutates artifacts. Returns per-target verdicts + drift + staleness.
+   */
+  auditLlm(): Record<string, unknown> {
+    return this.llm.auditLlm() as unknown as Record<string, unknown>;
+  }
+
   overview(
     args: { scope?: { pathPrefix?: string; cluster?: string }; withLlm?: boolean } = {},
   ): Record<string, unknown> {

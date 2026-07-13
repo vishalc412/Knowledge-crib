@@ -144,7 +144,7 @@ For each `item` from `enrich_next`, read `item.seed` (grounding), `item.lowerLay
     "nodes": [{ "localId": "rule:dti-cap", "kind": "business-rule", "name": "DTI 43% cap", "summary": "..." }],
     "edges": [{ "from": "<soul id or localId>", "to": "<soul id or localId>", "rel": "enforces", "rationale": "...", "confidence": 0.0 }]
   },
-  "evidence": [{ "soulId": "<id from seed>", "why": "<line / branch / adjacency that justifies a claim>" }]
+  "evidence": [{ "soulId": "<id from seed>", "quote": "<verbatim text lifted from that node's source span>", "why": "<what this quote justifies>" }]
 }
 ```
 
@@ -152,6 +152,13 @@ For each `item` from `enrich_next`, read `item.seed` (grounding), `item.lowerLay
 - `analysis`: object with `purpose` (string), `responsibilities` (string[]), `confidence` (number 0–1).
 - `graph`: `{ nodes: [], edges: [] }`. Every node needs `localId`, `kind`, `name`. Every edge needs `from`, `to`, `rel`. `confidence` (if set) must be 0–1.
 - `evidence`: array (can be empty, but prefer at least one pointer per non-trivial claim).
+
+### Grounding contract (M1.3 — the moat)
+- `evidence[].quote` is a **verbatim substring** lifted from the `soulId` node's rehydrated source span. At `enrich_save` time the server rehydrates the anchor span and checks the quote overlaps it.
+- A `quote` that does NOT appear in the span is a **hallucination** — the whole item is **rejected** ("no evidence grounded"). Re-read `item.seed.sourceBody` and copy the exact text; do not paraphrase, do not invent.
+- Evidence **without** a `quote` (just `{soulId, why}`) is `unsupported` — downgraded, not rejected (backward-compatible). But a grounded `quote` is the strongest signal; prefer it for every non-trivial claim.
+- `evidence[].startLine` (optional) pages a large span to the line the quote came from.
+- After a refactor, `crib audit-llm` re-runs this exact check against every persisted artifact. An artifact whose save-time `grounded` stamp no longer matches the recomputed verdict is reported as **drift**.
 
 ### Node `kind` values (use these)
 `concept` | `entity` | `business-rule` | `capability` | `feature` | `flow` | `invariant` | `decision`
