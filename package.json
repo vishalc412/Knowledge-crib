@@ -43,11 +43,14 @@
     "ownership:check": "node scripts/ownership-check.mjs",
     "federation:check": "node scripts/federation-check.mjs",
     "stats:check": "node scripts/stats-check.mjs",
-    "parallel:check": "node scripts/parallel-check.mjs"
+    "parallel:check": "node scripts/parallel-check.mjs",
+    "fuzz:check": "node scripts/fuzz-check.mjs",
+    "fuzz:nightly": "node scripts/fuzz-check.mjs --iterations 1000000"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/node": "^22.5.0",
+    "fast-check": "^4.9.0",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"
   },

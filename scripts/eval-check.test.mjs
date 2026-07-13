@@ -64,6 +64,11 @@ assert.match(
   /parallel:check/,
   'release gate must run the M3.4 parallel-parse gate (parallel-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /fuzz:check/,
+  'release gate must run the M3.5 parser-fuzz gate (fuzz-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -119,6 +124,16 @@ assert.match(
   pkg,
   /"parallel:check":\s*"node scripts\/parallel-check\.mjs"/,
   'package.json must define parallel:check',
+);
+assert.match(
+  pkg,
+  /"fuzz:check":\s*"node scripts\/fuzz-check\.mjs"/,
+  'package.json must define fuzz:check',
+);
+assert.match(
+  pkg,
+  /"fuzz:nightly":\s*"node scripts\/fuzz-check\.mjs --iterations 1000000"/,
+  'package.json must define fuzz:nightly (10^6 iters/extractor)',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');

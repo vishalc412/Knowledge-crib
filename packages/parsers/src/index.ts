@@ -111,3 +111,14 @@ export type {
   AstSpan,
   CallSite,
 } from './plsql/ast.js';
+
+// M3.5 parser fuzzing — deterministic, seeded fast-check inputs over the extractor fleet, run in a
+// worker pool with a per-call budget so a sync parse hang (the PL/SQL recover() class) is caught by
+// worker termination. Exported so the `fuzz:check` / `fuzz:nightly` gates (scripts/fuzz-check.mjs)
+// can drive the harness from the built dist. Not part of the MCP surface.
+export { runFuzz, runFakeselfTest } from './fuzz/extractor-fuzz.js';
+export type { FuzzOutcome, FuzzReproducer, RunFuzzOpts } from './fuzz/extractor-fuzz.js';
+export { FUZZ_EXTRACTORS } from './fuzz/fuzz-extractors.js';
+export type { FuzzExtractorSpec } from './fuzz/fuzz-extractors.js';
+export { validateFuzzResult, nodeIsValid, edgeIsValid } from './fuzz/fuzz-validate.js';
+export type { FuzzOutcomeKind } from './fuzz/fuzz-validate.js';
