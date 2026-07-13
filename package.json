@@ -45,7 +45,9 @@
     "stats:check": "node scripts/stats-check.mjs",
     "parallel:check": "node scripts/parallel-check.mjs",
     "fuzz:check": "node scripts/fuzz-check.mjs",
-    "fuzz:nightly": "node scripts/fuzz-check.mjs --iterations 1000000"
+    "fuzz:nightly": "node scripts/fuzz-check.mjs --iterations 1000000",
+    "scale:check": "node scripts/scale-bench.mjs --slice 20000 --out /tmp/crib-scale-gate.md",
+    "scale:nightly": "node scripts/scale-bench.mjs --slices 10000,100000,500000,1000000"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

@@ -69,6 +69,11 @@ assert.match(
   /fuzz:check/,
   'release gate must run the M3.5 parser-fuzz gate (fuzz-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /scale:check/,
+  'release gate must run the M3.6 scale-bench gate (scale-bench.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -134,6 +139,16 @@ assert.match(
   pkg,
   /"fuzz:nightly":\s*"node scripts\/fuzz-check\.mjs --iterations 1000000"/,
   'package.json must define fuzz:nightly (10^6 iters/extractor)',
+);
+assert.match(
+  pkg,
+  /"scale:check":\s*"node scripts\/scale-bench\.mjs --slice 20000 --out \/tmp\/crib-scale-gate\.md"/,
+  'package.json must define scale:check (M3.6 harness smoke, throwaway out path)',
+);
+assert.match(
+  pkg,
+  /"scale:nightly":\s*"node scripts\/scale-bench\.mjs --slices 10000,100000,500000,1000000"/,
+  'package.json must define scale:nightly (full 1M-LOC curve)',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');

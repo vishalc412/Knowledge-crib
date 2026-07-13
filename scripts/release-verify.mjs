@@ -33,6 +33,7 @@ pnpm(['federation:check']);
 pnpm(['stats:check']);
 pnpm(['parallel:check']);
 pnpm(['fuzz:check']);
+pnpm(['scale:check']);
 pnpm(['publish:dry-run']);
 pnpm(['installer:test']);
 pnpm(['installer:build']);
