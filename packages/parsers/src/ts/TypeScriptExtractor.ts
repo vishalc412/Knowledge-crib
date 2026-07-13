@@ -30,10 +30,28 @@ export class TypeScriptExtractor implements Extractor {
   name = 'lang:typescript';
   capabilities: Capabilities = { imports: true, calls: true, inheritance: true, types: 'partial' };
 
-  private static readonly EXTS = ['.ts', '.tsx', '.mts', '.cts'];
+  // M2.5 — the TS extractor's syntactic `createSourceFile` engine parses JS/JSX/MJS/CJS just as
+  // well as TS (no type-checker, no program, no `allowJs` flag needed — `createSourceFile` honors a
+  // `scriptKind`). Admitting the JS family here means plain-JS repos get the same symbol/edge
+  // coverage as TS repos instead of being dropped at Phase 2 (`if (!extractor) continue`).
+  private static readonly EXTS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'];
 
   supports(file: FileMeta): boolean {
     return TypeScriptExtractor.EXTS.some((e) => file.path.endsWith(e));
+  }
+
+  /** TS-family exts tag `lang: 'typescript'`; JS-family exts tag `lang: 'javascript'`. */
+  private static langFor(path: string): 'typescript' | 'javascript' {
+    return /\.(mjs|cjs|js|jsx)$/.test(path) ? 'javascript' : 'typescript';
+  }
+
+  /** `createSourceFile` scriptKind per extension — `.tsx`→TSX, `.jsx`→JSX, `.js`/`.mjs`/`.cjs`→JS. */
+  private static scriptKindFor(path: string): ts.ScriptKind {
+    if (path.endsWith('.tsx')) return ts.ScriptKind.TSX;
+    if (path.endsWith('.jsx')) return ts.ScriptKind.JSX;
+    if (path.endsWith('.js') || path.endsWith('.mjs') || path.endsWith('.cjs'))
+      return ts.ScriptKind.JS;
+    return ts.ScriptKind.TS;
   }
 
   async extract(file: FileMeta, ctx: ExtractCtx): Promise<ExtractResult> {
@@ -48,7 +66,8 @@ export class TypeScriptExtractor implements Extractor {
   }
 
   private parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult {
-    const scriptKind = path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+    const lang = TypeScriptExtractor.langFor(path);
+    const scriptKind = TypeScriptExtractor.scriptKindFor(path);
     const sf = ts.createSourceFile(
       path,
       text,
@@ -64,7 +83,7 @@ export class TypeScriptExtractor implements Extractor {
 
     // --- pass 1: declarations + member-of ---
     const visit = (node: ts.Node, qualifier: string[], parentId: string): void => {
-      const decl = this.declarationOf(node, qualifier, path, fileId, lineOf, ctx);
+      const decl = this.declarationOf(node, qualifier, path, fileId, lineOf, ctx, lang);
       if (decl) {
         symbols.push(decl.local);
         for (const k of decl.local.keys) if (!byKey.has(k)) byKey.set(k, decl.local.node.id);
@@ -82,7 +101,16 @@ export class TypeScriptExtractor implements Extractor {
 
     // --- pass 1.5 (1.2): preceding comment block → `explanation` node + `describes` edge,
     //     so a symbol's intent survives into the graph. Pure line-association, never throws. ---
-    this.attachExplanations(path, ctx, collectTsComments(text), symbols, lineOf, nodes, edges);
+    this.attachExplanations(
+      path,
+      ctx,
+      collectTsComments(text),
+      symbols,
+      lineOf,
+      nodes,
+      edges,
+      lang,
+    );
 
     // --- pass 2: intra-file calls (deduped proc→callee, no guard fields yet) ---
     this.collectCalls(sf, symbols, byKey, lineOf, edges);
@@ -90,7 +118,7 @@ export class TypeScriptExtractor implements Extractor {
     // --- pass 3: body-walk — condition/statement nodes + executes/guarded-by edges,
     //     call-site recording (meta.calls) + guard-field annotation on the calls edges.
     //     1.2: also emits raise/exception-handler/assignment/case-branch behavior nodes. ---
-    this.walkBodies(path, ctx, symbols, byKey, lineOf, nodes, edges);
+    this.walkBodies(path, ctx, symbols, byKey, lineOf, nodes, edges, lang);
 
     // --- pass 4 (1.3): framework semantics — NestJS (decorators) + Express (imperative routes) +
     //     React (components/hooks/renders). Derives routes/DI/module-producers/entity-relations/
@@ -105,10 +133,10 @@ export class TypeScriptExtractor implements Extractor {
         qualifiedName: s.node.qualifiedName ?? '',
       }));
     if (classSyms.length) {
-      extractNestSemantics({ classSyms, byKey, nodes, edges, ctx, path, lineOf });
+      extractNestSemantics({ classSyms, byKey, nodes, edges, ctx, path, lineOf, lang });
     }
-    extractExpressRoutes({ sf, byKey, symbols, nodes, edges, ctx, path, lineOf });
-    extractReactSemantics({ symbols, byKey, nodes, edges, ctx, path, lineOf });
+    extractExpressRoutes({ sf, byKey, symbols, nodes, edges, ctx, path, lineOf, lang });
+    extractReactSemantics({ symbols, byKey, nodes, edges, ctx, path, lineOf, lang });
 
     return { nodes, edges };
   }
@@ -126,6 +154,7 @@ export class TypeScriptExtractor implements Extractor {
     lineOf: (pos: number) => number,
     nodes: Node[],
     edges: Edge[],
+    lang: 'typescript' | 'javascript',
   ): void {
     const seen = new Set<string>();
     for (const s of symbols) {
@@ -142,7 +171,7 @@ export class TypeScriptExtractor implements Extractor {
         commentRef: { file: path, span: { start: block.start, end: block.end } },
         file: path,
         span: { start: block.start, end: block.end },
-        lang: 'typescript',
+        lang,
         hash: ctx.hash(`${path}:${block.start}:${block.text}`),
         meta: { text: block.text }, // the comment text is carried inline (a doc, not code ref)
       });
@@ -167,6 +196,7 @@ export class TypeScriptExtractor implements Extractor {
     _fileId: string,
     lineOf: (pos: number) => number,
     ctx: ExtractCtx,
+    lang: 'typescript' | 'javascript',
   ): { local: LocalSymbol; childQualifier: string[] } | null {
     const info = symbolInfo(node);
     if (!info) return null;
@@ -182,7 +212,7 @@ export class TypeScriptExtractor implements Extractor {
       qualifiedName,
       file: path,
       span: { start: startLine, end: endLine },
-      lang: 'typescript',
+      lang,
       hash: ctx.hash(node.getText()),
       ...(info.signature ? { signature: info.signature } : {}),
       meta: { parentQualifier: qualifier.join('.') },
@@ -283,6 +313,7 @@ export class TypeScriptExtractor implements Extractor {
     lineOf: (pos: number) => number,
     nodes: Node[],
     edges: Edge[],
+    lang: 'typescript' | 'javascript',
   ): void {
     // one entry per procedure that has a body, holding the call-site records + per-callee guard
     // annotations collected during its body-walk (calls edges are deduped per (proc,callee), so
@@ -324,6 +355,7 @@ export class TypeScriptExtractor implements Extractor {
         branch: undefined,
         inLoop: false,
         inException: false,
+        lang,
       });
     }
 
@@ -481,7 +513,7 @@ export class TypeScriptExtractor implements Extractor {
         expr: info.expr,
         file: env.path,
         span: { start: line, end: line },
-        lang: 'typescript',
+        lang: env.lang,
         hash: env.ctx.hash(`${env.path}:${line}:${info.type}`),
         meta: {
           head: info.head,
@@ -564,7 +596,7 @@ export class TypeScriptExtractor implements Extractor {
         kind: 'raise',
         file: env.path,
         span: { start: line, end: line },
-        lang: 'typescript',
+        lang: env.lang,
         hash: env.ctx.hash(`${env.path}:${line}:raise:${message ?? ''}`),
         ...(message !== undefined ? { errorMessage: message } : {}),
         ...(code !== undefined ? { errorCode: code } : {}),
@@ -606,7 +638,7 @@ export class TypeScriptExtractor implements Extractor {
         ...exprFields(stmt.getText()),
         file: env.path,
         span: { start: line, end: line },
-        lang: 'typescript',
+        lang: env.lang,
         hash: env.ctx.hash(`${env.path}:${line}:assign:${target}`),
         meta: { inLoop: env.inLoop, inException: env.inException },
       });
@@ -647,7 +679,7 @@ export class TypeScriptExtractor implements Extractor {
         whenSelector: truncate(selector, EXPR_MAX_CHARS),
         file: env.path,
         span: { start: line, end: line },
-        lang: 'typescript',
+        lang: env.lang,
         hash: env.ctx.hash(`${env.path}:case:${line}:${selector}`),
       });
       // executes: proc → case-branch (the callable dispatches into this branch).
@@ -677,7 +709,7 @@ export class TypeScriptExtractor implements Extractor {
         ...(selector !== undefined ? { whenSelector: selector } : {}),
         file: env.path,
         span: { start: line, end: line },
-        lang: 'typescript',
+        lang: env.lang,
         hash: env.ctx.hash(`${env.path}:exc:${line}:${selector ?? ''}`),
       });
     }
@@ -713,7 +745,7 @@ export class TypeScriptExtractor implements Extractor {
         ...exprFields(expr),
         file: env.path,
         span: { start: line, end: line },
-        lang: 'typescript',
+        lang: env.lang,
         hash: env.ctx.hash(`${env.path}:${line}:${expr}`),
       });
     }
@@ -757,6 +789,8 @@ interface BodyEnv {
   branch: string | undefined;
   inLoop: boolean;
   inException: boolean;
+  /** M2.5 — `lang` tag stamped on every body-walk node ('typescript' | 'javascript'). */
+  lang: 'typescript' | 'javascript';
 }
 
 /** A statement's action descriptor: one per action line (call/return/throw/assign-with-call). */

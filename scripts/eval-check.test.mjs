@@ -29,6 +29,11 @@ assert.match(
   /alias:check/,
   'release gate must run the M2.4 alias-dictionary gate (alias-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /js-coverage:check/,
+  'release gate must run the M2.5 plain-JS coverage gate (js-coverage-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -49,6 +54,11 @@ assert.match(
   pkg,
   /"alias:check":\s*"node scripts\/alias-check\.mjs"/,
   'package.json must define alias:check',
+);
+assert.match(
+  pkg,
+  /"js-coverage:check":\s*"node scripts\/js-coverage-check\.mjs"/,
+  'package.json must define js-coverage:check',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');
@@ -82,6 +92,22 @@ assert.match(
   'alias-check.mjs must target the camelCase class the alias case is built around',
 );
 assert.match(aliasCheck, /deterministic/i, 'alias-check.mjs must assert determinism across runs');
+const jsCoverageCheck = readFileSync('scripts/js-coverage-check.mjs', 'utf8');
+assert.match(
+  jsCoverageCheck,
+  /\.js.*\.jsx.*\.mjs.*\.cjs|js-coverage/,
+  'js-coverage-check.mjs must cover the JS file family (.js/.jsx/.mjs/.cjs)',
+);
+assert.match(
+  jsCoverageCheck,
+  /indexRepo/,
+  'js-coverage-check.mjs must drive the pipeline indexRepo over the plain-js fixture',
+);
+assert.match(
+  jsCoverageCheck,
+  /deterministic/i,
+  'js-coverage-check.mjs must assert determinism across indexes',
+);
 const semanticCheck = readFileSync('scripts/semantic-check.mjs', 'utf8');
 assert.match(semanticCheck, /MIN_RECOVERY/, 'semantic-check.mjs must enforce a recovery floor');
 assert.match(
