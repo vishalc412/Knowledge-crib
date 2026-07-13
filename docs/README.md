@@ -56,6 +56,19 @@ Two existing tools each prove half and serve as **design inspiration only (no co
 | — | [knowledge-crib-production-readiness.md](knowledge-crib-production-readiness.md) | Release gate, packaging fixes, and remaining production gaps |
 | — | [knowledge-crib-beta-installers.md](knowledge-crib-beta-installers.md) | macOS and Windows beta installer bundle build/install guide |
 
+## Launch assets (M4.6)
+
+Drafts for the launch — human-reviewed before posting/recording. Grounded in
+[knowledge-crib-technical-pitch.md](knowledge-crib-technical-pitch.md); do not contradict its honest
+limits section. Counts reference [STATS.md](STATS.md) (generated, not hardcoded).
+
+| Asset | What it is |
+|---|---|
+| [launch/comparison.md](launch/comparison.md) | The 7-column capability matrix vs GraphRAG / SCIP / Joern / CodeQL / Aider / Glean — the moat is the intersection |
+| [launch/show-hn.md](launch/show-hn.md) | Show HN post draft (technical tone, reproducible proof, honest limits) |
+| [launch/linkedin-series.md](launch/linkedin-series.md) | 5-post LinkedIn arc: problem → mechanism → moat → proof → ask |
+| [launch/demo-recipe.md](launch/demo-recipe.md) | Demo GIF/video shot list + exact commands (the capture itself is a user action) |
+
 ## Open-Source Release Files
 
 | File | Purpose |
