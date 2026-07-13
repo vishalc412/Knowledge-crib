@@ -1162,18 +1162,24 @@ function cmdMcp(args: string[], ctx?: CmdCtx): number {
 }
 
 /**
- * `crib export [--format rules|mermaid|graph.json|report] [--procedure <id|name>]` — render the
+ * `crib export [--format rules|mermaid|graph.json|report|llm] [--procedure <id|name>]` — render the
  * soul. `rules`/`mermaid` need `--procedure` (a node id or a procedure/function name); `graph.json`
- * and `report` dump the whole soul (report optionally scoped to one procedure via --procedure).
+ * and `report` dump the whole soul (report optionally scoped to one procedure via --procedure);
+ * `llm` dumps the committed LLM layer (redacted by default — M1.4).
  */
 async function cmdExport(args: string[], ctx?: CmdCtx): Promise<number> {
   // Parse flags + their values out so flag values aren't mistaken for a positional path.
   let format = 'report';
   let procedure: string | undefined;
+  let redact = true; // M1.4: the LLM export redacts by default; --no-redact opts out (local debugging only)
   const positional: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
-    if (a === '--format') {
+    if (a === '--no-redact') {
+      redact = false;
+    } else if (a === '--redact') {
+      redact = true;
+    } else if (a === '--format') {
       format = args[++i] ?? '';
     } else if (a === '--procedure') {
       procedure = args[++i];
@@ -1186,7 +1192,7 @@ async function cmdExport(args: string[], ctx?: CmdCtx): Promise<number> {
       ctx?.cwdOverride ?? (positional[0] && positional[0] !== '.' ? positional[0] : undefined),
   });
 
-  const formats = ['rules', 'mermaid', 'graph.json', 'report'] as const;
+  const formats = ['rules', 'mermaid', 'graph.json', 'report', 'llm'] as const;
   type ExportFormat = (typeof formats)[number];
   if (!(formats as readonly string[]).includes(format)) {
     process.stderr.write(`unknown format: ${format || '(none)'}\nvalid: ${formats.join(', ')}\n`);
@@ -1204,7 +1210,21 @@ async function cmdExport(args: string[], ctx?: CmdCtx): Promise<number> {
 
   const rt = openSoul(resolved);
   try {
-    process.stdout.write(renderExport(rt.soul, fmt, procedure));
+    if (fmt === 'llm') {
+      // M1.4: the `llm` format dumps the committed LLM layer (`.crib/llm/`). `--redact` (default)
+      // strips every evidence `quote` to a span ref `{soulId, file, startLine, endLine}` and masks
+      // any secret-pattern substring in analysis/graph strings, so the exported bundle never
+      // carries verbatim source snippets or secrets even if the on-disk artifacts do.
+      const enrich = new EnrichmentStore(rt.soul, resolved.repoRoot);
+      process.stdout.write(enrich.exportLlm(redact));
+      if (!redact) {
+        process.stderr.write(
+          'warning: --no-redact emits verbatim evidence quotes — do not share the output externally.\n',
+        );
+      }
+    } else {
+      process.stdout.write(renderExport(rt.soul, fmt, procedure));
+    }
   } catch (err) {
     process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
     return EXIT.ERROR;
@@ -1662,7 +1682,7 @@ function printHelp(): void {
       '  crib reindex [path] [--package <name|all>...]     full re-index (alias for `crib index`; --package scopes to one monorepo package)',
       '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',
       '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',
-      '  crib export [--format F] [--procedure P] render soul: rules|mermaid|graph.json|report',
+      '  crib export [--format F] [--procedure P] [--redact|--no-redact] render soul: rules|mermaid|graph.json|report|llm (--redact strips llm evidence quotes→span refs; default on for llm)',
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
       '  crib enrich [path] [--budget-tokens N]    LLM-graph work queue + driver: coverage, --next (grounded batch), --save <file>, --overview, --scope PFX, --scopes',
       '  crib audit-llm [path]                    re-verify every LLM artifact against the soul (grounding moat); exits non-zero on ungrounded/drift',

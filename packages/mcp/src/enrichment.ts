@@ -38,6 +38,7 @@ import {
   verifyArtifact,
   verifyEvidence,
 } from './grounding.js';
+import { collectStrings, redactSecrets, scanSecrets } from './secrets.js';
 import { estimateTokens } from './token-budget.js';
 
 export type EnrichLayer = 'symbol' | 'file' | 'cluster' | 'system';
@@ -634,6 +635,29 @@ export class EnrichmentStore {
         continue;
       }
 
+      // M1.4 secret scan (the persist-time guard): the LLM layer is a COMMITTED artifact, and a
+      // model-authored evidence `quote` lifts verbatim source. A secret copied into a quote or an
+      // analysis field would land in git. Reject the whole item on any hit so a planted canary
+      // secret can never reach a committed artifact. Runs BEFORE grounding — a secret must never
+      // persist regardless of whether the quote overlaps the span.
+      // Scan every string the model authored on this item (analysis + graph + evidence + their
+      // nested fields). collectStrings yields bracketed paths like `evidence[0].quote`; we keep
+      // every field because the whole item is model-authored and a secret anywhere is a reject.
+      const secretFields = collectStrings(item);
+      const secretHits = secretFields
+        .map((f) => ({ f, hits: scanSecrets(f.value) }))
+        .filter((x) => x.hits.length > 0);
+      if (secretHits.length > 0) {
+        const where = secretHits
+          .map((x) => `${x.f.path}(${x.hits.map((h) => h.pattern).join('|')})`)
+          .join(', ');
+        rejected.push({
+          targetId: item.targetId,
+          reason: `secret pattern detected in authored field(s): ${where} — redact before persisting`,
+        });
+        continue;
+      }
+
       // M1.3 grounding (the moat): verify every evidence quote against the rehydrated anchor span.
       //   • any quote present, none grounded → hallucination → reject the whole item.
       //   • otherwise drop the ungrounded quotes, keep grounded + unsupported, stamp `grounded`.
@@ -779,6 +803,37 @@ export class EnrichmentStore {
       });
     }
     return { checked: targets.length, grounded, ungrounded, drifted, stale, targets };
+  }
+
+  /**
+   * `crib export --format llm` (M1.4): render the committed LLM layer as JSON. With `redact` (default)
+   * every evidence `quote` is replaced by a span ref `{soulId, file, startLine, endLine}` — verbatim
+   * source stripped — and any secret-pattern substring in analysis/graph strings is masked. Use this
+   * bundle, not the raw `.crib/llm` tree, when sharing the LLM graph externally.
+   */
+  exportLlm(redact: boolean): string {
+    const artifacts = this.allArtifacts().map((a) => {
+      if (!redact) return a;
+      const evidence = (a.evidence ?? []).map((e) => {
+        const node = this.soul.getNode(e.soulId);
+        const startLine = e.startLine ?? node?.span?.start;
+        const endLine = e.endLine ?? node?.span?.end;
+        return {
+          soulId: e.soulId,
+          ...(e.why ? { why: redactSecrets(e.why) } : {}),
+          ...(startLine !== undefined ? { startLine } : {}),
+          ...(endLine !== undefined ? { endLine } : {}),
+          ...(node?.file ? { file: node.file } : {}),
+        };
+      });
+      return {
+        ...a,
+        analysis: JSON.parse(redactSecrets(JSON.stringify(a.analysis))) as LlmAnalysis,
+        graph: JSON.parse(redactSecrets(JSON.stringify(a.graph))) as LlmArtifact['graph'],
+        evidence,
+      };
+    });
+    return `${JSON.stringify({ schemaVersion: 'llm-1', redacted: redact, artifacts }, null, 2)}\n`;
   }
 
   overview(args: EnrichOverviewArgs = {}): Record<string, unknown> {
