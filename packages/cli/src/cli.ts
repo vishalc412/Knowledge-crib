@@ -3,7 +3,7 @@
  * `crib` — the Knowledge-crib CLI. Wraps the pipeline + MCP server.
  *
  * Commands: index | status | query | gaps | rules | context | ask | dossier | impact | path | neighbors |
- *           serve | update | reindex | merge-driver | install-hooks | export | viz | mcp.
+ *           serve | update | reindex | merge-driver | install-hooks | export | viz | mcp | init | doctor.
  *
  * Root resolution (REQ-1): `crib serve`/`status`/`update`/`export`/`viz`/`query` resolve the project
  * root via a priority chain — explicit positional arg or `--cwd` → `KCRIB_ROOT` → `CLAUDE_PROJECT_DIR`
@@ -13,6 +13,7 @@
  *
  * Exit codes (cli spec): 0 ok · 1 error · 2 bad args · 3 not indexed.
  */
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import {
@@ -41,7 +42,7 @@ import {
 import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
 import type { WorkspaceLayout } from '@knowledge-crib/pipeline';
 import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/ui';
-import { installHooks, mergeDriverFiles } from './hooks.js';
+import { hooksInstalled, installHooks, mergeDriverFiles } from './hooks.js';
 import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
 import { registerProject } from './registry.js';
 import {
@@ -316,6 +317,10 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdMcp(rest, ctx);
     case 'skill':
       return cmdSkill(rest);
+    case 'init':
+      return cmdInit(rest, ctx);
+    case 'doctor':
+      return cmdDoctor(rest, ctx);
     case undefined:
     case '-h':
     case '--help':
@@ -1131,6 +1136,206 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
   });
 }
 
+/**
+ * `crib init [path] [--ide <name|all>]` — the 5-minute onboarding (M4.2). Orchestrates the three
+ * setup steps a new user would otherwise run by hand — index, install-hooks, mcp install — then
+ * prints the hero "next steps" so the value is visible immediately and the path to the first MCP
+ * query is one copy-paste. Idempotent: re-running refreshes the index, re-wires hooks (managed
+ * blocks replace in place), and re-wires MCP (already-present configs report "up to date"). Does
+ * NOT take `--semantic` (deterministic-first onboarding; opt into INFERRED links with a later
+ * `crib index --semantic`).
+ */
+async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
+  const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
+  const ideIdx = args.indexOf('--ide');
+  const ide: McpIde | 'all' = ideIdx >= 0 ? ((args[ideIdx + 1] as McpIde | 'all') ?? 'all') : 'all';
+  const validIdes: Array<McpIde | 'all'> = ['all', 'claude', 'cursor', 'vscode', 'codex'];
+  if (!validIdes.includes(ide)) {
+    process.stderr.write(`unknown --ide: ${ide}\nvalid: ${validIdes.join(', ')}\n`);
+    return EXIT.BAD_ARGS;
+  }
+
+  process.stdout.write('crib init — 5-minute onboarding\n');
+  process.stdout.write('  step 1/3: indexing the repo (deterministic, LLM-free)…\n');
+  const indexCode = await cmdIndex([repoRoot], ctx);
+  if (indexCode !== EXIT.OK) {
+    process.stderr.write(`  index failed (exit ${indexCode}) — aborting init\n`);
+    return indexCode;
+  }
+
+  process.stdout.write(
+    '  step 2/3: wiring git hooks (post-commit `crib update` + .crib merge driver)…\n',
+  );
+  const hooksCode = cmdInstallHooks([repoRoot], ctx);
+  if (hooksCode !== EXIT.OK) {
+    process.stderr.write(`  install-hooks failed (exit ${hooksCode}) — aborting init\n`);
+    return hooksCode;
+  }
+
+  process.stdout.write(`  step 3/3: wiring the MCP server into IDE config (--ide ${ide})…\n`);
+  const mcpCode = cmdMcp(['install', '--ide', ide, repoRoot], ctx);
+  if (mcpCode !== EXIT.OK) {
+    process.stderr.write(`  mcp install failed (exit ${mcpCode}) — aborting init\n`);
+    return mcpCode;
+  }
+
+  process.stdout.write('\n✓ crib init complete. Next steps:\n');
+  process.stdout.write('  1. Restart your IDE so it picks up the MCP server config.\n');
+  process.stdout.write(
+    '  2. Ask your agent "query the crib for <symbol>", or run `crib query <text>`.\n',
+  );
+  process.stdout.write(
+    '  3. (optional) `crib index --semantic` — add INFERRED embedding-cosine links.\n',
+  );
+  process.stdout.write('  4. (optional) `crib enrich --next` — drive the LLM-graph layer.\n');
+  process.stdout.write('  Run `crib doctor` any time to re-check setup health.\n');
+  return EXIT.OK;
+}
+
+/**
+ * `crib doctor [path]` — setup health check (M4.2). Runs the six onboarding-critical checks and
+ * prints ✓/✗ + a fix hint for each. A failing check never skips the rest — the point is a full
+ * diagnostic in one pass. Exits 0 when every check passes, 1 when any fails, so scripts/CI can
+ * detect a broken setup. The Node-version check mirrors bin.ts's launcher guard (the canonical
+ * gate, REQUIRED_NODE = 22.5.0 — the node:sqlite requirement); doctor re-runs it so a user on a
+ * too-old Node learns it here, not from an opaque `node:sqlite` crash.
+ */
+function cmdDoctor(args: string[], ctx?: CmdCtx): number {
+  const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
+  const checks: Array<{ name: string; ok: boolean; detail: string; fix?: string }> = [];
+
+  // 1. Node ≥ 22.5.0 — mirrors bin.ts REQUIRED_NODE (the node:sqlite requirement).
+  const REQUIRED_NODE = '22.5.0';
+  const parts = process.versions.node.split('.').map((n) => Number.parseInt(n, 10));
+  const reqParts = REQUIRED_NODE.split('.').map((n) => Number.parseInt(n, 10));
+  const major = parts[0] ?? 0;
+  const minor = parts[1] ?? 0;
+  const reqMajor = reqParts[0] ?? 0;
+  const reqMinor = reqParts[1] ?? 0;
+  const nodeOk = major > reqMajor || (major === reqMajor && minor >= reqMinor);
+  checks.push({
+    name: 'Node ≥ 22.5.0',
+    ok: nodeOk,
+    detail: `found ${process.versions.node}`,
+    fix: 'upgrade Node, then re-run `crib`',
+  });
+
+  // 2. corepack available (the documented pnpm path — `corepack pnpm@9.15.0`).
+  let corepackOk = false;
+  let corepackDetail = 'not found';
+  try {
+    const v = execFileSync('corepack', ['--version'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    corepackOk = true;
+    corepackDetail = `corepack ${v}`;
+  } catch {
+    /* corepack absent — best-effort check, not a hard failure of crib itself */
+  }
+  checks.push({
+    name: 'corepack available',
+    ok: corepackOk,
+    detail: corepackDetail,
+    fix: '`corepack enable` (or install Node ≥ 16.17, which bundles corepack)',
+  });
+
+  // 3. .crib indexed (committed soul present).
+  const resolved = resolveProjectRoot({ explicitRoot: repoRoot });
+  const indexed = isIndexedRoot(resolved);
+  checks.push({
+    name: 'repo indexed (.crib soul present)',
+    ok: indexed,
+    detail: indexed ? 'yes' : 'no .crib/crib.json at repo root',
+    fix: 'run `crib init` (or `crib index .`)',
+  });
+
+  // 4. index freshness — soul vcsHead == current HEAD (only meaningful when indexed).
+  if (indexed) {
+    const rt = openSoul(resolved);
+    const index = openIndexForRead(rt);
+    if (index) {
+      const verbs = new Verbs({
+        soul: rt.soul,
+        index,
+        repoRoot: resolved.repoRoot,
+        vcs: new CliVcsAdapter(),
+      });
+      const st = verbs.status() as {
+        vcsHead?: string;
+        currentHead?: string;
+        dirty?: { aheadOfVcsHead?: boolean };
+      };
+      index.close();
+      const stale = st.dirty?.aheadOfVcsHead === true;
+      checks.push({
+        name: 'index fresh (soul vcsHead == HEAD)',
+        ok: !stale,
+        detail: stale
+          ? `soul at ${st.vcsHead ?? '(none)'}, HEAD at ${st.currentHead ?? '(none)'}`
+          : 'up to date',
+        fix: 'run `crib update .`',
+      });
+    } else {
+      checks.push({
+        name: 'index fresh (soul vcsHead == HEAD)',
+        ok: false,
+        detail: 'derived index missing',
+        fix: 'run `crib index .`',
+      });
+    }
+  } else {
+    checks.push({
+      name: 'index fresh (soul vcsHead == HEAD)',
+      ok: false,
+      detail: 'skipped — repo not indexed',
+      fix: 'run `crib init` first',
+    });
+  }
+
+  // 5. git hooks installed (post-commit `crib update` + .crib merge driver).
+  const hooks = hooksInstalled(repoRoot);
+  const hooksOk = hooks.postCommit && hooks.gitattributes && hooks.driverConfig;
+  checks.push({
+    name: 'git hooks installed',
+    ok: hooksOk,
+    detail: `post-commit ${hooks.postCommit ? '✓' : '✗'}, .gitattributes ${hooks.gitattributes ? '✓' : '✗'}, merge driver ${hooks.driverConfig ? '✓' : '✗'}`,
+    fix: 'run `crib install-hooks`',
+  });
+
+  // 6. IDE MCP wiring present (any IDE in project scope).
+  let wired = false;
+  let wiredDetail = 'no IDE config found';
+  try {
+    const entries = listMcp(repoRoot, { ide: 'all', scope: 'project' });
+    const present = entries.filter((e) => e.present);
+    wired = present.length > 0;
+    wiredDetail = present.length > 0 ? present.map((e) => e.ide).join(', ') : 'none present';
+  } catch {
+    /* best-effort — listMcp should not throw, but never let a diagnostic crash */
+  }
+  checks.push({
+    name: 'IDE MCP wiring present',
+    ok: wired,
+    detail: wiredDetail,
+    fix: 'run `crib mcp install` (or `crib init`)',
+  });
+
+  let failures = 0;
+  for (const c of checks) {
+    const mark = c.ok ? '✓' : '✗';
+    process.stdout.write(`  ${mark} ${c.name} — ${c.detail}\n`);
+    if (!c.ok) {
+      failures++;
+      if (c.fix) process.stdout.write(`      fix: ${c.fix}\n`);
+    }
+  }
+  process.stdout.write(
+    `\ncrib doctor: ${checks.length - failures}/${checks.length} checks passed\n`,
+  );
+  return failures > 0 ? EXIT.ERROR : EXIT.OK;
+}
+
 /** `crib merge-driver %O %A %B %P` — git custom merge driver for one `.crib` JSONL chunk. */
 function cmdMergeDriver(args: string[]): number {
   // git passes: %O ancestor  %A current/ours (output)  %B other/theirs  %P pathname
@@ -1766,6 +1971,8 @@ function printHelp(): void {
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]',
       '                                          auto-wire the MCP server into each IDE config (REQ-2)',
       '  crib skill <install|list> [name] [--dest <dir>]   install bundled skills (default ~/.claude/skills; Codex: --dest ~/.codex/skills)',
+      '  crib init [path] [--ide <name|all>]      5-minute onboarding: index + install-hooks + mcp install + next-steps hero',
+      '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring (✓/✗ + fix hints)',
       '',
       'Global: --cwd <path>   override the project root for any command',
       '',
@@ -1774,8 +1981,13 @@ function printHelp(): void {
 }
 
 main(process.argv.slice(2))
-  .then((code) => process.exit(code))
+  // Do not force process.exit here. Large graph/report exports write through a pipe; forcing exit
+  // discards buffered stdout (commonly at 64 KiB) before Node drains it. exitCode preserves the
+  // command result while letting stdio flush naturally.
+  .then((code) => {
+    process.exitCode = code;
+  })
   .catch((err) => {
     process.stderr.write(`${err instanceof Error ? err.stack : String(err)}\n`);
-    process.exit(EXIT.ERROR);
+    process.exitCode = EXIT.ERROR;
   });

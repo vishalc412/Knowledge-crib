@@ -84,6 +84,11 @@ assert.match(
   /soul-refresh:check/,
   'release gate must run the M4.3 crib-soul-refresh idempotence gate (soul-refresh-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /onboarding:check/,
+  'release gate must run the M4.2 crib init + doctor onboarding gate (onboarding-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -169,6 +174,11 @@ assert.match(
   pkg,
   /"soul-refresh:check":\s*"node scripts\/soul-refresh-check\.mjs"/,
   'package.json must define soul-refresh:check (M4.3 crib-soul-refresh idempotence gate)',
+);
+assert.match(
+  pkg,
+  /"onboarding:check":\s*"node scripts\/onboarding-check\.mjs"/,
+  'package.json must define onboarding:check (M4.2 crib init + doctor onboarding gate)',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');

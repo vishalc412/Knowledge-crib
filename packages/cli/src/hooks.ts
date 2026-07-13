@@ -46,6 +46,45 @@ export function gitDir(root: string): string {
   return resolve(root, rel);
 }
 
+/**
+ * Read-only counterpart to {@link installHooks} for `crib doctor`: report which of the three managed
+ * signals are already in place without writing anything. Each is the load-bearing artifact
+ * `installHooks` writes — the managed block in `post-commit`, the `# >>> kcrib merge >>>` block in
+ * `.gitattributes`, and the `merge.kcrib.driver` git config. A non-git directory (gitDir throws)
+ * reports all-false rather than throwing so doctor can run on a not-yet-init repo.
+ */
+export interface HookStatus {
+  postCommit: boolean;
+  gitattributes: boolean;
+  driverConfig: boolean;
+}
+export function hooksInstalled(root: string): HookStatus {
+  let gdir: string;
+  try {
+    gdir = gitDir(root);
+  } catch {
+    return { postCommit: false, gitattributes: false, driverConfig: false };
+  }
+  const postCommitPath = join(gdir, 'hooks', 'post-commit');
+  const postCommit =
+    existsSync(postCommitPath) && readFileSync(postCommitPath, 'utf8').includes(MANAGED_BEGIN);
+  const gitattributesPath = join(root, '.gitattributes');
+  const gitattributes =
+    existsSync(gitattributesPath) &&
+    readFileSync(gitattributesPath, 'utf8').includes(GITATTR_BEGIN);
+  let driverConfig = false;
+  try {
+    const cfg = execFileSync('git', ['-C', root, 'config', 'merge.kcrib.driver'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    driverConfig = cfg.length > 0;
+  } catch {
+    driverConfig = false;
+  }
+  return { postCommit, gitattributes, driverConfig };
+}
+
 /** Install/refresh the post-commit managed block, the `.gitattributes` merge entry, and the driver config. */
 export function installHooks(root: string, opts: HookInstallOptions = {}): HookInstallResult {
   const bin = opts.driverBin ?? 'crib';
