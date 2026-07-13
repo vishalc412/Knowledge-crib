@@ -5,9 +5,13 @@
 > cross-IDE, agent-agnostic, incrementally upgraded as the project evolves. Delivered as **one fast
 > MCP server** (not a skill). Greenfield, all-new, **Apache-2.0**.
 
-**Status:** implemented — M0→M8 + M10→M14 complete, 392 tests green, 7-language deep extraction
-(PL/SQL, TypeScript, Java, C#, Go, Rust, Python) with schema 1.2 behavior nodes + persisted
-dossiers, served over one MCP server. This repo holds the spec + the implementation.
+**Status:** implemented — the foundation + retrieval + enterprise + distribution milestones
+landed (see [knowledge-crib-build-plan.md](knowledge-crib-build-plan.md) and
+[knowledge-crib-m6-m13-build-plan.md](knowledge-crib-m6-m13-build-plan.md)), with schema behavior
+nodes + persisted dossiers, served over one MCP server. This repo holds the spec + the
+implementation. Counts (packages, languages, test surface) drift when stated in prose, so they live
+in one generated source — see [STATS.md](STATS.md) (regenerated from the real tree by
+`scripts/docs-stats.mjs`; reference it instead of restating a number here).
 
 ---
 

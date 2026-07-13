@@ -50,7 +50,10 @@
     "scale:nightly": "node scripts/scale-bench.mjs --slices 10000,100000,500000,1000000",
     "security:check": "node scripts/security-doc-check.mjs",
     "soul-refresh:check": "node scripts/soul-refresh-check.mjs",
-    "onboarding:check": "node scripts/onboarding-check.mjs"
+    "onboarding:check": "node scripts/onboarding-check.mjs",
+    "docs:stats": "node scripts/docs-stats.mjs",
+    "docs:build": "node scripts/docs-site-build.mjs",
+    "docs-site:check": "node scripts/docs-site-check.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

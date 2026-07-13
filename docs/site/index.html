@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowledge-crib — Docs</title>
+<style>
+  :root { --fg:#1b1b1b; --muted:#5a5a5a; --accent:#3a5a8c; --rule:#d8d8d8; --card:#f6f7f9; }
+  * { box-sizing: border-box; }
+  body { font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         color: var(--fg); max-width: 880px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  h1 { font-size: 1.7rem; margin: 0 0 .25rem; }
+  h2 { font-size: 1.2rem; margin: 2rem 0 .5rem; border-bottom: 1px solid var(--rule); padding-bottom: .25rem; }
+  p.lede { color: var(--muted); margin: 0 0 1.5rem; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .card { background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.25rem; }
+  table.stats { border-collapse: collapse; width: 100%; }
+  table.stats th, table.stats td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid var(--rule); }
+  table.stats th { font-weight: 600; width: 38%; color: var(--muted); font-size: .92rem; }
+  table.stats td { font-variant-numeric: tabular-nums; }
+  .stats-note { color: var(--muted); font-size: .85rem; margin: .6rem 0 0; }
+  ul.docs { list-style: none; padding: 0; margin: 0; }
+  ul.docs li { padding: .3rem 0; border-bottom: 1px dotted var(--rule); }
+  ul.docs li .num { display: inline-block; min-width: 2.2rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  ul.docs li .desc { color: var(--muted); font-size: .92rem; }
+  ul.orphans { list-style: square; color: var(--muted); font-size: .92rem; }
+  code { background: var(--card); padding: .1rem .3rem; border-radius: 3px; font-size: .9rem; }
+</style>
+</head>
+<body>
+  <h1>Knowledge-crib — Docs</h1>
+  <p class="lede">A portable &ldquo;project soul&rdquo; for AI coding agents: a deterministic, git-committable code
+    knowledge graph with per-edge provenance/confidence, served over one MCP server. Apache-2.0.</p>
+
+  <section class="card">
+    <h2 style="margin-top:0">Canonical stats</h2>
+    <p class="lede" style="margin-bottom:.75rem">Generated from the real tree by
+      <code>scripts/docs-stats.mjs</code> → <code>docs/STATS.md</code>. Reference that file instead of
+      restating a number in prose — a hardcoded stat drifts; a generated stat refreshes every run.</p>
+    <table class="stats">
+          <tr><th>packages</th><td>7 (knowledge-crib, @knowledge-crib/core, @knowledge-crib/mcp, @knowledge-crib/parsers, @knowledge-crib/pipeline, @knowledge-crib/soul-schema, @knowledge-crib/ui)</td></tr>
+          <tr><th>parser languages</th><td>9 (csharp, go, java, md, php, plsql, python, rust, ts)</td></tr>
+          <tr><th>eval fixture languages</th><td>9 (csharp, go, java, php, plsql, python, rust, ts, ts-min)</td></tr>
+          <tr><th>test files</th><td>80</td></tr>
+          <tr><th>test call-sites (static)</th><td>1032</td></tr>
+    </table>
+    <p class="stats-note">Test call-sites are a static count of <code>it(</code>/<code>test(</code>
+      occurrences (excluding comments), not the runtime total — <code>it.each</code> is one call-site.
+      The runtime total is in CI / <code>pnpm test</code>. Soul node/edge counts are deliberately
+      omitted (they change every merge via the M4.3 soul-refresh action).</p>
+  </section>
+
+  <h2>Document index</h2>
+  <p class="lede">Read in order. Curated in <a href="../README.md">docs/README.md</a>; this page renders it.</p>
+  <ul class="docs">
+        <li><span class="num">—</span> <a href="../README.md">README.md</a> — <span class="desc">This overview + index</span></li>
+        <li><span class="num">0</span> <a href="../knowledge-crib-prd.md">knowledge-crib-prd.md</a> — <span class="desc">Product vision, users, scope, metrics</span></li>
+        <li><span class="num">1</span> <a href="../knowledge-crib-architecture.md">knowledge-crib-architecture.md</a> — <span class="desc">System design + **diagrams**</span></li>
+        <li><span class="num">2</span> <a href="../knowledge-crib-data-model.md">knowledge-crib-data-model.md</a> — <span class="desc">Ontology: node kinds, edge rels, ID grammar</span></li>
+        <li><span class="num">2b</span> <a href="../knowledge-crib-deep-extraction.md">knowledge-crib-deep-extraction.md</a> — <span class="desc">Deep code/SQL extraction + CFG/conditions (migration wedge)</span></li>
+        <li><span class="num">3</span> <a href="../knowledge-crib-soul-format.md">knowledge-crib-soul-format.md</a> — <span class="desc">The on-disk soul (the spine)</span></li>
+        <li><span class="num">4</span> <a href="../knowledge-crib-storage.md">knowledge-crib-storage.md</a> — <span class="desc">`SoulStore` + `IndexStore` design</span></li>
+        <li><span class="num">5</span> <a href="../knowledge-crib-pipeline.md">knowledge-crib-pipeline.md</a> — <span class="desc">Extract→resolve→link→cluster→index + algorithms</span></li>
+        <li><span class="num">6</span> <a href="../knowledge-crib-extractor-plugins.md">knowledge-crib-extractor-plugins.md</a> — <span class="desc">Plugin contract; add a language/format</span></li>
+        <li><span class="num">7</span> <a href="../knowledge-crib-mcp-api.md">knowledge-crib-mcp-api.md</a> — <span class="desc">MCP verb request/response specs</span></li>
+        <li><span class="num">8</span> <a href="../knowledge-crib-cli.md">knowledge-crib-cli.md</a> — <span class="desc">CLI commands</span></li>
+        <li><span class="num">9</span> <a href="../knowledge-crib-build-plan.md">knowledge-crib-build-plan.md</a> — <span class="desc">Milestones M0→M9 (agent tasks)</span></li>
+        <li><span class="num">10</span> <a href="../knowledge-crib-testing.md">knowledge-crib-testing.md</a> — <span class="desc">Test strategy + acceptance gates</span></li>
+        <li><span class="num">11</span> <a href="../knowledge-crib-interview-guide.md">knowledge-crib-interview-guide.md</a> — <span class="desc">User research plan</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-decisions.md">knowledge-crib-decisions.md</a> — <span class="desc">Locked decisions (Q1–Q38) — the why</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-questionnaire.md">knowledge-crib-questionnaire.md</a> — <span class="desc">The full decision questionnaire</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-changelog-req1-req2.md">knowledge-crib-changelog-req1-req2.md</a> — <span class="desc">Changelog: single-entry root resolution + `crib mcp` auto-wiring (REQ-1, REQ-2)</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-user-guide.md">knowledge-crib-user-guide.md</a> — <span class="desc">User guide (install, workflow, 12 verbs, worked example)</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-client-setup.md">knowledge-crib-client-setup.md</a> — <span class="desc">IDE MCP wiring (Claude Code, Cursor, VS Code/Copilot, Codex)</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-prompts.md">knowledge-crib-prompts.md</a> — <span class="desc">**Prompting guide** — how to drive crib from a local LLM (Claude Code / Codex) to save tokens + compute</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-refined-vs-existing-assessment.md">knowledge-crib-refined-vs-existing-assessment.md</a> — <span class="desc">**Refined vs existing comparison + six-role judgment** on detailed-level analysis (plan review)</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-m6-m13-build-plan.md">knowledge-crib-m6-m13-build-plan.md</a> — <span class="desc">Milestones M6→M13 (post-foundation build plan)</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-production-readiness.md">knowledge-crib-production-readiness.md</a> — <span class="desc">Release gate, packaging fixes, and remaining production gaps</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-beta-installers.md">knowledge-crib-beta-installers.md</a> — <span class="desc">macOS and Windows beta installer bundle build/install guide</span></li>
+  </ul>
+
+  <h2>Standalone HTML docs</h2>
+  <ul class="docs">
+        <li><span class="num">★</span> <a href="../knowledge-crib-guide.html">Knowledge-crib — Complete Product Guide</a> — <span class="desc">Standalone HTML doc</span></li>
+        <li><span class="num">★</span> <a href="../knowledge-crib-showcase.html">Knowledge-crib — Technical Showcase</a> — <span class="desc">Standalone HTML doc</span></li>
+  </ul>
+  <h2>Not in the curated index</h2>
+  <ul class="orphans">
+        <li><a href="../knowledge-crib-executive-brief.md">knowledge-crib-executive-brief.md</a> <em>(not in docs/README.md index — add it or it stays here)</em></li>
+        <li><a href="../knowledge-crib-technical-pitch.md">knowledge-crib-technical-pitch.md</a> <em>(not in docs/README.md index — add it or it stays here)</em></li>
+        <li><a href="../knowledge-crib-track3-spec.md">knowledge-crib-track3-spec.md</a> <em>(not in docs/README.md index — add it or it stays here)</em></li>
+        <li><a href="../llm-integration-deep-dive.md">llm-integration-deep-dive.md</a> <em>(not in docs/README.md index — add it or it stays here)</em></li>
+  </ul>
+
+  <hr style="margin-top:2.5rem;border:none;border-top:1px solid var(--rule)">
+  <p class="stats-note">Generated by <code>scripts/docs-site-build.mjs</code> — do not edit by hand.
+    Re-run <code>pnpm docs:build</code> to refresh.</p>
+</body>
+</html>

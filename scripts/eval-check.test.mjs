@@ -89,6 +89,11 @@ assert.match(
   /onboarding:check/,
   'release gate must run the M4.2 crib init + doctor onboarding gate (onboarding-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /docs-site:check/,
+  'release gate must run the M4.4 docs site + stats drift gate (docs-site-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -179,6 +184,21 @@ assert.match(
   pkg,
   /"onboarding:check":\s*"node scripts\/onboarding-check\.mjs"/,
   'package.json must define onboarding:check (M4.2 crib init + doctor onboarding gate)',
+);
+assert.match(
+  pkg,
+  /"docs:stats":\s*"node scripts\/docs-stats\.mjs"/,
+  'package.json must define docs:stats (M4.4 canonical stats generator)',
+);
+assert.match(
+  pkg,
+  /"docs:build":\s*"node scripts\/docs-site-build\.mjs"/,
+  'package.json must define docs:build (M4.4 docs site generator)',
+);
+assert.match(
+  pkg,
+  /"docs-site:check":\s*"node scripts\/docs-site-check\.mjs"/,
+  'package.json must define docs-site:check (M4.4 docs site + stats drift gate)',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');
