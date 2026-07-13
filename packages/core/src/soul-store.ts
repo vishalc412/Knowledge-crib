@@ -305,7 +305,7 @@ export class SoulStore {
   }
 
   /** Flush dirty shards atomically, prune dangling edges, rewrite manifest + vendored schemas. */
-  commit(now = new Date().toISOString()): void {
+  commit(now = new Date().toISOString(), preserveTimestamp = false): void {
     this.pruneDangling();
     this.writeVendoredSchemas();
     this.writeGitignore();
@@ -314,7 +314,7 @@ export class SoulStore {
     this.writeClusters(); // cluster nodes live in their own file
     for (const shard of this.dirtyEdgeShards) this.writeEdgeShard(shard);
 
-    this.refreshStats(now);
+    this.refreshStats(now, preserveTimestamp);
     this.writeManifest();
 
     this.dirtyNodeShards.clear();
@@ -392,15 +392,22 @@ export class SoulStore {
     }
   }
 
-  private refreshStats(now: string): void {
+  private refreshStats(now: string, preserveTimestamp = false): void {
     let clusters = 0;
     for (const n of this.nodes.values()) if (n.kind === 'cluster') clusters++;
+    // `lastUpdated` means "soul content last updated", not "manifest file last touched". A no-op
+    // update that only advances the vcsHead anchor (no nodes/edges changed) must NOT bump it —
+    // bumping it would (a) break crib.json byte-stability across idempotent re-runs (the
+    // cache:stability gate's premise, per llm-overlay.ts's deliberate avoidance of soul.commit()
+    // from the MCP server) and (b) make the M4.3 crib-soul-refresh GitHub Action emit a spurious
+    // "refresh soul" commit on every merge even when the graph didn't change. preserveTimestamp
+    // reuses the existing lastUpdated for those anchor-only catches.
     this.manifest.stats = {
       ...this.manifest.stats,
       nodes: this.nodes.size,
       edges: this.edges.size,
       clusters,
-      lastUpdated: now,
+      lastUpdated: preserveTimestamp ? this.manifest.stats.lastUpdated : now,
     };
   }
 

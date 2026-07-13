@@ -79,6 +79,11 @@ assert.match(
   /security:check/,
   'release gate must run the M3.7 threat-model + access-model doc gate (security-doc-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /soul-refresh:check/,
+  'release gate must run the M4.3 crib-soul-refresh idempotence gate (soul-refresh-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -159,6 +164,11 @@ assert.match(
   pkg,
   /"security:check":\s*"node scripts\/security-doc-check\.mjs"/,
   'package.json must define security:check (M3.7 threat-model + access-model doc gate)',
+);
+assert.match(
+  pkg,
+  /"soul-refresh:check":\s*"node scripts\/soul-refresh-check\.mjs"/,
+  'package.json must define soul-refresh:check (M4.3 crib-soul-refresh idempotence gate)',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');

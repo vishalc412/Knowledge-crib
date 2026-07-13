@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 const workflow = readFileSync('.github/workflows/beta-installers.yml', 'utf8');
 const releaseWorkflow = readFileSync('.github/workflows/ci.yml', 'utf8');
 const tagWorkflow = readFileSync('.github/workflows/release.yml', 'utf8');
+const soulRefreshWorkflow = readFileSync('.github/workflows/crib-soul-refresh.yml', 'utf8');
 const occurrences = (text, pattern) => [...text.matchAll(pattern)].length;
 const dependabot = readFileSync('.github/dependabot.yml', 'utf8');
 
@@ -105,6 +106,78 @@ assert.match(
   dependabot,
   /package-ecosystem:\s*"github-actions"/,
   'Dependabot must monitor GitHub Actions',
+);
+
+// M4.3 — crib-soul-refresh workflow shape. The "never stale" differentiator: on every merge, run
+// `crib update` and commit the refreshed committed soul back. The behavioral idempotence (the
+// property the auto-commit loop relies on) is pinned in scripts/soul-refresh-check.mjs; these
+// assertions pin the workflow FILE shape — trigger, the crib update call, loop control, commit scope.
+assert.match(
+  soulRefreshWorkflow,
+  /name:\s*Crib Soul Refresh/,
+  'soul-refresh workflow must be named',
+);
+assert.match(
+  soulRefreshWorkflow,
+  /on:\n\s+push:\n\s+branches:\n\s+-\s+main\n\s+-\s+master/,
+  'soul-refresh must trigger on push to main + master (merge)',
+);
+assert.match(
+  soulRefreshWorkflow,
+  /workflow_dispatch:/,
+  'soul-refresh must allow manual workflow_dispatch',
+);
+assert.match(
+  soulRefreshWorkflow,
+  /contents:\s*write/,
+  'soul-refresh needs contents:write to push the refreshed soul back',
+);
+assert.match(
+  soulRefreshWorkflow,
+  /node packages\/cli\/dist\/cli\.js update \./,
+  'soul-refresh must run the built crib CLI `update` (the incremental re-extract)',
+);
+assert.match(
+  soulRefreshWorkflow,
+  /\[skip ci\]/,
+  'soul-refresh auto-commit must carry [skip ci] so the push does not re-trigger the workflow',
+);
+assert.match(
+  soulRefreshWorkflow,
+  /github\.actor\s*!=\s*'github-actions\[bot\]'/,
+  'soul-refresh must skip runs launched by the bot itself (loop-control belt-and-suspenders)',
+);
+assert.match(
+  soulRefreshWorkflow,
+  /github-actions\[bot\]@users\.noreply\.github\.com/,
+  'soul-refresh commit must be authored by github-actions[bot]',
+);
+// commit scope: the real committed-soul dirs (nodes/edges/dossiers/schema/clusters/crib.json) —
+// NEVER the gitignored derived .crib/index or .crib/embeddings.
+assert.match(
+  soulRefreshWorkflow,
+  /git add \.crib\/nodes \.crib\/edges \.crib\/dossiers \.crib\/schema \.crib\/clusters \.crib\/crib\.json/,
+  'soul-refresh must stage only the committed soul artifacts, never the derived index/embeddings',
+);
+assert.match(
+  soulRefreshWorkflow,
+  /git diff --staged --quiet/,
+  'soul-refresh must skip the commit when the diff is empty (idempotent no-op)',
+);
+assert.match(
+  soulRefreshWorkflow,
+  /fetch-depth:\s*0/,
+  'soul-refresh needs full git history for the vcsHead anchor diff',
+);
+assert.equal(
+  occurrences(soulRefreshWorkflow, /contents:\s*write/g),
+  1,
+  'soul-refresh must define permissions once',
+);
+assert.equal(
+  occurrences(soulRefreshWorkflow, /concurrency:/g),
+  1,
+  'soul-refresh must define concurrency once',
 );
 
 console.log('ci-workflow tests ok');

@@ -35,6 +35,7 @@ pnpm(['parallel:check']);
 pnpm(['fuzz:check']);
 pnpm(['scale:check']);
 pnpm(['security:check']);
+pnpm(['soul-refresh:check']);
 pnpm(['publish:dry-run']);
 pnpm(['installer:test']);
 pnpm(['installer:build']);

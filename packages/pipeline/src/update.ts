@@ -156,7 +156,10 @@ export async function updateRepo(
       } else {
         soul.setVcsHead(head);
       }
-      soul.commit(opts.now);
+      // No content changed — only the vcsHead anchor advances. Preserve the existing lastUpdated so
+      // crib.json stays byte-identical apart from the anchor field (idempotent re-runs don't churn
+      // the timestamp, and the M4.3 soul-refresh action's empty-diff check works on a no-op merge).
+      soul.commit(opts.now, true);
     }
     return { changedPaths, excludedPaths, scopeFiles: [], head, noop: true };
   }
