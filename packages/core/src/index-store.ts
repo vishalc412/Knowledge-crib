@@ -38,6 +38,13 @@ export interface HybridQuery {
   limit?: number;
   /** skip the first `offset` ranked rows (FTS5 OFFSET) — the resume cursor for `query` paging (M1.2). */
   offset?: number;
+  /**
+   * When the index was built with an embedder, fuse BM25 ∪ vector retrieval via reciprocal-rank
+   * fusion (RRF). `true` (default) fuses when vectors are present; `false` forces pure BM25 — the
+   * deterministic exact-match path. Vectors live only in the gitignored derived index, so the soul
+   * and `--extracted-only` output stay byte-identical either way (M2.1).
+   */
+  semantic?: boolean;
 }
 
 export interface Hit {

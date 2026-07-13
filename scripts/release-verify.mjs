@@ -21,6 +21,7 @@ pnpm(['release:metadata']);
 pnpm(['pack:check']);
 pnpm(['budget:check']);
 pnpm(['eval:check']);
+pnpm(['semantic:check']);
 pnpm(['publish:dry-run']);
 pnpm(['installer:test']);
 pnpm(['installer:build']);

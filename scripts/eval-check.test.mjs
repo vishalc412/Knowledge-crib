@@ -9,6 +9,24 @@ assert.match(
   /eval:check/,
   'release gate must run the retrieval-eval regression gate (eval-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /semantic:check/,
+  'release gate must run the M2.1 hybrid-recall gate (semantic-check.mjs)',
+);
+const pkg = readFileSync('package.json', 'utf8');
+assert.match(
+  pkg,
+  /"semantic:check":\s*"node scripts\/semantic-check\.mjs"/,
+  'package.json must define semantic:check',
+);
+const semanticCheck = readFileSync('scripts/semantic-check.mjs', 'utf8');
+assert.match(semanticCheck, /MIN_RECOVERY/, 'semantic-check.mjs must enforce a recovery floor');
+assert.match(
+  semanticCheck,
+  /runEval/,
+  'semantic-check.mjs must drive the eval harness in semantic mode',
+);
 
 // 2. The gate must define the regression ceiling + the metrics it tracks + the baseline path.
 const evalCheck = readFileSync('scripts/eval-check.mjs', 'utf8');

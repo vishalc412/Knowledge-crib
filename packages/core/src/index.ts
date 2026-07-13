@@ -20,4 +20,7 @@ export * from './index-store.js';
 export { SqliteIndexStore } from './index/sqlite-index.js';
 export { KuzuIndexStore } from './index/kuzu-index.js';
 export { openIndex } from './index/factory.js';
+export * from './embeddings/types.js';
+export { CharNgramEmbedder, cosine, decodeVec, encodeVec } from './embeddings/char-ngram.js';
+export { resolveEmbedder, isDefaultProvider } from './embeddings/provider.js';
 export * from './rules/index.js';
