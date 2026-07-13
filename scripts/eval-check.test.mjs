@@ -19,6 +19,11 @@ assert.match(
   /rerank:check/,
   'release gate must run the M2.2 graph-aware-rerank gate (rerank-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /linker:check/,
+  'release gate must run the M2.3 embedding-linker recall-up gate (linker-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -30,6 +35,11 @@ assert.match(
   /"rerank:check":\s*"node scripts\/rerank-check\.mjs"/,
   'package.json must define rerank:check',
 );
+assert.match(
+  pkg,
+  /"linker:check":\s*"node scripts\/linker-check\.mjs"/,
+  'package.json must define linker:check',
+);
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');
 assert.match(
@@ -38,6 +48,18 @@ assert.match(
   'rerank-check.mjs must drive the eval harness in semantic mode',
 );
 assert.match(rerankCheck, /deterministic/i, 'rerank-check.mjs must assert determinism across runs');
+const linkerCheck = readFileSync('scripts/linker-check.mjs', 'utf8');
+assert.match(
+  linkerCheck,
+  /runSemanticLink/,
+  'linker-check.mjs must drive both semantic-linker backends via runSemanticLink',
+);
+assert.match(
+  linkerCheck,
+  /'embedding'|'tfidf'/,
+  'linker-check.mjs must run both embedding and tfidf modes',
+);
+assert.match(linkerCheck, /deterministic/i, 'linker-check.mjs must assert determinism across runs');
 const semanticCheck = readFileSync('scripts/semantic-check.mjs', 'utf8');
 assert.match(semanticCheck, /MIN_RECOVERY/, 'semantic-check.mjs must enforce a recovery floor');
 assert.match(

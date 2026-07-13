@@ -36,6 +36,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - **`crib viz` overview pane:** `/overview.json` route + module cards (name + purpose + counts) with
   per-module cluster drill-down and a back affordance. Null-guarded — an old server degrades to the
   existing cluster-card view.
+- **M2.1 — local embeddings + RRF hybrid retrieval.** A pure-JS char 3–6-gram hashing embedder
+  (FNV-1a → signed hashing trick → float32[512] → L2-norm) backs an opt-in hybrid path: BM25 ∪
+  char-n-gram vectors fused by reciprocal-rank fusion (k=60). Vectors live only in the gitignored
+  derived index, so the soul and `--extracted-only` stay byte-identical with or without embeddings.
+  `semantic:check` gates conceptual-recall recovery of BM25 misses on the eval pack.
+- **M2.2 — graph-aware rerank.** A deterministic structural prior (centrality × stereotype match ×
+  per-intent kind prior) multiplies the RRF score on the hybrid path only — pure BM25 is returned
+  untouched. `rerank:check` gates overall conceptual MRR strictly up + recall no-regress + 2-run
+  determinism (overall MRR +2.76pp, recall 0.9132 → 0.9468 on the eval pack).
+- **M2.3 — embedding-cosine semantic linker.** The M7 TF-IDF semantic linker's similarity kernel is
+  pluggable: `'embedding'` (default, char-n-gram cosine) generalizes across inflection/case where
+  TF-IDF's exact-token match sees no shared term; `'tfidf'` is retained as the baseline/fallback.
+  Same [0.4, 0.6] confidence cap, same INFERRED `references` contract, deterministic-only subset
+  untouched. `linker:check` gates a strict inflection catch TF-IDF misses + recall-up + precision
+  held + 2-run determinism on the docs-semantic fixture.
 
 ### Fixed
 

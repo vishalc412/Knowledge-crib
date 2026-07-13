@@ -23,6 +23,7 @@ pnpm(['budget:check']);
 pnpm(['eval:check']);
 pnpm(['semantic:check']);
 pnpm(['rerank:check']);
+pnpm(['linker:check']);
 pnpm(['publish:dry-run']);
 pnpm(['installer:test']);
 pnpm(['installer:build']);

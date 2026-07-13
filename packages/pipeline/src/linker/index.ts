@@ -19,7 +19,8 @@ export { InvertedIndex } from './inverted-index.js';
 export { runMediaLink } from './media.js';
 export type { MediaLinkStats } from './media.js';
 export { runSemanticLink } from './semantic.js';
-export type { SemanticStats } from './semantic.js';
+export type { SemanticStats, SemanticMode, SemanticLinkOpts } from './semantic.js';
+export { EmbeddingLinkIndex } from './embedding.js';
 export { TfidfIndex, tokenize } from './tfidf.js';
 // re-exported so the media linker (and future cross-modal passes) reuse the exact same signals + scorer
 // as the deterministic doc→symbol linker — one scoring path, no drift.

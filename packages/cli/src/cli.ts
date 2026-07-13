@@ -1664,7 +1664,7 @@ function printHelp(): void {
       'crib — Knowledge-crib CLI',
       '',
       'Usage:',
-      '  crib index [path] [--semantic] [--exclude a,b,...] [--package <name|all>...]     full index → .crib soul + derived index (+ INFERRED TF-IDF semantic links); --package scopes to one monorepo package (list detected with no --package)',
+      '  crib index [path] [--semantic] [--exclude a,b,...] [--package <name|all>...]     full index → .crib soul + derived index (+ INFERRED embedding-cosine semantic links); --package scopes to one monorepo package (list detected with no --package)',
       '  crib status [path] [--dirty]             health + stats; --dirty previews files that would be re-indexed',
       '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',
       '  crib gaps [path] [--extracted-only] [--include-builtins]   analysis readiness + missing bodies + unresolved call sites',
