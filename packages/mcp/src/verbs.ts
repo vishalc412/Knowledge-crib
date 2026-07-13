@@ -1,6 +1,6 @@
 import { pathFromId } from '@knowledge-crib/core';
 import { LockBusyError, withCribLock } from '@knowledge-crib/core';
-import { type AliasMap, loadAliases, rewriteQuery } from '@knowledge-crib/core';
+import { type AliasMap, ifHash, loadAliases, rewriteQuery } from '@knowledge-crib/core';
 import type { Dir, Dossier, IndexStore, SoulStore } from '@knowledge-crib/core';
 import {
   CALLABLE_SYMBOL_TYPES,
@@ -273,6 +273,10 @@ export class Verbs {
      *  to fit the remaining budget and `budgetExhausted:true` is set; page via `source.nextLine`.
      *  (M1.2) */
     maxTokens?: number;
+    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged
+     *  response: when the rebuilt response is byte-identical, the body collapses to
+     *  `{ unchanged: true, hash }`. Stateless (deterministic BLAKE3 of the response). */
+    ifHash?: string;
   }): Record<string, unknown> {
     const soul = this.deps.soul;
     const id = this.resolveNodeId(args.id);
@@ -357,7 +361,7 @@ export class Verbs {
         }
       }
     }
-    return result;
+    return this.applyIfHash(args, result);
   }
 
   /**
@@ -375,12 +379,15 @@ export class Verbs {
     maxLines?: number;
     /** absolute file line to start the page at (paging cursor; default = span start) */
     startLine?: number;
+    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged
+     *  response. Stateless (deterministic BLAKE3 of the response). */
+    ifHash?: string;
   }): Record<string, unknown> {
     const id = this.resolveNodeId(args.id);
     if (!id) return notFound(args.id);
     const node = this.deps.soul.getNode(id);
     if (!node) return notFound(args.id);
-    return { node: this.publicNode(node), source: this.bodyOf(node, args) };
+    return this.applyIfHash(args, { node: this.publicNode(node), source: this.bodyOf(node, args) });
   }
 
   /**
@@ -410,6 +417,9 @@ export class Verbs {
     /** fold in saved LLM-authored semantic graph analysis; default-on when present. */
     withLlm?: boolean;
     format?: 'json' | 'markdown';
+    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged
+     *  response (works for both `json` and `markdown` formats). Stateless (deterministic BLAKE3). */
+    ifHash?: string;
   }): Record<string, unknown> {
     const soul = this.deps.soul;
     const id = this.resolveNodeId(args.id);
@@ -454,11 +464,11 @@ export class Verbs {
     }
     if (!dossier) return notFound(args.id);
     if (args.format === 'markdown') {
-      return { id, markdown: dossierToMarkdown(dossier) };
+      return this.applyIfHash(args, { id, markdown: dossierToMarkdown(dossier) });
     }
     const result = dossier as unknown as Record<string, unknown>;
     this.attachLlm(result, id, args.withLlm);
-    return result;
+    return this.applyIfHash(args, result);
   }
 
   /**
@@ -1501,6 +1511,25 @@ export class Verbs {
       ...(n.span ? { line: n.span.start } : {}),
       confidence,
     };
+  }
+
+  /**
+   * M2.6 — stateless change-aware response cache. Fingerprints `result` with {@link ifHash} (BLAKE3
+   * of its key-sorted serialization). When the caller echoes the same `hash` back as `ifHash` (the
+   * value the previous call returned in its `hash` field), the whole body collapses to
+   * `{ unchanged: true, hash }` — a ~30-byte stand-in for an unchanged 50 KB dossier, so a repeat
+   * `context`/`dossier`/`source` call in the same agent session stops re-filling the input window.
+   * Stateless: no session store, no cross-process state — the fingerprint is deterministic BLAKE3.
+   */
+  private applyIfHash(
+    args: { ifHash?: string },
+    result: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const hash = ifHash(result);
+    if (args.ifHash !== undefined && args.ifHash === hash) {
+      return { unchanged: true, hash };
+    }
+    return { ...result, hash };
   }
 
   private attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void {

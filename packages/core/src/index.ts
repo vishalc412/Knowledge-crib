@@ -16,6 +16,7 @@ export * from './cluster-hash.js';
 export * from './llm-overlay.js';
 export * from './functional-map.js';
 export * from './aliases.js';
+export * from './ifhash.js';
 export * from './dossier/index.js';
 export * from './index-store.js';
 export { SqliteIndexStore } from './index/sqlite-index.js';

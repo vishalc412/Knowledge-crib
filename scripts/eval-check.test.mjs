@@ -34,6 +34,11 @@ assert.match(
   /js-coverage:check/,
   'release gate must run the M2.5 plain-JS coverage gate (js-coverage-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /ifhash:check/,
+  'release gate must run the M2.6 ifHash change-aware cache gate (ifhash-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -59,6 +64,11 @@ assert.match(
   pkg,
   /"js-coverage:check":\s*"node scripts\/js-coverage-check\.mjs"/,
   'package.json must define js-coverage:check',
+);
+assert.match(
+  pkg,
+  /"ifhash:check":\s*"node scripts\/ifhash-check\.mjs"/,
+  'package.json must define ifhash:check',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');
@@ -107,6 +117,27 @@ assert.match(
   jsCoverageCheck,
   /deterministic/i,
   'js-coverage-check.mjs must assert determinism across indexes',
+);
+const ifhashCheck = readFileSync('scripts/ifhash-check.mjs', 'utf8');
+assert.match(
+  ifhashCheck,
+  /unchanged/,
+  'ifhash-check.mjs must assert the unchanged:true collapse on a matching ifHash',
+);
+assert.match(
+  ifhashCheck,
+  /Verbs/,
+  'ifhash-check.mjs must drive the verbs (context/source/dossier) over a built soul',
+);
+assert.match(
+  ifhashCheck,
+  /deterministic/i,
+  'ifhash-check.mjs must assert determinism across full calls',
+);
+assert.match(
+  ifhashCheck,
+  /0\.1|10%/,
+  'ifhash-check.mjs must enforce a measurable size-drop floor (the token-cost gate)',
 );
 const semanticCheck = readFileSync('scripts/semantic-check.mjs', 'utf8');
 assert.match(semanticCheck, /MIN_RECOVERY/, 'semantic-check.mjs must enforce a recovery floor');

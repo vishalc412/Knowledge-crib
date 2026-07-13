@@ -26,6 +26,7 @@ pnpm(['rerank:check']);
 pnpm(['linker:check']);
 pnpm(['alias:check']);
 pnpm(['js-coverage:check']);
+pnpm(['ifhash:check']);
 pnpm(['publish:dry-run']);
 pnpm(['installer:test']);
 pnpm(['installer:build']);

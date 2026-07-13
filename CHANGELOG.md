@@ -60,6 +60,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   alias-agnostic; an absent/empty dictionary is a pure no-op so queries without aliases are
   byte-identical (zero regression). `alias:check` gates a strict miss → resolve → no-op →
   determinism chain through the real `Verbs.query` surface.
+- **M2.5 — plain JS/JSX/MJS/CJS coverage.** The TS extractor's syntactic `createSourceFile` engine
+  parses the JS family natively (no `allowJs` flag, no type-checker), so the JS family is now admitted
+  with parity coverage instead of being dropped at Phase 2. `.js/.jsx/.mjs/.cjs` symbols are stamped
+  `lang: 'javascript'` (threaded through declaration/explanation/body-walk + the framework passes).
+  `js-coverage:check` gates coverage + member-of/calls edges + no-false-TS-tag + determinism; the
+  cross-language parity test adds a `.js` case proving JS emits the same condition + formula + raise
+  behavior nodes a `.ts` file would (fidelity parity, the half the gate does not cover).
+- **M2.6 — `ifHash` change-aware response cache.** `context`/`dossier`/`source` now return a `hash`
+  (BLAKE3 of the key-sorted response). Echo it back as `ifHash` on a repeat call and, when the
+  rebuilt response is byte-identical, the body collapses to `{ unchanged: true, hash }` — a ~99-byte
+  stand-in for a multi-KB dossier. Stateless (no session store): the fingerprint is deterministic
+  BLAKE3, stable across processes and cold restarts. Results land in the agent's *input* context
+  window as tool results, so skipping the re-send of an unchanged body directly shrinks the session.
+  `ifhash:check` gates a collapse → ≥10× size-drop → determinism → no-false-unchanged chain across
+  all three verbs (context 1477→99, source 1283→99, dossier 2638→99 bytes).
 
 ### Fixed
 

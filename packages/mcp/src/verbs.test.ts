@@ -32,6 +32,8 @@ interface ContextResult {
   source?: { text: string; truncated: boolean; totalLines: number };
   rules?: { rules: Array<{ action: { kind: string } }> };
   budgetExhausted?: boolean;
+  hash?: string;
+  unchanged?: boolean;
   framework?: {
     routes?: Array<{
       httpMethod?: string;
@@ -53,6 +55,8 @@ interface ContextResult {
 interface SourceResult {
   node: { id: string; file?: string };
   source: { text: string; truncated: boolean };
+  hash?: string;
+  unchanged?: boolean;
 }
 interface DescribesResult {
   docs: Array<unknown>;
@@ -799,6 +803,84 @@ describe('verbs', () => {
     expect(
       (verbs.describes({ id: issue.id, extractedOnly: true }) as unknown as DescribesResult).docs,
     ).toHaveLength(0);
+  });
+});
+
+describe('M2.6 ifHash — stateless change-aware response cache', () => {
+  it('context returns a blake3 hash; echoing it as ifHash collapses the body to unchanged:true', () => {
+    const first = verbs.context({ id: login.id }) as unknown as ContextResult;
+    expect(first.hash).toMatch(/^blake3:[0-9a-f]{64}$/);
+    expect(first.unchanged).toBeUndefined();
+    // the full body is present on the first call
+    expect(first.node.name).toBe('login');
+
+    const cached = verbs.context({ id: login.id, ifHash: first.hash }) as unknown as ContextResult;
+    expect(cached.unchanged).toBe(true);
+    expect(cached.hash).toBe(first.hash);
+    // the body is gone — the whole point is the client does not re-receive it
+    expect(cached.node).toBeUndefined();
+    expect(cached.callers).toBeUndefined();
+  });
+
+  it('context with a stale ifHash returns the full body + a fresh hash (no false unchanged)', () => {
+    const first = verbs.context({ id: login.id }) as unknown as ContextResult;
+    const stale = verbs.context({
+      id: login.id,
+      ifHash: 'blake3:deadbeef',
+    }) as unknown as ContextResult;
+    expect(stale.unchanged).toBeUndefined();
+    expect(stale.hash).toBe(first.hash); // rebuilt identical → same fingerprint
+    expect(stale.node).toBeDefined();
+  });
+
+  it('context fingerprint is stable across independent calls (deterministic, no state)', () => {
+    const a = verbs.context({ id: login.id }) as unknown as ContextResult;
+    const b = verbs.context({ id: login.id }) as unknown as ContextResult;
+    expect(a.hash).toBe(b.hash);
+  });
+
+  it('source echoes its hash to unchanged:true; a different id yields a different hash', () => {
+    const first = verbs.source({ id: login.id }) as unknown as SourceResult;
+    expect(first.hash).toMatch(/^blake3:/);
+    const cached = verbs.source({ id: login.id, ifHash: first.hash }) as unknown as SourceResult;
+    expect(cached.unchanged).toBe(true);
+    expect(cached.node).toBeUndefined();
+
+    const other = verbs.source({ id: issue.id }) as unknown as SourceResult;
+    expect(other.hash).not.toBe(first.hash);
+  });
+
+  it('dossier (json) collapses on a matching ifHash', () => {
+    const first = verbs.dossier({ id: login.id }) as unknown as {
+      hash?: string;
+      unchanged?: boolean;
+      id?: string;
+    };
+    expect(first.hash).toMatch(/^blake3:/);
+    const cached = verbs.dossier({ id: login.id, ifHash: first.hash }) as unknown as {
+      hash?: string;
+      unchanged?: boolean;
+      id?: string;
+    };
+    expect(cached.unchanged).toBe(true);
+    expect(cached.hash).toBe(first.hash);
+    expect(cached.id).toBeUndefined();
+  });
+
+  it('dossier (markdown) collapses on a matching ifHash', () => {
+    const first = verbs.dossier({
+      id: login.id,
+      format: 'markdown',
+    }) as unknown as { hash?: string; unchanged?: boolean; markdown?: string };
+    expect(first.hash).toMatch(/^blake3:/);
+    expect(first.markdown).toBeDefined();
+    const cached = verbs.dossier({
+      id: login.id,
+      format: 'markdown',
+      ifHash: first.hash,
+    }) as unknown as { hash?: string; unchanged?: boolean; markdown?: string };
+    expect(cached.unchanged).toBe(true);
+    expect(cached.markdown).toBeUndefined();
   });
 });
 
