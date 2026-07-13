@@ -4,6 +4,7 @@ import {
   CALLABLE_SYMBOL_TYPES,
   buildDossier,
   buildDossiersByScope,
+  buildFunctionalMap,
   buildReconstruction,
   computeCoverage,
   decisionTable,
@@ -11,6 +12,7 @@ import {
   expectedBodyFile,
   frameworkSemantics,
   readDossier,
+  readLlmOverlay,
   reconstructionToMarkdown,
   writeDossier,
 } from '@knowledge-crib/core';
@@ -808,20 +810,30 @@ export class Verbs {
     return result;
   }
 
-  /** Summarize clusters/files for overview questions when no LLM system bible exists. */
+  /** Summarize the soul for overview questions when no LLM system bible exists — a thin wrapper
+   *  over `buildFunctionalMap` (the same module-segmented view the overview verb serves). Keeps a
+   *  `clusters` list (label-fixed, LLM name preferred) for back-compat with callers that read
+   *  `fallback.clusters`, plus the `modules` array that is the real functional segregation. */
   private clusterSummary(): Record<string, unknown> {
-    const clusters = [...this.deps.soul.iterate('cluster')]
+    const soul = this.deps.soul;
+    const map = buildFunctionalMap(soul);
+    const overlay = readLlmOverlay(soul);
+    const clusters = [...soul.iterate('cluster')]
       .sort((a, b) => a.id.localeCompare(b.id))
       .map((c) => ({
         id: c.id,
-        name: c.name,
+        label: overlay.entries.get(c.id)?.name ?? c.label ?? c.id,
         memberCount: c.members?.length ?? 0,
       }));
-    const files = [...this.deps.soul.iterate('file')]
-      .sort((a, b) => (a.file ?? '').localeCompare(b.file ?? ''))
-      .slice(0, 50)
-      .map((f) => ({ id: f.id, path: f.file }));
-    return { clusters, files };
+    const modules = map.modules.map((m) => ({
+      id: m.id,
+      name: m.name,
+      pathPrefix: m.pathPrefix,
+      ...(m.purpose ? { purpose: m.purpose.text } : {}),
+      counts: m.counts,
+      coverage: m.coverage,
+    }));
+    return { clusters, modules };
   }
 
   enrichStatus(args: EnrichStatusArgs = {}): Record<string, unknown> {
@@ -849,7 +861,7 @@ export class Verbs {
   }
 
   overview(
-    args: { scope?: { pathPrefix?: string; cluster?: string } } = {},
+    args: { scope?: { pathPrefix?: string; cluster?: string }; withLlm?: boolean } = {},
   ): Record<string, unknown> {
     return this.llm.overview(args) as unknown as Record<string, unknown>;
   }
@@ -1521,12 +1533,26 @@ function askToMarkdown(result: Record<string, unknown>): string {
       parts.push(String(system.purpose));
       parts.push('');
     }
+    const modules = (overview.modules ?? []) as Array<Record<string, unknown>>;
+    if (modules.length > 0) {
+      parts.push(`## modules (${modules.length})`);
+      for (const m of modules) {
+        const purpose = (m.purpose as { text?: string } | undefined)?.text ?? '';
+        const counts = m.counts as { symbols?: number } | undefined;
+        const coverage = m.coverage as { pct?: number } | undefined;
+        parts.push(
+          `- **${m.name}** (${counts?.symbols ?? 0} symbols${
+            coverage?.pct !== undefined ? `, ${coverage.pct}% enriched` : ''
+          })${purpose ? ` — ${purpose}` : ''}`,
+        );
+      }
+      parts.push('');
+    }
     const analyses = (overview.analyses ?? []) as Array<Record<string, unknown>>;
     if (analyses.length > 0) {
       parts.push('## analyses');
       for (const a of analyses.slice(0, 10)) {
-        const analysis = (a.analysis as Record<string, unknown>) ?? {};
-        parts.push(`- **${a.targetId}** — ${analysis.purpose ?? 'no summary'}`);
+        parts.push(`- **${a.targetId}** — ${a.purpose ?? 'no summary'}`);
       }
       parts.push('');
     }

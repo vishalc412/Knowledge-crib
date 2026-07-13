@@ -15,7 +15,20 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { buildDossier, computeCoverage, decisionTable } from '@knowledge-crib/core';
+import {
+  type FunctionalModule,
+  type ImportanceEntry,
+  buildDossier,
+  buildFunctionalMap,
+  clusterContentHash,
+  clusterImportance,
+  clusterMembers as clusterMembersCore,
+  computeCoverage,
+  computeImportance,
+  decisionTable,
+  isTestPath,
+  readLlmOverlay,
+} from '@knowledge-crib/core';
 import type { SoulStore } from '@knowledge-crib/core';
 import { blake3Hex, contentHash } from '@knowledge-crib/soul-schema';
 import type { Node } from '@knowledge-crib/soul-schema';
@@ -93,6 +106,9 @@ export interface EnrichStatus {
   budgetExceeded?: boolean;
   /** Echo of the supplied budget, if any. */
   budget?: number;
+  /** Presence/freshness of a draft system skeleton bible (Phase 0.5). The skill authors a skeleton
+   *  before Phase 1 only when `present === false`. */
+  systemSkeleton?: { present: boolean; fresh: boolean };
 }
 
 export interface EnrichStatusArgs {
@@ -110,10 +126,19 @@ export interface EnrichNextArgs {
   scope?: EnrichScope;
   /** Optional token budget guard. If the selected batch estimate exceeds this, items will be empty and `budgetExceeded: true`. */
   budgetTokens?: number;
+  /** When true with `layer:'system'`, return a single SKELETON system-bible work item (the quick
+   *  Phase-0.5 draft pass) — a lightweight seed (functionalMap + top READMEs + top symbols) the
+   *  host authors at confidence ≤0.6 with a draft note. A skeleton never satisfies the system layer
+   *  for queue purposes; the final full pass is still offered. Explicit-only — `nextLayer` never
+   *  auto-choses skeleton, preventing driver loops. */
+  skeleton?: boolean;
 }
 
 export interface EnrichOverviewArgs {
   scope?: EnrichScope;
+  /** Fold the full analysis+graph+evidence blobs into a `full` array (opt-in; default output is
+   *  lean pointers + modules). Always computed live, never served from the cache. */
+  withLlm?: boolean;
 }
 
 export interface EnrichWorkItem {
@@ -234,6 +259,9 @@ export interface LlmArtifact {
   schemaVersion: string;
   builtAt: string;
   model?: string;
+  /** `'skeleton'` marks a draft system bible (the quick Phase-0.5 pass); `'full'` or absent = the
+   *  real pass. Additive — old artifacts read as full. `LLM_VERSION` stays 1. */
+  mode?: 'skeleton' | 'full';
   analysis: LlmAnalysis;
   graph: {
     nodes: Array<LlmGraphNode & { id: string; targetId: string }>;
@@ -330,6 +358,15 @@ export class EnrichmentStore {
 
     result.progress = progressFromLayers(layers);
     result.costEstimate = costFromLayers(layers);
+    // Whole-repo skeleton-bible presence/freshness (Phase 0.5 signal). Reported in every mode so the
+    // skill can gate Phase 0.5 (`present === false` → author a skeleton) regardless of scope.
+    const skeletons = this.allArtifacts().filter(
+      (a) => a.layer === 'system' && a.mode === 'skeleton',
+    );
+    result.systemSkeleton = {
+      present: skeletons.length > 0,
+      fresh: skeletons.some((a) => !this.isStale(a)),
+    };
     if (args.budgetTokens !== undefined) {
       result.budget = args.budgetTokens;
       if (result.costEstimate.pending > args.budgetTokens) {
@@ -351,6 +388,12 @@ export class EnrichmentStore {
         ? (this.status({ scope }).nextLayer ?? 'symbol')
         : (this.status().nextLayer ?? 'system'));
     if (scope && layer === 'system') layer = this.status({ scope }).nextLayer ?? 'symbol';
+    // Skeleton system pass (Phase 0.5): a single draft-bible work item under a distinct batchId
+    // prefix. Explicit-only — never auto-chosen by nextLayer. Scoped requests never hit this
+    // (system is whole-repo only).
+    if (args.skeleton && layer === 'system' && !scope) {
+      return this.nextSkeletonSystem(args);
+    }
     const all = this.targets(layer, scope);
     const pending = all.filter((target) => {
       const read = this.read(target.layer, target.id, target.hash);
@@ -432,6 +475,98 @@ export class EnrichmentStore {
     return `${layer}:${scope?.pathPrefix ?? ''}|${scope?.cluster ?? ''}`;
   }
 
+  /**
+   * Skeleton system-bible batch (Phase 0.5) — a single draft work item the host authors at
+   * confidence ≤0.6 with a draft note, seeded from the functional map + top READMEs + top symbols.
+   * Returns an empty batch when a fresh skeleton already exists (the skill gates on
+   * `status.systemSkeleton.present`, but the server enforces too). Distinct batchId prefix
+   * `llm:system-skeleton:` so a full pass (prefix `llm:system:`) never collides.
+   */
+  private nextSkeletonSystem(args: EnrichNextArgs): EnrichNextBatch {
+    const target = this.targets('system')[0];
+    const batchId = `llm:system-skeleton:${blake3Hex(target?.hash ?? 'empty').slice(0, 12)}`;
+    const progress = this.status().progress;
+    if (!target) {
+      return {
+        batchId,
+        layer: 'system',
+        items: [],
+        remaining: 0,
+        selectedTargetIds: [],
+        progress,
+        costEstimate: { currency: 'tokens', batch: 0, perItem: [], totalPending: 0 },
+      };
+    }
+    const freshSkeleton = this.allArtifacts().some(
+      (a) => a.layer === 'system' && a.mode === 'skeleton' && !this.isStale(a),
+    );
+    if (freshSkeleton) {
+      return {
+        batchId,
+        layer: 'system',
+        items: [],
+        remaining: 0,
+        selectedTargetIds: [],
+        progress,
+        costEstimate: { currency: 'tokens', batch: 0, perItem: [], totalPending: 0 },
+      };
+    }
+    const item: EnrichWorkItem = {
+      targetId: target.id,
+      seed: this.skeletonSeed(),
+      lowerLayer: { clusters: this.freshArtifacts('cluster') },
+      outputSchema: outputSchema('system'),
+      instructions: `${instructionsFor('system')} DRAFT SKELETON: author at confidence ≤0.6 and record a draft note in whatToDistrust. The final full pass will supersede this artifact.`,
+    };
+    const perItemCost = [{ targetId: item.targetId, tokens: estimateWorkItemCost(item) }];
+    return {
+      batchId,
+      layer: 'system',
+      items: [item],
+      remaining: 0,
+      selectedTargetIds: [target.id],
+      progress,
+      costEstimate: {
+        currency: 'tokens',
+        batch: perItemCost[0]!.tokens,
+        perItem: perItemCost,
+        totalPending: perItemCost[0]!.tokens,
+      },
+      ...(args.budgetTokens !== undefined ? { budget: args.budgetTokens } : {}),
+    };
+  }
+
+  /** Seed for the skeleton system pass — the functional map, the top README doc-sections, and the
+   *  top symbols by importance. Leaner than the full seed (no per-symbol dossiers). */
+  private skeletonSeed(): Record<string, unknown> {
+    const manifest = this.soul.getManifest();
+    const functionalMap = buildFunctionalMap(this.soul, { overlay: readLlmOverlay(this.soul) });
+    const readmes = [...this.soul.iterate('doc-section')]
+      .filter((d) => d.file && /readme(\.|$)/i.test(d.file))
+      .sort(byId)
+      .slice(0, 10)
+      .map((d) => ({ id: d.id, heading: d.heading, file: d.file }));
+    const topSymbols = this.topSymbols(50).map((n) => ({
+      id: n.id,
+      name: n.name,
+      qualifiedName: n.qualifiedName,
+      file: n.file,
+    }));
+    return {
+      repo: manifest.repo,
+      stats: manifest.stats,
+      functionalMap: {
+        source: functionalMap.source,
+        modules: functionalMap.modules.map(overviewModule),
+      },
+      readmes,
+      topSymbols,
+      caveats: [
+        'DRAFT skeleton bible — author at confidence ≤0.6 with a draft note in whatToDistrust. The final full pass supersedes this.',
+      ],
+    };
+  }
+
   save(args: EnrichSaveArgs): EnrichSaveResult {
     const accepted: EnrichAccepted[] = [];
     const rejected: EnrichRejected[] = [];
@@ -463,6 +598,12 @@ export class EnrichmentStore {
         keptEdges.push({ ...edge, from, to, targetId: item.targetId });
       }
 
+      // Skeleton mode is stamped server-side from the batchId prefix so the skill can't forget — a
+      // `llm:system-skeleton:` batch always persists mode:'skeleton'; a full pass leaves mode absent
+      // (reads as full) and overwrites the skeleton at the same targetId+nodeHash path.
+      const skeletonMode: 'skeleton' | undefined = args.batchId.startsWith('llm:system-skeleton:')
+        ? 'skeleton'
+        : undefined;
       const artifact: LlmArtifact = {
         version: LLM_VERSION,
         layer: target.layer,
@@ -471,6 +612,7 @@ export class EnrichmentStore {
         schemaVersion: this.soul.getManifest().schemaVersion,
         builtAt: new Date().toISOString(),
         ...(item.model ? { model: item.model } : {}),
+        ...(skeletonMode ? { mode: skeletonMode } : {}),
         analysis: item.analysis,
         graph: {
           nodes: item.graph.nodes.map((node) => ({
@@ -517,16 +659,21 @@ export class EnrichmentStore {
 
   overview(args: EnrichOverviewArgs = {}): Record<string, unknown> {
     const scope = args.scope;
-    // Unscoped: serve the cached whole-repo overview.json, rebuilding only if absent OR stale (the
-    // soul was rebuilt against a new vcsHead — the cached bible no longer reflects the code).
+    const withLlm = args.withLlm ?? false;
+    // Unscoped: serve the cached whole-repo overview.json (lean v2 shape), rebuilding only if absent
+    // OR stale (the soul was rebuilt against a new vcsHead) OR the cache is a pre-v2 file. v1 caches
+    // (version absent or 1) auto-rebuild via the `version === 2` gate — free migration. `withLlm`
+    // always computes live (blobs never cached).
     if (!scope) {
       const overviewPath = join(this.root(), 'overview.json');
-      const cached = readJson<{ builtAgainstHead?: string }>(overviewPath);
       const currentHead = this.soul.getManifest().repo.vcsHead ?? null;
-      if (cached && cached.builtAgainstHead === currentHead)
-        return cached as Record<string, unknown>;
-      const rebuilt = this.buildOverview(undefined);
-      writeJsonAtomic(overviewPath, rebuilt);
+      if (!withLlm) {
+        const cached = readJson<{ version?: number; builtAgainstHead?: string }>(overviewPath);
+        if (cached && cached.version === 2 && cached.builtAgainstHead === currentHead)
+          return cached as Record<string, unknown>;
+      }
+      const rebuilt = this.buildOverview(undefined, withLlm);
+      if (!withLlm) writeJsonAtomic(overviewPath, rebuilt);
       return rebuilt;
     }
     // Scoped: a module bible is computed live (never cached on disk beside the whole-repo one).
@@ -590,15 +737,67 @@ export class EnrichmentStore {
       return any ? [{ layer, id: SYSTEM_TARGET, hash: this.systemHash() }] : [];
     }
     if (layer === 'cluster') {
-      return [...this.soul.iterate('cluster')]
-        .sort(byId)
+      const imp = this.importanceMap();
+      return this.rankNodes([...this.soul.iterate('cluster')], layer, imp)
         .map((node) => ({ layer, id: node.id, hash: this.clusterHash(node), node }))
         .filter((target) => this.matchesScope(target.node!, layer, scope));
     }
-    return [...this.soul.iterate(layer)]
-      .sort(byId)
+    const imp = this.importanceMap();
+    return this.rankNodes([...this.soul.iterate(layer)], layer, imp)
       .map((node) => ({ layer, id: node.id, hash: node.hash, node }))
       .filter((target) => this.matchesScope(target.node!, layer, scope));
+  }
+
+  /**
+   * Importance-ranked queue ordering (outcome D, the new default): tests LAST, then importance desc
+   * (cluster = summed member importance), then id asc as the deterministic tie-break. Replaces the
+   * old alphabetical-by-id sort that surfaced `cli.test.ts` helpers before production symbols on a
+   * partial enrichment. The batchId hashes the FULL pending set (order-independent), so reordering
+   * `pending.slice(0, limit)` does not change the batchId — only which targets a small batch hits.
+   */
+  private rankNodes(
+    nodes: Node[],
+    layer: EnrichLayer,
+    importance: Map<string, ImportanceEntry>,
+  ): Node[] {
+    return nodes
+      .map((node) => ({ node, rank: this.targetRank(node, layer, importance) }))
+      .sort((a, b) => {
+        if (a.rank.test !== b.rank.test) return a.rank.test ? 1 : -1;
+        if (b.rank.imp !== a.rank.imp) return b.rank.imp - a.rank.imp;
+        return a.node.id < b.node.id ? -1 : a.node.id > b.node.id ? 1 : 0;
+      })
+      .map(({ node }) => node);
+  }
+
+  /** Test-path flag + importance for a target. Clusters: test iff the majority of members live in
+   *  test files; importance = summed member importance. */
+  private targetRank(
+    node: Node,
+    layer: EnrichLayer,
+    importance: Map<string, ImportanceEntry>,
+  ): { test: boolean; imp: number } {
+    if (layer === 'cluster') {
+      const members = clusterMembersCore(this.soul, node);
+      if (members.length === 0) return { test: false, imp: 0 };
+      const tests = members.filter((m) => isTestPath(m.file)).length;
+      return {
+        test: tests > members.length / 2,
+        imp: clusterImportance(this.soul, node, importance),
+      };
+    }
+    return { test: isTestPath(node.file), imp: importance.get(node.id)?.importance ?? 0 };
+  }
+
+  /** Per-instance importance cache keyed on `manifest.stats.lastUpdated` so the queue re-ranks once
+   *  per soul generation, not once per `targets()` call. */
+  private importanceCache: { key: string; map: Map<string, ImportanceEntry> } | undefined;
+  private importanceMap(): Map<string, ImportanceEntry> {
+    const key = this.soul.getManifest().stats.lastUpdated;
+    if (this.importanceCache && this.importanceCache.key === key) return this.importanceCache.map;
+    const map = computeImportance(this.soul);
+    this.importanceCache = { key, map };
+    return map;
   }
 
   /**
@@ -831,11 +1030,34 @@ export class EnrichmentStore {
     return {
       repo: this.soul.getManifest().repo,
       stats: this.soul.getManifest().stats,
-      entryPoints: [...this.soul.iterate('symbol')]
-        .filter((n) => n.type && ['function', 'method', 'procedure'].includes(n.type))
-        .slice(0, 50)
-        .map((n) => ({ id: n.id, name: n.name, qualifiedName: n.qualifiedName, file: n.file })),
+      // Importance-ranked entry points (tests deprioritized) — replaces the old unranked
+      // alphabetical slice(0,50) so the bible seed leads with the architecturally central symbols.
+      entryPoints: this.topSymbols(50).map((n) => ({
+        id: n.id,
+        name: n.name,
+        qualifiedName: n.qualifiedName,
+        file: n.file,
+      })),
     };
+  }
+
+  /** Top-N symbols by importance (tests last, id tie-break) — used by the system + skeleton seeds. */
+  private topSymbols(limit: number): Node[] {
+    const imp = this.importanceMap();
+    return [...this.soul.iterate('symbol')]
+      .filter((n) => n.type && ['function', 'method', 'procedure'].includes(n.type))
+      .map((n) => ({
+        node: n,
+        test: isTestPath(n.file),
+        imp: imp.get(n.id)?.importance ?? 0,
+      }))
+      .sort((a, b) => {
+        if (a.test !== b.test) return a.test ? 1 : -1;
+        if (b.imp !== a.imp) return b.imp - a.imp;
+        return a.node.id < b.node.id ? -1 : a.node.id > b.node.id ? 1 : 0;
+      })
+      .slice(0, limit)
+      .map(({ node }) => node);
   }
 
   private lowerLayer(target: { layer: EnrichLayer; node?: Node }): Record<string, unknown> {
@@ -887,13 +1109,15 @@ export class EnrichmentStore {
       artifact ??= candidate;
     }
     if (!artifact) return { missing: true, stale: false };
-    return {
-      artifact,
-      missing: false,
-      stale:
-        artifact.nodeHash !== liveHash ||
-        artifact.schemaVersion !== this.soul.getManifest().schemaVersion,
-    };
+    const stale =
+      artifact.nodeHash !== liveHash ||
+      artifact.schemaVersion !== this.soul.getManifest().schemaVersion;
+    // A fresh skeleton system bible counts as MISSING for queue purposes — the full pass is still
+    // offered. A stale skeleton stays stale (re-offered). `overview()` reads skeletons directly via
+    // allArtifacts, so this only affects the queue, not the served bible.
+    if (layer === 'system' && artifact.mode === 'skeleton' && !stale)
+      return { missing: true, stale: false };
+    return { artifact, missing: false, stale };
   }
 
   private writeArtifact(artifact: LlmArtifact): string {
@@ -938,28 +1162,140 @@ export class EnrichmentStore {
   }
 
   private writeOverview(): void {
-    writeJsonAtomic(join(this.root(), 'overview.json'), this.buildOverview());
+    writeJsonAtomic(join(this.root(), 'overview.json'), this.buildOverview(undefined, false));
   }
 
-  private buildOverview(scope?: EnrichScope): Record<string, unknown> {
-    let analyses = this.allArtifacts().filter((a) => !this.isStale(a));
-    if (scope) analyses = analyses.filter((a) => this.artifactInScope(a, scope));
-    // The whole-repo system bible is included only on an unscoped overview.
-    const system = scope ? undefined : analyses.find((a) => a.layer === 'system');
-    return {
-      version: LLM_VERSION,
+  /**
+   * Overview v2 — module-segmented, importance-ranked, LEAN by default. The old v1 dumped every
+   * fresh artifact as a full analysis+graph+evidence blob sorted alphabetically by targetId, so on
+   * a partial enrichment the test helpers from `cli.test.ts` sorted first and megabytes of test
+   * scaffolding swamped the system bible. v2:
+   *
+   *   • `modules` — ALWAYS present, works at 0% enrichment (computed from the soul, not the LLM
+   *     layer); the functional segregation the user asked for.
+   *   • `analyses` — lean pointers `{layer, targetId, purpose, confidence?, stale}`, sorted by
+   *     importance desc with test paths deprioritized — production symbols first, test helpers last.
+   *   • `system` / `systemProvenance` — the freshest system bible (full preferred over skeleton).
+   *   • `full` — the old-style blobs, ONLY when `withLlm:true` (opt-in; never cached).
+   *
+   * The system bible is moved OUT of `analyses` into its own slot (it was always the most valuable
+   * artifact yet arrived last under alphabetical sort). Scoped overviews exclude the system layer
+   * and filter modules/analyses to the scope.
+   */
+  private buildOverview(scope?: EnrichScope, withLlm = false): Record<string, unknown> {
+    const overlay = readLlmOverlay(this.soul);
+    const functionalMap = buildFunctionalMap(this.soul, { overlay });
+
+    // Modules: filter to the scope's path prefix when scoped (system is whole-repo only; a scoped
+    // overview reports just the in-scope modules).
+    let modules = functionalMap.modules;
+    if (scope?.pathPrefix) {
+      modules = modules.filter(
+        (m) => m.pathPrefix === scope.pathPrefix || m.pathPrefix.startsWith(`${scope.pathPrefix}/`),
+      );
+    }
+
+    // Fresh non-system artifacts → lean pointers, importance-sorted, tests last.
+    const importance = computeImportance(this.soul);
+    let fresh = this.allArtifacts().filter((a) => !this.isStale(a) && a.layer !== 'system');
+    if (scope) fresh = fresh.filter((a) => this.artifactInScope(a, scope));
+    const ranked = fresh
+      .map((a) => ({
+        a,
+        imp: this.artifactImportance(a, importance),
+        test: this.artifactIsTest(a),
+      }))
+      .sort((x, y) => {
+        if (x.test !== y.test) return x.test ? 1 : -1;
+        if (y.imp !== x.imp) return y.imp - x.imp;
+        return x.a.targetId < y.a.targetId ? -1 : x.a.targetId > y.a.targetId ? 1 : 0;
+      });
+    const analyses = ranked.map(({ a }) => ({
+      layer: a.layer,
+      targetId: a.targetId,
+      purpose: a.analysis.purpose ?? '',
+      ...(a.analysis.confidence !== undefined ? { confidence: a.analysis.confidence } : {}),
+      stale: false,
+    }));
+
+    // System bible: unscoped only; full preferred over skeleton; freshest (non-stale pool, then
+    // stale fallback so a draft skeleton still surfaces when that's all that exists).
+    let system: LlmArtifact | undefined;
+    if (!scope) {
+      const sysArts = this.allArtifacts().filter((a) => a.layer === 'system');
+      const freshSys = sysArts.filter((a) => !this.isStale(a));
+      const pool = freshSys.length > 0 ? freshSys : sysArts;
+      system = pool.find((a) => a.mode !== 'skeleton') ?? pool[0];
+    }
+
+    const result: Record<string, unknown> = {
+      version: 2,
       model: this.readManifest()?.model ?? null,
       builtAgainstHead: this.soul.getManifest().repo.vcsHead ?? null,
-      ...(system ? { system: system.analysis } : {}),
+      modules: modules.map((m) => overviewModule(m)),
+      analyses,
+      ...(system
+        ? {
+            system: system.analysis,
+            systemProvenance: {
+              mode: system.mode === 'skeleton' ? 'skeleton' : 'full',
+              stale: this.isStale(system),
+            },
+          }
+        : {}),
       ...(scope ? { scopeEcho: scope } : {}),
-      analyses: analyses.map((a) => ({
-        layer: a.layer,
-        targetId: a.targetId,
-        analysis: a.analysis,
-        graph: a.graph,
-        evidence: a.evidence,
-      })),
     };
+
+    // Opt-in full blobs (never cached): the old-style analysis+graph+evidence per fresh artifact,
+    // importance-sorted, with the system bible first.
+    if (withLlm) {
+      const full: Array<Record<string, unknown>> = [];
+      if (system) {
+        full.push({
+          layer: system.layer,
+          targetId: system.targetId,
+          analysis: system.analysis,
+          graph: system.graph,
+          evidence: system.evidence,
+        });
+      }
+      for (const { a } of ranked) {
+        full.push({
+          layer: a.layer,
+          targetId: a.targetId,
+          analysis: a.analysis,
+          graph: a.graph,
+          evidence: a.evidence,
+        });
+      }
+      result.full = full;
+    }
+    return result;
+  }
+
+  /** Importance of an artifact's target — symbol/file degree-weighted importance, or summed member
+   *  importance for a cluster. System artifacts are excluded from `analyses` so this is never called
+   *  for them. */
+  private artifactImportance(a: LlmArtifact, importance: Map<string, ImportanceEntry>): number {
+    if (a.layer === 'cluster') {
+      const node = this.soul.getNode(a.targetId);
+      return node ? clusterImportance(this.soul, node, importance) : 0;
+    }
+    return importance.get(a.targetId)?.importance ?? 0;
+  }
+
+  /** Test-path deprioritization for an artifact — a symbol/file is a test if its file is a test
+   *  path; a cluster is a test if the majority of its members live in test files. */
+  private artifactIsTest(a: LlmArtifact): boolean {
+    const node = this.soul.getNode(a.targetId);
+    if (!node) return false;
+    if (a.layer === 'cluster') {
+      const members = clusterMembersCore(this.soul, node);
+      if (members.length === 0) return false;
+      const tests = members.filter((m) => isTestPath(m.file)).length;
+      return tests > members.length / 2;
+    }
+    return isTestPath(node.file);
   }
 
   private resolveEndpoint(
@@ -996,19 +1332,16 @@ export class EnrichmentStore {
     );
   }
 
+  /** Cluster membership — delegates to the core `cluster-hash` module so the MCP layer and the
+   *  functional map share one implementation (the parity guarantee). */
   private clusterMembers(cluster: Node): Node[] {
-    const ids = new Set(cluster.members ?? []);
-    const slug = cluster.id.startsWith('c:') ? cluster.id.slice(2) : cluster.id;
-    return [...this.soul.iterate('symbol')]
-      .filter((n) => ids.has(n.id) || n.clusterId === cluster.id || n.clusterId === slug)
-      .sort(byId);
+    return clusterMembersCore(this.soul, cluster);
   }
 
+  /** Cluster content hash — delegates to core `clusterContentHash` (byte-identical to the old
+   *  inline formula; guarded by `cluster-hash.parity.test.ts`). */
   private clusterHash(cluster: Node): string {
-    const memberHashes = this.clusterMembers(cluster)
-      .map((n) => n.hash)
-      .sort();
-    return contentHash([cluster.hash, ...memberHashes].join('|'));
+    return clusterContentHash(this.soul, cluster);
   }
 
   private systemHash(): string {
@@ -1150,6 +1483,20 @@ function safeName(id: string): string {
 
 function byId(a: Node, b: Node): number {
   return a.id.localeCompare(b.id);
+}
+
+/** Lean overview module shape — picks the fields the overview surfaces from a FunctionalModule
+ *  (drops the internal stereotypes/clusterIds/readme the viz consumes directly via its own pass). */
+function overviewModule(m: FunctionalModule): Record<string, unknown> {
+  return {
+    id: m.id,
+    name: m.name,
+    pathPrefix: m.pathPrefix,
+    ...(m.purpose ? { purpose: m.purpose } : {}),
+    counts: m.counts,
+    coverage: m.coverage,
+    topSymbols: m.topSymbols,
+  };
 }
 
 function writeJsonAtomic(path: string, value: unknown): void {

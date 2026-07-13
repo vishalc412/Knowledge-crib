@@ -15,6 +15,14 @@ You are the **generator**. The `knowledge-crib` MCP server is 100% deterministic
 
 Do **not** run if `enrich_status` reports `done: true` unless the user forces a re-run (e.g. code changed and artifacts are `stale`).
 
+## Not a search command
+
+`/crib-enrich` generates and persists LLM analysis; it does not look up arbitrary text. If the
+invocation asks to "search", "find", "look up", or explain a named symbol, do not enter the
+enrichment queue. Tell the user to use the Knowledge-crib `query` MCP tool (or
+`crib query "<text>"`) and perform that lookup when the tool is available. Also correct
+`/crib-enric` to `/crib-enrich` when the final `h` is missing.
+
 ## ⚠️ The two rules that prevent the infinite loop
 
 1. **ONE batch per turn. HARD STOP.** You pull one batch, author it, save it, report progress, and **return to the user**. You do NOT re-enter the loop inside one invocation. Never call `enrich_next` twice in one turn. The old "repeat until done" loop is gone on purpose — with thousands of pending targets it loops forever and burns tokens. Re-running `/crib-enrich` continues from where you left off.
@@ -54,6 +62,33 @@ I'll wait for your choice before proceeding.
 
 If a new `/crib-enrich` turn cannot find the scope in context, **re-call `enrich_status({scopes:true})` and re-prompt — never silently default to full-repo.** That silent default is the failure mode being fixed.
 
+## Phase 0.5 — the skeleton bible (once, before Phase 1, unscoped only)
+
+Before authoring any per-target analysis, author a quick **draft skeleton system bible** so an
+overview is useful at 0% enrichment. Gate it on `enrich_status` (unscoped):
+
+```
+s = enrich_status({})                                  # NO scope — system is whole-repo only
+if s.systemSkeleton.present === false:
+    batch = enrich_next({ layer:'system', skeleton:true })   # single work item, llm:system-skeleton: batchId
+    item = batch.items[0]
+    # Author a DRAFT: confidence ≤ 0.6, and put a draft note in analysis.whatToDistrust
+    #   e.g. "Draft skeleton — not yet grounded in per-symbol analyses; will be superseded."
+    # Seed gives you: repo, stats, functionalMap (modules), top READMEs, topSymbols, caveats.
+    result = enrich_save({ batchId: batch.batchId, items:[author(item)] })
+    report: "Draft skeleton bible saved (low-confidence). Phase 1 will supersede it with the full pass."
+# then proceed to Phase 1.
+```
+
+- **Explicit-only:** `skeleton:true` is never auto-chosen by `nextLayer` — you must ask for it. This
+  prevents driver loops. A second `enrich_next({layer:'system', skeleton:true})` returns an empty
+  batch once a fresh skeleton exists, so author it **once**.
+- **A skeleton never satisfies the system layer** — `enrich_status.layers.system.missing` stays 1,
+  so the final full pass (`enrich_next({layer:'system'})`, batchId prefix `llm:system:`) is still
+  offered in Phase 1 and **overwrites** the skeleton at the same path. `overview` surfaces the
+  skeleton (with `systemProvenance.mode:"skeleton"`) only until the full bible lands.
+- **Scoped runs skip Phase 0.5** — the system layer is whole-repo only.
+
 ## Phase 1 — one batch, author, save, stop (the loop, per turn)
 
 ```
@@ -79,7 +114,10 @@ STOP — return to the user. Re-run /crib-enrich to continue.
 
 ### Completion reporting
 
-- **Unscoped, `done:true`:** call `mcp__knowledge-crib__overview` (no scope) and give the user a short summary of the bible (subsystems, top flows, glossary size). Do not dump the full JSON unless asked.
+- **Unscoped, `done:true`:** call `mcp__knowledge-crib__overview` (no scope) and give the user a
+  short v2 summary — the system bible purpose, then the top modules (`name — purpose (coverage%)`).
+  `overview` is now lean by default (modules + analyses pointers + system); pass `withLlm:true` only
+  if the user asks for the full analysis blobs. Do not dump the full JSON unless asked.
 - **Scoped, `done:true`:** do NOT call `overview` with no scope (it would mislead). Report: *"Module `<scope.pathPrefix>` complete: N symbols / M files / K clusters fresh. The whole-repo system layer is NOT enriched under scope — run `/crib-enrich` and pick `full` (or a different module) to continue. For this module's bible now, run `/crib-enrich` and ask for `overview --scope <pathPrefix>`."*
 - **Stale artifacts:** if `enrich_status` shows `stale > 0`, tell the user once: *"<S> artifacts are stale (code changed since last enrich) and will be re-authored."*
 
@@ -144,10 +182,10 @@ Every `graph.edge` endpoint must resolve to **(a)** a real soul node id present 
 
 ## Tools
 
-- `mcp__knowledge-crib__enrich_status` — `{ layer?, scope?, scopes? }`. Coverage + `nextLayer` + `done`; with `scopes:true` also returns `totalPending` + `threshold` + `scopes[]` for the picker; with `scope` also returns `scopeEcho` + `scopeEmpty` + `wholeRepoPending.system`.
-- `mcp__knowledge-crib__enrich_next` — `{ layer?, limit?, scope? }` → grounded batch + `batchId` + `selectedTargetIds` + `remaining` + `previousBatchId` + `zeroProgress`. `batchId` is deterministic over the full pending set (independent of `limit`); `zeroProgress: true` means the server already issued this `batchId` for this (layer, scope) with no save landing — break.
-- `mcp__knowledge-crib__enrich_save` — `{ batchId, items }` → `{ accepted, rejected }`. Scope is NOT a write constraint (cross-scope edges resolve against the full soul).
-- `mcp__knowledge-crib__overview` — `{ scope? }` → the bible. Omit scope for the whole-repo overview.json; pass scope for a module bible (excludes the system layer).
+- `mcp__knowledge-crib__enrich_status` — `{ layer?, scope?, scopes? }`. Coverage + `nextLayer` + `done` + `systemSkeleton:{present,fresh}`; with `scopes:true` also returns `totalPending` + `threshold` + `scopes[]` for the picker; with `scope` also returns `scopeEcho` + `scopeEmpty` + `wholeRepoPending.system`.
+- `mcp__knowledge-crib__enrich_next` — `{ layer?, limit?, scope?, skeleton? }` → grounded batch + `batchId` + `selectedTargetIds` + `remaining` + `previousBatchId` + `zeroProgress`. `batchId` is deterministic over the full pending set (independent of `limit`); `zeroProgress: true` means the server already issued this `batchId` for this (layer, scope) with no save landing — break. Queue is importance-ranked (tests last). `skeleton:true` + `layer:'system'` → the Phase-0.5 draft-bible work item.
+- `mcp__knowledge-crib__enrich_save` — `{ batchId, items }` → `{ accepted, rejected }`. Scope is NOT a write constraint (cross-scope edges resolve against the full soul). A `llm:system-skeleton:` batch is stamped `mode:"skeleton"` server-side.
+- `mcp__knowledge-crib__overview` — `{ scope?, withLlm? }` → v2 bible: `modules` (always present) + lean `analyses` pointers + `system`/`systemProvenance`. Omit scope for the cached whole-repo overview.json; pass scope for a module bible (excludes the system layer). `withLlm:true` folds the full analysis+graph+evidence blobs into a `full` array (computed live).
 - `mcp__knowledge-crib__llm_neighbors` — (optional) walk the semantic graph around a symbol to sanity-check your edges.
 
 If the MCP server is not connected, the same loop is drivable headlessly via the CLI: `crib enrich --scopes` prints the ranked picker data; `crib enrich --next --scope <prefix> [--layer L] [--limit N]` prints a scoped grounded batch (author items to a JSON file `{batchId, items}` and persist with `crib enrich --save <file>`); `crib enrich --overview --scope <prefix>` prints a module bible; `crib enrich --scope <prefix>` prints scoped coverage.

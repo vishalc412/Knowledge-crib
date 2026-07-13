@@ -15,7 +15,13 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { CALLABLE_SYMBOL_TYPES, MANIFEST_FILE, SoulStore, newManifest } from '@knowledge-crib/core';
+import {
+  CALLABLE_SYMBOL_TYPES,
+  MANIFEST_FILE,
+  SoulStore,
+  newManifest,
+  validateClusterIntegrity,
+} from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
 import { EnrichmentStore, Verbs, estimateTokens, serveStdio } from '@knowledge-crib/mcp';
 import type { EnrichLayer, EnrichScope, VcsAdapter } from '@knowledge-crib/mcp';
@@ -26,12 +32,13 @@ import {
   indexRepo,
   renderExport,
   resolvePackageArg,
+  runCluster,
   uncommittedChanges,
   updateRepo,
 } from '@knowledge-crib/pipeline';
 import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
 import type { WorkspaceLayout } from '@knowledge-crib/pipeline';
-import { buildVizGraph, vizAssetsDir } from '@knowledge-crib/ui';
+import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/ui';
 import { installHooks, mergeDriverFiles } from './hooks.js';
 import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
 import { registerProject } from './registry.js';
@@ -44,6 +51,7 @@ import {
   resolveProjectRoot,
 } from './runtime.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
+import { VizHttpError, readVizNodeSource, resolveVizAsset } from './viz-server.js';
 
 const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3 } as const;
 
@@ -146,7 +154,12 @@ function parsePackages(args: string[]): string[] {
 function resolvePackageScope(
   repoRoot: string,
   args: string[],
-): { status: number; packageRoots?: string[]; layout: WorkspaceLayout | null; indexedPackages: string[] } {
+): {
+  status: number;
+  packageRoots?: string[];
+  layout: WorkspaceLayout | null;
+  indexedPackages: string[];
+} {
   const layout = detectWorkspace(repoRoot);
   const tokens = parsePackages(args);
   const allPackages = layout ? layout.packages.map((p) => p.rel) : [];
@@ -155,10 +168,9 @@ function resolvePackageScope(
       process.stderr.write(
         `monorepo detected (${layout.tool}): ${layout.packages.length} package(s)\n`,
       );
-      for (const p of layout.packages)
-        process.stderr.write(`  - ${p.name}  (${p.rel})\n`);
+      for (const p of layout.packages) process.stderr.write(`  - ${p.name}  (${p.rel})\n`);
       process.stderr.write(
-        `scope one with: crib index . --package <name>  |  all: --package all\n`,
+        'scope one with: crib index . --package <name>  |  all: --package all\n',
       );
     }
     return { status: EXIT.OK, packageRoots: undefined, layout, indexedPackages: allPackages };
@@ -168,7 +180,9 @@ function resolvePackageScope(
   for (const token of tokens) {
     const r = resolvePackageArg(repoRoot, token, layout);
     if (r.unknown) {
-      const valid = layout ? layout.packages.map((p) => p.name).join(', ') : '(none — not a monorepo)';
+      const valid = layout
+        ? layout.packages.map((p) => p.name).join(', ')
+        : '(none — not a monorepo)';
       process.stderr.write(`unknown package: ${r.unknown}\navailable: ${valid}\n`);
       return { status: EXIT.BAD_ARGS, layout, indexedPackages: [] };
     }
@@ -418,9 +432,7 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   const index = buildIndex({ repoRoot, cribDir, soul });
   registerIndexed(repoRoot, cribDir, soul);
   const stats = soul.getManifest().stats;
-  const scopeSuffix = scope.packageRoots
-    ? ` [scoped: ${scope.indexedPackages.join(', ')}]`
-    : '';
+  const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
   process.stdout.write(
     `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
       `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
@@ -999,9 +1011,7 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
   index.close();
   registerIndexed(repoRoot, cribDir, soul);
   const stats = soul.getManifest().stats;
-  const scopeSuffix = scope.packageRoots
-    ? ` [scoped: ${scope.indexedPackages.join(', ')}]`
-    : '';
+  const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
   process.stdout.write(
     `reindexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
       `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
@@ -1186,11 +1196,18 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
     return EXIT.NOT_INDEXED;
   }
   const rt = openSoul(resolved);
+  const persistedIntegrity = validateClusterIntegrity(rt.soul);
+  let repairedClusters = false;
+  if (!persistedIntegrity.valid) {
+    runCluster(rt.soul);
+    repairedClusters = true;
+  }
   const graph = buildVizGraph(rt.soul);
+  const overview = buildVizOverview(rt.soul);
   const assets = vizAssetsDir();
   const { createServer } = await import('node:http');
   const { readFile } = await import('node:fs/promises');
-  const { join, extname } = await import('node:path');
+  const { extname } = await import('node:path');
 
   const MIME: Record<string, string> = {
     '.html': 'text/html; charset=utf-8',
@@ -1201,18 +1218,35 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
 
   const server = createServer(async (req, res) => {
     try {
-      if (req.url === '/graph.json') {
+      const requestUrl = new URL(req.url ?? '/', 'http://127.0.0.1');
+      if (requestUrl.pathname === '/graph.json') {
         res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(graph));
         return;
       }
-      const rel = (req.url ?? '/').split('?')[0]!.replace(/^\//, '');
-      const path = join(assets, rel === '' ? 'index.html' : rel);
+      if (requestUrl.pathname === '/overview.json') {
+        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(overview));
+        return;
+      }
+      if (requestUrl.pathname === '/source') {
+        const nodeId = requestUrl.searchParams.get('nodeId');
+        if (!nodeId) throw new VizHttpError(400, 'missing nodeId');
+        const source = await readVizNodeSource(rt.soul, rt.repoRoot, nodeId);
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(source));
+        return;
+      }
+      const path = await resolveVizAsset(assets, requestUrl.pathname);
       const body = await readFile(path);
       res.writeHead(200, { 'content-type': MIME[extname(path)] ?? 'application/octet-stream' });
       res.end(body);
     } catch (err) {
-      res.writeHead(404, { 'content-type': 'text/plain' });
+      const status = err instanceof VizHttpError ? err.status : 500;
+      res.writeHead(status, { 'content-type': 'text/plain; charset=utf-8' });
       res.end(`not found: ${err instanceof Error ? err.message : String(err)}`);
     }
   });
@@ -1224,6 +1258,11 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
   process.stderr.write(
     `viz → ${url}  (${graph.stats.nodes} nodes · ${graph.stats.edges} edges · ${graph.stats.clusters} clusters)\nCtrl-C to stop.\n`,
   );
+  if (repairedClusters) {
+    process.stderr.write(
+      'warning: stale cluster topology repaired in memory for this session; run `crib reindex` to persist it.\n',
+    );
+  }
   // best-effort browser open (macOS/linux/windows); never fatal.
   const { spawn } = await import('node:child_process');
   let opener: string;
@@ -1308,8 +1347,13 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
   }
 
   if (args.includes('--overview')) {
+    const withLlm = args.includes('--full');
     process.stdout.write(
-      `${JSON.stringify(enrich.overview({ ...(scope ? { scope } : {}) }), null, 2)}\n`,
+      `${JSON.stringify(
+        enrich.overview({ ...(scope ? { scope } : {}), ...(withLlm ? { withLlm: true } : {}) }),
+        null,
+        2,
+      )}\n`,
     );
     return EXIT.OK;
   }
@@ -1348,11 +1392,13 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
     const layer = layerIdx >= 0 ? (args[layerIdx + 1] as EnrichLayer | undefined) : undefined;
     const limitIdx = args.indexOf('--limit');
     const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;
+    const skeleton = args.includes('--skeleton');
     const batch = enrich.next({
       ...(layer ? { layer } : {}),
       ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
       ...(scope ? { scope } : {}),
       ...(budget ? { budgetTokens: budget } : {}),
+      ...(skeleton ? { skeleton: true } : {}),
     });
     process.stdout.write(`${JSON.stringify(batch, null, 2)}\n`);
     if (batch.budgetExceeded) {
@@ -1452,14 +1498,30 @@ function pathInPrefix(path: string, scope: EnrichScope): boolean {
 
 /**
  * `crib skill <install|list> [name] [--dest <dir>]` — install the bundled `/crib-enrich` skill into
- * `~/.claude/skills/` (or `--dest`) so the LLM-graph loop is drivable from any Claude Code session.
+ * `~/.claude/skills/` by default, or another client's skill root via `--dest`.
  * Mirrors `crib mcp install` (idempotent, non-clobbering). `list` prints the bundled skills.
  */
 function cmdSkill(args: string[]): number {
   const [sub, ...rest] = args;
-  const destIdx = rest.indexOf('--dest');
-  const destRoot = destIdx >= 0 ? rest[destIdx + 1] : undefined;
-  const name = rest.find((a) => !a.startsWith('-'));
+  let destRoot: string | undefined;
+  let name: string | undefined;
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i]!;
+    if (arg === '--dest') {
+      const value = rest[++i];
+      if (looksLikeFlag(value)) {
+        process.stderr.write('usage: crib skill install [name] [--dest <dir>]\n');
+        return EXIT.BAD_ARGS;
+      }
+      destRoot = value;
+      continue;
+    }
+    if (arg.startsWith('-')) {
+      process.stderr.write(`unknown skill option: ${arg}\n`);
+      return EXIT.BAD_ARGS;
+    }
+    if (!name) name = arg;
+  }
 
   switch (sub) {
     case 'install': {
@@ -1527,7 +1589,7 @@ function printHelp(): void {
       '  crib enrich [path] [--budget-tokens N]    LLM-graph work queue + driver: coverage, --next (grounded batch), --save <file>, --overview, --scope PFX, --scopes',
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]',
       '                                          auto-wire the MCP server into each IDE config (REQ-2)',
-      '  crib skill <install|list> [name] [--dest <dir>]   install bundled skills (e.g. crib-enrich) into ~/.claude/skills',
+      '  crib skill <install|list> [name] [--dest <dir>]   install bundled skills (default ~/.claude/skills; Codex: --dest ~/.codex/skills)',
       '',
       'Global: --cwd <path>   override the project root for any command',
       '',

@@ -291,6 +291,40 @@ describe('invariant #1 — no dangling edges after commit', () => {
   });
 });
 
+describe('atomic cluster replacement', () => {
+  it('validates full replacement before removing existing topology', () => {
+    const a = symNode('src/a.ts', 'doA', 1);
+    const first: Node = {
+      id: 'c:first',
+      kind: 'cluster',
+      members: [a.id],
+      hash: contentHash('first'),
+    };
+    const membership: Edge = {
+      id: edgeId(a.id, first.id, 'member-of'),
+      src: a.id,
+      dst: first.id,
+      rel: 'member-of',
+      method: 'static',
+      provenance: 'EXTRACTED',
+      confidence: 1,
+    };
+    const store = open();
+    store.putNodes([a]);
+    store.replaceClusters([first], [membership]);
+
+    const invalid: Node = {
+      id: 'c:invalid',
+      kind: 'cluster',
+      members: ['sym:missing'],
+      hash: contentHash('invalid'),
+    };
+    expect(() => store.replaceClusters([invalid], [])).toThrow('missing member');
+    expect(store.getNode(first.id)).toEqual(first);
+    expect(store.getEdge(membership.id)).toEqual(membership);
+  });
+});
+
 describe('invariant #4 — closed enums reject unknown values', () => {
   it('rejects an unknown node kind', () => {
     const store = open();

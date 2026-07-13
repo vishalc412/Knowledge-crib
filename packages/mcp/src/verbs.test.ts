@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { SoulStore, SqliteIndexStore, newManifest } from '@knowledge-crib/core';
 import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge, Node, Rel } from '@knowledge-crib/soul-schema';
@@ -1097,6 +1097,381 @@ describe('crib-enrich scope picker — scopes / scope / deterministic batchId / 
     };
     expect(whole.system).toBeDefined();
     expect(whole.system!.purpose).toBe('bible');
+  });
+});
+
+describe('overview v2 — module-segmented, importance-ranked, lean by default', () => {
+  // Uses the shared `verbs` soul (handle/login/issue under src/, a doc-section under docs/) — no
+  // workspace meta stamped → directory-fallback modules `src`, `docs`, `(root)`.
+
+  it('default output is lean v2: version 2, modules always present, no `full`/`graph` blobs', () => {
+    const ov = verbs.overview() as unknown as {
+      version: number;
+      modules: Array<{ id: string }>;
+      analyses: Array<Record<string, unknown>>;
+      full?: unknown;
+    };
+    expect(ov.version).toBe(2);
+    expect(ov.modules.length).toBeGreaterThan(0);
+    expect(ov.analyses).toEqual([]); // no LLM artifacts yet
+    expect(ov.full).toBeUndefined(); // blobs opt-in only
+  });
+
+  it('lean analyses carry no graph/evidence keys (the token-cost promise)', () => {
+    // Save one symbol artifact so analyses is non-empty.
+    const batch = verbs.enrichNext({ layer: 'symbol', limit: 10 }) as unknown as EnrichNextResult;
+    const target = batch.items.find((i) => i.targetId === login.id) ?? batch.items[0]!;
+    verbs.enrichSave({
+      batchId: batch.batchId,
+      items: [
+        {
+          targetId: target.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'login', responsibilities: ['auth'], confidence: 0.9 },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        },
+      ],
+    });
+    const ov = verbs.overview() as unknown as {
+      analyses: Array<Record<string, unknown>>;
+    };
+    const pointer = ov.analyses.find((a) => a.targetId === target.targetId)!;
+    expect(pointer).toBeDefined();
+    expect(pointer.purpose).toBe('login');
+    expect(pointer.graph).toBeUndefined();
+    expect(pointer.evidence).toBeUndefined();
+    expect(pointer.analysis).toBeUndefined();
+  });
+
+  it('withLlm:true folds the full analysis+graph+evidence blobs into `full`', () => {
+    const batch = verbs.enrichNext({ layer: 'symbol', limit: 10 }) as unknown as EnrichNextResult;
+    const target = batch.items.find((i) => i.targetId === login.id) ?? batch.items[0]!;
+    verbs.enrichSave({
+      batchId: batch.batchId,
+      items: [
+        {
+          targetId: target.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'login', responsibilities: ['auth'], confidence: 0.9 },
+          graph: {
+            nodes: [{ localId: 'n1', kind: 'rule', name: 'r', attributes: {} }],
+            edges: [],
+          },
+          evidence: [{ soulId: target.targetId, why: 'seed' }],
+        },
+      ],
+    });
+    const ov = verbs.overview({ withLlm: true }) as unknown as {
+      full?: Array<Record<string, unknown>>;
+    };
+    expect(ov.full).toBeDefined();
+    const blob = ov.full!.find((f) => f.targetId === target.targetId)!;
+    expect(blob).toBeDefined();
+    expect(blob.analysis).toBeDefined();
+    expect(blob.graph).toBeDefined();
+    expect(blob.evidence).toBeDefined();
+  });
+
+  it('a pre-v2 overview.json cache is auto-rebuilt to v2 (free migration)', () => {
+    // Hand-write a v1-shaped cache (version absent) the way the old buildOverview wrote it.
+    const cachePath = join(repo, '.crib', 'llm', 'overview.json');
+    mkdirSync(dirname(cachePath), { recursive: true });
+    writeFileSync(
+      cachePath,
+      `${JSON.stringify({
+        version: 1,
+        builtAgainstHead: soul.getManifest().repo.vcsHead ?? null,
+        analyses: [
+          { layer: 'symbol', targetId: 'stale-v1', analysis: {}, graph: {}, evidence: [] },
+        ],
+      })}\n`,
+    );
+    const ov = verbs.overview() as unknown as { version: number; modules: unknown[] };
+    expect(ov.version).toBe(2); // v1 cache ignored, rebuilt
+    expect(ov.modules.length).toBeGreaterThan(0);
+  });
+
+  it('module coverage counts a fresh saved symbol toward fresh/pct', () => {
+    const batch = verbs.enrichNext({ layer: 'symbol', limit: 10 }) as unknown as EnrichNextResult;
+    const target = batch.items.find((i) => i.targetId === login.id) ?? batch.items[0]!;
+    verbs.enrichSave({
+      batchId: batch.batchId,
+      items: [
+        {
+          targetId: target.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'login', responsibilities: ['auth'], confidence: 0.9 },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        },
+      ],
+    });
+    const ov = verbs.overview() as unknown as {
+      modules: Array<{
+        pathPrefix: string;
+        coverage: { fresh: number; pending: number; pct: number };
+      }>;
+    };
+    // The shared soul has no workspace meta → directory fallback with descent (all symbols under
+    // `src/` → modules split into src/auth, src/http, src/token). The login symbol lands in one of
+    // them; that module's coverage reflects the fresh save.
+    const withFresh = ov.modules.find((m) => m.coverage.fresh >= 1);
+    expect(withFresh).toBeDefined();
+    expect(withFresh!.coverage.pct).toBeGreaterThan(0);
+  });
+
+  it('ask overview markdown renders the modules section', () => {
+    const res = verbs.ask({ q: 'what is the architecture', format: 'markdown' }) as unknown as {
+      markdown: string;
+    };
+    expect(res.markdown).toContain('## modules');
+  });
+
+  it('scoped overview filters modules to the scope path prefix', () => {
+    const scoped = verbs.overview({ scope: { pathPrefix: 'src' } }) as unknown as {
+      modules: Array<{ pathPrefix: string }>;
+      system?: unknown;
+    };
+    expect(scoped.system).toBeUndefined(); // system whole-repo only
+    // Every served module is under the scope prefix (descent split src/ into src/auth etc., all
+    // still under `src/`); the root module and any non-src bucket are excluded.
+    expect(scoped.modules.every((m) => m.pathPrefix.startsWith('src/'))).toBe(true);
+    expect(scoped.modules.length).toBeGreaterThan(0);
+  });
+});
+
+describe('enrich queue — importance-ranked, tests last (outcome D)', () => {
+  // Self-contained soul: a high-importance hub (many callers), an alphabetically-earlier leaf with
+  // no callers, three callers, and a test helper under a .test.ts path.
+  let r4: string;
+  let s4: SoulStore;
+  let idx4: SqliteIndexStore;
+  let v4: Verbs;
+  const hub = sym('src/hub.ts', 'Z.hub', 1); // alphabetically LATER than leaf, but high importance
+  const leaf = sym('src/a.ts', 'A.leaf', 1); // alphabetically earlier, zero importance
+  const c1 = sym('src/c1.ts', 'C1.go', 1);
+  const c2 = sym('src/c2.ts', 'C2.go', 1);
+  const c3 = sym('src/c3.ts', 'C3.go', 1);
+  const testHelper = sym('src/cli.test.ts', 'H.run', 1); // test path → deprioritized
+
+  beforeEach(() => {
+    r4 = mkdtempSync(join(tmpdir(), 'crib-queue-'));
+    s4 = new SoulStore(join(r4, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    s4.load();
+    s4.putNodes([
+      fileNode('src/hub.ts'),
+      fileNode('src/a.ts'),
+      fileNode('src/c1.ts'),
+      fileNode('src/c2.ts'),
+      fileNode('src/c3.ts'),
+      fileNode('src/cli.test.ts'),
+      hub,
+      leaf,
+      c1,
+      c2,
+      c3,
+      testHelper,
+    ]);
+    s4.putEdges([
+      edge(c1.id, hub.id, 'calls'),
+      edge(c2.id, hub.id, 'calls'),
+      edge(c3.id, hub.id, 'calls'),
+    ]);
+    s4.commit('2026-01-01T00:00:00.000Z');
+    idx4 = new SqliteIndexStore();
+    idx4.buildFromSoul(s4, r4);
+    v4 = new Verbs({ soul: s4, index: idx4, repoRoot: r4 });
+  });
+  afterEach(() => {
+    idx4.close();
+    rmSync(r4, { recursive: true, force: true });
+  });
+
+  it('returns the high-importance hub before the alphabetically-earlier leaf', () => {
+    const batch = v4.enrichNext({ layer: 'symbol', limit: 1 }) as unknown as {
+      selectedTargetIds: string[];
+    };
+    expect(batch.selectedTargetIds[0]).toBe(hub.id); // not leaf (alphabetical) — importance wins
+  });
+
+  it('sorts the test helper after every non-test target', () => {
+    const batch = v4.enrichNext({ layer: 'symbol', limit: 25 }) as unknown as {
+      selectedTargetIds: string[];
+    };
+    const ids = batch.selectedTargetIds;
+    const testIdx = ids.indexOf(testHelper.id);
+    expect(testIdx).toBeGreaterThanOrEqual(0);
+    for (const id of ids) {
+      if (id !== testHelper.id) expect(ids.indexOf(id)).toBeLessThan(testIdx);
+    }
+  });
+
+  it('batchId is unchanged for the same pending set regardless of limit', () => {
+    const a = v4.enrichNext({ layer: 'symbol', limit: 1 }) as unknown as { batchId: string };
+    const b = v4.enrichNext({ layer: 'symbol', limit: 5 }) as unknown as { batchId: string };
+    expect(b.batchId).toBe(a.batchId);
+  });
+
+  it('is deterministic — same pending set yields the same selectedTargetIds order', () => {
+    const a = v4.enrichNext({ layer: 'symbol', limit: 25 }) as unknown as {
+      selectedTargetIds: string[];
+    };
+    const b = v4.enrichNext({ layer: 'symbol', limit: 25 }) as unknown as {
+      selectedTargetIds: string[];
+    };
+    expect(b.selectedTargetIds).toEqual(a.selectedTargetIds);
+  });
+});
+
+describe('enrich skeleton system pass (outcome C, Phase 0.5)', () => {
+  // Uses the shared `verbs` soul (handle/login/issue) so the system target exists.
+
+  it('returns a single skeleton work item seeded from the functional map, distinct batchId', () => {
+    const batch = verbs.enrichNext({ layer: 'system', skeleton: true }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string; seed: { functionalMap?: unknown } }>;
+      selectedTargetIds: string[];
+    };
+    expect(batch.batchId.startsWith('llm:system-skeleton:')).toBe(true);
+    expect(batch.items).toHaveLength(1);
+    expect(batch.items[0]!.targetId).toBe('system:repo');
+    expect(batch.items[0]!.seed.functionalMap).toBeDefined();
+    expect(batch.selectedTargetIds).toEqual(['system:repo']);
+  });
+
+  it('after a skeleton save, the system layer is still pending and the full pass is offered', () => {
+    const skel = verbs.enrichNext({ layer: 'system', skeleton: true }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string }>;
+    };
+    verbs.enrichSave({
+      batchId: skel.batchId,
+      items: [
+        {
+          targetId: skel.items[0]!.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'draft bible', responsibilities: ['tbd'], confidence: 0.5 },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        },
+      ],
+    });
+    // status: skeleton counts as missing for queue purposes → system still pending; skeleton present.
+    const st = verbs.enrichStatus() as unknown as {
+      layers: { system: { missing: number; fresh: number } };
+      systemSkeleton: { present: boolean; fresh: boolean };
+    };
+    expect(st.systemSkeleton.present).toBe(true);
+    expect(st.systemSkeleton.fresh).toBe(true);
+    expect(st.layers.system.missing).toBe(1); // skeleton does NOT satisfy the layer
+    // full pass still offered (non-skeleton next on system returns a work item).
+    const full = verbs.enrichNext({ layer: 'system' }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string }>;
+    };
+    expect(full.batchId.startsWith('llm:system:')).toBe(true);
+    expect(full.items.length).toBeGreaterThan(0);
+  });
+
+  it('overview uses the skeleton as the system bible when it is the only system artifact', () => {
+    const skel = verbs.enrichNext({ layer: 'system', skeleton: true }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string }>;
+    };
+    verbs.enrichSave({
+      batchId: skel.batchId,
+      items: [
+        {
+          targetId: skel.items[0]!.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'draft bible', responsibilities: ['tbd'], confidence: 0.5 },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        },
+      ],
+    });
+    const ov = verbs.overview() as unknown as {
+      system?: { purpose: string };
+      systemProvenance?: { mode: 'skeleton' | 'full'; stale: boolean };
+    };
+    expect(ov.system?.purpose).toBe('draft bible');
+    expect(ov.systemProvenance?.mode).toBe('skeleton');
+  });
+
+  it('a full system save overwrites the skeleton and satisfies the layer', () => {
+    // author + save a skeleton first
+    const skel = verbs.enrichNext({ layer: 'system', skeleton: true }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string }>;
+    };
+    verbs.enrichSave({
+      batchId: skel.batchId,
+      items: [
+        {
+          targetId: skel.items[0]!.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'draft', responsibilities: ['tbd'], confidence: 0.5 },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        },
+      ],
+    });
+    // then the full pass overwrites it
+    const full = verbs.enrichNext({ layer: 'system' }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string }>;
+    };
+    verbs.enrichSave({
+      batchId: full.batchId,
+      items: [
+        {
+          targetId: full.items[0]!.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'real bible', responsibilities: ['arch'], confidence: 0.9 },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        },
+      ],
+    });
+    const st = verbs.enrichStatus() as unknown as {
+      layers: { system: { missing: number; fresh: number } };
+      systemSkeleton: { present: boolean };
+    };
+    expect(st.layers.system.missing).toBe(0); // full satisfies the layer
+    expect(st.layers.system.fresh).toBe(1);
+    expect(st.systemSkeleton.present).toBe(false); // overwritten — mode gone
+    const ov = verbs.overview() as unknown as {
+      system?: { purpose: string };
+      systemProvenance?: { mode: 'skeleton' | 'full' };
+    };
+    expect(ov.system?.purpose).toBe('real bible');
+    expect(ov.systemProvenance?.mode).toBe('full');
+  });
+
+  it('a second skeleton next returns an empty batch once a fresh skeleton exists', () => {
+    const skel = verbs.enrichNext({ layer: 'system', skeleton: true }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string }>;
+    };
+    verbs.enrichSave({
+      batchId: skel.batchId,
+      items: [
+        {
+          targetId: skel.items[0]!.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'draft', responsibilities: ['tbd'], confidence: 0.5 },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        },
+      ],
+    });
+    const again = verbs.enrichNext({ layer: 'system', skeleton: true }) as unknown as {
+      items: unknown[];
+    };
+    expect(again.items).toEqual([]); // fresh skeleton already present — nothing to re-author
   });
 });
 

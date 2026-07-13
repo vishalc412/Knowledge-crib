@@ -10,6 +10,7 @@
      for any future non-offline use. -->
 <script src="./vendor/react.production.min.js"></script>
 <script src="./vendor/react-dom.production.min.js"></script>
+<script src="./graph-model.js"></script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -57,6 +58,9 @@
     <div class="kc-search" style="position:relative; display:flex; align-items:center;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="position:absolute; left:11px; pointer-events:none; opacity:0.55;"><circle cx="10.5" cy="10.5" r="6.5" stroke="{{ t.text }}" stroke-width="2"></circle><path d="M20 20L16 16" stroke="{{ t.text }}" stroke-width="2" stroke-linecap="round"></path></svg>
       <input ref="{{ searchRef }}" onInput="{{ onSearch }}" placeholder="Search code, docs, tables…" style="width:230px; height:36px; padding:0 12px 0 34px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 13px 'IBM Plex Sans'; outline:none;">
+      <sc-if value="{{ searchStatus }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute; top:42px; left:0; min-width:230px; padding:7px 10px; border-radius:8px; border:1px solid {{ t.border }}; background:{{ t.panel }}; color:{{ searchStatusColor }}; box-shadow:0 8px 24px rgba(0,0,0,0.24); font:600 11px 'IBM Plex Sans'; white-space:nowrap;">{{ searchStatus }}</div>
+      </sc-if>
     </div>
 
     <div style="height:36px; display:flex; align-items:center; padding:3px; gap:3px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }};">
@@ -111,6 +115,9 @@
             <span style="font-size:10.5px; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color: {{ sel.color }};">{{ sel.kindLabel }}</span>
           </div>
           <div style="display:flex; gap:6px; flex:none;">
+            <sc-if value="{{ sel.backAction }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ sel.backAction }}" title="Return to functionality members" style="height:26px; padding:0 9px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">← {{ sel.backLabel }}</button>
+            </sc-if>
             <button onClick="{{ exportSub }}" title="Export this focused view as JSON" style="height:26px; padding:0 9px; display:flex; align-items:center; gap:5px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
               Export
@@ -144,12 +151,36 @@
         <!-- meta row -->
         <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:13px;">
           <sc-if value="{{ sel.file }}" hint-placeholder-val="{{ true }}">
-            <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-family:'IBM Plex Mono',monospace; font-size:11px; color: {{ t.sub }};">{{ sel.file }}</span>
+            <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-family:'IBM Plex Mono',monospace; font-size:11px; color: {{ t.sub }};">{{ sel.fileDisplay }}</span>
           </sc-if>
           <sc-if value="{{ sel.lang }}" hint-placeholder-val="{{ true }}">
             <span style="display:inline-flex; align-items:center; padding:4px 9px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:11px; color: {{ t.sub }};">{{ sel.lang }}</span>
           </sc-if>
         </div>
+
+        <!-- exact source preview, loaded through indexed node id -->
+        <sc-if value="{{ sel.source }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:18px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <span style="font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }};">Source</span>
+              <div style="flex:1; height:1px; background: {{ t.border }};"></div>
+              <sc-if value="{{ sel.source.location }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ sel.source.onCopy }}" title="Copy file and line range" style="height:24px; padding:0 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10px 'IBM Plex Sans';">Copy location</button>
+              </sc-if>
+            </div>
+            <sc-if value="{{ sel.source.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading source…</div></sc-if>
+            <sc-if value="{{ sel.source.unavailable }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Source location unavailable for this node.</div></sc-if>
+            <sc-if value="{{ sel.source.failed }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f87171;">{{ sel.source.message }}</div></sc-if>
+            <sc-if value="{{ sel.source.ready }}" hint-placeholder-val="{{ true }}">
+              <div style="max-height:280px; overflow:auto; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.code }}; padding:8px 0;">
+                <sc-for list="{{ sel.source.lines }}" as="line" hint-placeholder-count="5">
+                  <div style="display:flex; min-width:max-content; font:11.5px/1.55 'IBM Plex Mono',monospace; color: {{ t.codeText }};"><span style="width:48px; flex:none; padding-right:10px; text-align:right; user-select:none; color: {{ t.sub }};">{{ line.no }}</span><span style="white-space:pre; padding-right:12px;">{{ line.text }}</span></div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ sel.source.truncated }}" hint-placeholder-val="{{ true }}"><div style="margin-top:6px; font-size:10.5px; color:#f59e0b;">Preview truncated at 200 lines / 64 KiB.</div></sc-if>
+            </sc-if>
+          </div>
+        </sc-if>
 
         <!-- connection sections -->
         <sc-for list="{{ sel.sections }}" as="sec" hint-placeholder-count="3">
@@ -221,7 +252,7 @@ class Component extends DCLogic {
   // (root + direct neighbors only) — lean by default, deep on demand — instead of always drawing
   // the full 2-hop neighborhood, which on a real repo can be hundreds of nodes with no "you are
   // here" (see toggleFocusDepth / the Horizon panel's expand control).
-  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedTrail: [], blast: false, query: '', hidden: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1 };
+  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedClusterKind: null, clusterContext: false, clusterReturnId: null, selectedTrail: [], sourcePreview: null, blast: false, query: '', hidden: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1 };
 
   KIND = { file:'#7c8aa5', symbol:'#5b8cff', method:'#6f9bff', function:'#8aa8ff', class:'#5b8cff', interface:'#a78bfa', 'doc-section':'#34d399', table:'#f59e0b', column:'#fbbf24', statement:'#2dd4bf', condition:'#f87171',
            // producer-emitted kinds (viz.ts deriveNodeKind + enums.ts) that were missing → gray + 'undefined' tooltip
@@ -252,7 +283,7 @@ class Component extends DCLogic {
 
   constructor(props){ super(props); this.canvasRef=React.createRef(); this.tipRef=React.createRef(); this.rootRef=React.createRef(); this.searchRef=React.createRef(); this.view={cx:0,cy:0,k:1}; this.alpha=1; this.hoverId=null; this.highlight=null;
     // graph state — initialised empty so the RAF draw loop no-ops safely before loadGraph() resolves.
-    this.nodes=[]; this.edges=[]; this.clusters=[]; this.byId={}; this.deg={}; this.adj={}; this.revDep={}; this.anchors={}; this.layoutScale=1; this.stats=''; this.largeGraph=false; this.overview=[]; this.overviewById={}; this.overviewEdges=[]; this.overviewZoom=1;
+    this.nodes=[]; this.edges=[]; this.clusters=[]; this.byId={}; this.deg={}; this.adj={}; this.revDep={}; this.archAdj={}; this.graphIndexes={membersByCluster:{},incidentByNode:{},archAdj:{}}; this.anchors={}; this.layoutScale=1; this.stats=''; this.largeGraph=false; this.overview=[]; this.overviewById={}; this.overviewEdges=[]; this.overviewZoom=1; this._sourceSeq=0; this._sourceAbort=null; this._searchProjection=null;
   }
 
   componentDidMount(){
@@ -269,15 +300,21 @@ class Component extends DCLogic {
     this.loadGraph();
     this.setState({ready:true});
   }
-  componentWillUnmount(){ cancelAnimationFrame(this.raf); if(this.ro)this.ro.disconnect(); this.unbind(); }
+  componentWillUnmount(){ cancelAnimationFrame(this.raf); if(this.ro)this.ro.disconnect(); if(this._sourceAbort)this._sourceAbort.abort(); this.unbind(); }
 
   // ---------- data ----------
   async loadGraph(){
     this.setState({loading:true,error:null});
     try {
-      const res = await fetch('/graph.json');
+      // Parallel fetch of the overview snapshot (/overview.json). Old servers don't serve it →
+      // the .catch(()=>null) degrades to the existing cluster-card path exactly (vizModules null).
+      const [res, ovRes] = await Promise.all([
+        fetch('/graph.json'),
+        fetch('/overview.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      ]);
       if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
       const g = await res.json();
+      this.vizModules = ovRes && Array.isArray(ovRes.modules) ? ovRes.modules : null;
       const nodes = (g.nodes || []).map(item => {
         const d = item.data || item;
         return {
@@ -285,7 +322,7 @@ class Component extends DCLogic {
           cluster: d.clusterId || d.cluster || 'default',
           label: d.label || d.name || d.id,
           name: d.name, qualified: d.qualified,
-          file: d.file, lang: d.lang,
+          file: d.file, span: d.span, lang: d.lang,
           signature: d.signature,
           summary: d.summary || d.label || '',
           type: d.type,
@@ -311,7 +348,10 @@ class Component extends DCLogic {
       }).filter(e => e.src && e.dst && nodeIds.has(e.src) && nodeIds.has(e.dst));
       const clusters = (g.clusters || []).map(c => ({
         id: c.id, label: c.label || c.id,
-        color: c.color || '#5b8cff', blurb: c.blurb || '',
+        color: c.color || '#5b8cff', blurb: c.blurb || '', memberCount: typeof c.memberCount==='number'?c.memberCount:0,
+        ...(c.llmLabel ? { llmLabel: c.llmLabel } : {}),
+        ...(c.purpose ? { purpose: c.purpose } : {}),
+        ...(c.llmStale ? { llmStale: true } : {}),
       }));
       this.clusters = clusters.length ? clusters : [{id:'default',label:'Project',color:'#5b8cff',blurb:'All nodes'}];
       // Ensure every node cluster has an anchor; orphan nodes land in a fallback cluster.
@@ -334,19 +374,16 @@ class Component extends DCLogic {
       this.byId = {}; nodes.forEach(n => this.byId[n.id] = n);
       this.deg = {}; this.adj = {}; this.revDep = {};
       nodes.forEach(n => { this.deg[n.id] = 0; this.adj[n.id] = []; this.revDep[n.id] = []; });
-      // Architectural-only adjacency mirrors packages/ui/src/viz.ts ARCHITECTURAL_RELS and drives
-      // Focus/Horizon/keyboard navigation. We keep it separate from `adj` (which mixes every edge
-      // type for physics/search) so a method's "neighbors" are callers/callees/importers, not
-      // every sibling in the same file via `member-of`.
-      const ARCH_RELS = new Set(['calls','imports','inherits','implements','exposes','injects','renders','produces']);
-      this.archAdj = {};
-      nodes.forEach(n => { this.archAdj[n.id] = []; });
       edges.forEach(e => {
         this.deg[e.src]++; this.deg[e.dst]++;
         this.adj[e.src].push(e.dst); this.adj[e.dst].push(e.src);
         if (this.DEP.has(e.rel)) this.revDep[e.dst].push(e.src);
-        if (ARCH_RELS.has(e.rel)) { this.archAdj[e.src].push(e.dst); this.archAdj[e.dst].push(e.src); }
       });
+      // Shared indexes power exact cluster membership, architectural context, and projected edges.
+      // Build once: cluster selection becomes O(cluster members + incident edges), not O(full graph).
+      this.graphIndexes=KCGraphModel.buildIndexes(nodes,edges);
+      this.archAdj=this.graphIndexes.archAdj;
+      this._searchProjection=null;
       // Build a per-repo guided tour from the highest-degree non-file nodes. The static
       // TOUR below hardcodes one demo project's BARE names, but buildVizGraph emits
       // namespaced ids (sym:<path>#<qualified>@L<line>) — so select()/centerOn() silently
@@ -383,6 +420,7 @@ class Component extends DCLogic {
     const ld=(this.props.linkDistance ?? 1.6);
     const largeGraph = ns.length > 1800;
     const forceScale = this.largeGraph ? 1 : this.layoutScale;
+    const activeEdges=this.visibleEdges(new Set(ns.map(n=>n.id)));
     for(const n of ns){ n.fx=0; n.fy=0; }
     if(!largeGraph){
       for(let i=0;i<ns.length;i++){ const a=ns[i]; if(hid[a.kind])continue;
@@ -392,7 +430,7 @@ class Component extends DCLogic {
     }
     const L={'member-of':46,calls:92,imports:108,describes:124,references:138,implements:92,executes:70,reads:78,writes:78,'guarded-by':64};
     const visibleIds = new Set(ns.map(n=>n.id));
-    for(const e of this.edges){ if(!visibleIds.has(e.src)||!visibleIds.has(e.dst))continue; const a=this.byId[e.src], b=this.byId[e.dst]; if(hid[a.kind]||hid[b.kind])continue;
+    for(const e of activeEdges){ if(!visibleIds.has(e.src)||!visibleIds.has(e.dst))continue; const a=this.byId[e.src], b=this.byId[e.dst]; if(hid[a.kind]||hid[b.kind])continue;
       let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||0.01; const tl=(L[e.rel]||95)*ld*forceScale; const f=(d-tl)*0.052; const ux=dx/d, uy=dy/d;
       a.fx+=ux*f; a.fy+=uy*f; b.fx-=ux*f; b.fy-=uy*f; }
     for(const n of ns){ if(hid[n.kind])continue; const an=this.largeGraph?{x:0,y:0}:(this.anchors[n.cluster] || this.anchors[Object.keys(this.anchors)[0]] || {x:0,y:0}); n.fx+=(an.x-n.x)*0.026; n.fy+=(an.y-n.y)*0.026; n.fx+=(-n.x)*0.0018; n.fy+=(-n.y)*0.0018; }
@@ -413,16 +451,32 @@ class Component extends DCLogic {
   startTour(){ this.setState({tour:true,tourStep:0}); if(!this.TOUR.length) return; const s=this.TOUR[0]; this.select(s.id); this.centerOn(s.id,1.15); }
   exitTour(){ this.setState({tour:false}); }
   tourGo(i){ if(i<0)return; if(i>=this.TOUR.length){ this.exitTour(); return; } this.setState({tourStep:i}); if(!this.TOUR.length) return; const s=this.TOUR[i]; this.select(s.id); this.centerOn(s.id,1.15); }
-  exportSubgraph(){ const hl=this.highlight; if(!hl)return; const ids=hl.set;
-    const ns=[...ids].map(id=>{ const n=this.byId[id]; return {id:n.id,kind:n.kind,label:n.label,qualified:n.qualified,file:n.file,signature:n.signature,summary:n.summary,cluster:n.cluster}; });
-    const es=this.edges.filter(e=>ids.has(e.src)&&ids.has(e.dst)).map(e=>{ const o={src:e.src,dst:e.dst,rel:e.rel}; if(e.provenance){o.provenance=e.provenance;o.confidence=e.confidence;} return o; });
-    const payload={ focus:this.state.selectedId, view:this.state.blast?'blast-radius':'neighborhood', exportedAt:new Date().toISOString(), stats:{nodes:ns.length,edges:es.length}, nodes:ns, edges:es };
-    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=(this.state.selectedId||'subgraph')+(this.state.blast?'.blast':'')+'.crib.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); }
+  exportSubgraph(){ let ids; let projection=null; const hl=this.highlight;
+    if(this.state.selectedClusterId&&!this.state.selectedId){ projection=this.clusterProjection(); ids=projection&&projection.nodeIds; }
+    else ids=hl&&hl.set;
+    if(!ids)return;
+    const ns=[...ids].map(id=>{ const n=this.byId[id]; return {id:n.id,kind:n.kind,label:n.label,qualified:n.qualified,file:n.file,span:n.span,signature:n.signature,summary:n.summary,cluster:n.cluster,role:projection?(projection.coreIds.includes(id)?'member':'context'):undefined}; });
+    const es=this.visibleEdges(ids).map(e=>{ const o={src:e.src,dst:e.dst,rel:e.rel}; if(e.provenance){o.provenance=e.provenance;o.confidence=e.confidence;} return o; });
+    const payload={ focus:this.state.selectedId||this.state.selectedClusterId, view:this.state.selectedClusterId&&!this.state.selectedId?(this.state.clusterContext?'functionality-with-context':'functionality-members'):(this.state.blast?'blast-radius':'neighborhood'), clusterKind:this.state.selectedClusterKind||undefined, exportedAt:new Date().toISOString(), stats:{nodes:ns.length,edges:es.length}, nodes:ns, edges:es };
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=(this.state.selectedId||this.state.selectedClusterId||'subgraph')+(this.state.blast?'.blast':'')+'.crib.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); }
 
   buildOverview(){
+    // Module-segmented overview (outcome F) when the server served /overview.json; falls back to
+    // the cluster-card path when vizModules is null (old server / no overview.json).
+    if(this.vizModules){ this.buildModuleOverview(); return; }
+    this.buildClusterOverview(null);
+  }
+
+  // Cluster-card overview (the original path). `filterClusterIds` restricts to a module's clusters
+  // (the second level of the module overview); when set, orphan handling is skipped.
+  buildClusterOverview(filterClusterIds){
+    const filter = filterClusterIds ? new Set(filterClusterIds) : null;
     const orphanId = this._orphanClusterId;
     const byCluster = new Map();
-    for(const c of this.clusters) byCluster.set(c.id,{...c,count:0,degree:0,importance:0,kinds:new Map(),x:0,y:0,w:0,h:0});
+    for(const c of this.clusters){
+      if(filter && !filter.has(c.id)) continue;
+      byCluster.set(c.id,{...c,count:0,degree:0,importance:0,kinds:new Map(),x:0,y:0,w:0,h:0});
+    }
     for(const n of this.nodes){
       const c = byCluster.get(n.cluster);
       if(!c) continue;
@@ -440,28 +494,30 @@ class Component extends DCLogic {
     const maxBlocks = this.largeGraph ? 26 : ranked.length;
     const blocks = ranked.slice(0,maxBlocks);
 
-    // Orphan nodes (no real cluster — 91% of a typical repo's nodes are statement-level symbols
-    // with no cluster membership) used to collapse into one giant muted "Unclustered" card that
-    // told the user nothing. Instead: surface the handful of highest-importance orphan SYMBOLS as
-    // their own small cards (clicking one jumps straight to that node's Focus view), and fold
-    // anything left over into a single unobtrusive summary card at the very end.
-    const orphanNodes = orphanId ? this.nodes.filter(n=>n.cluster===orphanId) : [];
-    const topOrphans = [...orphanNodes].sort((a,b)=>(b.importance||0)-(a.importance||0)).slice(0,6);
-    for(const n of topOrphans){
-      blocks.push({
-        id:'orphan:'+n.id, isNode:true, nodeId:n.id,
-        label:n.qualified||n.label||n.id, color:this.KIND[n.kind]||'#5b8cff',
-        count:1, degree:n.serverDegree||0, importance:n.importance||0,
-        kinds:new Map([[n.kind,1]]), topKind:n.kind, muted:false, x:0,y:0,w:0,h:0,
-      });
-    }
-    const remainingOrphans = orphanNodes.length - topOrphans.length;
-    if(remainingOrphans > 0){
-      blocks.push({
-        id:orphanId, label:remainingOrphans+' more uncategorized', color:'#64748b',
-        count:remainingOrphans, degree:0, importance:0, kinds:new Map(), topKind:'symbol',
-        muted:true, x:0,y:0,w:0,h:0,
-      });
+    if(!filter){
+      // Orphan nodes (no real cluster — 91% of a typical repo's nodes are statement-level symbols
+      // with no cluster membership) used to collapse into one giant muted "Unclustered" card that
+      // told the user nothing. Instead: surface the handful of highest-importance orphan SYMBOLS as
+      // their own small cards (clicking one jumps straight to that node's Focus view), and fold
+      // anything left over into a single unobtrusive summary card at the very end.
+      const orphanNodes = orphanId ? this.nodes.filter(n=>n.cluster===orphanId) : [];
+      const topOrphans = [...orphanNodes].sort((a,b)=>(b.importance||0)-(a.importance||0)).slice(0,6);
+      for(const n of topOrphans){
+        blocks.push({
+          id:'orphan:'+n.id, isNode:true, nodeId:n.id,
+          label:n.qualified||n.label||n.id, color:this.KIND[n.kind]||'#5b8cff',
+          count:1, degree:n.serverDegree||0, importance:n.importance||0,
+          kinds:new Map([[n.kind,1]]), topKind:n.kind, muted:false, x:0,y:0,w:0,h:0,
+        });
+      }
+      const remainingOrphans = orphanNodes.length - topOrphans.length;
+      if(remainingOrphans > 0){
+        blocks.push({
+          id:orphanId, label:remainingOrphans+' more uncategorized', color:'#64748b',
+          count:remainingOrphans, degree:0, importance:0, kinds:new Map(), topKind:'symbol',
+          muted:true, x:0,y:0,w:0,h:0,
+        });
+      }
     }
     const shown = new Set(blocks.map(b=>b.id));
     const muted = new Set(blocks.filter(b=>b.muted).map(b=>b.id));
@@ -500,21 +556,130 @@ class Component extends DCLogic {
     this.overviewEdges = [...edgeMap.values()].sort((a,b)=>b.count-a.count).slice(0,120);
   }
 
+  // Module-segmented overview (outcome F). Level 0 = module cards (name + purpose + counts, edges
+  // aggregated by module via node→module file-prefix mapping). Selecting a module drops to level 1
+  // = that module's cluster cards (buildClusterOverview filtered) + a back affordance.
+  buildModuleOverview(){
+    const mods = this.vizModules;
+    if(!mods) { this.buildClusterOverview(null); return; }
+    if(this.selectedModule){
+      const mod = mods.find(m=>m.id===this.selectedModule);
+      if(!mod){ this.selectedModule=null; return this.buildModuleOverview(); }
+      this.buildClusterOverview(mod.clusterIds && mod.clusterIds.length ? mod.clusterIds : null);
+      // Prepend a back affordance and re-layout the whole set so the back card owns the first slot.
+      const back = { id:'module:back', isBack:true, label:'← all modules', color:'#64748b',
+        count:0, degree:0, importance:0, kinds:new Map(), topKind:'symbol', muted:false, topMembers:[],
+        x:0,y:0,w:0,h:0 };
+      this.overview.unshift(back);
+      const cols = Math.max(3,Math.ceil(Math.sqrt(this.overview.length*1.35)));
+      const gap=30, bw=210, bh=132, rows=Math.ceil(this.overview.length/cols);
+      const ox=-((cols-1)*(bw+gap))/2, oy=-((rows-1)*(bh+gap))/2;
+      this.overview.forEach((b,i)=>{ const col=i%cols,row=Math.floor(i/cols); b.x=ox+col*(bw+gap); b.y=oy+row*(bh+gap); b.w=bw; b.h=bh; });
+      this.overviewById={}; this.overview.forEach(b=>this.overviewById[b.id]=b);
+      return;
+    }
+    const blocks = mods.map((m)=>({
+      id:m.id, isModule:true, moduleId:m.id,
+      label:m.name, pathPrefix:m.pathPrefix, purpose:m.purpose||'',
+      color:m.color||'#5b8cff',
+      count:(m.counts&&m.counts.symbols)||0, degree:0, importance:(m.counts&&m.counts.symbols)||0,
+      kinds:new Map(), clusterIds:m.clusterIds||[],
+      x:0,y:0,w:0,h:0, muted:false, topMembers:[],
+    }));
+    const shown = new Set(blocks.map(b=>b.id));
+    const nodeModule = new Map();
+    for(const n of this.nodes) nodeModule.set(n.id, this.moduleForFile(n.file));
+    const edgeMap = new Map();
+    for(const e of this.edges){
+      const a=this.byId[e.src], b=this.byId[e.dst];
+      if(!a||!b) continue;
+      const ma=nodeModule.get(a.id), mb=nodeModule.get(b.id);
+      if(!ma||!mb||ma===mb||!shown.has(ma)||!shown.has(mb)) continue;
+      const key = ma<mb?ma+'|'+mb:mb+'|'+ma;
+      const cur = edgeMap.get(key) || {src:ma,dst:mb,count:0,rel:e.rel};
+      cur.count++; if(this.DEP.has(e.rel)) cur.rel=e.rel;
+      edgeMap.set(key,cur);
+    }
+    const cols = Math.max(3,Math.ceil(Math.sqrt(blocks.length*1.35)));
+    const gap=30, bw=210, bh=132, rows=Math.ceil(blocks.length/cols);
+    const ox=-((cols-1)*(bw+gap))/2, oy=-((rows-1)*(bh+gap))/2;
+    blocks.forEach((b,i)=>{ const col=i%cols,row=Math.floor(i/cols); b.x=ox+col*(bw+gap); b.y=oy+row*(bh+gap); b.w=bw; b.h=bh; b.topKind='module'; });
+    this.overview = blocks;
+    this.overviewById = {};
+    blocks.forEach(b=>this.overviewById[b.id]=b);
+    this.overviewEdges = [...edgeMap.values()].sort((a,b)=>b.count-a.count).slice(0,120);
+  }
+
+  // Map a node's file to its module id (longest-prefix match; root module catches the rest).
+  moduleForFile(file){
+    if(!file || !this.vizModules) return null;
+    let best=null;
+    for(const m of this.vizModules){
+      const p=m.pathPrefix;
+      if(!p) continue;
+      if(file===p || file.startsWith(p+'/')){
+        if(!best || p.length>best.pathPrefix.length) best=m;
+      }
+    }
+    if(best) return best.id;
+    const root=this.vizModules.find(m=>m.pathPrefix==='');
+    return root?root.id:null;
+  }
+
+  selectModule(id){
+    if(!this.vizModules) return;
+    this.selectedModule=id; this._cand=null; this._nb=[]; this._nIdx=null;
+    this.buildOverview();
+    this.view={cx:0,cy:0,k:0.95}; this._vt=null;
+    this.setState({selectedId:null,selectedClusterId:null,selectedTrail:[],mode:'overview'});
+    this.reheat(0.35);
+  }
+  clearModule(){
+    if(!this.vizModules) return;
+    this.selectedModule=null; this._cand=null; this._nb=[]; this._nIdx=null;
+    this.buildOverview();
+    this.view={cx:0,cy:0,k:0.95}; this._vt=null;
+    this.setState({selectedId:null,selectedClusterId:null,selectedTrail:[],mode:'overview'});
+    this.reheat(0.35);
+  }
+
+  clusterProjection(clusterId=this.state.selectedClusterId,kind=this.state.selectedClusterKind,showContext=this.state.clusterContext,promotedId=null){
+    if(!clusterId) return null;
+    return KCGraphModel.clusterProjection({clusterId,kind,showContext,promotedId,coreCap:200,contextCap:60},this.nodes,this.edges,this.byId,this.graphIndexes);
+  }
+
+  searchProjection(query=this.state.query){
+    const q=String(query||'').trim().toLowerCase();
+    if(this._searchProjection&&this._searchProjection.query===q)return this._searchProjection;
+    this._searchProjection=KCGraphModel.searchProjection({query:q,matchCap:24,contextCap:48},this.nodes,this.edges,this.byId,this.graphIndexes);
+    return this._searchProjection;
+  }
+
+  visibleEdges(visibleIds){
+    const q=(this.state.query||'').trim();
+    if(q)return this.searchProjection(q).edgeIndexes.map(i=>this.edges[i]).filter(Boolean);
+    if(this.state.selectedClusterId && !this.state.selectedId){
+      const projection=this.clusterProjection();
+      return projection?projection.edgeIndexes.map(i=>this.edges[i]).filter(Boolean):[];
+    }
+    const indexes=KCGraphModel.edgeIndexesForNodeIds(visibleIds,this.edges,this.graphIndexes);
+    return indexes.map(i=>this.edges[i]).filter(Boolean);
+  }
+
   visibleNodes(){
+    const q=(this.state.query||'').trim();
+    if(q)return [...this.searchProjection(q).nodeIds].map(id=>this.byId[id]).filter(Boolean);
+    if(this.state.selectedClusterId && !this.state.selectedId){
+      const projection=this.clusterProjection();
+      return projection?[...projection.nodeIds].map(id=>this.byId[id]).filter(Boolean):[];
+    }
     if(!this.largeGraph) return this.nodes;
-    const q=(this.state.query||'').trim().toLowerCase();
     let ids = new Set();
-    if(q){
-      const matches=this.nodes.filter(n=>(n.label||'').toLowerCase().includes(q)||(n.qualified||'').toLowerCase().includes(q)||(n.file||'').toLowerCase().includes(q)).slice(0,160);
-      for(const n of matches){ ids.add(n.id); for(const nb of this.adj[n.id]||[]) ids.add(nb); }
-    } else if(this.state.selectedId){
+    if(this.state.selectedId){
       // Same capped, ranked ring set arrangeNodeFocus laid out — never draw a node that wasn't
       // also positioned (and vice versa). depth respects the user's expand/collapse choice.
       const rings=this.focusRingIds(this.state.selectedId,this.state.focusDepth||1);
       ids = new Set([rings.root,...rings.ring1,...rings.ring2]);
-    } else if(this.state.selectedClusterId){
-      for(const n of this.nodes){ if(n.cluster===this.state.selectedClusterId) ids.add(n.id); }
-      for(const e of this.edges){ if(ids.has(e.src)) ids.add(e.dst); if(ids.has(e.dst)) ids.add(e.src); }
     } else {
       const top = [...this.nodes].filter(n=>n.kind!=='file').sort((a,b)=>(b.importance||0)-(a.importance||0)).slice(0,260);
       for(const n of top) ids.add(n.id);
@@ -524,13 +689,38 @@ class Component extends DCLogic {
     return out;
   }
 
-  arrangeClusterFocus(clusterId){
-    const ids = new Set();
-    for(const n of this.nodes){ if(n.cluster===clusterId) ids.add(n.id); }
-    const core=[...ids].map(id=>this.byId[id]).filter(Boolean);
-    for(const e of this.edges){ if(ids.has(e.src)) ids.add(e.dst); if(ids.has(e.dst)) ids.add(e.src); if(ids.size>720) break; }
-    const ns=[...ids].map(id=>this.byId[id]).filter(Boolean).slice(0,720);
-    const coreIds=new Set(core.map(n=>n.id));
+  arrangeSearch(query){
+    const projection=this.searchProjection(query);
+    const matches=projection.matchIds.map(id=>this.byId[id]).filter(Boolean);
+    const context=projection.contextIds.map(id=>this.byId[id]).filter(Boolean);
+    if(!matches.length)return projection;
+    const cols=Math.max(1,Math.ceil(Math.sqrt(matches.length)));
+    const rows=Math.ceil(matches.length/cols);
+    const gapX=210,gapY=145;
+    matches.forEach((n,i)=>{
+      const col=i%cols,row=Math.floor(i/cols);
+      n.x=(col-(cols-1)/2)*gapX;
+      n.y=(row-(rows-1)/2)*gapY;
+      n.vx=0;n.vy=0;
+    });
+    const radius=Math.max(330,Math.hypot(cols*gapX,rows*gapY)*0.62+120);
+    context.forEach((n,i)=>{
+      const a=(i/Math.max(1,context.length))*Math.PI*2-Math.PI/2;
+      n.x=Math.cos(a)*radius;
+      n.y=Math.sin(a)*radius*0.68;
+      n.vx=0;n.vy=0;
+    });
+    this.reheat(0.18);
+    return projection;
+  }
+
+  arrangeClusterFocus(clusterId,kind=null,showContext=false,promotedId=null){
+    const projection=this.clusterProjection(clusterId,kind,showContext,promotedId);
+    if(!projection) return;
+    const core=projection.coreIds.map(id=>this.byId[id]).filter(Boolean);
+    const context=projection.contextIds.map(id=>this.byId[id]).filter(Boolean);
+    const ns=[...core,...context];
+    const coreIds=new Set(projection.coreIds);
     const R0=120, R1=280, R2=440;
     let ci=0, oi=0;
     for(const n of ns){
@@ -544,6 +734,9 @@ class Component extends DCLogic {
       n.y=Math.sin(a)*ring*0.72 + Math.cos(idx*1.73)*jitter;
       n.vx=0; n.vy=0;
     }
+    const zoom=this.graphFocusZoom(ns.length);
+    const sideOffset=this.W>880?175:(this.W>620?95:0);
+    this.view={cx:sideOffset/zoom,cy:0,k:zoom}; this._vt=null;
   }
 
   graphFocusZoom(count){
@@ -628,6 +821,9 @@ class Component extends DCLogic {
     }
     const visible = this.visibleNodes();
     const visibleIds = new Set(visible.map(n=>n.id));
+    const activeEdges=this.visibleEdges(visibleIds);
+    const clusterProjection=this.state.selectedClusterId&&!sel?this.clusterProjection():null;
+    const clusterContextIds=new Set(clusterProjection?clusterProjection.contextIds:[]);
     // cluster blobs
     for(const c of this.clusters){ const mem=visible.filter(n=>n.cluster===c.id&&!hid[n.kind]); if(mem.length<1)continue; let cx=0,cy=0; mem.forEach(n=>{cx+=n.x;cy+=n.y;}); cx/=mem.length; cy/=mem.length; let rad=0; mem.forEach(n=>{rad=Math.max(rad,Math.hypot(n.x-cx,n.y-cy)+n.r);}); rad+=26;
       const [sx,sy]=this.w2s(cx,cy); const sr=rad*k; const grd=ctx.createRadialGradient(sx,sy,sr*0.2,sx,sy,sr); const a=th.name==='dark'?0.16:0.13; grd.addColorStop(0,this.hex(c.color,a)); grd.addColorStop(1,this.hex(c.color,0)); ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(sx,sy,sr,0,7); ctx.fill();
@@ -635,7 +831,7 @@ class Component extends DCLogic {
       ctx.font='600 '+Math.max(10,11*Math.min(k,1.3))+"px 'IBM Plex Sans', system-ui, sans-serif"; ctx.fillStyle=this.hex(c.color,0.92); ctx.textAlign='center'; ctx.textBaseline='middle'; const dim=sel&&hl&&!mem.some(n=>hl.set.has(n.id)); ctx.globalAlpha=dim?0.25:1; ctx.fillText(c.label.toUpperCase(),sx,sy-sr-2); ctx.globalAlpha=1; }
     // edges
     ctx.lineCap='round';
-    for(const e of this.edges){ if(!visibleIds.has(e.src)||!visibleIds.has(e.dst))continue; const a=this.byId[e.src], b=this.byId[e.dst]; if(hid[a.kind]||hid[b.kind])continue;
+    for(const e of activeEdges){ const a=this.byId[e.src], b=this.byId[e.dst]; if(hid[a.kind]||hid[b.kind])continue;
       const [ax,ay]=this.w2s(a.x,a.y), [bx,by]=this.w2s(b.x,b.y);
       const sd=hl&&hl.depthMap?hl.depthMap.get(e.src):undefined, td=hl&&hl.depthMap?hl.depthMap.get(e.dst):undefined;
       const inHorizon = sd!==undefined && td!==undefined;
@@ -644,7 +840,7 @@ class Component extends DCLogic {
       let col=this.REL[e.rel]||'#888'; let alpha;
       if(this.state.blast && active) col='#f87171';
       else if(sel && inHorizon) col=direct?this.DEPTH_COLORS[1]:this.DEPTH_COLORS[2];
-      if(sel){ alpha = active?(direct?0.86:0.32):0.045; } else { alpha = 0.22; }
+      if(sel){ alpha = active?(direct?0.86:0.32):0.045; } else if(clusterProjection){ alpha=(clusterContextIds.has(e.src)||clusterContextIds.has(e.dst))?0.12:0.62; } else { alpha = 0.22; }
       ctx.strokeStyle=this.hex(col,alpha); ctx.lineWidth=active?(direct?2.2:1.35):1;
       if(e.rel==='member-of'||e.rel==='references'){ ctx.setLineDash([3,4]); } else ctx.setLineDash([]);
       // slight curve
@@ -671,7 +867,8 @@ class Component extends DCLogic {
       // Statement-level kinds fade by default so the architectural layer reads first — but never
       // when they're the focus, hovered, in the horizon, or a search match (then full opacity).
       const noiseFade = !isSel && !isHover && depth===undefined && !match && this.NOISE_KINDS.has(n.kind);
-      ctx.globalAlpha = dim?0.16:(noiseFade?0.4:1);
+      const contextFade=clusterContextIds.has(n.id)&&!isHover;
+      ctx.globalAlpha = dim?0.16:(contextFade?0.28:(noiseFade?0.4:1));
       // glow for selected / hover / search match
       if(isSel||isHover||match||ringCol){ ctx.beginPath(); ctx.arc(x,y,r+ (isSel?8:(depth===1?6:4)),0,7); ctx.fillStyle=this.hex(ringCol||col,isSel?0.28:(depth===1?0.18:0.1)); ctx.fill(); }
       ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fillStyle=col; ctx.fill();
@@ -699,6 +896,7 @@ class Component extends DCLogic {
       const isSel=n.id===sel; const isHover=n.id===this.hoverId; const inHL=hl&&hl.set.has(n.id); const match=isMatch(n);
       const dim = (sel&&!inHL) || (q&&!match&&!isSel);
       if(dim) continue;
+      if(clusterContextIds.has(n.id)&&!isHover) continue;
       const depth=hl&&hl.depthMap?hl.depthMap.get(n.id):undefined;
       // At low zoom, only the primary tier (plus sel/hover/horizon/match) gets labels — the long
       // detail tail is still shipped and rendered, just not labeled until you zoom in. Depth-2
@@ -774,10 +972,15 @@ class Component extends DCLogic {
       ctx.fillText(label,b.x+32,b.y+20);
       ctx.fillStyle=th.sub||'#8b97a8';
       ctx.font="500 11px 'IBM Plex Sans', system-ui, sans-serif";
-      const line1=b.isNode?(Math.round(b.degree)+' caller'+(Math.round(b.degree)===1?'':'s')):(b.count+' nodes · '+(b.muted?'summary':Math.round(b.degree)+' links'));
+      const line1=b.isModule?(b.count+' symbols · '+(b.clusterIds?b.clusterIds.length:0)+' clusters'):b.isBack?'back to the module list':b.isNode?(Math.round(b.degree)+' caller'+(Math.round(b.degree)===1?'':'s')):(b.count+' nodes · '+(b.muted?'summary':Math.round(b.degree)+' links'));
       ctx.fillText(this.ellipsize(ctx,line1,b.w-28),b.x+14,b.y+50);
       b.memberHits = [];
-      if(b.isNode || b.muted || !b.topMembers || !b.topMembers.length){
+      if(b.isModule){
+        // purpose text (~60 chars) — the module-segmented overview's reason for existing.
+        ctx.fillText(this.ellipsize(ctx,b.purpose||'no purpose yet',b.w-28),b.x+14,b.y+72);
+      } else if(b.isBack){
+        ctx.fillText(this.ellipsize(ctx,'',b.w-28),b.x+14,b.y+72);
+      } else if(b.isNode || b.muted || !b.topMembers || !b.topMembers.length){
         const line2=b.isNode?(this.KLABEL[b.topKind]||b.topKind):(b.muted?'Hidden from overview links':(this.KLABEL[b.topKind]||b.topKind)+' heavy');
         ctx.fillText(this.ellipsize(ctx,line2,b.w-28),b.x+14,b.y+72);
       } else {
@@ -829,7 +1032,7 @@ class Component extends DCLogic {
         if(p.node){ const [wx,wy]=this.s2w(e.offsetX,e.offsetY); p.node.x=wx; p.node.y=wy; p.node.vx=0; p.node.vy=0; this.reheat(0.3); } else { this._vt=null; this.view.cx-=dx/this.view.k; this.view.cy-=dy/this.view.k; } p.x=e.offsetX; p.y=e.offsetY; return; }
       const chip=this.hitExpandChip(e.offsetX,e.offsetY); const block=!chip&&this.largeGraph&&this.state.mode==='overview'?this.hitOverview(e.offsetX,e.offsetY):null; const n=(chip||block)?null:this.hit(e.offsetX,e.offsetY); this.hoverId=n?n.id:null; c.style.cursor=(chip||n||block)?'pointer':'grab'; this.tip(n,e.offsetX,e.offsetY);
     };
-    this.onUp=(e)=>{ const p=this._p; this._p=null; c.style.cursor='grab'; if(!p)return; if(p.node)p.node.pin=false; if(!p.moved){ if(p.chip) this.toggleFocusDepth(); else if(p.block&&p.block.isNode) this.select(p.block.nodeId); else if(p.block) this.selectCluster(p.block.id); else if(p.node) this.select(p.node.id); else this.closePanel(); } };
+    this.onUp=(e)=>{ const p=this._p; this._p=null; c.style.cursor='grab'; if(!p)return; if(p.node)p.node.pin=false; if(!p.moved){ if(p.chip) this.toggleFocusDepth(); else if(p.block&&p.block.isModule) this.selectModule(p.block.moduleId); else if(p.block&&p.block.isBack) this.clearModule(); else if(p.block&&p.block.isNode) this.select(p.block.nodeId); else if(p.block) this.selectCluster(p.block.id); else if(p.node) this.select(p.node.id); else this.closePanel(); } };
     this.onKey=(e)=>{ const k=e.key; const tag=(e.target&&e.target.tagName)||''; if(tag==='INPUT'){ if(k==='Escape')e.target.blur(); return; }
       if(this.state.tour){ if(k==='ArrowRight'||k===' '||k==='ArrowDown'){e.preventDefault(); this.tourGo(this.state.tourStep+1);} else if(k==='ArrowLeft'||k==='ArrowUp'){e.preventDefault(); this.tourGo(this.state.tourStep-1);} else if(k==='Escape'){this.exitTour();} return; }
       if(k==='Escape'){ this._cand=null; this.closePanel(); return; }
@@ -863,9 +1066,9 @@ class Component extends DCLogic {
   // whether the previous node had been expanded to 2-hop; expansion is a per-node choice, not a
   // sticky mode. arrangeNodeFocus is passed depth=1 explicitly so it doesn't read the (about to be
   // stale) previous state.focusDepth before setState lands.
-  select(id){ if(!this.byId[id]) return; const n=this.byId[id]; this._cand=null; this._nb=[...new Set(this.archAdj[id]||[])]; this._nIdx=null; this.arrangeNodeFocus(id,1);
+  select(id,returnClusterId=null){ if(!this.byId[id]) return; const n=this.byId[id]; const originCluster=returnClusterId||(!this.state.selectedId?this.state.selectedClusterId:null)||this.state.clusterReturnId; this._cand=null; this._nb=[...new Set(this.archAdj[id]||[])]; this._nIdx=null; this.arrangeNodeFocus(id,1);
     const trail=[...(this.state.selectedTrail||[]).filter(t=>t.id!==id),{id,label:n.qualified||n.label||id}].slice(-4);
-    this.setState({selectedId:id, selectedClusterId:n.cluster, selectedTrail:trail, mode:'focus', focusDepth:1}); this.reheat(0.08); }
+    this.setState({selectedId:id, selectedClusterId:n.cluster, clusterReturnId:originCluster, selectedTrail:trail, mode:'focus', focusDepth:1}); this.loadSource(id); this.reheat(0.08); }
   /** Toggle between 1-hop and 2-hop context for the currently selected node — the explicit
    *  "expand neighbors" affordance (Horizon panel's depth-2 row), replacing the old always-on
    *  2-hop hairball with an opt-in reveal. */
@@ -876,17 +1079,44 @@ class Component extends DCLogic {
     this.setState({focusDepth:next});
     this.reheat(0.3);
   }
-  selectCluster(id){ if(!this.overviewById[id]) return; this._cand=null; this._nb=[]; this._nIdx=null; this.arrangeClusterFocus(id); this.view={cx:0,cy:0,k:0.95}; this._vt=null; this.setState({selectedId:null, selectedClusterId:id, selectedTrail:[], mode:'focus'}); this.reheat(0.35); }
-  closePanel(){ this._cand=null; this._nb=[]; this._nIdx=null; this.setState({selectedId:null, selectedClusterId:null, selectedTrail:[]}); }
+  selectCluster(id){ if(!this.overviewById[id]) return; this._cand=null; this._nb=[]; this._nIdx=null; this.arrangeClusterFocus(id,null,false); this.setState({selectedId:null, selectedClusterId:id, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null, mode:'focus'}); this.reheat(0.35); }
+  setClusterKind(kind){ const id=this.state.selectedClusterId; if(!id)return; this.arrangeClusterFocus(id,kind,this.state.clusterContext); this.setState({selectedClusterKind:kind}); this.reheat(0.25); }
+  toggleClusterContext(){ const id=this.state.selectedClusterId; if(!id)return; const next=!this.state.clusterContext; this.arrangeClusterFocus(id,this.state.selectedClusterKind,next); this.setState({clusterContext:next}); this.reheat(0.25); }
+  returnToCluster(){ const id=this.state.clusterReturnId; if(!id||!this.overviewById[id])return; this.arrangeClusterFocus(id,this.state.selectedClusterKind,false); this.setState({selectedId:null,selectedClusterId:id,clusterContext:false,clusterReturnId:null,selectedTrail:[],sourcePreview:null,mode:'focus'}); this.reheat(0.25); }
+  async loadSource(id){
+    const n=this.byId[id]; const seq=++this._sourceSeq;
+    if(this._sourceAbort)this._sourceAbort.abort();
+    if(!n||!n.file||!n.span){ this.setState({sourcePreview:{nodeId:id,status:'unavailable',lines:[]}}); return; }
+    const controller=new AbortController(); this._sourceAbort=controller;
+    this.setState({sourcePreview:{nodeId:id,status:'loading',location:n.file+':'+n.span.start+(n.span.end!==n.span.start?'-'+n.span.end:''),lines:[]}});
+    try{
+      const res=await fetch('/source?nodeId='+encodeURIComponent(id),{signal:controller.signal,cache:'no-store'});
+      if(!res.ok)throw new Error(await res.text());
+      const data=await res.json(); if(seq!==this._sourceSeq)return;
+      const lines=String(data.excerpt&&data.excerpt.text||'').split('\n').map((text,i)=>({no:(data.excerpt.start||1)+i,text}));
+      this.setState({sourcePreview:{nodeId:id,status:'ready',location:data.file+':'+data.span.start+(data.span.end!==data.span.start?'-'+data.span.end:''),lines,truncated:!!data.excerpt.truncated}});
+    }catch(err){ if(controller.signal.aborted||seq!==this._sourceSeq)return; this.setState({sourcePreview:{nodeId:id,status:'error',message:String(err&&err.message||err),lines:[]}}); }
+  }
+  copyLocation(location){ if(!location)return; if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(location).catch(()=>{}); }
+  closePanel(){ this._cand=null; this._nb=[]; this._nIdx=null; if(this._sourceAbort)this._sourceAbort.abort(); this.setState({selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null}); }
   toggleTheme(){ this.setState(s=>({theme:s.theme==='dark'?'light':'dark'})); }
   toggleBlast(){ this.setState(s=>({blast:!s.blast})); this.reheat(0.2); }
-  showOverview(){ if(!this.largeGraph)return; this.setState({mode:'overview', selectedId:null, selectedTrail:[]}); }
+  showOverview(){ if(!this.largeGraph)return; this.setState({mode:'overview', selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null}); }
   showFocus(){ if(this.state.selectedId){ this.arrangeNodeFocus(this.state.selectedId); this.setState({mode:'focus'}); this.reheat(0.08); return; } this.setState({mode:'focus'}); setTimeout(()=>this.fit(),0); this.reheat(0.25); }
   bumpZoom(){ this.setState(s=>({zoomTick:(s.zoomTick||0)+1})); }
   zoomOut(){ if(this.largeGraph&&this.state.mode==='overview'){ this.overviewZoom=Math.max(0.45,this.overviewZoom/1.18); this.bumpZoom(); return; } this.view.k=Math.max(0.12,this.view.k/1.18); this.bumpZoom(); }
   zoomIn(){ if(this.largeGraph&&this.state.mode==='overview'){ this.overviewZoom=Math.min(2.8,this.overviewZoom*1.18); this.bumpZoom(); return; } this.view.k=Math.min(4.5,this.view.k*1.18); this.bumpZoom(); }
   resetView(){ if(this.largeGraph&&this.state.mode==='overview'){ this.overviewZoom=1; this.bumpZoom(); return; } this.fit(); this.bumpZoom(); }
-  onSearch(e){ const query=e.target.value; this.setState({query, mode:query.trim()?'focus':(this.largeGraph?'overview':'focus')}); setTimeout(()=>this.fit(),0); }
+  onSearch(e){
+    const query=e.target.value;
+    this.selectedModule=null;
+    this._searchProjection=null;
+    this.setState({query,mode:query.trim()?'focus':(this.largeGraph?'overview':'focus'),selectedId:null,selectedClusterId:null,selectedClusterKind:null,clusterContext:false,clusterReturnId:null,selectedTrail:[],sourcePreview:null},()=>{
+      if(query.trim())this.arrangeSearch(query);
+      if(!this.largeGraph||query.trim())this.fit();
+      this.bumpZoom();
+    });
+  }
   toggleKind(k){ this.setState(s=>({hidden:{...s.hidden,[k]:!s.hidden[k]}})); this.reheat(0.3); }
 
   computeDepthMap(root,maxDepth=2){
@@ -930,7 +1160,8 @@ class Component extends DCLogic {
   buildDetail(){ const sel=this.state.selectedId; if(!sel) return this.buildClusterDetail(); const n=this.byId[sel]; const col=this.KIND[n.kind]||'#888';
     const mk=(rel,otherId,dir)=>{ const o=this.byId[otherId]; const e=this._lastE; return { id:otherId, label:o.qualified||o.label, color:this.KIND[o.kind]||'#888', relColor:this.REL[rel]||'#888', phrase:(dir==='out'?this.PHRASE[rel]:this.RPHRASE[rel])||rel, tail:' '+(o.qualified||o.label), onGo:()=>this.select(otherId), badge: e&&e.provenance? (e.provenance==='INFERRED'?'inferred':'verified'):null, badgeBg: e&&e.provenance==='INFERRED'?'rgba(245,158,11,0.18)':'rgba(52,211,153,0.18)', badgeFg: e&&e.provenance==='INFERRED'?'#f59e0b':'#34d399' }; };
     const buckets={deps:[],depBy:[],docs:[],struct:[],guards:[]}; let evidence=null;
-    for(const e of this.edges){ this._lastE=e; if(e.src===sel){ const it=mk(e.rel,e.dst,'out');
+    const incident=(this.graphIndexes.incidentByNode[sel]||[]).map(i=>this.edges[i]).filter(Boolean);
+    for(const e of incident){ this._lastE=e; if(e.src===sel){ const it=mk(e.rel,e.dst,'out');
         if(this.DEP.has(e.rel)) buckets.deps.push(it); else if(e.rel==='describes'||e.rel==='references'){ buckets.docs.push(it); if(e.evidence&&!evidence)evidence=e.evidence; } else if(e.rel==='guarded-by') buckets.guards.push(it); else if(e.rel==='member-of') buckets.struct.push(it);
       } else if(e.dst===sel){ const it=mk(e.rel,e.src,'in');
         if(this.DEP.has(e.rel)) buckets.depBy.push(it); else if(e.rel==='describes'||e.rel==='references'){ buckets.docs.push(it); if(e.evidence&&!evidence)evidence=e.evidence; } else if(e.rel==='guarded-by') buckets.struct.push(it); else if(e.rel==='member-of') buckets.struct.push(it); }
@@ -965,39 +1196,61 @@ class Component extends DCLogic {
     }
     add('Depends on','#6f9bff',buckets.deps); add('Depended on by','#a78bfa',buckets.depBy); add('Guarded by','#f87171',buckets.guards); add('Documentation','#34d399',buckets.docs); add('Structure', '#7c8aa5', buckets.struct);
      const blastCount=hl?Math.max(0,hl.blast.size-1):0;
-     return { id:sel, name:n.label, qualified:n.qualified, kindLabel:this.KLABEL[n.kind]||n.kind, color:col, glow:this.hex(col,0.22), summary:n.summary, signature:n.signature, file:n.file, lang:n.lang, sections, evidence, blastOn:this.state.blast, blastCount };
+     const preview=this.state.sourcePreview&&this.state.sourcePreview.nodeId===sel?this.state.sourcePreview:null;
+     const source=preview?{...preview,loading:preview.status==='loading',ready:preview.status==='ready',unavailable:preview.status==='unavailable',failed:preview.status==='error',onCopy:()=>this.copyLocation(preview.location)}:null;
+     const fileDisplay=n.file?(n.file+(n.span?':'+n.span.start+(n.span.end!==n.span.start?'-'+n.span.end:''):'')):null;
+     return { id:sel, name:n.label, qualified:n.qualified, kindLabel:this.KLABEL[n.kind]||n.kind, color:col, glow:this.hex(col,0.22), summary:n.summary, signature:n.signature, file:n.file, fileDisplay, span:n.span, lang:n.lang, sections, evidence, source, backLabel:this.state.clusterReturnId?'Back to functionality':null, backAction:this.state.clusterReturnId?()=>this.returnToCluster():null, blastOn:this.state.blast, blastCount };
    }
 
   buildClusterDetail(){
     const id=this.state.selectedClusterId;
     if(!id) return null;
-    const c=this.overviewById[id];
+    const c=this.overviewById[id]||this.clusters.find(cluster=>cluster.id===id);
     if(!c) return null;
-    const members=this.nodes.filter(n=>n.cluster===id);
-    const counts=[...c.kinds.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const allMembers=(this.graphIndexes.membersByCluster[id]||[]).map(memberId=>this.byId[memberId]).filter(Boolean);
+    const kindCounts=new Map(); for(const member of allMembers)kindCounts.set(member.kind,(kindCounts.get(member.kind)||0)+1);
+    const counts=[...kindCounts.entries()].sort((a,b)=>b[1]-a[1]||String(a[0]).localeCompare(String(b[0])));
+    const selectedKind=this.state.selectedClusterKind;
+    const members=allMembers.filter(member=>!selectedKind||member.kind===selectedKind).sort((a,b)=>String(a.qualified||a.label||a.id).localeCompare(String(b.qualified||b.label||b.id)));
+    const projection=this.clusterProjection(id,selectedKind,this.state.clusterContext);
+    const compositionItems=[{
+      id:'all',label:'All members',color:c.color||'#5b8cff',relColor:c.color||'#5b8cff',phrase:String(allMembers.length),tail:' nodes',onGo:()=>this.setClusterKind(null),badge:!selectedKind?'active':null,badgeBg:'rgba(91,140,255,0.18)',badgeFg:'#5b8cff'
+    },...counts.map(([kind,count])=>({
+      id:kind,
+      label:this.KLABEL[kind]||kind,
+      color:this.KIND[kind]||'#888',
+      relColor:this.KIND[kind]||'#888',
+      phrase:String(count),
+      tail:' nodes',
+      onGo:()=>this.setClusterKind(kind),
+      badge:selectedKind===kind?'active':null,
+      badgeBg:'rgba(91,140,255,0.18)',
+      badgeFg:'#5b8cff',
+    }))];
+    const memberItems=members.map(member=>{
+      const location=member.file?(member.file+(member.span?':'+member.span.start+(member.span.end!==member.span.start?'-'+member.span.end:''):'')):'';
+      return {id:member.id,label:member.qualified||member.label||member.id,color:this.KIND[member.kind]||'#888',relColor:this.KIND[member.kind]||'#888',phrase:member.signature||(this.KLABEL[member.kind]||member.kind),tail:location?' · '+location:'',onGo:()=>this.select(member.id,id),badge:'extracted',badgeBg:'rgba(52,211,153,0.18)',badgeFg:'#34d399'};
+    });
     const sections=[{
       title:'Composition',
       color:c.color||'#5b8cff',
-      count:members.length,
-      items:counts.map(([kind,count])=>({
-        id:kind,
-        label:this.KLABEL[kind]||kind,
-        color:this.KIND[kind]||'#888',
-        relColor:this.KIND[kind]||'#888',
-        phrase:String(count),
-        tail:' nodes',
-        onGo:()=>{},
-        badge:null,
-      })),
+      count:allMembers.length,
+      items:compositionItems,
+    },{
+      title:'View',color:this.DEPTH_COLORS[1],count:(projection&&projection.contextIds.length)||0,items:[{id:'context',label:this.state.clusterContext?'Hide connected context':'Show connected context',color:this.DEPTH_COLORS[1],relColor:this.DEPTH_COLORS[1],phrase:this.state.clusterContext?'On':'Off',tail:this.state.clusterContext?' · direct architectural neighbors shown':' · exact members only',onGo:()=>this.toggleClusterContext(),badge:null}]
+    },{
+      title:'Members',color:c.color||'#5b8cff',count:members.length,items:memberItems
     }];
+    const shown=projection?projection.coreIds.length:members.length;
+    const hidden=projection?projection.hiddenCore:0;
     return {
       id,
       name:c.label||id,
       qualified:null,
-      kindLabel:'Module',
+      kindLabel:'Functionality',
       color:c.color||'#5b8cff',
       glow:this.hex(c.color||'#5b8cff',0.22),
-      summary:`${members.length} nodes grouped here. Focus mode shows this module plus directly connected neighbors so the project stays readable.`,
+      summary:`${shown} of ${members.length} ${selectedKind?(this.KLABEL[selectedKind]||selectedKind).toLowerCase()+' nodes':'members'} shown on canvas. Exact functionality members are isolated${this.state.clusterContext?'; connected context is enabled':'.'}${hidden>0?' '+hidden+' more remain available in member list.':''}`,
       signature:null,
       file:null,
       lang:null,
@@ -1030,13 +1283,17 @@ class Component extends DCLogic {
     const focusEmpty = this.largeGraph && focusOn && !this.state.selectedId && !this.state.selectedClusterId && !(this.state.query||'').trim();
     const zoomLabel=Math.round((overviewOn?this.overviewZoom:this.view.k)*100)+'%';
     const compactStats=(this.stats||'…').replace(/\s+·\s+/g,' · ');
+    const searchQuery=(this.state.query||'').trim();
+    const searchProjection=searchQuery?this.searchProjection(searchQuery):null;
+    const searchStatus=searchProjection?(searchProjection.totalMatches?searchProjection.totalMatches+' match'+(searchProjection.totalMatches===1?'':'es')+' · '+searchProjection.contextIds.length+' related':'No graph matches'):null;
+    const searchStatusColor=searchProjection&&searchProjection.totalMatches===0?'#f87171':t.sub;
      const tOn=this.state.tour; const ts=this.TOUR[this.state.tourStep]||{title:'No tour available',text:'This project has no indexed symbols to tour yet.'}; const isLast=this.state.tourStep>=this.TOUR.length-1; const isFirst=this.state.tourStep<=0;
      return {
       tour:{ on:tOn, step:this.state.tourStep+1, total:this.TOUR.length, title:ts.title, text:ts.text, nextLabel:isLast?'Finish':'Next', prevOp:isFirst?0.4:1, onNext:()=>this.tourGo(this.state.tourStep+1), onPrev:()=>this.tourGo(this.state.tourStep-1), onExit:()=>this.exitTour() },
       startTour:()=>this.startTour(), exportSub:()=>this.exportSubgraph(),
       tourBg: tOn?'rgba(91,140,255,0.16)':t.chip, tourBorder: tOn?'rgba(91,140,255,0.5)':t.border, tourFg: tOn?'#5b8cff':t.text,
        rootRef:this.rootRef, canvasRef:this.canvasRef, tipRef:this.tipRef, searchRef:this.searchRef,
-        t, stats:this.stats||'…', compactStats, kindList, sel, focusEmpty,
+        t, stats:this.stats||'…', compactStats, kindList, sel, focusEmpty, searchStatus, searchStatusColor,
       zoomLabel,
       overviewBg: overviewOn?'#5b8cff':'transparent', overviewFg: overviewOn?'#fff':t.text,
       focusBg: focusOn?'#5b8cff':'transparent', focusFg: focusOn?'#fff':t.text,

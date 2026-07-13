@@ -489,6 +489,17 @@ crib export --format rules --procedure <id|name> .    # decision table for one p
 `crib viz .` serves an offline React/canvas graph UI with compound cluster nodes at
 `http://127.0.0.1:<port>/` and opens a browser — useful for eyeballing the graph.
 
+The `.crib/` soul and SQLite search index are durable. Restarting an IDE, terminal, or machine does
+not require another `crib index`. IDEs restart `crib serve` from their MCP config. The web UI is a
+separate foreground process, so after a machine restart run only:
+
+```bash
+crib viz /absolute/path/to/project --port 43127
+```
+
+Using a fixed port keeps the bookmark stable. Keep that terminal open while using the UI; `Ctrl-C`
+stops only the UI server, not the persisted graph.
+
 ---
 
 ## 8. Troubleshooting
@@ -500,6 +511,8 @@ crib export --format rules --procedure <id|name> .    # decision table for one p
 | IDE says server failed to start / `crib` not found | The IDE didn't inherit your PATH. Use the absolute path `/Users/<you>/Library/pnpm/crib` in the config. |
 | Index hangs at 100% CPU | A cache dir isn't ignored, or the PL/SQL extractor hit the known slow path. Re-run with `--exclude <dir>` and/or exclude `resources` for SQL-heavy repos. |
 | `query` returns nothing | The symbol may not be extracted (for example, JavaScript `.js`/`.jsx` files currently produce file nodes only). Use a supported symbol language or extend the registry. |
+| UI search looks blank | Upgrade/build this version. Search now ranks direct matches, lays them out with bounded architectural context, and reports an explicit no-match state instead of reusing stale graph coordinates. |
+| Restart seems to lose the application | Do not re-index. MCP is host-started from `crib mcp install`; verify with `crib mcp list --ide <ide>`. UI is foreground-only; restart it with `crib viz <absolute-project-path> --port 43127`. |
 | Tools visible but agent doesn't use them | You're in Copilot "Ask" mode — switch to **Agent** mode (Copilot only). |
 | `.cursor` / `.vscode` MCP loads nothing | Wrong root key: Cursor uses `mcpServers`, Copilot uses `servers` + `type: "stdio"`. |
 | Codex ignores the server | Use snake_case `[mcp_servers.name]`, not `[mcpServers]` or `[mcp.servers]`. |
@@ -664,15 +677,18 @@ whole layer set:
 
 ```bash
 crib skill install                      # copies the bundled /crib-enrich skill to ~/.claude/skills/ (idempotent)
+crib skill install --dest ~/.codex/skills  # Codex: install same skill into its user skill root
 crib skill list                         # show bundled skills
 ```
 
-Then in a Claude Code session in the project, type `/crib-enrich` (or say "enrich the crib" /
+Then in Claude Code type `/crib-enrich`; in Codex invoke `$crib-enrich` (or say "enrich the crib" /
 "build the LLM graph" / "generate the bible"). The skill drives
 `enrich_status → enrich_next → author → enrich_save` one batch per turn, bottom-up, and calls
 `overview` at the end. The skill is **bundled inside the package** (`packages/cli/skills/`), so
-`crib skill install` is the one command that makes LLM-graph generation available in any Claude
-Code install — no separate repo to clone.
+No separate skill repository is required.
+
+`/crib-enrich` / `$crib-enrich` is generation, not search. For lookup use MCP `query`, plain language such as
+"search the crib for cmdViz", or `crib query "cmdViz"`. Command spelling includes final `h`.
 
 **Headless / from the CLI** (the same loop without an IDE):
 

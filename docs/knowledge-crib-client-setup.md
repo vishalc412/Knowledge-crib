@@ -409,6 +409,7 @@ install it from the CLI — no separate repo to clone:
 
 ```bash
 crib skill install                      # copies /crib-enrich to ~/.claude/skills/ (idempotent; skips byte-identical re-installs)
+crib skill install --dest ~/.codex/skills  # Codex skill root; invoke as $crib-enrich
 crib skill list                         # show bundled skills
 ```
 

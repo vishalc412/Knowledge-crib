@@ -427,6 +427,26 @@ describe('crib index — token-savings hero output (P1 instant value)', () => {
   });
 });
 
+describe('crib skill install --dest — cross-client skill installation', () => {
+  it('does not mistake the destination value for a skill name', () => {
+    const dest = join(repo, 'codex-skills');
+    const first = runCliResult(['skill', 'install', '--dest', dest]);
+    expect(first.status).toBe(0);
+    expect(first.stdout).toContain(`crib-enrich: installed → ${join(dest, 'crib-enrich')}`);
+    expect(readFileSync(join(dest, 'crib-enrich', 'SKILL.md'), 'utf8')).toContain('# crib-enrich');
+
+    const second = runCliResult(['skill', 'install', '--dest', dest]);
+    expect(second.status).toBe(0);
+    expect(second.stdout).toContain('crib-enrich: already up to date');
+  });
+
+  it('rejects a missing --dest value', () => {
+    const result = runCliResult(['skill', 'install', '--dest']);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('usage: crib skill install [name] [--dest <dir>]');
+  });
+});
+
 describe('crib update --package (P4 multi-package federation) — CLI dispatch', () => {
   let fedRepo: string;
   const runFed = (args: string[]): { status: number; stdout: string; stderr: string } => {

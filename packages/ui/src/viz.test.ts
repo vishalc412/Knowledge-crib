@@ -1,11 +1,11 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { SoulStore, newManifest } from '@knowledge-crib/core';
+import { dirname, join } from 'node:path';
+import { SoulStore, clusterContentHash, newManifest } from '@knowledge-crib/core';
 import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
 import { afterEach, describe, expect, it } from 'vitest';
-import { buildVizGraph } from './viz.js';
+import { buildVizGraph, buildVizOverview } from './viz.js';
 
 let dir: string | undefined;
 
@@ -49,12 +49,6 @@ describe('buildVizGraph', () => {
     });
     soul.load();
 
-    const cluster: Node = {
-      id: 'cluster:api',
-      kind: 'cluster',
-      label: 'API',
-      hash: contentHash('api'),
-    };
     const controller = sym('src/api.ts', 'LoanController.submit', 12, {
       framework: 'express',
       stereotype: 'controller',
@@ -62,6 +56,13 @@ describe('buildVizGraph', () => {
       routePath: '/loans',
     });
     const service = sym('src/service.ts', 'LoanService.create', 30);
+    const cluster: Node = {
+      id: 'cluster:api',
+      kind: 'cluster',
+      label: 'API',
+      members: [controller.id],
+      hash: contentHash('api'),
+    };
 
     soul.putNodes([cluster, controller, service]);
     soul.putEdges([
@@ -73,7 +74,11 @@ describe('buildVizGraph', () => {
     const graph = buildVizGraph(soul);
 
     expect(graph.stats).toEqual({ nodes: 2, edges: 2, clusters: 1, primaryNodes: 2 });
-    expect(graph.clusters[0]).toMatchObject({ id: 'cluster:api', label: 'API' });
+    expect(graph.clusters[0]).toMatchObject({
+      id: 'cluster:api',
+      label: 'API',
+      memberCount: 1,
+    });
     expect(graph.nodes.map((n) => n.data.id)).toEqual(
       [...graph.nodes.map((n) => n.data.id)].sort(),
     );
@@ -85,6 +90,7 @@ describe('buildVizGraph', () => {
       httpMethod: 'POST',
       routePath: '/loans',
       clusterId: 'cluster:api',
+      span: { start: 12, end: 12 },
     });
   });
 });
@@ -103,10 +109,7 @@ describe('buildVizGraph — importance/tier ranking (declutter)', () => {
     const lonely = sym('src/c.ts', 'C.go', 1);
 
     soul.putNodes([hub, caller1, caller2, lonely]);
-    soul.putEdges([
-      edge(caller1.id, hub.id, 'calls'),
-      edge(caller2.id, hub.id, 'calls'),
-    ]);
+    soul.putEdges([edge(caller1.id, hub.id, 'calls'), edge(caller2.id, hub.id, 'calls')]);
     soul.commit('2026-01-01T00:00:00.000Z');
 
     const graph = buildVizGraph(soul);
@@ -163,5 +166,93 @@ describe('buildVizGraph — importance/tier ranking (declutter)', () => {
     const first = buildVizGraph(soul);
     const second = buildVizGraph(soul);
     expect(JSON.stringify(first)).toBe(JSON.stringify(second));
+  });
+});
+
+describe('buildVizOverview + LLM cluster label preference (outcome F + E)', () => {
+  it('buildVizOverview is deterministic and segments the soul into modules', () => {
+    dir = mkdtempSync(join(tmpdir(), 'crib-ui-ov-'));
+    const soul = new SoulStore(join(dir, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soul.load();
+    const a = sym('src/a.ts', 'A.run', 1);
+    const b = sym('src/b.ts', 'B.go', 1);
+    soul.putNodes([a, b]);
+    soul.putEdges([edge(a.id, b.id, 'calls')]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+
+    const first = buildVizOverview(soul);
+    const second = buildVizOverview(soul);
+    expect(first.modules.length).toBeGreaterThan(0);
+    expect(first.modules.every((m) => m.color && typeof m.name === 'string')).toBe(true);
+    expect(JSON.stringify(first)).toBe(JSON.stringify(second));
+  });
+
+  it('buildVizGraph prefers the LLM cluster name (overlay) over the heuristic label', () => {
+    dir = mkdtempSync(join(tmpdir(), 'crib-ui-llm-'));
+    const soul = new SoulStore(join(dir, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soul.load();
+    const controller = sym('src/api.ts', 'LoanController.submit', 12);
+    const cluster: Node = {
+      id: 'cluster:api',
+      kind: 'cluster',
+      label: 'API',
+      members: [controller.id],
+      hash: contentHash('api'),
+    };
+    soul.putNodes([cluster, controller]);
+    soul.putEdges([edge(controller.id, cluster.id, 'member-of')]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+
+    // Write a fresh LLM cluster artifact surfacing name='Loans API' + a purpose.
+    const artifactPath = join(dir, '.crib', 'llm', 'analysis', 'cluster', '00', 'art.json');
+    mkdirSync(dirname(artifactPath), { recursive: true });
+    writeFileSync(
+      artifactPath,
+      `${JSON.stringify({
+        version: 1,
+        layer: 'cluster',
+        targetId: cluster.id,
+        nodeHash: clusterContentHash(soul, cluster),
+        schemaVersion: soul.getManifest().schemaVersion,
+        builtAt: '2026-01-01T00:00:00.000Z',
+        analysis: { purpose: 'Loan origination surface', name: 'Loans API', confidence: 0.85 },
+        graph: { nodes: [], edges: [] },
+        evidence: [],
+      })}\n`,
+    );
+
+    const graph = buildVizGraph(soul);
+    const c = graph.clusters[0]!;
+    expect(c.llmLabel).toBe('Loans API'); // overlay name surfaced
+    expect(c.label).toBe('Loans API'); // preferred over the heuristic 'API'
+    expect(c.purpose).toBe('Loan origination surface');
+  });
+
+  it('buildVizGraph degrades to the heuristic label when no LLM overlay exists', () => {
+    dir = mkdtempSync(join(tmpdir(), 'crib-ui-no-llm-'));
+    const soul = new SoulStore(join(dir, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soul.load();
+    const controller = sym('src/api.ts', 'LoanController.submit', 12);
+    const cluster: Node = {
+      id: 'cluster:api',
+      kind: 'cluster',
+      label: 'API',
+      members: [controller.id],
+      hash: contentHash('api'),
+    };
+    soul.putNodes([cluster, controller]);
+    soul.putEdges([edge(controller.id, cluster.id, 'member-of')]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+
+    const graph = buildVizGraph(soul);
+    const c = graph.clusters[0]!;
+    expect(c.llmLabel).toBeUndefined();
+    expect(c.label).toBe('API'); // heuristic fallback
   });
 });

@@ -187,7 +187,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'enrich_next',
     {
       description:
-        'Return the next missing/stale grounded work batch for the IDE agent model to author. Includes seed facts, lower-layer analyses, schema, and instructions. Pass scope:{pathPrefix} to restrict the batch to in-scope targets. batchId is deterministic (same pending set => same id) so a zero-progress re-issue is detectable by id equality. The system layer is never offered under a scope.',
+        'Return the next missing/stale grounded work batch for the IDE agent model to author. Includes seed facts, lower-layer analyses, schema, and instructions. Pass scope:{pathPrefix} to restrict the batch to in-scope targets. batchId is deterministic (same pending set => same id) so a zero-progress re-issue is detectable by id equality. The system layer is never offered under a scope. Pass skeleton:true with layer:"system" for the Phase-0.5 draft skeleton bible (a single work item seeded from the functional map + top READMEs + top symbols; a skeleton never satisfies the system layer — the full pass is still offered).',
       inputSchema: {
         layer: z.enum(['symbol', 'file', 'cluster', 'system']).optional(),
         limit: z.number().int().positive().optional(),
@@ -197,6 +197,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
             cluster: z.string().optional(),
           })
           .optional(),
+        skeleton: z.boolean().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.enrichNext(a)),
@@ -230,7 +231,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'overview',
     {
       description:
-        'Return the LLM-authored codebase bible / overview generated from the semantic graph layer. Pass scope:{pathPrefix} for a module-scoped bible (excludes the whole-repo system layer); omit scope for the cached whole-repo overview.json.',
+        'Return the LLM-authored codebase bible / overview generated from the semantic graph layer. v2: module-segmented, importance-ranked, LEAN by default — `modules` (always present, works at 0% enrichment), `analyses` (lean pointers, production symbols first / test helpers last), and `system` (the freshest bible, full preferred over a draft skeleton). Pass withLlm:true to fold the full analysis+graph+evidence blobs into a `full` array (computed live, never cached). Pass scope:{pathPrefix} for a module-scoped bible (excludes the whole-repo system layer); omit scope for the cached whole-repo overview.json.',
       inputSchema: {
         scope: z
           .object({
@@ -238,6 +239,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
             cluster: z.string().optional(),
           })
           .optional(),
+        withLlm: z.boolean().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.overview(a)),

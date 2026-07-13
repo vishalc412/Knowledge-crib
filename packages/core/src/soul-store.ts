@@ -143,6 +143,95 @@ export class SoulStore {
   }
 
   /**
+   * Atomically replace structural functionality clusters and their membership edges.
+   *
+   * Clustering is global: a topology change can change every community id. Plain upserts therefore
+   * leave obsolete cluster nodes and `member-of` edges behind. Validate the complete replacement
+   * before touching store state, then remove every edge incident to an old cluster and install the
+   * new, internally-consistent topology.
+   */
+  replaceClusters(clusters: Node[], memberships: Edge[]): void {
+    const clusterById = new Map<string, Node>();
+    const ownerByMember = new Map<string, string>();
+    const expectedEdges = new Set<string>();
+
+    for (const cluster of clusters) {
+      assertValidNode(cluster);
+      if (cluster.kind !== 'cluster') {
+        throw new Error(`replaceClusters expected cluster node, got ${cluster.kind}:${cluster.id}`);
+      }
+      if (clusterById.has(cluster.id)) {
+        throw new Error(`replaceClusters duplicate cluster id: ${cluster.id}`);
+      }
+      clusterById.set(cluster.id, cluster);
+      const declared = new Set<string>();
+      for (const memberId of cluster.members ?? []) {
+        if (declared.has(memberId)) {
+          throw new Error(`cluster ${cluster.id} declares duplicate member ${memberId}`);
+        }
+        declared.add(memberId);
+        const member = this.nodes.get(memberId);
+        if (!member) {
+          throw new Error(`cluster ${cluster.id} references missing member ${memberId}`);
+        }
+        if (member.kind !== 'symbol') {
+          throw new Error(
+            `cluster ${cluster.id} member ${memberId} is ${member.kind}, expected symbol`,
+          );
+        }
+        const previous = ownerByMember.get(memberId);
+        if (previous && previous !== cluster.id) {
+          throw new Error(
+            `cluster member ${memberId} belongs to both ${previous} and ${cluster.id}`,
+          );
+        }
+        ownerByMember.set(memberId, cluster.id);
+        expectedEdges.add(`${memberId}\0${cluster.id}`);
+      }
+    }
+
+    const actualEdges = new Set<string>();
+    for (const membership of memberships) {
+      assertValidEdge(membership);
+      if (membership.rel !== 'member-of' || !clusterById.has(membership.dst)) {
+        throw new Error(
+          `replaceClusters expected member-of edge into replacement cluster: ${membership.id}`,
+        );
+      }
+      if (!this.nodes.has(membership.src)) {
+        throw new Error(`cluster membership ${membership.id} has missing source ${membership.src}`);
+      }
+      const key = `${membership.src}\0${membership.dst}`;
+      if (actualEdges.has(key)) {
+        throw new Error(
+          `replaceClusters duplicate membership ${membership.src} -> ${membership.dst}`,
+        );
+      }
+      actualEdges.add(key);
+    }
+    if (
+      actualEdges.size !== expectedEdges.size ||
+      [...expectedEdges].some((key) => !actualEdges.has(key))
+    ) {
+      throw new Error('replaceClusters cluster members[] and membership edges do not match');
+    }
+
+    const oldClusterIds = new Set(
+      [...this.nodes.values()].filter((node) => node.kind === 'cluster').map((node) => node.id),
+    );
+    for (const id of oldClusterIds) this.nodes.delete(id);
+    if (oldClusterIds.size > 0 || clusters.length > 0) this.clustersDirty = true;
+    for (const edge of [...this.edges.values()]) {
+      if (!oldClusterIds.has(edge.src) && !oldClusterIds.has(edge.dst)) continue;
+      this.edges.delete(edge.id);
+      this.dirtyEdgeShards.add(shardOf(shardKeyForEdge(edge), this.shardDigits));
+    }
+
+    this.putNodes(clusters);
+    this.putEdges(memberships);
+  }
+
+  /**
    * Annotate-existing (M11 CFG pass): overwrite the guard-chain fields on edges already in the
    * soul. This is the overwrite primitive the CFG pass uses to stamp `guard`/`cfgPath`/`branch`/
    * `inLoop`/`inException` onto `executes`/`calls` edges the extractor + resolver already emitted.

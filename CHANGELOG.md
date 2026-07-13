@@ -5,6 +5,43 @@ All notable changes to Knowledge-crib are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Overview v2 — module-segmented, importance-ranked, lean by default.** `overview` now returns
+  `modules` (always present, works at 0% enrichment), lean `analyses` pointers (production symbols
+  first, test helpers last), and the system bible in its own slot (full preferred over a draft
+  skeleton). The old v1 dump of every fresh artifact as a full analysis+graph+evidence blob sorted
+  alphabetically is gone — it surfaced test helpers first and megabytes of scaffolding before the
+  bible. v1 `overview.json` caches auto-rebuild via a `version === 2` gate. `withLlm:true` opts into
+  the full blobs (computed live, never cached).
+- **Functional map (`buildFunctionalMap`) + shared importance ranking** in `@knowledge-crib/core`:
+  segments the soul into modules (workspace packages, else directory prefixes with a >80% monorepo
+  descent rule) and ranks every node by architectural in-degree. Consumed by `ui` and `mcp` without
+  crossing the dependency graph. No `module` NodeKind; `SCHEMA_VERSION` stays 1.3.
+- **Importance-ranked enrich queue (new default):** `enrich_next` orders targets tests-last →
+  importance desc (cluster = summed member importance) → id asc, replacing the alphabetical sort.
+  `batchId` is unchanged for the same pending set (the reordering only affects which targets a small
+  batch hits).
+- **System-skeleton-first pass (Phase 0.5):** `enrich_next({layer:'system', skeleton:true})` returns
+  a single draft-bible work item (functional map + top READMEs + top symbols seed) under a distinct
+  `llm:system-skeleton:` batchId; `enrich_save` stamps `mode:'skeleton'` server-side. A skeleton
+  never satisfies the system layer — the full pass is still offered and overwrites it.
+  `enrich_status.systemSkeleton:{present,fresh}` gates the skill.
+- **Heuristic cluster labels:** `<commonDirPrefix> · <dominantStereotypeOrType>`, falling back to
+  the highest-degree member's qualified name when members span roots. Cluster `id`/`hash` untouched
+  (no artifact-staleness cascade). LLM cluster names surface via a read-time overlay (no soul
+  write-back — preserves `cache:stability`).
+- **`crib viz` overview pane:** `/overview.json` route + module cards (name + purpose + counts) with
+  per-module cluster drill-down and a back affordance. Null-guarded — an old server degrades to the
+  existing cluster-card view.
+
+### Fixed
+
+- `clusterSummary` read `c.name` (cluster nodes carry `label`, not `name`) → always undefined. Now
+  reads `c.label ?? c.id` and surfaces LLM cluster names via the overlay.
+
 ## [0.1.0] - 2026-06-26
 
 ### Added
