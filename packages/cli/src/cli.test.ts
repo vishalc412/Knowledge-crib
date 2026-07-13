@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SoulStore, newManifest, openIndex } from '@knowledge-crib/core';
@@ -522,5 +522,59 @@ describe('crib update --package (P4 multi-package federation) — CLI dispatch',
       repo: { vcsHead: string };
     };
     expect(manifest.repo.vcsHead).toBe(h1);
+  });
+});
+
+describe('crib index — cross-process writer lock (M0.6)', () => {
+  let lockRepo: string;
+  const runLock = (args: string[]): { status: number; stdout: string; stderr: string } => {
+    const r = spawnSync(process.execPath, [CLI, ...args], {
+      cwd: lockRepo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    const stripNoise = (str: string): string =>
+      str
+        .split('\n')
+        .filter((l) => !/ExperimentalWarning|trace-warnings/.test(l))
+        .join('\n')
+        .trim();
+    return {
+      status: r.status ?? 1,
+      stdout: stripNoise(r.stdout ?? ''),
+      stderr: stripNoise(r.stderr ?? ''),
+    };
+  };
+  beforeEach(() => {
+    lockRepo = mkdtempSync(join(tmpdir(), 'crib-cli-lock-'));
+    writeFileSync(join(lockRepo, 'README.md'), '# locked\n');
+    mkdirSync(join(lockRepo, 'src'), { recursive: true });
+    writeFileSync(join(lockRepo, 'src', 'a.ts'), 'export const a = 1;\n');
+  });
+  afterEach(() => rmSync(lockRepo, { recursive: true, force: true }));
+
+  it('leaves no .lock behind after a clean index', () => {
+    const r = runLock(['index', '.']);
+    expect(r.status).toBe(0);
+    expect(existsSync(join(lockRepo, '.crib', '.lock'))).toBe(false);
+  });
+
+  it('refuses to index when a live-pid lock already holds (exit 4 LOCKED)', () => {
+    mkdirSync(join(lockRepo, '.crib'), { recursive: true });
+    // the test process is alive and is NOT the child crib will spawn → foreign live holder
+    writeFileSync(join(lockRepo, '.crib', '.lock'), `${process.pid}\n`);
+    const r = runLock(['index', '.']);
+    expect(r.status).toBe(4);
+    expect(r.stderr).toContain('crib is busy');
+  });
+
+  it('self-heals a stale (dead-pid) lock and indexes successfully', () => {
+    mkdirSync(join(lockRepo, '.crib'), { recursive: true });
+    // a pid nothing owns → dead → stale → stolen on acquire
+    writeFileSync(join(lockRepo, '.crib', '.lock'), '4194304\n');
+    const r = runLock(['index', '.']);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/indexed \d+ files/);
+    expect(existsSync(join(lockRepo, '.crib', '.lock'))).toBe(false);
   });
 });

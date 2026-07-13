@@ -17,10 +17,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import {
   CALLABLE_SYMBOL_TYPES,
+  LockBusyError,
   MANIFEST_FILE,
   SoulStore,
   newManifest,
   validateClusterIntegrity,
+  withCribLockAsync,
 } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
 import { EnrichmentStore, Verbs, estimateTokens, serveStdio } from '@knowledge-crib/mcp';
@@ -53,7 +55,7 @@ import {
 import { installSkill, listBundledSkills } from './skill-install.js';
 import { VizHttpError, isAllowedHost, readVizNodeSource, resolveVizAsset } from './viz-server.js';
 
-const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3 } as const;
+const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3, LOCKED: 4 } as const;
 
 /** Per-invocation context threaded from `main` (currently just the `--cwd` global flag). */
 interface CmdCtx {
@@ -329,6 +331,24 @@ function registerIndexed(repoRoot: string, cribDir: string, soul: SoulStore): vo
 }
 
 /**
+ * Run `fn` while holding the `.crib` writer lock; on a busy crib, print a friendly message and
+ * return the LOCKED exit code instead of throwing. Mutating commands (index/update/reindex) must
+ * serialize so two writers never stomp the derived sqlite index. Stale locks (dead holder pid, or
+ * older than 10 min) self-heal inside {@link withCribLockAsync} — no manual cleanup needed.
+ */
+async function runLocked(cribDir: string, fn: () => number | Promise<number>): Promise<number> {
+  try {
+    return await withCribLockAsync({ cribDir }, fn);
+  } catch (error) {
+    if (error instanceof LockBusyError) {
+      process.stderr.write(`${error.message}\n`);
+      return EXIT.LOCKED;
+    }
+    throw error;
+  }
+}
+
+/**
  * After a (re)index, print one real, measured token-savings number so the value of indexing is
  * visible immediately (P1: instant value) instead of staying an abstract claim. Picks the most
  * *called* callable symbol (highest in-degree — the actual architectural center of the codebase,
@@ -417,30 +437,32 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
   const cribDir = join(repoRoot, '.crib');
-  // Full rebuild: fresh manifest stamped with the current SCHEMA_VERSION (never inherit a stale
-  // one), repo.id preserved across rebuilds (stable committed soul + ~/.crib/registry mapping),
-  // resetForRebuild() so every on-disk shard is pruned-on-commit instead of layering new nodes over
-  // a stale older-schema soul. Do NOT load() — that hydrates stale nodes and overwrites the manifest.
-  const soul = freshSoulForRebuild(cribDir);
-  stampPackageMeta(soul, scope);
-  const started = Date.now();
-  const report = await indexRepo(soul, repoRoot, {
-    semantic,
-    ignores,
-    packageRoots: scope.packageRoots,
+  return runLocked(cribDir, async () => {
+    // Full rebuild: fresh manifest stamped with the current SCHEMA_VERSION (never inherit a stale
+    // one), repo.id preserved across rebuilds (stable committed soul + ~/.crib/registry mapping),
+    // resetForRebuild() so every on-disk shard is pruned-on-commit instead of layering new nodes over
+    // a stale older-schema soul. Do NOT load() — that hydrates stale nodes and overwrites the manifest.
+    const soul = freshSoulForRebuild(cribDir);
+    stampPackageMeta(soul, scope);
+    const started = Date.now();
+    const report = await indexRepo(soul, repoRoot, {
+      semantic,
+      ignores,
+      packageRoots: scope.packageRoots,
+    });
+    const index = buildIndex({ repoRoot, cribDir, soul });
+    registerIndexed(repoRoot, cribDir, soul);
+    const stats = soul.getManifest().stats;
+    const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
+    process.stdout.write(
+      `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
+        `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
+    );
+    printTokenSavingsHero(new Verbs({ soul, index, repoRoot }), soul, repoRoot);
+    index.close();
+    printLlmPending(soul, repoRoot);
+    return EXIT.OK;
   });
-  const index = buildIndex({ repoRoot, cribDir, soul });
-  registerIndexed(repoRoot, cribDir, soul);
-  const stats = soul.getManifest().stats;
-  const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
-  process.stdout.write(
-    `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
-      `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
-  );
-  printTokenSavingsHero(new Verbs({ soul, index, repoRoot }), soul, repoRoot);
-  index.close();
-  printLlmPending(soul, repoRoot);
-  return EXIT.OK;
 }
 
 /**
@@ -949,46 +971,54 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
   const scope = resolvePackageScope(resolved.repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
   const rt = openSoul(resolved);
-  const started = Date.now();
   const updateOpts: Parameters<typeof updateRepo>[2] = {
     ...(since ? { since } : {}),
     ...(dirty ? { dirty: true } : {}),
     ...(scope.packageRoots ? { packageRoots: scope.packageRoots } : {}),
   };
-  const result = await updateRepo(rt.soul, resolved.repoRoot, updateOpts);
-  if (result === null) {
-    // No anchor / non-git → degrade to a full index.
+  // Sentinel returned from inside the lock when there is no incremental anchor: we must NOT call
+  // `cmdIndex` while still holding the lock (it acquires its own → nested LockBusyError), so the
+  // fallback is deferred until after runLocked releases.
+  const UPDATE_FALLBACK = -2;
+  const r = await runLocked(resolved.cribDir, async () => {
+    const started = Date.now();
+    const result = await updateRepo(rt.soul, resolved.repoRoot, updateOpts);
+    if (result === null) return UPDATE_FALLBACK;
+    const excludedSuffix =
+      result.excludedPaths.length > 0
+        ? ` [${result.excludedPaths.length} file(s) outside scope left pending — anchor not advanced]`
+        : '';
+    if ('noop' in result) {
+      process.stdout.write(
+        `up to date (head ${result.head.slice(0, 12)}) in ${Date.now() - started}ms${excludedSuffix}\n`,
+      );
+      return EXIT.OK;
+    }
+    // Apply the delta to the existing derived index; if none exists yet, build it fresh from the
+    // (already-committed) updated soul — a delta applied to an empty index would be meaningless.
+    let index: IndexStore;
+    try {
+      index = openIndexOnly(rt);
+      index.applyDelta(result.delta, resolved.repoRoot);
+    } catch {
+      index = buildIndex(rt); // full buildFromSoul from the just-updated soul
+    }
+    index.close();
+    registerIndexed(resolved.repoRoot, resolved.cribDir, rt.soul);
+    const d = result.delta;
+    process.stdout.write(
+      `updated ${result.changedPaths.length} file(s) [scope ${result.scopeFiles.length}] → ` +
+        `+${d.nodes.length} nodes +${d.edges.length} edges −${d.removed.length} in ${Date.now() - started}ms${excludedSuffix}\n` +
+        `changed: ${result.changedPaths.join(', ')}\n`,
+    );
+    return EXIT.OK;
+  });
+  if (r === UPDATE_FALLBACK) {
+    // No anchor / non-git → degrade to a full index (lock now released; cmdIndex acquires its own).
     process.stderr.write('no incremental anchor — falling back to full index\n');
     return cmdIndex(args, ctx);
   }
-  const excludedSuffix =
-    result.excludedPaths.length > 0
-      ? ` [${result.excludedPaths.length} file(s) outside scope left pending — anchor not advanced]`
-      : '';
-  if ('noop' in result) {
-    process.stdout.write(
-      `up to date (head ${result.head.slice(0, 12)}) in ${Date.now() - started}ms${excludedSuffix}\n`,
-    );
-    return EXIT.OK;
-  }
-  // Apply the delta to the existing derived index; if none exists yet, build it fresh from the
-  // (already-committed) updated soul — a delta applied to an empty index would be meaningless.
-  let index: IndexStore;
-  try {
-    index = openIndexOnly(rt);
-    index.applyDelta(result.delta, resolved.repoRoot);
-  } catch {
-    index = buildIndex(rt); // full buildFromSoul from the just-updated soul
-  }
-  index.close();
-  registerIndexed(resolved.repoRoot, resolved.cribDir, rt.soul);
-  const d = result.delta;
-  process.stdout.write(
-    `updated ${result.changedPaths.length} file(s) [scope ${result.scopeFiles.length}] → ` +
-      `+${d.nodes.length} nodes +${d.edges.length} edges −${d.removed.length} in ${Date.now() - started}ms${excludedSuffix}\n` +
-      `changed: ${result.changedPaths.join(', ')}\n`,
-  );
-  return EXIT.OK;
+  return r;
 }
 
 async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
@@ -999,25 +1029,27 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
   const cribDir = join(repoRoot, '.crib');
-  const soul = freshSoulForRebuild(cribDir);
-  stampPackageMeta(soul, scope);
-  const started = Date.now();
-  const report = await indexRepo(soul, repoRoot, {
-    semantic,
-    ignores,
-    packageRoots: scope.packageRoots,
+  return runLocked(cribDir, async () => {
+    const soul = freshSoulForRebuild(cribDir);
+    stampPackageMeta(soul, scope);
+    const started = Date.now();
+    const report = await indexRepo(soul, repoRoot, {
+      semantic,
+      ignores,
+      packageRoots: scope.packageRoots,
+    });
+    const index = buildIndex({ repoRoot, cribDir, soul });
+    index.close();
+    registerIndexed(repoRoot, cribDir, soul);
+    const stats = soul.getManifest().stats;
+    const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
+    process.stdout.write(
+      `reindexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
+        `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
+    );
+    printLlmPending(soul, repoRoot);
+    return EXIT.OK;
   });
-  const index = buildIndex({ repoRoot, cribDir, soul });
-  index.close();
-  registerIndexed(repoRoot, cribDir, soul);
-  const stats = soul.getManifest().stats;
-  const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
-  process.stdout.write(
-    `reindexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
-      `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
-  );
-  printLlmPending(soul, repoRoot);
-  return EXIT.OK;
 }
 
 /** `crib merge-driver %O %A %B %P` — git custom merge driver for one `.crib` JSONL chunk. */

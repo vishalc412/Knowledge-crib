@@ -1,4 +1,5 @@
 import { pathFromId } from '@knowledge-crib/core';
+import { LockBusyError, withCribLock } from '@knowledge-crib/core';
 import type { Dir, Dossier, IndexStore, SoulStore } from '@knowledge-crib/core';
 import {
   CALLABLE_SYMBOL_TYPES,
@@ -898,7 +899,21 @@ export class Verbs {
       evidence: Array<Record<string, unknown>>;
     }>;
   }): Record<string, unknown> {
-    return this.llm.save(args as never) as unknown as Record<string, unknown>;
+    // Serializes writers: an enrich_save landing while `crib index`/`update` runs would race the
+    // .crib/llm files against the soul rebuild. Hold the cross-process crib lock around the save.
+    // On a busy crib, return a structured busy result (deterministic verbs never throw).
+    const cribDir = this.deps.soul.cribDir;
+    try {
+      return withCribLock(
+        { cribDir },
+        () => this.llm.save(args as never) as unknown as Record<string, unknown>,
+      );
+    } catch (error) {
+      if (error instanceof LockBusyError) {
+        return { error: 'crib_busy', message: error.message, holderPid: error.holderPid };
+      }
+      throw error;
+    }
   }
 
   overview(

@@ -11,6 +11,7 @@ export * from './merge.js';
 export * from './validate.js';
 export * from './source.js';
 export * from './importance.js';
+export * from './lock.js';
 export * from './cluster-hash.js';
 export * from './llm-overlay.js';
 export * from './functional-map.js';
