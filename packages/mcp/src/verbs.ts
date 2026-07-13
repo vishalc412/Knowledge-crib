@@ -1,6 +1,12 @@
 import { pathFromId } from '@knowledge-crib/core';
 import { LockBusyError, withCribLock } from '@knowledge-crib/core';
-import { type AliasMap, ifHash, loadAliases, rewriteQuery } from '@knowledge-crib/core';
+import {
+  type AliasMap,
+  type Federation,
+  federatedImpact,
+  loadFederation,
+} from '@knowledge-crib/core';
+import { ifHash, loadAliases, rewriteQuery } from '@knowledge-crib/core';
 import type { Dir, Dossier, IndexStore, SoulStore } from '@knowledge-crib/core';
 import {
   CALLABLE_SYMBOL_TYPES,
@@ -45,6 +51,7 @@ import {
   DEFAULT_LIMIT,
   MAX_DEPTH,
   MAX_DOC_LIMIT,
+  MAX_FED_ROOTS,
   MAX_HOPS,
   MAX_LIMIT,
   MAX_SCOPE_SYMBOLS,
@@ -685,6 +692,71 @@ export class Verbs {
       relatedDocs: this.docsFor(id, 0, args.extractedOnly),
       truncated: page.truncated,
       ...(page.cursor ? { cursor: page.cursor } : {}),
+    };
+  }
+
+  /**
+   * `federatedImpact` (M3.2) — cross-repo blast radius. Like `impact` but loads extra repo souls
+   * (`roots`) and crosses the route-layer bridge: a repo-A `http-call` (outbound HTTP client call)
+   * resolves to the repo-B `route` it serves, matched by {httpMethod, routePath}. The bridge is a
+   * runtime computation over the loaded souls — no cross-repo edge is committed, so each soul stays
+   * independent + deterministic. The primary soul (`this.deps.repoRoot`) is always federated; extra
+   * `roots` add the repos to traverse into. The start `id` is resolved in the primary soul first,
+   * then across the extra roots. Each affected node carries `soul` (its repo root) + `crossRepo`
+   * (true iff the hop crossed repos via the bridge).
+   */
+  federatedImpact(args: {
+    id: string;
+    dir: Dir;
+    /** extra repo roots to federate with the primary (`this.deps.repoRoot`). */
+    roots?: string[];
+    depth?: number;
+    limit?: number;
+    extractedOnly?: boolean;
+  }): Record<string, unknown> {
+    const primaryRoot = this.deps.repoRoot;
+    // Clamp extra roots to MAX_FED_ROOTS — the CLI path (collectRepeated) has no zod bound, so a
+    // runaway `--repo` list is defended here too, not only at the MCP zod layer (server.ts).
+    const extraRoots = (args.roots ?? []).slice(0, MAX_FED_ROOTS);
+    const roots = uniqueRoots([primaryRoot, ...extraRoots]);
+    let fed: Federation;
+    try {
+      fed = loadFederation(roots);
+    } catch (err) {
+      // Same {code, message} shape as notFound — a consumer branching on `result.error?.code`
+      // (the pattern verbs.test.ts uses) sees a stable code, not a bare string.
+      return {
+        error: { code: 'FEDERATION_LOAD_FAILED', message: (err as Error).message },
+        roots,
+      };
+    }
+    // Resolve the start id: primary soul first (the common case), then across the extra roots.
+    let startRoot = primaryRoot;
+    let startId = this.resolveNodeIdAcross(fed, args.id, primaryRoot);
+    if (!startId) {
+      for (const s of fed.souls) {
+        if (s.root === primaryRoot) continue;
+        const id = resolveIdInSoul(s.soul, args.id);
+        if (id) {
+          startId = id;
+          startRoot = s.root;
+          break;
+        }
+      }
+    }
+    if (!startId) return notFound(args.id);
+    const result = federatedImpact(fed, startRoot, startId, args.dir, {
+      depth: args.depth,
+      limit: args.limit,
+      extractedOnly: args.extractedOnly,
+    });
+    return {
+      root: startRoot,
+      dir: args.dir,
+      federatedRoots: roots,
+      affected: result.affected,
+      crossRepoHops: result.crossRepoHops,
+      truncated: result.truncated,
     };
   }
 
@@ -1523,6 +1595,18 @@ export class Verbs {
     return undefined;
   }
 
+  /** M3.2 — resolve an id-or-name against a specific federated soul (the primary), used by
+   *  `federatedImpact` before it falls back to scanning the extra roots. */
+  private resolveNodeIdAcross(
+    fed: Federation,
+    idOrName: string,
+    primaryRoot: string,
+  ): string | undefined {
+    const primary = fed.souls.find((s) => s.root === primaryRoot);
+    if (!primary) return undefined;
+    return resolveIdInSoul(primary.soul, idOrName);
+  }
+
   private brief(id: string, confidence: number): Record<string, unknown> {
     const n = this.deps.soul.getNode(id);
     if (!n) return { id, confidence };
@@ -1671,6 +1755,32 @@ function publicEdge(e: Edge): Record<string, unknown> {
 
 function notFound(id: string): Record<string, unknown> {
   return { error: { code: 'NOT_FOUND', message: `no node with id ${id}` } };
+}
+
+/** M3.2 — resolve an id-or-name against an arbitrary soul (exact id, then qualified, then simple). */
+function resolveIdInSoul(soul: SoulStore, idOrName: string): string | undefined {
+  if (soul.getNode(idOrName)) return idOrName;
+  const needle = idOrName.toLowerCase();
+  for (const n of soul.iterate()) {
+    if (n.qualifiedName?.toLowerCase() === needle) return n.id;
+  }
+  for (const n of soul.iterate()) {
+    if (n.name?.toLowerCase() === needle) return n.id;
+  }
+  return undefined;
+}
+
+/** M3.2 — de-duplicate + resolve repo roots, preserving order (primary first). */
+function uniqueRoots(roots: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of roots) {
+    if (!r) continue;
+    if (seen.has(r)) continue;
+    seen.add(r);
+    out.push(r);
+  }
+  return out;
 }
 
 /**

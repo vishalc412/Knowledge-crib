@@ -13,6 +13,7 @@ import ts from 'typescript';
 import { EXPR_MAX_CHARS, clampExpr } from '../types.js';
 import type { Capabilities, ExtractCtx, ExtractResult, Extractor, FileMeta } from '../types.js';
 import { extractExpressRoutes } from './express.js';
+import { extractHttpClients } from './http-client.js';
 import { extractNestSemantics } from './nest.js';
 import { extractReactSemantics } from './react.js';
 
@@ -137,6 +138,11 @@ export class TypeScriptExtractor implements Extractor {
     }
     extractExpressRoutes({ sf, byKey, symbols, nodes, edges, ctx, path, lineOf, lang });
     extractReactSemantics({ symbols, byKey, nodes, edges, ctx, path, lineOf, lang });
+    // --- pass 4b (1.5): outbound HTTP client calls → `http-call` nodes + enclosing `calls` edges.
+    //     The repo-A side of cross-repo federation. A non-client file is a no-op. ---
+    const symbolByNode = new Map<ts.Node, string>();
+    for (const s of symbols) symbolByNode.set(s.tsNode, s.node.id);
+    extractHttpClients({ sf, symbolByNode, nodes, edges, ctx, path, lineOf, lang });
 
     return { nodes, edges };
   }

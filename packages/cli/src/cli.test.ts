@@ -578,3 +578,52 @@ describe('crib index — cross-process writer lock (M0.6)', () => {
     expect(existsSync(join(lockRepo, '.crib', '.lock'))).toBe(false);
   });
 });
+
+describe('crib federated-impact (M3.2) — CLI dispatch + id-parse regression', () => {
+  it('parses the id as the positional AFTER flag values, not the --dir value', () => {
+    // Regression: `args.find(!startsWith('-'))` resolved id to 'down' (the --dir VALUE) when --dir
+    // preceded the id. positionalsOf strips VALUE_FLAGS values so the id is the real positional.
+    // With the bug, the verb got id='down' → NOT_FOUND; with the fix, id='loan_pkg.process_one'
+    // resolves and the result has a `root` (no error). The PL/SQL fixture has no http-call, so the
+    // down traversal is empty — this still proves dispatch + id resolution + the verb shape.
+    const out = runCli(['federated-impact', '--dir', 'down', 'loan_pkg.process_one']);
+    const r = JSON.parse(out) as {
+      root?: string;
+      dir?: string;
+      federatedRoots?: string[];
+      affected?: unknown[];
+      crossRepoHops?: number;
+      error?: { code: string };
+    };
+    expect(r.error).toBeUndefined();
+    expect(r.dir).toBe('down');
+    expect(typeof r.root).toBe('string');
+    expect(Array.isArray(r.affected)).toBe(true);
+    expect(r.crossRepoHops).toBe(0);
+  });
+
+  it('accepts the `federated` alias', () => {
+    const out = runCli(['federated', '--dir', 'down', 'loan_pkg.process_one']);
+    const r = JSON.parse(out) as { dir?: string; error?: { code: string } };
+    expect(r.error).toBeUndefined();
+    expect(r.dir).toBe('down');
+  });
+
+  it('exits BAD_ARGS when --dir is missing', () => {
+    const r = runCliResult(['federated-impact', 'loan_pkg.process_one']);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toMatch(/usage:/);
+  });
+
+  it('exits BAD_ARGS when --dir is not up|down', () => {
+    const r = runCliResult(['federated-impact', '--dir', 'sideways', 'loan_pkg.process_one']);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toMatch(/usage:/);
+  });
+
+  it('exits BAD_ARGS when the id is missing', () => {
+    const r = runCliResult(['federated-impact', '--dir', 'down']);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toMatch(/usage:/);
+  });
+});

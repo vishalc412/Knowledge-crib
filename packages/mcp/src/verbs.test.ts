@@ -2754,3 +2754,170 @@ describe('M1.2 token-true budgets — no verb response exceeds maxTokens', () =>
     expect(res.source!.truncated).toBe(false);
   });
 });
+
+describe('M3.2 — federatedImpact verb crosses the route-layer bridge', () => {
+  // Two independent repos, each its own soul + index + Verbs. The primary is repoA (a client with an
+  // outbound fetch); repoB (an Express server) is passed via `roots`. The verb resolves the start id
+  // by name across both souls and returns the federated blast radius with crossRepo flags.
+  let repoA: string;
+  let repoB: string;
+  let verbsA: Verbs;
+  let verbsB: Verbs;
+  let idxA: SqliteIndexStore;
+  let idxB: SqliteIndexStore;
+  let fetchLoan: Node;
+  let call: Node;
+  let handler: Node;
+  let rt: Node;
+
+  beforeEach(() => {
+    repoA = mkdtempSync(join(tmpdir(), 'crib-fed-a-'));
+    repoB = mkdtempSync(join(tmpdir(), 'crib-fed-b-'));
+    fetchLoan = sym('client.ts', 'fetchLoan', 2);
+    call = {
+      id: idFor({
+        kind: 'http-call',
+        httpMethod: 'GET',
+        routePath: '/api/loans/:id',
+        file: 'client.ts',
+        line: 3,
+      }),
+      kind: 'http-call',
+      name: 'GET /api/loans/:id',
+      httpMethod: 'GET',
+      routePath: '/api/loans/:id',
+      framework: 'fetch',
+      file: 'client.ts',
+      span: { start: 3, end: 3 },
+      lang: 'typescript',
+      hash: contentHash('http-call:GET:/api/loans/:id'),
+    };
+    handler = sym('server.ts', 'getLoan', 4);
+    rt = {
+      id: idFor({
+        kind: 'route',
+        httpMethod: 'GET',
+        routePath: '/api/loans/:id',
+        file: 'server.ts',
+        line: 4,
+      }),
+      kind: 'route',
+      name: 'GET /api/loans/:id',
+      httpMethod: 'GET',
+      routePath: '/api/loans/:id',
+      framework: 'express',
+      file: 'server.ts',
+      span: { start: 4, end: 4 },
+      lang: 'typescript',
+      hash: contentHash('route:GET:/api/loans/:id'),
+    };
+
+    const soulA = new SoulStore(join(repoA, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soulA.load();
+    soulA.putNodes([fetchLoan, call]);
+    soulA.putEdges([edge(fetchLoan.id, call.id, 'calls')]);
+    soulA.commit('2026-01-01T00:00:00.000Z');
+    idxA = new SqliteIndexStore();
+    idxA.buildFromSoul(soulA, repoA);
+    verbsA = new Verbs({ soul: soulA, index: idxA, repoRoot: repoA });
+
+    const soulB = new SoulStore(join(repoB, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soulB.load();
+    soulB.putNodes([handler, rt]);
+    soulB.putEdges([edge(handler.id, rt.id, 'exposes')]);
+    soulB.commit('2026-01-01T00:00:00.000Z');
+    idxB = new SqliteIndexStore();
+    idxB.buildFromSoul(soulB, repoB);
+    verbsB = new Verbs({ soul: soulB, index: idxB, repoRoot: repoB });
+  });
+  afterEach(() => {
+    idxA.close();
+    idxB.close();
+    rmSync(repoA, { recursive: true, force: true });
+    rmSync(repoB, { recursive: true, force: true });
+  });
+
+  it('DOWN from repoA fetchLoan (by name) crosses to repoB route; federatedRoots lists both', () => {
+    const res = verbsA.federatedImpact({
+      id: 'fetchLoan',
+      dir: 'down',
+      roots: [repoB],
+    }) as unknown as {
+      root: string;
+      dir: string;
+      federatedRoots: string[];
+      affected: Array<{ id: string; soul: string; crossRepo: boolean; rel: string }>;
+      crossRepoHops: number;
+      truncated: boolean;
+    };
+    expect(res.federatedRoots).toContain(repoA);
+    expect(res.federatedRoots).toContain(repoB);
+    expect(res.crossRepoHops).toBeGreaterThan(0);
+    const crossed = res.affected.find((a) => a.id === rt.id && a.crossRepo);
+    expect(crossed).toBeDefined();
+    expect(crossed?.soul).toBe(repoB);
+    expect(crossed?.rel).toBe('calls-route');
+  });
+
+  it('UP from repoB route (by name "GET /api/loans/:id") crosses to repoA http-call', () => {
+    const res = verbsB.federatedImpact({ id: rt.id, dir: 'up', roots: [repoA] }) as unknown as {
+      affected: Array<{ id: string; soul: string; crossRepo: boolean }>;
+      crossRepoHops: number;
+    };
+    expect(res.crossRepoHops).toBeGreaterThan(0);
+    const callHop = res.affected.find((a) => a.id === call.id && a.crossRepo);
+    expect(callHop).toBeDefined();
+    expect(callHop?.soul).toBe(repoA);
+  });
+
+  it('returns not-found for an unknown id (no spurious federation hops)', () => {
+    const res = verbsA.federatedImpact({
+      id: 'no-such-thing',
+      dir: 'down',
+      roots: [repoB],
+    }) as unknown as {
+      error?: { code: string };
+      affected?: unknown[];
+    };
+    expect(res.affected).toBeUndefined();
+    expect(res.error?.code).toBe('NOT_FOUND');
+  });
+
+  it('with no extra roots, a single-soul call does not cross (crossRepoHops=0)', () => {
+    const res = verbsA.federatedImpact({ id: 'fetchLoan', dir: 'down' }) as unknown as {
+      crossRepoHops: number;
+      affected: Array<{ crossRepo: boolean }>;
+    };
+    expect(res.crossRepoHops).toBe(0);
+    expect(res.affected.every((a) => !a.crossRepo)).toBe(true);
+  });
+
+  it('returns a {code, message} error (NOT a bare string) when a federated root fails to load', () => {
+    // loadFederation calls SoulStore.load() per root. A MISSING .crib is tolerated (load() hydrates
+    // an empty soul — the nonexistent-root case returns a normal result, NOT an error), so to hit the
+    // FEDERATION_LOAD_FAILED branch we need a .crib that is present but unreadable: a manifest whose
+    // schemaVersion is not in SUPPORTED_SCHEMA_VERSIONS makes load() throw (soul-store.ts loader gate).
+    // The error must share the {code, message} shape of notFound so a consumer branching on
+    // `result.error?.code` sees a stable code, not `undefined` (string.code). Regression for the
+    // divergent bare-string error shape.
+    const badRoot = mkdtempSync(join(tmpdir(), 'crib-fed-bad-'));
+    mkdirSync(join(badRoot, '.crib'), { recursive: true });
+    writeFileSync(
+      join(badRoot, '.crib', 'crib.json'),
+      '{"schemaVersion":"0.0","repo":{},"stats":{}}',
+    );
+    const res = verbsA.federatedImpact({
+      id: 'fetchLoan',
+      dir: 'down',
+      roots: [badRoot],
+    }) as unknown as { error?: { code: string; message: string }; affected?: unknown[] };
+    expect(res.affected).toBeUndefined();
+    expect(res.error?.code).toBe('FEDERATION_LOAD_FAILED');
+    expect(typeof res.error?.message).toBe('string');
+    rmSync(badRoot, { recursive: true, force: true });
+  });
+});

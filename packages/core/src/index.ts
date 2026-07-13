@@ -19,6 +19,7 @@ export * from './aliases.js';
 export * from './ifhash.js';
 export * from './dossier/index.js';
 export * from './index-store.js';
+export * from './federation.js';
 export { SqliteIndexStore } from './index/sqlite-index.js';
 export { KuzuIndexStore } from './index/kuzu-index.js';
 export { openIndex } from './index/factory.js';

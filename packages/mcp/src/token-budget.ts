@@ -19,6 +19,11 @@ export const MAX_SOURCE_LINES = 10_000;
 export const MAX_DOC_LIMIT = 100;
 export const MAX_DEPTH = 32;
 export const MAX_HOPS = 64;
+// M3.2 — federation root cap. `federatedImpact` loads one SoulStore per extra repo root (each a
+// file-read + sqlite-open + adjacency build), so an unbounded `roots` array is a load-amplification
+// vector. A rogue/buggy agent passing 10k roots would OOM the server. 64 is far beyond any realistic
+// cross-repo blast-radius query and matches the MAX_HOPS traversal ceiling.
+export const MAX_FED_ROOTS = 64;
 
 /**
  * Response-wide token budgets (M1.2). When a caller passes `maxTokens`, the verb guarantees its

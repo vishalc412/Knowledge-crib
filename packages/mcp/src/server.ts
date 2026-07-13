@@ -10,6 +10,7 @@ import { z } from 'zod';
 import {
   MAX_DEPTH,
   MAX_DOC_LIMIT,
+  MAX_FED_ROOTS,
   MAX_HOPS,
   MAX_LIMIT,
   MAX_MAX_TOKENS,
@@ -143,6 +144,23 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       },
     },
     async (a) => TOOL_RESULT(verbs.impact(a)),
+  );
+
+  server.registerTool(
+    'federatedImpact',
+    {
+      description:
+        'M3.2 cross-repo blast radius. Like `impact` but federates extra repo souls (`roots`) and crosses the route-layer bridge: a repo-A outbound HTTP client call (`http-call` node) resolves to the repo-B `route` it serves, matched by {httpMethod, routePath}. No cross-repo edge is committed — the bridge is a runtime computation over the loaded souls. Each affected node carries `soul` (its repo root) + `crossRepo` (true iff the hop crossed repos). The primary repo (the server cwd) is always federated.',
+      inputSchema: {
+        id: z.string(),
+        dir: z.enum(['up', 'down']),
+        roots: z.array(z.string()).max(MAX_FED_ROOTS).optional(),
+        depth: z.number().int().positive().max(MAX_DEPTH).optional(),
+        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
+        extractedOnly: z.boolean().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.federatedImpact(a)),
   );
 
   server.registerTool(

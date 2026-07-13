@@ -100,6 +100,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   CLI surface the owner (name + email) + the blame commit + the HEAD the index ran against.
   `ownership:check` gates edge-provenance + verb-output over the real `indexRepo` pipeline against a
   `git init`ed temp repo (the self-index dogfood).
+- **M3.2 — cross-repo federation (runtime route-layer bridge).** A repo-A outbound HTTP client call
+  site is now extracted as an `http-call` node (schema 1.5) — the OUTBOUND counterpart to an INBOUND
+  `route` node, carrying the same `{httpMethod, routePath, framework}` fields. The TS parser emits
+  `http-call` nodes for `fetch(path, init?)` (method GET default, `init.method` literal override)
+  and `axios.<verb>(path)` / `axios(path)` (verb from the property name; non-`axios` receivers and
+  `axios.request` are rejected to avoid phantoms), with a `calls` edge from the enclosing callable
+  and `${expr}` template spans normalized to `:param` so a templated call matches a templated route
+  by string equality. `federatedImpact({ id, dir, roots })` (MCP verb + `crib federated-impact` CLI)
+  loads N independent souls and hops a repo-A `http-call` to the repo-B `route` it serves, matched
+  by method+path-template, WITHOUT committing a cross-repo edge — each soul stays one-repo,
+  deterministic, committed-clean, and `--extracted-only` byte-identical. The bridge is a runtime
+  computation over the loaded souls (same inputs → same hops), not persisted state. `SCHEMA_VERSION`
+  bumps 1.4→1.5 (additive: one optional `http-call` NodeKind, no new Rel). `federation:check` gates
+  the 2-repo traversal over the real `indexRepo` pipeline (a repo-A `fetch('/api/loans/${id}')`
+  inside `fetchLoan` ↔ a repo-B `app.get('/api/loans/:id', handler)`).
 
 ### Fixed
 

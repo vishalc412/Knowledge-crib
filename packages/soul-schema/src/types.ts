@@ -200,16 +200,19 @@ export const CRIB_FORMAT_VERSION = '1.0';
  * optional Node fields `httpMethod`/`routePath`/`framework`/`stereotype`/`exprTruncated` — all
  * additive + optional, so a 1.0–1.2 soul still loads verbatim. 1.4 (ownership) adds NodeKind
  * `owner`, Rel `owned-by`, and the optional Node field `email` — additive + optional, so a
- * 1.0–1.3 soul still loads verbatim.
+ * 1.0–1.3 soul still loads verbatim. 1.5 (cross-repo federation) adds NodeKind `http-call` (an
+ * outbound HTTP client call site; reuses the optional `httpMethod`/`routePath`/`framework` fields)
+ * — additive + optional, so a 1.0–1.4 soul still loads verbatim. No new Rel: the A→B route
+ * resolution is a runtime federation computation, not a committed edge.
  */
-export const SCHEMA_VERSION = '1.4';
+export const SCHEMA_VERSION = '1.5';
 export const TOOL_NAME = 'knowledge-crib';
 
 /**
  * Schema versions the loader will hydrate. A 1.0 soul (pre-M11) loads as-is; its edges have no
  * `cfgPath` and that is preserved on re-write (no widening). Unknown versions → load() refuses.
  */
-export const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2', '1.3', '1.4'] as const;
+export const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2', '1.3', '1.4', '1.5'] as const;
 
 /** Default chunking knobs (per spec storage §6 / C4). */
 export const DEFAULT_CHUNKING: ManifestChunking = {

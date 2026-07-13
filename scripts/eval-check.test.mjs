@@ -49,6 +49,11 @@ assert.match(
   /ownership:check/,
   'release gate must run the M3.1 ownership gate (ownership-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /federation:check/,
+  'release gate must run the M3.2 cross-repo federation gate (federation-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -89,6 +94,11 @@ assert.match(
   pkg,
   /"ownership:check":\s*"node scripts\/ownership-check\.mjs"/,
   'package.json must define ownership:check',
+);
+assert.match(
+  pkg,
+  /"federation:check":\s*"node scripts\/federation-check\.mjs"/,
+  'package.json must define federation:check',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');
@@ -207,6 +217,40 @@ assert.match(
   ownershipCheck,
   /verbs\.ownership|\.ownership\(/,
   'ownership-check.mjs must drive the ownership MCP verb',
+);
+const federationCheck = readFileSync('scripts/federation-check.mjs', 'utf8');
+// Wiring assertions anchored to EXECUTABLE call-site syntax, not bare words — a bare /indexRepo/
+// matches the header doc comment, so a stub that deleted every real call but kept the comment would
+// pass. These require an actual awaited call / invocation / field access, so a gutted no-op stub fails.
+assert.match(
+  federationCheck,
+  /await indexRepo\(/,
+  'federation-check.mjs must AWAIT the real indexRepo pipeline call (not just mention it in a comment)',
+);
+assert.match(
+  federationCheck,
+  /loadFederation\(\[/,
+  'federation-check.mjs must call loadFederation with a roots array (load a federation of souls)',
+);
+assert.match(
+  federationCheck,
+  /federatedImpact\(fed/,
+  'federation-check.mjs must call the federatedImpact traversal with the loaded federation',
+);
+assert.match(
+  federationCheck,
+  /kind === 'http-call'/,
+  'federation-check.mjs must assert http-call nodes (the schema 1.5 call site) by kind check',
+);
+assert.match(
+  federationCheck,
+  /\.crossRepo\b/,
+  'federation-check.mjs must read the .crossRepo field (assert the cross-repo hop is flagged)',
+);
+assert.match(
+  federationCheck,
+  /soul\.getNode\(e\.src\)|soul\.getNode\(e\.dst\)/,
+  'federation-check.mjs must verify no committed cross-repo edge by resolving every edge endpoint in-soul',
 );
 const semanticCheck = readFileSync('scripts/semantic-check.mjs', 'utf8');
 assert.match(semanticCheck, /MIN_RECOVERY/, 'semantic-check.mjs must enforce a recovery floor');

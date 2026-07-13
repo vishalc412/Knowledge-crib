@@ -78,8 +78,8 @@ assert.deepEqual(npmInstallArgs('/tmp/kc', ['/tmp/dep.tgz', '/tmp/pkg.tgz']), [
 ]);
 
 assert.deepEqual(
-  validateSmokeStatus({ indexed: true, schemaVersion: '1.4', stats: { nodes: 4, edges: 2 } }),
-  { indexed: true, schemaVersion: '1.4', stats: { nodes: 4, edges: 2 } },
+  validateSmokeStatus({ indexed: true, schemaVersion: '1.5', stats: { nodes: 4, edges: 2 } }),
+  { indexed: true, schemaVersion: '1.5', stats: { nodes: 4, edges: 2 } },
 );
 assert.throws(
   () => validateSmokeStatus({ indexed: false, stats: { nodes: 0 } }),

@@ -87,6 +87,8 @@ const VALUE_FLAGS = new Set([
   '--min-confidence',
   '--max-hops',
   '--package',
+  '--repo',
+  '--dir',
 ]);
 
 /** Collect positional argv tokens, skipping boolean flags AND value-taking flags + their values. */
@@ -100,6 +102,18 @@ function positionalsOf(args: string[]): string[] {
     }
     if (a.startsWith('-')) continue;
     out.push(a);
+  }
+  return out;
+}
+
+/** Collect every value following a repeatable `--flag` (e.g. `--repo a --repo b` → ['a','b']). */
+function collectRepeated(args: string[], flag: string): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === flag) {
+      const v = args[i + 1];
+      if (v && !v.startsWith('-')) out.push(v);
+    }
   }
   return out;
 }
@@ -271,6 +285,9 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdReconstruct(rest, ctx);
     case 'impact':
       return cmdImpact(rest, ctx);
+    case 'federated-impact':
+    case 'federated':
+      return cmdFederatedImpact(rest, ctx);
     case 'path':
       return cmdPath(rest, ctx);
     case 'neighbors':
@@ -874,7 +891,51 @@ async function cmdImpact(args: string[], ctx?: CmdCtx): Promise<number> {
   return EXIT.OK;
 }
 
-/** `crib path <from> <to>` — shortest dependency path between two nodes. */
+/**
+ * `crib federated-impact <id> --dir up|down [--repo <root>]... [--depth N] [--limit N]
+ * [--extracted-only]` — M3.2 cross-repo blast radius. The primary repo (cwd / resolved root) is
+ * always federated; each extra `--repo <root>` adds a repo to traverse into. The route-layer bridge
+ * crosses a repo-A outbound HTTP call to the repo-B route it serves.
+ */
+async function cmdFederatedImpact(args: string[], ctx?: CmdCtx): Promise<number> {
+  // `args.find(!startsWith('-'))` is wrong here: with `--dir down fetchLoan --repo /B` the first
+  // non-dash token is `down` (the --dir VALUE), so id would resolve to 'down' and the real id is
+  // captured as a flag value. positionalsOf strips every VALUE_FLAGS value (--dir/--repo/--depth/
+  // --limit are all in VALUE_FLAGS), leaving only the genuine positional — the id.
+  const id = positionalsOf(args)[0];
+  const dirIdx = args.indexOf('--dir');
+  const dir = dirIdx >= 0 ? (args[dirIdx + 1] as 'up' | 'down' | undefined) : undefined;
+  if (!id || (dir !== 'up' && dir !== 'down')) {
+    process.stderr.write(
+      'usage: crib federated-impact <id> --dir up|down [--repo <root>]... [--depth N] [--limit N] [--extracted-only]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const roots = collectRepeated(args, '--repo');
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  const depthIdx = args.indexOf('--depth');
+  const depth = depthIdx >= 0 ? Number.parseInt(args[depthIdx + 1] ?? '', 10) : undefined;
+  const limitIdx = args.indexOf('--limit');
+  const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;
+  process.stdout.write(
+    `${JSON.stringify(
+      verbs.federatedImpact({
+        id,
+        dir,
+        ...(roots.length ? { roots } : {}),
+        ...(Number.isFinite(depth) && depth! > 0 ? { depth } : {}),
+        ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
+        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+      }),
+      null,
+      2,
+    )}\n`,
+  );
+  index.close();
+  return EXIT.OK;
+}
 async function cmdPath(args: string[], ctx?: CmdCtx): Promise<number> {
   const positional = positionalsOf(args);
   const [from, to] = positional;

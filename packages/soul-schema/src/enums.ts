@@ -28,7 +28,13 @@ export type NodeKind =
   | 'component' // a UI component (React function/class component, Angular @Component)
   // 1.4 (ownership layer): a git author — the person `git blame` attributes source lines to. The node
   // a symbol's `owned-by` edge points at, so "who do I ask about this code" is a graph query.
-  | 'owner';
+  | 'owner'
+  // 1.5 (cross-repo federation): an outbound HTTP client call site — `fetch('/api/x')`,
+  // `axios.get(...)`, `restTemplate.getForObject(...)`. Carries {httpMethod, routePath, framework}
+  // (the same fields a `route` node carries, so a runtime federation layer matches a repo-A call to
+  // a repo-B route by method+path WITHOUT committing a cross-repo edge (each soul stays independent
+  // + deterministic + committed-clean). The bridge is a runtime computation, not persisted state.)
+  | 'http-call';
 
 export type Rel =
   | 'calls'
@@ -84,6 +90,7 @@ export const NODE_KINDS: readonly NodeKind[] = [
   'field',
   'component',
   'owner',
+  'http-call',
 ];
 
 export const RELS: readonly Rel[] = [

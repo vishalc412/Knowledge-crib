@@ -29,6 +29,7 @@ pnpm(['js-coverage:check']);
 pnpm(['ifhash:check']);
 pnpm(['tier:check']);
 pnpm(['ownership:check']);
+pnpm(['federation:check']);
 pnpm(['publish:dry-run']);
 pnpm(['installer:test']);
 pnpm(['installer:build']);
