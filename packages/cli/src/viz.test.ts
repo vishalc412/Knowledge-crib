@@ -145,8 +145,11 @@ describe('crib viz — buildVizGraph (DC runtime contract)', () => {
     expect(html).toContain('arrangeSearch');
     expect(html).toContain('No graph matches');
     expect(html).toContain('{{ searchStatus }}');
-    const visibleNodes = html.slice(html.indexOf('visibleNodes(){'), html.indexOf('arrangeSearch('));
-    expect(visibleNodes.indexOf("if(q)return [...this.searchProjection(q).nodeIds]")).toBeLessThan(
+    const visibleNodes = html.slice(
+      html.indexOf('visibleNodes(){'),
+      html.indexOf('arrangeSearch('),
+    );
+    expect(visibleNodes.indexOf('if(q)return [...this.searchProjection(q).nodeIds]')).toBeLessThan(
       visibleNodes.indexOf('if(this.state.selectedClusterId && !this.state.selectedId)'),
     );
   });

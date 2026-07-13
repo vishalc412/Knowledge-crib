@@ -351,7 +351,16 @@ describe('updateRepo — packageRoots (P4 multi-package federation)', () => {
       "import { greet } from './a.js';\nexport function main(): string { return greet() + '!'; }\n",
     );
     git(repo, ['add', 'src/a.ts', 'src/b.ts']);
-    git(repo, ['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'edit both']);
+    git(repo, [
+      '-c',
+      'user.email=t@t.test',
+      '-c',
+      'user.name=T',
+      'commit',
+      '-q',
+      '-m',
+      'edit both',
+    ]);
 
     const soul = soulFor();
     const result = await updateRepo(soul, repo, {
@@ -390,7 +399,16 @@ describe('updateRepo — packageRoots (P4 multi-package federation)', () => {
 
     writeFileSync(join(repo, 'src', 'a.ts'), "export function greet(): string { return 'yo'; }\n");
     git(repo, ['add', 'src/a.ts']);
-    git(repo, ['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'edit a only']);
+    git(repo, [
+      '-c',
+      'user.email=t@t.test',
+      '-c',
+      'user.name=T',
+      'commit',
+      '-q',
+      '-m',
+      'edit a only',
+    ]);
     const h2 = git(repo, ['rev-parse', 'HEAD']);
 
     const soul = soulFor();

@@ -20,7 +20,7 @@
  * Run: node scripts/crib-ab-task.mjs   (from an indexed checkout).
  */
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { coldCost, sessionCost, usd } from './lib/pricing.mjs';
 
