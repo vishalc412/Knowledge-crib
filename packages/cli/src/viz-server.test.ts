@@ -5,7 +5,7 @@ import { SoulStore, newManifest } from '@knowledge-crib/core';
 import { contentHash, idFor } from '@knowledge-crib/soul-schema';
 import type { Node } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { VizHttpError, readVizNodeSource, resolveVizAsset } from './viz-server.js';
+import { VizHttpError, isAllowedHost, readVizNodeSource, resolveVizAsset } from './viz-server.js';
 
 let root: string;
 let outside: string;
@@ -110,5 +110,30 @@ describe('viz source endpoint helpers', () => {
     await expect(resolveVizAsset(assets, '/%2e%2e/src/demo.ts')).rejects.toMatchObject({
       status: 403,
     });
+  });
+});
+
+describe('isAllowedHost (DNS-rebinding guard)', () => {
+  it('accepts loopback hosts with and without a port', () => {
+    expect(isAllowedHost('127.0.0.1')).toBe(true);
+    expect(isAllowedHost('127.0.0.1:3939')).toBe(true);
+    expect(isAllowedHost('localhost')).toBe(true);
+    expect(isAllowedHost('localhost:3939')).toBe(true);
+    expect(isAllowedHost('[::1]')).toBe(true);
+    expect(isAllowedHost('[::1]:3939')).toBe(true);
+  });
+
+  it('is case-insensitive', () => {
+    expect(isAllowedHost('LOCALHOST:3939')).toBe(true);
+    expect(isAllowedHost('127.0.0.1')).toBe(true);
+  });
+
+  it('rejects attacker-controlled and missing hosts', () => {
+    expect(isAllowedHost('evil.example')).toBe(false);
+    expect(isAllowedHost('evil.example:443')).toBe(false);
+    expect(isAllowedHost('192.168.1.5')).toBe(false);
+    expect(isAllowedHost(undefined)).toBe(false);
+    expect(isAllowedHost('')).toBe(false);
+    expect(isAllowedHost('[::1')).toBe(false); // malformed bracket
   });
 });

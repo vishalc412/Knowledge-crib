@@ -51,7 +51,7 @@ import {
   resolveProjectRoot,
 } from './runtime.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
-import { VizHttpError, readVizNodeSource, resolveVizAsset } from './viz-server.js';
+import { VizHttpError, isAllowedHost, readVizNodeSource, resolveVizAsset } from './viz-server.js';
 
 const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3 } as const;
 
@@ -1218,6 +1218,10 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
 
   const server = createServer(async (req, res) => {
     try {
+      // DNS-rebinding guard: reject any non-loopback Host before touching a file.
+      if (!isAllowedHost(req.headers.host)) {
+        throw new VizHttpError(403, 'host not allowed');
+      }
       const requestUrl = new URL(req.url ?? '/', 'http://127.0.0.1');
       if (requestUrl.pathname === '/graph.json') {
         res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });

@@ -5,6 +5,32 @@ import type { SoulStore } from '@knowledge-crib/core';
 const MAX_SOURCE_LINES = 200;
 const MAX_SOURCE_CHARS = 64 * 1024;
 
+/**
+ * Loopback hosts the viz server is allowed to serve. The server binds to
+ * 127.0.0.1, so any request whose Host header is not a loopback variant is a
+ * DNS-rebinding attempt (an attacker-controlled domain that resolves to
+ * 127.0.0.1, letting a victim browser reach the local server "cross-origin")
+ * and must be rejected before any source or asset is read.
+ */
+const ALLOWED_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
+
+/** Strip the port from a Host header, handling bracketed IPv6, then allowlist-check. */
+export function isAllowedHost(host: string | undefined): boolean {
+  if (!host) return false;
+  let h = host.toLowerCase();
+  if (h.startsWith('[')) {
+    // bracketed IPv6: [::1] or [::1]:port
+    const end = h.indexOf(']');
+    if (end === -1) return false;
+    h = h.slice(0, end + 1);
+  } else {
+    // host or host:port — split on the last ':' only when it is not the only token
+    const colon = h.lastIndexOf(':');
+    if (colon > 0) h = h.slice(0, colon);
+  }
+  return ALLOWED_HOSTS.has(h);
+}
+
 export class VizHttpError extends Error {
   constructor(
     readonly status: number,
