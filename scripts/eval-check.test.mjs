@@ -74,6 +74,11 @@ assert.match(
   /scale:check/,
   'release gate must run the M3.6 scale-bench gate (scale-bench.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /security:check/,
+  'release gate must run the M3.7 threat-model + access-model doc gate (security-doc-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -149,6 +154,11 @@ assert.match(
   pkg,
   /"scale:nightly":\s*"node scripts\/scale-bench\.mjs --slices 10000,100000,500000,1000000"/,
   'package.json must define scale:nightly (full 1M-LOC curve)',
+);
+assert.match(
+  pkg,
+  /"security:check":\s*"node scripts\/security-doc-check\.mjs"/,
+  'package.json must define security:check (M3.7 threat-model + access-model doc gate)',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');
