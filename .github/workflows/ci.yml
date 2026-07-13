@@ -16,8 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The canonical publish-readiness gate: build + test + biome check on the shipping target
+  # (ubuntu, Node 22). Every PR must pass this before merge. Pinned actions, frozen lockfile.
   release-gate:
-    name: Release gate (Node 22)
+    name: Release gate (ubuntu, Node 22)
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -29,6 +31,43 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm@9.15.0 install --frozen-lockfile
+
+      - name: Run release gate
+        run: corepack pnpm@9.15.0 release:verify
+
+  # Cross-platform / cross-Node coverage matrix: the same release:verify gate run on the other two
+  # OSes and both supported Node lines (22 LTS + 24), so a darwin/windows-only or Node 24-only
+  # regression in the node:sqlite backend, the O_EXCL lock, or path handling surfaces before users
+  # hit it. fail-fast: false so every cell reports independently.
+  verify-matrix:
+    name: verify (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    needs: release-gate
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['22', '24']
+        exclude:
+          # ubuntu/Node 22 is already the release-gate cell — don't re-run it.
+          - os: ubuntu-latest
+            node: '22'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ matrix.node }}
 
       - name: Enable Corepack
         run: corepack enable

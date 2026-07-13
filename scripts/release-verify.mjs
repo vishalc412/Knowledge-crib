@@ -2,7 +2,13 @@ import { execFileSync } from 'node:child_process';
 
 function run(cmd, args, opts = {}) {
   process.stdout.write(`\n$ ${[cmd, ...args].join(' ')}\n`);
-  execFileSync(cmd, args, { stdio: 'inherit', ...opts });
+  // On Windows, `corepack` is a .cmd shim; execFileSync (shell: false) cannot launch .cmd files
+  // directly (ENOENT). Use a shell there so the matrix CI cell (windows-latest) stays green.
+  execFileSync(cmd, args, {
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+    ...opts,
+  });
 }
 
 function pnpm(args) {
