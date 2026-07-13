@@ -26,6 +26,8 @@ import { runLink } from './linker/index.js';
 import type { LinkStats } from './linker/index.js';
 import type { SemanticStats } from './linker/index.js';
 import { runSemanticLink } from './linker/index.js';
+import { runOwnership } from './ownership.js';
+import type { OwnershipStats } from './ownership.js';
 import { runParse } from './parse.js';
 import type { ParseStats } from './parse.js';
 import { defaultExtractors } from './pipeline.js';
@@ -51,6 +53,10 @@ export interface UpdateOpts {
   cluster?: boolean;
   /** run the INFERRED TF-IDF semantic linker pass over scoped docs; default false (M7). */
   semantic?: boolean;
+  /** run the M3.1 ownership phase over changed files: re-blame + re-attribute `owned-by` EXTRACTED edges
+   *  for symbols in changed files (their old owned-by edges were dropped by `removeByFile`). Default ON
+   *  inside a git work tree (clean no-op otherwise); false skips blame (benches / reproducibility). */
+  ownership?: boolean;
   /** Include staged and unstaged working-tree changes in the delta without advancing `repo.vcsHead`.
    * The derived index/soul is refreshed, `stats.incrementalSince` is set to current HEAD so subsequent
    * normal updates see no committed diff, but `repo.vcsHead` stays pinned to the last real commit so
@@ -79,6 +85,7 @@ export interface UpdateReport {
   cluster: ClusterStats;
   semantic: SemanticStats;
   dossiers: DossierStats;
+  ownership: OwnershipStats;
 }
 
 export interface UpdateNoopReport {
@@ -200,6 +207,14 @@ export async function updateRepo(
   // Semantic pass (M7, INFERRED): scoped to the docs in scope, like the deterministic re-link.
   const semantic = opts.semantic ? runSemanticLink(soul, root, scopeDocFiles) : { added: 0 };
 
+  // Ownership (M3.1): re-blame only the CHANGED files — their old `owned-by` edges were dropped by
+  // `removeByFile`, so a body edit re-attributes ownership instead of leaving symbols ownerless. The
+  // full-index path (`indexRepo`) blames every file; this is the scoped mirror.
+  const ownership =
+    opts.ownership === false
+      ? { files: 0, symbols: 0, owners: 0, edges: 0, skipped: 0 }
+      : runOwnership(soul, root, new Set(changedPaths));
+
   // Advance the shared incremental anchor only if this run left nothing pending — a package-scoped
   // update that excluded other packages' changes must NOT advance it (see UpdateOpts.packageRoots).
   if (excludedPaths.length === 0) {
@@ -228,5 +243,6 @@ export async function updateRepo(
     cluster,
     semantic,
     dossiers,
+    ownership,
   };
 }

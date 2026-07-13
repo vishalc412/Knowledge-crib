@@ -44,6 +44,11 @@ assert.match(
   /tier:check/,
   'release gate must run the M2.7 model-tier-hints gate (tier-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /ownership:check/,
+  'release gate must run the M3.1 ownership gate (ownership-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -79,6 +84,11 @@ assert.match(
   pkg,
   /"tier:check":\s*"node scripts\/tier-check\.mjs"/,
   'package.json must define tier:check',
+);
+assert.match(
+  pkg,
+  /"ownership:check":\s*"node scripts\/ownership-check\.mjs"/,
+  'package.json must define ownership:check',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');
@@ -171,6 +181,32 @@ assert.match(
   tierCheck,
   /SKILL\.md|skills\/crib-enrich/,
   'tier-check.mjs must assert the crib-enrich SKILL documents the cost model',
+);
+const ownershipCheck = readFileSync('scripts/ownership-check.mjs', 'utf8');
+assert.match(
+  ownershipCheck,
+  /indexRepo/,
+  'ownership-check.mjs must drive the real indexRepo pipeline (not a hand-built fixture)',
+);
+assert.match(
+  ownershipCheck,
+  /owned-by/,
+  'ownership-check.mjs must assert owned-by edges are emitted',
+);
+assert.match(
+  ownershipCheck,
+  /EXTRACTED/,
+  'ownership-check.mjs must assert owned-by edges are EXTRACTED provenance',
+);
+assert.match(
+  ownershipCheck,
+  /git blame|git.*blame|blame/,
+  'ownership-check.mjs must pin the git-blame → owned-by intent',
+);
+assert.match(
+  ownershipCheck,
+  /verbs\.ownership|\.ownership\(/,
+  'ownership-check.mjs must drive the ownership MCP verb',
 );
 const semanticCheck = readFileSync('scripts/semantic-check.mjs', 'utf8');
 assert.match(semanticCheck, /MIN_RECOVERY/, 'semantic-check.mjs must enforce a recovery floor');

@@ -5,7 +5,7 @@ import { smokeCli } from './release-cli-smoke.mjs';
 const status = smokeCli();
 
 assert.equal(status.indexed, true, 'smoke project must be indexed');
-assert.equal(status.schemaVersion, '1.3', 'smoke project must use the current schema');
+assert.equal(status.schemaVersion, '1.4', 'smoke project must use the current schema');
 assert.ok(status.stats.nodes > 0, 'smoke project must contain extracted nodes');
 
 const releaseVerifier = readFileSync('scripts/release-verify.mjs', 'utf8');

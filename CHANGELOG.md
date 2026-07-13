@@ -87,6 +87,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   multiplier × $/1M @ that tier), stable as absolute prices move. `tier:check` gates item-tier +
   perItem-tier-mirror + SKILL-documents-cost across the real `Verbs.enrichNext` surface.
 
+- **M3.1 — ownership layer (`git blame` → `owned-by` edges).** Every callable symbol now carries an
+  `owned-by` edge to an `owner` node built from `git blame` — answering "who do I ask about this code"
+  as a graph query. `owned-by` is EXTRACTED (a deterministic, file-derived fact, not a similarity
+  inference) with confidence 1 and method `static`, so it belongs in the `--extracted-only` deterministic
+  subset and preserves the byte-identical invariant. Schema bumps 1.3 → 1.4 (additive + optional: a new
+  `owner` NodeKind, the `owned-by` Rel, and an optional `email` Node field; old souls load verbatim).
+  A non-git repo is a clean no-op (no owners, no edges), so the deterministic index path is unchanged
+  outside a git work tree. The full `indexRepo` blames every file; incremental `update` re-blames only
+  changed files (their old `owned-by` edges were dropped by `removeByFile`, so a body edit re-attributes
+  ownership instead of leaving symbols ownerless). The `ownership({ id })` MCP verb + `crib ownership <id>`
+  CLI surface the owner (name + email) + the blame commit + the HEAD the index ran against.
+  `ownership:check` gates edge-provenance + verb-output over the real `indexRepo` pipeline against a
+  `git init`ed temp repo (the self-index dogfood).
+
 ### Fixed
 
 - `clusterSummary` read `c.name` (cluster nodes carry `label`, not `name`) → always undefined. Now

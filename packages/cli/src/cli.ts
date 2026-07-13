@@ -275,6 +275,8 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdPath(rest, ctx);
     case 'neighbors':
       return cmdNeighbors(rest, ctx);
+    case 'ownership':
+      return cmdOwnership(rest, ctx);
     case 'serve':
       return cmdServe(rest, ctx);
     case 'update':
@@ -931,6 +933,20 @@ async function cmdNeighbors(args: string[], ctx?: CmdCtx): Promise<number> {
       2,
     )}\n`,
   );
+  index.close();
+  return EXIT.OK;
+}
+
+async function cmdOwnership(args: string[], ctx?: CmdCtx): Promise<number> {
+  const id = args.find((a) => !a.startsWith('-'));
+  if (!id) {
+    process.stderr.write('usage: crib ownership <id>\n');
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  process.stdout.write(`${JSON.stringify(verbs.ownership({ id }), null, 2)}\n`);
   index.close();
   return EXIT.OK;
 }

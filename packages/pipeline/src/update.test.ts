@@ -70,7 +70,10 @@ async function indexAndCommit(): Promise<void> {
   // Commit FIRST so `indexRepo` can stamp the VCS anchor (mirrors real `crib index` after a commit).
   git(repo, ['add', '-A']);
   git(repo, ['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'initial']);
-  await indexRepo(soulFor(), repo, { now: '2026-01-01T00:00:00.000Z' });
+  await indexRepo(soulFor(), repo, {
+    now: '2026-01-01T00:00:00.000Z',
+    ownership: false,
+  });
 }
 
 describe('updateRepo (M6 incremental, git-anchored)', () => {
@@ -83,7 +86,7 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
         manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
       });
       s.load();
-      await indexRepo(s, plain, { now: '2026-01-01T00:00:00.000Z' });
+      await indexRepo(s, plain, { now: '2026-01-01T00:00:00.000Z', ownership: false });
       const result = await updateRepo(s, plain, {});
       expect(result).toBeNull();
     } finally {
@@ -120,7 +123,10 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
 
     // Run the incremental update on a freshly-loaded soul (simulating a later session).
     const soul = soulFor();
-    const result = await updateRepo(soul, repo, { now: '2026-01-02T00:00:00.000Z' });
+    const result = await updateRepo(soul, repo, {
+      now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
+    });
     expect(result).not.toBeNull();
     expect(result && 'noop' in result).toBe(false);
 
@@ -219,7 +225,7 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     );
     git(repo, ['add', '-A']);
     git(repo, ['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'spring']);
-    await indexRepo(soulFor(), repo, { now: '2026-01-01T00:00:00.000Z' });
+    await indexRepo(soulFor(), repo, { now: '2026-01-01T00:00:00.000Z', ownership: false });
 
     // The initial index carries the Spring route + the exposes edge (handler → route).
     const afterIndex = soulFor();
@@ -256,15 +262,18 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     ]);
 
     const soul = soulFor();
-    const result = await updateRepo(soul, repo, { now: '2026-01-02T00:00:00.000Z' });
+    const result = await updateRepo(soul, repo, {
+      now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
+    });
     expect(result).not.toBeNull();
     expect(result && 'noop' in result).toBe(false);
     const report = result as UpdateReport;
 
     // The P0 gate: no Spring artifact is silently dropped — the original route + exposes survive the
     // re-extract (they are re-emitted, not lost to delta.removed).
-    expect(report.delta.removed).toEqual([]);
     const reopened = soulFor();
+    expect(report.delta.removed).toEqual([]);
     expect(
       [...reopened.iterate('route')].map((n) => `${n.httpMethod} ${n.routePath}`).sort(),
     ).toEqual(['GET /api/loans', 'POST /api/loans']);
@@ -288,7 +297,10 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     const h2 = git(repo, ['rev-parse', 'HEAD']);
 
     const soul = soulFor();
-    const result = await updateRepo(soul, repo, { now: '2026-01-03T00:00:00.000Z' });
+    const result = await updateRepo(soul, repo, {
+      now: '2026-01-03T00:00:00.000Z',
+      ownership: false,
+    });
     expect(result && 'noop' in result).toBe(true);
     if (result && 'noop' in result) {
       expect(result.scopeFiles).toEqual([]);
@@ -307,6 +319,7 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     const result = await updateRepo(soul, repo, {
       dirty: true,
       now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
     });
     expect(result).not.toBeNull();
     expect(result && 'noop' in result).toBe(false);
@@ -330,6 +343,7 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     const result = await updateRepo(soul, repo, {
       dirty: true,
       now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
     });
     expect(result && 'noop' in result).toBe(true);
 
@@ -366,6 +380,7 @@ describe('updateRepo — packageRoots (P4 multi-package federation)', () => {
     const result = await updateRepo(soul, repo, {
       packageRoots: ['src/a.ts'], // a single-file "package" for this fixture's flat layout
       now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
     });
     expect(result).not.toBeNull();
     expect(result && 'noop' in result).toBe(false);
@@ -415,6 +430,7 @@ describe('updateRepo — packageRoots (P4 multi-package federation)', () => {
     const result = await updateRepo(soul, repo, {
       packageRoots: ['src/a.ts'],
       now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
     });
     const report = result as UpdateReport;
     expect(report.excludedPaths).toEqual([]);

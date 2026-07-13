@@ -25,7 +25,10 @@ export type NodeKind =
   // what makes a Java/Node/React/Angular graph REPLACE reading the code.
   | 'route' // an HTTP endpoint: httpMethod + routePath (Spring @GetMapping, Express app.get, Nest @Get)
   | 'field' // a class/entity/component field (JPA @Column, React prop/state, Angular @Input)
-  | 'component'; // a UI component (React function/class component, Angular @Component)
+  | 'component' // a UI component (React function/class component, Angular @Component)
+  // 1.4 (ownership layer): a git author — the person `git blame` attributes source lines to. The node
+  // a symbol's `owned-by` edge points at, so "who do I ask about this code" is a graph query.
+  | 'owner';
 
 export type Rel =
   | 'calls'
@@ -49,7 +52,12 @@ export type Rel =
   | 'exposes' // handler symbol → route (the endpoint a controller method serves)
   | 'injects' // consumer symbol → injected dependency type (the DI graph)
   | 'renders' // component → child component (the UI render tree)
-  | 'produces'; // producer symbol → produced type (a @Bean/@Factory method → its return type)
+  | 'produces' // producer symbol → produced type (a @Bean/@Factory method → its return type)
+  // 1.4 (ownership layer): symbol → the `owner` node (git author) `git blame` attributes the
+  // symbol's source lines to. EXTRACTED (a deterministic, file-derived fact), confidence 1, so the
+  // graph answers "who do I ask about X" without a model. The reverse ("what does Y own") is the
+  // walk over incoming `owned-by` edges.
+  | 'owned-by';
 
 /** HOW an edge was derived — also drives ranking: static > explicit > identifier > path > semantic > inferred */
 export type Method = 'static' | 'explicit' | 'identifier' | 'path' | 'semantic' | 'inferred';
@@ -75,6 +83,7 @@ export const NODE_KINDS: readonly NodeKind[] = [
   'route',
   'field',
   'component',
+  'owner',
 ];
 
 export const RELS: readonly Rel[] = [
@@ -98,6 +107,7 @@ export const RELS: readonly Rel[] = [
   'injects',
   'renders',
   'produces',
+  'owned-by',
 ];
 
 export const METHODS: readonly Method[] = [

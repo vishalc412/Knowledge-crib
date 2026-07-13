@@ -84,7 +84,12 @@ describe('CsharpResolver — cross-file edges (gate)', () => {
 
   it('is capability-honest: only member-of/calls/imports/inherits/implements; ZERO type edges', async () => {
     const soul = soulFor();
-    await indexRepo(soul, CSHARP_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(soul, CSHARP_CROSS, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+      ownership: false,
+    });
 
     const csEdges = edgesInFiles(soul, CSHARP_EXTS);
     const rels = new Set(csEdges.map((e) => e.rel));
@@ -106,7 +111,12 @@ describe('CsharpResolver — cross-file edges (gate)', () => {
 
   it('never emits an edge whose endpoint node does not exist (pruneDangling-safe)', async () => {
     const soul = soulFor();
-    await indexRepo(soul, CSHARP_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(soul, CSHARP_CROSS, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+      ownership: false,
+    });
     const ids = new Set([...soul.iterate()].map((n) => n.id));
     for (const e of soul.iterateEdges()) {
       expect(ids.has(e.src)).toBe(true);
@@ -116,13 +126,23 @@ describe('CsharpResolver — cross-file edges (gate)', () => {
 
   it('is id-stable: re-indexing yields byte-identical nodes + edges', async () => {
     const a = soulFor();
-    await indexRepo(a, CSHARP_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(a, CSHARP_CROSS, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+      ownership: false,
+    });
     const aNodes = JSON.stringify([...a.iterate()].sort(byId));
     const aEdges = JSON.stringify([...a.iterateEdges()].sort(byEdgeId));
 
     cribDir = mkdtempSync(join(tmpdir(), 'crib-csharp2-'));
     const b = soulFor();
-    await indexRepo(b, CSHARP_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(b, CSHARP_CROSS, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+      ownership: false,
+    });
     expect(JSON.stringify([...b.iterate()].sort(byId))).toBe(aNodes);
     expect(JSON.stringify([...b.iterateEdges()].sort(byEdgeId))).toBe(aEdges);
   });

@@ -1104,6 +1104,31 @@ export class Verbs {
     };
   }
 
+  /** M3.1 ownership: the git-blame owners of a node — "who do I ask about this code". Walks outgoing
+   *  `owned-by` EXTRACTED edges (symbol → owner) and returns the owner node + the blame commit + the
+   *  HEAD the index ran against. A node with no `owned-by` edge (untracked file, non-git repo, owner
+   *  unresolved) returns an empty owners list rather than not-found — the node exists, it just has no
+   *  owner attribution. Accepts the same id-or-name resolution as the other node verbs. */
+  ownership(args: { id: string }): Record<string, unknown> {
+    const id = this.resolveNodeId(args.id);
+    if (!id || !this.deps.soul.getNode(id)) return notFound(args.id);
+    const owners: Array<Record<string, unknown>> = [];
+    for (const e of this.adjacency(id, 'down', true)) {
+      if (e.rel !== 'owned-by') continue;
+      const owner = this.deps.soul.getNode(e.dst);
+      if (!owner) continue;
+      const ev = (e.evidence ?? {}) as Record<string, unknown>;
+      owners.push({
+        owner: this.publicNode(owner),
+        commit: ev.commit ?? null,
+        head: ev.head ?? null,
+        confidence: e.confidence,
+        provenance: e.provenance,
+      });
+    }
+    return { node: id, owners };
+  }
+
   shortestPath(args: { from: string; to: string; maxHops?: number }): Record<string, unknown> {
     // resolve qualified/simple names on both endpoints (parity with the other node verbs); fall
     // back to the raw input so index.shortestPath reports a clean not-found instead of throwing.
@@ -1581,6 +1606,9 @@ export class Verbs {
     if (n.exprTruncated) out.exprTruncated = n.exprTruncated;
     if (Array.isArray(n.constraints)) out.constraints = n.constraints;
     if (n.commentRef) out.commentRef = n.commentRef;
+    // M3.1 ownership — an `owner` node carries the git-blame author identity (email when blame
+    // exposed one, else name-only). Surfaced so the `ownership` verb's owner records carry email.
+    if (n.email) out.email = n.email;
     // doc-section
     if (n.heading) out.heading = n.heading;
     if (n.level !== undefined) out.level = n.level;

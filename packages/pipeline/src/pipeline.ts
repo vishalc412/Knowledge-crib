@@ -29,6 +29,8 @@ import { runSemanticLink } from './linker/index.js';
 import { runMultimodal } from './multimodal/index.js';
 import type { MultimodalPhaseOpts, MultimodalReport } from './multimodal/index.js';
 import { isMediaPath } from './multimodal/ingest.js';
+import { runOwnership } from './ownership.js';
+import type { OwnershipStats } from './ownership.js';
 import { runParse } from './parse.js';
 import type { ParseStats } from './parse.js';
 import { runCfg } from './resolve/index.js';
@@ -72,6 +74,10 @@ export interface IndexOpts {
    *  Default ON — the artifact the MCP `dossier` verb serves from cache; graph-divergent artifacts
    *  are refreshed while true no-ops remain byte-stable. */
   dossiers?: boolean;
+  /** run the M3.1 ownership phase: `git blame` → symbol→owner `owned-by` EXTRACTED edges. Default ON
+   *  inside a git work tree (a clean no-op in a non-git repo, so the deterministic path is unchanged).
+   *  Set false to skip blame (benches / `--extracted-only` reproducibility checks that want no git). */
+  ownership?: boolean;
 }
 
 export interface IndexReport {
@@ -84,6 +90,7 @@ export interface IndexReport {
   link: LinkStats;
   cluster: ClusterStats;
   semantic: SemanticStats;
+  ownership: OwnershipStats;
 }
 
 /** The default extractor fleet shipped with a fresh index — Markdown first so doc files never fall
@@ -137,6 +144,13 @@ export async function indexRepo(
   const link = runLink(soul, root, opts.linkThreshold); // Phase 4
   const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul); // Phase 4b (M7)
   const semantic = opts.semantic ? runSemanticLink(soul, root) : { added: 0 }; // Phase 4c (M7, INFERRED)
+  // Phase 4d (M3.1): `git blame` → symbol→owner `owned-by` EXTRACTED edges. Clean no-op in a non-git
+  // repo, so the deterministic path (and the mkdtemp-based tests/gates) is unchanged. Runs before the
+  // VCS anchor stamp + commit so owners land in the committed soul.
+  const ownership =
+    opts.ownership === false
+      ? { files: 0, symbols: 0, owners: 0, edges: 0, skipped: 0 }
+      : runOwnership(soul, root);
   // Best-effort VCS anchor (M6): stamp the current HEAD so `crib update` / `detect_changes` can diff
   // against it. Non-git repos silently skip (the stamp stays absent → update degrades to full index).
   try {
@@ -167,5 +181,6 @@ export async function indexRepo(
     link,
     cluster,
     semantic,
+    ownership,
   };
 }

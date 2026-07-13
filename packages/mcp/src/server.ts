@@ -314,6 +314,18 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
   );
 
   server.registerTool(
+    'ownership',
+    {
+      description:
+        'M3.1 ownership: the git-blame owners of a node (symbol → owner), answering "who do I ask about this code". Returns owner nodes + the blame commit + the HEAD the index ran against.',
+      inputSchema: {
+        id: z.string(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.ownership(a)),
+  );
+
+  server.registerTool(
     'shortest_path',
     {
       description: 'Shortest directed path between two nodes.',

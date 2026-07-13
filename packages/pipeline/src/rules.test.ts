@@ -156,7 +156,7 @@ describe('M12 renderers', () => {
 
     const graph = renderExport(soul, 'graph.json');
     const parsed = JSON.parse(graph);
-    expect(parsed.schemaVersion).toBe('1.3');
+    expect(parsed.schemaVersion).toBe('1.4');
     expect(parsed.nodes.length).toBeGreaterThan(0);
     expect(parsed.edges.length).toBeGreaterThan(0);
 
