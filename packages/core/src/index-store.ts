@@ -45,6 +45,14 @@ export interface HybridQuery {
    * and `--extracted-only` output stay byte-identical either way (M2.1).
    */
   semantic?: boolean;
+  /**
+   * On the hybrid (semantic) path, multiply each fused candidate's RRF score by a deterministic
+   * structural prior — centrality × stereotype-match × per-intent kind prior — and re-sort (M2.2).
+   * `true` (default) reranks when vectors are present; `false` returns the raw RRF order. Pure BM25
+   * (semantic:false) is never reranked, so the deterministic exact-match path is unaffected. The
+   * prior is a model-free multiplier that reorders within the fused set; it cannot invent relevance.
+   */
+  rerank?: boolean;
 }
 
 export interface Hit {

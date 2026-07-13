@@ -14,12 +14,30 @@ assert.match(
   /semantic:check/,
   'release gate must run the M2.1 hybrid-recall gate (semantic-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /rerank:check/,
+  'release gate must run the M2.2 graph-aware-rerank gate (rerank-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
   /"semantic:check":\s*"node scripts\/semantic-check\.mjs"/,
   'package.json must define semantic:check',
 );
+assert.match(
+  pkg,
+  /"rerank:check":\s*"node scripts\/rerank-check\.mjs"/,
+  'package.json must define rerank:check',
+);
+const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
+assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');
+assert.match(
+  rerankCheck,
+  /runEval/,
+  'rerank-check.mjs must drive the eval harness in semantic mode',
+);
+assert.match(rerankCheck, /deterministic/i, 'rerank-check.mjs must assert determinism across runs');
 const semanticCheck = readFileSync('scripts/semantic-check.mjs', 'utf8');
 assert.match(semanticCheck, /MIN_RECOVERY/, 'semantic-check.mjs must enforce a recovery floor');
 assert.match(

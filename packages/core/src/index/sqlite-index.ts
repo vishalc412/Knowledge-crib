@@ -42,6 +42,8 @@ import type {
   PathResult,
 } from '../index-store.js';
 import type { SoulStore } from '../soul-store.js';
+import { rerank } from './rerank.js';
+import type { RerankCandidate } from './rerank.js';
 import { expandToken } from './synonyms.js';
 
 /** Columns we feed into FTS5 for free-text search over symbols + doc sections + bodies. */
@@ -56,21 +58,21 @@ function vectorText(node: Node): string {
 
 /** Reciprocal-rank fusion (RRF) of two retriever rankings. k=60 is the standard constant. */
 const RRF_K = 60;
-function rrfFuse(bm25: Hit[], vec: Hit[], limit: number, offset: number): Hit[] {
+function rrfFuse(bm25: Hit[], vec: Hit[]): Hit[] {
   const score = new Map<string, number>();
   const meta = new Map<string, Hit>();
-  const add = (hits: Hit[], rankBase: number) => {
+  const add = (hits: Hit[]) => {
     for (let i = 0; i < hits.length; i++) {
       const h = hits[i]!;
-      const rank = i + 1 + rankBase;
+      const rank = i + 1;
       score.set(h.id, (score.get(h.id) ?? 0) + 1 / (RRF_K + rank));
       if (!meta.has(h.id)) meta.set(h.id, h);
     }
   };
-  add(bm25, 0);
-  add(vec, 0);
+  add(bm25);
+  add(vec);
   const ranked = [...score.entries()].sort((a, b) => b[1] - a[1]);
-  return ranked.slice(offset, offset + limit).map(([id, s]) => {
+  return ranked.map(([id, s]) => {
     const h = meta.get(id)!;
     return { id: h.id, kind: h.kind, score: s, name: h.name, file: h.file };
   });
@@ -153,13 +155,44 @@ export class SqliteIndexStore implements IndexStore {
     const limit = q.limit ?? 10;
     const offset = q.offset ?? 0;
     const wantSemantic = q.semantic !== false && this.builtEmbedderId !== null;
-    const bm25Hits = this.bm25Query(q, wantSemantic ? Math.max(limit * 5, 50) : limit, offset);
-    if (!wantSemantic) return bm25Hits;
+    if (!wantSemantic) return this.bm25Query(q, limit, offset);
     // M2.1 — RRF hybrid fusion of BM25 ∪ vector retrieval. Vectors generalize across the
     // case/affix/paraphrase gaps exact-match BM25 misses; RRF merges ranks without needing
     // comparable score scales. `score` returned is the RRF score (higher = better).
-    const vecHits = this.vectorQuery(q.text, Math.max(limit * 5, 50), q.kinds);
-    return rrfFuse(bm25Hits, vecHits, limit, offset).map((h) => ({ ...h, score: round5(h.score) }));
+    //
+    // M2.2 — after fusion, a deterministic structural prior (centrality × stereotype-match ×
+    // per-intent kind prior) multiplies the RRF score and re-sorts. The prior anchors BM25-found
+    // relevant docs so vector noise can't push them below rank 10 (the java -10.5pp case). Offset
+    // is applied AFTER fusion+rerank so paging stays consistent with the reranked order.
+    const pool = Math.max(limit * 5, 50);
+    const bm25Hits = this.bm25Query(q, pool, 0);
+    const vecHits = this.vectorQuery(q.text, pool, q.kinds);
+    const fused = rrfFuse(bm25Hits, vecHits);
+    if (q.rerank !== false) {
+      const degrees = this.degreesFor(fused.map((h) => h.id));
+      const candidates: RerankCandidate[] = fused.map((h) => ({
+        id: h.id,
+        kind: h.kind,
+        name: h.name ?? null,
+        file: h.file ?? null,
+        rrfScore: h.score,
+        degree: degrees.get(h.id) ?? 0,
+      }));
+      return rerank(candidates, q.text, limit, offset);
+    }
+    return fused.slice(offset, offset + limit).map((h) => ({ ...h, score: round5(h.score) }));
+  }
+
+  /** Total in+out edge count per node id — the centrality signal for M2.2 rerank. Indexed lookups. */
+  private degreesFor(ids: string[]): Map<string, number> {
+    const out = new Map<string, number>();
+    if (ids.length === 0) return out;
+    const stmt = this.db.prepare('SELECT COUNT(*) AS n FROM edges WHERE src = ? OR dst = ?');
+    for (const id of ids) {
+      const row = stmt.get(id, id) as { n: number };
+      out.set(id, row.n);
+    }
+    return out;
   }
 
   /** Pure BM25 projection (FTS5). Lower `score` = better. */

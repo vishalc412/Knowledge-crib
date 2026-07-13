@@ -148,14 +148,15 @@ export async function scoreFixture(lang, fixtureDir, core, pipeline, opts = {}) 
     }
 
     // Score pairs against an index, bucketing by template so the M2.1 gate can isolate the
-    // conceptual recall (mechanical pairs are exact-name lookups BM25 already nails).
-    const scoreAll = (idx, semantic) => {
+    // conceptual recall (mechanical pairs are exact-name lookups BM25 already nails). `qopts`
+    // forwards semantic/rerank flags to the hybrid query path.
+    const scoreAll = (idx, qopts) => {
       const byTemplate = {
         mechanical: { recall: [], mrr: [], ndcg: [] },
         conceptual: { recall: [], mrr: [], ndcg: [] },
       };
       for (const pair of allPairs) {
-        const hits = idx.query({ text: pair.question, limit: QUERY_LIMIT, semantic });
+        const hits = idx.query({ text: pair.question, limit: QUERY_LIMIT, ...qopts });
         const retrieved = hits.map((h) => h.id);
         const s = scorePair(retrieved, pair.expectedIds, K);
         const bucket = byTemplate[pair.template] ?? byTemplate.conceptual;
@@ -166,7 +167,7 @@ export async function scoreFixture(lang, fixtureDir, core, pipeline, opts = {}) 
       return byTemplate;
     };
 
-    const bm25ByTemplate = scoreAll(index, false);
+    const bm25ByTemplate = scoreAll(index, { semantic: false });
     const result = {
       lang,
       pairs: allPairs.length,
@@ -180,11 +181,16 @@ export async function scoreFixture(lang, fixtureDir, core, pipeline, opts = {}) 
 
     if (opts.semantic) {
       // Build a hybrid index from the SAME soul (no re-extraction) and score the conceptual set
-      // both ways — the M2.1 conceptual-recall gate. Vectors live only in the in-memory derived
-      // index, so the soul (and any --extracted-only export) is untouched either way.
+      // three ways — the M2.1 conceptual-recall gate + the M2.2 rerank gate. Vectors live only in
+      // the in-memory derived index, so the soul (and any --extracted-only export) is untouched.
       const hybrid = new SqliteIndexStore(':memory:', { embedder: new CharNgramEmbedder() });
       hybrid.buildFromSoul(soul, fixtureDir);
-      const hybridByTemplate = scoreAll(hybrid, true);
+      // M2.1 baseline: pure RRF (vectors + BM25, no structural rerank). `result.semantic.hybrid`
+      // stays THIS baseline so the M2.1 recovery gate measures the vector effect alone, not rerank.
+      const hybridByTemplate = scoreAll(hybrid, { semantic: true, rerank: false });
+      // M2.2 production: RRF × structural prior (centrality × stereotype × kind). The gate asserts
+      // this beats the no-rerank baseline on conceptual MRR — the java -10.5pp case is the target.
+      const rerankByTemplate = scoreAll(hybrid, { semantic: true, rerank: true });
       // Recovery of BM25 misses: of the conceptual pairs BM25 got WRONG (recall@10 == 0), how many
       // does hybrid get RIGHT (recall@10 > 0)? This is the plan's intent — "vectors recover
       // conceptual queries BM25 misses" — and is the falsifiable signal. (A literal "+30% relative
@@ -215,12 +221,25 @@ export async function scoreFixture(lang, fixtureDir, core, pipeline, opts = {}) 
             ndcg10: mean(hybridByTemplate.conceptual.ndcg),
           },
         },
+        hybridRerank: {
+          conceptual: {
+            recall10: mean(rerankByTemplate.conceptual.recall),
+            mrr: mean(rerankByTemplate.conceptual.mrr),
+            ndcg10: mean(rerankByTemplate.conceptual.ndcg),
+          },
+        },
         conceptualRecallDelta:
           mean(hybridByTemplate.conceptual.recall) - mean(bm25ByTemplate.conceptual.recall),
         bm25Misses,
         hybridRecovers,
         // 1.0 when BM25 had no misses (vacuously perfect — nothing to recover); else recovers/misses.
         recoveryRate: bm25Misses === 0 ? 1 : hybridRecovers / bm25Misses,
+        // M2.2 — rerank MRR/recall lift over the no-rerank RRF baseline. The gate asserts MRR >=
+        // baseline (rerank may reorder but should not regress aggregate ranking quality).
+        rerankMrrDelta:
+          mean(rerankByTemplate.conceptual.mrr) - mean(hybridByTemplate.conceptual.mrr),
+        rerankRecallDelta:
+          mean(rerankByTemplate.conceptual.recall) - mean(hybridByTemplate.conceptual.recall),
       };
       hybrid.close();
     }
@@ -247,7 +266,7 @@ export async function runEval(fixturesRoot = defaultFixturesRoot(), opts = {}) {
     perLang[lang] = r;
     const semStr =
       opts.semantic && r.semantic
-        ? `  concept R@10 bm25=${r.semantic.bm25.conceptual.recall10.toFixed(3)} hybrid=${r.semantic.hybrid.conceptual.recall10.toFixed(3)} Δ=${(r.semantic.conceptualRecallDelta * 100).toFixed(1)}pp recovery=${r.semantic.hybridRecovers}/${r.semantic.bm25Misses}`
+        ? `  concept R@10 bm25=${r.semantic.bm25.conceptual.recall10.toFixed(3)} hybrid=${r.semantic.hybrid.conceptual.recall10.toFixed(3)} rerank=${r.semantic.hybridRerank.conceptual.recall10.toFixed(3)} Δ=${(r.semantic.conceptualRecallDelta * 100).toFixed(1)}pp recovery=${r.semantic.hybridRecovers}/${r.semantic.bm25Misses} rerankΔMRR=${(r.semantic.rerankMrrDelta * 100).toFixed(1)}pp`
         : '';
     process.stdout.write(
       ` pairs=${r.pairs} (mech=${r.mechanical} concept=${r.conceptual})  ` +
@@ -270,6 +289,9 @@ export async function runEval(fixturesRoot = defaultFixturesRoot(), opts = {}) {
     overall.semantic = {
       bm25ConceptualRecall: mean(withSem.map((r) => r.semantic.bm25.conceptual.recall10)),
       hybridConceptualRecall: mean(withSem.map((r) => r.semantic.hybrid.conceptual.recall10)),
+      hybridRerankConceptualRecall: mean(
+        withSem.map((r) => r.semantic.hybridRerank.conceptual.recall10),
+      ),
       conceptualRecallDelta: mean(withSem.map((r) => r.semantic.conceptualRecallDelta)),
       // Aggregate recovery across all languages: total recovers / total misses. Macro-averaging
       // the per-lang recovery rate would let a language with 1 miss / 1 recover (100%) outweigh a
@@ -279,6 +301,13 @@ export async function runEval(fixturesRoot = defaultFixturesRoot(), opts = {}) {
       get recoveryRate() {
         const m = this.totalBm25Misses;
         return m === 0 ? 1 : this.totalHybridRecovers / m;
+      },
+      // M2.2 — macro-averaged rerank MRR lift over the no-rerank RRF baseline. The gate asserts
+      // this is >= 0 (rerank must not regress aggregate conceptual ranking quality).
+      hybridConceptualMrr: mean(withSem.map((r) => r.semantic.hybrid.conceptual.mrr)),
+      hybridRerankConceptualMrr: mean(withSem.map((r) => r.semantic.hybridRerank.conceptual.mrr)),
+      get rerankMrrDelta() {
+        return this.hybridRerankConceptualMrr - this.hybridConceptualMrr;
       },
     };
   }
