@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/parser.ts#Parser.capturePredicate@L684",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:01e28f44017365f417c60b893b0a4ed719f6ad5a33a0f7cfe274110cfbae508d",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/parser.ts#Parser.capturePredicate@L684",
@@ -372,11 +372,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:738663a65d7b3f41fad997280f55ae8d353c3f42583be5ce1c788480e41fff6b",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.sliceSrc@L712",
-          "expr": "sliceSrc",
-          "line": 701
+          "kind": "executes",
+          "edgeId": "e:595decf8178de63f3fec24255b09c6de4bfc41aa37d3c41994ae3d10e4f093b3",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L701",
+          "line": 701,
+          "expr": "const text = this.sliceSrc(startLine, startCol, tk.line, tk.col);"
         }
       },
       {
@@ -398,11 +398,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:595decf8178de63f3fec24255b09c6de4bfc41aa37d3c41994ae3d10e4f093b3",
-          "target": "stmt:packages/parsers/src/python/parser.ts@L701",
-          "line": 701,
-          "expr": "const text = this.sliceSrc(startLine, startCol, tk.line, tk.col);"
+          "kind": "calls",
+          "edgeId": "e:738663a65d7b3f41fad997280f55ae8d353c3f42583be5ce1c788480e41fff6b",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.sliceSrc@L712",
+          "expr": "sliceSrc",
+          "line": 701
         }
       },
       {

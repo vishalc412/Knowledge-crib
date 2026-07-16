@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/rules.test.ts#soulFor@L24",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:4e89a41098733845b91d916d248652dc46dfc9fc3d34fcad731c3effa2c3f8e2",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/rules.test.ts#soulFor@L24",
@@ -37,6 +37,16 @@
   "callers": [],
   "callees": [
     {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
+    {
       "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
       "confidence": 1,
       "name": "newManifest",
@@ -60,20 +70,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:b191cea4cf4a0c9a9d990c5ba6fb1bf0eaa37441f79421b7b9aff481ee35cad1",
-          "target": "stmt:packages/pipeline/src/rules.test.ts@L25",
-          "line": 25,
-          "expr": "const s = new SoulStore(cribDir, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/rules.test.ts#soulFor@L24",
-        "procedureName": "soulFor",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "calls",
           "edgeId": "e:a55643411b16f48fc7c892e2dd81704bf68f12430b38f094d0a827c38bebf978",
           "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
@@ -89,10 +85,38 @@
         "inException": false,
         "action": {
           "kind": "executes",
+          "edgeId": "e:b191cea4cf4a0c9a9d990c5ba6fb1bf0eaa37441f79421b7b9aff481ee35cad1",
+          "target": "stmt:packages/pipeline/src/rules.test.ts@L25",
+          "line": 25,
+          "expr": "const s = new SoulStore(cribDir, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules.test.ts#soulFor@L24",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
           "edgeId": "e:169f67bea92a93e47fe0e0b1dc05e62918ee515db55fd299376fce742ba48a3f",
           "target": "stmt:packages/pipeline/src/rules.test.ts@L26",
           "line": 26,
           "expr": "s.load();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules.test.ts#soulFor@L24",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5eebd8b88e7fcd36cf69e5be7c94e0100a245d834b473d3617296493614c6f1f",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 26
         }
       },
       {
@@ -127,7 +151,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 1,
+      "resolved": 2,
       "recorded": 2,
       "unresolved": 0
     },

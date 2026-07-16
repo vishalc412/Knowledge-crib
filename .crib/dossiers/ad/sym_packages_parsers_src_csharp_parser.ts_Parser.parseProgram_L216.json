@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseProgram@L216",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:ff5609e325aa95df93f90239117c66f1c97df40c3bc28b2eaf5c5a5bb89cd8fc",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseProgram@L216",
@@ -67,11 +67,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:fd40a48f3cba56a7e840a92282efe9401f5dca591cfa591d6405a939e95acf0f",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
-          "expr": "parseDecls",
-          "line": 217
+          "kind": "executes",
+          "edgeId": "e:1b471f95a09bf31b11198b21bf892dd6c5589375cbd422d15648f04a934f5508",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L217",
+          "line": 217,
+          "expr": "const { defs } = this.parseDecls(true);"
         }
       },
       {
@@ -81,11 +81,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:1b471f95a09bf31b11198b21bf892dd6c5589375cbd422d15648f04a934f5508",
-          "target": "stmt:packages/parsers/src/csharp/parser.ts@L217",
-          "line": 217,
-          "expr": "const { defs } = this.parseDecls(true);"
+          "kind": "calls",
+          "edgeId": "e:fd40a48f3cba56a7e840a92282efe9401f5dca591cfa591d6405a939e95acf0f",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+          "expr": "parseDecls",
+          "line": 217
         }
       },
       {

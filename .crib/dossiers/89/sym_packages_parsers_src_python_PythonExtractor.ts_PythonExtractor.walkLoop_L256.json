@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkLoop@L256",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:d9c741261927d863468098381de1e8c9e4b8ab32bc1a445d2f12888cb33d652b",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkLoop@L256",
@@ -90,20 +90,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:46f6b88e786cdba15067b39e3505ccf4ac7f5ad78bfba26a0df65843672eed6c",
-          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.condition@L409",
-          "expr": "condition",
-          "line": 264
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkLoop@L256",
-        "procedureName": "PythonExtractor.walkLoop",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:32fbeb9467bd2c1ae70eb287a6c8606bc2a1dd6801b16913f55a8acfe047ea44",
           "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L264",
@@ -119,10 +105,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:cb07399fc9010a5c893c01b5162a3c0d18fd858ea7e1386b2089fa83635c1047",
-          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
-          "expr": "walkBody",
-          "line": 265
+          "edgeId": "e:46f6b88e786cdba15067b39e3505ccf4ac7f5ad78bfba26a0df65843672eed6c",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.condition@L409",
+          "expr": "condition",
+          "line": 264
         }
       },
       {
@@ -137,6 +123,20 @@
           "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L265",
           "line": 265,
           "expr": "this.walkBody(s.body ?? [], procId, [...guardStack, condId], 'LOOP', true, inException, w);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkLoop@L256",
+        "procedureName": "PythonExtractor.walkLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cb07399fc9010a5c893c01b5162a3c0d18fd858ea7e1386b2089fa83635c1047",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
+          "expr": "walkBody",
+          "line": 265
         }
       }
     ]

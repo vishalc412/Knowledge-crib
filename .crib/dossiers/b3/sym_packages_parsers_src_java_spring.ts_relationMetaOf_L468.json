@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L468",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:69fab74d9ebe6ae050a8a549022009eae8dfed5f887687a644d5e71a20c61512",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/spring.ts#relationMetaOf@L468",
@@ -112,11 +112,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:91900c20d10ddd731512b3f3795c485a8026044c1e42999299eb7875e33dd94b",
-          "target": "sym:packages/parsers/src/java/spring.ts#matchKV@L516",
-          "expr": "matchKV",
-          "line": 471
+          "kind": "executes",
+          "edgeId": "e:828a7928adcb0f27c2f32d9bccc7e4e107b44e78714f3112064545672bd3efc3",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L471",
+          "line": 471,
+          "expr": "const mappedBy = matchKV(s, 'mappedBy');"
         }
       },
       {
@@ -126,11 +126,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:828a7928adcb0f27c2f32d9bccc7e4e107b44e78714f3112064545672bd3efc3",
-          "target": "stmt:packages/parsers/src/java/spring.ts@L471",
-          "line": 471,
-          "expr": "const mappedBy = matchKV(s, 'mappedBy');"
+          "kind": "calls",
+          "edgeId": "e:91900c20d10ddd731512b3f3795c485a8026044c1e42999299eb7875e33dd94b",
+          "target": "sym:packages/parsers/src/java/spring.ts#matchKV@L516",
+          "expr": "matchKV",
+          "line": 471
         }
       },
       {

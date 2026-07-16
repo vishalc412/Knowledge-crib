@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:df8eb501d20e7deccb808cde6e59d9c3a8810de0dcbe7c1005bf9a7fca8a9d09",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
@@ -175,8 +175,8 @@
     "procedureName": "Lexer.tryScanStringish",
     "conditions": [
       "cond:packages/parsers/src/rust/lexer.ts@L374",
-      "cond:packages/parsers/src/rust/lexer.ts@L381",
       "cond:packages/parsers/src/rust/lexer.ts@L345",
+      "cond:packages/parsers/src/rust/lexer.ts@L381",
       "cond:packages/parsers/src/rust/lexer.ts@L383",
       "cond:packages/parsers/src/rust/lexer.ts@L347",
       "cond:packages/parsers/src/rust/lexer.ts@L353",
@@ -187,6 +187,20 @@
       "cond:packages/parsers/src/rust/lexer.ts@L367"
     ],
     "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bc268c4cd3c139ebd3ce8d61459a31acfe6d34e88e0b54b60b0698ba1d3b4448",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L344",
+          "line": 344,
+          "expr": "const c = this.peek();"
+        }
+      },
       {
         "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
         "procedureName": "Lexer.tryScanStringish",
@@ -212,15 +226,23 @@
       {
         "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
         "procedureName": "Lexer.tryScanStringish",
-        "conditions": [],
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L345",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L345",
+            "expr": "c === 'r'",
+            "polarity": "THEN"
+          }
+        ],
         "inLoop": false,
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:bc268c4cd3c139ebd3ce8d61459a31acfe6d34e88e0b54b60b0698ba1d3b4448",
-          "target": "stmt:packages/parsers/src/rust/lexer.ts@L344",
-          "line": 344,
-          "expr": "const c = this.peek();"
+          "edgeId": "e:4f576600fd574692a0c83246d179a7f17e71c9bdab000deba41d509e91ef4201",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L346",
+          "line": 346,
+          "expr": "const hashCount = this.countRawHashes(1);"
         }
       },
       {
@@ -247,28 +269,6 @@
           "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.countRawHashes@L397",
           "expr": "countRawHashes",
           "line": 346
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
-        "procedureName": "Lexer.tryScanStringish",
-        "guard": "cond:packages/parsers/src/rust/lexer.ts@L345",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/rust/lexer.ts@L345",
-            "expr": "c === 'r'",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:4f576600fd574692a0c83246d179a7f17e71c9bdab000deba41d509e91ef4201",
-          "target": "stmt:packages/parsers/src/rust/lexer.ts@L346",
-          "line": 346,
-          "expr": "const hashCount = this.countRawHashes(1);"
         }
       },
       {
@@ -452,32 +452,6 @@
       {
         "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
         "procedureName": "Lexer.tryScanStringish",
-        "guard": "cond:packages/parsers/src/rust/lexer.ts@L376",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
-            "expr": "c === 'c'"
-          },
-          {
-            "id": "cond:packages/parsers/src/rust/lexer.ts@L376",
-            "expr": "c1 === '\"'",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:7bf6e878e9c9dd5612c999fb7b653d0362bb436885d92857ce3b3e33e7d567be",
-          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanString@L221",
-          "expr": "scanString",
-          "line": 357
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
-        "procedureName": "Lexer.tryScanStringish",
         "guard": "cond:packages/parsers/src/rust/lexer.ts@L355",
         "branch": "THEN",
         "conditions": [
@@ -499,6 +473,32 @@
           "target": "stmt:packages/parsers/src/rust/lexer.ts@L357",
           "line": 357,
           "expr": "this.scanString();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+        "procedureName": "Lexer.tryScanStringish",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L376",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L374",
+            "expr": "c === 'c'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L376",
+            "expr": "c1 === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7bf6e878e9c9dd5612c999fb7b653d0362bb436885d92857ce3b3e33e7d567be",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanString@L221",
+          "expr": "scanString",
+          "line": 357
         }
       },
       {

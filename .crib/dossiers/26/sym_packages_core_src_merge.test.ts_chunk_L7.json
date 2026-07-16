@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/merge.test.ts#chunk@L7",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:f65046149a9dcff0ce6127831ce3bc29931e4113c6be3b0d538e74b87c27fcdf",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/merge.test.ts#chunk@L7",
@@ -75,20 +75,10 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m0-soul-schema-soulstore-chunked-jsonl-r-w-manifest",
-      "heading": "M0 — `soul-schema` + `SoulStore` (chunked JSONL r/w + manifest)",
-      "anchor": "m0-soul-schema-soulstore-chunked-jsonl-r-w-manifest",
-      "snippet": "M0 — `soul-schema` + `SoulStore` (chunked JSONL r/w + manifest)",
-      "edgeType": "describes",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.8
-    },
-    {
-      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m6-incremental-update-git-hook-merge-driver",
-      "heading": "M6 — incremental `update` + git hook + merge driver",
-      "anchor": "m6-incremental-update-git-hook-merge-driver",
-      "snippet": "M6 — incremental `update` + git hook + merge driver",
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#consequences",
+      "heading": "Consequences",
+      "anchor": "consequences",
+      "snippet": "Consequences",
       "edgeType": "describes",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -105,10 +95,60 @@
       "confidence": 0.8
     },
     {
-      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-7-deployment-lifecycle",
-      "heading": "2.7 Deployment & lifecycle",
-      "anchor": "2-7-deployment-lifecycle",
-      "snippet": "2.7 Deployment & lifecycle",
+      "sectionId": "doc:docs/knowledge-crib-storage.md#5-concurrency-safety",
+      "heading": "5. Concurrency & safety",
+      "anchor": "5-concurrency-safety",
+      "snippet": "5. Concurrency & safety",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#6-sizing-knobs-set-from-c4-scale-answer",
+      "heading": "6. Sizing knobs (set from C4 scale answer)",
+      "anchor": "6-sizing-knobs-set-from-c4-scale-answer",
+      "snippet": "6. Sizing knobs (set from C4 scale answer)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#per-module-souls-yes-driven-by-index-time-not-memory",
+      "heading": "Per-module souls — YES, driven by INDEX TIME (not memory)",
+      "anchor": "per-module-souls-yes-driven-by-index-time-not-memory",
+      "snippet": "Per-module souls — YES, driven by INDEX TIME (not memory)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#option-b-per-module-souls-lazy-shard-loading",
+      "heading": "Option B — Per-module souls + lazy shard loading",
+      "anchor": "option-b-per-module-souls-lazy-shard-loading",
+      "snippet": "Option B — Per-module souls + lazy shard loading",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#1-design-goals-choices",
+      "heading": "1. Design goals → choices",
+      "anchor": "1-design-goals-choices",
+      "snippet": "1. Design goals → choices",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#conflict-merge-rule-deterministic-embed-in-spec-not-code-only",
+      "heading": "Conflict / merge rule (deterministic — embed in spec, not code-only)",
+      "anchor": "conflict-merge-rule-deterministic-embed-in-spec-not-code-only",
+      "snippet": "Conflict / merge rule (deterministic — embed in spec, not code-only)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -145,20 +185,20 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-data-model.md#1-node-kinds",
-      "heading": "1. Node kinds",
-      "anchor": "1-node-kinds",
-      "snippet": "1. Node kinds",
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#clarifications-status",
+      "heading": "Clarifications (status)",
+      "anchor": "clarifications-status",
+      "snippet": "Clarifications (status)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-decisions.md#clarifications-status",
-      "heading": "Clarifications (status)",
-      "anchor": "clarifications-status",
-      "snippet": "Clarifications (status)",
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#1-node-kinds",
+      "heading": "1. Node kinds",
+      "anchor": "1-node-kinds",
+      "snippet": "1. Node kinds",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -179,46 +219,6 @@
       "heading": "2.6 AI Engineer",
       "anchor": "2-6-ai-engineer",
       "snippet": "2.6 AI Engineer",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-soul-format.md#1-design-goals-choices",
-      "heading": "1. Design goals → choices",
-      "anchor": "1-design-goals-choices",
-      "snippet": "1. Design goals → choices",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-soul-format.md#conflict-merge-rule-deterministic-embed-in-spec-not-code-only",
-      "heading": "Conflict / merge rule (deterministic — embed in spec, not code-only)",
-      "anchor": "conflict-merge-rule-deterministic-embed-in-spec-not-code-only",
-      "snippet": "Conflict / merge rule (deterministic — embed in spec, not code-only)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-storage.md#5-concurrency-safety",
-      "heading": "5. Concurrency & safety",
-      "anchor": "5-concurrency-safety",
-      "snippet": "5. Concurrency & safety",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-storage.md#6-sizing-knobs-set-from-c4-scale-answer",
-      "heading": "6. Sizing knobs (set from C4 scale answer)",
-      "anchor": "6-sizing-knobs-set-from-c4-scale-answer",
-      "snippet": "6. Sizing knobs (set from C4 scale answer)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",

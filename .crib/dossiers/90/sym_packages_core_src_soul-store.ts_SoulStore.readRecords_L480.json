@@ -1,0 +1,152 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.readRecords@L480",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:4dff5e34fe8f07f8ac2bc1b3a363e0a9dfd0d00519b670814b24ffe55fdefe89",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.readRecords@L480",
+    "kind": "symbol",
+    "type": "method",
+    "name": "readRecords",
+    "qualifiedName": "SoulStore.readRecords",
+    "signature": "readRecords(file: string): T[]",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 480,
+      "end": 488
+    },
+    "callSites": [
+      {
+        "callee": "readFileSync",
+        "line": 481
+      },
+      {
+        "callee": "push",
+        "line": 485
+      },
+      {
+        "callee": "parse",
+        "line": 485
+      }
+    ]
+  },
+  "source": {
+    "text": "  private readRecords<T>(file: string): T[] {\n    const text = readFileSync(file, 'utf8');\n    const out: T[] = [];\n    for (const line of text.split('\\n')) {\n      if (line.length === 0) continue;\n      out.push(JSON.parse(line) as T);\n    }\n    return out;\n  }",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 480
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateEdges@L459",
+      "confidence": 1,
+      "name": "hydrateEdges",
+      "qualifiedName": "SoulStore.hydrateEdges",
+      "signature": "hydrateEdges(): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 459
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.hydrateNodes@L448",
+      "confidence": 1,
+      "name": "hydrateNodes",
+      "qualifiedName": "SoulStore.hydrateNodes",
+      "signature": "hydrateNodes(): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 448
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.readRecords@L480",
+    "procedureName": "SoulStore.readRecords",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L483"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.readRecords@L480",
+        "procedureName": "SoulStore.readRecords",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fc1f604b269c849d53eff8607c533e852cac0fbde2d28344c4a2bf3811c36b44",
+          "target": "stmt:packages/core/src/soul-store.ts@L481",
+          "line": 481,
+          "expr": "const text = readFileSync(file, 'utf8');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.readRecords@L480",
+        "procedureName": "SoulStore.readRecords",
+        "guard": "cond:packages/core/src/soul-store.ts@L483",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L483",
+            "expr": "text.split('\\n')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4edcb682c58b3bc6ab9249ef60e3ba4204ccfedaf3c70523a79913eb303a05ed",
+          "target": "stmt:packages/core/src/soul-store.ts@L485",
+          "line": 485,
+          "expr": "out.push(JSON.parse(line) as T);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.readRecords@L480",
+        "procedureName": "SoulStore.readRecords",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cdae5a626d1fa00297328daea76b12439dbcd3d35987088460de3f93fe2d487f",
+          "target": "stmt:packages/core/src/soul-store.ts@L487",
+          "line": 487,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

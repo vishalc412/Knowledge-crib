@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:5b4c52ee1cd81f120fc543297cc8da1078435783a20bcbcad339edc53f14d73e",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
@@ -203,14 +203,24 @@
       "line": 16
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 122
+      "line": 141
     },
     {
       "id": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
@@ -283,16 +293,6 @@
       "line": 138
     },
     {
-      "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#safeRead@L292",
-      "confidence": 1,
-      "name": "safeRead",
-      "qualifiedName": "safeRead",
-      "signature": "safeRead(abs: string): string | undefined",
-      "type": "function",
-      "file": "packages/pipeline/src/resolve/java-resolver.ts",
-      "line": 292
-    },
-    {
       "id": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
       "confidence": 1,
       "name": "safeRead",
@@ -301,6 +301,16 @@
       "type": "function",
       "file": "packages/pipeline/src/structure.ts",
       "line": 196
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#safeRead@L292",
+      "confidence": 1,
+      "name": "safeRead",
+      "qualifiedName": "safeRead",
+      "signature": "safeRead(abs: string): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/java-resolver.ts",
+      "line": 292
     }
   ],
   "docs": [
@@ -350,8 +360,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:54f28d3b1365bdb27b67ea2eeb4553436ed14b29888f9afa3e18d7a398d9d727",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "edgeId": "e:d96d6634ade48e6443d68e1ca991a40126bb3a9733b6114fa6f44ba70b7fb168",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
           "expr": "edgeId",
           "line": 71
         }
@@ -368,6 +378,20 @@
           "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
           "expr": "add",
           "line": 73
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:39d310023c0ce71e87abc5613d64c4fc1294b392813adfcd504d85f2a2174352",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 74
         }
       },
       {
@@ -404,30 +428,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:39d310023c0ce71e87abc5613d64c4fc1294b392813adfcd504d85f2a2174352",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 74
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
-        "procedureName": "resolveJava",
-        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L88",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L88",
-            "expr": "files",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:ef5be0a488b2026eb5fa645d4f3dcff31f7f9131c48061807fcd18eeec73b059",
-          "target": "sym:packages/pipeline/src/resolve/java-resolver.ts#safeRead@L292",
+          "edgeId": "e:c51e241749ccc8c83816d3963588e14991c1582e4794aae8921220802107e18a",
+          "target": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
           "expr": "safeRead",
           "line": 90
         }
@@ -457,13 +459,21 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
         "procedureName": "resolveJava",
-        "conditions": [],
-        "inLoop": false,
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L88",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L88",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:c51e241749ccc8c83816d3963588e14991c1582e4794aae8921220802107e18a",
-          "target": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
+          "edgeId": "e:ef5be0a488b2026eb5fa645d4f3dcff31f7f9131c48061807fcd18eeec73b059",
+          "target": "sym:packages/pipeline/src/resolve/java-resolver.ts#safeRead@L292",
           "expr": "safeRead",
           "line": 90
         }
@@ -554,6 +564,20 @@
           "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L115",
           "line": 115,
           "expr": "const targetFile =\n        fqnFile.get(fqn) ??\n        (imp.module ? findFileBySuffix(imp.module, imp.name, parsed) : undefined);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+        "procedureName": "resolveJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:35e1ff1d7f7d425def4f2672ed566f30197bf4221742aeba776c4b86389b2ef5",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 116
         }
       },
       {
@@ -904,14 +928,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 11,
+      "resolved": 12,
       "recorded": 38,
-      "unresolved": 6
+      "unresolved": 4
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

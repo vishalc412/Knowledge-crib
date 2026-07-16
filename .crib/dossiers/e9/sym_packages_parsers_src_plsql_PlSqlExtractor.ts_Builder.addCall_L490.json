@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addCall@L490",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:89759e2ce03481590da8a17f37a8525467662163deb14890f05d49cbca562d1c",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addCall@L490",
@@ -118,8 +118,8 @@
     "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addCall@L490",
     "procedureName": "Builder.addCall",
     "conditions": [
-      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L510",
       "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L499",
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L510",
       "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L501"
     ],
     "rules": [
@@ -168,28 +168,6 @@
       {
         "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addCall@L490",
         "procedureName": "Builder.addCall",
-        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L510",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L510",
-            "expr": "env.guard",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:c71c611dee5863e5d3f7edbccc37cc22057b33506ab5fd7d75eaa0f2ce0fb822",
-          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L798",
-          "expr": "edge",
-          "line": 500
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addCall@L490",
-        "procedureName": "Builder.addCall",
         "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L499",
         "branch": "THEN",
         "conditions": [
@@ -212,16 +190,12 @@
       {
         "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addCall@L490",
         "procedureName": "Builder.addCall",
-        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L501",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L510",
         "branch": "THEN",
         "conditions": [
           {
-            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L499",
-            "expr": "calleeId && calleeId !== proc.procId"
-          },
-          {
-            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L501",
-            "expr": "calleeId === proc.procId",
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L510",
+            "expr": "env.guard",
             "polarity": "THEN"
           }
         ],
@@ -229,10 +203,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:6f7a39f77d37a1e2058fc71f082f62755a2b52dd6a6a522ca3494f006cfd9384",
-          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.markRecursive@L598",
-          "expr": "markRecursive",
-          "line": 508
+          "edgeId": "e:c71c611dee5863e5d3f7edbccc37cc22057b33506ab5fd7d75eaa0f2ce0fb822",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L798",
+          "expr": "edge",
+          "line": 500
         }
       },
       {
@@ -259,6 +233,32 @@
           "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L508",
           "line": 508,
           "expr": "this.markRecursive(proc.procId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addCall@L490",
+        "procedureName": "Builder.addCall",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L501",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L499",
+            "expr": "calleeId && calleeId !== proc.procId"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L501",
+            "expr": "calleeId === proc.procId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6f7a39f77d37a1e2058fc71f082f62755a2b52dd6a6a522ca3494f006cfd9384",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.markRecursive@L598",
+          "expr": "markRecursive",
+          "line": 508
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/rules/extract.ts#decisionTable@L197",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:59e9d18aaeb6dd4d33d9769b8f4355d37d031aaa42823edb51e62d52a47b9e1d",
-  "builtAt": "2026-06-30T15:54:03.404Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/rules/extract.ts#decisionTable@L197",
@@ -54,24 +54,24 @@
       "line": 148
     },
     {
-      "id": "sym:packages/pipeline/src/rules/export.ts#renderExport@L156",
+      "id": "sym:packages/pipeline/src/rules/export.ts#renderExport@L161",
       "confidence": 1,
       "name": "renderExport",
       "qualifiedName": "renderExport",
-      "signature": "renderExport(soul: SoulStore, format: 'rules' | 'mermaid' | 'graph.json' | 'report', procedure?: string): string",
+      "signature": "renderExport(soul: SoulStore, format: 'rules' | 'mermaid' | 'graph.json' | 'report', procedure?: string, opts: { extractedOnly?: boolean } = {}): string",
       "type": "function",
       "file": "packages/pipeline/src/rules/export.ts",
-      "line": 156
+      "line": 161
     },
     {
-      "id": "sym:packages/pipeline/src/rules/export.ts#renderReport@L97",
+      "id": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
       "confidence": 1,
       "name": "renderReport",
       "qualifiedName": "renderReport",
       "signature": "renderReport(soul: SoulStore, procedure?: string): string",
       "type": "function",
       "file": "packages/pipeline/src/rules/export.ts",
-      "line": 97
+      "line": 102
     }
   ],
   "callees": [
@@ -126,16 +126,6 @@
       "confidence": 1
     },
     {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-6-reconstruction-artifact-closes-g6",
-      "heading": "WS-6 — Reconstruction artifact (closes G6)",
-      "anchor": "ws-6-reconstruction-artifact-closes-g6",
-      "snippet": "WS-6 — Reconstruction artifact (closes G6)",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.99
-    },
-    {
       "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
       "heading": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
       "anchor": "3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
@@ -146,14 +136,14 @@
       "confidence": 0.99
     },
     {
-      "sectionId": "doc:PLAN_MAKE_A_BEATS_B.md#ws-a4-rule-semantic-extraction",
-      "heading": "WS-A4 — Rule semantic extraction",
-      "anchor": "ws-a4-rule-semantic-extraction",
-      "snippet": "WS-A4 — Rule semantic extraction",
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-6-reconstruction-artifact-closes-g6",
+      "heading": "WS-6 — Reconstruction artifact (closes G6)",
+      "anchor": "ws-6-reconstruction-artifact-closes-g6",
+      "snippet": "WS-6 — Reconstruction artifact (closes G6)",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
-      "confidence": 0.95
+      "confidence": 0.99
     },
     {
       "sectionId": "doc:docs/knowledge-crib-track3-spec.md#tests-each-language-add-to-the-existing-extractor-test-ts",
@@ -170,16 +160,6 @@
       "heading": "Definition of done (per language)",
       "anchor": "definition-of-done-per-language",
       "snippet": "Definition of done (per language)",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
-      "heading": "2.1 Monorepo Package Map",
-      "anchor": "2-1-monorepo-package-map",
-      "snippet": "2.1 Monorepo Package Map",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -206,6 +186,16 @@
       "confidence": 0.95
     },
     {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
       "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#per-layer-guidance",
       "heading": "Per-layer guidance",
       "anchor": "per-layer-guidance",
@@ -216,7 +206,17 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a4-rule-semantic-extraction",
+      "heading": "WS-A4 — Rule semantic extraction",
+      "anchor": "ws-a4-rule-semantic-extraction",
+      "snippet": "WS-A4 — Rule semantic extraction",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
       "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
       "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
       "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
@@ -270,20 +270,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:f25d37cc9f7f5648d9d1233efcf323d01274df2b44b1ab7a83922b173fff76f9",
-          "target": "sym:packages/core/src/rules/extract.ts#extractRules@L134",
-          "expr": "extractRules",
-          "line": 203
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/rules/extract.ts#decisionTable@L197",
-        "procedureName": "decisionTable",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:7e8c27d6baf4bcef35a6d45a32214ebb4827ea55d876ea6f3d04ac7bea2bb8fd",
           "target": "stmt:packages/core/src/rules/extract.ts@L203",
@@ -294,31 +280,15 @@
       {
         "procedure": "sym:packages/core/src/rules/extract.ts#decisionTable@L197",
         "procedureName": "decisionTable",
-        "guard": "cond:packages/core/src/rules/extract.ts@L208",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/core/src/rules/extract.ts@L206",
-            "expr": "rules"
-          },
-          {
-            "id": "cond:packages/core/src/rules/extract.ts@L207",
-            "expr": "r.conditions"
-          },
-          {
-            "id": "cond:packages/core/src/rules/extract.ts@L208",
-            "expr": "!seen.has(c.id)",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": true,
+        "conditions": [],
+        "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:b1b2e8482b77ced1a8e9656ac04955d0b98785fa1743ccd37c2bfaebeb5cde02",
-          "target": "stmt:packages/core/src/rules/extract.ts@L209",
-          "line": 209,
-          "expr": "seen.add(c.id);"
+          "kind": "calls",
+          "edgeId": "e:f25d37cc9f7f5648d9d1233efcf323d01274df2b44b1ab7a83922b173fff76f9",
+          "target": "sym:packages/core/src/rules/extract.ts#extractRules@L134",
+          "expr": "extractRules",
+          "line": 203
         }
       },
       {
@@ -359,10 +329,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:e898f7cc8f9143fcf03b39b71086223311f802904c8acb8ff8acfcb7a317828b",
-          "target": "stmt:packages/core/src/rules/extract.ts@L210",
-          "line": 210,
-          "expr": "conditions.push(c.id);"
+          "edgeId": "e:b1b2e8482b77ced1a8e9656ac04955d0b98785fa1743ccd37c2bfaebeb5cde02",
+          "target": "stmt:packages/core/src/rules/extract.ts@L209",
+          "line": 209,
+          "expr": "seen.add(c.id);"
         }
       },
       {
@@ -377,6 +347,36 @@
           "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
           "expr": "push",
           "line": 210
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#decisionTable@L197",
+        "procedureName": "decisionTable",
+        "guard": "cond:packages/core/src/rules/extract.ts@L208",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L206",
+            "expr": "rules"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L207",
+            "expr": "r.conditions"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L208",
+            "expr": "!seen.has(c.id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e898f7cc8f9143fcf03b39b71086223311f802904c8acb8ff8acfcb7a317828b",
+          "target": "stmt:packages/core/src/rules/extract.ts@L210",
+          "line": 210,
+          "expr": "conditions.push(c.id);"
         }
       },
       {

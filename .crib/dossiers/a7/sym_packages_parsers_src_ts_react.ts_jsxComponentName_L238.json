@@ -1,0 +1,155 @@
+{
+  "id": "sym:packages/parsers/src/ts/react.ts#jsxComponentName@L238",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:c1506c3a4b0ac9eebb78018ecd84b77f95d6f273ddc9ec8d2e1eb61aedbce13b",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/react.ts#jsxComponentName@L238",
+    "kind": "symbol",
+    "type": "function",
+    "name": "jsxComponentName",
+    "qualifiedName": "jsxComponentName",
+    "signature": "jsxComponentName(tag: ts.JsxTagNameExpression): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/react.ts",
+    "span": {
+      "start": 238,
+      "end": 241
+    }
+  },
+  "source": {
+    "text": "function jsxComponentName(tag: ts.JsxTagNameExpression): string | undefined {\n  if (ts.isIdentifier(tag) && isComponentName(tag.text)) return tag.text;\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 238
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks@L132",
+      "confidence": 1,
+      "name": "collectRendersAndHooks",
+      "qualifiedName": "collectRendersAndHooks",
+      "signature": "collectRendersAndHooks(body: ts.Node | undefined, byKey: Map<string, string>, srcId: string, edges: Edge[], recorded: string[], hooks: string[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 132
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "collectRendersAndHooks.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 141
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#isComponentName@L215",
+      "confidence": 1,
+      "name": "isComponentName",
+      "qualifiedName": "isComponentName",
+      "signature": "isComponentName(name: string): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 215
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/react.ts@L235",
+      "snippet": "/** The child component name from a JSX tag, or undefined for a DOM tag (lowercase) / namespaced tag.",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/react.ts#jsxComponentName@L238",
+    "procedureName": "jsxComponentName",
+    "conditions": [
+      "cond:packages/parsers/src/ts/react.ts@L239"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#jsxComponentName@L238",
+        "procedureName": "jsxComponentName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e98ff51a13b81e9070ee995197a14c9a234b4ebf3a22bf53e45b05f478894d70",
+          "target": "sym:packages/parsers/src/ts/react.ts#isComponentName@L215",
+          "expr": "isComponentName"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#jsxComponentName@L238",
+        "procedureName": "jsxComponentName",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L239",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L239",
+            "expr": "ts.isIdentifier(tag) && isComponentName(tag.text)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:33cfe0d84e46fb650258ca782895b707fcbbe7957bbb6fbed73f8585188882c9",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L239",
+          "line": 239,
+          "expr": "return tag.text;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#jsxComponentName@L238",
+        "procedureName": "jsxComponentName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5b16661f944ce391e89981ebeff6b2c786a8d47009c35fe1f2996eaf30b64960",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L240",
+          "line": 240,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/react.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

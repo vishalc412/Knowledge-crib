@@ -1,0 +1,1446 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:347f24bb7506ff0476e554cdc5569bbf8e70bf94dbebe97e88d2986e29f75918",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+    "kind": "symbol",
+    "type": "method",
+    "name": "query",
+    "qualifiedName": "Verbs.query",
+    "signature": "query(args: {\n    q: string;\n    kinds?: NodeKind[];\n    limit?: number;\n    /** restrict rules/framework edges to EXTRACTED provenance (parity with `context`). */\n    extractedOnly?: boolean;\n    /** include the full rehydrated source body per hit (budgeted; see sourceMaxChars/Lines). */\n    withSource?: boolean;\n    /** char cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}). */\n    sourceMaxChars?: number;\n    /** line cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}). */\n    sourceMaxLines?: number;\n    /** for a callable hit, fold in its decision table + coverage readiness. */\n    withRules?: boolean;\n    /** fold in framework-semantics (routes/beans/DI/relations) per hit, when present. */\n    withFramework?: boolean;\n    /** include saved LLM semantic analysis on hits and search LLM analysis text too. */\n    withLlm?: boolean;\n    /** resume cursor (a prior response's `cursor`) — skip the first N BM25-ranked hits (FTS5 OFFSET).\n     *  Decoupled from `maxTokens`: paging works without a budget, but a cursor is only RETURNED when\n     *  `maxTokens` is set (the opt-in budget path). (M1.2) */\n    cursor?: string;\n    /** response-wide token budget (chars/4). When set, the hits list is trimmed to the largest\n     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.\n     *  (M1.2) */\n    maxTokens?: number;\n  }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 848,
+      "end": 993
+    },
+    "callSites": [
+      {
+        "callee": "capInt",
+        "line": 876
+      },
+      {
+        "callee": "max",
+        "line": 878
+      },
+      {
+        "callee": "parseInt",
+        "line": 878
+      },
+      {
+        "callee": "rewriteQuery",
+        "line": 881
+      },
+      {
+        "callee": "query",
+        "line": 884
+      },
+      {
+        "callee": "slice",
+        "line": 891
+      },
+      {
+        "callee": "get",
+        "line": 902
+      },
+      {
+        "callee": "push",
+        "line": 903
+      },
+      {
+        "callee": "set",
+        "line": 904
+      },
+      {
+        "callee": "get",
+        "line": 905
+      },
+      {
+        "callee": "push",
+        "line": 906
+      },
+      {
+        "callee": "set",
+        "line": 907
+      },
+      {
+        "callee": "map",
+        "line": 912
+      },
+      {
+        "callee": "map",
+        "line": 913
+      },
+      {
+        "callee": "getNode",
+        "line": 914
+      },
+      {
+        "callee": "rehydrate",
+        "line": 919
+      },
+      {
+        "callee": "bodyOf",
+        "line": 924
+      },
+      {
+        "callee": "has",
+        "line": 926
+      },
+      {
+        "callee": "decisionTable",
+        "line": 927
+      },
+      {
+        "callee": "computeCoverage",
+        "line": 931
+      },
+      {
+        "callee": "frameworkSemantics",
+        "line": 934
+      },
+      {
+        "callee": "attachLlm",
+        "line": 939
+      },
+      {
+        "callee": "matchText",
+        "line": 948
+      },
+      {
+        "callee": "add",
+        "line": 953
+      },
+      {
+        "callee": "getNode",
+        "line": 954
+      },
+      {
+        "callee": "llmProjection",
+        "line": 956
+      },
+      {
+        "callee": "llmPointer",
+        "line": 956
+      },
+      {
+        "callee": "push",
+        "line": 958
+      },
+      {
+        "callee": "rehydrate",
+        "line": 961
+      },
+      {
+        "callee": "capMaxTokens",
+        "line": 974
+      },
+      {
+        "callee": "fitTokenBudget",
+        "line": 975
+      },
+      {
+        "callee": "stringify",
+        "line": 976
+      },
+      {
+        "callee": "String",
+        "line": 981
+      },
+      {
+        "callee": "String",
+        "line": 991
+      }
+    ]
+  },
+  "source": {
+    "text": "  query(args: {\n    q: string;\n    kinds?: NodeKind[];\n    limit?: number;\n    /** restrict rules/framework edges to EXTRACTED provenance (parity with `context`). */\n    extractedOnly?: boolean;\n    /** include the full rehydrated source body per hit (budgeted; see sourceMaxChars/Lines). */\n    withSource?: boolean;\n    /** char cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}). */\n    sourceMaxChars?: number;\n    /** line cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}). */\n    sourceMaxLines?: number;\n    /** for a callable hit, fold in its decision table + coverage readiness. */\n    withRules?: boolean;\n    /** fold in framework-semantics (routes/beans/DI/relations) per hit, when present. */\n    withFramework?: boolean;\n    /** include saved LLM semantic analysis on hits and search LLM analysis text too. */\n    withLlm?: boolean;\n    /** resume cursor (a prior response's `cursor`) — skip the first N BM25-ranked hits (FTS5 OFFSET).\n     *  Decoupled from `maxTokens`: paging works without a budget, but a cursor is only RETURNED when\n     *  `maxTokens` is set (the opt-in budget path). (M1.2) */\n    cursor?: string;\n    /** response-wide token budget (chars/4). When set, the hits list is trimmed to the largest\n     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.\n     *  (M1.2) */\n    maxTokens?: number;\n  }): Record<string, unknown> {\n    const soul = this.deps.soul;\n    const limit = capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT);\n    // cursor → offset into the BM25-ranked set (FTS5 OFFSET). Floor at 0; non-numeric → 0.\n    const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);\n    // M2.4 — rewrite the query with the per-repo alias dictionary before it reaches the index.\n    // Empty dict (the common case) is a pure no-op, so queries without aliases are byte-identical.\n    const q = rewriteQuery(args.q, this.aliases);\n    // Over-fetch by one to detect whether the BM25 result set was capped (honest `truncated` flag)\n    // without an extra count query; we slice back to `limit` after the overflow check.\n    const rawHits = this.deps.index.query({\n      text: q,\n      ...(args.kinds ? { kinds: args.kinds } : {}),\n      limit: limit + 1,\n      offset,\n    });\n    const bm25Truncated = rawHits.length > limit;\n    const hits0 = bm25Truncated ? rawHits.slice(0, limit) : rawHits;\n\n    // Build outgoing + incoming adjacency ONCE when rules/framework are requested, so per-hit\n    // decisionTable / computeCoverage / frameworkSemantics reuse it instead of re-scanning edges.\n    const needEdges = args.withRules || args.withFramework;\n    let outgoing: Map<string, Edge[]> | undefined;\n    let incoming: Map<string, Edge[]> | undefined;\n    if (needEdges) {\n      outgoing = new Map<string, Edge[]>();\n      incoming = new Map<string, Edge[]>();\n      for (const e of soul.iterateEdges()) {\n        const o = outgoing.get(e.src);\n        if (o) o.push(e);\n        else outgoing.set(e.src, [e]);\n        const i = incoming.get(e.dst);\n        if (i) i.push(e);\n        else incoming.set(e.dst, [e]);\n      }\n    }\n    const keep = (e: Edge) => !args.extractedOnly || e.provenance === 'EXTRACTED';\n\n    const bm25Ids = new Set(hits0.map((h) => h.id));\n    const hits = hits0.map((h) => {\n      const node = soul.getNode(h.id);\n      const hit: Record<string, unknown> = {\n        id: h.id,\n        kind: h.kind,\n        score: h.score,\n        snippet: rehydrate(this.deps.repoRoot, node),\n        ...(node?.clusterId ? { clusterId: node.clusterId } : {}),\n      };\n      if (args.withSource && node) {\n        // the paged/body view; `truncated` tells the consumer to page via `source.nextLine` if needed.\n        hit.source = this.bodyOf(node, args);\n      }\n      if (args.withRules && node?.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {\n        hit.rules = decisionTable(soul, h.id, { includeTables: true, out: outgoing });",
+    "truncated": true,
+    "totalLines": 146,
+    "startLine": 848,
+    "nextLine": 928
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L1003",
+      "confidence": 1,
+      "name": "ask",
+      "qualifiedName": "Verbs.ask",
+      "signature": "ask(args: {\n    q: string;\n    limit?: number;\n    format?: 'json' | 'markdown';\n    withSource?: boolean;\n    withRules?: boolean;\n    withFramework?: boolean;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1003
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1752",
+      "confidence": 1,
+      "name": "attachLlm",
+      "qualifiedName": "Verbs.attachLlm",
+      "signature": "attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1752
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.bodyOf@L689",
+      "confidence": 1,
+      "name": "bodyOf",
+      "qualifiedName": "Verbs.bodyOf",
+      "signature": "bodyOf(node: Node, args: {\n      sourceMaxChars?: number;\n      sourceMaxLines?: number;\n      sourceStartLine?: number;\n      maxChars?: number;\n      maxLines?: number;\n      startLine?: number;\n    }): RehydratedBody",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 689
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.get@L252",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "Verbs.get",
+      "signature": "get(target, prop, receiver)",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 252
+    },
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#capInt@L88",
+      "confidence": 1,
+      "name": "capInt",
+      "qualifiedName": "capInt",
+      "signature": "capInt(value: number | undefined, def: number, max: number): number",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 88
+    },
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#capMaxTokens@L110",
+      "confidence": 1,
+      "name": "capMaxTokens",
+      "qualifiedName": "capMaxTokens",
+      "signature": "capMaxTokens(value: number | undefined): number",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 110
+    },
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#fitTokenBudget@L128",
+      "confidence": 1,
+      "name": "fitTokenBudget",
+      "qualifiedName": "fitTokenBudget",
+      "signature": "fitTokenBudget(items: T[], maxTokens: number, serialize: (prefix: T[]) => string): Fitted<T>",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 128
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#llmPointer@L1692",
+      "confidence": 1,
+      "name": "llmPointer",
+      "qualifiedName": "llmPointer",
+      "signature": "llmPointer(read: LlmRead): Record<string, unknown> | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1692
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1672",
+      "confidence": 1,
+      "name": "llmProjection",
+      "qualifiedName": "llmProjection",
+      "signature": "llmProjection(read: LlmRead): Record<string, unknown> | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1672
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L835",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#1-design-principles",
+      "heading": "1. Design principles",
+      "anchor": "1-design-principles",
+      "snippet": "1. Design principles",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-3-unified-graph-data-architecture",
+      "heading": "Branch 3 — Unified Graph & Data Architecture",
+      "anchor": "branch-3-unified-graph-data-architecture",
+      "snippet": "Branch 3 — Unified Graph & Data Architecture",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "heading": "9. Prompt skeleton you can keep at the top of a session",
+      "anchor": "9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "snippet": "9. Prompt skeleton you can keep at the top of a session",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "heading": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "anchor": "5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "snippet": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "heading": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "anchor": "1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "snippet": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#option-a-single-soul-eager-full-load-status-quo",
+      "heading": "Option A — Single soul, eager full load (status quo)",
+      "anchor": "option-a-single-soul-eager-full-load-status-quo",
+      "snippet": "Option A — Single soul, eager full load (status quo)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#context",
+      "heading": "Context",
+      "anchor": "context",
+      "snippet": "Context",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#conventions",
+      "heading": "Conventions",
+      "anchor": "conventions",
+      "snippet": "Conventions",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#cypher-optional-index-backend-dependent",
+      "heading": "`cypher` *(optional, index-backend-dependent)*",
+      "anchor": "cypher-optional-index-backend-dependent",
+      "snippet": "`cypher` *(optional, index-backend-dependent)*",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#6-proof-reproducible-not-marketing",
+      "heading": "6. Proof — reproducible, not marketing",
+      "anchor": "6-proof-reproducible-not-marketing",
+      "snippet": "6. Proof — reproducible, not marketing",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#5-how-it-works-the-actual-mechanism",
+      "heading": "5. How it works (the actual mechanism)",
+      "anchor": "5-how-it-works-the-actual-mechanism",
+      "snippet": "5. How it works (the actual mechanism)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#3-what-it-is-in-plain-terms",
+      "heading": "3. What it is (in plain terms)",
+      "anchor": "3-what-it-is-in-plain-terms",
+      "snippet": "3. What it is (in plain terms)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:SECURITY.md#project-security-principles",
+      "heading": "Project Security Principles",
+      "anchor": "project-security-principles",
+      "snippet": "Project Security Principles",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:SECURITY.md#network-surface-inventory-the-whole-product",
+      "heading": "Network surface inventory (the whole product)",
+      "anchor": "network-surface-inventory-the-whole-product",
+      "snippet": "Network surface inventory (the whole product)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-3-capture-real-product-evidence",
+      "heading": "Task 3: Capture Real Product Evidence",
+      "anchor": "task-3-capture-real-product-evidence",
+      "snippet": "Task 3: Capture Real Product Evidence",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/comparison.md#the-7-column-matrix",
+      "heading": "The 7-column matrix",
+      "anchor": "the-7-column-matrix",
+      "snippet": "The 7-column matrix",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#1-executive-summary",
+      "heading": "1. Executive Summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-query-text",
+      "heading": "`crib query <text>`",
+      "anchor": "crib-query-text",
+      "snippet": "`crib query <text>`",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#current-limits-say-before-architects-ask",
+      "heading": "Current limits — say before architects ask",
+      "anchor": "current-limits-say-before-architects-ask",
+      "snippet": "Current limits — say before architects ask",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#agent-and-llm-design",
+      "heading": "Agent and LLM design",
+      "anchor": "agent-and-llm-design",
+      "snippet": "Agent and LLM design",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#alias-dictionary-crib-graph-semantic-aliases-json",
+      "heading": "Alias dictionary (`.crib/graph/semantic/aliases.json`)",
+      "anchor": "alias-dictionary-crib-graph-semantic-aliases-json",
+      "snippet": "Alias dictionary (`.crib/graph/semantic/aliases.json`)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-4-capability-flags-what-flips-what-doesn-t",
+      "heading": "10.4 Capability flags — what flips, what doesn't",
+      "anchor": "10-4-capability-flags-what-flips-what-doesn-t",
+      "snippet": "10.4 Capability flags — what flips, what doesn't",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/show-hn.md#body",
+      "heading": "Body",
+      "anchor": "body",
+      "snippet": "Body",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#5-architecture",
+      "heading": "5. Architecture",
+      "anchor": "5-architecture",
+      "snippet": "5. Architecture",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#7-success-metrics-q25",
+      "heading": "7. Success Metrics [Q25]",
+      "anchor": "7-success-metrics-q25",
+      "snippet": "7. Success Metrics [Q25]",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:README.md#measured-not-projected-run-it-yourself",
+      "heading": "Measured, not projected (run it yourself)",
+      "anchor": "measured-not-projected-run-it-yourself",
+      "snippet": "Measured, not projected (run it yourself)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:README.md#architecture",
+      "heading": "Architecture",
+      "anchor": "architecture",
+      "snippet": "Architecture",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#table-of-contents",
+      "heading": "Table of contents",
+      "anchor": "table-of-contents",
+      "snippet": "Table of contents",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#query-time-merge-lightweight-by-default-full-on-withllm",
+      "heading": "Query-time merge — lightweight by default, full on `withLlm`",
+      "anchor": "query-time-merge-lightweight-by-default-full-on-withllm",
+      "snippet": "Query-time merge — lightweight by default, full on `withLlm`",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#driving-the-loop",
+      "heading": "Driving the loop",
+      "anchor": "driving-the-loop",
+      "snippet": "Driving the loop",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
+      "heading": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
+      "anchor": "plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
+      "snippet": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a7-scale-and-performance-hardening",
+      "heading": "WS-A7 — Scale and performance hardening",
+      "anchor": "ws-a7-scale-and-performance-hardening",
+      "snippet": "WS-A7 — Scale and performance hardening",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "heading": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "anchor": "phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "snippet": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
+      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#5-phasing-effort",
+      "heading": "5. Phasing & effort",
+      "anchor": "5-phasing-effort",
+      "snippet": "5. Phasing & effort",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "heading": "7. Risks",
+      "anchor": "7-risks",
+      "snippet": "7. Risks",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#option-b-per-module-souls-lazy-shard-loading",
+      "heading": "Option B — Per-module souls + lazy shard loading",
+      "anchor": "option-b-per-module-souls-lazy-shard-loading",
+      "snippet": "Option B — Per-module souls + lazy shard loading",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#lazy-shard-loading-defer-not-warranted-by-data",
+      "heading": "Lazy shard loading — DEFER (not warranted by data)",
+      "anchor": "lazy-shard-loading-defer-not-warranted-by-data",
+      "snippet": "Lazy shard loading — DEFER (not warranted by data)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#1-test-pyramid",
+      "heading": "1. Test pyramid",
+      "anchor": "1-test-pyramid",
+      "snippet": "1. Test pyramid",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-1-framework-semantics-edge-field-meta-1-3",
+      "heading": "2.1 Framework-semantics edge & field meta *(1.3)*",
+      "anchor": "2-1-framework-semantics-edge-field-meta-1-3",
+      "snippet": "2.1 Framework-semantics edge & field meta *(1.3)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-hard-invariant-the-server-never-calls-a-model",
+      "heading": "The hard invariant — the server never calls a model",
+      "anchor": "the-hard-invariant-the-server-never-calls-a-model",
+      "snippet": "The hard invariant — the server never calls a model",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+    "procedureName": "Verbs.query",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L898",
+      "cond:packages/mcp/src/verbs.ts@L901",
+      "cond:packages/mcp/src/verbs.ts@L903",
+      "cond:packages/mcp/src/verbs.ts@L906",
+      "cond:packages/mcp/src/verbs.ts@L951",
+      "cond:packages/mcp/src/verbs.ts@L971"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:caf26265a5cfbdedcbf69c367cbc1721ee7bd5ee21f66475dca4e44da2dcf5a3",
+          "target": "stmt:packages/mcp/src/verbs.ts@L876",
+          "line": 876,
+          "expr": "const limit = capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f27321a0b16627468c8551b89fba1274313f705877c19d8cf774b41f17a15232",
+          "target": "sym:packages/mcp/src/token-budget.ts#capInt@L88",
+          "expr": "capInt",
+          "line": 876
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:86d9f0257e66a5f02272f0f1e138937cc497abe109c17ba7fbbf44938bfc8d19",
+          "target": "stmt:packages/mcp/src/verbs.ts@L878",
+          "line": 878,
+          "expr": "const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:48e656cd678af270bd0f3fa9dd949b664ec5bda55440d4a264e7e6df0cfde3c9",
+          "target": "stmt:packages/mcp/src/verbs.ts@L881",
+          "line": 881,
+          "expr": "const q = rewriteQuery(args.q, this.aliases);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:662064ae675eba07214cce2833f2f254300dd17d4950f7fb1b49d329d4b87b6a",
+          "target": "stmt:packages/mcp/src/verbs.ts@L884",
+          "line": 884,
+          "expr": "const rawHits = this.deps.index.query({\n      text: q,\n      ...(args.kinds ? { kinds: args.kinds } : {}),\n      limit: limit + 1,\n      offset,\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:703910596101d25f7f05e7b12668f7e48e796e4ef94374f00dd9fb0d5886aec0",
+          "target": "stmt:packages/mcp/src/verbs.ts@L891",
+          "line": 891,
+          "expr": "const hits0 = bm25Truncated ? rawHits.slice(0, limit) : rawHits;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L898",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L898",
+            "expr": "needEdges",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f93f218aae472a1cf0586e62407f02c797ce9fd59b825c1795cefcd0e86337cb",
+          "target": "assign:packages/mcp/src/verbs.ts@L899",
+          "line": 899,
+          "expr": "outgoing = new Map<string, Edge[]>();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L898",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L898",
+            "expr": "needEdges",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c746dfd0bc6c0a909eaf9aad3e716c58b84e857a9d65612342164e9a3bfa4ff",
+          "target": "assign:packages/mcp/src/verbs.ts@L900",
+          "line": 900,
+          "expr": "incoming = new Map<string, Edge[]>();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L901",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L898",
+            "expr": "needEdges"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L901",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:07109701442a6dd9c75f60fdcbd45930a2590b8d7c9d97fef5af03ae0e9a865f",
+          "target": "stmt:packages/mcp/src/verbs.ts@L902",
+          "line": 902,
+          "expr": "const o = outgoing.get(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L901",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L898",
+            "expr": "needEdges"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L901",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:253fefc234458df39826b07bac5a38bef262842317bc773079822ce6909413d4",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.get@L252",
+          "expr": "get",
+          "line": 902
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L903",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L898",
+            "expr": "needEdges"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L901",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L903",
+            "expr": "o",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3489aa0eca3ece4eeaf7ecbc63cc6b0e3b03d3c2648172b79470c42807e088a8",
+          "target": "stmt:packages/mcp/src/verbs.ts@L903",
+          "line": 903,
+          "expr": "o.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L903",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L898",
+            "expr": "needEdges"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L901",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L903",
+            "expr": "o",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9f3b9cfc450d02f51298c14480370556fa978fe214c2f15b60f1b0548e212269",
+          "target": "stmt:packages/mcp/src/verbs.ts@L904",
+          "line": 904,
+          "expr": "outgoing.set(e.src, [e]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L901",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L898",
+            "expr": "needEdges"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L901",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:512277fb64dce60492bec592534f0dd30d73b538f36b1598a53685a5f0ae7b66",
+          "target": "stmt:packages/mcp/src/verbs.ts@L905",
+          "line": 905,
+          "expr": "const i = incoming.get(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L906",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L898",
+            "expr": "needEdges"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L901",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L906",
+            "expr": "i",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29c6193b19bd9e74d3f95def0a92d06817bd3ac3ac0dc3c1959500b8fd443c9e",
+          "target": "stmt:packages/mcp/src/verbs.ts@L906",
+          "line": 906,
+          "expr": "i.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L906",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L898",
+            "expr": "needEdges"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L901",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L906",
+            "expr": "i",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:beec94676ed005c0c4b70d9ca8d5abfe07e89e5d163a2fd78e04b90512959297",
+          "target": "stmt:packages/mcp/src/verbs.ts@L907",
+          "line": 907,
+          "expr": "incoming.set(e.dst, [e]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a1c79c0a6d4f7787d12bc46bc15f43299d731e3b3acdc72a423ec47e0e76029d",
+          "target": "stmt:packages/mcp/src/verbs.ts@L912",
+          "line": 912,
+          "expr": "const bm25Ids = new Set(hits0.map((h) => h.id));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:010b2d01e02e5c29f1d39a546e8e8cb63e3d9b2d26af84dd997a3d90a894b4eb",
+          "target": "stmt:packages/mcp/src/verbs.ts@L913",
+          "line": 913,
+          "expr": "const hits = hits0.map((h) => {\n      const node = soul.getNode(h.id);\n      const hit: Record<string, unknown> = {\n        id: h.id,\n        kind: h.kind,\n        score: h.score,\n        snippet: rehydrate(this.deps.repoRoot, node),\n        ...(node?.clusterId ? { clusterId: node.clusterId } : {}),\n      };\n      if (args.withSource && node) {\n        // the paged/body view; `truncated` tells the consumer to page via `source.nextLine` if needed.\n        hit.source = this.bodyOf(node, args);\n      }\n      if (args.withRules && node?.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {\n        hit.rules = decisionTable(soul, h.id, { includeTables: true, out: outgoing });\n        // coverage gates the rules: an `unimplemented`/`partial` readiness says the decision table may\n        // be empty/lossy because the body is missing or expressions were clipped — never present\n        // an empty rules array as if the callable had no logic.\n        hit.coverage = computeCoverage(soul, h.id, { keep, outgoing, incoming });\n      }\n      if (args.withFramework) {\n        const fw = frameworkSemantics(soul, h.id, { keep, outgoing, incoming });\n        if (fw) hit.framework = fw;\n      }\n      // Lightweight LLM pointer by default; full analysis/graph/evidence only when withLlm===true;\n      // never attach when withLlm===false. This keeps the default discovery view cheap.\n      this.attachLlm(hit, h.id, args.withLlm);\n      return hit;\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b23a43fb9cac4bc6031504eb28d625f0210fc9f7f053d7b5867743f2f6655863",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.bodyOf@L689",
+          "expr": "bodyOf",
+          "line": 924
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5078a1bf19baae81be13ba0ac0041f16e1bec0d9e3ff15e31e84ac1990b9b73e",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1752",
+          "expr": "attachLlm",
+          "line": 939
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9830d8a5909fe09ee40ff98707e69de8a7897c7764eb6290ec988918837dce32",
+          "target": "stmt:packages/mcp/src/verbs.ts@L948",
+          "line": 948,
+          "expr": "const llmArtifacts = args.withLlm === false ? [] : this.llm.matchText(args.q, limit + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L951",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L951",
+            "expr": "llmArtifacts.slice(0, limit)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:301ff914938e49a5c8434b6a806e99e85321e8a7507f088e981ac18e183526c5",
+          "target": "stmt:packages/mcp/src/verbs.ts@L953",
+          "line": 953,
+          "expr": "seen.add(artifact.targetId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L951",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L951",
+            "expr": "llmArtifacts.slice(0, limit)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b9d0de6ccab39a4d7d61085e6d7557f69d2d031654ee4d07147039e2445e096b",
+          "target": "stmt:packages/mcp/src/verbs.ts@L954",
+          "line": 954,
+          "expr": "const node = soul.getNode(artifact.targetId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:08e79975171cefb2e3a92a3fabede0282374d98d0865de7c3e859806345e0fbb",
+          "target": "sym:packages/mcp/src/enrichment.ts#llmPointer@L1692",
+          "expr": "llmPointer",
+          "line": 956
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4b762d78e5f8b8d83e41cf60b05f54c2196735f21757c3c3ee4d74c09238ce76",
+          "target": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1672",
+          "expr": "llmProjection",
+          "line": 956
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L951",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L951",
+            "expr": "llmArtifacts.slice(0, limit)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d654d1445d2a5e83b3073614a5dfe24ad15970d01b8330ddb51618c003f42314",
+          "target": "stmt:packages/mcp/src/verbs.ts@L956",
+          "line": 956,
+          "expr": "const proj = args.withLlm === true ? llmProjection(read) : llmPointer(read);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L951",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L951",
+            "expr": "llmArtifacts.slice(0, limit)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a6d5e629732aefe5ba76c4cf345d855c8b16fd7133e89ab470c973abb4df777",
+          "target": "stmt:packages/mcp/src/verbs.ts@L958",
+          "line": 958,
+          "expr": "llmHits.push({\n        id: artifact.targetId,\n        kind: node?.kind ?? 'symbol',\n        snippet: node ? rehydrate(this.deps.repoRoot, node) : '',\n        llm: proj,\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "guard": "cond:packages/mcp/src/verbs.ts@L971",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L971",
+            "expr": "args.maxTokens === undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c9947b33d03f682125859b10df09398aa1d9557f99902f4c91ffde22dd198a22",
+          "target": "stmt:packages/mcp/src/verbs.ts@L972",
+          "line": 972,
+          "expr": "return { hits, llmHits, truncated: baseTruncated };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4970918076c811fd6384e195d12d2d5a823caab26a1b9aecf456481beb296d64",
+          "target": "sym:packages/mcp/src/token-budget.ts#capMaxTokens@L110",
+          "expr": "capMaxTokens",
+          "line": 974
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:787b041648a487d6b5052ce46620af08fc391202102dd377d6424b3b123010c3",
+          "target": "stmt:packages/mcp/src/verbs.ts@L974",
+          "line": 974,
+          "expr": "const maxTokens = capMaxTokens(args.maxTokens);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:28a4c09d8a021acb4fd490cd3a19373026274d6bb2bbca6c18f9f647f40ede59",
+          "target": "sym:packages/mcp/src/token-budget.ts#fitTokenBudget@L128",
+          "expr": "fitTokenBudget",
+          "line": 975
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8cf4ae10bc7e9f6efef41871cbc3e7c15f2137a09cd1c9c5bd3713e09b84ef28",
+          "target": "stmt:packages/mcp/src/verbs.ts@L975",
+          "line": 975,
+          "expr": "const fitted = fitTokenBudget(hits, maxTokens, (prefix) =>\n      JSON.stringify({\n        hits: prefix,\n        llmHits,\n        truncated: baseTruncated,\n        budgetExhausted: true,\n        cursor: String(offset + prefix.length),\n      }),\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+        "procedureName": "Verbs.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2460bb4de48fb039ca222c6391a9433dc7a004e5c22a947e091f9ae0c51bdece",
+          "target": "stmt:packages/mcp/src/verbs.ts@L985",
+          "line": 985,
+          "expr": "return {\n      hits: fitted.items,\n      llmHits,\n      truncated: baseTruncated,\n      // when maxTokens is opted in, always report budgetExhausted (true/false); cursor only when more.\n      budgetExhausted: fitted.budgetExhausted,\n      ...(more ? { cursor: String(offset + fitted.items.length) } : {}),\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 24,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 24,
+    "assignments": 2,
+    "conditions": 6,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 8,
+      "recorded": 34,
+      "unresolved": 11
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "11 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseParamList@L369",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:c20e829350c3fadb423ea1d6607bff0c5f3670ba264e423ed70c1e0c7d2a264d",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseParamList@L369",
@@ -213,11 +213,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:d21bd1939b58990d708b694a8188e073f66e87e86d400d48b2f9693278c418ba",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
-          "expr": "peek",
-          "line": 374
+          "kind": "executes",
+          "edgeId": "e:b32dbc6ec621818bd22faea2b1fce707793d7ea3b0c689e2720bab89a2d11197",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L374",
+          "line": 374,
+          "expr": "const tk = this.peek();"
         }
       },
       {
@@ -235,11 +235,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:b32dbc6ec621818bd22faea2b1fce707793d7ea3b0c689e2720bab89a2d11197",
-          "target": "stmt:packages/parsers/src/python/parser.ts@L374",
-          "line": 374,
-          "expr": "const tk = this.peek();"
+          "kind": "calls",
+          "edgeId": "e:d21bd1939b58990d708b694a8188e073f66e87e86d400d48b2f9693278c418ba",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+          "expr": "peek",
+          "line": 374
         }
       },
       {

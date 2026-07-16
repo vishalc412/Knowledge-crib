@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:eab4147c219453baecbf09f78a6adb312e99ed6d86e71811695dcbde313f0220",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
@@ -122,14 +122,14 @@
       "line": 57
     },
     {
-      "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
       "confidence": 1,
       "name": "parse",
       "qualifiedName": "parse",
-      "signature": "parse(…)",
+      "signature": "parse(input)",
       "type": "function",
-      "file": "packages/parsers/src/java/parser.test.ts",
-      "line": 35
+      "file": "packages/pipeline/fixtures/plain-js/src/legacy.cjs",
+      "line": 4
     },
     {
       "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
@@ -140,6 +140,16 @@
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
       "line": 39
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
     },
     {
       "id": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker.finish@L91",
@@ -186,6 +196,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "executes",
+          "edgeId": "e:113ae1fb7caeb0748c37ab177c1c395af64f188cfde3ced3c86af4bc234ff2ba",
+          "target": "stmt:packages/pipeline/src/multimodal/worker.ts@L76",
+          "line": 76,
+          "expr": "const workerDir = opts.workerPath ?? defaultWorkerDir();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
+        "procedureName": "runWorker",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "calls",
           "edgeId": "e:5ed23caff7b08feaf5a7b24457ace401ff1438a06ab9264d14aed9642a87d9dd",
           "target": "sym:packages/pipeline/src/multimodal/worker.ts#defaultWorkerDir@L57",
@@ -200,11 +224,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:113ae1fb7caeb0748c37ab177c1c395af64f188cfde3ced3c86af4bc234ff2ba",
-          "target": "stmt:packages/pipeline/src/multimodal/worker.ts@L76",
-          "line": 76,
-          "expr": "const workerDir = opts.workerPath ?? defaultWorkerDir();"
+          "kind": "calls",
+          "edgeId": "e:ca08d4fd34645a6bc6a1b12e775000b8a8cc5911f31f6936721dec836c688399",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 79
         }
       },
       {
@@ -236,11 +260,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:ca08d4fd34645a6bc6a1b12e775000b8a8cc5911f31f6936721dec836c688399",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 79
+          "kind": "executes",
+          "edgeId": "e:48cca50fa4d6b8fb0f298b6d22f80f5a28a5c745dbdfc0ae1276fd03be0488c8",
+          "target": "stmt:packages/pipeline/src/multimodal/worker.ts@L81",
+          "line": 81,
+          "expr": "return new Promise((resolve) => {\n    let child: ReturnType<typeof spawn>;\n    try {\n      child = spawn(python, args, { cwd: workerDir, stdio: ['ignore', 'pipe', 'pipe'] });\n    } catch {\n      resolve({ ...EMPTY, file: mediaAbsPath });\n      return;\n    }\n    let stdout = '';\n    let settled = false;\n    const finish = (payload: WorkerPayload): void => {\n      if (settled) return;\n      settled = true;\n      clearTimeout(timer);\n      resolve(payload);\n    };\n    const timer = setTimeout(() => {\n      try {\n        child.kill('SIGKILL');\n      } catch {\n        /* ignore */\n      }\n      finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 });\n    }, opts.timeoutMs ?? 30_000);\n\n    child.stdout?.setEncoding('utf8');\n    child.stdout?.on('data', (chunk: string) => {\n      stdout += chunk;\n    });\n    child.on('error', () => finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 }));\n    child.on('close', (code) => {\n      if (code !== 0) {\n        finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 });\n        return;\n      }\n      try {\n        const payload = JSON.parse(stdout) as WorkerPayload;\n        finish({ ...EMPTY, ...payload, file: mediaAbsPath });\n      } catch {\n        finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 });\n      }\n    });\n  });"
         }
       },
       {
@@ -250,11 +274,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:48cca50fa4d6b8fb0f298b6d22f80f5a28a5c745dbdfc0ae1276fd03be0488c8",
-          "target": "stmt:packages/pipeline/src/multimodal/worker.ts@L81",
-          "line": 81,
-          "expr": "return new Promise((resolve) => {\n    let child: ReturnType<typeof spawn>;\n    try {\n      child = spawn(python, args, { cwd: workerDir, stdio: ['ignore', 'pipe', 'pipe'] });\n    } catch {\n      resolve({ ...EMPTY, file: mediaAbsPath });\n      return;\n    }\n    let stdout = '';\n    let settled = false;\n    const finish = (payload: WorkerPayload): void => {\n      if (settled) return;\n      settled = true;\n      clearTimeout(timer);\n      resolve(payload);\n    };\n    const timer = setTimeout(() => {\n      try {\n        child.kill('SIGKILL');\n      } catch {\n        /* ignore */\n      }\n      finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 });\n    }, opts.timeoutMs ?? 30_000);\n\n    child.stdout?.setEncoding('utf8');\n    child.stdout?.on('data', (chunk: string) => {\n      stdout += chunk;\n    });\n    child.on('error', () => finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 }));\n    child.on('close', (code) => {\n      if (code !== 0) {\n        finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 });\n        return;\n      }\n      try {\n        const payload = JSON.parse(stdout) as WorkerPayload;\n        finish({ ...EMPTY, ...payload, file: mediaAbsPath });\n      } catch {\n        finish({ ...EMPTY, file: mediaAbsPath, dropped: 1 });\n      }\n    });\n  });"
+          "kind": "calls",
+          "edgeId": "e:d11eda7bc66395785c9a2f1ee3dc5aa1ad3f9acf0aee4bc06294bd844ff41e28",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 86
         }
       },
       {
@@ -279,8 +303,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:4233d6087cf07a6e7c56fa4ae493fe04ea683a717419c9ebee2d1ce9f856770f",
-          "target": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+          "edgeId": "e:6dbd9a669eda9b346366bc6dd5aafa86a484b6b793dc3eb69b36019babd8df99",
+          "target": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
           "expr": "parse",
           "line": 117
         }
@@ -305,7 +329,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 4,
+      "resolved": 5,
       "recorded": 18,
       "unresolved": 8
     },

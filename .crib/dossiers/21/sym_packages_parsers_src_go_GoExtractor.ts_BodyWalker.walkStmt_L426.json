@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkStmt@L426",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:8466b53cd7b5dadec5ce1e38f8dd28b9b45c7ad617aea07c247de24f6441df38",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkStmt@L426",
@@ -374,11 +374,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:a0e707942aea22ec58b40149962b84b259fa37b250cd07196c14f7bee263079f",
-          "target": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkFor@L580",
-          "expr": "walkFor",
-          "line": 439
+          "kind": "executes",
+          "edgeId": "e:4c982332ff62e4441afefa02ed872f9313d6743ee85f13c6ceaedd25c4dab038",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L439",
+          "line": 439,
+          "expr": "this.walkFor(s, proc, guardStack, inLoop, inException);"
         }
       },
       {
@@ -396,11 +396,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:4c982332ff62e4441afefa02ed872f9313d6743ee85f13c6ceaedd25c4dab038",
-          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L439",
-          "line": 439,
-          "expr": "this.walkFor(s, proc, guardStack, inLoop, inException);"
+          "kind": "calls",
+          "edgeId": "e:a0e707942aea22ec58b40149962b84b259fa37b250cd07196c14f7bee263079f",
+          "target": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkFor@L580",
+          "expr": "walkFor",
+          "line": 439
         }
       },
       {
@@ -878,11 +878,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:87482a1e00cb1d6ec509b1d714cd832a2c5ed499f1b8c4cffa24fecfed9a2015",
-          "target": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addAssignment@L860",
-          "expr": "addAssignment",
-          "line": 511
+          "kind": "executes",
+          "edgeId": "e:4b5e873c1d62eb78738b00ed0ca539550b38bf4e454b749363755298976c8cf5",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L511",
+          "line": 511,
+          "expr": "this.addAssignment(\n          s.line,\n          s.target ?? '',\n          s.text,\n          proc,\n          guardStack,\n          branch,\n          inLoop,\n          inException,\n          s.callee,\n        );"
         }
       },
       {
@@ -900,11 +900,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:4b5e873c1d62eb78738b00ed0ca539550b38bf4e454b749363755298976c8cf5",
-          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L511",
-          "line": 511,
-          "expr": "this.addAssignment(\n          s.line,\n          s.target ?? '',\n          s.text,\n          proc,\n          guardStack,\n          branch,\n          inLoop,\n          inException,\n          s.callee,\n        );"
+          "kind": "calls",
+          "edgeId": "e:87482a1e00cb1d6ec509b1d714cd832a2c5ed499f1b8c4cffa24fecfed9a2015",
+          "target": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addAssignment@L860",
+          "expr": "addAssignment",
+          "line": 511
         }
       },
       {
@@ -1060,11 +1060,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:4099f588c85fd288932801cbacfb6f59c32c9809df440e8a9b719e9e53983ee5",
-          "target": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkBody@L415",
-          "expr": "walkBody",
-          "line": 547
+          "kind": "executes",
+          "edgeId": "e:06b2a2fbc832b41e2e701f127ecdff4d3b08d2b6ff76b0e2b02277204e334fc2",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L547",
+          "line": 547,
+          "expr": "this.walkBody(s.body, proc, guardStack, branch, inLoop, inException);"
         }
       },
       {
@@ -1082,11 +1082,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:06b2a2fbc832b41e2e701f127ecdff4d3b08d2b6ff76b0e2b02277204e334fc2",
-          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L547",
-          "line": 547,
-          "expr": "this.walkBody(s.body, proc, guardStack, branch, inLoop, inException);"
+          "kind": "calls",
+          "edgeId": "e:4099f588c85fd288932801cbacfb6f59c32c9809df440e8a9b719e9e53983ee5",
+          "target": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkBody@L415",
+          "expr": "walkBody",
+          "line": 547
         }
       }
     ]

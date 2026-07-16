@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:8c5c794b08dd7006c681e85218f2e1e2fd5e9066edc28273aee1752e6b565563",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
@@ -92,14 +92,14 @@
       "line": 216
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1687",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1693",
       "confidence": 1,
       "name": "collectCallSites",
       "qualifiedName": "collectCallSites",
       "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): CsharpCallSite[]",
       "type": "function",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1687
+      "line": 1693
     },
     {
       "id": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
@@ -112,16 +112,6 @@
       "line": 1590
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
-      "confidence": 1,
-      "name": "collectImports",
-      "qualifiedName": "collectImports",
-      "signature": "collectImports(tokens: Token[]): { pkg: string; imports: CsharpImport[] }",
-      "type": "function",
-      "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1727
-    },
-    {
       "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
       "confidence": 1,
       "name": "collectImports",
@@ -132,14 +122,14 @@
       "line": 150
     },
     {
-      "id": "sym:packages/parsers/src/csharp/lexer.ts#tokenize@L173",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1733",
       "confidence": 1,
-      "name": "tokenize",
-      "qualifiedName": "tokenize",
-      "signature": "tokenize(src: string): Token[]",
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(tokens: Token[]): { pkg: string; imports: CsharpImport[] }",
       "type": "function",
-      "file": "packages/parsers/src/csharp/lexer.ts",
-      "line": 173
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1733
     },
     {
       "id": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
@@ -150,6 +140,16 @@
       "type": "function",
       "file": "packages/pipeline/src/linker/tfidf.ts",
       "line": 80
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#tokenize@L173",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(src: string): Token[]",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 173
     }
   ],
   "docs": [
@@ -174,13 +174,13 @@
         "procedureName": "parseCsharp",
         "conditions": [],
         "inLoop": false,
-        "inException": true,
+        "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:9229a68ca9d3cc649a784a040d8c88c9c6795c853844bfce4880a6a4a0db518d",
-          "target": "stmt:packages/parsers/src/csharp/parser.ts@L178",
-          "line": 178,
-          "expr": "const tokens = tokenize(src);"
+          "kind": "calls",
+          "edgeId": "e:165af677fe27d3d0d3fc14ef4517b7fc22ae9e0d47e2e9ee1637a9140e3d78d5",
+          "target": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
+          "expr": "tokenize",
+          "line": 178
         }
       },
       {
@@ -202,27 +202,13 @@
         "procedureName": "parseCsharp",
         "conditions": [],
         "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:165af677fe27d3d0d3fc14ef4517b7fc22ae9e0d47e2e9ee1637a9140e3d78d5",
-          "target": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
-          "expr": "tokenize",
-          "line": 178
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
-        "procedureName": "parseCsharp",
-        "conditions": [],
-        "inLoop": false,
         "inException": true,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:8e7866ed5b030e5d9aa453518ae52269ffb80fe750f13e393f6172a24121d40a",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseProgram@L216",
-          "expr": "parseProgram",
-          "line": 180
+          "kind": "executes",
+          "edgeId": "e:9229a68ca9d3cc649a784a040d8c88c9c6795c853844bfce4880a6a4a0db518d",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L178",
+          "line": 178,
+          "expr": "const tokens = tokenize(src);"
         }
       },
       {
@@ -247,8 +233,22 @@
         "inException": true,
         "action": {
           "kind": "calls",
-          "edgeId": "e:0c47c7b8cef35ed9abb94025fe9c89fdd132722a0f3fb3e8a3d18f9551f3d555",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1687",
+          "edgeId": "e:8e7866ed5b030e5d9aa453518ae52269ffb80fe750f13e393f6172a24121d40a",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseProgram@L216",
+          "expr": "parseProgram",
+          "line": 180
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5eb05bda742fa18a18f43f4c190cd4ff9598790b3010c8ec1760ac4fd49e162b",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1693",
           "expr": "collectCallSites",
           "line": 181
         }
@@ -286,11 +286,25 @@
         "procedureName": "parseCsharp",
         "conditions": [],
         "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:136b56b6ce184b73b004c6bc02d8881b8e315b012f658669ec8811f0bcb915d5",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
+          "expr": "collectImports",
+          "line": 182
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
         "inException": true,
         "action": {
           "kind": "calls",
-          "edgeId": "e:589e88c24d766e5930df8d053e8486a12eca35fa93e4f6c7ec178930a644d08f",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
+          "edgeId": "e:5808943d816fb6bf589b9516d2db5eabb0de99756d781ba5456c12958ad43301",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1733",
           "expr": "collectImports",
           "line": 182
         }
@@ -307,20 +321,6 @@
           "target": "stmt:packages/parsers/src/csharp/parser.ts@L182",
           "line": 182,
           "expr": "const { pkg, imports } = collectImports(tokens);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
-        "procedureName": "parseCsharp",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:136b56b6ce184b73b004c6bc02d8881b8e315b012f658669ec8811f0bcb915d5",
-          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
-          "expr": "collectImports",
-          "line": 182
         }
       },
       {

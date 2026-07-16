@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/md/markdown.ts#extractLinks@L117",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:933d63af92eefdfddd8f3f3ea0afbad89a0d4a1b82410f771520ac1ccb0ec67f",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/md/markdown.ts#extractLinks@L117",
@@ -92,6 +92,20 @@
       {
         "procedure": "sym:packages/parsers/src/md/markdown.ts#extractLinks@L117",
         "procedureName": "extractLinks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7317d3344fb0803b08065fd52011b1e52a8d75aaf1e1311d3e06a9353530785a",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 121
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/md/markdown.ts#extractLinks@L117",
+        "procedureName": "extractLinks",
         "guard": "cond:packages/parsers/src/md/markdown.ts@L121",
         "branch": "THEN",
         "conditions": [
@@ -113,20 +127,6 @@
           "target": "stmt:packages/parsers/src/md/markdown.ts@L121",
           "line": 121,
           "expr": "links.add(target);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/md/markdown.ts#extractLinks@L117",
-        "procedureName": "extractLinks",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:7317d3344fb0803b08065fd52011b1e52a8d75aaf1e1311d3e06a9353530785a",
-          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
-          "expr": "add",
-          "line": 121
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:3668016a29b7d9223079dbb85d16c5eaaa2c838a057af4878b8ec2978496e6d4",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
@@ -152,11 +152,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:a66897317db052f9e7816cbcbc3a7de4e15f8a712906334b548a841fd02f29d9",
-          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L431",
-          "line": 431,
-          "expr": "const match = symbols.find(\n    (s) =>\n      s.simpleName === name &&\n      s.parentQualifier === enclosingQ &&\n      (s.node.type === 'method' || s.node.type === 'constructor'),\n  );"
+          "kind": "calls",
+          "edgeId": "e:4055623c709c0a65b0b32a8fb44399ea9e05e13ccc1f9927d28cee7a58f4e21e",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 431
         }
       },
       {
@@ -166,11 +166,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:4055623c709c0a65b0b32a8fb44399ea9e05e13ccc1f9927d28cee7a58f4e21e",
-          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
-          "expr": "find",
-          "line": 431
+          "kind": "executes",
+          "edgeId": "e:a66897317db052f9e7816cbcbc3a7de4e15f8a712906334b548a841fd02f29d9",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L431",
+          "line": 431,
+          "expr": "const match = symbols.find(\n    (s) =>\n      s.simpleName === name &&\n      s.parentQualifier === enclosingQ &&\n      (s.node.type === 'method' || s.node.type === 'constructor'),\n  );"
         }
       },
       {

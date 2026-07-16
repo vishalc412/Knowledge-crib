@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedTypeName@L833",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:8aee7ca9d8e515c5e11ca02d3c3283cd66e3762d2f405ce0311bbbc4488a351c",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedTypeName@L833",
@@ -68,44 +68,44 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1520",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1526",
       "confidence": 1,
       "name": "isNameToken",
       "qualifiedName": "Parser.isNameToken",
       "signature": "isNameToken(): boolean",
       "type": "method",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1520
+      "line": 1526
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1510",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1516",
       "confidence": 1,
       "name": "isOp",
       "qualifiedName": "Parser.isOp",
       "signature": "isOp(v: string): boolean",
       "type": "method",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1510
+      "line": 1516
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1523",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1529",
       "confidence": 1,
       "name": "next",
       "qualifiedName": "Parser.next",
       "signature": "next(): Token",
       "type": "method",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1523
+      "line": 1529
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1528",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1534",
       "confidence": 1,
       "name": "peek",
       "qualifiedName": "Parser.peek",
       "signature": "peek(offset = 0): Token",
       "type": "method",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1528
+      "line": 1534
     }
   ],
   "docs": [
@@ -151,28 +151,6 @@
       {
         "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedTypeName@L833",
         "procedureName": "Parser.parseDottedTypeName",
-        "guard": "cond:packages/parsers/src/csharp/parser.ts@L837",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/csharp/parser.ts@L837",
-            "expr": "this.isOp('.') && this.peek(1).type === 'NAME'",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:6d9f17cd7120c187fadf6adb22f85b5bfd947a04c9f2d164af33416a0ba7da02",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1528",
-          "expr": "peek",
-          "line": 835
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedTypeName@L833",
-        "procedureName": "Parser.parseDottedTypeName",
         "conditions": [],
         "inLoop": false,
         "inException": false,
@@ -200,8 +178,30 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:44130ab577c42bfcb2c4a84d73a1d12bc2482510275a78c80f053f0b0e501c8d",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1523",
+          "edgeId": "e:f53dc8b7fa2d77dd9869cf71c62114471b7dcc16d94755275a7ae6b075f0045a",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1534",
+          "expr": "peek",
+          "line": 835
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedTypeName@L833",
+        "procedureName": "Parser.parseDottedTypeName",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L837",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L837",
+            "expr": "this.isOp('.') && this.peek(1).type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:301328aa1ec39ec63c7d51f9e344b9ee410f7c174f609257ce7435a58ec29284",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1529",
           "expr": "next",
           "line": 836
         }
@@ -308,8 +308,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:417efef92d8b33913a5f3d8187535c7458a4a1956f6e3b6f605382d71150b3db",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1510",
+          "edgeId": "e:8ac1e2657a5821f5b5cfe36fea7fd99a1d7d377dfa62775cc0e89f327f96aab9",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1516",
           "expr": "isOp"
         }
       },
@@ -321,8 +321,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:22bd428d361f2bbf62407564ba3a4157ccf9c30ba97ba4b60c80868f44dbc93f",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1520",
+          "edgeId": "e:7135736f89c3c14e728a5938dba089778843a558c5373ee491c5474320a05f2f",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1526",
           "expr": "isNameToken"
         }
       }

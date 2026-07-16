@@ -1,0 +1,113 @@
+{
+  "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#defaultFuzzConcurrency@L138",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:4020530924d0e37c4d5a1d4006d7fef9617c3d81723cb6c0d7e4e265cbc483f2",
+  "builtAt": "2026-07-13T14:47:57.424Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#defaultFuzzConcurrency@L138",
+    "kind": "symbol",
+    "type": "function",
+    "name": "defaultFuzzConcurrency",
+    "qualifiedName": "defaultFuzzConcurrency",
+    "signature": "defaultFuzzConcurrency(): number",
+    "lang": "typescript",
+    "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+    "span": {
+      "start": 138,
+      "end": 140
+    },
+    "callSites": [
+      {
+        "callee": "min",
+        "line": 139
+      },
+      {
+        "callee": "max",
+        "line": 139
+      },
+      {
+        "callee": "availableParallelism",
+        "line": 139
+      }
+    ]
+  },
+  "source": {
+    "text": "export function defaultFuzzConcurrency(): number {\n  return Math.min(4, Math.max(1, availableParallelism() - 1));\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 138
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz@L147",
+      "confidence": 1,
+      "name": "runFuzz",
+      "qualifiedName": "runFuzz",
+      "signature": "runFuzz(extractorName: string, opts: RunFuzzOpts = {}): Promise<FuzzOutcome>",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+      "line": 147
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/fuzz/extractor-fuzz.ts@L137",
+      "snippet": "/** Default pool size: small — fuzz workers are CPU-heavy (sync parse). Leave headroom for main. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#defaultFuzzConcurrency@L138",
+    "procedureName": "defaultFuzzConcurrency",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#defaultFuzzConcurrency@L138",
+        "procedureName": "defaultFuzzConcurrency",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:056571c31e3a03183ca64586cb6d3b54c32ae27545fb47d01bc520ec83993a48",
+          "target": "stmt:packages/parsers/src/fuzz/extractor-fuzz.ts@L139",
+          "line": 139,
+          "expr": "return Math.min(4, Math.max(1, availableParallelism() - 1));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/fuzz/extractor-fuzz.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

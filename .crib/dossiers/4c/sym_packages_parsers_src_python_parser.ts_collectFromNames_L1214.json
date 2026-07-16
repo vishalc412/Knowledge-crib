@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/parser.ts#collectFromNames@L1214",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:9b3a14ce3ca527dab70b54e008310e31744851f0617eca1343c3ab3dd5f355df",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/parser.ts#collectFromNames@L1214",
@@ -248,6 +248,20 @@
       {
         "procedure": "sym:packages/parsers/src/python/parser.ts#collectFromNames@L1214",
         "procedureName": "collectFromNames",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:216deddf98a7887686eecf4d31ee9909b1cb1b392cb721d36a30e297a1e69e87",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1245
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#collectFromNames@L1214",
+        "procedureName": "collectFromNames",
         "guard": "cond:packages/parsers/src/python/parser.ts@L1234",
         "branch": "THEN",
         "conditions": [
@@ -269,20 +283,6 @@
           "target": "stmt:packages/parsers/src/python/parser.ts@L1245",
           "line": 1245,
           "expr": "imp.names.push({ local, original });"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/parser.ts#collectFromNames@L1214",
-        "procedureName": "collectFromNames",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:216deddf98a7887686eecf4d31ee9909b1cb1b392cb721d36a30e297a1e69e87",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 1245
         }
       },
       {

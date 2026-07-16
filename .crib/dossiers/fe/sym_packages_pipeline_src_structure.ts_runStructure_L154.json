@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/structure.ts#runStructure@L154",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:c9cf75c4d6612a70cf04578bb015bb297ba74e855ef77ce8b770ce6d6b1e77bb",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/structure.ts#runStructure@L154",
@@ -40,24 +40,24 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L108",
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
       "confidence": 1,
       "name": "indexRepo",
       "qualifiedName": "indexRepo",
       "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
       "type": "function",
       "file": "packages/pipeline/src/pipeline.ts",
-      "line": 108
+      "line": 94
     },
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L94",
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 94
+      "line": 112
     }
   ],
   "callees": [
@@ -82,16 +82,6 @@
       "confidence": 1
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
-      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
-      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
-      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
       "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
       "heading": "2.2 The Three Command Paths",
       "anchor": "2-2-the-three-command-paths",
@@ -106,6 +96,16 @@
       "heading": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
       "anchor": "a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
       "snippet": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",

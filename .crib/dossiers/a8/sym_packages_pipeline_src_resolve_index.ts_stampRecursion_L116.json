@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/index.ts#stampRecursion@L116",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:968d31e08b00be6bd4228cd994116d8d0a0c6caf6f304e54493da0ab5a4c9e90",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/index.ts#stampRecursion@L116",
@@ -63,6 +63,16 @@
     }
   ],
   "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
     {
       "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
       "confidence": 1,
@@ -186,6 +196,20 @@
           "target": "stmt:packages/pipeline/src/resolve/index.ts@L123",
           "line": 123,
           "expr": "byQualified.set(q, s.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/index.ts#stampRecursion@L116",
+        "procedureName": "stampRecursion",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:aa0c502a27076615ea81929cb3f57abbdb05d99bdd6a334e43b3869253e47a74",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 125
         }
       },
       {
@@ -395,14 +419,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 2,
+      "resolved": 3,
       "recorded": 6,
-      "unresolved": 5
+      "unresolved": 4
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseNameTypeList@L523",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:e30c6c35dd0d92ed101ced5a52f5a9dd4ce6d4c325f8b3d845901209b0d1b5aa",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseNameTypeList@L523",
@@ -180,11 +180,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:abdc29c646ffc73511ca0c20ddd9132620e3e5ace9eba981e28ef5ce453922f1",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.next@L122",
-          "expr": "next",
-          "line": 545
+          "kind": "executes",
+          "edgeId": "e:408f031fdd1583470a04b0d5359eaeb40eab6aa20efdb76dd1f2d0cd5d2d62c3",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L545",
+          "line": 545,
+          "expr": "const itemName = this.next().raw;"
         }
       },
       {
@@ -206,11 +206,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:408f031fdd1583470a04b0d5359eaeb40eab6aa20efdb76dd1f2d0cd5d2d62c3",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L545",
-          "line": 545,
-          "expr": "const itemName = this.next().raw;"
+          "kind": "calls",
+          "edgeId": "e:abdc29c646ffc73511ca0c20ddd9132620e3e5ace9eba981e28ef5ce453922f1",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.next@L122",
+          "expr": "next",
+          "line": 545
         }
       },
       {

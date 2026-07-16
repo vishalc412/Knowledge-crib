@@ -1,0 +1,165 @@
+{
+  "id": "sym:packages/mcp/src/verbs.test.ts#sym@L185",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:83d265497a4dfa07b12010d8e3aeb20b5446106ca6ac2c6f6546d74917fb7faa",
+  "builtAt": "2026-07-16T14:53:52.220Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.test.ts#sym@L185",
+    "kind": "symbol",
+    "type": "function",
+    "name": "sym",
+    "qualifiedName": "sym",
+    "signature": "sym(path: string, q: string, line: number, extra: Partial<Node> = {}): Node",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.test.ts",
+    "span": {
+      "start": 185,
+      "end": 198
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 187
+      },
+      {
+        "callee": "pop",
+        "line": 190
+      },
+      {
+        "callee": "split",
+        "line": 190
+      },
+      {
+        "callee": "contentHash",
+        "line": 195
+      }
+    ]
+  },
+  "source": {
+    "text": "function sym(path: string, q: string, line: number, extra: Partial<Node> = {}): Node {\n  return {\n    id: idFor({ kind: 'symbol', path, qualifiedName: q, startLine: line }),\n    kind: 'symbol',\n    type: 'method',\n    name: q.split('.').pop() ?? q,\n    qualifiedName: q,\n    file: path,\n    span: { start: line, end: line + 1 },\n    lang: 'typescript',\n    hash: contentHash(q),\n    ...extra,\n  };\n}",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 185
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 88
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#node",
+      "heading": "Node",
+      "anchor": "node",
+      "snippet": "Node",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.test.ts#sym@L185",
+    "procedureName": "sym",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.test.ts#sym@L185",
+        "procedureName": "sym",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9592a2aff71b4eef8e1709a48d319fb8401f180c8b4ad188fe0b146ee7308c1e",
+          "target": "stmt:packages/mcp/src/verbs.test.ts@L186",
+          "line": 186,
+          "expr": "return {\n    id: idFor({ kind: 'symbol', path, qualifiedName: q, startLine: line }),\n    kind: 'symbol',\n    type: 'method',\n    name: q.split('.').pop() ?? q,\n    qualifiedName: q,\n    file: path,\n    span: { start: line, end: line + 1 },\n    lang: 'typescript',\n    hash: contentHash(q),\n    ...extra,\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.test.ts#sym@L185",
+        "procedureName": "sym",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d7d64a3a37473ed2953992debf8b20350fab7cbfb6961457a4f7aa06d688db93",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 187
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.test.ts#sym@L185",
+        "procedureName": "sym",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ba72b0416c086264f49e3879209e2a8445eb0ac75082d224b1a2676b4d683bb6",
+          "target": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+          "expr": "contentHash",
+          "line": 195
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

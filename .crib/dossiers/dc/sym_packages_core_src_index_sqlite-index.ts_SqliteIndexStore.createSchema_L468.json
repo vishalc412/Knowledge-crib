@@ -1,0 +1,106 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.createSchema@L468",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:40462e12cf4871aaaa2362edfac9d6e1dfde6e7203d113133c596fc28dba64d7",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.createSchema@L468",
+    "kind": "symbol",
+    "type": "method",
+    "name": "createSchema",
+    "qualifiedName": "SqliteIndexStore.createSchema",
+    "signature": "createSchema(): void",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 468,
+      "end": 497
+    },
+    "callSites": [
+      {
+        "callee": "exec",
+        "line": 469
+      }
+    ]
+  },
+  "source": {
+    "text": "  private createSchema(): void {\n    this.db.exec(`\n      CREATE TABLE IF NOT EXISTS nodes (\n        id TEXT PRIMARY KEY,\n        kind TEXT NOT NULL,\n        name TEXT,\n        file TEXT,\n        json TEXT NOT NULL\n      );\n      CREATE TABLE IF NOT EXISTS edges (\n        id TEXT PRIMARY KEY,\n        src TEXT NOT NULL,\n        dst TEXT NOT NULL,\n        rel TEXT NOT NULL,\n        provenance TEXT NOT NULL,\n        confidence REAL NOT NULL,\n        json TEXT NOT NULL\n      );\n      CREATE INDEX IF NOT EXISTS idx_edges_src ON edges(src);\n      CREATE INDEX IF NOT EXISTS idx_edges_dst ON edges(dst);\n      CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(\n        id UNINDEXED, name, qualifiedName, signature, heading, file, body\n      );\n      CREATE TABLE IF NOT EXISTS vectors (\n        id TEXT PRIMARY KEY,\n        vec BLOB NOT NULL,\n        dim INTEGER NOT NULL\n      );\n    `);\n  }",
+    "truncated": false,
+    "totalLines": 30,
+    "startLine": 468
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore@L96",
+      "confidence": 1,
+      "name": "SqliteIndexStore",
+      "qualifiedName": "SqliteIndexStore",
+      "signature": "class SqliteIndexStore implements IndexStore",
+      "type": "class",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 96
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reset@L499",
+      "confidence": 1,
+      "name": "reset",
+      "qualifiedName": "SqliteIndexStore.reset",
+      "signature": "reset(): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 499
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.createSchema@L468",
+    "procedureName": "SqliteIndexStore.createSchema",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.createSchema@L468",
+        "procedureName": "SqliteIndexStore.createSchema",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:59aaf953cabec3a5b21b1195257f78e8cd8cf8380053ce0b52983b3161c3d3b5",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L469",
+          "line": 469,
+          "expr": "this.db.exec(`\n      CREATE TABLE IF NOT EXISTS nodes (\n        id TEXT PRIMARY KEY,\n        kind TEXT NOT NULL,\n        name TEXT,\n        file TEXT,\n        json TEXT NOT NULL\n      );\n      CREATE TABLE IF NOT EXISTS edges (\n        id TEXT PRIMARY KEY,\n        src TEXT NOT NULL,\n        dst TEXT NOT NULL,\n        rel TEXT NOT NULL,\n        provenance TEXT NOT NULL,\n        confidence REAL NOT NULL,\n        json TEXT NOT NULL\n      );\n      CREATE INDEX IF NOT EXISTS idx_edges_src ON edges(src);\n      CREATE INDEX IF NOT EXISTS idx_edges_dst ON edges(dst);\n      CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(\n        id UNINDEXED, name, qualifiedName, signature, heading, file, body\n      );\n      CREATE TABLE IF NOT EXISTS vectors (\n        id TEXT PRIMARY KEY,\n        vec BLOB NOT NULL,\n        dim INTEGER NOT NULL\n      );\n    `);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

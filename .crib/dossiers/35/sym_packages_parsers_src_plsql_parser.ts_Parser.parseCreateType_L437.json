@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateType@L437",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:f0c7f931207aced876b688241bf1f1bbd1ab70f72723bde076d3b4376a58c2bd",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateType@L437",
@@ -255,6 +255,20 @@
       {
         "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateType@L437",
         "procedureName": "Parser.parseCreateType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0e3cc920857638048ca857a398009f6b8d50095cd79fec7d2aab2095dbfa1870",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L438",
+          "line": 438,
+          "expr": "this.eatWord('type');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateType@L437",
+        "procedureName": "Parser.parseCreateType",
         "guard": "cond:packages/parsers/src/plsql/parser.ts@L478",
         "branch": "THEN",
         "conditions": [
@@ -290,10 +304,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:0e3cc920857638048ca857a398009f6b8d50095cd79fec7d2aab2095dbfa1870",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L438",
-          "line": 438,
-          "expr": "this.eatWord('type');"
+          "edgeId": "e:21f07fc9e26741f20309d96d72c3be5c133678640d92fa158a66ffc2b5a0a1a5",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L439",
+          "line": 439,
+          "expr": "const { schema, name } = this.parseQualifiedName();"
         }
       },
       {
@@ -308,20 +322,6 @@
           "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseQualifiedName@L1203",
           "expr": "parseQualifiedName",
           "line": 439
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateType@L437",
-        "procedureName": "Parser.parseCreateType",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:21f07fc9e26741f20309d96d72c3be5c133678640d92fa158a66ffc2b5a0a1a5",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L439",
-          "line": 439,
-          "expr": "const { schema, name } = this.parseQualifiedName();"
         }
       },
       {
@@ -433,11 +433,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:f5e77fc00e3f5b897c7d9eac20826cd14b4af893e775f12d3fe6e9ea2dddecf3",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseNameTypeList@L523",
-          "expr": "parseNameTypeList",
-          "line": 457
+          "kind": "executes",
+          "edgeId": "e:d9bb1e19a049bd8534d917f4ad96353830f02d2c8f88a8d857823a1c7e81fac6",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L457",
+          "line": 457,
+          "expr": "const attributes = this.parseNameTypeList();"
         }
       },
       {
@@ -455,11 +455,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:d9bb1e19a049bd8534d917f4ad96353830f02d2c8f88a8d857823a1c7e81fac6",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L457",
-          "line": 457,
-          "expr": "const attributes = this.parseNameTypeList();"
+          "kind": "calls",
+          "edgeId": "e:f5e77fc00e3f5b897c7d9eac20826cd14b4af893e775f12d3fe6e9ea2dddecf3",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseNameTypeList@L523",
+          "expr": "parseNameTypeList",
+          "line": 457
         }
       },
       {
@@ -571,6 +571,32 @@
       {
         "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateType@L437",
         "procedureName": "Parser.parseCreateType",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L471",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L469",
+            "expr": "this.isWord('table')"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L471",
+            "expr": "this.isWord('of')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:252f7c17dc1f8670363c2c2540997c696aa916be96e5acb6dc7944d6baabe6dc",
+          "target": "assign:packages/parsers/src/plsql/parser.ts@L473",
+          "line": 473,
+          "expr": "collection = { kind: 'table', elementType: this.readTypeText() };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateType@L437",
+        "procedureName": "Parser.parseCreateType",
         "guard": "cond:packages/parsers/src/plsql/parser.ts@L478",
         "branch": "THEN",
         "conditions": [
@@ -596,32 +622,6 @@
           "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.readTypeText@L584",
           "expr": "readTypeText",
           "line": 473
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateType@L437",
-        "procedureName": "Parser.parseCreateType",
-        "guard": "cond:packages/parsers/src/plsql/parser.ts@L471",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/plsql/parser.ts@L469",
-            "expr": "this.isWord('table')"
-          },
-          {
-            "id": "cond:packages/parsers/src/plsql/parser.ts@L471",
-            "expr": "this.isWord('of')",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:252f7c17dc1f8670363c2c2540997c696aa916be96e5acb6dc7944d6baabe6dc",
-          "target": "assign:packages/parsers/src/plsql/parser.ts@L473",
-          "line": 473,
-          "expr": "collection = { kind: 'table', elementType: this.readTypeText() };"
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/parser.ts#Parser.isName@L1468",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:2a31c93f4365904a100c6eaced137c5cb5e3f8fd9986bad532dc23c04bd4590e",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/parser.ts#Parser.isName@L1468",
@@ -131,11 +131,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:ad2ba2531bd7cd8e989a1707a728748fe8bf3a1409bd001af03d7440bc55591a",
-          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
-          "expr": "peek",
-          "line": 1469
+          "kind": "executes",
+          "edgeId": "e:a67cf4b9936ae983b86de4fcc7105a61042c823003792caaa413486a6188ab51",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1469",
+          "line": 1469,
+          "expr": "return this.peek().type === 'NAME' && this.peek().value === v;"
         }
       },
       {
@@ -145,11 +145,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:a67cf4b9936ae983b86de4fcc7105a61042c823003792caaa413486a6188ab51",
-          "target": "stmt:packages/parsers/src/rust/parser.ts@L1469",
-          "line": 1469,
-          "expr": "return this.peek().type === 'NAME' && this.peek().value === v;"
+          "kind": "calls",
+          "edgeId": "e:ad2ba2531bd7cd8e989a1707a728748fe8bf3a1409bd001af03d7440bc55591a",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
+          "expr": "peek",
+          "line": 1469
         }
       }
     ]

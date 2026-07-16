@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/parser.ts#Parser.skipDecorators@L722",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:f31602ca9c981b29502294d0e4eea828e2d52618cc91ed3302d880fd137607d5",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/parser.ts#Parser.skipDecorators@L722",
@@ -261,11 +261,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:5427db39bd0f2a7d202bf546a2fd27863c0068daba1e2fda3f49af9ff9bbe922",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
-          "expr": "skipParens",
-          "line": 733
+          "kind": "executes",
+          "edgeId": "e:438919a761746c32cde274fac9dbce3f7988ea4281477f970447ddda9e284f96",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L733",
+          "line": 733,
+          "expr": "this.skipParens();"
         }
       },
       {
@@ -291,11 +291,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:438919a761746c32cde274fac9dbce3f7988ea4281477f970447ddda9e284f96",
-          "target": "stmt:packages/parsers/src/python/parser.ts@L733",
-          "line": 733,
-          "expr": "this.skipParens();"
+          "kind": "calls",
+          "edgeId": "e:5427db39bd0f2a7d202bf546a2fd27863c0068daba1e2fda3f49af9ff9bbe922",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+          "expr": "skipParens",
+          "line": 733
         }
       },
       {

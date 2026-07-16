@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.readUntilColon@L1534",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:21722bd58465de82d248004dac6e8fcf97281b2de6525460e1e18fa61bc07bf2",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.readUntilColon@L1534",
@@ -146,11 +146,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b0ab296ce3992b9a726a2ed42dc6329c871fd0c6564c1f0f9b91229036f8dcb8",
-          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.sliceText@L1644",
-          "expr": "sliceText",
-          "line": 1549
+          "kind": "executes",
+          "edgeId": "e:22d63d6f050513384c711c6c12ee5a56e5b6331b7fae41190cbd58a422664afe",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1549",
+          "line": 1549,
+          "expr": "const text = j > startIdx ? this.sliceText(startIdx, j - 1).trim() : '';"
         }
       },
       {
@@ -160,11 +160,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:22d63d6f050513384c711c6c12ee5a56e5b6331b7fae41190cbd58a422664afe",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1549",
-          "line": 1549,
-          "expr": "const text = j > startIdx ? this.sliceText(startIdx, j - 1).trim() : '';"
+          "kind": "calls",
+          "edgeId": "e:b0ab296ce3992b9a726a2ed42dc6329c871fd0c6564c1f0f9b91229036f8dcb8",
+          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.sliceText@L1644",
+          "expr": "sliceText",
+          "line": 1549
         }
       },
       {

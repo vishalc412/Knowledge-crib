@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:757c57b7dd9f5af27920795c498d16318c0ae8ef4b80cb25df1e5d4563d29ead",
-  "builtAt": "2026-06-30T22:39:43.179Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
@@ -40,6 +40,26 @@
     "startLine": 39
   },
   "callers": [
+    {
+      "id": "sym:packages/ui/web/vendor/react.production.min.js#B@L12",
+      "confidence": 1,
+      "name": "B",
+      "qualifiedName": "B",
+      "signature": "B(a, b, e, m, d)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react.production.min.js",
+      "line": 12
+    },
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Ce@L64",
+      "confidence": 1,
+      "name": "Ce",
+      "qualifiedName": "Ce",
+      "signature": "Ce(a, b, c, d, e)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 64
+    },
     {
       "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.parse.visit@L105",
       "confidence": 1,
@@ -100,6 +120,16 @@
       "line": 83
     },
     {
+      "id": "sym:packages/ui/web/vendor/react.production.min.js#O@L15",
+      "confidence": 1,
+      "name": "O",
+      "qualifiedName": "O",
+      "signature": "O(a, b)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react.production.min.js",
+      "line": 15
+    },
+    {
       "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList.flush@L653",
       "confidence": 1,
       "name": "flush",
@@ -128,6 +158,36 @@
       "type": "function",
       "file": "packages/parsers/src/rust/parser.ts",
       "line": 802
+    },
+    {
+      "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.extendsAndImplements@L125",
+      "confidence": 1,
+      "name": "extendsAndImplements",
+      "qualifiedName": "PhpExtractor.walk.extendsAndImplements",
+      "signature": "extendsAndImplements(…)",
+      "type": "function",
+      "file": "packages/parsers/src/php/PhpExtractor.ts",
+      "line": 125
+    },
+    {
+      "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkCalls@L219",
+      "confidence": 1,
+      "name": "walkCalls",
+      "qualifiedName": "PhpExtractor.walk.walkCalls",
+      "signature": "walkCalls(…)",
+      "type": "function",
+      "file": "packages/parsers/src/php/PhpExtractor.ts",
+      "line": 219
+    },
+    {
+      "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkMethods@L140",
+      "confidence": 1,
+      "name": "walkMethods",
+      "qualifiedName": "PhpExtractor.walk.walkMethods",
+      "signature": "walkMethods(…)",
+      "type": "function",
+      "file": "packages/parsers/src/php/PhpExtractor.ts",
+      "line": 140
     },
     {
       "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse.visit@L100",
@@ -180,24 +240,24 @@
       "line": 71
     },
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls.walk@L227",
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls.walk@L263",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "TypeScriptExtractor.collectCalls.walk",
       "signature": "walk(…)",
       "type": "function",
       "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
-      "line": 227
+      "line": 263
     },
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L66",
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
       "confidence": 1,
       "name": "visit",
       "qualifiedName": "TypeScriptExtractor.parse.visit",
       "signature": "visit(…)",
       "type": "function",
       "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
-      "line": 66
+      "line": 86
     },
     {
       "id": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
@@ -220,14 +280,14 @@
       "line": 376
     },
     {
-      "id": "sym:packages/parsers/src/ts/nest.ts#allStringArgs@L595",
+      "id": "sym:packages/parsers/src/ts/nest.ts#allStringArgs@L597",
       "confidence": 1,
       "name": "allStringArgs",
       "qualifiedName": "allStringArgs",
       "signature": "allStringArgs(d: ts.Decorator): string[]",
       "type": "function",
       "file": "packages/parsers/src/ts/nest.ts",
-      "line": 595
+      "line": 597
     },
     {
       "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
@@ -250,14 +310,24 @@
       "line": 603
     },
     {
-      "id": "sym:packages/mcp/src/verbs.ts#askToMarkdown@L1449",
+      "id": "sym:packages/mcp/src/verbs.ts#askToMarkdown@L1940",
       "confidence": 1,
       "name": "askToMarkdown",
       "qualifiedName": "askToMarkdown",
       "signature": "askToMarkdown(result: Record<string, unknown>): string",
       "type": "function",
       "file": "packages/mcp/src/verbs.ts",
-      "line": 1449
+      "line": 1940
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+      "confidence": 1,
+      "name": "blameLines",
+      "qualifiedName": "blameLines",
+      "signature": "blameLines(root: string, path: string): BlameLine[]",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 94
     },
     {
       "id": "sym:packages/core/src/dossier/coverage.ts#bodyNodeIdsOfKind@L239",
@@ -300,14 +370,34 @@
       "line": 42
     },
     {
-      "id": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L84",
+      "id": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
       "confidence": 1,
       "name": "buildDossiersByScope",
       "qualifiedName": "buildDossiersByScope",
       "signature": "buildDossiersByScope(soul: SoulStore, repoRoot: string, scope: DossierScope, id: string, now: string, opts: DossiersByScopeOpts = {}): DossiersByScope | undefined",
       "type": "function",
       "file": "packages/core/src/dossier/by-scope.ts",
-      "line": 84
+      "line": 86
+    },
+    {
+      "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
+      "confidence": 1,
+      "name": "buildFunctionalMap",
+      "qualifiedName": "buildFunctionalMap",
+      "signature": "buildFunctionalMap(soul: SoulStore, opts: BuildFunctionalMapOpts = {}): FunctionalMap",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 74
+    },
+    {
+      "id": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+      "confidence": 1,
+      "name": "buildIndexes",
+      "qualifiedName": "buildIndexes",
+      "signature": "buildIndexes(nodes, edges)",
+      "type": "function",
+      "file": "packages/ui/web/graph-model.js",
+      "line": 20
     },
     {
       "id": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
@@ -330,24 +420,34 @@
       "line": 187
     },
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#callsWithin@L873",
+      "id": "sym:packages/ui/src/viz.ts#buildVizGraph@L223",
+      "confidence": 1,
+      "name": "buildVizGraph",
+      "qualifiedName": "buildVizGraph",
+      "signature": "buildVizGraph(soul: SoulStore): VizGraph",
+      "type": "function",
+      "file": "packages/ui/src/viz.ts",
+      "line": 223
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#callsWithin@L913",
       "confidence": 1,
       "name": "callsWithin",
       "qualifiedName": "callsWithin",
       "signature": "callsWithin(stmt: ts.Statement): ts.CallExpression[]",
       "type": "function",
       "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
-      "line": 873
+      "line": 913
     },
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#callsWithin.walk@L875",
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#callsWithin.walk@L915",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "callsWithin.walk",
       "signature": "walk(…)",
       "type": "function",
       "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
-      "line": 875
+      "line": 915
     },
     {
       "id": "sym:packages/parsers/src/java/JavaExtractor.ts#catchSelector@L348",
@@ -360,44 +460,74 @@
       "line": 348
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#cmdExport@L1117",
+      "id": "sym:scripts/budget-check.mjs#check@L60",
+      "confidence": 1,
+      "name": "check",
+      "qualifiedName": "check",
+      "signature": "check(name, fn)",
+      "type": "function",
+      "file": "scripts/budget-check.mjs",
+      "line": 60
+    },
+    {
+      "id": "sym:scripts/eval-check.mjs#check@L35",
+      "confidence": 1,
+      "name": "check",
+      "qualifiedName": "check",
+      "signature": "check(name, fn)",
+      "type": "function",
+      "file": "scripts/eval-check.mjs",
+      "line": 35
+    },
+    {
+      "id": "sym:scripts/semantic-check.mjs#check@L42",
+      "confidence": 1,
+      "name": "check",
+      "qualifiedName": "check",
+      "signature": "check(name, fn)",
+      "type": "function",
+      "file": "scripts/semantic-check.mjs",
+      "line": 42
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdDoctor@L1255",
+      "confidence": 1,
+      "name": "cmdDoctor",
+      "qualifiedName": "cmdDoctor",
+      "signature": "cmdDoctor(args: string[], ctx?: CmdCtx): number",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1255
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
       "confidence": 1,
       "name": "cmdExport",
       "qualifiedName": "cmdExport",
       "signature": "cmdExport(args: string[], ctx?: CmdCtx): Promise<number>",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 1117
+      "line": 1504
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#cmdMcp@L1035",
+      "id": "sym:packages/cli/src/cli.ts#cmdMcp@L1421",
       "confidence": 1,
       "name": "cmdMcp",
       "qualifiedName": "cmdMcp",
       "signature": "cmdMcp(args: string[], ctx?: CmdCtx): number",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 1035
+      "line": 1421
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#cmdViz@L1164",
+      "id": "sym:packages/cli/src/cli.ts#cmdViz@L1574",
       "confidence": 1,
       "name": "cmdViz",
       "qualifiedName": "cmdViz",
       "signature": "cmdViz(args: string[], ctx?: CmdCtx): Promise<number>",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 1164
-    },
-    {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1687",
-      "confidence": 1,
-      "name": "collectCallSites",
-      "qualifiedName": "collectCallSites",
-      "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): CsharpCallSite[]",
-      "type": "function",
-      "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1687
+      "line": 1574
     },
     {
       "id": "sym:packages/parsers/src/go/parser.ts#collectCallSites@L1770",
@@ -410,14 +540,14 @@
       "line": 1770
     },
     {
-      "id": "sym:packages/parsers/src/java/parser.ts#collectCallSites@L1002",
+      "id": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
       "confidence": 1,
       "name": "collectCallSites",
       "qualifiedName": "collectCallSites",
-      "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): JavaCallSite[]",
+      "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): RustCallSite[]",
       "type": "function",
-      "file": "packages/parsers/src/java/parser.ts",
-      "line": 1002
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1590
     },
     {
       "id": "sym:packages/parsers/src/python/parser.ts#collectCallSites@L1041",
@@ -430,24 +560,44 @@
       "line": 1041
     },
     {
-      "id": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1693",
       "confidence": 1,
       "name": "collectCallSites",
       "qualifiedName": "collectCallSites",
-      "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): RustCallSite[]",
+      "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): CsharpCallSite[]",
       "type": "function",
-      "file": "packages/parsers/src/rust/parser.ts",
-      "line": 1590
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1693
     },
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#collectCargoMembers@L196",
+      "id": "sym:packages/parsers/src/java/parser.ts#collectCallSites@L1002",
+      "confidence": 1,
+      "name": "collectCallSites",
+      "qualifiedName": "collectCallSites",
+      "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): JavaCallSite[]",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1002
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#collectCargoMembers@L194",
       "confidence": 1,
       "name": "collectCargoMembers",
       "qualifiedName": "collectCargoMembers",
       "signature": "collectCargoMembers(segment: string, out: string[]): void",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 196
+      "line": 194
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+      "confidence": 1,
+      "name": "collectComments",
+      "qualifiedName": "collectComments",
+      "signature": "collectComments(src: string): CommentBlock[]",
+      "type": "function",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 47
     },
     {
       "id": "sym:packages/parsers/src/csharp/lexer.ts#collectComments@L694",
@@ -468,16 +618,6 @@
       "type": "function",
       "file": "packages/parsers/src/go/lexer.ts",
       "line": 131
-    },
-    {
-      "id": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
-      "confidence": 1,
-      "name": "collectComments",
-      "qualifiedName": "collectComments",
-      "signature": "collectComments(src: string): CommentBlock[]",
-      "type": "function",
-      "file": "packages/parsers/src/java/lexer.ts",
-      "line": 47
     },
     {
       "id": "sym:packages/parsers/src/plsql/lexer.ts#collectComments@L201",
@@ -510,34 +650,24 @@
       "line": 1214
     },
     {
-      "id": "sym:packages/parsers/src/ts/react.ts#collectHooks@L168",
+      "id": "sym:packages/parsers/src/ts/react.ts#collectHooks@L171",
       "confidence": 1,
       "name": "collectHooks",
       "qualifiedName": "collectHooks",
       "signature": "collectHooks(body: ts.Node | undefined): string[]",
       "type": "function",
       "file": "packages/parsers/src/ts/react.ts",
-      "line": 168
+      "line": 171
     },
     {
-      "id": "sym:packages/parsers/src/ts/react.ts#collectHooks.visit@L171",
+      "id": "sym:packages/parsers/src/ts/react.ts#collectHooks.visit@L174",
       "confidence": 1,
       "name": "visit",
       "qualifiedName": "collectHooks.visit",
       "signature": "visit(…)",
       "type": "function",
       "file": "packages/parsers/src/ts/react.ts",
-      "line": 171
-    },
-    {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1727",
-      "confidence": 1,
-      "name": "collectImports",
-      "qualifiedName": "collectImports",
-      "signature": "collectImports(tokens: Token[]): { pkg: string; imports: CsharpImport[] }",
-      "type": "function",
-      "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1727
+      "line": 174
     },
     {
       "id": "sym:packages/parsers/src/go/parser.ts#collectImports@L1810",
@@ -550,14 +680,14 @@
       "line": 1810
     },
     {
-      "id": "sym:packages/parsers/src/java/parser.ts#collectImports@L1043",
+      "id": "sym:packages/parsers/src/rust/parser.ts#collectImports@L1654",
       "confidence": 1,
       "name": "collectImports",
       "qualifiedName": "collectImports",
-      "signature": "collectImports(tokens: Token[]): { pkg: string; imports: JavaImport[] }",
+      "signature": "collectImports(tokens: Token[]): RustImport[]",
       "type": "function",
-      "file": "packages/parsers/src/java/parser.ts",
-      "line": 1043
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1654
     },
     {
       "id": "sym:packages/parsers/src/python/parser.ts#collectImports@L1096",
@@ -570,24 +700,34 @@
       "line": 1096
     },
     {
-      "id": "sym:packages/parsers/src/rust/parser.ts#collectImports@L1654",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1733",
       "confidence": 1,
       "name": "collectImports",
       "qualifiedName": "collectImports",
-      "signature": "collectImports(tokens: Token[]): RustImport[]",
+      "signature": "collectImports(tokens: Token[]): { pkg: string; imports: CsharpImport[] }",
       "type": "function",
-      "file": "packages/parsers/src/rust/parser.ts",
-      "line": 1654
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1733
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports.consumeDotted@L1734",
+      "id": "sym:packages/parsers/src/java/parser.ts#collectImports@L1043",
+      "confidence": 1,
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(tokens: Token[]): { pkg: string; imports: JavaImport[] }",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1043
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports.consumeDotted@L1740",
       "confidence": 1,
       "name": "consumeDotted",
       "qualifiedName": "collectImports.consumeDotted",
       "signature": "consumeDotted(…)",
       "type": "function",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1734
+      "line": 1740
     },
     {
       "id": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1050",
@@ -620,6 +760,16 @@
       "line": 1660
     },
     {
+      "id": "sym:packages/ui/web/support.js#collectProps@L369",
+      "confidence": 1,
+      "name": "collectProps",
+      "qualifiedName": "collectProps",
+      "signature": "collectProps(node, kind, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 369
+    },
+    {
       "id": "sym:packages/parsers/src/python/lexer.ts#collectPythonComments@L495",
       "confidence": 1,
       "name": "collectPythonComments",
@@ -640,24 +790,34 @@
       "line": 663
     },
     {
-      "id": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks@L129",
+      "id": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks@L132",
       "confidence": 1,
       "name": "collectRendersAndHooks",
       "qualifiedName": "collectRendersAndHooks",
       "signature": "collectRendersAndHooks(body: ts.Node | undefined, byKey: Map<string, string>, srcId: string, edges: Edge[], recorded: string[], hooks: string[]): void",
       "type": "function",
       "file": "packages/parsers/src/ts/react.ts",
-      "line": 129
+      "line": 132
     },
     {
-      "id": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L138",
+      "id": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
       "confidence": 1,
       "name": "visit",
       "qualifiedName": "collectRendersAndHooks.visit",
       "signature": "visit(…)",
       "type": "function",
       "file": "packages/parsers/src/ts/react.ts",
-      "line": 138
+      "line": 141
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#collectRepeated@L115",
+      "confidence": 1,
+      "name": "collectRepeated",
+      "qualifiedName": "collectRepeated",
+      "signature": "collectRepeated(args: string[], flag: string): string[]",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 115
     },
     {
       "id": "sym:packages/parsers/src/rust/lexer.ts#collectRustComments@L556",
@@ -670,24 +830,34 @@
       "line": 556
     },
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L911",
+      "id": "sym:packages/mcp/src/secrets.ts#collectStrings@L120",
+      "confidence": 1,
+      "name": "collectStrings",
+      "qualifiedName": "collectStrings",
+      "signature": "collectStrings(value: unknown, base = ''): StringField[]",
+      "type": "function",
+      "file": "packages/mcp/src/secrets.ts",
+      "line": 120
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L951",
       "confidence": 1,
       "name": "collectTsComments",
       "qualifiedName": "collectTsComments",
       "signature": "collectTsComments(src: string): CommentBlock[]",
       "type": "function",
       "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
-      "line": 911
+      "line": 951
     },
     {
-      "id": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L372",
+      "id": "sym:packages/core/src/index/sqlite-index.ts#composeSearchableBody@L560",
       "confidence": 1,
       "name": "composeSearchableBody",
       "qualifiedName": "composeSearchableBody",
       "signature": "composeSearchableBody(node: Node, repoRoot: string, fileCache: FileLineCache): string",
       "type": "function",
       "file": "packages/core/src/index/sqlite-index.ts",
-      "line": 372
+      "line": 560
     },
     {
       "id": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
@@ -700,14 +870,14 @@
       "line": 63
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#computeLineStarts@L1862",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#computeLineStarts@L1868",
       "confidence": 1,
       "name": "computeLineStarts",
       "qualifiedName": "computeLineStarts",
       "signature": "computeLineStarts(src: string): number[]",
       "type": "function",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1862
+      "line": 1868
     },
     {
       "id": "sym:packages/parsers/src/java/parser.ts#computeLineStarts@L1139",
@@ -750,6 +920,26 @@
       "line": 382
     },
     {
+      "id": "sym:packages/core/src/graph-layout.ts#countFiles@L216",
+      "confidence": 1,
+      "name": "countFiles",
+      "qualifiedName": "countFiles",
+      "signature": "countFiles(root: string): number",
+      "type": "function",
+      "file": "packages/core/src/graph-layout.ts",
+      "line": 216
+    },
+    {
+      "id": "sym:packages/core/src/federation.ts#crossRepoNeighbors@L190",
+      "confidence": 1,
+      "name": "crossRepoNeighbors",
+      "qualifiedName": "crossRepoNeighbors",
+      "signature": "crossRepoNeighbors(fed: Federation, cur: { soulRoot: string; id: string }, node: Node | undefined, dir: Dir): Array<{ soulRoot: string; id: string }>",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 190
+    },
+    {
       "id": "sym:packages/pipeline/src/parity/parity.ts#decisionParity@L190",
       "confidence": 1,
       "name": "decisionParity",
@@ -790,14 +980,14 @@
       "line": 119
     },
     {
-      "id": "sym:packages/pipeline/src/linker/semantic.test.ts#docSymbolEdges@L33",
+      "id": "sym:packages/pipeline/src/linker/semantic.test.ts#docSymbolEdges@L34",
       "confidence": 1,
       "name": "docSymbolEdges",
       "qualifiedName": "docSymbolEdges",
       "signature": "docSymbolEdges(soul: SoulStore): Array<{ src: string; dst: string; rel: string }>",
       "type": "function",
       "file": "packages/pipeline/src/linker/semantic.test.ts",
-      "line": 33
+      "line": 34
     },
     {
       "id": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
@@ -810,14 +1000,24 @@
       "line": 15
     },
     {
-      "id": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+      "id": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1910",
       "confidence": 1,
       "name": "dossiersByScopeToMarkdown",
       "qualifiedName": "dossiersByScopeToMarkdown",
       "signature": "dossiersByScopeToMarkdown(r: DossiersByScopeShape): string",
       "type": "function",
       "file": "packages/mcp/src/verbs.ts",
-      "line": 1419
+      "line": 1910
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#emitInject@L315",
+      "confidence": 1,
+      "name": "emitInject",
+      "qualifiedName": "emitInject",
+      "signature": "emitInject(consumerId: string, depType: string, byKey: Map<string, string>, edges: Edge[], recorded: string[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 315
     },
     {
       "id": "sym:packages/parsers/src/java/spring.ts#emitInject@L332",
@@ -830,24 +1030,14 @@
       "line": 332
     },
     {
-      "id": "sym:packages/parsers/src/ts/nest.ts#emitInject@L313",
-      "confidence": 1,
-      "name": "emitInject",
-      "qualifiedName": "emitInject",
-      "signature": "emitInject(consumerId: string, depType: string, byKey: Map<string, string>, edges: Edge[], recorded: string[]): void",
-      "type": "function",
-      "file": "packages/parsers/src/ts/nest.ts",
-      "line": 313
-    },
-    {
-      "id": "sym:packages/parsers/src/ts/react.ts#emitRender@L184",
+      "id": "sym:packages/parsers/src/ts/react.ts#emitRender@L187",
       "confidence": 1,
       "name": "emitRender",
       "qualifiedName": "emitRender",
       "signature": "emitRender(srcId: string, childName: string, byKey: Map<string, string>, edges: Edge[], recorded: string[]): void",
       "type": "function",
       "file": "packages/parsers/src/ts/react.ts",
-      "line": 184
+      "line": 187
     },
     {
       "id": "sym:packages/parsers/src/java/spring.ts#exceptionTypesOf@L450",
@@ -860,14 +1050,14 @@
       "line": 450
     },
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L210",
+      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
       "confidence": 1,
       "name": "expandPatterns",
       "qualifiedName": "expandPatterns",
       "signature": "expandPatterns(root: string, patterns: string[]): WorkspacePackage[]",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 210
+      "line": 208
     },
     {
       "id": "sym:packages/pipeline/src/linker/signals.ts#explicitSignal@L23",
@@ -880,34 +1070,54 @@
       "line": 23
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#extractCwdFlag@L213",
+      "id": "sym:packages/cli/src/cli.ts#extractCwdFlag@L248",
       "confidence": 1,
       "name": "extractCwdFlag",
       "qualifiedName": "extractCwdFlag",
       "signature": "extractCwdFlag(argv: string[]): { argv: string[]; cwdOverride?: string }",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 213
+      "line": 248
     },
     {
-      "id": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L60",
+      "id": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L62",
       "confidence": 1,
       "name": "extractExpressRoutes",
       "qualifiedName": "extractExpressRoutes",
       "signature": "extractExpressRoutes(input: ExpressPassInput): void",
       "type": "function",
       "file": "packages/parsers/src/ts/express.ts",
-      "line": 60
+      "line": 62
     },
     {
-      "id": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes.visit@L63",
+      "id": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes.visit@L65",
       "confidence": 1,
       "name": "visit",
       "qualifiedName": "extractExpressRoutes.visit",
       "signature": "visit(…)",
       "type": "function",
       "file": "packages/parsers/src/ts/express.ts",
-      "line": 63
+      "line": 65
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+      "confidence": 1,
+      "name": "extractHttpClients",
+      "qualifiedName": "extractHttpClients",
+      "signature": "extractHttpClients(input: HttpClientPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.ts",
+      "line": 69
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients.visit@L80",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "extractHttpClients.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.ts",
+      "line": 80
     },
     {
       "id": "sym:packages/parsers/src/plsql/parser.ts#extractInlineFk@L1493",
@@ -920,14 +1130,14 @@
       "line": 1493
     },
     {
-      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L102",
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
       "confidence": 1,
       "name": "extractNestSemantics",
       "qualifiedName": "extractNestSemantics",
       "signature": "extractNestSemantics(input: NestPassInput): void",
       "type": "function",
       "file": "packages/parsers/src/ts/nest.ts",
-      "line": 102
+      "line": 104
     },
     {
       "id": "sym:packages/core/src/rules/extract.ts#extractRules@L134",
@@ -960,6 +1170,16 @@
       "line": 1373
     },
     {
+      "id": "sym:packages/core/src/federation.ts#federatedImpact@L106",
+      "confidence": 1,
+      "name": "federatedImpact",
+      "qualifiedName": "federatedImpact",
+      "signature": "federatedImpact(fed: Federation, startRoot: string, id: string, dir: Dir, opts: { depth?: number; limit?: number; extractedOnly?: boolean } = {}): FederatedImpactResult",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 106
+    },
+    {
       "id": "sym:packages/parsers/src/python/parser.ts#findAllCallChains@L862",
       "confidence": 1,
       "name": "findAllCallChains",
@@ -980,24 +1200,54 @@
       "line": 203
     },
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#globDirs@L227",
+      "id": "sym:packages/pipeline/src/workspace.ts#globDirs@L225",
       "confidence": 1,
       "name": "globDirs",
       "qualifiedName": "globDirs",
       "signature": "globDirs(root: string, pattern: string): string[]",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 227
+      "line": 225
     },
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#globDirs.walk@L229",
+      "id": "sym:packages/pipeline/src/workspace.ts#globDirs.walk@L227",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "globDirs.walk",
       "signature": "walk(…)",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 229
+      "line": 227
+    },
+    {
+      "id": "sym:packages/parsers/src/tree-sitter-pool.ts#grammarsNeededFor@L41",
+      "confidence": 1,
+      "name": "grammarsNeededFor",
+      "qualifiedName": "grammarsNeededFor",
+      "signature": "grammarsNeededFor(files: readonly FileMeta[]): string[]",
+      "type": "function",
+      "file": "packages/parsers/src/tree-sitter-pool.ts",
+      "line": 41
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#graphFingerprint@L148",
+      "confidence": 1,
+      "name": "graphFingerprint",
+      "qualifiedName": "graphFingerprint",
+      "signature": "graphFingerprint(soul: SoulStore): GraphFingerprint",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 148
+    },
+    {
+      "id": "sym:packages/core/src/functional-map.ts#groupByDepth@L285",
+      "confidence": 1,
+      "name": "groupByDepth",
+      "qualifiedName": "groupByDepth",
+      "signature": "groupByDepth(symbols: Node[], depth: number): Array<{ prefix: string; symbols: Node[] }>",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 285
     },
     {
       "id": "sym:packages/pipeline/src/linker/signals.ts#identifierSignal@L50",
@@ -1040,6 +1290,46 @@
       "line": 256
     },
     {
+      "id": "sym:packages/core/src/federation.ts#loadFederation@L43",
+      "confidence": 1,
+      "name": "loadFederation",
+      "qualifiedName": "loadFederation",
+      "signature": "loadFederation(roots: string[]): Federation",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 43
+    },
+    {
+      "id": "sym:packages/pipeline/src/cluster/cluster.ts#longestCommonDirPrefix@L147",
+      "confidence": 1,
+      "name": "longestCommonDirPrefix",
+      "qualifiedName": "longestCommonDirPrefix",
+      "signature": "longestCommonDirPrefix(files: string[]): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/cluster.ts",
+      "line": 147
+    },
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main()",
+      "type": "function",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 165
+    },
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#main.call@L185",
+      "confidence": 1,
+      "name": "call",
+      "qualifiedName": "main.call",
+      "signature": "call(…)",
+      "type": "function",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 185
+    },
+    {
       "id": "sym:packages/core/src/merge.ts#mergeThreeWay@L64",
       "confidence": 1,
       "name": "mergeThreeWay",
@@ -1060,14 +1350,14 @@
       "line": 164
     },
     {
-      "id": "sym:packages/parsers/src/ts/nest.ts#moduleProviders@L370",
+      "id": "sym:packages/parsers/src/ts/nest.ts#moduleProviders@L372",
       "confidence": 1,
       "name": "moduleProviders",
       "qualifiedName": "moduleProviders",
       "signature": "moduleProviders(modDec: ts.Decorator | undefined): string[]",
       "type": "function",
       "file": "packages/parsers/src/ts/nest.ts",
-      "line": 370
+      "line": 372
     },
     {
       "id": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L123",
@@ -1080,14 +1370,14 @@
       "line": 123
     },
     {
-      "id": "sym:packages/core/src/dossier/by-scope.ts#packageMembers@L211",
+      "id": "sym:packages/core/src/dossier/by-scope.ts#packageMembers@L215",
       "confidence": 1,
       "name": "packageMembers",
       "qualifiedName": "packageMembers",
       "signature": "packageMembers(soul: SoulStore, scopeNode: Node, incoming: Map<string, Edge[]>): string[]",
       "type": "function",
       "file": "packages/core/src/dossier/by-scope.ts",
-      "line": 211
+      "line": 215
     },
     {
       "id": "sym:packages/pipeline/src/gitignore.ts#parseGitignore@L48",
@@ -1110,24 +1400,24 @@
       "line": 36
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#parsePackages@L122",
+      "id": "sym:packages/cli/src/cli.ts#parsePackages@L151",
       "confidence": 1,
       "name": "parsePackages",
       "qualifiedName": "parsePackages",
       "signature": "parsePackages(args: string[]): string[]",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 122
+      "line": 151
     },
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L136",
+      "id": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
       "confidence": 1,
       "name": "parsePnpmWorkspacePatterns",
       "qualifiedName": "parsePnpmWorkspacePatterns",
       "signature": "parsePnpmWorkspacePatterns(content: string): string[]",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 136
+      "line": 134
     },
     {
       "id": "sym:packages/pipeline/src/cfg/guard-chain.ts#pathCondition@L45",
@@ -1150,14 +1440,24 @@
       "line": 68
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#positionalsOf@L83",
+      "id": "sym:packages/cli/src/cli.ts#positionalsOf@L100",
       "confidence": 1,
       "name": "positionalsOf",
       "qualifiedName": "positionalsOf",
       "signature": "positionalsOf(args: string[]): string[]",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 83
+      "line": 100
+    },
+    {
+      "id": "sym:packages/core/src/federation.ts#push@L303",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Edge[]>, id: string, e: Edge): void",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 303
     },
     {
       "id": "sym:packages/core/src/dossier/framework.ts#pushDependency@L580",
@@ -1180,6 +1480,26 @@
       "line": 1354
     },
     {
+      "id": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+      "confidence": 1,
+      "name": "readAllArtifacts",
+      "qualifiedName": "readAllArtifacts",
+      "signature": "readAllArtifacts(analysisDir: string): ReadArtifact[]",
+      "type": "function",
+      "file": "packages/core/src/llm-overlay.ts",
+      "line": 141
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+      "confidence": 1,
+      "name": "readSemantic",
+      "qualifiedName": "readSemantic",
+      "signature": "readSemantic(soul: SoulStore): GraphSnapshot",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 173
+    },
+    {
       "id": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
       "confidence": 1,
       "name": "readTableRef",
@@ -1198,6 +1518,16 @@
       "type": "function",
       "file": "packages/core/src/dossier/reconstruct.ts",
       "line": 322
+    },
+    {
+      "id": "sym:packages/core/src/functional-map.ts#readWorkspacePackages@L251",
+      "confidence": 1,
+      "name": "readWorkspacePackages",
+      "qualifiedName": "readWorkspacePackages",
+      "signature": "readWorkspacePackages(soul: SoulStore): WorkspacePackage[]",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 251
     },
     {
       "id": "sym:packages/core/src/dossier/reconstruct.ts#reconstructionToMarkdown@L357",
@@ -1230,14 +1560,14 @@
       "line": 10
     },
     {
-      "id": "sym:packages/pipeline/src/rules/export.ts#renderReport@L97",
+      "id": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
       "confidence": 1,
       "name": "renderReport",
       "qualifiedName": "renderReport",
       "signature": "renderReport(soul: SoulStore, procedure?: string): string",
       "type": "function",
       "file": "packages/pipeline/src/rules/export.ts",
-      "line": 97
+      "line": 102
     },
     {
       "id": "sym:packages/parsers/src/java/spring.ts#requestMethodsOf@L385",
@@ -1278,6 +1608,16 @@
       "type": "function",
       "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
       "line": 126
+    },
+    {
+      "id": "sym:scripts/eval/harness.mjs#resolveExpected@L78",
+      "confidence": 1,
+      "name": "resolveExpected",
+      "qualifiedName": "resolveExpected",
+      "signature": "resolveExpected(entry, soul)",
+      "type": "function",
+      "file": "scripts/eval/harness.mjs",
+      "line": 78
     },
     {
       "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo@L50",
@@ -1360,14 +1700,14 @@
       "line": 179
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#resolvePackageScope@L146",
+      "id": "sym:packages/cli/src/cli.ts#resolvePackageScope@L175",
       "confidence": 1,
       "name": "resolvePackageScope",
       "qualifiedName": "resolvePackageScope",
-      "signature": "resolvePackageScope(repoRoot: string, args: string[]): { status: number; packageRoots?: string[]; layout: WorkspaceLayout | null; indexedPackages: string[] }",
+      "signature": "resolvePackageScope(repoRoot: string, args: string[]): {\n  status: number;\n  packageRoots?: string[];\n  layout: WorkspaceLayout | null;\n  indexedPackages: string[];\n}",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 146
+      "line": 175
     },
     {
       "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython@L56",
@@ -1450,6 +1790,26 @@
       "line": 61
     },
     {
+      "id": "sym:packages/core/src/aliases.ts#rewriteQuery@L97",
+      "confidence": 1,
+      "name": "rewriteQuery",
+      "qualifiedName": "rewriteQuery",
+      "signature": "rewriteQuery(text: string, aliases: AliasMap): string",
+      "type": "function",
+      "file": "packages/core/src/aliases.ts",
+      "line": 97
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+      "confidence": 1,
+      "name": "routeParamsOf",
+      "qualifiedName": "routeParamsOf",
+      "signature": "routeParamsOf(m: ts.MethodDeclaration): Array<{ name: string; type?: string; in: string }>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 414
+    },
+    {
       "id": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L418",
       "confidence": 1,
       "name": "routeParamsOf",
@@ -1460,34 +1820,44 @@
       "line": 418
     },
     {
-      "id": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L412",
-      "confidence": 1,
-      "name": "routeParamsOf",
-      "qualifiedName": "routeParamsOf",
-      "signature": "routeParamsOf(m: ts.MethodDeclaration): Array<{ name: string; type?: string; in: string }>",
-      "type": "function",
-      "file": "packages/parsers/src/ts/nest.ts",
-      "line": 412
-    },
-    {
-      "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L39",
+      "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
       "confidence": 1,
       "name": "runCluster",
       "qualifiedName": "runCluster",
       "signature": "runCluster(soul: SoulStore): ClusterStats",
       "type": "function",
       "file": "packages/pipeline/src/cluster/cluster.ts",
-      "line": 39
+      "line": 40
     },
     {
-      "id": "sym:packages/pipeline/src/linker/index.ts#runLink@L43",
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz@L147",
+      "confidence": 1,
+      "name": "runFuzz",
+      "qualifiedName": "runFuzz",
+      "signature": "runFuzz(extractorName: string, opts: RunFuzzOpts = {}): Promise<FuzzOutcome>",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+      "line": 147
+    },
+    {
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+      "confidence": 1,
+      "name": "slotLoop",
+      "qualifiedName": "runFuzz.slotLoop",
+      "signature": "slotLoop(…)",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+      "line": 180
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/index.ts#runLink@L44",
       "confidence": 1,
       "name": "runLink",
       "qualifiedName": "runLink",
       "signature": "runLink(soul: SoulStore, root: string, threshold?: number, docFiles?: string[]): LinkStats",
       "type": "function",
       "file": "packages/pipeline/src/linker/index.ts",
-      "line": 43
+      "line": 44
     },
     {
       "id": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
@@ -1500,6 +1870,26 @@
       "line": 42
     },
     {
+      "id": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+      "confidence": 1,
+      "name": "runOwnership",
+      "qualifiedName": "runOwnership",
+      "signature": "runOwnership(soul: SoulStore, root: string, onlyFiles?: Set<string>): OwnershipStats",
+      "type": "function",
+      "file": "packages/pipeline/src/ownership.ts",
+      "line": 77
+    },
+    {
+      "id": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel@L71",
+      "confidence": 1,
+      "name": "runParseParallel",
+      "qualifiedName": "runParseParallel",
+      "signature": "runParseParallel(soul: SoulStore, root: string, files: FileMeta[], size = defaultPoolSize(files.length)): Promise<ParseStats>",
+      "type": "function",
+      "file": "packages/pipeline/src/parse-pool.ts",
+      "line": 71
+    },
+    {
       "id": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
       "confidence": 1,
       "name": "runResolve",
@@ -1510,14 +1900,14 @@
       "line": 71
     },
     {
-      "id": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L42",
+      "id": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
       "confidence": 1,
       "name": "runSemanticLink",
       "qualifiedName": "runSemanticLink",
-      "signature": "runSemanticLink(soul: SoulStore, root: string, docFiles?: string[]): SemanticStats",
+      "signature": "runSemanticLink(soul: SoulStore, root: string, docFiles?: string[], opts: SemanticLinkOpts = {}): SemanticStats",
       "type": "function",
       "file": "packages/pipeline/src/linker/semantic.ts",
-      "line": 42
+      "line": 69
     },
     {
       "id": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
@@ -1530,6 +1920,46 @@
       "line": 74
     },
     {
+      "id": "sym:packages/mcp/src/secrets.ts#scanSecrets@L75",
+      "confidence": 1,
+      "name": "scanSecrets",
+      "qualifiedName": "scanSecrets",
+      "signature": "scanSecrets(text: string): SecretHit[]",
+      "type": "function",
+      "file": "packages/mcp/src/secrets.ts",
+      "line": 75
+    },
+    {
+      "id": "sym:scripts/eval/harness.mjs#scoreFixture@L105",
+      "confidence": 1,
+      "name": "scoreFixture",
+      "qualifiedName": "scoreFixture",
+      "signature": "scoreFixture(lang, fixtureDir, core, pipeline, opts = {})",
+      "type": "function",
+      "file": "scripts/eval/harness.mjs",
+      "line": 105
+    },
+    {
+      "id": "sym:scripts/eval/harness.mjs#scoreFixture.scoreAll@L153",
+      "confidence": 1,
+      "name": "scoreAll",
+      "qualifiedName": "scoreFixture.scoreAll",
+      "signature": "scoreAll(…)",
+      "type": "function",
+      "file": "scripts/eval/harness.mjs",
+      "line": 153
+    },
+    {
+      "id": "sym:scripts/eval/seed.mjs#seedGoldenPairs@L26",
+      "confidence": 1,
+      "name": "seedGoldenPairs",
+      "qualifiedName": "seedGoldenPairs",
+      "signature": "seedGoldenPairs(soul, lang)",
+      "type": "function",
+      "file": "scripts/eval/seed.mjs",
+      "line": 26
+    },
+    {
       "id": "sym:packages/pipeline/src/cfg/basic-block.ts#segmentBlock@L29",
       "confidence": 1,
       "name": "segmentBlock",
@@ -1538,6 +1968,66 @@
       "type": "function",
       "file": "packages/pipeline/src/cfg/basic-block.ts",
       "line": 29
+    },
+    {
+      "id": "sym:scripts/parallel-check.mjs#snap@L79",
+      "confidence": 1,
+      "name": "snap",
+      "qualifiedName": "snap",
+      "signature": "snap(repo)",
+      "type": "function",
+      "file": "scripts/parallel-check.mjs",
+      "line": 79
+    },
+    {
+      "id": "sym:scripts/parallel-check.mjs#snap.walk@L82",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "snap.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/parallel-check.mjs",
+      "line": 82
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.test.ts#snapshot@L350",
+      "confidence": 1,
+      "name": "snapshot",
+      "qualifiedName": "snapshot",
+      "signature": "snapshot(…)",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.test.ts",
+      "line": 350
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.test.ts#snapshot.walk@L352",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "snapshot.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.test.ts",
+      "line": 352
+    },
+    {
+      "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L67",
+      "confidence": 1,
+      "name": "snapshotCrib",
+      "qualifiedName": "snapshotCrib",
+      "signature": "snapshotCrib(repo: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/parse-concurrent.test.ts",
+      "line": 67
+    },
+    {
+      "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L70",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "snapshotCrib.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/parse-concurrent.test.ts",
+      "line": 70
     },
     {
       "id": "sym:packages/parsers/src/plsql/parser.ts#splitConstraints@L1593",
@@ -1570,14 +2060,14 @@
       "line": 116
     },
     {
-      "id": "sym:packages/parsers/src/ts/express.ts#stringPaths@L156",
+      "id": "sym:packages/parsers/src/ts/express.ts#stringPaths@L158",
       "confidence": 1,
       "name": "stringPaths",
       "qualifiedName": "stringPaths",
       "signature": "stringPaths(arg: ts.Expression): string[]",
       "type": "function",
       "file": "packages/parsers/src/ts/express.ts",
-      "line": 156
+      "line": 158
     },
     {
       "id": "sym:packages/parsers/src/md/markdown.ts#stripCode@L127",
@@ -1590,24 +2080,14 @@
       "line": 127
     },
     {
-      "id": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+      "id": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L54",
       "confidence": 1,
       "name": "surprisingConnections",
       "qualifiedName": "surprisingConnections",
       "signature": "surprisingConnections(soul: SoulStore, limit = 20): SurprisingConnection[]",
       "type": "function",
       "file": "packages/pipeline/src/rules/export.ts",
-      "line": 49
-    },
-    {
-      "id": "sym:packages/parsers/src/plsql/lexer.ts#tokenize@L33",
-      "confidence": 1,
-      "name": "tokenize",
-      "qualifiedName": "tokenize",
-      "signature": "tokenize(src: string): Token[]",
-      "type": "function",
-      "file": "packages/parsers/src/plsql/lexer.ts",
-      "line": 33
+      "line": 54
     },
     {
       "id": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
@@ -1618,6 +2098,16 @@
       "type": "function",
       "file": "packages/pipeline/src/linker/tfidf.ts",
       "line": 80
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/lexer.ts#tokenize@L33",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(src: string): Token[]",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/lexer.ts",
+      "line": 33
     },
     {
       "id": "sym:packages/parsers/src/plsql/lexer.ts#tokenize.push@L39",
@@ -1640,14 +2130,74 @@
       "line": 197
     },
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L94",
+      "id": "sym:packages/ui/web/graph-model.js#uniquePush@L15",
+      "confidence": 1,
+      "name": "uniquePush",
+      "qualifiedName": "uniquePush",
+      "signature": "uniquePush(map, key, value)",
+      "type": "function",
+      "file": "packages/ui/web/graph-model.js",
+      "line": 15
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#uniqueRoots@L1892",
+      "confidence": 1,
+      "name": "uniqueRoots",
+      "qualifiedName": "uniqueRoots",
+      "signature": "uniqueRoots(roots: string[]): string[]",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1892
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 94
+      "line": 112
+    },
+    {
+      "id": "sym:packages/core/src/cluster-hash.ts#validateClusterIntegrity@L39",
+      "confidence": 1,
+      "name": "validateClusterIntegrity",
+      "qualifiedName": "validateClusterIntegrity",
+      "signature": "validateClusterIntegrity(soul: SoulStore): ClusterIntegrityReport",
+      "type": "function",
+      "file": "packages/core/src/cluster-hash.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
+      "confidence": 1,
+      "name": "verifyArtifact",
+      "qualifiedName": "verifyArtifact",
+      "signature": "verifyArtifact(soul: SoulStore, repoRoot: string, artifact: LlmArtifact): GroundingResult",
+      "type": "function",
+      "file": "packages/mcp/src/grounding.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:scripts/docs-stats.mjs#walk@L31",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/docs-stats.mjs",
+      "line": 31
+    },
+    {
+      "id": "sym:scripts/budget-check.mjs#walk@L317",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "walk",
+      "signature": "walk(dir)",
+      "type": "function",
+      "file": "scripts/budget-check.mjs",
+      "line": 317
     },
     {
       "id": "sym:packages/cli/src/skill-install.ts#walk@L139",
@@ -1660,27 +2210,88 @@
       "line": 139
     },
     {
-      "id": "sym:packages/mcp/src/enrichment.ts#walkFiles@L1182",
+      "id": "sym:packages/core/src/graph-layout.ts#walkFiles@L202",
+      "confidence": 1,
+      "name": "walkFiles",
+      "qualifiedName": "walkFiles",
+      "signature": "walkFiles(root: string): string[]",
+      "type": "function",
+      "file": "packages/core/src/graph-layout.ts",
+      "line": 202
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#walkFiles@L294",
+      "confidence": 1,
+      "name": "walkFiles",
+      "qualifiedName": "walkFiles",
+      "signature": "walkFiles(root: string): string[]",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 294
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#walkFiles@L1833",
       "confidence": 1,
       "name": "walkFiles",
       "qualifiedName": "walkFiles",
       "signature": "walkFiles(root: string): string[]",
       "type": "function",
       "file": "packages/mcp/src/enrichment.ts",
-      "line": 1182
+      "line": 1833
     },
     {
-      "id": "sym:packages/pipeline/src/update.test.ts#walkJsonl@L56",
+      "id": "sym:packages/core/src/llm-overlay.ts#walkJson@L161",
+      "confidence": 1,
+      "name": "walkJson",
+      "qualifiedName": "walkJson",
+      "signature": "walkJson(root: string): string[]",
+      "type": "function",
+      "file": "packages/core/src/llm-overlay.ts",
+      "line": 161
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.test.ts#walkJsonl@L59",
       "confidence": 1,
       "name": "walkJsonl",
       "qualifiedName": "walkJsonl",
       "signature": "walkJsonl(dir: string): string[]",
       "type": "function",
       "file": "packages/pipeline/src/update.test.ts",
-      "line": 56
+      "line": 59
+    },
+    {
+      "id": "sym:scripts/crib-ab-task.mjs#walkTs@L51",
+      "confidence": 1,
+      "name": "walkTs",
+      "qualifiedName": "walkTs",
+      "signature": "walkTs(dir, out = [])",
+      "type": "function",
+      "file": "scripts/crib-ab-task.mjs",
+      "line": 51
+    },
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#we@L40",
+      "confidence": 1,
+      "name": "we",
+      "qualifiedName": "we",
+      "signature": "we(a)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 40
     }
   ],
-  "callees": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    }
+  ],
   "docs": [],
   "rules": {
     "procedure": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
@@ -1699,6 +2310,20 @@
           "target": "stmt:packages/pipeline/src/linker/inverted-index.ts@L40",
           "line": 40,
           "expr": "const list = map.get(key) ?? [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+        "procedureName": "push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b8defbacb1c0113a0535dbebf737a940151593315f0b53b4c16dfd7e7bcf0de4",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 40
         }
       },
       {
@@ -1738,6 +2363,8 @@
       "packages/cli/src/cli.ts",
       "packages/cli/src/mcp-install.ts",
       "packages/cli/src/skill-install.ts",
+      "packages/core/src/aliases.ts",
+      "packages/core/src/cluster-hash.ts",
       "packages/core/src/delta.ts",
       "packages/core/src/dossier/builder.ts",
       "packages/core/src/dossier/by-scope.ts",
@@ -1745,14 +2372,23 @@
       "packages/core/src/dossier/framework.ts",
       "packages/core/src/dossier/reconstruct.ts",
       "packages/core/src/dossier/serializer.ts",
+      "packages/core/src/federation.ts",
+      "packages/core/src/functional-map.ts",
+      "packages/core/src/graph-layout.ts",
+      "packages/core/src/graph-store.ts",
+      "packages/core/src/index/sqlite-index.test.ts",
       "packages/core/src/index/sqlite-index.ts",
+      "packages/core/src/llm-overlay.ts",
       "packages/core/src/merge.ts",
       "packages/core/src/rules/extract.ts",
       "packages/mcp/src/enrichment.ts",
+      "packages/mcp/src/grounding.ts",
+      "packages/mcp/src/secrets.ts",
       "packages/mcp/src/verbs.ts",
       "packages/parsers/src/csharp/CsharpExtractor.ts",
       "packages/parsers/src/csharp/lexer.ts",
       "packages/parsers/src/csharp/parser.ts",
+      "packages/parsers/src/fuzz/extractor-fuzz.ts",
       "packages/parsers/src/go/GoExtractor.ts",
       "packages/parsers/src/go/lexer.ts",
       "packages/parsers/src/go/parser.ts",
@@ -1761,6 +2397,7 @@
       "packages/parsers/src/java/parser.ts",
       "packages/parsers/src/java/spring.ts",
       "packages/parsers/src/md/markdown.ts",
+      "packages/parsers/src/php/PhpExtractor.ts",
       "packages/parsers/src/plsql/lexer.ts",
       "packages/parsers/src/plsql/parser.ts",
       "packages/parsers/src/python/PythonExtractor.ts",
@@ -1769,8 +2406,10 @@
       "packages/parsers/src/rust/RustExtractor.ts",
       "packages/parsers/src/rust/lexer.ts",
       "packages/parsers/src/rust/parser.ts",
+      "packages/parsers/src/tree-sitter-pool.ts",
       "packages/parsers/src/ts/TypeScriptExtractor.ts",
       "packages/parsers/src/ts/express.ts",
+      "packages/parsers/src/ts/http-client.ts",
       "packages/parsers/src/ts/nest.ts",
       "packages/parsers/src/ts/react.ts",
       "packages/pipeline/src/cfg/basic-block.ts",
@@ -1786,7 +2425,10 @@
       "packages/pipeline/src/linker/tfidf.ts",
       "packages/pipeline/src/multimodal/ingest.ts",
       "packages/pipeline/src/multimodal/worker.ts",
+      "packages/pipeline/src/ownership.ts",
       "packages/pipeline/src/parity/parity.ts",
+      "packages/pipeline/src/parse-concurrent.test.ts",
+      "packages/pipeline/src/parse-pool.ts",
       "packages/pipeline/src/resolve/csharp-resolver.ts",
       "packages/pipeline/src/resolve/go-resolver.ts",
       "packages/pipeline/src/resolve/index.ts",
@@ -1800,7 +2442,22 @@
       "packages/pipeline/src/structure.ts",
       "packages/pipeline/src/update.test.ts",
       "packages/pipeline/src/update.ts",
-      "packages/pipeline/src/workspace.ts"
+      "packages/pipeline/src/vcs.ts",
+      "packages/pipeline/src/workspace.ts",
+      "packages/ui/src/viz.ts",
+      "packages/ui/web/graph-model.js",
+      "packages/ui/web/support.js",
+      "packages/ui/web/vendor/react-dom.production.min.js",
+      "packages/ui/web/vendor/react.production.min.js",
+      "scripts/budget-check.mjs",
+      "scripts/crib-ab-task.mjs",
+      "scripts/crib-self-hosted-e2e.mjs",
+      "scripts/docs-stats.mjs",
+      "scripts/eval-check.mjs",
+      "scripts/eval/harness.mjs",
+      "scripts/eval/seed.mjs",
+      "scripts/parallel-check.mjs",
+      "scripts/semantic-check.mjs"
     ]
   },
   "coverage": {
@@ -1814,14 +2471,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 0,
+      "resolved": 1,
       "recorded": 3,
-      "unresolved": 2
+      "unresolved": 1
     },
     "recursive": true,
     "exprTruncated": 0,
     "caveats": [
-      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

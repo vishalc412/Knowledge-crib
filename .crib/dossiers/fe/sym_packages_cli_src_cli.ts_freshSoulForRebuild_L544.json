@@ -1,0 +1,353 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:580d79388e11cd046286d8c4870314790a4befeace948193d5008a48de3e1fb6",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+    "kind": "symbol",
+    "type": "function",
+    "name": "freshSoulForRebuild",
+    "qualifiedName": "freshSoulForRebuild",
+    "signature": "freshSoulForRebuild(cribDir: string): SoulStore",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 544,
+      "end": 562
+    },
+    "callSites": [
+      {
+        "callee": "migrateLegacyGraph",
+        "line": 545
+      },
+      {
+        "callee": "graphPaths",
+        "line": 546
+      },
+      {
+        "callee": "existsSync",
+        "line": 547
+      },
+      {
+        "callee": "join",
+        "line": 549
+      },
+      {
+        "callee": "parse",
+        "line": 553
+      },
+      {
+        "callee": "readFileSync",
+        "line": 553
+      },
+      {
+        "callee": "newManifest",
+        "line": 559
+      },
+      {
+        "callee": "resetForRebuild",
+        "line": 560
+      }
+    ]
+  },
+  "source": {
+    "text": "function freshSoulForRebuild(cribDir: string): SoulStore {\n  if (hasLegacyGraph(cribDir)) migrateLegacyGraph(cribDir);\n  const canonicalManifest = graphPaths(cribDir).manifest;\n  const manifestPath = existsSync(canonicalManifest)\n    ? canonicalManifest\n    : join(cribDir, MANIFEST_FILE);\n  let repoId: string | undefined;\n  if (existsSync(manifestPath)) {\n    try {\n      repoId = (JSON.parse(readFileSync(manifestPath, 'utf8')) as { repo?: { id?: string } }).repo\n        ?.id;\n    } catch {\n      // corrupt or unreadable manifest — generate a fresh repo.id via newManifest below\n    }\n  }\n  const soul = new SoulStore(cribDir, { manifest: newManifest({ root: '.', repoId }) });\n  soul.resetForRebuild();\n  return soul;\n}",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 544
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdIndex@L500",
+      "confidence": 1,
+      "name": "cmdIndex",
+      "qualifiedName": "cmdIndex",
+      "signature": "cmdIndex(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 500
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdReindex@L1160",
+      "confidence": 1,
+      "name": "cmdReindex",
+      "qualifiedName": "cmdReindex",
+      "signature": "cmdReindex(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1160
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/graph-layout.ts#graphPaths@L33",
+      "confidence": 1,
+      "name": "graphPaths",
+      "qualifiedName": "graphPaths",
+      "signature": "graphPaths(cribDir: string): GraphPaths",
+      "type": "function",
+      "file": "packages/core/src/graph-layout.ts",
+      "line": 33
+    },
+    {
+      "id": "sym:packages/core/src/graph-layout.ts#migrateLegacyGraph@L70",
+      "confidence": 1,
+      "name": "migrateLegacyGraph",
+      "qualifiedName": "migrateLegacyGraph",
+      "signature": "migrateLegacyGraph(cribDir: string, dryRun = false): GraphMigrationReport",
+      "type": "function",
+      "file": "packages/core/src/graph-layout.ts",
+      "line": 70
+    },
+    {
+      "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+      "confidence": 1,
+      "name": "newManifest",
+      "qualifiedName": "newManifest",
+      "signature": "newManifest(opts: NewManifestOpts = {}): Manifest",
+      "type": "function",
+      "file": "packages/core/src/manifest.ts",
+      "line": 28
+    },
+    {
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(input)",
+      "type": "function",
+      "file": "packages/pipeline/fixtures/plain-js/src/legacy.cjs",
+      "line": 4
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L536",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+    "procedureName": "freshSoulForRebuild",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L545",
+      "cond:packages/cli/src/cli.ts@L551"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+        "procedureName": "freshSoulForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2c94720ab1b2ac3d74b40b212078af818ca9e5b41ce1bf21adfb57a0197e6ce5",
+          "target": "sym:packages/core/src/graph-layout.ts#migrateLegacyGraph@L70",
+          "expr": "migrateLegacyGraph",
+          "line": 545
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+        "procedureName": "freshSoulForRebuild",
+        "guard": "cond:packages/cli/src/cli.ts@L545",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L545",
+            "expr": "hasLegacyGraph(cribDir)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6007f0812edfe61b7be89982db5e2c87926c16782be34861152c227b89053d21",
+          "target": "stmt:packages/cli/src/cli.ts@L545",
+          "line": 545,
+          "expr": "migrateLegacyGraph(cribDir);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+        "procedureName": "freshSoulForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4b63fffc1507948480d6b217b88601156d6d3df3eea46261e2d78b1fc9536894",
+          "target": "sym:packages/core/src/graph-layout.ts#graphPaths@L33",
+          "expr": "graphPaths",
+          "line": 546
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+        "procedureName": "freshSoulForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:768c3783f06f96b7e3038cc28af359595884ba9d02c4d62f31cf9f9e391b1da1",
+          "target": "stmt:packages/cli/src/cli.ts@L546",
+          "line": 546,
+          "expr": "const canonicalManifest = graphPaths(cribDir).manifest;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+        "procedureName": "freshSoulForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bea77f0af5e1a6e6635a5373c7cd7990dea41973e624e1cb5886e11b0aba937d",
+          "target": "stmt:packages/cli/src/cli.ts@L547",
+          "line": 547,
+          "expr": "const manifestPath = existsSync(canonicalManifest)\n    ? canonicalManifest\n    : join(cribDir, MANIFEST_FILE);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+        "procedureName": "freshSoulForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:624e9115dbb8c8dc700f0a3387cb4edfba7d5fa7d37e5386a521e090bbc485af",
+          "target": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+          "expr": "parse",
+          "line": 553
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+        "procedureName": "freshSoulForRebuild",
+        "guard": "cond:packages/cli/src/cli.ts@L551",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L551",
+            "expr": "existsSync(manifestPath)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a80a11a77cb6a58554b2472b68db90a431009320ea9b67c52f9d0c68292293d9",
+          "target": "assign:packages/cli/src/cli.ts@L553",
+          "line": 553,
+          "expr": "repoId = (JSON.parse(readFileSync(manifestPath, 'utf8')) as { repo?: { id?: string } }).repo\n        ?.id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+        "procedureName": "freshSoulForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1bae4ad89934dbe2e31793151a64b15b7fd93012d5d53468a1dadcbc7ee75f69",
+          "target": "stmt:packages/cli/src/cli.ts@L559",
+          "line": 559,
+          "expr": "const soul = new SoulStore(cribDir, { manifest: newManifest({ root: '.', repoId }) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+        "procedureName": "freshSoulForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e91233299241b7f2e3a26765d14f555541184cc012e9773f8fe3728c72e1e375",
+          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
+          "expr": "newManifest",
+          "line": 559
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+        "procedureName": "freshSoulForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0396d68f038ee995034defcbd94c36f2b5469213fe6415a63170b526fef4ee27",
+          "target": "stmt:packages/cli/src/cli.ts@L560",
+          "line": 560,
+          "expr": "soul.resetForRebuild();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+        "procedureName": "freshSoulForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8b8df1120833eb84cba5bcc904fee3bd627c9b9e5eed06323fc98fc56606d640",
+          "target": "stmt:packages/cli/src/cli.ts@L561",
+          "line": 561,
+          "expr": "return soul;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 8,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

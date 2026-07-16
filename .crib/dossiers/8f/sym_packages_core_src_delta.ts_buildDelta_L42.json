@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/delta.ts#buildDelta@L42",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:40ce68b7fed7143c4d99fe80b7c34e82842c3e6a767b01c44efd32c5c63768ad",
-  "builtAt": "2026-06-30T15:54:03.404Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/delta.ts#buildDelta@L42",
@@ -56,14 +56,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L94",
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 94
+      "line": 112
     }
   ],
   "callees": [
@@ -127,6 +127,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "executes",
+          "edgeId": "e:85561c0079822cb3133fb20525d063b14e5d83e65690a921ff6b2dd6a740e951",
+          "target": "stmt:packages/core/src/delta.ts@L43",
+          "line": 43,
+          "expr": "const after = fileScopedIds(soul, files);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/delta.ts#buildDelta@L42",
+        "procedureName": "buildDelta",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "calls",
           "edgeId": "e:db23f82cd414fb65786369fd8f8dbe410d130b514427997516fe381bc1442ba5",
           "target": "sym:packages/core/src/delta.ts#fileScopedIds@L25",
@@ -141,11 +155,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:85561c0079822cb3133fb20525d063b14e5d83e65690a921ff6b2dd6a740e951",
-          "target": "stmt:packages/core/src/delta.ts@L43",
-          "line": 43,
-          "expr": "const after = fileScopedIds(soul, files);"
+          "kind": "calls",
+          "edgeId": "e:c058171b1f7dffb3c215c1f090aea20f19774c590515d18b7224a006b76c3c1b",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 45
         }
       },
       {
@@ -172,20 +186,6 @@
           "target": "stmt:packages/core/src/delta.ts@L45",
           "line": 45,
           "expr": "removed.push(id);"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/delta.ts#buildDelta@L42",
-        "procedureName": "buildDelta",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:c058171b1f7dffb3c215c1f090aea20f19774c590515d18b7224a006b76c3c1b",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 45
         }
       },
       {

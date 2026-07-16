@@ -1,0 +1,884 @@
+{
+  "id": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:f74e6ecd63b87bc08cd10ad5c8a9e8cf9deba5de360f2f1f13853434c590058f",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildDossiersByScope",
+    "qualifiedName": "buildDossiersByScope",
+    "signature": "buildDossiersByScope(soul: SoulStore, repoRoot: string, scope: DossierScope, id: string, now: string, opts: DossiersByScopeOpts = {}): DossiersByScope | undefined",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/by-scope.ts",
+    "span": {
+      "start": 86,
+      "end": 174
+    },
+    "callSites": [
+      {
+        "callee": "resolveScopeNode",
+        "line": 94
+      },
+      {
+        "callee": "get",
+        "line": 105
+      },
+      {
+        "callee": "push",
+        "line": 106
+      },
+      {
+        "callee": "set",
+        "line": 107
+      },
+      {
+        "callee": "get",
+        "line": 108
+      },
+      {
+        "callee": "push",
+        "line": 109
+      },
+      {
+        "callee": "set",
+        "line": 110
+      },
+      {
+        "callee": "set",
+        "line": 111
+      },
+      {
+        "callee": "replace",
+        "line": 121
+      },
+      {
+        "callee": "add",
+        "line": 124
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 124
+      },
+      {
+        "callee": "add",
+        "line": 126
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 126
+      },
+      {
+        "callee": "add",
+        "line": 127
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 127
+      },
+      {
+        "callee": "pop",
+        "line": 127
+      },
+      {
+        "callee": "split",
+        "line": 127
+      },
+      {
+        "callee": "push",
+        "line": 129
+      },
+      {
+        "callee": "push",
+        "line": 130
+      },
+      {
+        "callee": "packageMembers",
+        "line": 135
+      },
+      {
+        "callee": "sort",
+        "line": 136
+      },
+      {
+        "callee": "byNodeLine",
+        "line": 136
+      },
+      {
+        "callee": "max",
+        "line": 139
+      },
+      {
+        "callee": "slice",
+        "line": 140
+      },
+      {
+        "callee": "buildDossier",
+        "line": 158
+      },
+      {
+        "callee": "push",
+        "line": 159
+      },
+      {
+        "callee": "push",
+        "line": 160
+      },
+      {
+        "callee": "scopeLabel",
+        "line": 166
+      },
+      {
+        "callee": "getManifest",
+        "line": 167
+      }
+    ]
+  },
+  "source": {
+    "text": "export function buildDossiersByScope(\n  soul: SoulStore,\n  repoRoot: string,\n  scope: DossierScope,\n  id: string,\n  now: string,\n  opts: DossiersByScopeOpts = {},\n): DossiersByScope | undefined {\n  const scopeNode = resolveScopeNode(soul, scope, id);\n  if (!scopeNode) return undefined;\n\n  // ONE iterateEdges() pass → outgoing + incoming adjacency AND the `produces` supply-chain map\n  // (dst-type → src-producer). All three are reused by every per-symbol buildDossier + the\n  // frameworkSemantics / computeCoverage callees inside it, so the bulk path scans edges ONCE\n  // regardless of how many members the scope holds (the WS-4 1-scan optimization).\n  const outgoing = new Map<string, Edge[]>();\n  const incoming = new Map<string, Edge[]>();\n  const producerOf = new Map<string, string>();\n  for (const e of soul.iterateEdges()) {\n    const o = outgoing.get(e.src);\n    if (o) o.push(e);\n    else outgoing.set(e.src, [e]);\n    const i = incoming.get(e.dst);\n    if (i) i.push(e);\n    else incoming.set(e.dst, [e]);\n    if (e.rel === 'produces' && !producerOf.has(e.dst)) producerOf.set(e.dst, e.src);\n  }\n\n  // ONE iterate('symbol') pass → the lowercased name index for coverage call-site resolution\n  // (reused by every callable dossier's computeCoverage) AND the file/cluster member ids (so the\n  // file + cluster paths do NOT re-scan symbols). The package path uses the `incoming` adjacency\n  // instead (members are `member-of` dsts), so it touches neither this pass nor a second edge scan.\n  const nameIndex = new Set<string>();\n  const scopeMembers: string[] = [];\n  const filePath =\n    scope === 'file' ? (scopeNode.file ?? scopeNode.id.replace(/^file:/, '')) : undefined;\n  const clusterId = scope === 'cluster' ? scopeNode.id : undefined;\n  for (const n of soul.iterate('symbol')) {\n    if (n.name) nameIndex.add(n.name.toLowerCase());\n    if (n.qualifiedName) {\n      nameIndex.add(n.qualifiedName.toLowerCase());\n      nameIndex.add((n.qualifiedName.split('.').pop() ?? '').toLowerCase());\n    }\n    if (filePath !== undefined && n.file === filePath) scopeMembers.push(n.id);\n    else if (clusterId !== undefined && n.clusterId === clusterId) scopeMembers.push(n.id);\n  }\n\n  const symbolIds =\n    scope === 'package'\n      ? packageMembers(soul, scopeNode, incoming)\n      : scopeMembers.sort(byNodeLine(soul));\n  const symbolCount = symbolIds.length;\n  const maxSymbols = opts.maxSymbols ?? DEFAULT_MAX_SYMBOLS;\n  const offset = Math.max(0, opts.offset ?? 0);\n  const capped = symbolIds.slice(offset, offset + maxSymbols);\n  // truncated when symbols remain beyond this page (past the cap OR past a non-zero offset).\n  const truncated = offset + capped.length < symbolCount;\n\n  const buildOpts: DossierOpts = {\n    ...(opts.extractedOnly ? { extractedOnly: true } : {}),\n    ...(opts.includeTables ? { includeTables: true } : {}),\n    ...(opts.sourceMaxChars !== undefined ? { sourceMaxChars: opts.sourceMaxChars } : {}),\n    ...(opts.sourceMaxLines !== undefined ? { sourceMaxLines: opts.sourceMaxLines } : {}),\n    outgoing,\n    incoming,\n    producerOf,\n    nameIndex,\n  };\n\n  const symbols: Dossier[] = [];\n  const skipped: string[] = [];\n  for (const sid of capped) {\n    const d = buildDossier(soul, repoRoot, sid, now, buildOpts);\n    if (d) symbols.push(d);\n    else skipped.push(sid);\n  }\n\n  return {\n    scope,\n    id: scopeNode.id,\n    label: scopeLabel(scopeNode),\n    schemaVersion: soul.getManifest().schemaVersion,\n    builtAt: now,\n    symbols,\n    symbolCount,\n    truncated,\n    skipped,\n  };\n}",
+    "truncated": false,
+    "totalLines": 89,
+    "startLine": 86
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L148",
+      "confidence": 1,
+      "name": "buildDossier",
+      "qualifiedName": "buildDossier",
+      "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 148
+    },
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.ts#byNodeLine@L226",
+      "confidence": 1,
+      "name": "byNodeLine",
+      "qualifiedName": "byNodeLine",
+      "signature": "byNodeLine(soul: SoulStore): (a: string, b: string) => number",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.ts",
+      "line": 226
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.ts#packageMembers@L215",
+      "confidence": 1,
+      "name": "packageMembers",
+      "qualifiedName": "packageMembers",
+      "signature": "packageMembers(soul: SoulStore, scopeNode: Node, incoming: Map<string, Edge[]>): string[]",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.ts",
+      "line": 215
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L177",
+      "confidence": 1,
+      "name": "resolveScopeNode",
+      "qualifiedName": "resolveScopeNode",
+      "signature": "resolveScopeNode(soul: SoulStore, scope: DossierScope, id: string): Node | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.ts",
+      "line": 177
+    },
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.ts#scopeLabel@L238",
+      "confidence": 1,
+      "name": "scopeLabel",
+      "qualifiedName": "scopeLabel",
+      "signature": "scopeLabel(n: Node): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.ts",
+      "line": 238
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/by-scope.ts@L68",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+    "procedureName": "buildDossiersByScope",
+    "conditions": [
+      "cond:packages/core/src/dossier/by-scope.ts@L95",
+      "cond:packages/core/src/dossier/by-scope.ts@L104",
+      "cond:packages/core/src/dossier/by-scope.ts@L106",
+      "cond:packages/core/src/dossier/by-scope.ts@L109",
+      "cond:packages/core/src/dossier/by-scope.ts@L111",
+      "cond:packages/core/src/dossier/by-scope.ts@L123",
+      "cond:packages/core/src/dossier/by-scope.ts@L124",
+      "cond:packages/core/src/dossier/by-scope.ts@L125",
+      "cond:packages/core/src/dossier/by-scope.ts@L129",
+      "cond:packages/core/src/dossier/by-scope.ts@L130",
+      "cond:packages/core/src/dossier/by-scope.ts@L157",
+      "cond:packages/core/src/dossier/by-scope.ts@L159"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0170a7b03dc7e5a2a267d16f0d9dd03cb9f8fef3495bc15532ae6f23d256a553",
+          "target": "sym:packages/core/src/dossier/by-scope.ts#resolveScopeNode@L177",
+          "expr": "resolveScopeNode",
+          "line": 94
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bad49597d4609d60868d52ebafcc823fc9d4470b44297633e2b9e1835c649bad",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L94",
+          "line": 94,
+          "expr": "const scopeNode = resolveScopeNode(soul, scope, id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L95",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L95",
+            "expr": "!scopeNode",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:70462dc1dbdc13b360a5aebe3b8040ea5dc0e687e45609b6322c555c1f1982d5",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L95",
+          "line": 95,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a8f2780c5de0893c75b20856a1865bdd20fa0c81ee04ea73d34f304c9bf3e300",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 105
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L104",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L104",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ff239a686d587aea06f5f9dc1a8abf051a3ca8b83d6eef68ea48c454b96b46f3",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L105",
+          "line": 105,
+          "expr": "const o = outgoing.get(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:78e6bd8dd9d244a2252fa7b5c48cb2c9b707cf255481732748d4374436087662",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 106
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L106",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L104",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L106",
+            "expr": "o",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b0674026df8e0bea9e9934365b9d2fbcca66eefeae03b91791738e42e6411abe",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L106",
+          "line": 106,
+          "expr": "o.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L106",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L104",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L106",
+            "expr": "o",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6428890efad0a03f9ba3df4a550ff2109136fd760e678afbb2de25692c1b406d",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L107",
+          "line": 107,
+          "expr": "outgoing.set(e.src, [e]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L104",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L104",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b98b28311b420913ef28ae3db21ad10b799563a101ac2423b76ebbde1eeeba19",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L108",
+          "line": 108,
+          "expr": "const i = incoming.get(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L109",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L104",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L109",
+            "expr": "i",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f977adbf4a56062afb750a7daa1b5c9085dbc1b49d0a89b207d9acba3f01497",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L109",
+          "line": 109,
+          "expr": "i.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L109",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L104",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L109",
+            "expr": "i",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ef13b99ded658b9168b12e30b9a0a7f5d7c73793021b4b7d2e490f5b64a6416b",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L110",
+          "line": 110,
+          "expr": "incoming.set(e.dst, [e]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L111",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L104",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L111",
+            "expr": "e.rel === 'produces' && !producerOf.has(e.dst)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:16a05d669e1e19acb586efecedb7ab8abac342f1851878366f644d6f8b5215b0",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L111",
+          "line": 111,
+          "expr": "producerOf.set(e.dst, e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eef7670b85dc6c409f21f7ef20376a22df151500ba95d30508591df74df2c4b8",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L120",
+          "line": 120,
+          "expr": "const filePath =\n    scope === 'file' ? (scopeNode.file ?? scopeNode.id.replace(/^file:/, '')) : undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5ba2bac0c7797b0e0353bb20bf89fc63cf0f7def13fb07569577a417f07a6d24",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 124
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L124",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L123",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L124",
+            "expr": "n.name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ed0262e827dcd69036634b3dd4998af80d31f82303101d7cd275ed9935ac762e",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L124",
+          "line": 124,
+          "expr": "nameIndex.add(n.name.toLowerCase());"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L125",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L123",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L125",
+            "expr": "n.qualifiedName",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:433c326fefb8e86b90be51c9a6422f83e8ee3567c36698a6d00524c181c64eaa",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L126",
+          "line": 126,
+          "expr": "nameIndex.add(n.qualifiedName.toLowerCase());"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L125",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L123",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L125",
+            "expr": "n.qualifiedName",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a6d12d0c5c32bf79f0d154ca2286fb6381d1a4ebea5ecc76db1dedcd6026b15",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L127",
+          "line": 127,
+          "expr": "nameIndex.add((n.qualifiedName.split('.').pop() ?? '').toLowerCase());"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L129",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L123",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L129",
+            "expr": "filePath !== undefined && n.file === filePath",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0519f7b43d0312d206b57902a76bc88a8e3a2893f218231de25673ef26a8e508",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L129",
+          "line": 129,
+          "expr": "scopeMembers.push(n.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L123",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L129",
+            "expr": "filePath !== undefined && n.file === filePath"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L130",
+            "expr": "clusterId !== undefined && n.clusterId === clusterId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fe4bce4ee6a6e0b1a16dfae63767ec464621b9928c493a41183d3921cfc2b9f2",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L130",
+          "line": 130,
+          "expr": "scopeMembers.push(n.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5860f34a3d21a82c3d4691db4939bba9c333fdb4efa569ad32cd970d8d99481d",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L133",
+          "line": 133,
+          "expr": "const symbolIds =\n    scope === 'package'\n      ? packageMembers(soul, scopeNode, incoming)\n      : scopeMembers.sort(byNodeLine(soul));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:84f3f2ed9512d09709cb0fc25b3a2cfe7e29ffdba4827279fb408230520bec23",
+          "target": "sym:packages/core/src/dossier/by-scope.ts#packageMembers@L215",
+          "expr": "packageMembers",
+          "line": 135
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:036d79b1bea662cb87eb50b7dbcc3d0f1b2a912b5dbf0f1598144162a1082c44",
+          "target": "sym:packages/core/src/dossier/by-scope.ts#byNodeLine@L226",
+          "expr": "byNodeLine",
+          "line": 136
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e24cf9f801b8adab46b0eb0968febb225403e0bddafcc0af3184cd53c9aa2533",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L139",
+          "line": 139,
+          "expr": "const offset = Math.max(0, opts.offset ?? 0);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ac768f9aaf2f304eab708b87b7b3871b966b5b3ff1484944fb6299b2793c4b7f",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L140",
+          "line": 140,
+          "expr": "const capped = symbolIds.slice(offset, offset + maxSymbols);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L157",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L157",
+            "expr": "capped",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:36e60329afdfd8f4f4d219bfaafb6518330fa0607183acf9570334d6817c0f7c",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L158",
+          "line": 158,
+          "expr": "const d = buildDossier(soul, repoRoot, sid, now, buildOpts);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:73203a7f483ef07f12d75c0321bc75c0a07bf9ea1c62bd7db5cd024356f9def5",
+          "target": "sym:packages/core/src/dossier/builder.ts#buildDossier@L148",
+          "expr": "buildDossier",
+          "line": 158
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L159",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L157",
+            "expr": "capped"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L159",
+            "expr": "d",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5890e872b24173a90036195d6a6b536c7767320c2fb229eba2d0f6465206c277",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L159",
+          "line": 159,
+          "expr": "symbols.push(d);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L159",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L157",
+            "expr": "capped"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L159",
+            "expr": "d",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df59b715aa9e76352c0ac7bdbcfe0a807125bae2e57af5088ae4c1ba9ecd1556",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L160",
+          "line": 160,
+          "expr": "skipped.push(sid);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5ba29167f54d6ddf633f02cbbaf3e5626debbbffbbf82e96a79ccaafee808fc1",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L163",
+          "line": 163,
+          "expr": "return {\n    scope,\n    id: scopeNode.id,\n    label: scopeLabel(scopeNode),\n    schemaVersion: soul.getManifest().schemaVersion,\n    builtAt: now,\n    symbols,\n    symbolCount,\n    truncated,\n    skipped,\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+        "procedureName": "buildDossiersByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:567da0c0e9d767b88ae37aa8e1d96847bb9a1de309b5f45948f28304215f6e50",
+          "target": "sym:packages/core/src/dossier/by-scope.ts#scopeLabel@L238",
+          "expr": "scopeLabel",
+          "line": 166
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 22,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 22,
+    "assignments": 0,
+    "conditions": 11,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 8,
+      "recorded": 29,
+      "unresolved": 12
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "12 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

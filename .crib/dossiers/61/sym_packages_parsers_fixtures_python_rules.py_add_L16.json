@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:f087f51c4e4dfe6630599dc05caddb2a99a0d592712d660362660464635109b2",
-  "builtAt": "2026-06-30T22:41:35.495Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
@@ -30,6 +30,26 @@
   },
   "callers": [
     {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Ab@L14",
+      "confidence": 1,
+      "name": "Ab",
+      "qualifiedName": "Ab",
+      "signature": "Ab(a, b)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 14
+    },
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Ei@L170",
+      "confidence": 1,
+      "name": "Ei",
+      "qualifiedName": "Ei",
+      "signature": "Ei(a)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 170
+    },
+    {
       "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.parse.attachComment@L186",
       "confidence": 1,
       "name": "attachComment",
@@ -38,6 +58,16 @@
       "type": "function",
       "file": "packages/parsers/src/go/GoExtractor.ts",
       "line": 186
+    },
+    {
+      "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkCalls@L219",
+      "confidence": 1,
+      "name": "walkCalls",
+      "qualifiedName": "PhpExtractor.walk.walkCalls",
+      "signature": "walkCalls(…)",
+      "type": "function",
+      "file": "packages/parsers/src/php/PhpExtractor.ts",
+      "line": 219
     },
     {
       "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
@@ -60,24 +90,34 @@
       "line": 71
     },
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls.walk@L227",
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.collectCalls.walk@L263",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "TypeScriptExtractor.collectCalls.walk",
       "signature": "walk(…)",
       "type": "function",
       "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
-      "line": 227
+      "line": 263
     },
     {
-      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.referencedBy@L1032",
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps.referencedBy@L1433",
       "confidence": 1,
       "name": "referencedBy",
       "qualifiedName": "Verbs.gaps.referencedBy",
       "signature": "referencedBy(…)",
       "type": "function",
       "file": "packages/mcp/src/verbs.ts",
-      "line": 1032
+      "line": 1433
+    },
+    {
+      "id": "sym:packages/core/src/index/rerank.ts#actionStemsInQuery@L100",
+      "confidence": 1,
+      "name": "actionStemsInQuery",
+      "qualifiedName": "actionStemsInQuery",
+      "signature": "actionStemsInQuery(query: string): Set<string>",
+      "type": "function",
+      "file": "packages/core/src/index/rerank.ts",
+      "line": 100
     },
     {
       "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
@@ -100,6 +140,16 @@
       "line": 603
     },
     {
+      "id": "sym:packages/ui/web/support.js#boot.StandaloneRoot@L172",
+      "confidence": 1,
+      "name": "StandaloneRoot",
+      "qualifiedName": "boot.StandaloneRoot",
+      "signature": "StandaloneRoot()",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 172
+    },
+    {
       "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L148",
       "confidence": 1,
       "name": "buildDossier",
@@ -110,14 +160,24 @@
       "line": 148
     },
     {
-      "id": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L84",
+      "id": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
       "confidence": 1,
       "name": "buildDossiersByScope",
       "qualifiedName": "buildDossiersByScope",
       "signature": "buildDossiersByScope(soul: SoulStore, repoRoot: string, scope: DossierScope, id: string, now: string, opts: DossiersByScopeOpts = {}): DossiersByScope | undefined",
       "type": "function",
       "file": "packages/core/src/dossier/by-scope.ts",
-      "line": 84
+      "line": 86
+    },
+    {
+      "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
+      "confidence": 1,
+      "name": "buildFunctionalMap",
+      "qualifiedName": "buildFunctionalMap",
+      "signature": "buildFunctionalMap(soul: SoulStore, opts: BuildFunctionalMapOpts = {}): FunctionalMap",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 74
     },
     {
       "id": "sym:packages/core/src/dossier/coverage.ts#buildNameIndex@L249",
@@ -140,6 +200,16 @@
       "line": 146
     },
     {
+      "id": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+      "confidence": 1,
+      "name": "clusterProjection",
+      "qualifiedName": "clusterProjection",
+      "signature": "clusterProjection(options, nodes, edges, byId, indexes)",
+      "type": "function",
+      "file": "packages/ui/web/graph-model.js",
+      "line": 138
+    },
+    {
       "id": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L561",
       "confidence": 1,
       "name": "collectDependencies",
@@ -160,14 +230,34 @@
       "line": 663
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#collectTypeKinds@L1655",
+      "id": "sym:packages/parsers/src/ts/http-client.ts#collectShadowedCallNames@L306",
+      "confidence": 1,
+      "name": "collectShadowedCallNames",
+      "qualifiedName": "collectShadowedCallNames",
+      "signature": "collectShadowedCallNames(sf: ts.SourceFile): Set<string>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.ts",
+      "line": 306
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.ts#collectShadowedCallNames.visit@L308",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "collectShadowedCallNames.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.ts",
+      "line": 308
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#collectTypeKinds@L1661",
       "confidence": 1,
       "name": "collectTypeKinds",
       "qualifiedName": "collectTypeKinds",
       "signature": "collectTypeKinds(tokens: Token[]): { interfaces: Set<string>; classLikes: Set<string> }",
       "type": "function",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1655
+      "line": 1661
     },
     {
       "id": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
@@ -200,6 +290,36 @@
       "line": 382
     },
     {
+      "id": "sym:packages/ui/web/support.js#createComponentFactory.getDC.Dispatcher@L971",
+      "confidence": 1,
+      "name": "Dispatcher",
+      "qualifiedName": "createComponentFactory.getDC.Dispatcher",
+      "signature": "Dispatcher(p)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 971
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+      "confidence": 1,
+      "name": "waitForGlobal",
+      "qualifiedName": "createExternalModules.waitForGlobal",
+      "signature": "waitForGlobal(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1107
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createHelmetManager.compile@L1221",
+      "confidence": 1,
+      "name": "compile",
+      "qualifiedName": "createHelmetManager.compile",
+      "signature": "compile(node)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1221
+    },
+    {
       "id": "sym:packages/core/src/rules/extract.ts#decisionTable@L197",
       "confidence": 1,
       "name": "decisionTable",
@@ -230,14 +350,24 @@
       "line": 119
     },
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L210",
+      "id": "sym:packages/ui/web/graph-model.js#edgeIndexesForNodeIds@L52",
+      "confidence": 1,
+      "name": "edgeIndexesForNodeIds",
+      "qualifiedName": "edgeIndexesForNodeIds",
+      "signature": "edgeIndexesForNodeIds(nodeIds, edges, indexes)",
+      "type": "function",
+      "file": "packages/ui/web/graph-model.js",
+      "line": 52
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
       "confidence": 1,
       "name": "expandPatterns",
       "qualifiedName": "expandPatterns",
       "signature": "expandPatterns(root: string, patterns: string[]): WorkspacePackage[]",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 210
+      "line": 208
     },
     {
       "id": "sym:packages/parsers/src/md/markdown.ts#extractCodeRefs@L94",
@@ -258,6 +388,16 @@
       "type": "function",
       "file": "packages/parsers/src/md/markdown.ts",
       "line": 117
+    },
+    {
+      "id": "sym:packages/core/src/federation.ts#federatedImpact@L106",
+      "confidence": 1,
+      "name": "federatedImpact",
+      "qualifiedName": "federatedImpact",
+      "signature": "federatedImpact(fed: Federation, startRoot: string, id: string, dir: Dir, opts: { depth?: number; limit?: number; extractedOnly?: boolean } = {}): FederatedImpactResult",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 106
     },
     {
       "id": "sym:packages/core/src/delta.ts#fileScopedIds@L25",
@@ -300,24 +440,34 @@
       "line": 76
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#parseExcludes@L101",
+      "id": "sym:packages/cli/src/cli.ts#parseExcludes@L130",
       "confidence": 1,
       "name": "parseExcludes",
       "qualifiedName": "parseExcludes",
       "signature": "parseExcludes(args: string[]): Set<string>",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 101
+      "line": 130
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#printTokenSavingsHero@L327",
+      "id": "sym:packages/cli/src/cli.ts#printTokenSavingsHero@L429",
       "confidence": 1,
       "name": "printTokenSavingsHero",
       "qualifiedName": "printTokenSavingsHero",
       "signature": "printTokenSavingsHero(verbs: Verbs, soul: SoulStore, repoRoot: string): void",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 327
+      "line": 429
+    },
+    {
+      "id": "sym:scripts/crib-bench.mjs#rawFileReadTokens@L62",
+      "confidence": 1,
+      "name": "rawFileReadTokens",
+      "qualifiedName": "rawFileReadTokens",
+      "signature": "rawFileReadTokens(hits)",
+      "type": "function",
+      "file": "scripts/crib-bench.mjs",
+      "line": 62
     },
     {
       "id": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L81",
@@ -450,6 +600,26 @@
       "line": 61
     },
     {
+      "id": "sym:packages/core/src/aliases.ts#rewriteQuery@L97",
+      "confidence": 1,
+      "name": "rewriteQuery",
+      "qualifiedName": "rewriteQuery",
+      "signature": "rewriteQuery(text: string, aliases: AliasMap): string",
+      "type": "function",
+      "file": "packages/core/src/aliases.ts",
+      "line": 97
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L61",
+      "confidence": 1,
+      "name": "rrfFuse",
+      "qualifiedName": "rrfFuse",
+      "signature": "rrfFuse(bm25: Hit[], vec: Hit[]): Hit[]",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 61
+    },
+    {
       "id": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
       "confidence": 1,
       "name": "runDossiers",
@@ -460,14 +630,34 @@
       "line": 43
     },
     {
-      "id": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L42",
+      "id": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
       "confidence": 1,
       "name": "runSemanticLink",
       "qualifiedName": "runSemanticLink",
-      "signature": "runSemanticLink(soul: SoulStore, root: string, docFiles?: string[]): SemanticStats",
+      "signature": "runSemanticLink(soul: SoulStore, root: string, docFiles?: string[], opts: SemanticLinkOpts = {}): SemanticStats",
       "type": "function",
       "file": "packages/pipeline/src/linker/semantic.ts",
-      "line": 42
+      "line": 69
+    },
+    {
+      "id": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+      "confidence": 1,
+      "name": "searchProjection",
+      "qualifiedName": "searchProjection",
+      "signature": "searchProjection(options, nodes, edges, byId, indexes)",
+      "type": "function",
+      "file": "packages/ui/web/graph-model.js",
+      "line": 93
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L521",
+      "confidence": 1,
+      "name": "toFtsMatch",
+      "qualifiedName": "toFtsMatch",
+      "signature": "toFtsMatch(text: string): string | undefined",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 521
     },
     {
       "id": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
@@ -480,28 +670,48 @@
       "line": 60
     },
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L94",
+      "id": "sym:packages/mcp/src/verbs.ts#uniqueRoots@L1892",
+      "confidence": 1,
+      "name": "uniqueRoots",
+      "qualifiedName": "uniqueRoots",
+      "signature": "uniqueRoots(roots: string[]): string[]",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1892
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 94
+      "line": 112
+    },
+    {
+      "id": "sym:packages/core/src/cluster-hash.ts#validateClusterIntegrity@L39",
+      "confidence": 1,
+      "name": "validateClusterIntegrity",
+      "qualifiedName": "validateClusterIntegrity",
+      "signature": "validateClusterIntegrity(soul: SoulStore): ClusterIntegrityReport",
+      "type": "function",
+      "file": "packages/core/src/cluster-hash.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#warnUnresolved@L453",
+      "confidence": 1,
+      "name": "warnUnresolved",
+      "qualifiedName": "warnUnresolved",
+      "signature": "warnUnresolved(ctx, what)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 453
     }
   ],
   "callees": [],
   "docs": [
-    {
-      "sectionId": "doc:README.md#install",
-      "heading": "Install",
-      "anchor": "install",
-      "snippet": "Install",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.99
-    },
     {
       "sectionId": "doc:docs/knowledge-crib-client-setup.md#4-claude-code",
       "heading": "4. Claude Code",
@@ -513,50 +723,20 @@
       "confidence": 0.99
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-client-setup.md#1-one-time-machine-setup",
-      "heading": "1. One-time machine setup",
-      "anchor": "1-one-time-machine-setup",
-      "snippet": "1. One-time machine setup",
+      "sectionId": "doc:README.md#install",
+      "heading": "Install",
+      "anchor": "install",
+      "snippet": "Install",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-client-setup.md#7-openai-codex-cli",
-      "heading": "7. OpenAI Codex CLI",
-      "anchor": "7-openai-codex-cli",
-      "snippet": "7. OpenAI Codex CLI",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#2-install",
-      "heading": "2. Install",
-      "anchor": "2-install",
-      "snippet": "2. Install",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
+      "confidence": 0.99
     },
     {
       "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-1-scaffold-the-reproducible-media-workspace",
       "heading": "Task 1: Scaffold The Reproducible Media Workspace",
       "anchor": "task-1-scaffold-the-reproducible-media-workspace",
       "snippet": "Task 1: Scaffold The Reproducible Media Workspace",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-2-define-and-test-the-45-second-timeline",
-      "heading": "Task 2: Define And Test The 45-Second Timeline",
-      "anchor": "task-2-define-and-test-the-45-second-timeline",
-      "snippet": "Task 2: Define And Test The 45-Second Timeline",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -573,20 +753,10 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-4-generate-narration-and-original-music",
-      "heading": "Task 4: Generate Narration And Original Music",
-      "anchor": "task-4-generate-narration-and-original-music",
-      "snippet": "Task 4: Generate Narration And Original Music",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-5-render-the-signal-grid-video",
-      "heading": "Task 5: Render The Signal Grid Video",
-      "anchor": "task-5-render-the-signal-grid-video",
-      "snippet": "Task 5: Render The Signal Grid Video",
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-2-define-and-test-the-45-second-timeline",
+      "heading": "Task 2: Define And Test The 45-Second Timeline",
+      "anchor": "task-2-define-and-test-the-45-second-timeline",
+      "snippet": "Task 2: Define And Test The 45-Second Timeline",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -603,7 +773,57 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-0-universal-cfg-parity-finish-s65-6-days",
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-5-render-the-signal-grid-video",
+      "heading": "Task 5: Render The Signal Grid Video",
+      "anchor": "task-5-render-the-signal-grid-video",
+      "snippet": "Task 5: Render The Signal Grid Video",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-4-generate-narration-and-original-music",
+      "heading": "Task 4: Generate Narration And Original Music",
+      "anchor": "task-4-generate-narration-and-original-music",
+      "snippet": "Task 4: Generate Narration And Original Music",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#7-openai-codex-cli",
+      "heading": "7. OpenAI Codex CLI",
+      "anchor": "7-openai-codex-cli",
+      "snippet": "7. OpenAI Codex CLI",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#1-one-time-machine-setup",
+      "heading": "1. One-time machine setup",
+      "anchor": "1-one-time-machine-setup",
+      "snippet": "1. One-time machine setup",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#2-install",
+      "heading": "2. Install",
+      "anchor": "2-install",
+      "snippet": "2. Install",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-0-universal-cfg-parity-finish-s65-6-days",
       "heading": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
       "anchor": "phase-0-universal-cfg-parity-finish-s65-6-days",
       "snippet": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
@@ -611,6 +831,156 @@
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#7-open-confirmations",
+      "heading": "7. Open confirmations",
+      "anchor": "7-open-confirmations",
+      "snippet": "7. Open confirmations",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#knowledge-crib-changelog-single-entry-resolution-auto-mcp-wiring-req-1-req-2",
+      "heading": "Knowledge-crib — Changelog: Single-Entry Resolution + Auto MCP Wiring (REQ-1, REQ-2)",
+      "anchor": "knowledge-crib-changelog-single-entry-resolution-auto-mcp-wiring-req-1-req-2",
+      "snippet": "Knowledge-crib — Changelog: Single-Entry Resolution + Auto MCP Wiring (REQ-1, REQ-2)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-7-mvp-scope-roadmap",
+      "heading": "Branch 7 — MVP Scope & Roadmap",
+      "anchor": "branch-7-mvp-scope-roadmap",
+      "snippet": "Branch 7 — MVP Scope & Roadmap",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-4-ingestion-extraction",
+      "heading": "Branch 4 — Ingestion & Extraction",
+      "anchor": "branch-4-ingestion-extraction",
+      "snippet": "Branch 4 — Ingestion & Extraction",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-6-interface-output-surface",
+      "heading": "Branch 6 — Interface & Output Surface",
+      "anchor": "branch-6-interface-output-surface",
+      "snippet": "Branch 6 — Interface & Output Surface",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#7-codex-specific-notes-local-openai-codex-cli",
+      "heading": "7. Codex-specific notes (local OpenAI/Codex CLI)",
+      "anchor": "7-codex-specific-notes-local-openai-codex-cli",
+      "snippet": "7. Codex-specific notes (local OpenAI/Codex CLI)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#consequences",
+      "heading": "Consequences",
+      "anchor": "consequences",
+      "snippet": "Consequences",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#lazy-shard-loading-defer-not-warranted-by-data",
+      "heading": "Lazy shard loading — DEFER (not warranted by data)",
+      "anchor": "lazy-shard-loading-defer-not-warranted-by-data",
+      "snippet": "Lazy shard loading — DEFER (not warranted by data)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#knowledge-crib-extractor-plugin-spec",
+      "heading": "Knowledge-crib — Extractor Plugin Spec",
+      "anchor": "knowledge-crib-extractor-plugin-spec",
+      "snippet": "Knowledge-crib — Extractor Plugin Spec",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#10-the-ask",
+      "heading": "10. The ask",
+      "anchor": "10-the-ask",
+      "snippet": "10. The ask",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#8-rollout-path",
+      "heading": "8. Rollout path",
+      "anchor": "8-rollout-path",
+      "snippet": "8. Rollout path",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#file-map",
+      "heading": "File Map",
+      "anchor": "file-map",
+      "snippet": "File Map",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#wiring-minimal",
+      "heading": "Wiring (minimal)",
+      "anchor": "wiring-minimal",
+      "snippet": "Wiring (minimal)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#tests-each-language-add-to-the-existing-extractor-test-ts",
+      "heading": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "anchor": "tests-each-language-add-to-the-existing-extractor-test-ts",
+      "snippet": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
     },
     {
       "sectionId": "doc:CONTRIBUTING.md#contribution-guidelines",
@@ -623,110 +993,10 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:PLAN_MAKE_A_BEATS_B.md#ws-a7-scale-and-performance-hardening",
-      "heading": "WS-A7 — Scale and performance hardening",
-      "anchor": "ws-a7-scale-and-performance-hardening",
-      "snippet": "WS-A7 — Scale and performance hardening",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-1-body-searchable-fts-closes-g1-highest-leverage",
-      "heading": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
-      "anchor": "ws-1-body-searchable-fts-closes-g1-highest-leverage",
-      "snippet": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
-      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
-      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
-      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-3-optional-vector-semantic-search-closes-g3",
-      "heading": "WS-3 — Optional vector/semantic search (closes G3)",
-      "anchor": "ws-3-optional-vector-semantic-search-closes-g3",
-      "snippet": "WS-3 — Optional vector/semantic search (closes G3)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-5-expose-rich-verbs-on-the-cli-closes-g5",
-      "heading": "WS-5 — Expose rich verbs on the CLI (closes G5)",
-      "anchor": "ws-5-expose-rich-verbs-on-the-cli-closes-g5",
-      "snippet": "WS-5 — Expose rich verbs on the CLI (closes G5)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-7-verify-extend-sql-data-flow-edges-defense-in-depth",
-      "heading": "WS-7 — Verify/extend SQL data-flow edges (defense-in-depth)",
-      "anchor": "ws-7-verify-extend-sql-data-flow-edges-defense-in-depth",
-      "snippet": "WS-7 — Verify/extend SQL data-flow edges (defense-in-depth)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#4-architecture-invariants-to-preserve-do-not-break",
-      "heading": "4. Architecture invariants to preserve (do NOT break)",
-      "anchor": "4-architecture-invariants-to-preserve-do-not-break",
-      "snippet": "4. Architecture invariants to preserve (do NOT break)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/README.md#document-index-read-in-order",
-      "heading": "Document index (read in order)",
-      "anchor": "document-index-read-in-order",
-      "snippet": "Document index (read in order)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
-      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
-      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
-      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#12-critical-files-spec-read-first-during-implementation",
-      "heading": "12. Critical files (spec, read-first during implementation)",
-      "anchor": "12-critical-files-spec-read-first-during-implementation",
-      "snippet": "12. Critical files (spec, read-first during implementation)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#knowledge-crib-changelog-single-entry-resolution-auto-mcp-wiring-req-1-req-2",
-      "heading": "Knowledge-crib — Changelog: Single-Entry Resolution + Auto MCP Wiring (REQ-1, REQ-2)",
-      "anchor": "knowledge-crib-changelog-single-entry-resolution-auto-mcp-wiring-req-1-req-2",
-      "snippet": "Knowledge-crib — Changelog: Single-Entry Resolution + Auto MCP Wiring (REQ-1, REQ-2)",
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#5-package-significance-matrix",
+      "heading": "5. Package Significance Matrix",
+      "anchor": "5-package-significance-matrix",
+      "snippet": "5. Package Significance Matrix",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -747,16 +1017,6 @@
       "heading": "Decision Log",
       "anchor": "decision-log",
       "snippet": "Decision Log",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#knowledge-crib-extractor-plugin-spec",
-      "heading": "Knowledge-crib — Extractor Plugin Spec",
-      "anchor": "knowledge-crib-extractor-plugin-spec",
-      "snippet": "Knowledge-crib — Extractor Plugin Spec",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -793,100 +1053,80 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
-      "heading": "`context(symbol)`",
-      "anchor": "context-symbol",
-      "snippet": "`context(symbol)`",
+      "sectionId": "doc:docs/README.md#document-index-read-in-order",
+      "heading": "Document index (read in order)",
+      "anchor": "document-index-read-in-order",
+      "snippet": "Document index (read in order)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-prompts.md#7-codex-specific-notes-local-openai-codex-cli",
-      "heading": "7. Codex-specific notes (local OpenAI/Codex CLI)",
-      "anchor": "7-codex-specific-notes-local-openai-codex-cli",
-      "snippet": "7. Codex-specific notes (local OpenAI/Codex CLI)",
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a7-scale-and-performance-hardening",
+      "heading": "WS-A7 — Scale and performance hardening",
+      "anchor": "ws-a7-scale-and-performance-hardening",
+      "snippet": "WS-A7 — Scale and performance hardening",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-4-ingestion-extraction",
-      "heading": "Branch 4 — Ingestion & Extraction",
-      "anchor": "branch-4-ingestion-extraction",
-      "snippet": "Branch 4 — Ingestion & Extraction",
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-1-body-searchable-fts-closes-g1-highest-leverage",
+      "heading": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
+      "anchor": "ws-1-body-searchable-fts-closes-g1-highest-leverage",
+      "snippet": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-6-interface-output-surface",
-      "heading": "Branch 6 — Interface & Output Surface",
-      "anchor": "branch-6-interface-output-surface",
-      "snippet": "Branch 6 — Interface & Output Surface",
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
+      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-7-mvp-scope-roadmap",
-      "heading": "Branch 7 — MVP Scope & Roadmap",
-      "anchor": "branch-7-mvp-scope-roadmap",
-      "snippet": "Branch 7 — MVP Scope & Roadmap",
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-3-optional-vector-semantic-search-closes-g3",
+      "heading": "WS-3 — Optional vector/semantic search (closes G3)",
+      "anchor": "ws-3-optional-vector-semantic-search-closes-g3",
+      "snippet": "WS-3 — Optional vector/semantic search (closes G3)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-storage.md#7-open-confirmations",
-      "heading": "7. Open confirmations",
-      "anchor": "7-open-confirmations",
-      "snippet": "7. Open confirmations",
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-5-expose-rich-verbs-on-the-cli-closes-g5",
+      "heading": "WS-5 — Expose rich verbs on the CLI (closes G5)",
+      "anchor": "ws-5-expose-rich-verbs-on-the-cli-closes-g5",
+      "snippet": "WS-5 — Expose rich verbs on the CLI (closes G5)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#tests-each-language-add-to-the-existing-extractor-test-ts",
-      "heading": "Tests (each language — add to the existing `Extractor.test.ts`)",
-      "anchor": "tests-each-language-add-to-the-existing-extractor-test-ts",
-      "snippet": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-7-verify-extend-sql-data-flow-edges-defense-in-depth",
+      "heading": "WS-7 — Verify/extend SQL data-flow edges (defense-in-depth)",
+      "anchor": "ws-7-verify-extend-sql-data-flow-edges-defense-in-depth",
+      "snippet": "WS-7 — Verify/extend SQL data-flow edges (defense-in-depth)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#wiring-minimal",
-      "heading": "Wiring (minimal)",
-      "anchor": "wiring-minimal",
-      "snippet": "Wiring (minimal)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/llm-integration-deep-dive.md#5-package-significance-matrix",
-      "heading": "5. Package Significance Matrix",
-      "anchor": "5-package-significance-matrix",
-      "snippet": "5. Package Significance Matrix",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#file-map",
-      "heading": "File Map",
-      "anchor": "file-map",
-      "snippet": "File Map",
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#4-architecture-invariants-to-preserve-do-not-break",
+      "heading": "4. Architecture invariants to preserve (do NOT break)",
+      "anchor": "4-architecture-invariants-to-preserve-do-not-break",
+      "snippet": "4. Architecture invariants to preserve (do NOT break)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -919,20 +1159,28 @@
     "executesCount": 1,
     "referencedByFiles": [
       "packages/cli/src/cli.ts",
+      "packages/core/src/aliases.ts",
+      "packages/core/src/cluster-hash.ts",
       "packages/core/src/delta.ts",
       "packages/core/src/dossier/builder.ts",
       "packages/core/src/dossier/by-scope.ts",
       "packages/core/src/dossier/coverage.ts",
       "packages/core/src/dossier/framework.ts",
       "packages/core/src/dossier/reconstruct.ts",
+      "packages/core/src/federation.ts",
+      "packages/core/src/functional-map.ts",
+      "packages/core/src/index/rerank.ts",
+      "packages/core/src/index/sqlite-index.ts",
       "packages/core/src/rules/extract.ts",
       "packages/mcp/src/verbs.ts",
       "packages/parsers/fixtures/python/rules.py",
       "packages/parsers/src/csharp/parser.ts",
       "packages/parsers/src/go/GoExtractor.ts",
       "packages/parsers/src/md/markdown.ts",
+      "packages/parsers/src/php/PhpExtractor.ts",
       "packages/parsers/src/rust/RustExtractor.ts",
       "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "packages/parsers/src/ts/http-client.ts",
       "packages/pipeline/src/cluster/louvain.ts",
       "packages/pipeline/src/dossiers.ts",
       "packages/pipeline/src/linker/semantic.ts",
@@ -947,7 +1195,11 @@
       "packages/pipeline/src/structure.ts",
       "packages/pipeline/src/update.ts",
       "packages/pipeline/src/vcs.ts",
-      "packages/pipeline/src/workspace.ts"
+      "packages/pipeline/src/workspace.ts",
+      "packages/ui/web/graph-model.js",
+      "packages/ui/web/support.js",
+      "packages/ui/web/vendor/react-dom.production.min.js",
+      "scripts/crib-bench.mjs"
     ]
   },
   "coverage": {

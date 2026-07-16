@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:d3c2e4357cfd316f8ea631c91b9a6698e2a5035bd1f6918a6fbb8017eb4aa422",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
@@ -97,6 +97,20 @@
       {
         "procedure": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
         "procedureName": "readVariables",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:863c4ed80b160f44574b7016b0e983bb7a8f584a50f1d45cb93ea900db7ed228",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 331
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
+        "procedureName": "readVariables",
         "guard": "cond:packages/core/src/dossier/reconstruct.ts@L326",
         "branch": "LOOP",
         "conditions": [
@@ -114,20 +128,6 @@
           "target": "stmt:packages/core/src/dossier/reconstruct.ts@L331",
           "line": 331,
           "expr": "out.push({\n      name,\n      ...(typeof v.dataType === 'string' ? { dataType: v.dataType } : {}),\n      ...(typeof v.init === 'string' ? { init: v.init } : {}),\n      ...(v.constant === true ? { constant: true } : {}),\n      ...(v.exprTruncated === true ? { exprTruncated: true } : {}),\n    });"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
-        "procedureName": "readVariables",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:863c4ed80b160f44574b7016b0e983bb7a8f584a50f1d45cb93ea900db7ed228",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 331
         }
       },
       {

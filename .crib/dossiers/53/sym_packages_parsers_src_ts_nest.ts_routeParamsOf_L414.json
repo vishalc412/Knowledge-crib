@@ -1,0 +1,401 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:3082262da7814e718077ff273cfafe0d93647678cdea9ce2efb5c79127be28bf",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+    "kind": "symbol",
+    "type": "function",
+    "name": "routeParamsOf",
+    "qualifiedName": "routeParamsOf",
+    "signature": "routeParamsOf(m: ts.MethodDeclaration): Array<{ name: string; type?: string; in: string }>",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 414,
+      "end": 427
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 419
+      },
+      {
+        "callee": "decors",
+        "line": 419
+      },
+      {
+        "callee": "simpleName",
+        "line": 419
+      },
+      {
+        "callee": "simpleName",
+        "line": 421
+      },
+      {
+        "callee": "isIdentifier",
+        "line": 422
+      },
+      {
+        "callee": "getText",
+        "line": 422
+      },
+      {
+        "callee": "paramTypeOf",
+        "line": 423
+      },
+      {
+        "callee": "push",
+        "line": 424
+      }
+    ]
+  },
+  "source": {
+    "text": "function routeParamsOf(\n  m: ts.MethodDeclaration,\n): Array<{ name: string; type?: string; in: string }> {\n  const out: Array<{ name: string; type?: string; in: string }> = [];\n  for (const p of m.parameters) {\n    const binding = decors(p).find((d) => simpleName(d) in PARAM_BINDING);\n    if (!binding) continue;\n    const loc = PARAM_BINDING[simpleName(binding)]!;\n    const name = ts.isIdentifier(p.name) ? p.name.text : p.name.getText();\n    const type = paramTypeOf(p);\n    out.push({ name, ...(type ? { type } : {}), in: loc });\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 414
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L404",
+      "confidence": 1,
+      "name": "routeMetaOf",
+      "qualifiedName": "routeMetaOf",
+      "signature": "routeMetaOf(m: ts.MethodDeclaration): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 404
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+      "confidence": 1,
+      "name": "routeMetaOf",
+      "qualifiedName": "routeMetaOf",
+      "signature": "routeMetaOf(m: JavaDef): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 406
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#decors@L565",
+      "confidence": 1,
+      "name": "decors",
+      "qualifiedName": "decors",
+      "signature": "decors(node: ts.Node): ts.Decorator[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 565
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#paramTypeOf@L546",
+      "confidence": 1,
+      "name": "paramTypeOf",
+      "qualifiedName": "paramTypeOf",
+      "signature": "paramTypeOf(p: ts.ParameterDeclaration | ts.PropertyDeclaration): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 546
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
+      "confidence": 1,
+      "name": "simpleName",
+      "qualifiedName": "simpleName",
+      "signature": "simpleName(d: ts.Decorator): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 571
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L413",
+      "snippet": "/** One entry per handler param that carries a binding decorator (`@Param`→path, `@Query`→query, …). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+    "procedureName": "routeParamsOf",
+    "conditions": [
+      "cond:packages/parsers/src/ts/nest.ts@L418"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+        "procedureName": "routeParamsOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L418",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L418",
+            "expr": "m.parameters",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:71dc23a460c04f71c59f4a9ddc38363fd7bd699039d7d723c2482532850b8e39",
+          "target": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
+          "expr": "simpleName",
+          "line": 419
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+        "procedureName": "routeParamsOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L418",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L418",
+            "expr": "m.parameters",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:96bdfe0686fcc1b358c123e74c8f798166b8875250b172980a14315ca3b7a4ca",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L419",
+          "line": 419,
+          "expr": "const binding = decors(p).find((d) => simpleName(d) in PARAM_BINDING);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+        "procedureName": "routeParamsOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L418",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L418",
+            "expr": "m.parameters",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ce04bb8238ad0590ac7561474c20ad048445ef2d83143db77a66edd0858d2a04",
+          "target": "sym:packages/parsers/src/ts/nest.ts#decors@L565",
+          "expr": "decors",
+          "line": 419
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+        "procedureName": "routeParamsOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e87dd7a7b1396bdc50262383427574e3f1e3616f042c9a6c00f1f9affdd97f99",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 419
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+        "procedureName": "routeParamsOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L418",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L418",
+            "expr": "m.parameters",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb86fc0a5ac42322af0bb8bed26852ca62dc74f3a0669903f3ea482953cbb9c9",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L421",
+          "line": 421,
+          "expr": "const loc = PARAM_BINDING[simpleName(binding)]!;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+        "procedureName": "routeParamsOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L418",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L418",
+            "expr": "m.parameters",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f72032fd07d4130db3ce6baff75ae3b1652a1041066f85a5586be80a1f0f4e87",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L422",
+          "line": 422,
+          "expr": "const name = ts.isIdentifier(p.name) ? p.name.text : p.name.getText();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+        "procedureName": "routeParamsOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L418",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L418",
+            "expr": "m.parameters",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4314b45bad5bfd818d82741040e343075a81ecce302794dd39c131a7491c1225",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L423",
+          "line": 423,
+          "expr": "const type = paramTypeOf(p);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+        "procedureName": "routeParamsOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L418",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L418",
+            "expr": "m.parameters",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4a228463b7d870a3c2fab235c41821414ff19de5ed7810cf19f23fdc9efc7261",
+          "target": "sym:packages/parsers/src/ts/nest.ts#paramTypeOf@L546",
+          "expr": "paramTypeOf",
+          "line": 423
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+        "procedureName": "routeParamsOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L418",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L418",
+            "expr": "m.parameters",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9a14d9c93b0e80ecf27809eb20e0a8d9c208bfe42ee4b70a522c91278d549a27",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L424",
+          "line": 424,
+          "expr": "out.push({ name, ...(type ? { type } : {}), in: loc });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+        "procedureName": "routeParamsOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a235d280f9a13a1f0a6929d2e30ae091ccfb0abf7aa994520dc91f5a55c1784b",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 424
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+        "procedureName": "routeParamsOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:698faeff02cef7438d2c13e017e896a8187ec3cca5a2b88fbd51fddb17030ecc",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L426",
+          "line": 426,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts",
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 8,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

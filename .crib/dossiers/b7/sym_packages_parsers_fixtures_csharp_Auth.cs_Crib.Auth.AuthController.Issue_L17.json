@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/fixtures/csharp/Auth.cs#Crib.Auth.AuthController.Issue@L17",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:fb59bb877dbe273ef80c3b25416e45ede3afe4542f8b765b5c6fe177408de10b",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/fixtures/csharp/Auth.cs#Crib.Auth.AuthController.Issue@L17",
@@ -63,18 +63,7 @@
       "line": 39
     }
   ],
-  "docs": [
-    {
-      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a9715ede2516d49b7.md#adversarial-angles-tried",
-      "heading": "Adversarial angles tried",
-      "anchor": "adversarial-angles-tried",
-      "snippet": "Adversarial angles tried",
-      "edgeType": "describes",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.8
-    }
-  ],
+  "docs": [],
   "rules": {
     "procedure": "sym:packages/parsers/fixtures/csharp/Auth.cs#Crib.Auth.AuthController.Issue@L17",
     "procedureName": "Crib.Auth.AuthController.Issue",
@@ -87,11 +76,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:847a11676ec3ec15d30daaa0753bea7a0bb87617de45e005c7f7283724576f63",
-          "target": "sym:packages/parsers/fixtures/csharp/Auth.cs#Crib.Auth.Token@L39",
-          "expr": "Token",
-          "line": 20
+          "kind": "executes",
+          "edgeId": "e:3bf12e6682e1854adaa99be17de21efb692ce2d1ef25f4de524a266770efcd2a",
+          "target": "assign:packages/parsers/fixtures/csharp/Auth.cs@L20",
+          "line": 20,
+          "expr": "Token t = new Token(req)"
         }
       },
       {
@@ -101,11 +90,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:3bf12e6682e1854adaa99be17de21efb692ce2d1ef25f4de524a266770efcd2a",
-          "target": "assign:packages/parsers/fixtures/csharp/Auth.cs@L20",
-          "line": 20,
-          "expr": "Token t = new Token(req)"
+          "kind": "calls",
+          "edgeId": "e:847a11676ec3ec15d30daaa0753bea7a0bb87617de45e005c7f7283724576f63",
+          "target": "sym:packages/parsers/fixtures/csharp/Auth.cs#Crib.Auth.Token@L39",
+          "expr": "Token",
+          "line": 20
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/parser.ts#findAllCallChains@L862",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:4f2c8c230dbaa4663217fc5216141db1aa19bc1debd044e87cf8681bf7e50c11",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/parser.ts#findAllCallChains@L862",
@@ -103,6 +103,20 @@
       {
         "procedure": "sym:packages/parsers/src/python/parser.ts#findAllCallChains@L862",
         "procedureName": "findAllCallChains",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0372ba743ede7e7c2a0b5bde9958c36c9ba04e9747b6521105a6ebc698148f81",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 879
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#findAllCallChains@L862",
+        "procedureName": "findAllCallChains",
         "guard": "cond:packages/parsers/src/python/parser.ts@L873",
         "branch": "LOOP",
         "conditions": [
@@ -124,20 +138,6 @@
           "target": "stmt:packages/parsers/src/python/parser.ts@L879",
           "line": 879,
           "expr": "chain.push(toks[j + 1]!.value);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/parser.ts#findAllCallChains@L862",
-        "procedureName": "findAllCallChains",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:0372ba743ede7e7c2a0b5bde9958c36c9ba04e9747b6521105a6ebc698148f81",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 879
         }
       },
       {

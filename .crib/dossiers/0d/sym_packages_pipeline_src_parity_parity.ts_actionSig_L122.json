@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/parity/parity.ts#actionSig@L122",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:8004b94a5b4f748e091a59e67b739fa32ae58d3ca74526e76f6866d5bf180c54",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/parity/parity.ts#actionSig@L122",
@@ -120,20 +120,6 @@
       {
         "procedure": "sym:packages/pipeline/src/parity/parity.ts#actionSig@L122",
         "procedureName": "actionSig",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:79255c72d4c613c481e2ea19e4c5e0c2a4c4ec67348c8f79d63a05521b2d5006",
-          "target": "sym:packages/pipeline/src/parity/parity.ts#normExpr@L89",
-          "expr": "normExpr",
-          "line": 125
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/parity/parity.ts#actionSig@L122",
-        "procedureName": "actionSig",
         "guard": "cond:packages/pipeline/src/parity/parity.ts@L124",
         "branch": "THEN",
         "conditions": [
@@ -151,6 +137,20 @@
           "target": "stmt:packages/pipeline/src/parity/parity.ts@L125",
           "line": 125,
           "expr": "return `call:${normExpr(a.expr ?? '')}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parity/parity.ts#actionSig@L122",
+        "procedureName": "actionSig",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:79255c72d4c613c481e2ea19e4c5e0c2a4c4ec67348c8f79d63a05521b2d5006",
+          "target": "sym:packages/pipeline/src/parity/parity.ts#normExpr@L89",
+          "expr": "normExpr",
+          "line": 125
         }
       },
       {

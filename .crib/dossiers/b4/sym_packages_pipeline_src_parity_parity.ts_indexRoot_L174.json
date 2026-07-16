@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/parity/parity.ts#indexRoot@L174",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:807c1f44d8eb11adb0facf835d1d9caaa13e2bdbef20371c52c2f2b99a249fdd",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T14:53:52.220Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/parity/parity.ts#indexRoot@L174",
@@ -60,14 +60,24 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L108",
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
       "confidence": 1,
       "name": "indexRepo",
       "qualifiedName": "indexRepo",
       "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
       "type": "function",
       "file": "packages/pipeline/src/pipeline.ts",
-      "line": 108
+      "line": 94
     },
     {
       "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
@@ -103,8 +113,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:f77b2b82bc771bb6eed96d2084dbcd34c55e1f804e4045d8e96c544ca9e7e49d",
-          "target": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L108",
+          "edgeId": "e:a1dfcc31dac2a7430a575b228ab3f4722af5cd2e520a85fdf145cd73d41fb97c",
+          "target": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
           "expr": "indexRepo"
         }
       },
@@ -171,6 +181,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:5b40f6055182bef1d17fa9836929b730ca713aaa132af42bbaf3ba27c0b1245f",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 177
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parity/parity.ts#indexRoot@L174",
+        "procedureName": "indexRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
           "edgeId": "e:fe3be042b47b0a85ea5999cb12d640877d5f22a3e81f0615174d520190e42249",
           "target": "stmt:packages/pipeline/src/parity/parity.ts@L180",
@@ -198,7 +222,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 2,
+      "resolved": 3,
       "recorded": 5,
       "unresolved": 3
     },

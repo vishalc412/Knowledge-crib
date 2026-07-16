@@ -1,0 +1,138 @@
+{
+  "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.paramList@L82",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:b8bea54879c2c677e0c994f42d69d321b444e11e918f1ce4e3f669a32a53cb0f",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.paramList@L82",
+    "kind": "symbol",
+    "type": "function",
+    "name": "paramList",
+    "qualifiedName": "PhpExtractor.walk.paramList",
+    "signature": "paramList(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/php/PhpExtractor.ts",
+    "span": {
+      "start": 82,
+      "end": 87
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 84
+      },
+      {
+        "callee": "map",
+        "line": 84
+      },
+      {
+        "callee": "childForFieldName",
+        "line": 85
+      }
+    ]
+  },
+  "source": {
+    "text": "    const paramList = (params: SyntaxNode | null): string => {\n      if (!params) return '';\n      return params.namedChildren\n        .map((p) => p.childForFieldName('name')?.text ?? p.text)\n        .join(', ');\n    };",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 82
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk@L71",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "PhpExtractor.walk",
+      "signature": "walk(path: string, text: string, root: SyntaxNode, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/php/PhpExtractor.ts",
+      "line": 71
+    },
+    {
+      "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkMethods@L140",
+      "confidence": 1,
+      "name": "walkMethods",
+      "qualifiedName": "PhpExtractor.walk.walkMethods",
+      "signature": "walkMethods(…)",
+      "type": "function",
+      "file": "packages/parsers/src/php/PhpExtractor.ts",
+      "line": 140
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.paramList@L82",
+    "procedureName": "PhpExtractor.walk.paramList",
+    "conditions": [
+      "cond:packages/parsers/src/php/PhpExtractor.ts@L83"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.paramList@L82",
+        "procedureName": "PhpExtractor.walk.paramList",
+        "guard": "cond:packages/parsers/src/php/PhpExtractor.ts@L83",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/php/PhpExtractor.ts@L83",
+            "expr": "!params",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a780b254c2713eff5cbf56130e759825b02485fb13f7948dbf715d681541760d",
+          "target": "stmt:packages/parsers/src/php/PhpExtractor.ts@L83",
+          "line": 83,
+          "expr": "return '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.paramList@L82",
+        "procedureName": "PhpExtractor.walk.paramList",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5c1048789f6c13a7f8ced058f49fc99f6a20a548f690de6e96713046e08fc410",
+          "target": "stmt:packages/parsers/src/php/PhpExtractor.ts@L84",
+          "line": 84,
+          "expr": "return params.namedChildren\n        .map((p) => p.childForFieldName('name')?.text ?? p.text)\n        .join(', ');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/php/PhpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

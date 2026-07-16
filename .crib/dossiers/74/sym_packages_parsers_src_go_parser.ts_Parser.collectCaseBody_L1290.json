@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/parser.ts#Parser.collectCaseBody@L1290",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:19f1cd32fe53ddee7b800efcf8c009e5580eb1df71d5c591d7a36ab00fca49d0",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/parser.ts#Parser.collectCaseBody@L1290",
@@ -640,11 +640,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:e33a27f7190a4510cf72638398fb391be8bfea956e0e75ff02607411a63a6411",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseSwitch@L1195",
-          "expr": "parseSwitch",
-          "line": 1316
+          "kind": "executes",
+          "edgeId": "e:049e23281152e21d09909dbf918a96009e5ccff2e64a7decc34716a11f429fd1",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L1316",
+          "line": 1316,
+          "expr": "stmts.push(this.parseSwitch());"
         }
       },
       {
@@ -670,11 +670,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:049e23281152e21d09909dbf918a96009e5ccff2e64a7decc34716a11f429fd1",
-          "target": "stmt:packages/parsers/src/go/parser.ts@L1316",
-          "line": 1316,
-          "expr": "stmts.push(this.parseSwitch());"
+          "kind": "calls",
+          "edgeId": "e:e33a27f7190a4510cf72638398fb391be8bfea956e0e75ff02607411a63a6411",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseSwitch@L1195",
+          "expr": "parseSwitch",
+          "line": 1316
         }
       },
       {
@@ -760,11 +760,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:cb44c19a74c8f6b131d09d04194909167ba7ea895d7b326a01f6ef6668f94cb5",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseReturn@L1353",
-          "expr": "parseReturn",
-          "line": 1324
+          "kind": "executes",
+          "edgeId": "e:09536debff112359340a10660be3daab8068a8d94edb0aeb6d84309ca846d4e0",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L1324",
+          "line": 1324,
+          "expr": "stmts.push(this.parseReturn());"
         }
       },
       {
@@ -790,41 +790,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:09536debff112359340a10660be3daab8068a8d94edb0aeb6d84309ca846d4e0",
-          "target": "stmt:packages/parsers/src/go/parser.ts@L1324",
-          "line": 1324,
-          "expr": "stmts.push(this.parseReturn());"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.collectCaseBody@L1290",
-        "procedureName": "Parser.collectCaseBody",
-        "guard": "cond:packages/parsers/src/go/parser.ts@L1327",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/go/parser.ts@L1292",
-            "expr": "!this.atEnd()"
-          },
-          {
-            "id": "cond:packages/parsers/src/go/parser.ts@L1306",
-            "expr": "tk.type === 'NAME'"
-          },
-          {
-            "id": "cond:packages/parsers/src/go/parser.ts@L1327",
-            "expr": "tk.value === 'defer'",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
           "kind": "calls",
-          "edgeId": "e:adf76f1b3ab600ea0b2c99f45ebaa74994058b1cfb1d240e832f45803d60cdb4",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseDefer@L1379",
-          "expr": "parseDefer",
-          "line": 1328
+          "edgeId": "e:cb44c19a74c8f6b131d09d04194909167ba7ea895d7b326a01f6ef6668f94cb5",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseReturn@L1353",
+          "expr": "parseReturn",
+          "line": 1324
         }
       },
       {
@@ -860,7 +830,7 @@
       {
         "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.collectCaseBody@L1290",
         "procedureName": "Parser.collectCaseBody",
-        "guard": "cond:packages/parsers/src/go/parser.ts@L1331",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L1327",
         "branch": "THEN",
         "conditions": [
           {
@@ -872,8 +842,8 @@
             "expr": "tk.type === 'NAME'"
           },
           {
-            "id": "cond:packages/parsers/src/go/parser.ts@L1331",
-            "expr": "tk.value === 'var' ||\n          tk.value === 'const' ||\n          tk.value === 'type' ||\n          tk.value === 'break' ||\n          tk.value === 'continue' ||\n          tk.value === 'fallthrough' ||\n          tk.value === 'goto'",
+            "id": "cond:packages/parsers/src/go/parser.ts@L1327",
+            "expr": "tk.value === 'defer'",
             "polarity": "THEN"
           }
         ],
@@ -881,10 +851,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:ca9fb40baa259c69bc1219be8b5903409b61c96dd2eba4199a99b7e7635bdbc6",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
-          "expr": "skipToSemi",
-          "line": 1340
+          "edgeId": "e:adf76f1b3ab600ea0b2c99f45ebaa74994058b1cfb1d240e832f45803d60cdb4",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseDefer@L1379",
+          "expr": "parseDefer",
+          "line": 1328
         }
       },
       {
@@ -920,23 +890,31 @@
       {
         "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.collectCaseBody@L1290",
         "procedureName": "Parser.collectCaseBody",
-        "guard": "cond:packages/parsers/src/go/parser.ts@L1292",
-        "branch": "LOOP",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L1331",
+        "branch": "THEN",
         "conditions": [
           {
             "id": "cond:packages/parsers/src/go/parser.ts@L1292",
-            "expr": "!this.atEnd()",
-            "polarity": "LOOP"
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L1306",
+            "expr": "tk.type === 'NAME'"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L1331",
+            "expr": "tk.value === 'var' ||\n          tk.value === 'const' ||\n          tk.value === 'type' ||\n          tk.value === 'break' ||\n          tk.value === 'continue' ||\n          tk.value === 'fallthrough' ||\n          tk.value === 'goto'",
+            "polarity": "THEN"
           }
         ],
         "inLoop": true,
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:8cf5fd3651f7ed08698f02413b8be8bc5ac47293c23bfba88a2e94fc473ec447",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseSimpleStmt@L1448",
-          "expr": "parseSimpleStmt",
-          "line": 1345
+          "edgeId": "e:ca9fb40baa259c69bc1219be8b5903409b61c96dd2eba4199a99b7e7635bdbc6",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+          "expr": "skipToSemi",
+          "line": 1340
         }
       },
       {
@@ -959,6 +937,28 @@
           "target": "stmt:packages/parsers/src/go/parser.ts@L1345",
           "line": 1345,
           "expr": "const s = this.parseSimpleStmt();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.collectCaseBody@L1290",
+        "procedureName": "Parser.collectCaseBody",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L1292",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L1292",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8cf5fd3651f7ed08698f02413b8be8bc5ac47293c23bfba88a2e94fc473ec447",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseSimpleStmt@L1448",
+          "expr": "parseSimpleStmt",
+          "line": 1345
         }
       },
       {

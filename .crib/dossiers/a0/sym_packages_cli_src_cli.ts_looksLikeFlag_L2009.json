@@ -1,0 +1,113 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#looksLikeFlag@L2009",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:90eea9ccf4f1ef9772006cb607542a93f2cb6d02f0b8c1446a93db4325426a44",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#looksLikeFlag@L2009",
+    "kind": "symbol",
+    "type": "function",
+    "name": "looksLikeFlag",
+    "qualifiedName": "looksLikeFlag",
+    "signature": "looksLikeFlag(v: string | undefined): boolean",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 2009,
+      "end": 2011
+    },
+    "callSites": [
+      {
+        "callee": "startsWith",
+        "line": 2010
+      }
+    ]
+  },
+  "source": {
+    "text": "function looksLikeFlag(v: string | undefined): boolean {\n  return v === undefined || v.startsWith('--');\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 2009
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdSkill@L2065",
+      "confidence": 1,
+      "name": "cmdSkill",
+      "qualifiedName": "cmdSkill",
+      "signature": "cmdSkill(args: string[]): number",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 2065
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#parseScopeFlag@L1986",
+      "confidence": 1,
+      "name": "parseScopeFlag",
+      "qualifiedName": "parseScopeFlag",
+      "signature": "parseScopeFlag(args: string[]): EnrichScope | undefined",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1986
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L2008",
+      "snippet": "/** True when a flag's value slot is missing or itself looks like another flag (e.g. `--scope --next`). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#looksLikeFlag@L2009",
+    "procedureName": "looksLikeFlag",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#looksLikeFlag@L2009",
+        "procedureName": "looksLikeFlag",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4b97681053a0ea7cd8a75ef3846b81505941184cf247996d5be853f922091a96",
+          "target": "stmt:packages/cli/src/cli.ts@L2010",
+          "line": 2010,
+          "expr": "return v === undefined || v.startsWith('--');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

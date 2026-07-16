@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/spring.ts#securityOf@L438",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:329d2bcd28d50a68153a7d7b9ce0162776f9be35da5d4dc27d205cd55ebc5e05",
-  "builtAt": "2026-06-26T05:10:32.429Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/spring.ts#securityOf@L438",
@@ -108,11 +108,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:7ed44435fa7149a2815bbd526c3104b7d24912eb68bddced8bb1ce9345ee6f1e",
-          "target": "sym:packages/parsers/src/java/spring.ts#allQuoted@L376",
-          "expr": "allQuoted",
-          "line": 442
+          "kind": "executes",
+          "edgeId": "e:4e5547584390ef1f01b0168460344f01c17d216175d27bb9510c34093d3f2fb1",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L442",
+          "line": 442,
+          "expr": "const v = allQuoted(a.args).join('|');"
         }
       },
       {
@@ -130,11 +130,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:4e5547584390ef1f01b0168460344f01c17d216175d27bb9510c34093d3f2fb1",
-          "target": "stmt:packages/parsers/src/java/spring.ts@L442",
-          "line": 442,
-          "expr": "const v = allQuoted(a.args).join('|');"
+          "kind": "calls",
+          "edgeId": "e:7ed44435fa7149a2815bbd526c3104b7d24912eb68bddced8bb1ce9345ee6f1e",
+          "target": "sym:packages/parsers/src/java/spring.ts#allQuoted@L376",
+          "expr": "allQuoted",
+          "line": 442
         }
       },
       {

@@ -1,0 +1,1176 @@
+{
+  "id": "sym:scripts/crib-self-hosted-e2e.mjs#main.call@L185",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:b9d19cdfa1ed5331cce3a3594462650788e482e60b757d159ae6f4238555d420",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/crib-self-hosted-e2e.mjs#main.call@L185",
+    "kind": "symbol",
+    "type": "function",
+    "name": "call",
+    "qualifiedName": "main.call",
+    "signature": "call(…)",
+    "lang": "javascript",
+    "file": "scripts/crib-self-hosted-e2e.mjs",
+    "span": {
+      "start": 185,
+      "end": 189
+    },
+    "callSites": [
+      {
+        "callee": "request",
+        "line": 186
+      },
+      {
+        "callee": "push",
+        "line": 187
+      },
+      {
+        "callee": "assertToolResult",
+        "line": 188
+      }
+    ]
+  },
+  "source": {
+    "text": "  const call = async (name, args = {}) => {\n    const result = await client.request('tools/call', { name, arguments: args });\n    called.push(name);\n    return assertToolResult(name, result);\n  };",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 185
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/vendor/react.production.min.js#C@L14",
+      "confidence": 1,
+      "name": "C",
+      "qualifiedName": "C",
+      "signature": "C(a, b, e)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react.production.min.js",
+      "line": 14
+    },
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Dh.I@L91",
+      "confidence": 1,
+      "name": "I",
+      "qualifiedName": "Dh.I",
+      "signature": "I(e, g, h, k)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 91
+    },
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Hh@L102",
+      "confidence": 1,
+      "name": "Hh",
+      "qualifiedName": "Hh",
+      "signature": "Hh(a, b, c)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 102
+    },
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Wd@L213",
+      "confidence": 1,
+      "name": "Wd",
+      "qualifiedName": "Wd",
+      "signature": "Wd(a, b, c, d, e)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 213
+    },
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Zk@L212",
+      "confidence": 1,
+      "name": "Zk",
+      "qualifiedName": "Zk",
+      "signature": "Zk(a, b, c, d, e)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 212
+    },
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#be@L17",
+      "confidence": 1,
+      "name": "be",
+      "qualifiedName": "be",
+      "signature": "be(a, b)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 17
+    },
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#hj@L23",
+      "confidence": 1,
+      "name": "hj",
+      "qualifiedName": "hj",
+      "signature": "hj(a)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 23
+    },
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#kj@L223",
+      "confidence": 1,
+      "name": "kj",
+      "qualifiedName": "kj",
+      "signature": "kj(…)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 223
+    },
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main()",
+      "type": "function",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 165
+    },
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#qd@L84",
+      "confidence": 1,
+      "name": "qd",
+      "qualifiedName": "qd",
+      "signature": "qd(a, b)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 84
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.request@L119",
+      "confidence": 1,
+      "name": "request",
+      "qualifiedName": "McpStdioClient.request",
+      "signature": "request(method, params)",
+      "type": "method",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 119
+    },
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#assertToolResult@L160",
+      "confidence": 1,
+      "name": "assertToolResult",
+      "qualifiedName": "assertToolResult",
+      "signature": "assertToolResult(name, result)",
+      "type": "function",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 160
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-2-define-and-test-the-45-second-timeline",
+      "heading": "Task 2: Define And Test The 45-Second Timeline",
+      "anchor": "task-2-define-and-test-the-45-second-timeline",
+      "snippet": "Task 2: Define And Test The 45-Second Timeline",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#per-language-parser-work",
+      "heading": "Per-language parser work",
+      "anchor": "per-language-parser-work",
+      "snippet": "Per-language parser work",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "heading": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "anchor": "2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "snippet": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#4-deep-dive-one-symbol-the-dossier-prompt-highest-leverage",
+      "heading": "4. Deep-dive one symbol — *the dossier prompt (highest leverage)*",
+      "anchor": "4-deep-dive-one-symbol-the-dossier-prompt-highest-leverage",
+      "snippet": "4. Deep-dive one symbol — *the dossier prompt (highest leverage)*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "heading": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "anchor": "1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "snippet": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#impact-symbol-dir",
+      "heading": "`impact(symbol, dir)`",
+      "anchor": "impact-symbol-dir",
+      "snippet": "`impact(symbol, dir)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#edge",
+      "heading": "Edge",
+      "anchor": "edge",
+      "snippet": "Edge",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-3-ascii-flow-diagram-command-paths",
+      "heading": "2.3 ASCII Flow Diagram: Command Paths",
+      "anchor": "2-3-ascii-flow-diagram-command-paths",
+      "snippet": "2.3 ASCII Flow Diagram: Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#the-author-contract-what-you-write-per-item",
+      "heading": "The author contract — what you write per item",
+      "anchor": "the-author-contract-what-you-write-per-item",
+      "snippet": "The author contract — what you write per item",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#phase-1-one-batch-author-save-stop-the-default-loop-per-turn",
+      "heading": "Phase 1 — one batch, author, save, stop (the default loop, per turn)",
+      "anchor": "phase-1-one-batch-author-save-stop-the-default-loop-per-turn",
+      "snippet": "Phase 1 — one batch, author, save, stop (the default loop, per turn)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-author-contract-per-item",
+      "heading": "The author contract (per item)",
+      "anchor": "the-author-contract-per-item",
+      "snippet": "The author contract (per item)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:SECURITY.md#network-surface-inventory-the-whole-product",
+      "heading": "Network surface inventory (the whole product)",
+      "anchor": "network-surface-inventory-the-whole-product",
+      "snippet": "Network surface inventory (the whole product)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#8-verify-it-works-any-client",
+      "heading": "8. Verify it works (any client)",
+      "anchor": "8-verify-it-works-any-client",
+      "snippet": "8. Verify it works (any client)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/show-hn.md#body",
+      "heading": "Body",
+      "anchor": "body",
+      "snippet": "Body",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#knowledge-crib-prompting-guide-how-to-talk-to-your-local-llm-so-crib-does-the-work",
+      "heading": "Knowledge-crib — Prompting Guide (how to talk to your local LLM so crib does the work)",
+      "anchor": "knowledge-crib-prompting-guide-how-to-talk-to-your-local-llm-so-crib-does-the-work",
+      "snippet": "Knowledge-crib — Prompting Guide (how to talk to your local LLM so crib does the work)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#0-the-mental-model-what-to-ask-for-when",
+      "heading": "0. The mental model — what to ask for, when",
+      "anchor": "0-the-mental-model-what-to-ask-for-when",
+      "snippet": "0. The mental model — what to ask for, when",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#7-codex-specific-notes-local-openai-codex-cli",
+      "heading": "7. Codex-specific notes (local OpenAI/Codex CLI)",
+      "anchor": "7-codex-specific-notes-local-openai-codex-cli",
+      "snippet": "7. Codex-specific notes (local OpenAI/Codex CLI)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#dossiers-in-git-keep-committed",
+      "heading": "Dossiers-in-git — KEEP committed",
+      "anchor": "dossiers-in-git-keep-committed",
+      "snippet": "Dossiers-in-git — KEEP committed",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/demo-recipe.md#shot-2-impact-blast-radius-the-enterprise-pull-25s",
+      "heading": "Shot 2 — impact blast-radius (the enterprise pull)  · ~25s",
+      "anchor": "shot-2-impact-blast-radius-the-enterprise-pull-25s",
+      "snippet": "Shot 2 — impact blast-radius (the enterprise pull)  · ~25s",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#gaps-missing-asset-detection",
+      "heading": "`gaps` *(missing-asset detection)*",
+      "anchor": "gaps-missing-asset-detection",
+      "snippet": "`gaps` *(missing-asset detection)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#1-contract",
+      "heading": "1. Contract",
+      "anchor": "1-contract",
+      "snippet": "1. Contract",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#new-edge-relations",
+      "heading": "New edge relations",
+      "anchor": "new-edge-relations",
+      "snippet": "New edge relations",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "heading": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "anchor": "4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "snippet": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4d-dossier-the-persisted-reusable-deep-context-workstream-d-e",
+      "heading": "4d. Dossier — the persisted reusable deep context (Workstream D/E)",
+      "anchor": "4d-dossier-the-persisted-reusable-deep-context-workstream-d-e",
+      "snippet": "4d. Dossier — the persisted reusable deep context (Workstream D/E)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#1-why-this-is-its-own-capability",
+      "heading": "1. Why this is its own capability",
+      "anchor": "1-why-this-is-its-own-capability",
+      "snippet": "1. Why this is its own capability",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#crib-export-format-mermaid",
+      "heading": "`crib export --format mermaid`",
+      "anchor": "crib-export-format-mermaid",
+      "snippet": "`crib export --format mermaid`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4a-serving-layer-deep-context-universal-all-languages",
+      "heading": "4a. Serving-layer deep context (universal, all languages)",
+      "anchor": "4a-serving-layer-deep-context-universal-all-languages",
+      "snippet": "4a. Serving-layer deep context (universal, all languages)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "heading": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "anchor": "3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "snippet": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#decision",
+      "heading": "Decision",
+      "anchor": "decision",
+      "snippet": "Decision",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#7-seeroflow-read-contract-q38-and-any-external-consumer",
+      "heading": "7. SeeroFlow read contract [Q38] (and any external consumer)",
+      "anchor": "7-seeroflow-read-contract-q38-and-any-external-consumer",
+      "snippet": "7. SeeroFlow read contract [Q38] (and any external consumer)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#access-model-the-soul-inherits-the-repo-acl",
+      "heading": "Access model — the soul inherits the repo ACL",
+      "anchor": "access-model-the-soul-inherits-the-repo-acl",
+      "snippet": "Access model — the soul inherits the repo ACL",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-3d-cfg-condition-extraction-deep-extraction-the-deep-part",
+      "heading": "Phase 3d — CFG / condition extraction *(deep-extraction — the deep part)*",
+      "anchor": "phase-3d-cfg-condition-extraction-deep-extraction-the-deep-part",
+      "snippet": "Phase 3d — CFG / condition extraction *(deep-extraction — the deep part)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#2-fixtures",
+      "heading": "2. Fixtures",
+      "anchor": "2-fixtures",
+      "snippet": "2. Fixtures",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "heading": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "anchor": "3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "snippet": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/comparison.md#the-7-column-matrix",
+      "heading": "The 7-column matrix",
+      "anchor": "the-7-column-matrix",
+      "snippet": "The 7-column matrix",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "heading": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "anchor": "4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "snippet": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-3-staleness-detection-how-the-system-knows-llm-artifacts-are-outdated",
+      "heading": "3.2.3 Staleness Detection — How the System Knows LLM Artifacts Are Outdated",
+      "anchor": "3-2-3-staleness-detection-how-the-system-knows-llm-artifacts-are-outdated",
+      "snippet": "3.2.3 Staleness Detection — How the System Knows LLM Artifacts Are Outdated",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-3-4-zero-progress-detection-preventing-infinite-churn",
+      "heading": "3.3.4 Zero-Progress Detection — Preventing Infinite Churn",
+      "anchor": "3-3-4-zero-progress-detection-preventing-infinite-churn",
+      "snippet": "3.3.4 Zero-Progress Detection — Preventing Infinite Churn",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#1-executive-summary",
+      "heading": "1. Executive Summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive Summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#schema-evolution",
+      "heading": "Schema evolution",
+      "anchor": "schema-evolution",
+      "snippet": "Schema evolution",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#why-it-matters",
+      "heading": "Why it matters",
+      "anchor": "why-it-matters",
+      "snippet": "Why it matters",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#technical-depth",
+      "heading": "Technical depth",
+      "anchor": "technical-depth",
+      "snippet": "Technical depth",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#the-two-rules-that-prevent-the-infinite-loop",
+      "heading": "⚠️ The two rules that prevent the infinite loop",
+      "anchor": "the-two-rules-that-prevent-the-infinite-loop",
+      "snippet": "⚠️ The two rules that prevent the infinite loop",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#phase-0-the-scope-picker-first-thing-once-per-session",
+      "heading": "Phase 0 — the scope picker (first thing, once per session)",
+      "anchor": "phase-0-the-scope-picker-first-thing-once-per-session",
+      "snippet": "Phase 0 — the scope picker (first thing, once per session)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#completion-reporting",
+      "heading": "Completion reporting",
+      "anchor": "completion-reporting",
+      "snippet": "Completion reporting",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-the-llm-semantic-graph-layer-optional-build-the-bible",
+      "heading": "10. The LLM semantic-graph layer (optional — \"build the bible\")",
+      "anchor": "10-the-llm-semantic-graph-layer-optional-build-the-bible",
+      "snippet": "10. The LLM semantic-graph layer (optional — \"build the bible\")",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#knowledge-crib-mcp-client-setup-guide",
+      "heading": "Knowledge-crib — MCP Client Setup Guide",
+      "anchor": "knowledge-crib-mcp-client-setup-guide",
+      "snippet": "Knowledge-crib — MCP Client Setup Guide",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-edge-relations-rel",
+      "heading": "2. Edge relations (`rel`)",
+      "anchor": "2-edge-relations-rel",
+      "snippet": "2. Edge relations (`rel`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#final-narration-script",
+      "heading": "Final Narration Script",
+      "anchor": "final-narration-script",
+      "snippet": "Final Narration Script",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#objective",
+      "heading": "Objective",
+      "anchor": "objective",
+      "snippet": "Objective",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#16-24-seconds-see-the-architecture",
+      "heading": "16-24 seconds: See The Architecture",
+      "anchor": "16-24-seconds-see-the-architecture",
+      "snippet": "16-24 seconds: See The Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CLAUDE.md#never-do",
+      "heading": "Never Do",
+      "anchor": "never-do",
+      "snippet": "Never Do",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#2-problem-user",
+      "heading": "2. Problem & User",
+      "anchor": "2-problem-user",
+      "snippet": "2. Problem & User",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#12-future-seeroflow-integration-q38",
+      "heading": "12. Future: SeeroFlow Integration [Q38]",
+      "anchor": "12-future-seeroflow-integration-q38",
+      "snippet": "12. Future: SeeroFlow Integration [Q38]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/STATS.md#knowledge-crib-canonical-stats",
+      "heading": "Knowledge-crib — canonical stats",
+      "anchor": "knowledge-crib-canonical-stats",
+      "snippet": "Knowledge-crib — canonical stats",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#0-verified-facts-judge-conflict-reconciliations",
+      "heading": "0. Verified facts & judge-conflict reconciliations",
+      "anchor": "0-verified-facts-judge-conflict-reconciliations",
+      "snippet": "0. Verified facts & judge-conflict reconciliations",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m10-pl-sql-extractor-sql-data-flow-phase-3c",
+      "heading": "M10 — PL/SQL extractor + SQL data-flow (Phase 3c)",
+      "anchor": "m10-pl-sql-extractor-sql-data-flow-phase-3c",
+      "snippet": "M10 — PL/SQL extractor + SQL data-flow (Phase 3c)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:AGENTS.md#never-do",
+      "heading": "Never Do",
+      "anchor": "never-do",
+      "snippet": "Never Do",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#knowledge-crib-refined-vs-existing-detailed-level-analysis-assessment",
+      "heading": "Knowledge-crib — Refined vs Existing: Detailed-Level Analysis Assessment",
+      "anchor": "knowledge-crib-refined-vs-existing-detailed-level-analysis-assessment",
+      "snippet": "Knowledge-crib — Refined vs Existing: Detailed-Level Analysis Assessment",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-1-what-each-model-can-answer-about-one-procedure",
+      "heading": "1.1 What each model can answer about ONE procedure",
+      "anchor": "1-1-what-each-model-can-answer-about-one-procedure",
+      "snippet": "1.1 What each model can answer about ONE procedure",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-2-concrete-before-after-the-loan-rule-engine-procedure",
+      "heading": "1.2 Concrete before/after — the loan-rule-engine procedure",
+      "anchor": "1-2-concrete-before-after-the-loan-rule-engine-procedure",
+      "snippet": "1.2 Concrete before/after — the loan-rule-engine procedure",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-5-ai-architect",
+      "heading": "2.5 AI Architect",
+      "anchor": "2-5-ai-architect",
+      "snippet": "2.5 AI Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-2-product-manager",
+      "heading": "2.2 Product Manager",
+      "anchor": "2-2-product-manager",
+      "snippet": "2.2 Product Manager",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#3-overall-verdict",
+      "heading": "3. Overall verdict",
+      "anchor": "3-overall-verdict",
+      "snippet": "3. Overall verdict",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:README.md#the-token-cost-benefit-concretely",
+      "heading": "The token-cost benefit, concretely",
+      "anchor": "the-token-cost-benefit-concretely",
+      "snippet": "The token-cost benefit, concretely",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:README.md#measured-not-projected-run-it-yourself",
+      "heading": "Measured, not projected (run it yourself)",
+      "anchor": "measured-not-projected-run-it-yourself",
+      "snippet": "Measured, not projected (run it yourself)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#knowledge-crib-user-guide",
+      "heading": "Knowledge-crib — User Guide",
+      "anchor": "knowledge-crib-user-guide",
+      "snippet": "Knowledge-crib — User Guide",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#context-360-for-one-symbol",
+      "heading": "`context` — 360° for one symbol",
+      "anchor": "context-360-for-one-symbol",
+      "snippet": "`context` — 360° for one symbol",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-remaining-deterministic-verbs-compact",
+      "heading": "The remaining deterministic verbs (compact)",
+      "anchor": "the-remaining-deterministic-verbs-compact",
+      "snippet": "The remaining deterministic verbs (compact)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-7-mcp-server-verification-the-real-test",
+      "heading": "5.7 MCP server verification (the real test)",
+      "anchor": "5-7-mcp-server-verification-the-real-test",
+      "snippet": "5.7 MCP server verification (the real test)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#10-the-llm-semantic-graph-layer-the-grove-plan",
+      "heading": "10. The LLM semantic-graph layer (the grove plan)",
+      "anchor": "10-the-llm-semantic-graph-layer-the-grove-plan",
+      "snippet": "10. The LLM semantic-graph layer (the grove plan)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a2-body-present-data-flow-verification-finish-ws-7",
+      "heading": "WS-A2 — Body-present data-flow verification (finish WS-7)",
+      "anchor": "ws-a2-body-present-data-flow-verification-finish-ws-7",
+      "snippet": "WS-A2 — Body-present data-flow verification (finish WS-7)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#4-acceptance-criteria-the-plan-a-plan-b-test",
+      "heading": "4. Acceptance criteria (the \"Plan A > Plan B\" test)",
+      "anchor": "4-acceptance-criteria-the-plan-a-plan-b-test",
+      "snippet": "4. Acceptance criteria (the \"Plan A > Plan B\" test)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#4-acceptance-criteria-the-universal-plan-a-plan-b-test",
+      "heading": "4. Acceptance criteria (the universal \"Plan A > Plan B\" test)",
+      "anchor": "4-acceptance-criteria-the-universal-plan-a-plan-b-test",
+      "snippet": "4. Acceptance criteria (the universal \"Plan A > Plan B\" test)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#1-2-the-mcp-server-is-already-plan-b-capable-per-symbol-mcp-src-verbs-ts",
+      "heading": "1.2 The MCP server is already Plan-B-capable *per symbol* (`mcp/src/verbs.ts`)",
+      "anchor": "1-2-the-mcp-server-is-already-plan-b-capable-per-symbol-mcp-src-verbs-ts",
+      "snippet": "1.2 The MCP server is already Plan-B-capable *per symbol* (`mcp/src/verbs.ts`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
+      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-3-optional-vector-semantic-search-closes-g3",
+      "heading": "WS-3 — Optional vector/semantic search (closes G3)",
+      "anchor": "ws-3-optional-vector-semantic-search-closes-g3",
+      "snippet": "WS-3 — Optional vector/semantic search (closes G3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-4-bulk-package-level-context-closes-g4",
+      "heading": "WS-4 — Bulk / package-level context (closes G4)",
+      "anchor": "ws-4-bulk-package-level-context-closes-g4",
+      "snippet": "WS-4 — Bulk / package-level context (closes G4)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#3-how-this-closes-plan-a-vs-plan-b",
+      "heading": "3. How this closes Plan A vs Plan B",
+      "anchor": "3-how-this-closes-plan-a-vs-plan-b",
+      "snippet": "3. How this closes Plan A vs Plan B",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#5-phasing-effort",
+      "heading": "5. Phasing & effort",
+      "anchor": "5-phasing-effort",
+      "snippet": "5. Phasing & effort",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#6-acceptance-criteria-the-plan-a-plan-b-test",
+      "heading": "6. Acceptance criteria (the \"Plan A == Plan B\" test)",
+      "anchor": "6-acceptance-criteria-the-plan-a-plan-b-test",
+      "snippet": "6. Acceptance criteria (the \"Plan A == Plan B\" test)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#main.call@L185",
+    "procedureName": "main.call",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#main.call@L185",
+        "procedureName": "main.call",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2ae7a2b2609f08462848255f87650549f78cd3eb1f8da9205544dd791e9a80f5",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L186",
+          "line": 186,
+          "expr": "const result = await client.request('tools/call', { name, arguments: args });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#main.call@L185",
+        "procedureName": "main.call",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:af84223039b96cfcee5f13122509831412fb268ca2e816ff5a78d6b43e77569b",
+          "target": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.request@L119",
+          "expr": "request",
+          "line": 186
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#main.call@L185",
+        "procedureName": "main.call",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9db54a52b999491fe17391c1183c246a56befbde944c63f8435469fb91ea2b29",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 187
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#main.call@L185",
+        "procedureName": "main.call",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c0c6ff1c2f09b73bcb4aac7a0f38f9114ca139d5532871dbee8f9fcb46a4e5b7",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L187",
+          "line": 187,
+          "expr": "called.push(name);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#main.call@L185",
+        "procedureName": "main.call",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2ca9d5c226c1a9a7697da66e03a289f5eb8e1c9b6b8c54266dd93f1f1388ddcd",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L188",
+          "line": 188,
+          "expr": "return assertToolResult(name, result);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#main.call@L185",
+        "procedureName": "main.call",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:84a1a8a93981c92e1f333edf917d5a146539c0b153bb094b602fb7a03bdcd377",
+          "target": "sym:scripts/crib-self-hosted-e2e.mjs#assertToolResult@L160",
+          "expr": "assertToolResult",
+          "line": 188
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/ui/web/vendor/react-dom.production.min.js",
+      "packages/ui/web/vendor/react.production.min.js",
+      "scripts/crib-self-hosted-e2e.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

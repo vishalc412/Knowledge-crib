@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkIf@L530",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:1ca0fde684b83acd0b0a2757092d80a9fa2344a6dffd608b8588c61ec9311631",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkIf@L530",
@@ -101,6 +101,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "executes",
+          "edgeId": "e:2e2caeff4b75d2c130af7e9dfd5daf23ef9f1573d10ff0161b45c2b016077105",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L538",
+          "line": 538,
+          "expr": "const condId = this.condition(s.predicate, s.line, 'THEN');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkIf@L530",
+        "procedureName": "BodyWalker.walkIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "calls",
           "edgeId": "e:eebaae8e507e3d62c6ef78a465dfb223d84303d2b8f94ae74551c4f8945b4e2a",
           "target": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.condition@L691",
@@ -116,10 +130,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:2e2caeff4b75d2c130af7e9dfd5daf23ef9f1573d10ff0161b45c2b016077105",
-          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L538",
-          "line": 538,
-          "expr": "const condId = this.condition(s.predicate, s.line, 'THEN');"
+          "edgeId": "e:38cd76e1519a0f58307e28a00b3286bd3d6c3b3bbd5f089715687bb0c02b8c1b",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L539",
+          "line": 539,
+          "expr": "this.walkBody(\n      s.then,\n      procId,\n      [...guardStack, { condId, branch: 'THEN' }],\n      inLoop,\n      inException,\n      sites,\n    );"
         }
       },
       {
@@ -142,20 +156,6 @@
           "target": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkBody@L482",
           "expr": "walkBody",
           "line": 539
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkIf@L530",
-        "procedureName": "BodyWalker.walkIf",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:38cd76e1519a0f58307e28a00b3286bd3d6c3b3bbd5f089715687bb0c02b8c1b",
-          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L539",
-          "line": 539,
-          "expr": "this.walkBody(\n      s.then,\n      procId,\n      [...guardStack, { condId, branch: 'THEN' }],\n      inLoop,\n      inException,\n      sites,\n    );"
         }
       },
       {

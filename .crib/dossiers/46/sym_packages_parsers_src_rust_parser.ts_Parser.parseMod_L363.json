@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseMod@L363",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:2b53a93067f751fb421fdc94d163c424fd1d04b9bf762b0f83e95f7bfccebc7b",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseMod@L363",
@@ -293,11 +293,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:1dba21e17299718f66f45fd387313a15f3b08f4a70cbc3f4a2c0cef652b61021",
-          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.parseDecls@L236",
-          "expr": "parseDecls",
-          "line": 372
+          "kind": "executes",
+          "edgeId": "e:099e5ffcc3fc4027310ec8b5a67978d3820571174e41d2ae06409728e236e79e",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L372",
+          "line": 372,
+          "expr": "const res = this.parseDecls(false);"
         }
       },
       {
@@ -315,11 +315,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:099e5ffcc3fc4027310ec8b5a67978d3820571174e41d2ae06409728e236e79e",
-          "target": "stmt:packages/parsers/src/rust/parser.ts@L372",
-          "line": 372,
-          "expr": "const res = this.parseDecls(false);"
+          "kind": "calls",
+          "edgeId": "e:1dba21e17299718f66f45fd387313a15f3b08f4a70cbc3f4a2c0cef652b61021",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.parseDecls@L236",
+          "expr": "parseDecls",
+          "line": 372
         }
       },
       {

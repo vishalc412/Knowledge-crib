@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedBrackets@L904",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:6d9ce916fa00dedb557bda5981349cc91a18024c55ff722bcfc4a8aed857cb3d",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedBrackets@L904",
@@ -199,11 +199,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:dab2b7c3e0bc5724161a68e30e55547966d2186543a2e060872aaebfe55236e2",
-          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
-          "expr": "peek",
-          "line": 910
+          "kind": "executes",
+          "edgeId": "e:59dfa4731db55a99c88ab3fe738e3ee75c82577ef64a5106225e3730be6ff8e6",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L910",
+          "line": 910,
+          "expr": "const tk = this.peek();"
         }
       },
       {
@@ -221,11 +221,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:59dfa4731db55a99c88ab3fe738e3ee75c82577ef64a5106225e3730be6ff8e6",
-          "target": "stmt:packages/parsers/src/rust/parser.ts@L910",
-          "line": 910,
-          "expr": "const tk = this.peek();"
+          "kind": "calls",
+          "edgeId": "e:dab2b7c3e0bc5724161a68e30e55547966d2186543a2e060872aaebfe55236e2",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
+          "expr": "peek",
+          "line": 910
         }
       },
       {

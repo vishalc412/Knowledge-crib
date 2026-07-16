@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visitImplBody@L236",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:40ff36684634d6b4f82494a23fea64fd24fae7cf5d65bdd212f7bccaae7ceda0",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visitImplBody@L236",
@@ -116,14 +116,14 @@
       "line": 323
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 77
+      "line": 88
     },
     {
       "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
@@ -158,6 +158,20 @@
       {
         "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visitImplBody@L236",
         "procedureName": "RustExtractor.parse.visitImplBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4ed24c95eafa8a90240fdd96feb2b2c32e6160093a96de5f8c1424feb8ea8495",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 241
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visitImplBody@L236",
+        "procedureName": "RustExtractor.parse.visitImplBody",
         "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L237",
         "branch": "LOOP",
         "conditions": [
@@ -175,20 +189,6 @@
           "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L241",
           "line": 241,
           "expr": "const id = ctx.idFor('symbol', { path, qualifiedName: qn, startLine: d.startLine });"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visitImplBody@L236",
-        "procedureName": "RustExtractor.parse.visitImplBody",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:8cbde5612cc0341b0e694754d4897fa8516bcfc07517cabc898b41096bff6005",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
-          "expr": "idFor",
-          "line": 241
         }
       },
       {
@@ -304,6 +304,20 @@
       {
         "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visitImplBody@L236",
         "procedureName": "RustExtractor.parse.visitImplBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:abd7d235df30179cda00c7babecd51334aaedd5404e7ee6760c8151fa8a477d9",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 263
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visitImplBody@L236",
+        "procedureName": "RustExtractor.parse.visitImplBody",
         "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L237",
         "branch": "LOOP",
         "conditions": [
@@ -321,20 +335,6 @@
           "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L263",
           "line": 263,
           "expr": "symbols.push({ node, keys: [qn, d.name], simpleName: d.name, parentQualifier: implQ });"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visitImplBody@L236",
-        "procedureName": "RustExtractor.parse.visitImplBody",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:abd7d235df30179cda00c7babecd51334aaedd5404e7ee6760c8151fa8a477d9",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 263
         }
       },
       {

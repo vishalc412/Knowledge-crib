@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecls@L232",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:f4e8f4410b9bfecf26bf9b8eb8fe25f71065adb66ec48127fbfb5a4ad0321460",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecls@L232",
@@ -172,9 +172,9 @@
     "conditions": [
       "cond:packages/parsers/src/java/parser.ts@L235",
       "cond:packages/parsers/src/java/parser.ts@L236",
+      "cond:packages/parsers/src/java/parser.ts@L238",
       "cond:packages/parsers/src/java/parser.ts@L260",
       "cond:packages/parsers/src/java/parser.ts@L261",
-      "cond:packages/parsers/src/java/parser.ts@L238",
       "cond:packages/parsers/src/java/parser.ts@L241",
       "cond:packages/parsers/src/java/parser.ts@L246",
       "cond:packages/parsers/src/java/parser.ts@L253",
@@ -237,36 +237,6 @@
       {
         "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecls@L232",
         "procedureName": "Parser.parseDecls",
-        "guard": "cond:packages/parsers/src/java/parser.ts@L261",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/java/parser.ts@L235",
-            "expr": "!this.atEnd()"
-          },
-          {
-            "id": "cond:packages/parsers/src/java/parser.ts@L260",
-            "expr": "d"
-          },
-          {
-            "id": "cond:packages/parsers/src/java/parser.ts@L261",
-            "expr": "this.i === before && !this.atEnd()",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:ee7565ec7e36898dc4503731918ea74db85d1c24188835dc62517a33f521d5a7",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L885",
-          "expr": "next",
-          "line": 238
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecls@L232",
-        "procedureName": "Parser.parseDecls",
         "guard": "cond:packages/parsers/src/java/parser.ts@L238",
         "branch": "THEN",
         "conditions": [
@@ -297,7 +267,7 @@
       {
         "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecls@L232",
         "procedureName": "Parser.parseDecls",
-        "guard": "cond:packages/parsers/src/java/parser.ts@L241",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L261",
         "branch": "THEN",
         "conditions": [
           {
@@ -305,8 +275,12 @@
             "expr": "!this.atEnd()"
           },
           {
-            "id": "cond:packages/parsers/src/java/parser.ts@L241",
-            "expr": "this.isOp('{')",
+            "id": "cond:packages/parsers/src/java/parser.ts@L260",
+            "expr": "d"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L261",
+            "expr": "this.i === before && !this.atEnd()",
             "polarity": "THEN"
           }
         ],
@@ -314,10 +288,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:b33a0c4df53e589823bcefc1f6d0285a799e69a6f8684c83a1b41cca268ce0ce",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.skipBraces@L847",
-          "expr": "skipBraces",
-          "line": 243
+          "edgeId": "e:ee7565ec7e36898dc4503731918ea74db85d1c24188835dc62517a33f521d5a7",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L885",
+          "expr": "next",
+          "line": 238
         }
       },
       {
@@ -344,6 +318,32 @@
           "target": "stmt:packages/parsers/src/java/parser.ts@L243",
           "line": 243,
           "expr": "this.skipBraces();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseDecls@L232",
+        "procedureName": "Parser.parseDecls",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L241",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L235",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L241",
+            "expr": "this.isOp('{')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b33a0c4df53e589823bcefc1f6d0285a799e69a6f8684c83a1b41cca268ce0ce",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.skipBraces@L847",
+          "expr": "skipBraces",
+          "line": 243
         }
       },
       {

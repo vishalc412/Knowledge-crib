@@ -1,0 +1,202 @@
+{
+  "id": "sym:scripts/eval/harness.mjs#loadCore@L66",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:bec71fc95eb2ed9a58168ca3d757fca401bee97fed621e17915fa4c6d301b019",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/eval/harness.mjs#loadCore@L66",
+    "kind": "symbol",
+    "type": "function",
+    "name": "loadCore",
+    "qualifiedName": "loadCore",
+    "signature": "loadCore()",
+    "lang": "javascript",
+    "file": "scripts/eval/harness.mjs",
+    "span": {
+      "start": 66,
+      "end": 71
+    },
+    "callSites": [
+      {
+        "callee": "repoRoot",
+        "line": 67
+      },
+      {
+        "callee": "resolve",
+        "line": 68
+      },
+      {
+        "callee": "resolve",
+        "line": 69
+      }
+    ]
+  },
+  "source": {
+    "text": "async function loadCore() {\n  const root = repoRoot();\n  const core = await import(resolve(root, 'packages', 'core', 'dist', 'index.js'));\n  const pipeline = await import(resolve(root, 'packages', 'pipeline', 'dist', 'index.js'));\n  return { core, pipeline };\n}",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 66
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/eval/harness.mjs#runEval@L259",
+      "confidence": 1,
+      "name": "runEval",
+      "qualifiedName": "runEval",
+      "signature": "runEval(fixturesRoot = defaultFixturesRoot(), opts = {})",
+      "type": "function",
+      "file": "scripts/eval/harness.mjs",
+      "line": 259
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:scripts/eval/harness.mjs#repoRoot@L51",
+      "confidence": 1,
+      "name": "repoRoot",
+      "qualifiedName": "repoRoot",
+      "signature": "repoRoot()",
+      "type": "function",
+      "file": "scripts/eval/harness.mjs",
+      "line": 51
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/eval/harness.mjs@L61",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/eval/harness.mjs#loadCore@L66",
+    "procedureName": "loadCore",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/eval/harness.mjs#loadCore@L66",
+        "procedureName": "loadCore",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:86d1cd8116e527b9094b863e63ac73e8b90da2fb46a68c5785bc2593c7115a41",
+          "target": "sym:scripts/eval/harness.mjs#repoRoot@L51",
+          "expr": "repoRoot",
+          "line": 67
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval/harness.mjs#loadCore@L66",
+        "procedureName": "loadCore",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f09373218aae566c12afb83750aac7740c4c13fbbcfcbc67fc2a8ad96c3265bc",
+          "target": "stmt:scripts/eval/harness.mjs@L67",
+          "line": 67,
+          "expr": "const root = repoRoot();"
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval/harness.mjs#loadCore@L66",
+        "procedureName": "loadCore",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2818b3c3a7f2c30a1c89d121b016822c87af2b9d2faf50cc5fdc241a6eb2ffe4",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 68
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval/harness.mjs#loadCore@L66",
+        "procedureName": "loadCore",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:56ee47703ab2f06b353c8c4de1ebb181e8cb97bbfd167d33ad8a91a0c36f019a",
+          "target": "stmt:scripts/eval/harness.mjs@L68",
+          "line": 68,
+          "expr": "const core = await import(resolve(root, 'packages', 'core', 'dist', 'index.js'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval/harness.mjs#loadCore@L66",
+        "procedureName": "loadCore",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e3153341357d2ef35dff5602635d7225364c53b40d1e2e8821580e93025402fa",
+          "target": "stmt:scripts/eval/harness.mjs@L69",
+          "line": 69,
+          "expr": "const pipeline = await import(resolve(root, 'packages', 'pipeline', 'dist', 'index.js'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval/harness.mjs#loadCore@L66",
+        "procedureName": "loadCore",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ae82e842ce12281c601047e3e30596287c8505685145d82878291311bb049b60",
+          "target": "stmt:scripts/eval/harness.mjs@L70",
+          "line": 70,
+          "expr": "return { core, pipeline };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "scripts/eval/harness.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

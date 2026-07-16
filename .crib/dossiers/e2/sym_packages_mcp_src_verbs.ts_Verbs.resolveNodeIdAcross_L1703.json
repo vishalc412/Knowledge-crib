@@ -1,0 +1,170 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeIdAcross@L1703",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:3a29b6be50baffe3e67181a82d289e20d402090286c83c41c466a59cd0470e40",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeIdAcross@L1703",
+    "kind": "symbol",
+    "type": "method",
+    "name": "resolveNodeIdAcross",
+    "qualifiedName": "Verbs.resolveNodeIdAcross",
+    "signature": "resolveNodeIdAcross(fed: Federation, idOrName: string, primaryRoot: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1703,
+      "end": 1711
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 1708
+      },
+      {
+        "callee": "resolveIdInSoul",
+        "line": 1710
+      }
+    ]
+  },
+  "source": {
+    "text": "  private resolveNodeIdAcross(\n    fed: Federation,\n    idOrName: string,\n    primaryRoot: string,\n  ): string | undefined {\n    const primary = fed.souls.find((s) => s.root === primaryRoot);\n    if (!primary) return undefined;\n    return resolveIdInSoul(primary.soul, idOrName);\n  }",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 1703
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.federatedImpact@L780",
+      "confidence": 1,
+      "name": "federatedImpact",
+      "qualifiedName": "Verbs.federatedImpact",
+      "signature": "federatedImpact(args: {\n    id: string;\n    dir: Dir;\n    /** extra repo roots to federate with the primary (`this.deps.repoRoot`). */\n    roots?: string[];\n    depth?: number;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 780
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#resolveIdInSoul@L1879",
+      "confidence": 1,
+      "name": "resolveIdInSoul",
+      "qualifiedName": "resolveIdInSoul",
+      "signature": "resolveIdInSoul(soul: SoulStore, idOrName: string): string | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1879
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L1701",
+      "snippet": "/** M3.2 — resolve an id-or-name against a specific federated soul (the primary), used by",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeIdAcross@L1703",
+    "procedureName": "Verbs.resolveNodeIdAcross",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L1709"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeIdAcross@L1703",
+        "procedureName": "Verbs.resolveNodeIdAcross",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9aeda49266a542da0cd9ffde4e2b773f021066cd6413bed71f41fbf92b47896d",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1708",
+          "line": 1708,
+          "expr": "const primary = fed.souls.find((s) => s.root === primaryRoot);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeIdAcross@L1703",
+        "procedureName": "Verbs.resolveNodeIdAcross",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1709",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1709",
+            "expr": "!primary",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f6a57f430dcadb9a6f8224a014032c6d56810d290a2ae020b040c87fd5807447",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1709",
+          "line": 1709,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeIdAcross@L1703",
+        "procedureName": "Verbs.resolveNodeIdAcross",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2c774bfe957cc304ee5c2e12f250d17801c9f8b9d15d77843d8ae48ed301c4f8",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1710",
+          "line": 1710,
+          "expr": "return resolveIdInSoul(primary.soul, idOrName);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeIdAcross@L1703",
+        "procedureName": "Verbs.resolveNodeIdAcross",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:30e97899f35f633db542c554874097294c9f2a6c84e3777762053ae68a5206e0",
+          "target": "sym:packages/mcp/src/verbs.ts#resolveIdInSoul@L1879",
+          "expr": "resolveIdInSoul",
+          "line": 1710
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkIf@L604",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:db770e7391b0554ce0a4c8407f400367bb323ad025865a990ed63898c30a74d6",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkIf@L604",
@@ -135,11 +135,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:ff866b5229593b18c8ec2efb5885693ea4e4283097ac0d965fcc08e052ea52df",
-          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkBlock@L408",
-          "expr": "walkBlock",
-          "line": 618
+          "kind": "executes",
+          "edgeId": "e:b3f68a2d2df600f7b43aa996b7c3d022dd98e06b0f06ec5516df8104d2006667",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L618",
+          "line": 618,
+          "expr": "this.walkBlock(branch.body, proc, branchEnv);"
         }
       },
       {
@@ -157,11 +157,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:b3f68a2d2df600f7b43aa996b7c3d022dd98e06b0f06ec5516df8104d2006667",
-          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L618",
-          "line": 618,
-          "expr": "this.walkBlock(branch.body, proc, branchEnv);"
+          "kind": "calls",
+          "edgeId": "e:ff866b5229593b18c8ec2efb5885693ea4e4283097ac0d965fcc08e052ea52df",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkBlock@L408",
+          "expr": "walkBlock",
+          "line": 618
         }
       }
     ]

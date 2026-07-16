@@ -1,0 +1,194 @@
+{
+  "id": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L72",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:e6de7bbf2ddcf6be35f9873945bbe232547d4dac6e134ad581accd04c6ee937e",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L72",
+    "kind": "symbol",
+    "type": "function",
+    "name": "indexAndCommit",
+    "qualifiedName": "indexAndCommit",
+    "signature": "indexAndCommit(): Promise<void>",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/update.test.ts",
+    "span": {
+      "start": 72,
+      "end": 80
+    },
+    "callSites": [
+      {
+        "callee": "git",
+        "line": 74
+      },
+      {
+        "callee": "git",
+        "line": 75
+      }
+    ]
+  },
+  "source": {
+    "text": "async function indexAndCommit(): Promise<void> {\n  // Commit FIRST so `indexRepo` can stamp the VCS anchor (mirrors real `crib index` after a commit).\n  git(repo, ['add', '-A']);\n  git(repo, ['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'initial']);\n  await indexRepo(soulFor(), repo, {\n    now: '2026-01-01T00:00:00.000Z',\n    ownership: false,\n  });\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 72
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/update.test.ts#git@L31",
+      "confidence": 1,
+      "name": "git",
+      "qualifiedName": "git",
+      "signature": "git(root: string, args: string[]): string",
+      "type": "function",
+      "file": "packages/pipeline/src/update.test.ts",
+      "line": 31
+    },
+    {
+      "id": "sym:scripts/soul-refresh-check.mjs#git@L93",
+      "confidence": 1,
+      "name": "git",
+      "qualifiedName": "git",
+      "signature": "git(…)",
+      "type": "function",
+      "file": "scripts/soul-refresh-check.mjs",
+      "line": 93
+    },
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 94
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.test.ts#soulFor@L38",
+      "confidence": 1,
+      "name": "soulFor",
+      "qualifiedName": "soulFor",
+      "signature": "soulFor(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/update.test.ts",
+      "line": 38
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L72",
+    "procedureName": "indexAndCommit",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L72",
+        "procedureName": "indexAndCommit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f2ca77f554685386c47198beb58a68d2261095362170b27af7788a49a5155eb3",
+          "target": "sym:packages/pipeline/src/update.test.ts#soulFor@L38",
+          "expr": "soulFor"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L72",
+        "procedureName": "indexAndCommit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4da543236e7586759393f23b023bbecc6c02044268318effc9448bfa01346984",
+          "target": "sym:packages/pipeline/src/update.test.ts#git@L31",
+          "expr": "git",
+          "line": 74
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L72",
+        "procedureName": "indexAndCommit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:865bbec3d4dfa5bff0a8f605d9801fabd1ae04da415b197cafadfabc6d91876c",
+          "target": "sym:scripts/soul-refresh-check.mjs#git@L93",
+          "expr": "git",
+          "line": 74
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L72",
+        "procedureName": "indexAndCommit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d09eb3a7e0fa0fdbbf8c4695390c457087d3a11460d13ecef0a17ac8146e01c1",
+          "target": "stmt:packages/pipeline/src/update.test.ts@L74",
+          "line": 74,
+          "expr": "git(repo, ['add', '-A']);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L72",
+        "procedureName": "indexAndCommit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6668bab79b6dedc7ecbf4e7f67c1829849694fe79f9bfa55338aad210ace0c5a",
+          "target": "stmt:packages/pipeline/src/update.test.ts@L75",
+          "line": 75,
+          "expr": "git(repo, ['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'initial']);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L72",
+        "procedureName": "indexAndCommit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0dc77705ab31b36489fa4f21ffece535e269625ef691d3c2f72cc4529dfed81a",
+          "target": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+          "expr": "indexRepo"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

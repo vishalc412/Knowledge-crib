@@ -1,0 +1,409 @@
+{
+  "id": "sym:media/teaser/render.mjs#capture@L25",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:39ac1840248545be4e70f281580d370ee152f7ae09b021a915e366b002fbd4bc",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:media/teaser/render.mjs#capture@L25",
+    "kind": "symbol",
+    "type": "function",
+    "name": "capture",
+    "qualifiedName": "capture",
+    "signature": "capture(scene)",
+    "lang": "javascript",
+    "file": "media/teaser/render.mjs",
+    "span": {
+      "start": 25,
+      "end": 59
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 27
+      },
+      {
+        "callee": "join",
+        "line": 28
+      },
+      {
+        "callee": "rmSync",
+        "line": 29
+      },
+      {
+        "callee": "spawn",
+        "line": 30
+      },
+      {
+        "callee": "replaceAll",
+        "line": 36
+      },
+      {
+        "callee": "unref",
+        "line": 38
+      },
+      {
+        "callee": "kill",
+        "line": 40
+      },
+      {
+        "callee": "now",
+        "line": 42
+      },
+      {
+        "callee": "existsSync",
+        "line": 44
+      },
+      {
+        "callee": "statSync",
+        "line": 44
+      },
+      {
+        "callee": "stop",
+        "line": 45
+      },
+      {
+        "callee": "resolve",
+        "line": 46
+      },
+      {
+        "callee": "now",
+        "line": 49
+      },
+      {
+        "callee": "stop",
+        "line": 50
+      },
+      {
+        "callee": "reject",
+        "line": 51
+      },
+      {
+        "callee": "setTimeout",
+        "line": 54
+      },
+      {
+        "callee": "once",
+        "line": 56
+      },
+      {
+        "callee": "check",
+        "line": 57
+      }
+    ]
+  },
+  "source": {
+    "text": "function capture(scene) {\n  return new Promise((resolve, reject) => {\n    const target = join(work, `scene-${scene}.png`);\n    const profile = join(work, 'chrome-profiles', `scene-${scene}`);\n    rmSync(target, { force: true });\n    const child = spawn(chrome, [\n      '--headless', '--hide-scrollbars', '--disable-gpu', '--force-device-scale-factor=1',\n      '--window-size=1920,1080', '--allow-file-access-from-files', '--no-first-run',\n      '--disable-background-networking', '--disable-component-update', '--disable-sync',\n      '--no-default-browser-check', '--disable-features=OptimizationGuideModelDownloading,MediaRouter',\n      `--user-data-dir=${profile}`, `--screenshot=${target}`,\n      `${new URL(`file://${html.replaceAll(' ', '%20')}`).href}?scene=${scene}`,\n    ], { detached: true, stdio: 'ignore' });\n    child.unref();\n    const stop = () => {\n      try { process.kill(-child.pid, 'SIGTERM'); } catch { /* capture process already exited */ }\n    };\n    const started = Date.now();\n    const check = () => {\n      if (existsSync(target) && statSync(target).size > 1_000) {\n        stop();\n        resolve();\n        return;\n      }\n      if (Date.now() - started > 20_000) {\n        stop();\n        reject(new Error(`Timed out capturing scene ${scene}`));\n        return;\n      }\n      setTimeout(check, 100);\n    };\n    child.once('error', reject);\n    check();\n  });\n}",
+    "truncated": false,
+    "totalLines": 35,
+    "startLine": 25
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:media/teaser/render.mjs#capture.check@L43",
+      "confidence": 1,
+      "name": "check",
+      "qualifiedName": "capture.check",
+      "signature": "check(…)",
+      "type": "function",
+      "file": "media/teaser/render.mjs",
+      "line": 43
+    },
+    {
+      "id": "sym:media/teaser/render.mjs#capture.stop@L39",
+      "confidence": 1,
+      "name": "stop",
+      "qualifiedName": "capture.stop",
+      "signature": "stop(…)",
+      "type": "function",
+      "file": "media/teaser/render.mjs",
+      "line": 39
+    },
+    {
+      "id": "sym:scripts/semantic-check.mjs#check@L42",
+      "confidence": 1,
+      "name": "check",
+      "qualifiedName": "check",
+      "signature": "check(name, fn)",
+      "type": "function",
+      "file": "scripts/semantic-check.mjs",
+      "line": 42
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-3-capture-real-product-evidence",
+      "heading": "Task 3: Capture Real Product Evidence",
+      "anchor": "task-3-capture-real-product-evidence",
+      "snippet": "Task 3: Capture Real Product Evidence",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-1-scaffold-the-reproducible-media-workspace",
+      "heading": "Task 1: Scaffold The Reproducible Media Workspace",
+      "anchor": "task-1-scaffold-the-reproducible-media-workspace",
+      "snippet": "Task 1: Scaffold The Reproducible Media Workspace",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-6-orchestrate-deliverables-and-quality-gates",
+      "heading": "Task 6: Orchestrate Deliverables And Quality Gates",
+      "anchor": "task-6-orchestrate-deliverables-and-quality-gates",
+      "snippet": "Task 6: Orchestrate Deliverables And Quality Gates",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#file-map",
+      "heading": "File Map",
+      "anchor": "file-map",
+      "snippet": "File Map",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/demo-recipe.md#capture-notes",
+      "heading": "Capture notes",
+      "anchor": "capture-notes",
+      "snippet": "Capture notes",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/demo-recipe.md#knowledge-crib-demo-recording-recipe",
+      "heading": "Knowledge-crib — demo recording recipe",
+      "anchor": "knowledge-crib-demo-recording-recipe",
+      "snippet": "Knowledge-crib — demo recording recipe",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#8-rollout-path",
+      "heading": "8. Rollout path",
+      "anchor": "8-rollout-path",
+      "snippet": "8. Rollout path",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-5-render-the-signal-grid-video",
+      "heading": "Task 5: Render The Signal Grid Video",
+      "anchor": "task-5-render-the-signal-grid-video",
+      "snippet": "Task 5: Render The Signal Grid Video",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#per-language-parser-work",
+      "heading": "Per-language parser work",
+      "anchor": "per-language-parser-work",
+      "snippet": "Per-language parser work",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#16-24-seconds-see-the-architecture",
+      "heading": "16-24 seconds: See The Architecture",
+      "anchor": "16-24-seconds-see-the-architecture",
+      "snippet": "16-24 seconds: See The Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#production-architecture",
+      "heading": "Production Architecture",
+      "anchor": "production-architecture",
+      "snippet": "Production Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#capture-plan",
+      "heading": "Capture Plan",
+      "anchor": "capture-plan",
+      "snippet": "Capture Plan",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#24-33-seconds-ask-deeper-questions",
+      "heading": "24-33 seconds: Ask Deeper Questions",
+      "anchor": "24-33-seconds-ask-deeper-questions",
+      "snippet": "24-33 seconds: Ask Deeper Questions",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#9-16-seconds-index-once",
+      "heading": "9-16 seconds: Index Once",
+      "anchor": "9-16-seconds-index-once",
+      "snippet": "9-16 seconds: Index Once",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#knowledge-crib-refined-vs-existing-detailed-level-analysis-assessment",
+      "heading": "Knowledge-crib — Refined vs Existing: Detailed-Level Analysis Assessment",
+      "anchor": "knowledge-crib-refined-vs-existing-detailed-level-analysis-assessment",
+      "snippet": "Knowledge-crib — Refined vs Existing: Detailed-Level Analysis Assessment",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/README.md#launch-assets-m4-6",
+      "heading": "Launch assets (M4.6)",
+      "anchor": "launch-assets-m4-6",
+      "snippet": "Launch assets (M4.6)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:media/teaser/render.mjs#capture@L25",
+    "procedureName": "capture",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture@L25",
+        "procedureName": "capture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a6144eaea463e49cf0923ff7412e9edc7494fe1d2f3da39efb6dfad027d27a05",
+          "target": "stmt:media/teaser/render.mjs@L26",
+          "line": 26,
+          "expr": "return new Promise((resolve, reject) => {\n    const target = join(work, `scene-${scene}.png`);\n    const profile = join(work, 'chrome-profiles', `scene-${scene}`);\n    rmSync(target, { force: true });\n    const child = spawn(chrome, [\n      '--headless', '--hide-scrollbars', '--disable-gpu', '--force-device-scale-factor=1',\n      '--window-size=1920,1080', '--allow-file-access-from-files', '--no-first-run',\n      '--disable-background-networking', '--disable-component-update', '--disable-sync',\n      '--no-default-browser-check', '--disable-features=OptimizationGuideModelDownloading,MediaRouter',\n      `--user-data-dir=${profile}`, `--screenshot=${target}`,\n      `${new URL(`file://${html.replaceAll(' ', '%20')}`).href}?scene=${scene}`,\n    ], { detached: true, stdio: 'ignore' });\n    child.unref();\n    const stop = () => {\n      try { process.kill(-child.pid, 'SIGTERM'); } catch { /* capture process already exited */ }\n    };\n    const started = Date.now();\n    const check = () => {\n      if (existsSync(target) && statSync(target).size > 1_000) {\n        stop();\n        resolve();\n        return;\n      }\n      if (Date.now() - started > 20_000) {\n        stop();\n        reject(new Error(`Timed out capturing scene ${scene}`));\n        return;\n      }\n      setTimeout(check, 100);\n    };\n    child.once('error', reject);\n    check();\n  });"
+        }
+      },
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture@L25",
+        "procedureName": "capture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3805f8f613de58ac9593b4d3672f5b335f6d787c4222a92980e01856578d67e9",
+          "target": "sym:media/teaser/render.mjs#capture.stop@L39",
+          "expr": "stop",
+          "line": 45
+        }
+      },
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture@L25",
+        "procedureName": "capture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:adad766210ce21c850fb97ce28e6a93cbdbe65816c4a5641db554a12c8f31aee",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 46
+        }
+      },
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture@L25",
+        "procedureName": "capture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4bc7ded3db90cefb8ee20cc4aaba76a2791b58eb4684f84e0bf452c12601c980",
+          "target": "sym:media/teaser/render.mjs#capture.check@L43",
+          "expr": "check",
+          "line": 57
+        }
+      },
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture@L25",
+        "procedureName": "capture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cd76d03bee670d7b2b6171096c939388a5f15156a8a7089915512aa1963847b4",
+          "target": "sym:scripts/semantic-check.mjs#check@L42",
+          "expr": "check",
+          "line": 57
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 18,
+      "unresolved": 13
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "13 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

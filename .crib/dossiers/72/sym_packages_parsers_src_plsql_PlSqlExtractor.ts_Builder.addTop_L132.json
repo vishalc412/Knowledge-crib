@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:8bb66dbb983ca600945455f796697cd1d4d362c46a1472e3750e28498351c52b",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
@@ -121,11 +121,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:ab50ad7a6c671f3b7670d996dd79ed543fbf9ccda571ea90e2bbf073dc93ca94",
-          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
-          "expr": "addTable",
-          "line": 134
+          "kind": "executes",
+          "edgeId": "e:a95740b26d3a4f614e5d04835bf9b130022af6016b5dd61d513e1a6a67eda025",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L134",
+          "line": 134,
+          "expr": "this.addTable(top);"
         }
       },
       {
@@ -143,11 +143,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:a95740b26d3a4f614e5d04835bf9b130022af6016b5dd61d513e1a6a67eda025",
-          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L134",
-          "line": 134,
-          "expr": "this.addTable(top);"
+          "kind": "calls",
+          "edgeId": "e:ab50ad7a6c671f3b7670d996dd79ed543fbf9ccda571ea90e2bbf073dc93ca94",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
+          "expr": "addTable",
+          "line": 134
         }
       },
       {
@@ -187,11 +187,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:e2f15545487ae659d936f9c7a13363abc0681f5edc355a764a9c3dd1f8536278",
-          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L252",
-          "expr": "addView",
-          "line": 138
+          "kind": "executes",
+          "edgeId": "e:8dd5d3f19bceeebdbffb7c53028e1ecd3aa6d6935d4862053445cc00345e5801",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L138",
+          "line": 138,
+          "expr": "this.addView(top);"
         }
       },
       {
@@ -209,11 +209,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:8dd5d3f19bceeebdbffb7c53028e1ecd3aa6d6935d4862053445cc00345e5801",
-          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L138",
-          "line": 138,
-          "expr": "this.addView(top);"
+          "kind": "calls",
+          "edgeId": "e:e2f15545487ae659d936f9c7a13363abc0681f5edc355a764a9c3dd1f8536278",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L252",
+          "expr": "addView",
+          "line": 138
         }
       },
       {
@@ -311,11 +311,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:98c5ad36fa2d1e43fbce563b2e084034c95419f510f8c024dfc1f4ffb0de42e2",
-          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addUnit@L270",
-          "expr": "addUnit",
-          "line": 145
+          "kind": "executes",
+          "edgeId": "e:12530c660455dd3c3febf095ebfadf43440672a11c81e8658d15176fd3654984",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L145",
+          "line": 145,
+          "expr": "this.addUnit(top, /*enclosingId*/ this.fileId, /*qualifier*/ '');"
         }
       },
       {
@@ -325,11 +325,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:12530c660455dd3c3febf095ebfadf43440672a11c81e8658d15176fd3654984",
-          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L145",
-          "line": 145,
-          "expr": "this.addUnit(top, /*enclosingId*/ this.fileId, /*qualifier*/ '');"
+          "kind": "calls",
+          "edgeId": "e:98c5ad36fa2d1e43fbce563b2e084034c95419f510f8c024dfc1f4ffb0de42e2",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addUnit@L270",
+          "expr": "addUnit",
+          "line": 145
         }
       }
     ]

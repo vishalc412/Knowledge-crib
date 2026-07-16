@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/soul-store.test.ts#mk@L190",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:d4d765c6f567170afe43edb5bdbc13bb3ebab0263f0190cd642ed797a49cf350",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-13T11:04:33.459Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/soul-store.test.ts#mk@L190",
@@ -24,7 +24,28 @@
     "totalLines": 15,
     "startLine": 190
   },
-  "callers": [],
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Ni@L184",
+      "confidence": 1,
+      "name": "Ni",
+      "qualifiedName": "Ni",
+      "signature": "Ni(a, b)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 184
+    },
+    {
+      "id": "sym:scripts/tier-check.mjs#buildSoul@L47",
+      "confidence": 1,
+      "name": "buildSoul",
+      "qualifiedName": "buildSoul",
+      "signature": "buildSoul(…)",
+      "type": "function",
+      "file": "scripts/tier-check.mjs",
+      "line": 47
+    }
+  ],
   "callees": [],
   "docs": [],
   "rules": {
@@ -36,7 +57,10 @@
   "implementation": {
     "status": "unimplemented",
     "executesCount": 0,
-    "referencedByFiles": []
+    "referencedByFiles": [
+      "packages/ui/web/vendor/react-dom.production.min.js",
+      "scripts/tier-check.mjs"
+    ]
   },
   "coverage": {
     "readiness": "unimplemented",

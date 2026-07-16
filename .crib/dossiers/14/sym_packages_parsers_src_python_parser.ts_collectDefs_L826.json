@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/parser.ts#collectDefs@L826",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:78b3ba51445b3fc3041537a03b3ab126b67690affdf59692c8c48d9ae9324aca",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/parser.ts#collectDefs@L826",
@@ -167,6 +167,20 @@
       {
         "procedure": "sym:packages/parsers/src/python/parser.ts#collectDefs@L826",
         "procedureName": "collectDefs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5833331fa577872012c55a2af5fb80a21777cc122630860b74331c7c300825b8",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 831
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#collectDefs@L826",
+        "procedureName": "collectDefs",
         "guard": "cond:packages/parsers/src/python/parser.ts@L831",
         "branch": "THEN",
         "conditions": [
@@ -192,20 +206,6 @@
           "target": "stmt:packages/parsers/src/python/parser.ts@L831",
           "line": 831,
           "expr": "out.push(s.def);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/parser.ts#collectDefs@L826",
-        "procedureName": "collectDefs",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:5833331fa577872012c55a2af5fb80a21777cc122630860b74331c7c300825b8",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 831
         }
       },
       {

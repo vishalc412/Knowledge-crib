@@ -1,0 +1,235 @@
+{
+  "id": "sym:packages/core/src/graph-store.ts#GraphStore.neighbors@L109",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:d544196e916cc12aefea8e4209c1f2fb8cf248d1ab8941103a472dd2854bbf3a",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/graph-store.ts#GraphStore.neighbors@L109",
+    "kind": "symbol",
+    "type": "method",
+    "name": "neighbors",
+    "qualifiedName": "GraphStore.neighbors",
+    "signature": "neighbors(id: string, includeSemantic = false): CompositeEdge[]",
+    "lang": "typescript",
+    "file": "packages/core/src/graph-store.ts",
+    "span": {
+      "start": 109,
+      "end": 112
+    },
+    "callSites": [
+      {
+        "callee": "composite",
+        "line": 110
+      },
+      {
+        "callee": "extracted",
+        "line": 110
+      },
+      {
+        "callee": "filter",
+        "line": 111
+      }
+    ]
+  },
+  "source": {
+    "text": "  neighbors(id: string, includeSemantic = false): CompositeEdge[] {\n    const graph = includeSemantic ? this.composite() : this.extracted();\n    return graph.edges.filter((edge) => edge.src === id || edge.dst === id);\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 109
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/graph-store.ts#GraphStore.composite@L90",
+      "confidence": 1,
+      "name": "composite",
+      "qualifiedName": "GraphStore.composite",
+      "signature": "composite(): GraphSnapshot",
+      "type": "method",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 90
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#GraphStore.extracted@L77",
+      "confidence": 1,
+      "name": "extracted",
+      "qualifiedName": "GraphStore.extracted",
+      "signature": "extracted(): GraphSnapshot",
+      "type": "method",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 77
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#1-executive-summary",
+      "heading": "1. Executive Summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#table-of-contents",
+      "heading": "Table of contents",
+      "anchor": "table-of-contents",
+      "snippet": "Table of contents",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-26-large-project-viz-design.md#user-experience",
+      "heading": "User Experience",
+      "anchor": "user-experience",
+      "snippet": "User Experience",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-26-large-project-viz-design.md#approved-direction",
+      "heading": "Approved Direction",
+      "anchor": "approved-direction",
+      "snippet": "Approved Direction",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#5-how-it-works-the-actual-mechanism",
+      "heading": "5. How it works (the actual mechanism)",
+      "anchor": "5-how-it-works-the-actual-mechanism",
+      "snippet": "5. How it works (the actual mechanism)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.neighbors@L109",
+    "procedureName": "GraphStore.neighbors",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.neighbors@L109",
+        "procedureName": "GraphStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:29d23ce5e8399685afc9b5f32c05625eb6af918ea074e0cb702003174b7a75b4",
+          "target": "sym:packages/core/src/graph-store.ts#GraphStore.extracted@L77",
+          "expr": "extracted",
+          "line": 110
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.neighbors@L109",
+        "procedureName": "GraphStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9d56d432c409dda7e15bd468fa28bc0b3d9e45e9e2d0fec960665c7849a87640",
+          "target": "sym:packages/core/src/graph-store.ts#GraphStore.composite@L90",
+          "expr": "composite",
+          "line": 110
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.neighbors@L109",
+        "procedureName": "GraphStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a8f29c708895189968d16bdcac263ecbf9329b23f7ae1ce8b47b786351d2881a",
+          "target": "stmt:packages/core/src/graph-store.ts@L110",
+          "line": 110,
+          "expr": "const graph = includeSemantic ? this.composite() : this.extracted();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.neighbors@L109",
+        "procedureName": "GraphStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3636763c540a0303ba20e173ce28771d6f6da395431b6895440294986177e48a",
+          "target": "stmt:packages/core/src/graph-store.ts@L111",
+          "line": 111,
+          "expr": "return graph.edges.filter((edge) => edge.src === id || edge.dst === id);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

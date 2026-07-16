@@ -1,0 +1,212 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#classifyGap@L169",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:7d766d8fada571d86b0ad037eca02285d691c558fed1b2459a6f930419bc7d14",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#classifyGap@L169",
+    "kind": "symbol",
+    "type": "function",
+    "name": "classifyGap",
+    "qualifiedName": "classifyGap",
+    "signature": "classifyGap(args: { file?: string; callee?: string }): GapCategory",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 169,
+      "end": 173
+    },
+    "callSites": [
+      {
+        "callee": "fileCategory",
+        "line": 172
+      }
+    ]
+  },
+  "source": {
+    "text": "function classifyGap(args: { file?: string; callee?: string }): GapCategory {\n  if (args.callee && isBuiltinCallee(args.callee)) return 'builtin';\n  if (args.callee && isExternalCallee(args.callee)) return 'external';\n  return fileCategory(args.file);\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 169
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L1409",
+      "confidence": 1,
+      "name": "gaps",
+      "qualifiedName": "Verbs.gaps",
+      "signature": "gaps(args: { extractedOnly?: boolean; includeBuiltins?: boolean } = {}): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1409
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#fileCategory@L158",
+      "confidence": 1,
+      "name": "fileCategory",
+      "qualifiedName": "fileCategory",
+      "signature": "fileCategory(file?: string): GapCategory",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 158
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#isBuiltinCallee@L150",
+      "confidence": 1,
+      "name": "isBuiltinCallee",
+      "qualifiedName": "isBuiltinCallee",
+      "signature": "isBuiltinCallee(callee: string): boolean",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 150
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#isExternalCallee@L154",
+      "confidence": 1,
+      "name": "isExternalCallee",
+      "qualifiedName": "isExternalCallee",
+      "signature": "isExternalCallee(callee: string): boolean",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 154
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#classifyGap@L169",
+    "procedureName": "classifyGap",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L170",
+      "cond:packages/mcp/src/verbs.ts@L171"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#classifyGap@L169",
+        "procedureName": "classifyGap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:129bc2d767321729be8ec76c30050d239e5b30c47c5e4e6ecd9e772cc00e6d19",
+          "target": "sym:packages/mcp/src/verbs.ts#isBuiltinCallee@L150",
+          "expr": "isBuiltinCallee"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#classifyGap@L169",
+        "procedureName": "classifyGap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fb04a316f059fbd2a954a70a0fd41c33aee9729e0d087d0c6bddce053993187d",
+          "target": "sym:packages/mcp/src/verbs.ts#isExternalCallee@L154",
+          "expr": "isExternalCallee"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#classifyGap@L169",
+        "procedureName": "classifyGap",
+        "guard": "cond:packages/mcp/src/verbs.ts@L170",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L170",
+            "expr": "args.callee && isBuiltinCallee(args.callee)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:244e8b2d6293474a8ddafc0d09374b227e84685645e4a6f95e38026cda1e0228",
+          "target": "stmt:packages/mcp/src/verbs.ts@L170",
+          "line": 170,
+          "expr": "return 'builtin';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#classifyGap@L169",
+        "procedureName": "classifyGap",
+        "guard": "cond:packages/mcp/src/verbs.ts@L171",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L171",
+            "expr": "args.callee && isExternalCallee(args.callee)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:43b3084431b94a5506203f551cfbc6fa74df8d49fe0c15b8b307b1bd206325c5",
+          "target": "stmt:packages/mcp/src/verbs.ts@L171",
+          "line": 171,
+          "expr": "return 'external';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#classifyGap@L169",
+        "procedureName": "classifyGap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:aa8917f377e9607323f73d0ea6f60de15d6ec2f3f33b760a840f9216c7c59afb",
+          "target": "sym:packages/mcp/src/verbs.ts#fileCategory@L158",
+          "expr": "fileCategory",
+          "line": 172
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#classifyGap@L169",
+        "procedureName": "classifyGap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca3b3129456f583dcb107f509b6a5c7550696adc5ed220ab6f162e17ebda3a81",
+          "target": "stmt:packages/mcp/src/verbs.ts@L172",
+          "line": 172,
+          "expr": "return fileCategory(args.file);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

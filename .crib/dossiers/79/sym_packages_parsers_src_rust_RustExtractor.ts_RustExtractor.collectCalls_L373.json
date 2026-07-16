@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:8d388aee10db7b1ba06112c47369e0bc133cf5d52d38554e8c5cf58563101bbe",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.collectCalls@L373",
@@ -398,11 +398,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:25dc8662bcbdba96bd0049c861be129deba49e4a63d98c9f6fff7b3deb67e94e",
-          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#lastSeg@L453",
-          "expr": "lastSeg",
-          "line": 412
+          "kind": "executes",
+          "edgeId": "e:18fa2d127bbd355f89f686b0f45b96563520ea1f061b2dc4b1b64640a1734d2c",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L412",
+          "line": 412,
+          "expr": "const site = sites.find((s) => lastSeg(s.callee).toLowerCase() === calleeSimple);"
         }
       },
       {
@@ -424,11 +424,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:18fa2d127bbd355f89f686b0f45b96563520ea1f061b2dc4b1b64640a1734d2c",
-          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L412",
-          "line": 412,
-          "expr": "const site = sites.find((s) => lastSeg(s.callee).toLowerCase() === calleeSimple);"
+          "kind": "calls",
+          "edgeId": "e:25dc8662bcbdba96bd0049c861be129deba49e4a63d98c9f6fff7b3deb67e94e",
+          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#lastSeg@L453",
+          "expr": "lastSeg",
+          "line": 412
         }
       },
       {
@@ -663,12 +663,12 @@
     "calls": {
       "resolved": 2,
       "recorded": 16,
-      "unresolved": 10
+      "unresolved": 5
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "10 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

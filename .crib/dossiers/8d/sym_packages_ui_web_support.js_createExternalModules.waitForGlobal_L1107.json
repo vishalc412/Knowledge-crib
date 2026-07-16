@@ -1,0 +1,345 @@
+{
+  "id": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:6827f24e7a78a6166df2088a3d791cb9eb3020512ca4a45df180beb5be182de0",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+    "kind": "symbol",
+    "type": "function",
+    "name": "waitForGlobal",
+    "qualifiedName": "createExternalModules.waitForGlobal",
+    "signature": "waitForGlobal(name)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 1107,
+      "end": 1130
+    },
+    "callSites": [
+      {
+        "callee": "add",
+        "line": 1109
+      },
+      {
+        "callee": "now",
+        "line": 1110
+      },
+      {
+        "callee": "isCustomElementName",
+        "line": 1111
+      },
+      {
+        "callee": "get",
+        "line": 1113
+      },
+      {
+        "callee": "isRenderableType",
+        "line": 1113
+      },
+      {
+        "callee": "resolveDottedPath",
+        "line": 1113
+      },
+      {
+        "callee": "delete",
+        "line": 1115
+      },
+      {
+        "callee": "onResolved",
+        "line": 1116
+      },
+      {
+        "callee": "now",
+        "line": 1119
+      },
+      {
+        "callee": "warn",
+        "line": 1120
+      },
+      {
+        "callee": "stringify",
+        "line": 1122
+      },
+      {
+        "callee": "setTimeout",
+        "line": 1127
+      },
+      {
+        "callee": "setTimeout",
+        "line": 1129
+      }
+    ]
+  },
+  "source": {
+    "text": "    function waitForGlobal(name) {\n      if (polling.has(name)) return;\n      polling.add(name);\n      const started = Date.now();\n      const isCE = isCustomElementName(name);\n      const tick = () => {\n        const found = isCE ? customElements.get(name) : isRenderableType(resolveDottedPath(window, name));\n        if (found) {\n          polling.delete(name);\n          onResolved();\n          return;\n        }\n        if (Date.now() - started >= GLOBAL_POLL_TIMEOUT_MS) {\n          console.warn(\n            \"[dc-runtime] x-import: global\",\n            JSON.stringify(name),\n            \"never appeared on window after \" + GLOBAL_POLL_TIMEOUT_MS + \"ms\"\n          );\n          return;\n        }\n        setTimeout(tick, GLOBAL_POLL_INTERVAL_MS);\n      };\n      setTimeout(tick, GLOBAL_POLL_INTERVAL_MS);\n    }",
+    "truncated": false,
+    "totalLines": 24,
+    "startLine": 1107
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.resolveGlobal@L1131",
+      "confidence": 1,
+      "name": "resolveGlobal",
+      "qualifiedName": "createExternalModules.resolveGlobal",
+      "signature": "resolveGlobal(url, name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1131
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#isCustomElementName@L994",
+      "confidence": 1,
+      "name": "isCustomElementName",
+      "qualifiedName": "isCustomElementName",
+      "signature": "isCustomElementName(…)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 994
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#isRenderableType@L995",
+      "confidence": 1,
+      "name": "isRenderableType",
+      "qualifiedName": "isRenderableType",
+      "signature": "isRenderableType(g)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 995
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#resolveDottedPath@L999",
+      "confidence": 1,
+      "name": "resolveDottedPath",
+      "qualifiedName": "resolveDottedPath",
+      "signature": "resolveDottedPath(root, name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 999
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+    "procedureName": "createExternalModules.waitForGlobal",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L1108"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+        "procedureName": "createExternalModules.waitForGlobal",
+        "guard": "cond:packages/ui/web/support.js@L1108",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1108",
+            "expr": "polling.has(name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6e922867e5c40ad2a78c9205747fcfb6fce6247ec3a5a3a88bca71f530e51fa4",
+          "target": "stmt:packages/ui/web/support.js@L1108",
+          "line": 1108,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+        "procedureName": "createExternalModules.waitForGlobal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d252d12fac381177f77d6a3d8dd833e7055985ff8dc479e7dbd18b3bc8dfa95c",
+          "target": "stmt:packages/ui/web/support.js@L1109",
+          "line": 1109,
+          "expr": "polling.add(name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+        "procedureName": "createExternalModules.waitForGlobal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ffe2fb31f0aa1ef0abb8ab428bb7f9c737f1b8e3585d81baec749db3f6befeae",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 1109
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+        "procedureName": "createExternalModules.waitForGlobal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b3fb6d31f53e0243e314d8b1dd2d44db94b0605bd49464d31dcf354a704727c4",
+          "target": "stmt:packages/ui/web/support.js@L1110",
+          "line": 1110,
+          "expr": "const started = Date.now();"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+        "procedureName": "createExternalModules.waitForGlobal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:41e4e9f008475e8ebc73d6e29ecca0b4fea397cc06bc05af2ff5035e473c8f7b",
+          "target": "sym:packages/ui/web/support.js#isCustomElementName@L994",
+          "expr": "isCustomElementName",
+          "line": 1111
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+        "procedureName": "createExternalModules.waitForGlobal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b526fb93e2cda85d57036fde7a0b9e3432be4df042f511cfb7014f5c75cb5a20",
+          "target": "stmt:packages/ui/web/support.js@L1111",
+          "line": 1111,
+          "expr": "const isCE = isCustomElementName(name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+        "procedureName": "createExternalModules.waitForGlobal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:08f6ea250759a5e4ccd6b3477862baa6b255732a1127eb669cfb15d2157d86cf",
+          "target": "stmt:packages/ui/web/support.js@L1112",
+          "line": 1112,
+          "expr": "const tick = () => {\n        const found = isCE ? customElements.get(name) : isRenderableType(resolveDottedPath(window, name));\n        if (found) {\n          polling.delete(name);\n          onResolved();\n          return;\n        }\n        if (Date.now() - started >= GLOBAL_POLL_TIMEOUT_MS) {\n          console.warn(\n            \"[dc-runtime] x-import: global\",\n            JSON.stringify(name),\n            \"never appeared on window after \" + GLOBAL_POLL_TIMEOUT_MS + \"ms\"\n          );\n          return;\n        }\n        setTimeout(tick, GLOBAL_POLL_INTERVAL_MS);\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+        "procedureName": "createExternalModules.waitForGlobal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5677d2bc6a5b569723dab4d9f0a35fd9b49312af772f294a9d6156dd2ff873a2",
+          "target": "sym:packages/ui/web/support.js#isRenderableType@L995",
+          "expr": "isRenderableType",
+          "line": 1113
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+        "procedureName": "createExternalModules.waitForGlobal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7d88b2ad9e51762c87c9285f2919143bd3fb1026fdbe5f0137858ac44eee5178",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 1113
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+        "procedureName": "createExternalModules.waitForGlobal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cfdebccc087eddaa848e4949a919b804ad76024746a4bee595e0e0887055f3c1",
+          "target": "sym:packages/ui/web/support.js#resolveDottedPath@L999",
+          "expr": "resolveDottedPath",
+          "line": 1113
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+        "procedureName": "createExternalModules.waitForGlobal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6be9b3b5b1f858bae1e3bb9d9de0cd70665f36bc155f5ef417f36393a45286b2",
+          "target": "stmt:packages/ui/web/support.js@L1129",
+          "line": 1129,
+          "expr": "setTimeout(tick, GLOBAL_POLL_INTERVAL_MS);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 13,
+      "unresolved": 8
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "8 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

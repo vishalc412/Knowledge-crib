@@ -1,0 +1,156 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#computeLineStarts@L1868",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:ab352d5c9f93e65a51280acc97f30284c34526856052292d450e667c3eaa957c",
+  "builtAt": "2026-07-13T14:47:57.424Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#computeLineStarts@L1868",
+    "kind": "symbol",
+    "type": "function",
+    "name": "computeLineStarts",
+    "qualifiedName": "computeLineStarts",
+    "signature": "computeLineStarts(src: string): number[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 1868,
+      "end": 1874
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 1871
+      }
+    ]
+  },
+  "source": {
+    "text": "function computeLineStarts(src: string): number[] {\n  const starts = [0];\n  for (let i = 0; i < src.length; i++) {\n    if (src[i] === '\\n') starts.push(i + 1);\n  }\n  return starts;\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 1868
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser@L197",
+      "confidence": 1,
+      "name": "Parser",
+      "qualifiedName": "Parser",
+      "type": "class",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 197
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/parser.ts@L1863",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#computeLineStarts@L1868",
+    "procedureName": "computeLineStarts",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/parser.ts@L1870",
+      "cond:packages/parsers/src/csharp/parser.ts@L1871"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#computeLineStarts@L1868",
+        "procedureName": "computeLineStarts",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1871",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1870",
+            "expr": "i < src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1871",
+            "expr": "src[i] === '\\n'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:671f4f2f95ad9ed260930460b39234696972dfc1c9ca7005ae148b81b465f656",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1871",
+          "line": 1871,
+          "expr": "starts.push(i + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#computeLineStarts@L1868",
+        "procedureName": "computeLineStarts",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fc6ffa507f32855c2f58885207cac9641fa891150ca496e805817d744e403f49",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1871
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#computeLineStarts@L1868",
+        "procedureName": "computeLineStarts",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c706b055ca3ffcef441d053d745a3191cdcc0762f416567c9c4762ef2aa26125",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1873",
+          "line": 1873,
+          "expr": "return starts;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

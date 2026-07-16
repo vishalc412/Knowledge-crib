@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L716",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:03858f650de1406937075406924cc162884983d1fb3eba7acad204de53f28248",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L716",
@@ -174,28 +174,6 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:fed931d52147068fccd23a9436722fcd92e8e41b48956c4be0999a203f0cd47f",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L890",
-          "expr": "peek",
-          "line": 720
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L716",
-        "procedureName": "Parser.skipGenericAngle",
-        "guard": "cond:packages/parsers/src/java/parser.ts@L719",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/java/parser.ts@L719",
-            "expr": "!this.atEnd()",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:259f44fd311bc628a5f5c8547ac5471465e002147d22010ee675786bd52ab82d",
           "target": "stmt:packages/parsers/src/java/parser.ts@L720",
@@ -219,10 +197,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:1ed6b0bbdce29c0254bd15a3072e9c0955a563c50e7f4774dd96eba23363a6b9",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L885",
-          "expr": "next",
-          "line": 725
+          "edgeId": "e:fed931d52147068fccd23a9436722fcd92e8e41b48956c4be0999a203f0cd47f",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L890",
+          "expr": "peek",
+          "line": 720
         }
       },
       {
@@ -257,6 +235,28 @@
           "target": "stmt:packages/parsers/src/java/parser.ts@L725",
           "line": 725,
           "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipGenericAngle@L716",
+        "procedureName": "Parser.skipGenericAngle",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L719",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L719",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1ed6b0bbdce29c0254bd15a3072e9c0955a563c50e7f4774dd96eba23363a6b9",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L885",
+          "expr": "next",
+          "line": 725
         }
       },
       {

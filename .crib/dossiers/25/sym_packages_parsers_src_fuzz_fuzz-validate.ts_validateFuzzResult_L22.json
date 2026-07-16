@@ -1,0 +1,400 @@
+{
+  "id": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:56331d316e640ddb174a20a07d91e6b54c27ac180b4dc0ecf6314153a23d178b",
+  "builtAt": "2026-07-13T14:47:57.424Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+    "kind": "symbol",
+    "type": "function",
+    "name": "validateFuzzResult",
+    "qualifiedName": "validateFuzzResult",
+    "signature": "validateFuzzResult(res: ExtractResult): { ok: true } | { ok: false; reason: string }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/fuzz/fuzz-validate.ts",
+    "span": {
+      "start": 22,
+      "end": 48
+    },
+    "callSites": [
+      {
+        "callee": "String",
+        "line": 28
+      },
+      {
+        "callee": "String",
+        "line": 39
+      },
+      {
+        "callee": "String",
+        "line": 41
+      },
+      {
+        "callee": "String",
+        "line": 43
+      }
+    ]
+  },
+  "source": {
+    "text": "export function validateFuzzResult(\n  res: ExtractResult,\n): { ok: true } | { ok: false; reason: string } {\n  for (const n of res.nodes) {\n    if (typeof n.id !== 'string' || n.id.length === 0)\n      return { ok: false, reason: 'node.id empty' };\n    if (!isNodeKind(n.kind)) return { ok: false, reason: `node.kind invalid: ${String(n.kind)}` };\n    if (typeof n.hash !== 'string' || n.hash.length === 0)\n      return { ok: false, reason: 'node.hash empty' };\n  }\n  for (const e of res.edges as Edge[]) {\n    if (typeof e.id !== 'string' || e.id.length === 0)\n      return { ok: false, reason: 'edge.id empty' };\n    if (typeof e.src !== 'string' || e.src.length === 0)\n      return { ok: false, reason: 'edge.src empty' };\n    if (typeof e.dst !== 'string' || e.dst.length === 0)\n      return { ok: false, reason: 'edge.dst empty' };\n    if (!isRel(e.rel)) return { ok: false, reason: `edge.rel invalid: ${String(e.rel)}` };\n    if (!isMethod(e.method))\n      return { ok: false, reason: `edge.method invalid: ${String(e.method)}` };\n    if (!isProvenance(e.provenance))\n      return { ok: false, reason: `edge.provenance invalid: ${String(e.provenance)}` };\n    if (typeof e.confidence !== 'number' || e.confidence < 0 || e.confidence > 1)\n      return { ok: false, reason: `edge.confidence out of [0,1]: ${e.confidence}` };\n  }\n  return { ok: true };\n}",
+    "truncated": false,
+    "totalLines": 27,
+    "startLine": 22
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#edgeIsValid@L56",
+      "confidence": 1,
+      "name": "edgeIsValid",
+      "qualifiedName": "edgeIsValid",
+      "signature": "edgeIsValid(e: Edge): { ok: true } | { ok: false; reason: string }",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/fuzz-validate.ts",
+      "line": 56
+    },
+    {
+      "id": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#nodeIsValid@L51",
+      "confidence": 1,
+      "name": "nodeIsValid",
+      "qualifiedName": "nodeIsValid",
+      "signature": "nodeIsValid(n: Node): { ok: true } | { ok: false; reason: string }",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/fuzz-validate.ts",
+      "line": 51
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/fuzz/fuzz-validate.ts@L21",
+      "snippet": "/** Validate an extractor's returned node/edge set. `ok:true` iff every field is well-formed. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+    "procedureName": "validateFuzzResult",
+    "conditions": [
+      "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L25",
+      "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L26",
+      "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L28",
+      "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L29",
+      "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L32",
+      "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L33",
+      "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L35",
+      "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L37",
+      "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L39",
+      "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L40",
+      "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L42",
+      "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L44"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+        "procedureName": "validateFuzzResult",
+        "guard": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L26",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L25",
+            "expr": "res.nodes"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L26",
+            "expr": "typeof n.id !== 'string' || n.id.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:98dacfdf9d5d1d860726c3362d1084af893744a70fa17aa4dae1eb24ea8b79e0",
+          "target": "stmt:packages/parsers/src/fuzz/fuzz-validate.ts@L27",
+          "line": 27,
+          "expr": "return { ok: false, reason: 'node.id empty' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+        "procedureName": "validateFuzzResult",
+        "guard": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L28",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L25",
+            "expr": "res.nodes"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L28",
+            "expr": "!isNodeKind(n.kind)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:11183cff1a4145e0e13d3d999f830d68ac35d9c1e4d07e9ce7607d18b97df2c6",
+          "target": "stmt:packages/parsers/src/fuzz/fuzz-validate.ts@L28",
+          "line": 28,
+          "expr": "return { ok: false, reason: `node.kind invalid: ${String(n.kind)}` };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+        "procedureName": "validateFuzzResult",
+        "guard": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L29",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L25",
+            "expr": "res.nodes"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L29",
+            "expr": "typeof n.hash !== 'string' || n.hash.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d8b71cf77120fed8a17ec7984beb38db47833f9b28c8fd0786bdcedca2a23877",
+          "target": "stmt:packages/parsers/src/fuzz/fuzz-validate.ts@L30",
+          "line": 30,
+          "expr": "return { ok: false, reason: 'node.hash empty' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+        "procedureName": "validateFuzzResult",
+        "guard": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L33",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L32",
+            "expr": "res.edges as Edge[]"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L33",
+            "expr": "typeof e.id !== 'string' || e.id.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4d20e125234959aa9065c8b82870ce2c148a18d11612e9a6b3111f07d814a9c7",
+          "target": "stmt:packages/parsers/src/fuzz/fuzz-validate.ts@L34",
+          "line": 34,
+          "expr": "return { ok: false, reason: 'edge.id empty' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+        "procedureName": "validateFuzzResult",
+        "guard": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L35",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L32",
+            "expr": "res.edges as Edge[]"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L35",
+            "expr": "typeof e.src !== 'string' || e.src.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cc798119dd095860d8a993b01703e568629700c20fd685ed2aad561040d53fe5",
+          "target": "stmt:packages/parsers/src/fuzz/fuzz-validate.ts@L36",
+          "line": 36,
+          "expr": "return { ok: false, reason: 'edge.src empty' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+        "procedureName": "validateFuzzResult",
+        "guard": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L37",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L32",
+            "expr": "res.edges as Edge[]"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L37",
+            "expr": "typeof e.dst !== 'string' || e.dst.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1042e45d55ab881abe35c4d80fcc3016a6fb81863fe01a06617f02d089b67364",
+          "target": "stmt:packages/parsers/src/fuzz/fuzz-validate.ts@L38",
+          "line": 38,
+          "expr": "return { ok: false, reason: 'edge.dst empty' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+        "procedureName": "validateFuzzResult",
+        "guard": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L39",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L32",
+            "expr": "res.edges as Edge[]"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L39",
+            "expr": "!isRel(e.rel)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:79d32037dce8889eeee3546ab008a368459e5109aa876a2ff8944738cd14a61f",
+          "target": "stmt:packages/parsers/src/fuzz/fuzz-validate.ts@L39",
+          "line": 39,
+          "expr": "return { ok: false, reason: `edge.rel invalid: ${String(e.rel)}` };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+        "procedureName": "validateFuzzResult",
+        "guard": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L40",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L32",
+            "expr": "res.edges as Edge[]"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L40",
+            "expr": "!isMethod(e.method)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:855c826b0f67f66e7e704ed0f6b79aa476a0ce9111b2a79f442518b74eda580f",
+          "target": "stmt:packages/parsers/src/fuzz/fuzz-validate.ts@L41",
+          "line": 41,
+          "expr": "return { ok: false, reason: `edge.method invalid: ${String(e.method)}` };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+        "procedureName": "validateFuzzResult",
+        "guard": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L42",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L32",
+            "expr": "res.edges as Edge[]"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L42",
+            "expr": "!isProvenance(e.provenance)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2d41c9294a971b0f98e7f3d35b7df9986df7c36d380ed7386abc2599b941584a",
+          "target": "stmt:packages/parsers/src/fuzz/fuzz-validate.ts@L43",
+          "line": 43,
+          "expr": "return { ok: false, reason: `edge.provenance invalid: ${String(e.provenance)}` };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+        "procedureName": "validateFuzzResult",
+        "guard": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L44",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L32",
+            "expr": "res.edges as Edge[]"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/fuzz-validate.ts@L44",
+            "expr": "typeof e.confidence !== 'number' || e.confidence < 0 || e.confidence > 1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:317359cd163bdec76e3eb77d261e8460d2201967ffdcf8d11cd6a5e6cd7ec948",
+          "target": "stmt:packages/parsers/src/fuzz/fuzz-validate.ts@L45",
+          "line": 45,
+          "expr": "return { ok: false, reason: `edge.confidence out of [0,1]: ${e.confidence}` };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/fuzz-validate.ts#validateFuzzResult@L22",
+        "procedureName": "validateFuzzResult",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:52ac5fa937dae0b99459b0778c8a2c99b47326b7ffbbd6e620ba3a63136c0b01",
+          "target": "stmt:packages/parsers/src/fuzz/fuzz-validate.ts@L47",
+          "line": 47,
+          "expr": "return { ok: true };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 11,
+    "referencedByFiles": [
+      "packages/parsers/src/fuzz/fuzz-validate.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 11,
+    "assignments": 0,
+    "conditions": 10,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

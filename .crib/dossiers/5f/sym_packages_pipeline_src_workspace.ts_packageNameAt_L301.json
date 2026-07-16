@@ -1,0 +1,274 @@
+{
+  "id": "sym:packages/pipeline/src/workspace.ts#packageNameAt@L301",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:f0c7bcc65009eb5f9170bf4cb5056f1be630126d698a31fea49691486715f9d5",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/workspace.ts#packageNameAt@L301",
+    "kind": "symbol",
+    "type": "function",
+    "name": "packageNameAt",
+    "qualifiedName": "packageNameAt",
+    "signature": "packageNameAt(dir: string, fallbackRel: string): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/workspace.ts",
+    "span": {
+      "start": 301,
+      "end": 317
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 302
+      },
+      {
+        "callee": "parse",
+        "line": 305
+      },
+      {
+        "callee": "readFileSync",
+        "line": 305
+      },
+      {
+        "callee": "join",
+        "line": 311
+      },
+      {
+        "callee": "match",
+        "line": 313
+      },
+      {
+        "callee": "readFileSync",
+        "line": 313
+      },
+      {
+        "callee": "basename",
+        "line": 316
+      }
+    ]
+  },
+  "source": {
+    "text": "function packageNameAt(dir: string, fallbackRel: string): string {\n  const pkgPath = join(dir, 'package.json');\n  if (existsSync(pkgPath)) {\n    try {\n      const name = (JSON.parse(readFileSync(pkgPath, 'utf8')) as { name?: string }).name;\n      if (name) return name;\n    } catch {\n      // corrupt package.json — fall back to basename\n    }\n  }\n  const cargoPath = join(dir, 'Cargo.toml');\n  if (existsSync(cargoPath)) {\n    const m = readFileSync(cargoPath, 'utf8').match(/^\\s*name\\s*=\\s*\"([^\"]+)\"/m);\n    if (m?.[1]) return m[1];\n  }\n  return basename(fallbackRel);\n}",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 301
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
+      "confidence": 1,
+      "name": "expandPatterns",
+      "qualifiedName": "expandPatterns",
+      "signature": "expandPatterns(root: string, patterns: string[]): WorkspacePackage[]",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 208
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(input)",
+      "type": "function",
+      "file": "packages/pipeline/fixtures/plain-js/src/legacy.cjs",
+      "line": 4
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/workspace.ts#packageNameAt@L301",
+    "procedureName": "packageNameAt",
+    "conditions": [
+      "cond:packages/pipeline/src/workspace.ts@L303",
+      "cond:packages/pipeline/src/workspace.ts@L306",
+      "cond:packages/pipeline/src/workspace.ts@L312",
+      "cond:packages/pipeline/src/workspace.ts@L314"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#packageNameAt@L301",
+        "procedureName": "packageNameAt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:880032a48114fd3183c87a2c7a51fe14eef130eb6d7f76209f17f6dd663125a9",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L302",
+          "line": 302,
+          "expr": "const pkgPath = join(dir, 'package.json');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#packageNameAt@L301",
+        "procedureName": "packageNameAt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:796b52d9ecca7a737c50e3c342a8f1b643bd6618c6137ddb9daa28db1d17bd18",
+          "target": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+          "expr": "parse",
+          "line": 305
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#packageNameAt@L301",
+        "procedureName": "packageNameAt",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L303",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L303",
+            "expr": "existsSync(pkgPath)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a45fcce7c48311cc11ba93508970e2a3bbcf05c4d84d330d795376e2e117e369",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L305",
+          "line": 305,
+          "expr": "const name = (JSON.parse(readFileSync(pkgPath, 'utf8')) as { name?: string }).name;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#packageNameAt@L301",
+        "procedureName": "packageNameAt",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L306",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L303",
+            "expr": "existsSync(pkgPath)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L306",
+            "expr": "name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6e1146318db3b91041d7253059d78a184181bd2dfc6f8da3f8852ab29d9fff67",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L306",
+          "line": 306,
+          "expr": "return name;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#packageNameAt@L301",
+        "procedureName": "packageNameAt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bc389cac1e86556b917e8aff89fb594419aa1e6185f09b0a2b391263d38ffa8b",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L311",
+          "line": 311,
+          "expr": "const cargoPath = join(dir, 'Cargo.toml');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#packageNameAt@L301",
+        "procedureName": "packageNameAt",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L312",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L312",
+            "expr": "existsSync(cargoPath)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b01f5bbb0e2479009a4240b5a233aaa7cac5daa56c8f1b819ea80a2f6c38f7d4",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L313",
+          "line": 313,
+          "expr": "const m = readFileSync(cargoPath, 'utf8').match(/^\\s*name\\s*=\\s*\"([^\"]+)\"/m);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#packageNameAt@L301",
+        "procedureName": "packageNameAt",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L314",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L312",
+            "expr": "existsSync(cargoPath)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L314",
+            "expr": "m?.[1]",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fce60bb87b90376558dc9b2c6035eceb0e04b2fdca3b619246be4228e946fe6c",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L314",
+          "line": 314,
+          "expr": "return m[1];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#packageNameAt@L301",
+        "procedureName": "packageNameAt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d69a2672023028cfd47f7f731fe79920707338db87567b1a617eccb8b7ba11c3",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L316",
+          "line": 316,
+          "expr": "return basename(fallbackRel);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/pipeline/src/workspace.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 7,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

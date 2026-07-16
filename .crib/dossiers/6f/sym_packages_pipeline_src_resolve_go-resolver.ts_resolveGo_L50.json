@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo@L50",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:bf9fcf446406c94d628617daf0146abbee670680c34079639e0b5248e3ab4abd",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo@L50",
@@ -187,14 +187,24 @@
       "line": 16
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 122
+      "line": 141
     },
     {
       "id": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
@@ -287,16 +297,6 @@
       "line": 138
     },
     {
-      "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#safeRead@L239",
-      "confidence": 1,
-      "name": "safeRead",
-      "qualifiedName": "safeRead",
-      "signature": "safeRead(abs: string): string | undefined",
-      "type": "function",
-      "file": "packages/pipeline/src/resolve/go-resolver.ts",
-      "line": 239
-    },
-    {
       "id": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
       "confidence": 1,
       "name": "safeRead",
@@ -305,6 +305,16 @@
       "type": "function",
       "file": "packages/pipeline/src/structure.ts",
       "line": 196
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#safeRead@L239",
+      "confidence": 1,
+      "name": "safeRead",
+      "qualifiedName": "safeRead",
+      "signature": "safeRead(abs: string): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.ts",
+      "line": 239
     }
   ],
   "docs": [
@@ -352,8 +362,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:56efa92b0351f029ba32ed6f8f9b25de5eaeff4bf927d677c1b345b4f0ce51aa",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "edgeId": "e:b0d336c03c26d0f628e8ad7b632885051a3fa6f24d6e387db3a8aad5b52de3e8",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
           "expr": "edgeId",
           "line": 60
         }
@@ -370,6 +380,20 @@
           "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
           "expr": "add",
           "line": 62
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo@L50",
+        "procedureName": "resolveGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:21e9710a045fa0c9adcd95761616f241819f67c489e4c9fd9551213dfb7c6e6c",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 63
         }
       },
       {
@@ -406,10 +430,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:21e9710a045fa0c9adcd95761616f241819f67c489e4c9fd9551213dfb7c6e6c",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 63
+          "edgeId": "e:05ed2f82eebf8d0e444626b599c49ce09b6ae87f004c9ef29105d397a323ec4c",
+          "target": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
+          "expr": "safeRead",
+          "line": 79
         }
       },
       {
@@ -454,20 +478,6 @@
           "target": "stmt:packages/pipeline/src/resolve/go-resolver.ts@L79",
           "line": 79,
           "expr": "const text = safeRead(join(root, file.path));"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo@L50",
-        "procedureName": "resolveGo",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:05ed2f82eebf8d0e444626b599c49ce09b6ae87f004c9ef29105d397a323ec4c",
-          "target": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
-          "expr": "safeRead",
-          "line": 79
         }
       },
       {
@@ -526,6 +536,20 @@
           "target": "stmt:packages/pipeline/src/resolve/go-resolver.ts@L89",
           "line": 89,
           "expr": "const list = pkgFiles.get(p.mod.pkg) ?? [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo@L50",
+        "procedureName": "resolveGo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b779b6c3e3667360f7db22d4f4d3d9e678d6d3059925a131c9ed75f9b6cdb5b4",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 89
         }
       },
       {
@@ -1062,14 +1086,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 13,
+      "resolved": 14,
       "recorded": 34,
-      "unresolved": 13
+      "unresolved": 7
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "13 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

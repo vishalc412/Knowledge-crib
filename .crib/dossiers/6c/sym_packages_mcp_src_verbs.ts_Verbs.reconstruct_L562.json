@@ -1,0 +1,387 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:8c5995c58da0085e626cb1667ef25256ed9d9c42c756cf3dc7e25e059b623cc4",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+    "kind": "symbol",
+    "type": "method",
+    "name": "reconstruct",
+    "qualifiedName": "Verbs.reconstruct",
+    "signature": "reconstruct(args: {\n    id: string;\n    extractedOnly?: boolean;\n    /** include the referenced-tables section (default true) */\n    includeTables?: boolean;\n    /** cap on the number of member entries (default 1000; `truncated` flags a cap) */\n    maxSymbols?: number;\n    format?: 'json' | 'markdown';\n  }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 562,
+      "end": 593
+    },
+    "callSites": [
+      {
+        "callee": "resolveNodeId",
+        "line": 572
+      },
+      {
+        "callee": "notFound",
+        "line": 573
+      },
+      {
+        "callee": "getManifest",
+        "line": 574
+      },
+      {
+        "callee": "buildReconstruction",
+        "line": 575
+      },
+      {
+        "callee": "clampMax",
+        "line": 584
+      },
+      {
+        "callee": "notFound",
+        "line": 588
+      },
+      {
+        "callee": "reconstructionToMarkdown",
+        "line": 590
+      }
+    ]
+  },
+  "source": {
+    "text": "  reconstruct(args: {\n    id: string;\n    extractedOnly?: boolean;\n    /** include the referenced-tables section (default true) */\n    includeTables?: boolean;\n    /** cap on the number of member entries (default 1000; `truncated` flags a cap) */\n    maxSymbols?: number;\n    format?: 'json' | 'markdown';\n  }): Record<string, unknown> {\n    const soul = this.deps.soul;\n    const id = this.resolveNodeId(args.id);\n    if (!id) return notFound(args.id);\n    const manifest = soul.getManifest();\n    const reconstruction = buildReconstruction(\n      soul,\n      this.deps.repoRoot,\n      id,\n      manifest.stats.lastUpdated,\n      {\n        ...(args.extractedOnly ? { extractedOnly: true } : {}),\n        ...(args.includeTables !== undefined ? { includeTables: args.includeTables } : {}),\n        ...(args.maxSymbols !== undefined\n          ? { maxSymbols: clampMax(args.maxSymbols, MAX_SCOPE_SYMBOLS) }\n          : {}),\n      },\n    );\n    if (!reconstruction) return notFound(args.id);\n    if (args.format === 'markdown') {\n      return { id, markdown: reconstructionToMarkdown(reconstruction) };\n    }\n    return reconstruction as unknown as Record<string, unknown>;\n  }",
+    "truncated": false,
+    "totalLines": 32,
+    "startLine": 562
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+      "confidence": 1,
+      "name": "resolveNodeId",
+      "qualifiedName": "Verbs.resolveNodeId",
+      "signature": "resolveNodeId(idOrName: string): string | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1688
+    },
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#clampMax@L99",
+      "confidence": 1,
+      "name": "clampMax",
+      "qualifiedName": "clampMax",
+      "signature": "clampMax(value: number | undefined, max: number): number | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 99
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#notFound@L1874",
+      "confidence": 1,
+      "name": "notFound",
+      "qualifiedName": "notFound",
+      "signature": "notFound(id: string): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1874
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L552",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#1-executive-summary",
+      "heading": "1. Executive summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#5-how-it-works-the-actual-mechanism",
+      "heading": "5. How it works (the actual mechanism)",
+      "anchor": "5-how-it-works-the-actual-mechanism",
+      "snippet": "5. How it works (the actual mechanism)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-3-capture-real-product-evidence",
+      "heading": "Task 3: Capture Real Product Evidence",
+      "anchor": "task-3-capture-real-product-evidence",
+      "snippet": "Task 3: Capture Real Product Evidence",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#table-of-contents",
+      "heading": "Table of contents",
+      "anchor": "table-of-contents",
+      "snippet": "Table of contents",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-1-language-agnostic-migration-core-8-days",
+      "heading": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "anchor": "phase-1-language-agnostic-migration-core-8-days",
+      "snippet": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "heading": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "anchor": "phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "snippet": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-6-reconstruction-artifact-closes-g6",
+      "heading": "WS-6 — Reconstruction artifact (closes G6)",
+      "anchor": "ws-6-reconstruction-artifact-closes-g6",
+      "snippet": "WS-6 — Reconstruction artifact (closes G6)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "heading": "7. Risks",
+      "anchor": "7-risks",
+      "snippet": "7. Risks",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+    "procedureName": "Verbs.reconstruct",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L588",
+      "cond:packages/mcp/src/verbs.ts@L573",
+      "cond:packages/mcp/src/verbs.ts@L589"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+        "procedureName": "Verbs.reconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:baa787909dae431f4e0814685f91460c096298718bba9fca33e9edbc000d9862",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+          "expr": "resolveNodeId",
+          "line": 572
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+        "procedureName": "Verbs.reconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c59610525f2c40d8b26da7eca13e04b484cb83482de44134029e5f5759265fcf",
+          "target": "stmt:packages/mcp/src/verbs.ts@L572",
+          "line": 572,
+          "expr": "const id = this.resolveNodeId(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+        "procedureName": "Verbs.reconstruct",
+        "guard": "cond:packages/mcp/src/verbs.ts@L588",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L588",
+            "expr": "!reconstruction",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:94665248d4c40fe96d4dcd096fc52b3775f320dbee721e448fe2f88179d93a19",
+          "target": "sym:packages/mcp/src/verbs.ts#notFound@L1874",
+          "expr": "notFound",
+          "line": 573
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+        "procedureName": "Verbs.reconstruct",
+        "guard": "cond:packages/mcp/src/verbs.ts@L573",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L573",
+            "expr": "!id",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d6fc09792fc63e00c83dcd4e293eafe829739c8726659323973ce27579a687f2",
+          "target": "stmt:packages/mcp/src/verbs.ts@L573",
+          "line": 573,
+          "expr": "return notFound(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+        "procedureName": "Verbs.reconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ec7847c8f3860c674b84cba8818226261179a585f30597c42b730f4adce25a2",
+          "target": "stmt:packages/mcp/src/verbs.ts@L574",
+          "line": 574,
+          "expr": "const manifest = soul.getManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+        "procedureName": "Verbs.reconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8285ed7ec87a5f48175170db4a1917118cb1ea389eff5e86e958ec2e2e49e8a7",
+          "target": "stmt:packages/mcp/src/verbs.ts@L575",
+          "line": 575,
+          "expr": "const reconstruction = buildReconstruction(\n      soul,\n      this.deps.repoRoot,\n      id,\n      manifest.stats.lastUpdated,\n      {\n        ...(args.extractedOnly ? { extractedOnly: true } : {}),\n        ...(args.includeTables !== undefined ? { includeTables: args.includeTables } : {}),\n        ...(args.maxSymbols !== undefined\n          ? { maxSymbols: clampMax(args.maxSymbols, MAX_SCOPE_SYMBOLS) }\n          : {}),\n      },\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+        "procedureName": "Verbs.reconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8b478ae12fc4f458a5fa7943ee856d9e1ddf8f050934a1e0e9dd9b3e81debaeb",
+          "target": "sym:packages/mcp/src/token-budget.ts#clampMax@L99",
+          "expr": "clampMax",
+          "line": 584
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+        "procedureName": "Verbs.reconstruct",
+        "guard": "cond:packages/mcp/src/verbs.ts@L588",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L588",
+            "expr": "!reconstruction",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dc37befbca13278b73e7e5cd06b380559698f1e076829b23683ffc064bf0c0a5",
+          "target": "stmt:packages/mcp/src/verbs.ts@L588",
+          "line": 588,
+          "expr": "return notFound(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+        "procedureName": "Verbs.reconstruct",
+        "guard": "cond:packages/mcp/src/verbs.ts@L589",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L589",
+            "expr": "args.format === 'markdown'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1e65febb1e12f0e450fb920af5a186b337936714885ee290e73ddeae52b5cf1b",
+          "target": "stmt:packages/mcp/src/verbs.ts@L590",
+          "line": 590,
+          "expr": "return { id, markdown: reconstructionToMarkdown(reconstruction) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+        "procedureName": "Verbs.reconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e371846719fc10d92dbe9244ac58e214237402cc8a2abdf540f64a448de4eb8",
+          "target": "stmt:packages/mcp/src/verbs.ts@L592",
+          "line": 592,
+          "expr": "return reconstruction as unknown as Record<string, unknown>;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 7,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseStatement@L236",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:073f050ee5c77060b2e080b6bc5473cd82fef060575a7e1be0d11ac4fb711890",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseStatement@L236",
@@ -318,11 +318,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:2842f382c0c90d3113fb405c050cf1baa410cdc6f72c109ea2d9bac90e9baa73",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseClass@L276",
-          "expr": "parseClass",
-          "line": 239
+          "kind": "executes",
+          "edgeId": "e:0fdb2988ee0b99da20b3822ebeeefacec233c39960a09a49f839bc226d57d14a",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L239",
+          "line": 239,
+          "expr": "const def = this.parseClass();"
         }
       },
       {
@@ -340,33 +340,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:0fdb2988ee0b99da20b3822ebeeefacec233c39960a09a49f839bc226d57d14a",
-          "target": "stmt:packages/parsers/src/python/parser.ts@L239",
-          "line": 239,
-          "expr": "const def = this.parseClass();"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseStatement@L236",
-        "procedureName": "Parser.parseStatement",
-        "guard": "cond:packages/parsers/src/python/parser.ts@L246",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/python/parser.ts@L246",
-            "expr": "this.isName('async') && this.peekName(1) === 'def'",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "calls",
-          "edgeId": "e:a025ba888e07410c7cdca5c78eb6049f933f3b932ea325301852c08fe55ab9f1",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.defStmt@L272",
-          "expr": "defStmt",
-          "line": 240
+          "edgeId": "e:2842f382c0c90d3113fb405c050cf1baa410cdc6f72c109ea2d9bac90e9baa73",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseClass@L276",
+          "expr": "parseClass",
+          "line": 239
         }
       },
       {
@@ -407,10 +385,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:dcb08731571be28db50e3fb4bc9f59ce2589a7ffe0a34536bf13fb3587bfce6f",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
-          "expr": "parseFunction",
-          "line": 243
+          "edgeId": "e:a025ba888e07410c7cdca5c78eb6049f933f3b932ea325301852c08fe55ab9f1",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.defStmt@L272",
+          "expr": "defStmt",
+          "line": 240
         }
       },
       {
@@ -433,6 +411,28 @@
           "target": "stmt:packages/parsers/src/python/parser.ts@L243",
           "line": 243,
           "expr": "const def = this.parseFunction(false);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseStatement@L236",
+        "procedureName": "Parser.parseStatement",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L246",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L246",
+            "expr": "this.isName('async') && this.peekName(1) === 'def'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dcb08731571be28db50e3fb4bc9f59ce2589a7ffe0a34536bf13fb3587bfce6f",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+          "expr": "parseFunction",
+          "line": 243
         }
       },
       {
@@ -472,11 +472,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:abdb0f9328b8f932bbf6c6e7e6e23e48252dd5b9134cce8d5929555435c05d93",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.next@L781",
-          "expr": "next",
-          "line": 247
+          "kind": "executes",
+          "edgeId": "e:1184a31aaa3a9373a629a17d1ac6d73b8130c57d96af99fe070def97e28cb908",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L247",
+          "line": 247,
+          "expr": "this.next();"
         }
       },
       {
@@ -494,11 +494,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:1184a31aaa3a9373a629a17d1ac6d73b8130c57d96af99fe070def97e28cb908",
-          "target": "stmt:packages/parsers/src/python/parser.ts@L247",
-          "line": 247,
-          "expr": "this.next();"
+          "kind": "calls",
+          "edgeId": "e:abdb0f9328b8f932bbf6c6e7e6e23e48252dd5b9134cce8d5929555435c05d93",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.next@L781",
+          "expr": "next",
+          "line": 247
         }
       },
       {
@@ -648,11 +648,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:e499f88aa22e21d0808504325880fe771bf3b82fd9381e936d8c93c62ca9fb61",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseTry@L507",
-          "expr": "parseTry",
-          "line": 253
+          "kind": "executes",
+          "edgeId": "e:5258e9b8eb92836a2cff2c7a0db5cf577ee4a1f54c09b6bf59efdec275ff1b8d",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L253",
+          "line": 253,
+          "expr": "return this.parseTry();"
         }
       },
       {
@@ -670,11 +670,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:5258e9b8eb92836a2cff2c7a0db5cf577ee4a1f54c09b6bf59efdec275ff1b8d",
-          "target": "stmt:packages/parsers/src/python/parser.ts@L253",
-          "line": 253,
-          "expr": "return this.parseTry();"
+          "kind": "calls",
+          "edgeId": "e:e499f88aa22e21d0808504325880fe771bf3b82fd9381e936d8c93c62ca9fb61",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseTry@L507",
+          "expr": "parseTry",
+          "line": 253
         }
       },
       {
@@ -736,11 +736,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:f8e5120f30b1cb525674f8796b51fccd69b6c075a470954ef412729443d1b8dc",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseMatch@L550",
-          "expr": "parseMatch",
-          "line": 255
+          "kind": "executes",
+          "edgeId": "e:ecacd808cb84084db61fa3c2b9f07fc4c1edc22bb6c2916b6c90037c0de3f95b",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L255",
+          "line": 255,
+          "expr": "return this.parseMatch();"
         }
       },
       {
@@ -758,11 +758,33 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:f8e5120f30b1cb525674f8796b51fccd69b6c075a470954ef412729443d1b8dc",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseMatch@L550",
+          "expr": "parseMatch",
+          "line": 255
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseStatement@L236",
+        "procedureName": "Parser.parseStatement",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L258",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L258",
+            "expr": "this.isName('elif') ||\n      this.isName('else') ||\n      this.isName('except') ||\n      this.isName('finally') ||\n      this.isName('case')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
-          "edgeId": "e:ecacd808cb84084db61fa3c2b9f07fc4c1edc22bb6c2916b6c90037c0de3f95b",
-          "target": "stmt:packages/parsers/src/python/parser.ts@L255",
-          "line": 255,
-          "expr": "return this.parseMatch();"
+          "edgeId": "e:4896d051a1717826e6b70ddba6ba766cc2b9c5098637df592ac483715f4f4249",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L265",
+          "line": 265,
+          "expr": "this.skipToNewline();"
         }
       },
       {
@@ -803,46 +825,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:4896d051a1717826e6b70ddba6ba766cc2b9c5098637df592ac483715f4f4249",
-          "target": "stmt:packages/parsers/src/python/parser.ts@L265",
-          "line": 265,
-          "expr": "this.skipToNewline();"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseStatement@L236",
-        "procedureName": "Parser.parseStatement",
-        "guard": "cond:packages/parsers/src/python/parser.ts@L258",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/python/parser.ts@L258",
-            "expr": "this.isName('elif') ||\n      this.isName('else') ||\n      this.isName('except') ||\n      this.isName('finally') ||\n      this.isName('case')",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
           "edgeId": "e:4546f71cd3d1b1954ce25a47225e3623e5487418834a3a226915b82cf13a8807",
           "target": "stmt:packages/parsers/src/python/parser.ts@L266",
           "line": 266,
           "expr": "return null;"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseStatement@L236",
-        "procedureName": "Parser.parseStatement",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:baf22bafed2eea3a2e2deee020d4cd769b9c4280e6a7ed4d0cbb832d5d6d41c7",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
-          "expr": "parseAction",
-          "line": 268
         }
       },
       {
@@ -857,6 +843,20 @@
           "target": "stmt:packages/parsers/src/python/parser.ts@L268",
           "line": 268,
           "expr": "return this.parseAction();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseStatement@L236",
+        "procedureName": "Parser.parseStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:baf22bafed2eea3a2e2deee020d4cd769b9c4280e6a7ed4d0cbb832d5d6d41c7",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+          "expr": "parseAction",
+          "line": 268
         }
       },
       {

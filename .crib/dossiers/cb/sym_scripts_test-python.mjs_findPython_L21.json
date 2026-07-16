@@ -1,0 +1,176 @@
+{
+  "id": "sym:scripts/test-python.mjs#findPython@L21",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:ceecae9fd38e6718eab671157e4c59a03aa936ac454dfb04a0fc2efc242d3043",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/test-python.mjs#findPython@L21",
+    "kind": "symbol",
+    "type": "function",
+    "name": "findPython",
+    "qualifiedName": "findPython",
+    "signature": "findPython(platform = process.platform)",
+    "lang": "javascript",
+    "file": "scripts/test-python.mjs",
+    "span": {
+      "start": 21,
+      "end": 29
+    },
+    "callSites": [
+      {
+        "callee": "spawnSync",
+        "line": 23
+      }
+    ]
+  },
+  "source": {
+    "text": "export function findPython(platform = process.platform) {\n  for (const candidate of pythonCandidates(platform)) {\n    const probe = spawnSync(candidate.command, [...candidate.prefixArgs, '--version'], {\n      encoding: 'utf8',\n    });\n    if (!probe.error && probe.status === 0) return candidate;\n  }\n  throw new Error('Python 3 is required to run the worker test suite');\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 21
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/test-python.mjs#runPythonTests@L31",
+      "confidence": 1,
+      "name": "runPythonTests",
+      "qualifiedName": "runPythonTests",
+      "signature": "runPythonTests()",
+      "type": "function",
+      "file": "scripts/test-python.mjs",
+      "line": 31
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:scripts/test-python.mjs#pythonCandidates@L7",
+      "confidence": 1,
+      "name": "pythonCandidates",
+      "qualifiedName": "pythonCandidates",
+      "signature": "pythonCandidates(platform = process.platform)",
+      "type": "function",
+      "file": "scripts/test-python.mjs",
+      "line": 7
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/test-python.mjs#findPython@L21",
+    "procedureName": "findPython",
+    "conditions": [
+      "cond:scripts/test-python.mjs@L22",
+      "cond:scripts/test-python.mjs@L26"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:scripts/test-python.mjs#findPython@L21",
+        "procedureName": "findPython",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a5760d22be2b1810eca75a5b9157ac7091d81ab2257bad7d9825f5512c5bf434",
+          "target": "sym:scripts/test-python.mjs#pythonCandidates@L7",
+          "expr": "pythonCandidates"
+        }
+      },
+      {
+        "procedure": "sym:scripts/test-python.mjs#findPython@L21",
+        "procedureName": "findPython",
+        "guard": "cond:scripts/test-python.mjs@L22",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:scripts/test-python.mjs@L22",
+            "expr": "pythonCandidates(platform)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1377a3d7ce32fe0d362b8f0c5f9ad6a121e1f4f986c6d12c178285d3a28e92ef",
+          "target": "stmt:scripts/test-python.mjs@L23",
+          "line": 23,
+          "expr": "const probe = spawnSync(candidate.command, [...candidate.prefixArgs, '--version'], {\n      encoding: 'utf8',\n    });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/test-python.mjs#findPython@L21",
+        "procedureName": "findPython",
+        "guard": "cond:scripts/test-python.mjs@L26",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/test-python.mjs@L22",
+            "expr": "pythonCandidates(platform)"
+          },
+          {
+            "id": "cond:scripts/test-python.mjs@L26",
+            "expr": "!probe.error && probe.status === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c4a62757a5a5554dfc2a4aad70c0909d2ee0a4c6eef34903e0c10272716276cb",
+          "target": "stmt:scripts/test-python.mjs@L26",
+          "line": 26,
+          "expr": "return candidate;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:scripts/test-python.mjs@L28",
+        "kind": "raise",
+        "lang": "javascript",
+        "file": "scripts/test-python.mjs",
+        "span": {
+          "start": 28,
+          "end": 28
+        },
+        "errorMessage": "Python 3 is required to run the worker test suite",
+        "confidence": 1
+      }
+    ],
+    "handles": [],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "scripts/test-python.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 1,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.scanSimple@L1458",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:e5919b663c9137a567e15a91ccfaf53da4c9b1a3f24bc796c798052980d10bc7",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.scanSimple@L1458",
@@ -230,11 +230,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:ed4f3e2f356f4247bf8e84a0baf221589cf3d939c4ccab8776b82a8378d3ebbd",
-          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.detectCall@L1498",
-          "expr": "detectCall",
-          "line": 1483
+          "kind": "executes",
+          "edgeId": "e:5e190ab4db241090440b938eb55b3557925d27a636e4afe33ab8222ad57e7411",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1483",
+          "line": 1483,
+          "expr": "const chain = this.detectCall(j);"
         }
       },
       {
@@ -256,11 +256,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:5e190ab4db241090440b938eb55b3557925d27a636e4afe33ab8222ad57e7411",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1483",
-          "line": 1483,
-          "expr": "const chain = this.detectCall(j);"
+          "kind": "calls",
+          "edgeId": "e:ed4f3e2f356f4247bf8e84a0baf221589cf3d939c4ccab8776b82a8378d3ebbd",
+          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.detectCall@L1498",
+          "expr": "detectCall",
+          "line": 1483
         }
       },
       {
@@ -300,11 +300,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:c83da9e18f37c3c3ae6b3474ab831d709ba58b680db16a96b8037584241fb9ec",
-          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.sliceText@L1644",
-          "expr": "sliceText",
-          "line": 1488
+          "kind": "executes",
+          "edgeId": "e:4c8b2260a8a66ec1b7fc4c2790de78a00e5517454700de130d51c77318a34c09",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1488",
+          "line": 1488,
+          "expr": "const text = this.sliceText(startIdx, textEnd).trim();"
         }
       },
       {
@@ -314,11 +314,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:4c8b2260a8a66ec1b7fc4c2790de78a00e5517454700de130d51c77318a34c09",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1488",
-          "line": 1488,
-          "expr": "const text = this.sliceText(startIdx, textEnd).trim();"
+          "kind": "calls",
+          "edgeId": "e:c83da9e18f37c3c3ae6b3474ab831d709ba58b680db16a96b8037584241fb9ec",
+          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.sliceText@L1644",
+          "expr": "sliceText",
+          "line": 1488
         }
       },
       {

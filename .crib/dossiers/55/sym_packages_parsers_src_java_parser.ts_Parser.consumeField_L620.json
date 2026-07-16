@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#Parser.consumeField@L620",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:7401f52625afd903514af4e14a6eeef5cf7c46be81229ec048ba9b3a0d2e5ee5",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#Parser.consumeField@L620",
@@ -170,28 +170,6 @@
       {
         "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeField@L620",
         "procedureName": "Parser.consumeField",
-        "guard": "cond:packages/parsers/src/java/parser.ts@L624",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/java/parser.ts@L624",
-            "expr": "!this.atEnd()",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:67c1edd0d10032c221f2cc77e7d4015edae386b41ab52c5a8d85a17baf3eed2e",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L885",
-          "expr": "next",
-          "line": 627
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeField@L620",
-        "procedureName": "Parser.consumeField",
         "guard": "cond:packages/parsers/src/java/parser.ts@L626",
         "branch": "THEN",
         "conditions": [
@@ -213,6 +191,28 @@
           "target": "stmt:packages/parsers/src/java/parser.ts@L627",
           "line": 627,
           "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.consumeField@L620",
+        "procedureName": "Parser.consumeField",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L624",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L624",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:67c1edd0d10032c221f2cc77e7d4015edae386b41ab52c5a8d85a17baf3eed2e",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L885",
+          "expr": "next",
+          "line": 627
         }
       },
       {

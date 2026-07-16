@@ -1,0 +1,117 @@
+{
+  "id": "sym:packages/core/src/dossier/by-scope.ts#byNodeLine@L226",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:f4ac1b446104143257149c2de806a235e0afe4c421080672009128fb241414b6",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/by-scope.ts#byNodeLine@L226",
+    "kind": "symbol",
+    "type": "function",
+    "name": "byNodeLine",
+    "qualifiedName": "byNodeLine",
+    "signature": "byNodeLine(soul: SoulStore): (a: string, b: string) => number",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/by-scope.ts",
+    "span": {
+      "start": 226,
+      "end": 235
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 228
+      },
+      {
+        "callee": "getNode",
+        "line": 229
+      }
+    ]
+  },
+  "source": {
+    "text": "function byNodeLine(soul: SoulStore): (a: string, b: string) => number {\n  return (a, b): number => {\n    const na = soul.getNode(a);\n    const nb = soul.getNode(b);\n    const la = na?.span?.start ?? Number.POSITIVE_INFINITY;\n    const lb = nb?.span?.start ?? Number.POSITIVE_INFINITY;\n    if (la !== lb) return la - lb;\n    return (na?.qualifiedName ?? na?.name ?? a) < (nb?.qualifiedName ?? nb?.name ?? b) ? -1 : 1;\n  };\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 226
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+      "confidence": 1,
+      "name": "buildDossiersByScope",
+      "qualifiedName": "buildDossiersByScope",
+      "signature": "buildDossiersByScope(soul: SoulStore, repoRoot: string, scope: DossierScope, id: string, now: string, opts: DossiersByScopeOpts = {}): DossiersByScope | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.ts",
+      "line": 86
+    },
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.ts#packageMembers@L215",
+      "confidence": 1,
+      "name": "packageMembers",
+      "qualifiedName": "packageMembers",
+      "signature": "packageMembers(soul: SoulStore, scopeNode: Node, incoming: Map<string, Edge[]>): string[]",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.ts",
+      "line": 215
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/by-scope.ts@L225",
+      "snippet": "/** A sort comparator factory keyed by source line (stable, top-to-bottom). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/by-scope.ts#byNodeLine@L226",
+    "procedureName": "byNodeLine",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#byNodeLine@L226",
+        "procedureName": "byNodeLine",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fff248757843fba4f8a792e5bf55988bfdcc2defae3e55ada05b04cd08325efb",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L227",
+          "line": 227,
+          "expr": "return (a, b): number => {\n    const na = soul.getNode(a);\n    const nb = soul.getNode(b);\n    const la = na?.span?.start ?? Number.POSITIVE_INFINITY;\n    const lb = nb?.span?.start ?? Number.POSITIVE_INFINITY;\n    if (la !== lb) return la - lb;\n    return (na?.qualifiedName ?? na?.name ?? a) < (nb?.qualifiedName ?? nb?.name ?? b) ? -1 : 1;\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/dossier/by-scope.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,198 @@
+{
+  "id": "sym:scripts/security-doc-check.mjs#assertContains@L49",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:14e38416f127849735fff327474d1a66cfdb0e9ea5c0e9b9207d344f1c7b81d7",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/security-doc-check.mjs#assertContains@L49",
+    "kind": "symbol",
+    "type": "function",
+    "name": "assertContains",
+    "qualifiedName": "assertContains",
+    "signature": "assertContains(…)",
+    "lang": "javascript",
+    "file": "scripts/security-doc-check.mjs",
+    "span": {
+      "start": 49,
+      "end": 55
+    },
+    "callSites": [
+      {
+        "callee": "fail",
+        "line": 51
+      },
+      {
+        "callee": "write",
+        "line": 53
+      }
+    ]
+  },
+  "source": {
+    "text": "const assertContains = (needle, label) => {\n  if (!SECURITY.includes(needle)) {\n    fail(`${label} — SECURITY.md missing \"${needle}\"`);\n  } else {\n    process.stdout.write(`  security:check — ${label}\\n`);\n  }\n};",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 49
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:scripts/security-doc-check.mjs#fail@L45",
+      "confidence": 1,
+      "name": "fail",
+      "qualifiedName": "fail",
+      "signature": "fail(…)",
+      "type": "function",
+      "file": "scripts/security-doc-check.mjs",
+      "line": 45
+    },
+    {
+      "id": "sym:scripts/tier-check.mjs#fail@L41",
+      "confidence": 1,
+      "name": "fail",
+      "qualifiedName": "fail",
+      "signature": "fail(…)",
+      "type": "function",
+      "file": "scripts/tier-check.mjs",
+      "line": 41
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/security-doc-check.mjs#assertContains@L49",
+    "procedureName": "assertContains",
+    "conditions": [
+      "cond:scripts/security-doc-check.mjs@L50"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:scripts/security-doc-check.mjs#assertContains@L49",
+        "procedureName": "assertContains",
+        "guard": "cond:scripts/security-doc-check.mjs@L50",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/security-doc-check.mjs@L50",
+            "expr": "!SECURITY.includes(needle)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:45b018be571738042035e9925f4015d375703f40f089c7c6a57382798a81341c",
+          "target": "sym:scripts/security-doc-check.mjs#fail@L45",
+          "expr": "fail",
+          "line": 51
+        }
+      },
+      {
+        "procedure": "sym:scripts/security-doc-check.mjs#assertContains@L49",
+        "procedureName": "assertContains",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6371fe1cbcdde61a991de0c4a85aeb12f0e56b7002bb7550a14cfff71adfb8df",
+          "target": "sym:scripts/tier-check.mjs#fail@L41",
+          "expr": "fail",
+          "line": 51
+        }
+      },
+      {
+        "procedure": "sym:scripts/security-doc-check.mjs#assertContains@L49",
+        "procedureName": "assertContains",
+        "guard": "cond:scripts/security-doc-check.mjs@L50",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/security-doc-check.mjs@L50",
+            "expr": "!SECURITY.includes(needle)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ff2ba1df51970f46dd7d5248fccd45be3b3641fcdfc1eb7495bc58184d377f24",
+          "target": "stmt:scripts/security-doc-check.mjs@L51",
+          "line": 51,
+          "expr": "fail(`${label} — SECURITY.md missing \"${needle}\"`);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/security-doc-check.mjs#assertContains@L49",
+        "procedureName": "assertContains",
+        "guard": "cond:scripts/security-doc-check.mjs@L50",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:scripts/security-doc-check.mjs@L50",
+            "expr": "!SECURITY.includes(needle)",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:64999690575ddd05c74b49d8036182dadab7b1eb19aa8363c5c834af6c95c147",
+          "target": "stmt:scripts/security-doc-check.mjs@L53",
+          "line": 53,
+          "expr": "process.stdout.write(`  security:check — ${label}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/security-doc-check.mjs#assertContains@L49",
+        "procedureName": "assertContains",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f6ac2b5623ff7bda93203800109ce4d19f573801cacdc3702ec997570846f9ec",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 53
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

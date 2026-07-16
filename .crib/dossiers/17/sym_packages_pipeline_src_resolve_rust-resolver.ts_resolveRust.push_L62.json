@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust.push@L62",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:ddbac27adfd1540b4fd33ae5de63fffcc6c114a2d6d12d66826ba05fa65637f2",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust.push@L62",
@@ -72,14 +72,14 @@
       "line": 16
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 122
+      "line": 141
     },
     {
       "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
@@ -107,11 +107,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:7f8b355c4ff1cc9d818e124efaf12d089d825eadd3194fe1f4c07f632b3cda03",
-          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L63",
-          "line": 63,
-          "expr": "const id = edgeId(src, dst, rel);"
+          "kind": "calls",
+          "edgeId": "e:13dcf6f93d40fa3ffd5053492f17720c0067c0b34ed830ba216bb3ec4aecdeae",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+          "expr": "edgeId",
+          "line": 63
         }
       },
       {
@@ -121,11 +121,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:375e6855ab19405131583383aec401cab9aac9a1560fff4331e15a10d8293503",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
-          "expr": "edgeId",
-          "line": 63
+          "kind": "executes",
+          "edgeId": "e:7f8b355c4ff1cc9d818e124efaf12d089d825eadd3194fe1f4c07f632b3cda03",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L63",
+          "line": 63,
+          "expr": "const id = edgeId(src, dst, rel);"
         }
       },
       {
@@ -157,20 +157,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:bc71c09f38c0c35bb3944bc64c85e04495a45325bbfb0a687471169dc0098705",
-          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L65",
-          "line": 65,
-          "expr": "seen.add(id);"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust.push@L62",
-        "procedureName": "resolveRust.push",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "calls",
           "edgeId": "e:240ad04272df6542cd17c7df5eca1bc5fdcfd0c5220f593fce9604cfb35e9248",
           "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
@@ -186,10 +172,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:c8ef2f11e2e3a08bde4e0ef939f79db9c3db13a3586a66fa1e568fbc669b0897",
-          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L66",
-          "line": 66,
-          "expr": "edges.push({\n      id,\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'rust-resolver', snippet },\n    });"
+          "edgeId": "e:bc71c09f38c0c35bb3944bc64c85e04495a45325bbfb0a687471169dc0098705",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L65",
+          "line": 65,
+          "expr": "seen.add(id);"
         }
       },
       {
@@ -204,6 +190,20 @@
           "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
           "expr": "push",
           "line": 66
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust.push@L62",
+        "procedureName": "resolveRust.push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c8ef2f11e2e3a08bde4e0ef939f79db9c3db13a3586a66fa1e568fbc669b0897",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L66",
+          "line": 66,
+          "expr": "edges.push({\n      id,\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'rust-resolver', snippet },\n    });"
         }
       }
     ]

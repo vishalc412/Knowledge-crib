@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/multimodal.test.ts#indexedSoul@L49",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:f6b4169b78bca02d1add6f7c91199b5e0d3426bf9205662e9d03ac7ac3816230",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/multimodal.test.ts#indexedSoul@L49",
@@ -33,14 +33,14 @@
   "callers": [],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L108",
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
       "confidence": 1,
       "name": "indexRepo",
       "qualifiedName": "indexRepo",
       "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
       "type": "function",
       "file": "packages/pipeline/src/pipeline.ts",
-      "line": 108
+      "line": 94
     },
     {
       "id": "sym:packages/pipeline/src/multimodal.test.ts#soulAt@L42",
@@ -51,6 +51,16 @@
       "type": "function",
       "file": "packages/pipeline/src/multimodal.test.ts",
       "line": 42
+    },
+    {
+      "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#soulAt@L56",
+      "confidence": 1,
+      "name": "soulAt",
+      "qualifiedName": "soulAt",
+      "signature": "soulAt(repo: string): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/parse-concurrent.test.ts",
+      "line": 56
     }
   ],
   "docs": [
@@ -75,6 +85,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "executes",
+          "edgeId": "e:674e56e7a6b5a78c9d6cce8ea76a193e51091d0c8b509fd6154c916132bcdf50",
+          "target": "stmt:packages/pipeline/src/multimodal.test.ts@L50",
+          "line": 50,
+          "expr": "const soul = soulAt();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal.test.ts#indexedSoul@L49",
+        "procedureName": "indexedSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "calls",
           "edgeId": "e:7ffe2949c86c325b2a597486ade6607add160e01910d1ce30699e9f26898ad35",
           "target": "sym:packages/pipeline/src/multimodal.test.ts#soulAt@L42",
@@ -89,11 +113,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:674e56e7a6b5a78c9d6cce8ea76a193e51091d0c8b509fd6154c916132bcdf50",
-          "target": "stmt:packages/pipeline/src/multimodal.test.ts@L50",
-          "line": 50,
-          "expr": "const soul = soulAt();"
+          "kind": "calls",
+          "edgeId": "e:fec4bc10438c19d65f2c471beb2ced4dfbb844f3a89b43cec5281624c4ace3e0",
+          "target": "sym:packages/pipeline/src/parse-concurrent.test.ts#soulAt@L56",
+          "expr": "soulAt",
+          "line": 50
         }
       },
       {
@@ -118,8 +142,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:26ceaf3850e2dc41b3b278672e100ac1fae7eb2f4ebc8ba8ae0c72ac25309141",
-          "target": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L108",
+          "edgeId": "e:573b6339550086343ea6f8273d05d9901848c55a02d000c6a4f1b90d8436eb0b",
+          "target": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
           "expr": "indexRepo"
         }
       }
@@ -141,7 +165,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 2,
+      "resolved": 3,
       "recorded": 1,
       "unresolved": 0
     },

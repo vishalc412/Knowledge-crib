@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/dossier/framework.test.ts#springModel@L137",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:607f119b2dc26180b7989ebf181b364239d1a775b939fd30d04082ff3b16f817",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/framework.test.ts#springModel@L137",
@@ -163,6 +163,16 @@
       "line": 22
     },
     {
+      "id": "sym:scripts/stats-check.mjs#commit@L58",
+      "confidence": 1,
+      "name": "commit",
+      "qualifiedName": "commit",
+      "signature": "commit(…)",
+      "type": "function",
+      "file": "scripts/stats-check.mjs",
+      "line": 58
+    },
+    {
       "id": "sym:packages/core/src/dossier/framework.test.ts#edge@L86",
       "confidence": 1,
       "name": "edge",
@@ -183,16 +193,6 @@
       "line": 27
     },
     {
-      "id": "sym:packages/core/src/dossier/framework.test.ts#fieldNode@L53",
-      "confidence": 1,
-      "name": "fieldNode",
-      "qualifiedName": "fieldNode",
-      "signature": "fieldNode(q: string, line: number, extra: Partial<Node> = {}): Node",
-      "type": "function",
-      "file": "packages/core/src/dossier/framework.test.ts",
-      "line": 53
-    },
-    {
       "id": "sym:packages/core/src/validate.test.ts#fieldNode@L58",
       "confidence": 1,
       "name": "fieldNode",
@@ -201,6 +201,16 @@
       "type": "function",
       "file": "packages/core/src/validate.test.ts",
       "line": 58
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.test.ts#fieldNode@L53",
+      "confidence": 1,
+      "name": "fieldNode",
+      "qualifiedName": "fieldNode",
+      "signature": "fieldNode(q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.test.ts",
+      "line": 53
     },
     {
       "id": "sym:packages/core/src/dossier/framework.test.ts#freshSoul@L114",
@@ -294,20 +304,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:eecdd68d3129af5e5d4cecac771562fb054a65f9cf9274841f7fb7d9c46a0501",
-          "target": "sym:packages/core/src/dossier/framework.test.ts#cls@L22",
-          "expr": "cls",
-          "line": 139
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/framework.test.ts#springModel@L137",
-        "procedureName": "springModel",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:8737f4c306565bf508e9ee9f26565b3b2440a94c78f13c4a7fb95560c9ad8727",
           "target": "stmt:packages/core/src/dossier/framework.test.ts@L139",
@@ -323,10 +319,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:82bc2533f93d140e2a6c710eb45e5f72080ed00166fc4502ac271777c1b0b347",
-          "target": "sym:packages/core/src/dossier/framework.test.ts#method@L38",
-          "expr": "method",
-          "line": 142
+          "edgeId": "e:eecdd68d3129af5e5d4cecac771562fb054a65f9cf9274841f7fb7d9c46a0501",
+          "target": "sym:packages/core/src/dossier/framework.test.ts#cls@L22",
+          "expr": "cls",
+          "line": 139
         }
       },
       {
@@ -341,6 +337,20 @@
           "target": "stmt:packages/core/src/dossier/framework.test.ts@L142",
           "line": 142,
           "expr": "const apply = method('com.acme.LoanController.apply', 5, {\n    meta: { security: { PreAuthorize: \"hasRole('LENDER')\" } },\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.test.ts#springModel@L137",
+        "procedureName": "springModel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:82bc2533f93d140e2a6c710eb45e5f72080ed00166fc4502ac271777c1b0b347",
+          "target": "sym:packages/core/src/dossier/framework.test.ts#method@L38",
+          "expr": "method",
+          "line": 142
         }
       },
       {
@@ -378,11 +388,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:9985014bae5fc81fd0c758ae749cf960e8c13b7292cbf3558dc79f74797aeb5a",
-          "target": "stmt:packages/core/src/dossier/framework.test.ts@L145",
-          "line": 145,
-          "expr": "const route = routeNode('POST', '/api/loans', 5, {\n    params: [{ name: 'loan', type: 'Loan', in: 'body' }],\n    security: { PreAuthorize: \"hasRole('LENDER')\" },\n  });"
+          "kind": "calls",
+          "edgeId": "e:97d9d4354624a4b24a9ba19309a2856751ebb01c58728c1d9f855e74699e1557",
+          "target": "sym:packages/core/src/validate.test.ts#routeNode@L40",
+          "expr": "routeNode",
+          "line": 145
         }
       },
       {
@@ -392,11 +402,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:97d9d4354624a4b24a9ba19309a2856751ebb01c58728c1d9f855e74699e1557",
-          "target": "sym:packages/core/src/validate.test.ts#routeNode@L40",
-          "expr": "routeNode",
-          "line": 145
+          "kind": "executes",
+          "edgeId": "e:9985014bae5fc81fd0c758ae749cf960e8c13b7292cbf3558dc79f74797aeb5a",
+          "target": "stmt:packages/core/src/dossier/framework.test.ts@L145",
+          "line": 145,
+          "expr": "const route = routeNode('POST', '/api/loans', 5, {\n    params: [{ name: 'loan', type: 'Loan', in: 'body' }],\n    security: { PreAuthorize: \"hasRole('LENDER')\" },\n  });"
         }
       },
       {
@@ -491,6 +501,20 @@
         "inException": false,
         "action": {
           "kind": "calls",
+          "edgeId": "e:7e583b6583cb8d5b165b8b0efbc9e0fc7b21705f2a03c85f8bcea8e209300828",
+          "target": "sym:packages/core/src/validate.test.ts#fieldNode@L58",
+          "expr": "fieldNode",
+          "line": 162
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.test.ts#springModel@L137",
+        "procedureName": "springModel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
           "edgeId": "e:de9b78e5cea319ca494af787ca2d635bb22bd93e6bb2b8c17e13144fdc6bcd37",
           "target": "sym:packages/core/src/dossier/framework.test.ts#fieldNode@L53",
           "expr": "fieldNode",
@@ -509,20 +533,6 @@
           "target": "stmt:packages/core/src/dossier/framework.test.ts@L162",
           "line": 162,
           "expr": "const applicantField = fieldNode('com.acme.Loan.applicant', 82, {\n    meta: { column: { joinColumn: 'applicant_id' } },\n  });"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/framework.test.ts#springModel@L137",
-        "procedureName": "springModel",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:7e583b6583cb8d5b165b8b0efbc9e0fc7b21705f2a03c85f8bcea8e209300828",
-          "target": "sym:packages/core/src/validate.test.ts#fieldNode@L58",
-          "expr": "fieldNode",
-          "line": 162
         }
       },
       {
@@ -630,6 +640,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:756315a8e55556b7ff40167f25cea2cd1e3be24d6793f3f28351810bb636c3c1",
+          "target": "sym:scripts/stats-check.mjs#commit@L58",
+          "expr": "commit",
+          "line": 205
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.test.ts#springModel@L137",
+        "procedureName": "springModel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
           "edgeId": "e:b575e946ae7ca820ec1ffba859e01105c70686b7e5b489dbea13f03bf83def84",
           "target": "stmt:packages/core/src/dossier/framework.test.ts@L206",
@@ -655,7 +679,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 10,
+      "resolved": 11,
       "recorded": 31,
       "unresolved": 0
     },

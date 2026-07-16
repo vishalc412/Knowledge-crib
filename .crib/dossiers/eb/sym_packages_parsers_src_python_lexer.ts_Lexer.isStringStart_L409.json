@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:82286c1bd0414f66888b4d5582dffa7c4c9935b35d47937e7ad72f7b11adc162",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
@@ -80,6 +80,20 @@
       {
         "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
         "procedureName": "Lexer.isStringStart",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:52cf4306be9d7863c848cee720fd65c58a1e688fa86f348d9aff8b9f893735cf",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L410",
+          "line": 410,
+          "expr": "const c = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
+        "procedureName": "Lexer.isStringStart",
         "guard": "cond:packages/parsers/src/python/lexer.ts@L413",
         "branch": "THEN",
         "conditions": [
@@ -97,20 +111,6 @@
           "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
           "expr": "peek",
           "line": 410
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.isStringStart@L409",
-        "procedureName": "Lexer.isStringStart",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:52cf4306be9d7863c848cee720fd65c58a1e688fa86f348d9aff8b9f893735cf",
-          "target": "stmt:packages/parsers/src/python/lexer.ts@L410",
-          "line": 410,
-          "expr": "const c = this.peek();"
         }
       },
       {

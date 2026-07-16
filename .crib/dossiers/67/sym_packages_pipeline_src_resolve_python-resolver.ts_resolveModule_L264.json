@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveModule@L264",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:fd7cc77365e89e69f3119751e710cc3569e37ecd591cad64499fca02ddaacd8c",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveModule@L264",
@@ -227,6 +227,20 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveModule@L264",
         "procedureName": "resolveModule",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:445707f4fc6a1bbd78b7fcb4a3be0f45d66bb4f94588230ab1da991cfb8d05eb",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 274
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveModule@L264",
+        "procedureName": "resolveModule",
         "guard": "cond:packages/pipeline/src/resolve/python-resolver.ts@L273",
         "branch": "ELSE",
         "conditions": [
@@ -246,6 +260,20 @@
           "kind": "calls",
           "edgeId": "e:7c9bf7f0dd0f17c292d6e947a3c70e252005ef0fe7fe6d3383539226fda29eae",
           "target": "sym:packages/pipeline/src/resolve/python-resolver.ts#normalize@L291",
+          "expr": "normalize",
+          "line": 274
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveModule@L264",
+        "procedureName": "resolveModule",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b0f33a89160960fc05e165c1d775599e609b181c2a519bab6ac2bf6ed1fb63d5",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#normalize@L196",
           "expr": "normalize",
           "line": 274
         }
@@ -274,34 +302,6 @@
           "target": "stmt:packages/pipeline/src/resolve/python-resolver.ts@L274",
           "line": 274,
           "expr": "candidates.push(normalize(join(base, '__init__.py')));"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveModule@L264",
-        "procedureName": "resolveModule",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:445707f4fc6a1bbd78b7fcb4a3be0f45d66bb4f94588230ab1da991cfb8d05eb",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 274
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveModule@L264",
-        "procedureName": "resolveModule",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:b0f33a89160960fc05e165c1d775599e609b181c2a519bab6ac2bf6ed1fb63d5",
-          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#normalize@L196",
-          "expr": "normalize",
-          "line": 274
         }
       },
       {

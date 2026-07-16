@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:3668016a29b7d9223079dbb85d16c5eaaa2c838a057af4878b8ec2978496e6d4",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
@@ -58,16 +58,6 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#enclosingTypeId@L374",
-      "confidence": 1,
-      "name": "enclosingTypeId",
-      "qualifiedName": "enclosingTypeId",
-      "signature": "enclosingTypeId(line: number, symbols: LocalSymbol[]): LocalSymbol | undefined",
-      "type": "function",
-      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
-      "line": 374
-    },
-    {
       "id": "sym:packages/parsers/src/java/JavaExtractor.ts#enclosingTypeId@L403",
       "confidence": 1,
       "name": "enclosingTypeId",
@@ -76,6 +66,16 @@
       "type": "function",
       "file": "packages/parsers/src/java/JavaExtractor.ts",
       "line": 403
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#enclosingTypeId@L374",
+      "confidence": 1,
+      "name": "enclosingTypeId",
+      "qualifiedName": "enclosingTypeId",
+      "signature": "enclosingTypeId(line: number, symbols: LocalSymbol[]): LocalSymbol | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 374
     },
     {
       "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
@@ -113,8 +113,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:c04093dbd7bfad736d17261ddea0c2d5e41be55b5de63bac8d8290c9fc4cb58d",
-          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#enclosingTypeId@L374",
+          "edgeId": "e:ba334ad0192ac8ecdefd5faedd73b70b4c66ed83a605bc44f6c9b8189418e413",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#enclosingTypeId@L403",
           "expr": "enclosingTypeId",
           "line": 400
         }
@@ -141,8 +141,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:ba334ad0192ac8ecdefd5faedd73b70b4c66ed83a605bc44f6c9b8189418e413",
-          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#enclosingTypeId@L403",
+          "edgeId": "e:c04093dbd7bfad736d17261ddea0c2d5e41be55b5de63bac8d8290c9fc4cb58d",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#enclosingTypeId@L374",
           "expr": "enclosingTypeId",
           "line": 400
         }
@@ -176,11 +176,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:f6afeb6b4373cf2582fc76ad8c649f9ebe36bd1ae3d10bbdfd4a983286c78a1c",
-          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L403",
-          "line": 403,
-          "expr": "const match = symbols.find(\n    (s) =>\n      s.simpleName === name &&\n      s.parentQualifier === enclosingQ &&\n      (s.node.type === 'method' || s.node.type === 'constructor'),\n  );"
+          "kind": "calls",
+          "edgeId": "e:d372b1beb62bdc81981c8e22000482e9fbe31b71d285acc8a356719da4546a9a",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 403
         }
       },
       {
@@ -190,11 +190,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:d372b1beb62bdc81981c8e22000482e9fbe31b71d285acc8a356719da4546a9a",
-          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
-          "expr": "find",
-          "line": 403
+          "kind": "executes",
+          "edgeId": "e:f6afeb6b4373cf2582fc76ad8c649f9ebe36bd1ae3d10bbdfd4a983286c78a1c",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L403",
+          "line": 403,
+          "expr": "const match = symbols.find(\n    (s) =>\n      s.simpleName === name &&\n      s.parentQualifier === enclosingQ &&\n      (s.node.type === 'method' || s.node.type === 'constructor'),\n  );"
         }
       },
       {

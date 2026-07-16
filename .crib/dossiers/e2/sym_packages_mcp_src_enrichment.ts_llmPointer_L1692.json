@@ -1,0 +1,141 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#llmPointer@L1692",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:5a3312749d11cc4f15defd738fa40fdb17d54253eb31d3d148148aa2cd5f9873",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#llmPointer@L1692",
+    "kind": "symbol",
+    "type": "function",
+    "name": "llmPointer",
+    "qualifiedName": "llmPointer",
+    "signature": "llmPointer(read: LlmRead): Record<string, unknown> | undefined",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1692,
+      "end": 1702
+    }
+  },
+  "source": {
+    "text": "export function llmPointer(read: LlmRead): Record<string, unknown> | undefined {\n  if (!read.artifact) return undefined;\n  const a = read.artifact.analysis;\n  return {\n    provenance: 'LLM',\n    model: read.artifact.model,\n    stale: read.stale,\n    confidence: a.confidence,\n    purpose: a.purpose ?? '',\n  };\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 1692
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L1003",
+      "confidence": 1,
+      "name": "ask",
+      "qualifiedName": "Verbs.ask",
+      "signature": "ask(args: {\n    q: string;\n    limit?: number;\n    format?: 'json' | 'markdown';\n    withSource?: boolean;\n    withRules?: boolean;\n    withFramework?: boolean;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1003
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1752",
+      "confidence": 1,
+      "name": "attachLlm",
+      "qualifiedName": "Verbs.attachLlm",
+      "signature": "attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1752
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+      "confidence": 1,
+      "name": "query",
+      "qualifiedName": "Verbs.query",
+      "signature": "query(args: {\n    q: string;\n    kinds?: NodeKind[];\n    limit?: number;\n    /** restrict rules/framework edges to EXTRACTED provenance (parity with `context`). */\n    extractedOnly?: boolean;\n    /** include the full rehydrated source body per hit (budgeted; see sourceMaxChars/Lines). */\n    withSource?: boolean;\n    /** char cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}). */\n    sourceMaxChars?: number;\n    /** line cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}). */\n    sourceMaxLines?: number;\n    /** for a callable hit, fold in its decision table + coverage readiness. */\n    withRules?: boolean;\n    /** fold in framework-semantics (routes/beans/DI/relations) per hit, when present. */\n    withFramework?: boolean;\n    /** include saved LLM semantic analysis on hits and search LLM analysis text too. */\n    withLlm?: boolean;\n    /** resume cursor (a prior response's `cursor`) — skip the first N BM25-ranked hits (FTS5 OFFSET).\n     *  Decoupled from `maxTokens`: paging works without a budget, but a cursor is only RETURNED when\n     *  `maxTokens` is set (the opt-in budget path). (M1.2) */\n    cursor?: string;\n    /** response-wide token budget (chars/4). When set, the hits list is trimmed to the largest\n     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.\n     *  (M1.2) */\n    maxTokens?: number;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 848
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L1685",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#llmPointer@L1692",
+    "procedureName": "llmPointer",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1693"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#llmPointer@L1692",
+        "procedureName": "llmPointer",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1693",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1693",
+            "expr": "!read.artifact",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1954a7e54612a808c6871e06fabcde947ffe4932eb75436ff4a26a5596a93f66",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1693",
+          "line": 1693,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#llmPointer@L1692",
+        "procedureName": "llmPointer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af9a8f93d859e85aaf0060dd82ed31d1cc9f5692a7158b1f3bc6d514ddd2321b",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1695",
+          "line": 1695,
+          "expr": "return {\n    provenance: 'LLM',\n    model: read.artifact.model,\n    stale: read.stale,\n    confidence: a.confidence,\n    purpose: a.purpose ?? '',\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

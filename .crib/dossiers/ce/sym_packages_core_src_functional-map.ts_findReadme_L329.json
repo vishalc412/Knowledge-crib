@@ -1,0 +1,151 @@
+{
+  "id": "sym:packages/core/src/functional-map.ts#findReadme@L329",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:c8af43f49ccbf679b004740953b9f8592a490a1867be375846acd8ed3d058225",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/functional-map.ts#findReadme@L329",
+    "kind": "symbol",
+    "type": "function",
+    "name": "findReadme",
+    "qualifiedName": "findReadme",
+    "signature": "findReadme(docs: Node[]): { sectionId: string; heading?: string; file: string } | undefined",
+    "lang": "typescript",
+    "file": "packages/core/src/functional-map.ts",
+    "span": {
+      "start": 329,
+      "end": 339
+    },
+    "callSites": [
+      {
+        "callee": "sort",
+        "line": 332
+      },
+      {
+        "callee": "filter",
+        "line": 332
+      },
+      {
+        "callee": "test",
+        "line": 332
+      }
+    ]
+  },
+  "source": {
+    "text": "function findReadme(\n  docs: Node[],\n): { sectionId: string; heading?: string; file: string } | undefined {\n  const readme = docs.filter((d) => d.file && /readme(\\.|$)/i.test(d.file)).sort(byId)[0];\n  if (!readme || !readme.file) return undefined;\n  return {\n    sectionId: readme.id,\n    ...(readme.heading ? { heading: readme.heading } : {}),\n    file: readme.file,\n  };\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 329
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
+      "confidence": 1,
+      "name": "buildFunctionalMap",
+      "qualifiedName": "buildFunctionalMap",
+      "signature": "buildFunctionalMap(soul: SoulStore, opts: BuildFunctionalMapOpts = {}): FunctionalMap",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 74
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/functional-map.ts@L328",
+      "snippet": "/** First README doc-section in the module (id-sorted). Core stays fs-pure — only the pointer. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/functional-map.ts#findReadme@L329",
+    "procedureName": "findReadme",
+    "conditions": [
+      "cond:packages/core/src/functional-map.ts@L333"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#findReadme@L329",
+        "procedureName": "findReadme",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e3b5c7135c96a83999940274fcd389a23140e9d76db6c93233e6d99624fb0e1c",
+          "target": "stmt:packages/core/src/functional-map.ts@L332",
+          "line": 332,
+          "expr": "const readme = docs.filter((d) => d.file && /readme(\\.|$)/i.test(d.file)).sort(byId)[0];"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#findReadme@L329",
+        "procedureName": "findReadme",
+        "guard": "cond:packages/core/src/functional-map.ts@L333",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L333",
+            "expr": "!readme || !readme.file",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4b1ddb4496171cb883875003a0644f058de56eea7d07ae6541290711883e566e",
+          "target": "stmt:packages/core/src/functional-map.ts@L333",
+          "line": 333,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#findReadme@L329",
+        "procedureName": "findReadme",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0f19995a5032fc77d420a6063a9a4fa82f89c97f1891a92df9556c906aa3b514",
+          "target": "stmt:packages/core/src/functional-map.ts@L334",
+          "line": 334,
+          "expr": "return {\n    sectionId: readme.id,\n    ...(readme.heading ? { heading: readme.heading } : {}),\n    file: readme.file,\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/functional-map.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

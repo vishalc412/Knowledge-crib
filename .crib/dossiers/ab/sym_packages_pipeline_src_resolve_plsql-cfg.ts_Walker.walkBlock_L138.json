@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkBlock@L138",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:32995ce0906e40184bd8398a3a3279ec0190fcceef4ea14241c0b173fee2b78f",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkBlock@L138",
@@ -256,11 +256,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:8eec0cdd023137b05085ef21a73f473e846a067477397659b65168f18d65f031",
-          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotate@L207",
-          "expr": "annotate",
-          "line": 142
+          "kind": "executes",
+          "edgeId": "e:6415a5460377aab80f710cf888948dc8e9fdfe8cc0438482d510575a528ab466",
+          "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L142",
+          "line": 142,
+          "expr": "this.annotate(s, procId, cond);"
         }
       },
       {
@@ -282,37 +282,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:6415a5460377aab80f710cf888948dc8e9fdfe8cc0438482d510575a528ab466",
-          "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L142",
-          "line": 142,
-          "expr": "this.annotate(s, procId, cond);"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkBlock@L138",
-        "procedureName": "Walker.walkBlock",
-        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L146",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L145",
-            "expr": "block.statements"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L146",
-            "expr": "s.kind === 'if'",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
           "kind": "calls",
-          "edgeId": "e:1da2eeea0e7585c4233977f42f3173c6171244fdc43c46c7c16f43aba657064b",
-          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkIf@L153",
-          "expr": "walkIf",
-          "line": 146
+          "edgeId": "e:8eec0cdd023137b05085ef21a73f473e846a067477397659b65168f18d65f031",
+          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotate@L207",
+          "expr": "annotate",
+          "line": 142
         }
       },
       {
@@ -344,7 +318,7 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkBlock@L138",
         "procedureName": "Walker.walkBlock",
-        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L147",
+        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L146",
         "branch": "THEN",
         "conditions": [
           {
@@ -353,11 +327,7 @@
           },
           {
             "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L146",
-            "expr": "s.kind === 'if'"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L147",
-            "expr": "s.kind === 'loop'",
+            "expr": "s.kind === 'if'",
             "polarity": "THEN"
           }
         ],
@@ -365,10 +335,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:f5089f6c79613e3b180fb233dee39ba6b7d3606797a69d3ad8a6fbae1d790d85",
-          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkLoop@L168",
-          "expr": "walkLoop",
-          "line": 147
+          "edgeId": "e:1da2eeea0e7585c4233977f42f3173c6171244fdc43c46c7c16f43aba657064b",
+          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkIf@L153",
+          "expr": "walkIf",
+          "line": 146
         }
       },
       {
@@ -404,7 +374,7 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkBlock@L138",
         "procedureName": "Walker.walkBlock",
-        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L148",
+        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L147",
         "branch": "THEN",
         "conditions": [
           {
@@ -417,11 +387,7 @@
           },
           {
             "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L147",
-            "expr": "s.kind === 'loop'"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L148",
-            "expr": "s.kind === 'case'",
+            "expr": "s.kind === 'loop'",
             "polarity": "THEN"
           }
         ],
@@ -429,10 +395,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:f49da87415c00c0e6437a65e98d9f157191f54ed7d84a940cde2387dee9ce2ea",
-          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkCase@L181",
-          "expr": "walkCase",
-          "line": 148
+          "edgeId": "e:f5089f6c79613e3b180fb233dee39ba6b7d3606797a69d3ad8a6fbae1d790d85",
+          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkLoop@L168",
+          "expr": "walkLoop",
+          "line": 147
         }
       },
       {
@@ -472,7 +438,7 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkBlock@L138",
         "procedureName": "Walker.walkBlock",
-        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L149",
+        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L148",
         "branch": "THEN",
         "conditions": [
           {
@@ -489,11 +455,7 @@
           },
           {
             "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L148",
-            "expr": "s.kind === 'case'"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L149",
-            "expr": "s.kind === 'exception'",
+            "expr": "s.kind === 'case'",
             "polarity": "THEN"
           }
         ],
@@ -501,10 +463,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:6787a48333f7238d5825f0a8a5f7d64189e3c88fbd24dd0942d8c9026f51a80f",
-          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkException@L199",
-          "expr": "walkException",
-          "line": 149
+          "edgeId": "e:f49da87415c00c0e6437a65e98d9f157191f54ed7d84a940cde2387dee9ce2ea",
+          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkCase@L181",
+          "expr": "walkCase",
+          "line": 148
         }
       },
       {
@@ -543,6 +505,44 @@
           "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L149",
           "line": 149,
           "expr": "this.walkException(s, procId, frames);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkBlock@L138",
+        "procedureName": "Walker.walkBlock",
+        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L149",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L145",
+            "expr": "block.statements"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L146",
+            "expr": "s.kind === 'if'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L147",
+            "expr": "s.kind === 'loop'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L148",
+            "expr": "s.kind === 'case'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L149",
+            "expr": "s.kind === 'exception'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6787a48333f7238d5825f0a8a5f7d64189e3c88fbd24dd0942d8c9026f51a80f",
+          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkException@L199",
+          "expr": "walkException",
+          "line": 149
         }
       }
     ]

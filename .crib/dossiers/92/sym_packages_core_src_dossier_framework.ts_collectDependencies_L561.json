@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L561",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:5bc1ef07336cc233435e7dc6351e409f50fd725ef1a7409a7f81608e379dc20c",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L561",
@@ -88,6 +88,20 @@
       {
         "procedure": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L561",
         "procedureName": "collectDependencies",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:131cf18fed9fb02995f973b640650267d8ac3a3280e6a10f06d881e34cf26297",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 574
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L561",
+        "procedureName": "collectDependencies",
         "guard": "cond:packages/core/src/dossier/framework.ts@L571",
         "branch": "LOOP",
         "conditions": [
@@ -105,20 +119,6 @@
           "target": "stmt:packages/core/src/dossier/framework.ts@L574",
           "line": 574,
           "expr": "seen.add(e.dst);"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/framework.ts#collectDependencies@L561",
-        "procedureName": "collectDependencies",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:131cf18fed9fb02995f973b640650267d8ac3a3280e6a10f06d881e34cf26297",
-          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
-          "expr": "add",
-          "line": 574
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreate@L212",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:2be7f8064578f6d4f84d3af2024721bdb2bfbaa8cbcb56b357c813f5b3e089d0",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreate@L212",
@@ -190,8 +190,8 @@
     "conditions": [
       "cond:packages/parsers/src/plsql/parser.ts@L218",
       "cond:packages/parsers/src/plsql/parser.ts@L221",
-      "cond:packages/parsers/src/plsql/parser.ts@L227",
       "cond:packages/parsers/src/plsql/parser.ts@L224",
+      "cond:packages/parsers/src/plsql/parser.ts@L227",
       "cond:packages/parsers/src/plsql/parser.ts@L230",
       "cond:packages/parsers/src/plsql/parser.ts@L233"
     ],
@@ -216,20 +216,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:cdd47122cec70748cea4e460d139ee5fc18f57ee0de6051d33fddf80e85e1b38",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.lineOf@L147",
-          "expr": "lineOf",
-          "line": 213
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreate@L212",
-        "procedureName": "Parser.parseCreate",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:8efbd4990f8fb5292f12d587e65fd9299672343f5c856c6e06442e2d2afe6991",
           "target": "stmt:packages/parsers/src/plsql/parser.ts@L213",
@@ -245,10 +231,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:d44eac92e1a781143ed624adf0d613b8c535b14ecca76ce936765c9a5dd39a3d",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.eatWord@L133",
-          "expr": "eatWord",
-          "line": 214
+          "edgeId": "e:cdd47122cec70748cea4e460d139ee5fc18f57ee0de6051d33fddf80e85e1b38",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.lineOf@L147",
+          "expr": "lineOf",
+          "line": 213
         }
       },
       {
@@ -263,6 +249,20 @@
           "target": "stmt:packages/parsers/src/plsql/parser.ts@L214",
           "line": 214,
           "expr": "this.eatWord('create');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreate@L212",
+        "procedureName": "Parser.parseCreate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d44eac92e1a781143ed624adf0d613b8c535b14ecca76ce936765c9a5dd39a3d",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.eatWord@L133",
+          "expr": "eatWord",
+          "line": 214
         }
       },
       {
@@ -384,28 +384,6 @@
       {
         "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreate@L212",
         "procedureName": "Parser.parseCreate",
-        "guard": "cond:packages/parsers/src/plsql/parser.ts@L227",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/plsql/parser.ts@L227",
-            "expr": "this.isWord('function')",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:bb6c5524817f1ccb1f7a2aff241beddb830eb6e043c2341fba291c29555c8639",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseProcOrFunc@L668",
-          "expr": "parseProcOrFunc",
-          "line": 225
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreate@L212",
-        "procedureName": "Parser.parseCreate",
         "guard": "cond:packages/parsers/src/plsql/parser.ts@L224",
         "branch": "THEN",
         "conditions": [
@@ -423,6 +401,28 @@
           "target": "stmt:packages/parsers/src/plsql/parser.ts@L225",
           "line": 225,
           "expr": "return this.parseProcOrFunc('procedure', startLine);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreate@L212",
+        "procedureName": "Parser.parseCreate",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L227",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L227",
+            "expr": "this.isWord('function')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bb6c5524817f1ccb1f7a2aff241beddb830eb6e043c2341fba291c29555c8639",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseProcOrFunc@L668",
+          "expr": "parseProcOrFunc",
+          "line": 225
         }
       },
       {
@@ -506,11 +506,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:de933cde32e8f00369fe466f742bd6ec62403a356c5aee209eb2730d31913e5a",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateView@L500",
-          "expr": "parseCreateView",
-          "line": 234
+          "kind": "executes",
+          "edgeId": "e:d34c302456886bf4a1ea79325a790e0dea8df4e0545d3ab209a6850685bf5256",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L234",
+          "line": 234,
+          "expr": "return this.parseCreateView(startLine);"
         }
       },
       {
@@ -528,11 +528,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:d34c302456886bf4a1ea79325a790e0dea8df4e0545d3ab209a6850685bf5256",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L234",
-          "line": 234,
-          "expr": "return this.parseCreateView(startLine);"
+          "kind": "calls",
+          "edgeId": "e:de933cde32e8f00369fe466f742bd6ec62403a356c5aee209eb2730d31913e5a",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateView@L500",
+          "expr": "parseCreateView",
+          "line": 234
         }
       },
       {

@@ -1,0 +1,100 @@
+{
+  "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap.inModule@L127",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:0accd54d2e3948fe5ff0a2e24c5ba00eafce1a864593515a2040675e0d2a05ba",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap.inModule@L127",
+    "kind": "symbol",
+    "type": "function",
+    "name": "inModule",
+    "qualifiedName": "buildFunctionalMap.inModule",
+    "signature": "inModule(…)",
+    "lang": "typescript",
+    "file": "packages/core/src/functional-map.ts",
+    "span": {
+      "start": 127,
+      "end": 131
+    }
+  },
+  "source": {
+    "text": "    const inModule = (p?: string): boolean =>\n      !!p &&\n      (pathPrefix === ''\n        ? !inAnyPrefix(p, prefixes)\n        : p === pathPrefix || p.startsWith(`${pathPrefix}/`));",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 127
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
+      "confidence": 1,
+      "name": "buildFunctionalMap",
+      "qualifiedName": "buildFunctionalMap",
+      "signature": "buildFunctionalMap(soul: SoulStore, opts: BuildFunctionalMapOpts = {}): FunctionalMap",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 74
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/functional-map.ts#inAnyPrefix@L311",
+      "confidence": 1,
+      "name": "inAnyPrefix",
+      "qualifiedName": "inAnyPrefix",
+      "signature": "inAnyPrefix(file: string, prefixes: Array<{ pathPrefix: string }>): boolean",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 311
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/functional-map.ts#buildFunctionalMap.inModule@L127",
+    "procedureName": "buildFunctionalMap.inModule",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#buildFunctionalMap.inModule@L127",
+        "procedureName": "buildFunctionalMap.inModule",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8a8282ac76319129409052f77761c4066344f28c06c268ae3fe7048daf66fddf",
+          "target": "sym:packages/core/src/functional-map.ts#inAnyPrefix@L311",
+          "expr": "inAnyPrefix"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": [
+      "packages/core/src/functional-map.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

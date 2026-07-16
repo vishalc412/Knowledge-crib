@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanInterpolatedString@L402",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:ea3aaf9422ef58f975082b7b821f9113fb57f3698413f60f857ff12a40975395",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanInterpolatedString@L402",
@@ -491,11 +491,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:fad62aeb4ef6dfffd510734ffe1034fc531db52d0f51c7d8c8aa650bfcbbe097",
-          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanInterpolationHole@L453",
-          "expr": "scanInterpolationHole",
-          "line": 427
+          "kind": "executes",
+          "edgeId": "e:9146ff06b0a13fab41b61580cbf1df159e73cd127cd8a5236ed40784a31ae3b8",
+          "target": "assign:packages/parsers/src/csharp/lexer.ts@L427",
+          "line": 427,
+          "expr": "value += this.scanInterpolationHole();"
         }
       },
       {
@@ -517,11 +517,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:9146ff06b0a13fab41b61580cbf1df159e73cd127cd8a5236ed40784a31ae3b8",
-          "target": "assign:packages/parsers/src/csharp/lexer.ts@L427",
-          "line": 427,
-          "expr": "value += this.scanInterpolationHole();"
+          "kind": "calls",
+          "edgeId": "e:fad62aeb4ef6dfffd510734ffe1034fc531db52d0f51c7d8c8aa650bfcbbe097",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanInterpolationHole@L453",
+          "expr": "scanInterpolationHole",
+          "line": 427
         }
       },
       {

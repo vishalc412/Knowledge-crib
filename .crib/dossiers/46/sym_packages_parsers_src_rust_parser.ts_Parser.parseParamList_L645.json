@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList@L645",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:7a3ac9b895fbcca76a345526bc312dca25706566ee65d439250f186086d0dc3b",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList@L645",
@@ -156,8 +156,8 @@
       "cond:packages/parsers/src/rust/parser.ts@L659",
       "cond:packages/parsers/src/rust/parser.ts@L661",
       "cond:packages/parsers/src/rust/parser.ts@L666",
-      "cond:packages/parsers/src/rust/parser.ts@L672",
       "cond:packages/parsers/src/rust/parser.ts@L669",
+      "cond:packages/parsers/src/rust/parser.ts@L672",
       "cond:packages/parsers/src/rust/parser.ts@L678",
       "cond:packages/parsers/src/rust/parser.ts@L683",
       "cond:packages/parsers/src/rust/parser.ts@L687",
@@ -254,11 +254,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:c09f1d6e2230d995e2a2d4ecfabb792456da651f808defc338982449c3ec991d",
-          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
-          "expr": "peek",
-          "line": 660
+          "kind": "executes",
+          "edgeId": "e:90a72aca2c2a92d0905f13bf69656c01a7fdebd763c156d40e3261094702af19",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L660",
+          "line": 660,
+          "expr": "const tk = this.peek();"
         }
       },
       {
@@ -276,11 +276,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:90a72aca2c2a92d0905f13bf69656c01a7fdebd763c156d40e3261094702af19",
-          "target": "stmt:packages/parsers/src/rust/parser.ts@L660",
-          "line": 660,
-          "expr": "const tk = this.peek();"
+          "kind": "calls",
+          "edgeId": "e:c09f1d6e2230d995e2a2d4ecfabb792456da651f808defc338982449c3ec991d",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
+          "expr": "peek",
+          "line": 660
         }
       },
       {
@@ -338,32 +338,6 @@
       {
         "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList@L645",
         "procedureName": "Parser.parseParamList",
-        "guard": "cond:packages/parsers/src/rust/parser.ts@L672",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/rust/parser.ts@L659",
-            "expr": "!this.atEnd() && pdepth > 0"
-          },
-          {
-            "id": "cond:packages/parsers/src/rust/parser.ts@L672",
-            "expr": "pdepth === 1 && tk.type === 'OP' && tk.value === ','",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:7959618ddaf28152c650024585698d89d15581051b9174620a684328dce10650",
-          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList.flush@L653",
-          "expr": "flush",
-          "line": 669
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList@L645",
-        "procedureName": "Parser.parseParamList",
         "guard": "cond:packages/parsers/src/rust/parser.ts@L669",
         "branch": "THEN",
         "conditions": [
@@ -389,6 +363,32 @@
           "target": "stmt:packages/parsers/src/rust/parser.ts@L669",
           "line": 669,
           "expr": "flush();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList@L645",
+        "procedureName": "Parser.parseParamList",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L672",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L659",
+            "expr": "!this.atEnd() && pdepth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L672",
+            "expr": "pdepth === 1 && tk.type === 'OP' && tk.value === ','",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7959618ddaf28152c650024585698d89d15581051b9174620a684328dce10650",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList.flush@L653",
+          "expr": "flush",
+          "line": 669
         }
       },
       {

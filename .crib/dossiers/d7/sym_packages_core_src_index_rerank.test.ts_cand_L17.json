@@ -1,0 +1,75 @@
+{
+  "id": "sym:packages/core/src/index/rerank.test.ts#cand@L17",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:00899301231fd7fd556f7c2637eaf8866f59e61042e5d99b8dbfaaecae73d72f",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/rerank.test.ts#cand@L17",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cand",
+    "qualifiedName": "cand",
+    "signature": "cand(id: string, rrfScore: number, degree = 0, kind: RerankCandidate['kind'] = 'symbol', name: string | null = null): RerankCandidate",
+    "lang": "typescript",
+    "file": "packages/core/src/index/rerank.test.ts",
+    "span": {
+      "start": 17,
+      "end": 25
+    }
+  },
+  "source": {
+    "text": "function cand(\n  id: string,\n  rrfScore: number,\n  degree = 0,\n  kind: RerankCandidate['kind'] = 'symbol',\n  name: string | null = null,\n): RerankCandidate {\n  return { id, kind, name, file: null, rrfScore, degree };\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 17
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/rerank.test.ts#cand@L17",
+    "procedureName": "cand",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/rerank.test.ts#cand@L17",
+        "procedureName": "cand",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4297cbe738ee8ae1b8691f5a2590afa0c434fa195a7e4b7147b99814807e8c30",
+          "target": "stmt:packages/core/src/index/rerank.test.ts@L24",
+          "line": 24,
+          "expr": "return { id, kind, name, file: null, rrfScore, degree };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

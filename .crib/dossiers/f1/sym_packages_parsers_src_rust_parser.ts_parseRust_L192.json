@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/parser.ts#parseRust@L192",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:c8529824a1069a0a1e1bc2baa15efad035f6462406f0d2eeb0870562b922086b",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/parser.ts#parseRust@L192",
@@ -106,16 +106,6 @@
       "line": 150
     },
     {
-      "id": "sym:packages/parsers/src/rust/lexer.ts#tokenize@L111",
-      "confidence": 1,
-      "name": "tokenize",
-      "qualifiedName": "tokenize",
-      "signature": "tokenize(src: string): Token[]",
-      "type": "function",
-      "file": "packages/parsers/src/rust/lexer.ts",
-      "line": 111
-    },
-    {
       "id": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
       "confidence": 1,
       "name": "tokenize",
@@ -124,6 +114,16 @@
       "type": "function",
       "file": "packages/pipeline/src/linker/tfidf.ts",
       "line": 80
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#tokenize@L111",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(src: string): Token[]",
+      "type": "function",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 111
     }
   ],
   "docs": [
@@ -141,6 +141,20 @@
     "procedureName": "parseRust",
     "conditions": [],
     "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#parseRust@L192",
+        "procedureName": "parseRust",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:018b7f348944f133e59adeaaa2b504dcf67e95a891b147fbbd4ee191014e728b",
+          "target": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
+          "expr": "tokenize",
+          "line": 194
+        }
+      },
       {
         "procedure": "sym:packages/parsers/src/rust/parser.ts#parseRust@L192",
         "procedureName": "parseRust",
@@ -165,20 +179,6 @@
           "kind": "calls",
           "edgeId": "e:b0da76f830b47a75f1d7e66d772f3b3d4c13eff3fffd1981a302ac430a0f562b",
           "target": "sym:packages/parsers/src/rust/lexer.ts#tokenize@L111",
-          "expr": "tokenize",
-          "line": 194
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/parser.ts#parseRust@L192",
-        "procedureName": "parseRust",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:018b7f348944f133e59adeaaa2b504dcf67e95a891b147fbbd4ee191014e728b",
-          "target": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
           "expr": "tokenize",
           "line": 194
         }
@@ -246,11 +246,11 @@
         "inLoop": false,
         "inException": true,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:a015f1c0b21e69e852bfb6f614371e53f8ab0a71214914961539647e23617f90",
-          "target": "sym:packages/parsers/src/rust/parser.ts#collectImports@L1654",
-          "expr": "collectImports",
-          "line": 198
+          "kind": "executes",
+          "edgeId": "e:2c0f16dd5fecf1bd21be806bd9aec3119ced98657e44ef24cffea1f42d5c68ab",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L198",
+          "line": 198,
+          "expr": "const imports = collectImports(tokens);"
         }
       },
       {
@@ -260,11 +260,11 @@
         "inLoop": false,
         "inException": true,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:2c0f16dd5fecf1bd21be806bd9aec3119ced98657e44ef24cffea1f42d5c68ab",
-          "target": "stmt:packages/parsers/src/rust/parser.ts@L198",
-          "line": 198,
-          "expr": "const imports = collectImports(tokens);"
+          "kind": "calls",
+          "edgeId": "e:a015f1c0b21e69e852bfb6f614371e53f8ab0a71214914961539647e23617f90",
+          "target": "sym:packages/parsers/src/rust/parser.ts#collectImports@L1654",
+          "expr": "collectImports",
+          "line": 198
         }
       },
       {

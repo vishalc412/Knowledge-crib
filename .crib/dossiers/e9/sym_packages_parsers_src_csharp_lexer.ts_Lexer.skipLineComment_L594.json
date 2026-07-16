@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipLineComment@L594",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:e0c52cee620c7c163109c6ac699890fc31a20e2efcba1967b0161b76f96bd408",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipLineComment@L594",
@@ -87,11 +87,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:f1439957319a37e470105c15ad8f8942f948d760836f2ba5920259d17c088856",
-          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
-          "expr": "advance",
-          "line": 596
+          "kind": "executes",
+          "edgeId": "e:6f2dd846cf2d05dc2cdc25155910e1a0ee51d852eeb35c77dd5d160d669a3e61",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L596",
+          "line": 596,
+          "expr": "this.advance();"
         }
       },
       {
@@ -109,11 +109,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:6f2dd846cf2d05dc2cdc25155910e1a0ee51d852eeb35c77dd5d160d669a3e61",
-          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L596",
-          "line": 596,
-          "expr": "this.advance();"
+          "kind": "calls",
+          "edgeId": "e:f1439957319a37e470105c15ad8f8942f948d760836f2ba5920259d17c088856",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
+          "expr": "advance",
+          "line": 596
         }
       },
       {

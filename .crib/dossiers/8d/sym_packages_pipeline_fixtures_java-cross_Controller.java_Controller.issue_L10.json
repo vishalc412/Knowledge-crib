@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/fixtures/java-cross/Controller.java#Controller.issue@L10",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:bea240ab2057721c43e9d934bea359aa5212a72c3ada51c521aff817ba640ffa",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/fixtures/java-cross/Controller.java#Controller.issue@L10",
@@ -48,26 +48,6 @@
   ],
   "docs": [
     {
-      "sectionId": "doc:SECURITY.md#reporting-a-vulnerability",
-      "heading": "Reporting a Vulnerability",
-      "anchor": "reporting-a-vulnerability",
-      "snippet": "Reporting a Vulnerability",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a4e92d26a9a50426f.md#component-by-component-check",
-      "heading": "Component-by-component check",
-      "anchor": "component-by-component-check",
-      "snippet": "Component-by-component check",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
       "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
       "heading": "What was built",
       "anchor": "what-was-built",
@@ -78,10 +58,20 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-client-setup.md#root-resolution-one-entry-every-project",
-      "heading": "Root resolution — one entry, every project",
-      "anchor": "root-resolution-one-entry-every-project",
-      "snippet": "Root resolution — one entry, every project",
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#enrich-next-grounded-work-batch-for-the-host-agent-model",
+      "heading": "`enrich_next` *(grounded work batch for the host agent model)*",
+      "anchor": "enrich-next-grounded-work-batch-for-the-host-agent-model",
+      "snippet": "`enrich_next` *(grounded work batch for the host agent model)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#reporting-a-vulnerability",
+      "heading": "Reporting a Vulnerability",
+      "anchor": "reporting-a-vulnerability",
+      "snippet": "Reporting a Vulnerability",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -92,6 +82,16 @@
       "heading": "Task 4: Verification",
       "anchor": "task-4-verification",
       "snippet": "Task 4: Verification",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#root-resolution-one-entry-every-project",
+      "heading": "Root resolution — one entry, every project",
+      "anchor": "root-resolution-one-entry-every-project",
+      "snippet": "Root resolution — one entry, every project",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -120,11 +120,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:a4f99d4c9575d9180041a9cbc0a0bc59574a7badc6995a8c8e65ebd5d3cebb20",
-          "target": "stmt:packages/pipeline/fixtures/java-cross/Controller.java@L11",
-          "line": 11,
-          "expr": "return new Token(input)"
+          "kind": "calls",
+          "edgeId": "e:187e8f52af3e53f1cc517c92da6667ef47ad057a240cb658534208ba95acf58c",
+          "target": "sym:packages/pipeline/fixtures/java-cross/Token.java#Token@L3",
+          "expr": "Token",
+          "line": 11
         }
       },
       {
@@ -134,11 +134,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:187e8f52af3e53f1cc517c92da6667ef47ad057a240cb658534208ba95acf58c",
-          "target": "sym:packages/pipeline/fixtures/java-cross/Token.java#Token@L3",
-          "expr": "Token",
-          "line": 11
+          "kind": "executes",
+          "edgeId": "e:a4f99d4c9575d9180041a9cbc0a0bc59574a7badc6995a8c8e65ebd5d3cebb20",
+          "target": "stmt:packages/pipeline/fixtures/java-cross/Controller.java@L11",
+          "line": 11,
+          "expr": "return new Token(input)"
         }
       }
     ]

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:95869858a9ebb42a71ea18b732af32e57b5361e7139856a80d2f97338400f2b9",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
@@ -156,6 +156,28 @@
       {
         "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
         "procedureName": "Parser.readTypePath",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L734",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L734",
+            "expr": "this.isNameToken()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:194e8dfb2cc1b66299b784a3c445b2a3679de81e60a464ae1113ae663013f77c",
+          "target": "assign:packages/parsers/src/rust/parser.ts@L735",
+          "line": 735,
+          "expr": "simple = this.peek().value;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
         "guard": "cond:packages/parsers/src/rust/parser.ts@L737",
         "branch": "LOOP",
         "conditions": [
@@ -177,28 +199,6 @@
           "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
           "expr": "peek",
           "line": 735
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
-        "procedureName": "Parser.readTypePath",
-        "guard": "cond:packages/parsers/src/rust/parser.ts@L734",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/rust/parser.ts@L734",
-            "expr": "this.isNameToken()",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:194e8dfb2cc1b66299b784a3c445b2a3679de81e60a464ae1113ae663013f77c",
-          "target": "assign:packages/parsers/src/rust/parser.ts@L735",
-          "line": 735,
-          "expr": "simple = this.peek().value;"
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/ts/nest.test.ts#metaProduces@L88",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:49fa3e41eadebc1845a2566dff07339e444ffdb64e11c0173d59ca929a44fcc4",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/ts/nest.test.ts#metaProduces@L88",
@@ -65,11 +65,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:4fb42eeb230a92acbe927cfc9cf9e8f385b33904aa39bfe725874d387e617c6b",
-          "target": "stmt:packages/parsers/src/ts/nest.test.ts@L89",
-          "line": 89,
-          "expr": "const n = r.nodes.find((x) => x.qualifiedName === q);"
+          "kind": "calls",
+          "edgeId": "e:002fc239a93e8345e77404a914489ebd4b069d4c3aa2aa1681dbac6910b038dc",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 89
         }
       },
       {
@@ -79,11 +79,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:002fc239a93e8345e77404a914489ebd4b069d4c3aa2aa1681dbac6910b038dc",
-          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
-          "expr": "find",
-          "line": 89
+          "kind": "executes",
+          "edgeId": "e:4fb42eeb230a92acbe927cfc9cf9e8f385b33904aa39bfe725874d387e617c6b",
+          "target": "stmt:packages/parsers/src/ts/nest.test.ts@L89",
+          "line": 89,
+          "expr": "const n = r.nodes.find((x) => x.qualifiedName === q);"
         }
       },
       {

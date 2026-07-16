@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust.visitDef@L129",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:9bbdda28a661b4fe844c8c1f6ec375c8ec274fa72b9820f50a3f366e926557b6",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust.visitDef@L129",
@@ -99,16 +99,6 @@
       "line": 62
     },
     {
-      "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveTypeName@L188",
-      "confidence": 1,
-      "name": "resolveTypeName",
-      "qualifiedName": "resolveTypeName",
-      "signature": "resolveTypeName(name: string, file: string, basename: string, imports: Map<string, NameBinding>, fqnFile: Map<string, string>, table: SymbolTable): string | undefined",
-      "type": "function",
-      "file": "packages/pipeline/src/resolve/rust-resolver.ts",
-      "line": 188
-    },
-    {
       "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeName@L138",
       "confidence": 1,
       "name": "resolveTypeName",
@@ -117,6 +107,16 @@
       "type": "function",
       "file": "packages/pipeline/src/resolve/ts-resolver.ts",
       "line": 138
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveTypeName@L188",
+      "confidence": 1,
+      "name": "resolveTypeName",
+      "qualifiedName": "resolveTypeName",
+      "signature": "resolveTypeName(name: string, file: string, basename: string, imports: Map<string, NameBinding>, fqnFile: Map<string, string>, table: SymbolTable): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/rust-resolver.ts",
+      "line": 188
     }
   ],
   "docs": [
@@ -137,11 +137,25 @@
       "cond:packages/pipeline/src/resolve/rust-resolver.ts@L145",
       "cond:packages/pipeline/src/resolve/rust-resolver.ts@L146",
       "cond:packages/pipeline/src/resolve/rust-resolver.ts@L130",
-      "cond:packages/pipeline/src/resolve/rust-resolver.ts@L148",
       "cond:packages/pipeline/src/resolve/rust-resolver.ts@L136",
+      "cond:packages/pipeline/src/resolve/rust-resolver.ts@L148",
       "cond:packages/pipeline/src/resolve/rust-resolver.ts@L157"
     ],
     "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust.visitDef@L129",
+        "procedureName": "resolveRust.visitDef",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:18f6054c98c89a74596e955a8b7ccf3e9497481ccf8421544c9c891a9fae5638",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeName@L138",
+          "expr": "resolveTypeName",
+          "line": 132
+        }
+      },
       {
         "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust.visitDef@L129",
         "procedureName": "resolveRust.visitDef",
@@ -197,20 +211,6 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust.visitDef@L129",
         "procedureName": "resolveRust.visitDef",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:18f6054c98c89a74596e955a8b7ccf3e9497481ccf8421544c9c891a9fae5638",
-          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeName@L138",
-          "expr": "resolveTypeName",
-          "line": 132
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust.visitDef@L129",
-        "procedureName": "resolveRust.visitDef",
         "guard": "cond:packages/pipeline/src/resolve/rust-resolver.ts@L130",
         "branch": "THEN",
         "conditions": [
@@ -228,6 +228,32 @@
           "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L133",
           "line": 133,
           "expr": "const traitSym = impl.trait\n          ? resolveTypeName(impl.trait, path, basename, nameBindings, fqnFile, table)\n          : undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust.visitDef@L129",
+        "procedureName": "resolveRust.visitDef",
+        "guard": "cond:packages/pipeline/src/resolve/rust-resolver.ts@L136",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/rust-resolver.ts@L130",
+            "expr": "d.kind === 'impl' && d.impl"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/rust-resolver.ts@L136",
+            "expr": "typeSym && traitSym",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a3422a67208666736ea6e5accb2d15c660e8e46570d906af44a81aaf067402d",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L137",
+          "line": 137,
+          "expr": "push(typeSym, traitSym, 'implements', `impl ${impl.trait} for ${impl.type}`);"
         }
       },
       {
@@ -267,27 +293,15 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust.visitDef@L129",
         "procedureName": "resolveRust.visitDef",
-        "guard": "cond:packages/pipeline/src/resolve/rust-resolver.ts@L136",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/resolve/rust-resolver.ts@L130",
-            "expr": "d.kind === 'impl' && d.impl"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/rust-resolver.ts@L136",
-            "expr": "typeSym && traitSym",
-            "polarity": "THEN"
-          }
-        ],
+        "conditions": [],
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:7a3422a67208666736ea6e5accb2d15c660e8e46570d906af44a81aaf067402d",
-          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L137",
-          "line": 137,
-          "expr": "push(typeSym, traitSym, 'implements', `impl ${impl.trait} for ${impl.type}`);"
+          "kind": "calls",
+          "edgeId": "e:ee503d259be3b48edfd80bbb5964c03c7c16e93fc7a634b0cff596b2edf7c8be",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 137
         }
       },
       {
@@ -298,10 +312,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:ee503d259be3b48edfd80bbb5964c03c7c16e93fc7a634b0cff596b2edf7c8be",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 137
+          "edgeId": "e:0b6fbe7d8ab0f7a647f91f58c6fbba898ad71b49af4847a96d1472d827096807",
+          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
+          "expr": "enclosingSymbolId",
+          "line": 144
         }
       },
       {
@@ -324,20 +338,6 @@
           "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L144",
           "line": 144,
           "expr": "const traitId = table.enclosingSymbolId(path, d.startLine);"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust.visitDef@L129",
-        "procedureName": "resolveRust.visitDef",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:0b6fbe7d8ab0f7a647f91f58c6fbba898ad71b49af4847a96d1472d827096807",
-          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
-          "expr": "enclosingSymbolId",
-          "line": 144
         }
       },
       {

@@ -1,0 +1,314 @@
+{
+  "id": "sym:packages/pipeline/src/cluster/cluster.ts#dominantStereotypeOrType.best@L170",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:a17ac49169354268ccfb698a7b09a9a58d331839e2c13f01eb3b95fcfe4934ac",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/cluster/cluster.ts#dominantStereotypeOrType.best@L170",
+    "kind": "symbol",
+    "type": "function",
+    "name": "best",
+    "qualifiedName": "dominantStereotypeOrType.best",
+    "signature": "best(…)",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/cluster/cluster.ts",
+    "span": {
+      "start": 170,
+      "end": 180
+    }
+  },
+  "source": {
+    "text": "  const best = (counts: Map<string, number>): string | undefined => {\n    let bestKey: string | undefined;\n    let bestN = 0;\n    for (const [k, n] of counts) {\n      if (n > bestN || (n === bestN && (bestKey === undefined || k < bestKey))) {\n        bestKey = k;\n        bestN = n;\n      }\n    }\n    return bestKey;\n  };",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 170
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/cluster/cluster.ts#dominantStereotypeOrType@L163",
+      "confidence": 1,
+      "name": "dominantStereotypeOrType",
+      "qualifiedName": "dominantStereotypeOrType",
+      "signature": "dominantStereotypeOrType(members: Node[]): string",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/cluster.ts",
+      "line": 163
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "heading": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "anchor": "2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "snippet": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#1-condition-nodes-one-per-if-while-for-switch-case-predicate",
+      "heading": "1. `condition` nodes — one per IF / WHILE / FOR / SWITCH-CASE predicate",
+      "anchor": "1-condition-nodes-one-per-if-while-for-switch-case-predicate",
+      "snippet": "1. `condition` nodes — one per IF / WHILE / FOR / SWITCH-CASE predicate",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#8-key-technical-choices-and-why",
+      "heading": "8. Key technical choices (and why)",
+      "anchor": "8-key-technical-choices-and-why",
+      "snippet": "8. Key technical choices (and why)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#decision-item-4-committing-the-soul",
+      "heading": "Decision item 4 — committing the soul",
+      "anchor": "decision-item-4-committing-the-soul",
+      "snippet": "Decision item 4 — committing the soul",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#6-proof-reproducible-not-marketing",
+      "heading": "6. Proof — reproducible, not marketing",
+      "anchor": "6-proof-reproducible-not-marketing",
+      "snippet": "6. Proof — reproducible, not marketing",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-3-resolve-the-deep-part",
+      "heading": "Phase 3 — Resolve (the deep part)",
+      "anchor": "phase-3-resolve-the-deep-part",
+      "snippet": "Phase 3 — Resolve (the deep part)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CODE_OF_CONDUCT.md#our-standards",
+      "heading": "Our Standards",
+      "anchor": "our-standards",
+      "snippet": "Our Standards",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "heading": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "anchor": "4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "snippet": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#per-language-parser-work",
+      "heading": "Per-language parser work",
+      "anchor": "per-language-parser-work",
+      "snippet": "Per-language parser work",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/comparison.md#what-this-matrix-is-not-claiming",
+      "heading": "What this matrix is NOT claiming",
+      "anchor": "what-this-matrix-is-not-claiming",
+      "snippet": "What this matrix is NOT claiming",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#4-claude-code",
+      "heading": "4. Claude Code",
+      "anchor": "4-claude-code",
+      "snippet": "4. Claude Code",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#audio-design",
+      "heading": "Audio Design",
+      "anchor": "audio-design",
+      "snippet": "Audio Design",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/show-hn.md#body",
+      "heading": "Body",
+      "anchor": "body",
+      "snippet": "Body",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#0-verified-facts-judge-conflict-reconciliations",
+      "heading": "0. Verified facts & judge-conflict reconciliations",
+      "anchor": "0-verified-facts-judge-conflict-reconciliations",
+      "snippet": "0. Verified facts & judge-conflict reconciliations",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#dominantStereotypeOrType.best@L170",
+    "procedureName": "dominantStereotypeOrType.best",
+    "conditions": [
+      "cond:packages/pipeline/src/cluster/cluster.ts@L173",
+      "cond:packages/pipeline/src/cluster/cluster.ts@L174"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#dominantStereotypeOrType.best@L170",
+        "procedureName": "dominantStereotypeOrType.best",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L174",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L173",
+            "expr": "counts"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L174",
+            "expr": "n > bestN || (n === bestN && (bestKey === undefined || k < bestKey))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:575739ccaaaf76bb6ba0b5136dd9147c92677dd42dff8b5d1ed6827cd8265438",
+          "target": "assign:packages/pipeline/src/cluster/cluster.ts@L175",
+          "line": 175,
+          "expr": "bestKey = k;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#dominantStereotypeOrType.best@L170",
+        "procedureName": "dominantStereotypeOrType.best",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L174",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L173",
+            "expr": "counts"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L174",
+            "expr": "n > bestN || (n === bestN && (bestKey === undefined || k < bestKey))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a541092bb89eea51b4e5e157f0cdc0fc4eb50c371b88e24c26427ad66e5f46be",
+          "target": "assign:packages/pipeline/src/cluster/cluster.ts@L176",
+          "line": 176,
+          "expr": "bestN = n;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#dominantStereotypeOrType.best@L170",
+        "procedureName": "dominantStereotypeOrType.best",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5ea6cbfd602c5cf32a8e6bde008731cdd2bce7e9709631f8e9c9965aee1614e8",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L179",
+          "line": 179,
+          "expr": "return bestKey;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/pipeline/src/cluster/cluster.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 2,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

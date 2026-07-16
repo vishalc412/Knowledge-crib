@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseSuite@L415",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:f53b1e3233dbfdb0f3f0ba29f598387043bf2b3dd882cca8d81d676283be40bb",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseSuite@L415",
@@ -452,11 +452,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b8bc62e6a17b52a49d3469a74a25f43d78254ddd1881c544e24c15a763fcf94d",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.skipToNewline@L776",
-          "expr": "skipToNewline",
-          "line": 427
+          "kind": "executes",
+          "edgeId": "e:048dbdbd246682eaf7436a6e66bdbd6afd2a2199a5ed0d9ea26595edb16dd6ff",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L427",
+          "line": 427,
+          "expr": "this.skipToNewline();"
         }
       },
       {
@@ -474,11 +474,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:048dbdbd246682eaf7436a6e66bdbd6afd2a2199a5ed0d9ea26595edb16dd6ff",
-          "target": "stmt:packages/parsers/src/python/parser.ts@L427",
-          "line": 427,
-          "expr": "this.skipToNewline();"
+          "kind": "calls",
+          "edgeId": "e:b8bc62e6a17b52a49d3469a74a25f43d78254ddd1881c544e24c15a763fcf94d",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.skipToNewline@L776",
+          "expr": "skipToNewline",
+          "line": 427
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkStmt@L479",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:d6f60a884fa850b95bb5ec7fbb3f08eebf6875db21a78afc841a9ab44fceba10",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkStmt@L479",
@@ -147,8 +147,8 @@
     "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkStmt@L479",
     "procedureName": "BodyWalker.walkStmt",
     "conditions": [
-      "case:packages/parsers/src/java/JavaExtractor.ts@L492",
       "case:packages/parsers/src/java/JavaExtractor.ts@L489",
+      "case:packages/parsers/src/java/JavaExtractor.ts@L492",
       "case:packages/parsers/src/java/JavaExtractor.ts@L497",
       "case:packages/parsers/src/java/JavaExtractor.ts@L500",
       "case:packages/parsers/src/java/JavaExtractor.ts@L505",
@@ -187,28 +187,6 @@
       {
         "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkStmt@L479",
         "procedureName": "BodyWalker.walkStmt",
-        "guard": "case:packages/parsers/src/java/JavaExtractor.ts@L492",
-        "branch": "CASE",
-        "conditions": [
-          {
-            "id": "case:packages/parsers/src/java/JavaExtractor.ts@L492",
-            "expr": "throw",
-            "polarity": "CASE"
-          }
-        ],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:75e9c38c2bd262e2920b46b3548e1e7290ea75539789c2fa222452eb4980954b",
-          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAction@L745",
-          "expr": "addAction",
-          "line": 490
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkStmt@L479",
-        "procedureName": "BodyWalker.walkStmt",
         "guard": "case:packages/parsers/src/java/JavaExtractor.ts@L489",
         "branch": "CASE",
         "conditions": [
@@ -226,6 +204,28 @@
           "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L490",
           "line": 490,
           "expr": "this.addAction(s, procId, guardStack, innerBranch, inLoop, inException);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkStmt@L479",
+        "procedureName": "BodyWalker.walkStmt",
+        "guard": "case:packages/parsers/src/java/JavaExtractor.ts@L492",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/src/java/JavaExtractor.ts@L492",
+            "expr": "throw",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:75e9c38c2bd262e2920b46b3548e1e7290ea75539789c2fa222452eb4980954b",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAction@L745",
+          "expr": "addAction",
+          "line": 490
         }
       },
       {
@@ -279,11 +279,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b3bc3aa6fe6cb9048eaf16ee5b565ecf3ef93b5cec59c0d6ca41b7dece57dabc",
-          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addRaise@L580",
-          "expr": "addRaise",
-          "line": 495
+          "kind": "executes",
+          "edgeId": "e:0fe6c218b244bc76e8dbb8e0de0082cbfcac224ccf4bfc9ef7ee2c6410d21848",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L495",
+          "line": 495,
+          "expr": "this.addRaise(s, procId, guardStack, inLoop, inException);"
         }
       },
       {
@@ -301,11 +301,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:0fe6c218b244bc76e8dbb8e0de0082cbfcac224ccf4bfc9ef7ee2c6410d21848",
-          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L495",
-          "line": 495,
-          "expr": "this.addRaise(s, procId, guardStack, inLoop, inException);"
+          "kind": "calls",
+          "edgeId": "e:b3bc3aa6fe6cb9048eaf16ee5b565ecf3ef93b5cec59c0d6ca41b7dece57dabc",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addRaise@L580",
+          "expr": "addRaise",
+          "line": 495
         }
       },
       {
@@ -395,11 +395,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:bdacbf2ef7642c64a8f38204942c0c8e3ad5fbb680d6689202f0e848b875c8db",
-          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkIf@L667",
-          "expr": "walkIf",
-          "line": 501
+          "kind": "executes",
+          "edgeId": "e:85aab004a33c423d5e26744f60d516cdf03682ffdcb985e016a886819c13181e",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L501",
+          "line": 501,
+          "expr": "this.walkIf(s, procId, guardStack, inLoop, inException);"
         }
       },
       {
@@ -417,11 +417,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:85aab004a33c423d5e26744f60d516cdf03682ffdcb985e016a886819c13181e",
-          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L501",
-          "line": 501,
-          "expr": "this.walkIf(s, procId, guardStack, inLoop, inException);"
+          "kind": "calls",
+          "edgeId": "e:bdacbf2ef7642c64a8f38204942c0c8e3ad5fbb680d6689202f0e848b875c8db",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkIf@L667",
+          "expr": "walkIf",
+          "line": 501
         }
       },
       {

@@ -1,0 +1,174 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.importanceMap@L1071",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:87b14dc96566c307345386ca723ef73f166adcef661e258ef4816de7c0e32b2e",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.importanceMap@L1071",
+    "kind": "symbol",
+    "type": "method",
+    "name": "importanceMap",
+    "qualifiedName": "EnrichmentStore.importanceMap",
+    "signature": "importanceMap(): Map<string, ImportanceEntry>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1071,
+      "end": 1077
+    },
+    "callSites": [
+      {
+        "callee": "getManifest",
+        "line": 1072
+      },
+      {
+        "callee": "computeImportance",
+        "line": 1074
+      }
+    ]
+  },
+  "source": {
+    "text": "  private importanceMap(): Map<string, ImportanceEntry> {\n    const key = this.soul.getManifest().stats.lastUpdated;\n    if (this.importanceCache && this.importanceCache.key === key) return this.importanceCache.map;\n    const map = computeImportance(this.soul);\n    this.importanceCache = { key, map };\n    return map;\n  }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 1071
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L1005",
+      "confidence": 1,
+      "name": "targets",
+      "qualifiedName": "EnrichmentStore.targets",
+      "signature": "targets(layer: EnrichLayer, scope?: EnrichScope): Array<{ layer: EnrichLayer; id: string; hash: string; node?: Node }>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1005
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.topSymbols@L1322",
+      "confidence": 1,
+      "name": "topSymbols",
+      "qualifiedName": "EnrichmentStore.topSymbols",
+      "signature": "topSymbols(limit: number): Node[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1322
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.importanceMap@L1071",
+    "procedureName": "EnrichmentStore.importanceMap",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1073"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.importanceMap@L1071",
+        "procedureName": "EnrichmentStore.importanceMap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2a5f7f9642edbbf89ecd0d5a3a09f3e51799e25f94c9b3c7ed137305a09aed9b",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1072",
+          "line": 1072,
+          "expr": "const key = this.soul.getManifest().stats.lastUpdated;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.importanceMap@L1071",
+        "procedureName": "EnrichmentStore.importanceMap",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1073",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1073",
+            "expr": "this.importanceCache && this.importanceCache.key === key",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b98eced9c5afc0cf0eb7cd35ae1a828ecd703c5c366ba9eb19c1e63abab9290d",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1073",
+          "line": 1073,
+          "expr": "return this.importanceCache.map;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.importanceMap@L1071",
+        "procedureName": "EnrichmentStore.importanceMap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a5f7c106d43850d76ab228122c7adb3720af741b1cbe353e0b42348cb6952e03",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1074",
+          "line": 1074,
+          "expr": "const map = computeImportance(this.soul);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.importanceMap@L1071",
+        "procedureName": "EnrichmentStore.importanceMap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:773e45c174404a19262e06f2dfde3d428632a176df4b4f1babc379d9c469096b",
+          "target": "assign:packages/mcp/src/enrichment.ts@L1075",
+          "line": 1075,
+          "expr": "this.importanceCache = { key, map };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.importanceMap@L1071",
+        "procedureName": "EnrichmentStore.importanceMap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c233f204522e5cb18fd59f1caa98b76fca63fa6cd7fdadca852a505238250ea5",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1076",
+          "line": 1076,
+          "expr": "return map;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

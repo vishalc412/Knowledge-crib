@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:b1f5c7e2a80b754cdfda6137383b19ba78a16fde3b45f00bd1d52dfaff35bb8b",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
@@ -147,24 +147,24 @@
       "line": 207
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 77
+      "line": 88
     },
     {
-      "id": "sym:packages/parsers/src/ts/nest.ts#memberOf@L604",
+      "id": "sym:packages/parsers/src/ts/nest.ts#memberOf@L606",
       "confidence": 1,
       "name": "memberOf",
       "qualifiedName": "memberOf",
       "signature": "memberOf(childId: string, parentId: string): Edge",
       "type": "function",
       "file": "packages/parsers/src/ts/nest.ts",
-      "line": 604
+      "line": 606
     },
     {
       "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
@@ -247,6 +247,20 @@
       {
         "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
         "procedureName": "JavaExtractor.parse.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:34f64b0660895486d0fa292d221d824104bab99c267171f1bee65ea9dbd49b1b",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 91
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
         "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L90",
         "branch": "THEN",
         "conditions": [
@@ -278,10 +292,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:df18600d9983e5bc6c788900ed0279e69c6f76fe53f07f21d7ec2d4621cb5b47",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
-          "expr": "idFor",
-          "line": 91
+          "edgeId": "e:002714b72f20e33ca46ebf9c59e5d61b8e830b308a2a3c1e3f4e4c03910df0fe",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 92
         }
       },
       {
@@ -308,20 +322,6 @@
           "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L92",
           "line": 92,
           "expr": "fieldNodes.push({\n            id: fid,\n            kind: 'field',\n            name: d.name,\n            qualifiedName,\n            file: path,\n            span: { start: d.startLine, end: d.endLine },\n            lang: 'java',\n            hash: ctx.hash(this.defText(d, text)),\n            ...(d.fieldType ? { dataType: d.fieldType } : {}),\n            signature: this.signature(d),\n            meta: {\n              parentQualifier: parentQ,\n              ...(d.modifiers.length ? { modifiers: d.modifiers } : {}),\n              ...(d.annotations.length ? { annotations: d.annotations } : {}),\n            },\n          });"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
-        "procedureName": "JavaExtractor.parse.visit",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:002714b72f20e33ca46ebf9c59e5d61b8e830b308a2a3c1e3f4e4c03910df0fe",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 92
         }
       },
       {
@@ -391,9 +391,23 @@
         "inLoop": true,
         "inException": false,
         "action": {
+          "kind": "executes",
+          "edgeId": "e:9814924ba69bdd1394c9067c0ae31ac02264640e48fa5530f3e5b61c128d491f",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L109",
+          "line": 109,
+          "expr": "fieldEdges.push(this.memberOf({ id: fid } as Node, ownerId));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "calls",
-          "edgeId": "e:fc5e936ffbb33daafd30edfaa62a4cffdbad555b05d9123fadbb6d5bec388f10",
-          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.memberOf@L231",
+          "edgeId": "e:a9f3426278e7abd12c2e8283e3a020e89d646d20c18dbf9c72be3c8de9a22b2f",
+          "target": "sym:packages/parsers/src/ts/nest.ts#memberOf@L606",
           "expr": "memberOf",
           "line": 109
         }
@@ -421,23 +435,9 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:9814924ba69bdd1394c9067c0ae31ac02264640e48fa5530f3e5b61c128d491f",
-          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L109",
-          "line": 109,
-          "expr": "fieldEdges.push(this.memberOf({ id: fid } as Node, ownerId));"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
-        "procedureName": "JavaExtractor.parse.visit",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "calls",
-          "edgeId": "e:bbcf92cf24383652cb56614ccc2d3dddbe75b54e7d927820bf5cc23410b1d161",
-          "target": "sym:packages/parsers/src/ts/nest.ts#memberOf@L604",
+          "edgeId": "e:fc5e936ffbb33daafd30edfaa62a4cffdbad555b05d9123fadbb6d5bec388f10",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.memberOf@L231",
           "expr": "memberOf",
           "line": 109
         }

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotateCall@L233",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:a00304e0bb0354bbf8049f176bb1bdf0e9755ea003891adbd45c9e3db92c9cec",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.annotateCall@L233",
@@ -77,11 +77,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:fd53a6be5ba0d4101c8d9eb1e0f06eef48b424cb5a7ce0f2f0a15596fe19c5c3",
-          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#resolveCallee@L78",
-          "expr": "resolveCallee",
-          "line": 234
+          "kind": "executes",
+          "edgeId": "e:b772ea9311b4fb24f0b25796dcf3d26726382ee3aa77a1a99c66fcf211720b41",
+          "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L234",
+          "line": 234,
+          "expr": "const dstId = resolveCallee(s.callee, this.path, this.byQualified, this.bySimple);"
         }
       },
       {
@@ -91,11 +91,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:b772ea9311b4fb24f0b25796dcf3d26726382ee3aa77a1a99c66fcf211720b41",
-          "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L234",
-          "line": 234,
-          "expr": "const dstId = resolveCallee(s.callee, this.path, this.byQualified, this.bySimple);"
+          "kind": "calls",
+          "edgeId": "e:fd53a6be5ba0d4101c8d9eb1e0f06eef48b424cb5a7ce0f2f0a15596fe19c5c3",
+          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#resolveCallee@L78",
+          "expr": "resolveCallee",
+          "line": 234
         }
       },
       {

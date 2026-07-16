@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.isIdentPart@L465",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:f7edb70383b56c15f64f4f9f63f2a5dd4e2571604f11ff68ef1408b05ec83808",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.isIdentPart@L465",
@@ -67,11 +67,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:607ca4f8a52a54d6fd58ed0ff9f2a129bf2a1be8a5fa3da8654285321b002a69",
-          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.isIdentStart@L456",
-          "expr": "isIdentStart",
-          "line": 466
+          "kind": "executes",
+          "edgeId": "e:5a380b3bd3dac50c9ccb3b7d00d43b882df8534e99da69b98efb47d9db897d71",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L466",
+          "line": 466,
+          "expr": "return this.isIdentStart(c) || (c >= '0' && c <= '9');"
         }
       },
       {
@@ -81,11 +81,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:5a380b3bd3dac50c9ccb3b7d00d43b882df8534e99da69b98efb47d9db897d71",
-          "target": "stmt:packages/parsers/src/java/lexer.ts@L466",
-          "line": 466,
-          "expr": "return this.isIdentStart(c) || (c >= '0' && c <= '9');"
+          "kind": "calls",
+          "edgeId": "e:607ca4f8a52a54d6fd58ed0ff9f2a129bf2a1be8a5fa3da8654285321b002a69",
+          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.isIdentStart@L456",
+          "expr": "isIdentStart",
+          "line": 466
         }
       }
     ]

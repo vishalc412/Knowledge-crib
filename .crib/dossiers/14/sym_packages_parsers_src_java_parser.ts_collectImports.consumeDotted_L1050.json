@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1050",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:880b0ed7acc0d0ad162c77abc2f1cab6a9ce750d4d168a20c90b794e7956c9eb",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1050",
@@ -90,6 +90,20 @@
       {
         "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1050",
         "procedureName": "collectImports.consumeDotted",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3ffb6938d4124eec9a85c5970baccad8736357c660c7e4e6becdd47a65cc5dbb",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1055
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1050",
+        "procedureName": "collectImports.consumeDotted",
         "guard": "cond:packages/parsers/src/java/parser.ts@L1054",
         "branch": "LOOP",
         "conditions": [
@@ -107,20 +121,6 @@
           "target": "stmt:packages/parsers/src/java/parser.ts@L1055",
           "line": 1055,
           "expr": "parts.push(tokens[j]!.value);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/parser.ts#collectImports.consumeDotted@L1050",
-        "procedureName": "collectImports.consumeDotted",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:3ffb6938d4124eec9a85c5970baccad8736357c660c7e4e6becdd47a65cc5dbb",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 1055
         }
       },
       {

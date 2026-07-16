@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:cae1ae17874991b29ddc50a6b55d057f87da21e07c454d32af4825d74cd027fd",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
@@ -260,11 +260,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:86e818e906b5747168101046a5bf1304f194d38afc6f31e4219f0a2e05c96de4",
-          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
-          "expr": "addRaise",
-          "line": 206
+          "kind": "executes",
+          "edgeId": "e:45a1f7ed7d8f10d56ad715249ad99a40fe232b1dab3b8f4c4669cbb452afee50",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L206",
+          "line": 206,
+          "expr": "this.addRaise(s, procId, guardStack, branch, inLoop, inException, w);"
         }
       },
       {
@@ -290,45 +290,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:45a1f7ed7d8f10d56ad715249ad99a40fe232b1dab3b8f4c4669cbb452afee50",
-          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L206",
-          "line": 206,
-          "expr": "this.addRaise(s, procId, guardStack, branch, inLoop, inException, w);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
-        "procedureName": "PythonExtractor.walkBody",
-        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L207",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L195",
-            "expr": "stmts"
-          },
-          {
-            "id": "case:packages/parsers/src/python/PythonExtractor.ts@L201",
-            "expr": "action"
-          },
-          {
-            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L205",
-            "expr": "s.action === 'throw'"
-          },
-          {
-            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L207",
-            "expr": "s.action === 'assign'",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
           "kind": "calls",
-          "edgeId": "e:62a371a073f4dcf9688cc4d8b3452d593b5b8ffe73e8e4117324de5a0538851c",
-          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addAssignment@L480",
-          "expr": "addAssignment",
-          "line": 208
+          "edgeId": "e:86e818e906b5747168101046a5bf1304f194d38afc6f31e4219f0a2e05c96de4",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+          "expr": "addRaise",
+          "line": 206
         }
       },
       {
@@ -363,6 +329,40 @@
           "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L208",
           "line": 208,
           "expr": "this.addAssignment(s, procId, guardStack, branch, inLoop, inException, w);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
+        "procedureName": "PythonExtractor.walkBody",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L207",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L195",
+            "expr": "stmts"
+          },
+          {
+            "id": "case:packages/parsers/src/python/PythonExtractor.ts@L201",
+            "expr": "action"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L205",
+            "expr": "s.action === 'throw'"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L207",
+            "expr": "s.action === 'assign'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:62a371a073f4dcf9688cc4d8b3452d593b5b8ffe73e8e4117324de5a0538851c",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addAssignment@L480",
+          "expr": "addAssignment",
+          "line": 208
         }
       },
       {
@@ -540,11 +540,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:64c6fcebfd2943d1c964e5a42d8401c845822af1e4dcd08b1da81960dd1d18d3",
-          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkLoop@L256",
-          "expr": "walkLoop",
-          "line": 216
+          "kind": "executes",
+          "edgeId": "e:15e32cabf7177eedb28b7c7511c190c24d3dcd40596927d517975f29bdece2a7",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L216",
+          "line": 216,
+          "expr": "this.walkLoop(s, procId, guardStack, inLoop, inException, w);"
         }
       },
       {
@@ -566,11 +566,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:15e32cabf7177eedb28b7c7511c190c24d3dcd40596927d517975f29bdece2a7",
-          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L216",
-          "line": 216,
-          "expr": "this.walkLoop(s, procId, guardStack, inLoop, inException, w);"
+          "kind": "calls",
+          "edgeId": "e:64c6fcebfd2943d1c964e5a42d8401c845822af1e4dcd08b1da81960dd1d18d3",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkLoop@L256",
+          "expr": "walkLoop",
+          "line": 216
         }
       },
       {

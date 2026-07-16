@@ -1,0 +1,151 @@
+{
+  "id": "sym:packages/core/src/graph-store.ts#hashFiles@L309",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:657f5f5f64a5ae3007208e1edf2ba65f0adb6578de73644543c9c57cbfdbadba",
+  "builtAt": "2026-07-16T14:53:52.220Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/graph-store.ts#hashFiles@L309",
+    "kind": "symbol",
+    "type": "function",
+    "name": "hashFiles",
+    "qualifiedName": "hashFiles",
+    "signature": "hashFiles(files: string[]): string",
+    "lang": "typescript",
+    "file": "packages/core/src/graph-store.ts",
+    "span": {
+      "start": 309,
+      "end": 315
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 310
+      },
+      {
+        "callee": "map",
+        "line": 310
+      },
+      {
+        "callee": "sort",
+        "line": 310
+      },
+      {
+        "callee": "readFileSync",
+        "line": 312
+      },
+      {
+        "callee": "blake3Hex",
+        "line": 314
+      }
+    ]
+  },
+  "source": {
+    "text": "function hashFiles(files: string[]): string {\n  const contents = files\n    .sort()\n    .map((path) => `${path}\\0${readFileSync(path, 'utf8')}`)\n    .join('\\0');\n  return `blake3:${blake3Hex(contents)}`;\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 309
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/graph-store.ts#graphFingerprint@L148",
+      "confidence": 1,
+      "name": "graphFingerprint",
+      "qualifiedName": "graphFingerprint",
+      "signature": "graphFingerprint(soul: SoulStore): GraphFingerprint",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 148
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+      "confidence": 1,
+      "name": "blake3Hex",
+      "qualifiedName": "blake3Hex",
+      "signature": "blake3Hex(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 15
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/graph-store.ts#hashFiles@L309",
+    "procedureName": "hashFiles",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#hashFiles@L309",
+        "procedureName": "hashFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:796aea0f125be66a79a3f053bc28ba3a90a31d38d533189d5e8db27295286186",
+          "target": "stmt:packages/core/src/graph-store.ts@L310",
+          "line": 310,
+          "expr": "const contents = files\n    .sort()\n    .map((path) => `${path}\\0${readFileSync(path, 'utf8')}`)\n    .join('\\0');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#hashFiles@L309",
+        "procedureName": "hashFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5400915922090d7fbd33893153edf1e8866acee907a0b894fff3d9278cfc1637",
+          "target": "stmt:packages/core/src/graph-store.ts@L314",
+          "line": 314,
+          "expr": "return `blake3:${blake3Hex(contents)}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#hashFiles@L309",
+        "procedureName": "hashFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dc7641bb57ecca50a2d5e529e0ec7289e1df8663639f863edfaa0d5bc213ab77",
+          "target": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+          "expr": "blake3Hex",
+          "line": 314
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/graph-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 5,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

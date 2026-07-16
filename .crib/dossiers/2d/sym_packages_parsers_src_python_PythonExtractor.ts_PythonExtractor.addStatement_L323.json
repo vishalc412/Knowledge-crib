@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addStatement@L323",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:cbee1aa19c5a35d05049ec13251ddb1f6bf9099e680d85b6776b1b1eaea51388",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addStatement@L323",
@@ -358,11 +358,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:bbf51361d04303ffa72022422e24b73a034d2708e2cfc6177d729d5edc69755b",
-          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.recordCall@L375",
-          "expr": "recordCall",
-          "line": 371
+          "kind": "executes",
+          "edgeId": "e:6a3f581509240b6aa8e483a9ba851dab06ca4d2b7745fcc8b445cc6bb7653db4",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L371",
+          "line": 371,
+          "expr": "this.recordCall(c, procId, guardStack, branch, inLoop, inException, w);"
         }
       },
       {
@@ -380,11 +380,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:6a3f581509240b6aa8e483a9ba851dab06ca4d2b7745fcc8b445cc6bb7653db4",
-          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L371",
-          "line": 371,
-          "expr": "this.recordCall(c, procId, guardStack, branch, inLoop, inException, w);"
+          "kind": "calls",
+          "edgeId": "e:bbf51361d04303ffa72022422e24b73a034d2708e2cfc6177d729d5edc69755b",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.recordCall@L375",
+          "expr": "recordCall",
+          "line": 371
         }
       }
     ]

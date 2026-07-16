@@ -1,0 +1,119 @@
+{
+  "id": "sym:scripts/install-smoke.mjs#validateSmokeStatus@L102",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:7b70efa0ba504c599d4fd1fb7a80cba42fe819c5452136875081982eb4083ab9",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/install-smoke.mjs#validateSmokeStatus@L102",
+    "kind": "symbol",
+    "type": "function",
+    "name": "validateSmokeStatus",
+    "qualifiedName": "validateSmokeStatus",
+    "signature": "validateSmokeStatus(status)",
+    "lang": "javascript",
+    "file": "scripts/install-smoke.mjs",
+    "span": {
+      "start": 102,
+      "end": 110
+    }
+  },
+  "source": {
+    "text": "export function validateSmokeStatus(status) {\n  if (status?.indexed !== true) {\n    throw new Error('Installed CLI smoke did not produce an indexed graph');\n  }\n  if (!Number.isFinite(status?.stats?.nodes) || status.stats.nodes <= 0) {\n    throw new Error('Installed CLI smoke did not extract any nodes');\n  }\n  return status;\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 102
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+      "confidence": 1,
+      "name": "smokeInstall",
+      "qualifiedName": "smokeInstall",
+      "signature": "smokeInstall({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
+      "type": "function",
+      "file": "scripts/install-smoke.mjs",
+      "line": 135
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/install-smoke.mjs#validateSmokeStatus@L102",
+    "procedureName": "validateSmokeStatus",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#validateSmokeStatus@L102",
+        "procedureName": "validateSmokeStatus",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:83653b656a5205ce200d2b77a349cd16e7c9eb8abba728196d2cbb1bc68dcc8f",
+          "target": "stmt:scripts/install-smoke.mjs@L109",
+          "line": 109,
+          "expr": "return status;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:scripts/install-smoke.mjs@L104",
+        "kind": "raise",
+        "lang": "javascript",
+        "file": "scripts/install-smoke.mjs",
+        "span": {
+          "start": 104,
+          "end": 104
+        },
+        "errorMessage": "Installed CLI smoke did not produce an indexed graph",
+        "confidence": 1
+      },
+      {
+        "id": "raise:scripts/install-smoke.mjs@L107",
+        "kind": "raise",
+        "lang": "javascript",
+        "file": "scripts/install-smoke.mjs",
+        "span": {
+          "start": 107,
+          "end": 107
+        },
+        "errorMessage": "Installed CLI smoke did not extract any nodes",
+        "confidence": 1
+      }
+    ],
+    "handles": [],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "scripts/install-smoke.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 2,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

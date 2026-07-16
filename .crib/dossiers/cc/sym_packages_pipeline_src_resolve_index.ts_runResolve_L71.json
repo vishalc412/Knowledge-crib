@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:386ed27452645cf6945e6e8ac6f709774359b898b496a342ef67843dbb5e8b50",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
@@ -56,24 +56,24 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L108",
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
       "confidence": 1,
       "name": "indexRepo",
       "qualifiedName": "indexRepo",
       "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
       "type": "function",
       "file": "packages/pipeline/src/pipeline.ts",
-      "line": 108
+      "line": 94
     },
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L94",
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 94
+      "line": 112
     }
   ],
   "callees": [
@@ -98,6 +98,16 @@
       "line": 39
     },
     {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    },
+    {
       "id": "sym:packages/pipeline/src/resolve/index.ts#stampRecursion@L116",
       "confidence": 1,
       "name": "stampRecursion",
@@ -118,20 +128,20 @@
       "confidence": 1
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#0-verified-facts-judge-conflict-reconciliations",
-      "heading": "0. Verified facts & judge-conflict reconciliations",
-      "anchor": "0-verified-facts-judge-conflict-reconciliations",
-      "snippet": "0. Verified facts & judge-conflict reconciliations",
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-4-adding-a-new-pipeline-phase",
+      "heading": "4.4 Adding a New Pipeline Phase",
+      "anchor": "4-4-adding-a-new-pipeline-phase",
+      "snippet": "4.4 Adding a New Pipeline Phase",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
-      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
-      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
-      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "heading": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "anchor": "a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "snippet": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -148,20 +158,20 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-4-adding-a-new-pipeline-phase",
-      "heading": "4.4 Adding a New Pipeline Phase",
-      "anchor": "4-4-adding-a-new-pipeline-phase",
-      "snippet": "4.4 Adding a New Pipeline Phase",
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#0-verified-facts-judge-conflict-reconciliations",
+      "heading": "0. Verified facts & judge-conflict reconciliations",
+      "anchor": "0-verified-facts-judge-conflict-reconciliations",
+      "snippet": "0. Verified facts & judge-conflict reconciliations",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/llm-integration-deep-dive.md#a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
-      "heading": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
-      "anchor": "a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
-      "snippet": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -271,6 +281,34 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
         "procedureName": "runResolve",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:82939411fd7ce3b0186ec46b5bdb2619a744317a3ac1d7d01e1d42ae265d4563",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 87
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
+        "procedureName": "runResolve",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0ec75a7bacd6908658210fde65293c4b913b17eb3ecb0116893e72d619522348",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 88
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
+        "procedureName": "runResolve",
         "guard": "cond:packages/pipeline/src/resolve/index.ts@L88",
         "branch": "LOOP",
         "conditions": [
@@ -292,20 +330,6 @@
           "target": "stmt:packages/pipeline/src/resolve/index.ts@L88",
           "line": 88,
           "expr": "allEdges.push(e);"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
-        "procedureName": "runResolve",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:0ec75a7bacd6908658210fde65293c4b913b17eb3ecb0116893e72d619522348",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 88
         }
       },
       {
@@ -419,7 +443,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 3,
+      "resolved": 4,
       "recorded": 7,
       "unresolved": 1
     },

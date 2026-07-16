@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseTypeDecl@L477",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:2384b9502ac7cda307ee719b4dbbcdc4d13877c67dbe0071e011f9a1ede853fe",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseTypeDecl@L477",
@@ -354,11 +354,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:f02ca817a7347e35ae2352cfe6cd5b62f30069f1f42f8fe0b7544267c82cde9c",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseTypeParams@L803",
-          "expr": "parseTypeParams",
-          "line": 482
+          "kind": "executes",
+          "edgeId": "e:bbaeba79565cae76a2677e2817ef178f56e98dec522c615b600a3e9bb8e8a2c0",
+          "target": "assign:packages/parsers/src/go/parser.ts@L482",
+          "line": 482,
+          "expr": "typeParams = this.parseTypeParams();"
         }
       },
       {
@@ -376,11 +376,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:bbaeba79565cae76a2677e2817ef178f56e98dec522c615b600a3e9bb8e8a2c0",
-          "target": "assign:packages/parsers/src/go/parser.ts@L482",
-          "line": 482,
-          "expr": "typeParams = this.parseTypeParams();"
+          "kind": "calls",
+          "edgeId": "e:f02ca817a7347e35ae2352cfe6cd5b62f30069f1f42f8fe0b7544267c82cde9c",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseTypeParams@L803",
+          "expr": "parseTypeParams",
+          "line": 482
         }
       },
       {
@@ -530,11 +530,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:8bf89cd9ddd0ce183104807d9154c8cd4f76c90d9a49dc84ecc1d70871a2312e",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseStructBody@L603",
-          "expr": "parseStructBody",
-          "line": 515
+          "kind": "executes",
+          "edgeId": "e:420a451e1458aae3b922bddeca5b736050194f73f3de1fb7a1ff7037d91761e9",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L515",
+          "line": 515,
+          "expr": "const res = this.parseStructBody();"
         }
       },
       {
@@ -556,11 +556,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:420a451e1458aae3b922bddeca5b736050194f73f3de1fb7a1ff7037d91761e9",
-          "target": "stmt:packages/parsers/src/go/parser.ts@L515",
-          "line": 515,
-          "expr": "const res = this.parseStructBody();"
+          "kind": "calls",
+          "edgeId": "e:8bf89cd9ddd0ce183104807d9154c8cd4f76c90d9a49dc84ecc1d70871a2312e",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseStructBody@L603",
+          "expr": "parseStructBody",
+          "line": 515
         }
       },
       {

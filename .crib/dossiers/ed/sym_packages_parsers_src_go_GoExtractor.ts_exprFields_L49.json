@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/GoExtractor.ts#exprFields@L49",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:93bdb14b1ebade7ab11cf304af634f307ccccd5d1147134302c74257aa3550b0",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/GoExtractor.ts#exprFields@L49",
@@ -120,11 +120,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:7c778863dcc8704148736f0395fe6142572b831fa60d4621cfc8fa01edb13b56",
-          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L51",
-          "line": 51,
-          "expr": "const { expr, truncated } = clampExpr(raw);"
+          "kind": "calls",
+          "edgeId": "e:11880bf1b323d5a7c755243705905e99ea88423447749deb4d3dae61bc59559a",
+          "target": "sym:packages/parsers/src/types.ts#clampExpr@L30",
+          "expr": "clampExpr",
+          "line": 51
         }
       },
       {
@@ -134,11 +134,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:11880bf1b323d5a7c755243705905e99ea88423447749deb4d3dae61bc59559a",
-          "target": "sym:packages/parsers/src/types.ts#clampExpr@L30",
-          "expr": "clampExpr",
-          "line": 51
+          "kind": "executes",
+          "edgeId": "e:7c778863dcc8704148736f0395fe6142572b831fa60d4621cfc8fa01edb13b56",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L51",
+          "line": 51,
+          "expr": "const { expr, truncated } = clampExpr(raw);"
         }
       },
       {

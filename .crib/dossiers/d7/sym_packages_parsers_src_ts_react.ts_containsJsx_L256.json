@@ -1,0 +1,171 @@
+{
+  "id": "sym:packages/parsers/src/ts/react.ts#containsJsx@L256",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:9294add8b7a6097e46fffed1ee5643a6d68514ba1123aa84d2defd5895d38354",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/react.ts#containsJsx@L256",
+    "kind": "symbol",
+    "type": "function",
+    "name": "containsJsx",
+    "qualifiedName": "containsJsx",
+    "signature": "containsJsx(node: ts.Node | undefined): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/react.ts",
+    "span": {
+      "start": 256,
+      "end": 265
+    },
+    "recursive": true,
+    "callSites": [
+      {
+        "callee": "forEachChild",
+        "line": 261
+      },
+      {
+        "callee": "containsJsx",
+        "line": 262
+      }
+    ]
+  },
+  "source": {
+    "text": "function containsJsx(node: ts.Node | undefined): boolean {\n  if (!node) return false;\n  if (ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node) || ts.isJsxFragment(node))\n    return true;\n  let found = false;\n  ts.forEachChild(node, (c) => {\n    if (!found) found = containsJsx(c);\n  });\n  return found;\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 256
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#classify@L102",
+      "confidence": 1,
+      "name": "classify",
+      "qualifiedName": "classify",
+      "signature": "classify(s: ReactSymbolLike): {\n  kind: 'class' | 'function' | 'hook';\n  body?: ts.Node;\n  propsType?: string;\n  stateType?: string;\n} | null",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 102
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/react.ts@L254",
+      "snippet": "/** Does a body contain any JSX (the function-component signal — arrow expression body or a JSX",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/react.ts#containsJsx@L256",
+    "procedureName": "containsJsx",
+    "conditions": [
+      "cond:packages/parsers/src/ts/react.ts@L257",
+      "cond:packages/parsers/src/ts/react.ts@L258"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#containsJsx@L256",
+        "procedureName": "containsJsx",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L257",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L257",
+            "expr": "!node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d91ba1a500e46f3970caeef9fc78c8723a8434696beb1c3f632a00ad02638c4e",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L257",
+          "line": 257,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#containsJsx@L256",
+        "procedureName": "containsJsx",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L258",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L258",
+            "expr": "ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node) || ts.isJsxFragment(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9a856ed33c27d74281b8176d6fd6cd4da056a11f4f430a70fb86a6d85dde186b",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L259",
+          "line": 259,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#containsJsx@L256",
+        "procedureName": "containsJsx",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c7dbd5c9158afd8ab9562405a338430c610de26c90a2fdb2cbf5b4bbd990afe9",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L261",
+          "line": 261,
+          "expr": "ts.forEachChild(node, (c) => {\n    if (!found) found = containsJsx(c);\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#containsJsx@L256",
+        "procedureName": "containsJsx",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e358ad694c3eaa4108729700777af04bd11f7a4647eb69d7345f4ca01cb36777",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L264",
+          "line": 264,
+          "expr": "return found;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/react.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": true,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

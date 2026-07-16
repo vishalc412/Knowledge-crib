@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse.visit@L100",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:b9aef882751cc6b2f93d0fd84fb31cd5615ed0e07970d61df451f89518a6d9a1",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse.visit@L100",
@@ -159,24 +159,24 @@
       "line": 624
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 77
+      "line": 88
     },
     {
-      "id": "sym:packages/parsers/src/ts/nest.ts#memberOf@L604",
+      "id": "sym:packages/parsers/src/ts/nest.ts#memberOf@L606",
       "confidence": 1,
       "name": "memberOf",
       "qualifiedName": "memberOf",
       "signature": "memberOf(childId: string, parentId: string): Edge",
       "type": "function",
       "file": "packages/parsers/src/ts/nest.ts",
-      "line": 604
+      "line": 606
     },
     {
       "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
@@ -233,6 +233,20 @@
       {
         "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse.visit@L100",
         "procedureName": "PythonExtractor.parse.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:54c1358338215410892ff63a3c135d493bf3691768a1844cd77164e6d5cca08e",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 103
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse.visit@L100",
+        "procedureName": "PythonExtractor.parse.visit",
         "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L101",
         "branch": "LOOP",
         "conditions": [
@@ -250,20 +264,6 @@
           "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L103",
           "line": 103,
           "expr": "const id = ctx.idFor('symbol', { path, qualifiedName, startLine: d.startLine });"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse.visit@L100",
-        "procedureName": "PythonExtractor.parse.visit",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:facef02b80ac15acc32d20650d254cca1f6938d2fac62dab5383ecd500655901",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
-          "expr": "idFor",
-          "line": 103
         }
       },
       {
@@ -303,11 +303,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b1514fe6699979b5479522854e8d1a57ac504fa0c89b66e3e23ce60d78d5a06c",
-          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.typeOf@L624",
-          "expr": "typeOf",
-          "line": 106
+          "kind": "executes",
+          "edgeId": "e:0cfa027f562b8bfc612df0750eb8ff67d5a0bf3c4f392fd68e8dc36a32a229f7",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L106",
+          "line": 106,
+          "expr": "const parentType = parentQ === '' ? undefined : this.typeOf(parentQ, symbols);"
         }
       },
       {
@@ -325,11 +325,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:0cfa027f562b8bfc612df0750eb8ff67d5a0bf3c4f392fd68e8dc36a32a229f7",
-          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L106",
-          "line": 106,
-          "expr": "const parentType = parentQ === '' ? undefined : this.typeOf(parentQ, symbols);"
+          "kind": "calls",
+          "edgeId": "e:b1514fe6699979b5479522854e8d1a57ac504fa0c89b66e3e23ce60d78d5a06c",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.typeOf@L624",
+          "expr": "typeOf",
+          "line": 106
         }
       },
       {
@@ -502,8 +502,22 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:97789fdb94b3b0418fc7376ece88f4c89647d4c66dc63b40569be5bcee5ed0aa",
-          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.memberOf@L635",
+          "edgeId": "e:0d9cbd019e81dfc8965f59b1de3a01d32576ca8c0db2589045a3c00add0d0839",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parentIdFor@L628",
+          "expr": "parentIdFor",
+          "line": 138
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse.visit@L100",
+        "procedureName": "PythonExtractor.parse.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5d16783b6e91e6d1804f1f6c50320987b997320c98e2617aa65f3702cc033e9e",
+          "target": "sym:packages/parsers/src/ts/nest.ts#memberOf@L606",
           "expr": "memberOf",
           "line": 138
         }
@@ -524,9 +538,9 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:0d9cbd019e81dfc8965f59b1de3a01d32576ca8c0db2589045a3c00add0d0839",
-          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parentIdFor@L628",
-          "expr": "parentIdFor",
+          "edgeId": "e:97789fdb94b3b0418fc7376ece88f4c89647d4c66dc63b40569be5bcee5ed0aa",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.memberOf@L635",
+          "expr": "memberOf",
           "line": 138
         }
       },
@@ -555,15 +569,23 @@
       {
         "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse.visit@L100",
         "procedureName": "PythonExtractor.parse.visit",
-        "conditions": [],
-        "inLoop": false,
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L101",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L101",
+            "expr": "defs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:803e6c117271baccf8316b4dd895d9c049794065d9780386a17e37defbf6d5b1",
-          "target": "sym:packages/parsers/src/ts/nest.ts#memberOf@L604",
-          "expr": "memberOf",
-          "line": 138
+          "kind": "executes",
+          "edgeId": "e:53e58eaeb531f5429158a3b15268c160b2a2c052e4b46e0a5b9101fc7bcd196b",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L140",
+          "line": 140,
+          "expr": "this.attachExplanation(id, d, path, ctx, nodes, edges, explSeen, comments);"
         }
       },
       {
@@ -586,28 +608,6 @@
           "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
           "expr": "attachExplanation",
           "line": 140
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse.visit@L100",
-        "procedureName": "PythonExtractor.parse.visit",
-        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L101",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L101",
-            "expr": "defs",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:53e58eaeb531f5429158a3b15268c160b2a2c052e4b46e0a5b9101fc7bcd196b",
-          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L140",
-          "line": 140,
-          "expr": "this.attachExplanation(id, d, path, ctx, nodes, edges, explSeen, comments);"
         }
       },
       {

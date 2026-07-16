@@ -1,0 +1,608 @@
+{
+  "id": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:76bc38a40b3d415b4f5cea2c94e2685b4a344effe031d72b12f5bea5ed0b72f6",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readLlmOverlay",
+    "qualifiedName": "readLlmOverlay",
+    "signature": "readLlmOverlay(soul: SoulStore, opts: { includeStale?: boolean } = {}): LlmOverlay",
+    "lang": "typescript",
+    "file": "packages/core/src/llm-overlay.ts",
+    "span": {
+      "start": 63,
+      "end": 118
+    },
+    "callSites": [
+      {
+        "callee": "graphPaths",
+        "line": 65
+      },
+      {
+        "callee": "join",
+        "line": 66
+      },
+      {
+        "callee": "existsSync",
+        "line": 67
+      },
+      {
+        "callee": "join",
+        "line": 69
+      },
+      {
+        "callee": "getManifest",
+        "line": 70
+      },
+      {
+        "callee": "getManifest",
+        "line": 71
+      },
+      {
+        "callee": "readJson",
+        "line": 72
+      },
+      {
+        "callee": "existsSync",
+        "line": 73
+      },
+      {
+        "callee": "join",
+        "line": 73
+      },
+      {
+        "callee": "existsSync",
+        "line": 76
+      },
+      {
+        "callee": "readAllArtifacts",
+        "line": 76
+      },
+      {
+        "callee": "get",
+        "line": 82
+      },
+      {
+        "callee": "set",
+        "line": 84
+      },
+      {
+        "callee": "set",
+        "line": 92
+      },
+      {
+        "callee": "isStale",
+        "line": 100
+      },
+      {
+        "callee": "set",
+        "line": 111
+      }
+    ]
+  },
+  "source": {
+    "text": "export function readLlmOverlay(soul: SoulStore, opts: { includeStale?: boolean } = {}): LlmOverlay {\n  const includeStale = opts.includeStale ?? true;\n  const canonical = graphPaths(soul.cribDir);\n  const legacyRoot = join(soul.cribDir, 'llm');\n  const analysisDir = existsSync(canonical.artifacts)\n    ? canonical.artifacts\n    : join(legacyRoot, 'analysis');\n  const manifestSchema = soul.getManifest().schemaVersion;\n  const vcsHead = soul.getManifest().repo.vcsHead ?? null;\n  const llmManifest = readJson<{ builtAgainstHead?: string | null }>(\n    existsSync(canonical.state) ? canonical.state : join(legacyRoot, 'manifest.json'),\n  );\n\n  const raw = existsSync(analysisDir) ? readAllArtifacts(analysisDir) : [];\n\n  // Keep the newest artifact per targetId (a re-save with a new hash coexists briefly; prefer the\n  // one whose nodeHash matches the live hash, else the last by sort).\n  const byTarget = new Map<string, ReadArtifact>();\n  for (const a of raw) {\n    const prev = byTarget.get(a.targetId);\n    if (!prev) {\n      byTarget.set(a.targetId, a);\n      continue;\n    }\n    // Prefer a schema-version match, then the lexicographically-later nodeHash (newer content).\n    if (\n      a.schemaVersion === manifestSchema ||\n      (a.nodeHash > prev.nodeHash && prev.schemaVersion !== manifestSchema)\n    ) {\n      byTarget.set(a.targetId, a);\n    }\n  }\n\n  const entries = new Map<string, LlmOverlayEntry>();\n  let hasFreshSystem = false;\n  let system: LlmOverlayEntry | undefined;\n  for (const a of byTarget.values()) {\n    const stale = isStale(soul, a, manifestSchema, vcsHead, llmManifest?.builtAgainstHead ?? null);\n    if (stale && !includeStale) continue;\n    const entry: LlmOverlayEntry = {\n      targetId: a.targetId,\n      layer: a.layer,\n      stale,\n      ...(a.name ? { name: a.name } : {}),\n      ...(a.purpose ? { purpose: a.purpose } : {}),\n      ...(a.confidence !== undefined ? { confidence: a.confidence } : {}),\n      ...(a.mode ? { mode: a.mode } : {}),\n    };\n    entries.set(a.targetId, entry);\n    if (a.layer === 'system') {\n      system = entry;\n      if (!stale) hasFreshSystem = true;\n    }\n  }\n  return { entries, hasFreshSystem, ...(system ? { system } : {}) };\n}",
+    "truncated": false,
+    "totalLines": 56,
+    "startLine": 63
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
+      "confidence": 1,
+      "name": "buildFunctionalMap",
+      "qualifiedName": "buildFunctionalMap",
+      "signature": "buildFunctionalMap(soul: SoulStore, opts: BuildFunctionalMapOpts = {}): FunctionalMap",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 74
+    },
+    {
+      "id": "sym:packages/ui/src/viz.ts#buildVizGraph@L223",
+      "confidence": 1,
+      "name": "buildVizGraph",
+      "qualifiedName": "buildVizGraph",
+      "signature": "buildVizGraph(soul: SoulStore): VizGraph",
+      "type": "function",
+      "file": "packages/ui/src/viz.ts",
+      "line": 223
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/core/src/graph-layout.ts#graphPaths@L33",
+      "confidence": 1,
+      "name": "graphPaths",
+      "qualifiedName": "graphPaths",
+      "signature": "graphPaths(cribDir: string): GraphPaths",
+      "type": "function",
+      "file": "packages/core/src/graph-layout.ts",
+      "line": 33
+    },
+    {
+      "id": "sym:packages/core/src/llm-overlay.ts#isStale@L122",
+      "confidence": 1,
+      "name": "isStale",
+      "qualifiedName": "isStale",
+      "signature": "isStale(soul: SoulStore, a: ReadArtifact, schemaVersion: string, vcsHead: string | null, llmBuiltAgainstHead: string | null): boolean",
+      "type": "function",
+      "file": "packages/core/src/llm-overlay.ts",
+      "line": 122
+    },
+    {
+      "id": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+      "confidence": 1,
+      "name": "readAllArtifacts",
+      "qualifiedName": "readAllArtifacts",
+      "signature": "readAllArtifacts(analysisDir: string): ReadArtifact[]",
+      "type": "function",
+      "file": "packages/core/src/llm-overlay.ts",
+      "line": 141
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+      "confidence": 1,
+      "name": "readJson",
+      "qualifiedName": "readJson",
+      "signature": "readJson(path: string): T | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1824
+    },
+    {
+      "id": "sym:packages/core/src/llm-overlay.ts#readJson@L172",
+      "confidence": 1,
+      "name": "readJson",
+      "qualifiedName": "readJson",
+      "signature": "readJson(path: string): T | undefined",
+      "type": "function",
+      "file": "packages/core/src/llm-overlay.ts",
+      "line": 172
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/llm-overlay.ts@L60",
+      "snippet": "/** Read semantic overlay. `opts.includeStale` (default true) controls whether",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+    "procedureName": "readLlmOverlay",
+    "conditions": [
+      "cond:packages/core/src/llm-overlay.ts@L81",
+      "cond:packages/core/src/llm-overlay.ts@L83",
+      "cond:packages/core/src/llm-overlay.ts@L88",
+      "cond:packages/core/src/llm-overlay.ts@L99",
+      "cond:packages/core/src/llm-overlay.ts@L112",
+      "cond:packages/core/src/llm-overlay.ts@L114"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:42c9139e7a6129866a9c0a67ebc3ae359f0f7b446db5309a8d370a66edbf7611",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L65",
+          "line": 65,
+          "expr": "const canonical = graphPaths(soul.cribDir);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6ab50cde20e8cb0349837863b198e20b6b0bae0560680716f952a7691035d316",
+          "target": "sym:packages/core/src/graph-layout.ts#graphPaths@L33",
+          "expr": "graphPaths",
+          "line": 65
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0f4cb347bce6a56fc96fa1a79827de0ec13c847e7cfdd54285759055eed3f015",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L66",
+          "line": 66,
+          "expr": "const legacyRoot = join(soul.cribDir, 'llm');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd0ff68899c58c6f5f0705eca70c7cb5ec4eae4c4b6e5d0359a9d4a8208d3f16",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L67",
+          "line": 67,
+          "expr": "const analysisDir = existsSync(canonical.artifacts)\n    ? canonical.artifacts\n    : join(legacyRoot, 'analysis');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f7abbfad64b0e5b09a2a894e08fa97ec4801ea2852430e4ee8ec67bcae3ef732",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L70",
+          "line": 70,
+          "expr": "const manifestSchema = soul.getManifest().schemaVersion;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2004cae3aff0809257e843af5261b55348a22df1f78cb7d64ea9439a5692716d",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L71",
+          "line": 71,
+          "expr": "const vcsHead = soul.getManifest().repo.vcsHead ?? null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:329598044f4dfaec344204716378c072c37101785ac6a46e5e11000badf36ff4",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L72",
+          "line": 72,
+          "expr": "const llmManifest = readJson<{ builtAgainstHead?: string | null }>(\n    existsSync(canonical.state) ? canonical.state : join(legacyRoot, 'manifest.json'),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:51790b948af560823565a9237d38767cdfab506078d14944b919624d703059c6",
+          "target": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+          "expr": "readJson",
+          "line": 72
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:78b49e73f27280d7083397309df8ee87b38cd28e197f8957df0960530b460ea3",
+          "target": "sym:packages/core/src/llm-overlay.ts#readJson@L172",
+          "expr": "readJson",
+          "line": 72
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4ba5858f27a2279e214a44602c566006d7762f98ba110c090c13e3a154440f6f",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L76",
+          "line": 76,
+          "expr": "const raw = existsSync(analysisDir) ? readAllArtifacts(analysisDir) : [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4f6fc4a7ffaee3b67aed3cbc6c90e67a17e24ed69ceeebd76d1831a2e85bdfcb",
+          "target": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+          "expr": "readAllArtifacts",
+          "line": 76
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0a2ff45635e8b65132828fe822f592001969517bc5293449b9bb3c82f8333100",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 82
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "guard": "cond:packages/core/src/llm-overlay.ts@L81",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L81",
+            "expr": "raw",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2a690f1480c735516c5f8e90bbd15497cd491bd46ad581f51208ac18d65b1e25",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L82",
+          "line": 82,
+          "expr": "const prev = byTarget.get(a.targetId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "guard": "cond:packages/core/src/llm-overlay.ts@L83",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L81",
+            "expr": "raw"
+          },
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L83",
+            "expr": "!prev",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1bbf0ee6454e6091770ca48472e07790358faf967180775c5f6f6e6f6017150f",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L84",
+          "line": 84,
+          "expr": "byTarget.set(a.targetId, a);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "guard": "cond:packages/core/src/llm-overlay.ts@L88",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L81",
+            "expr": "raw"
+          },
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L88",
+            "expr": "a.schemaVersion === manifestSchema ||\n      (a.nodeHash > prev.nodeHash && prev.schemaVersion !== manifestSchema)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:36c184dc54f51371357612046dbc8db8257ff067a39cb1b537d42b7186e18bb0",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L92",
+          "line": 92,
+          "expr": "byTarget.set(a.targetId, a);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "guard": "cond:packages/core/src/llm-overlay.ts@L99",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L99",
+            "expr": "byTarget.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1378f2b18ac1d5443332c5eabeafd66bc2cbb506b16088c99a4d3718b18482b2",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L100",
+          "line": 100,
+          "expr": "const stale = isStale(soul, a, manifestSchema, vcsHead, llmManifest?.builtAgainstHead ?? null);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "guard": "cond:packages/core/src/llm-overlay.ts@L99",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L99",
+            "expr": "byTarget.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ad28f4b9bd34c5b6e0dcb52d0b031700307febc9b37b110ccf2a919cd1c5396b",
+          "target": "sym:packages/core/src/llm-overlay.ts#isStale@L122",
+          "expr": "isStale",
+          "line": 100
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "guard": "cond:packages/core/src/llm-overlay.ts@L99",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L99",
+            "expr": "byTarget.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6fa9c1374324f5ad851c4a6b512d6c8cd5ffd16504842b025ab83727067e0956",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L111",
+          "line": 111,
+          "expr": "entries.set(a.targetId, entry);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "guard": "cond:packages/core/src/llm-overlay.ts@L112",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L99",
+            "expr": "byTarget.values()"
+          },
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L112",
+            "expr": "a.layer === 'system'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d9936345f385c4e2d6381ba983f4276bc386eb24e59a06ee7773cb6eeca5b425",
+          "target": "assign:packages/core/src/llm-overlay.ts@L113",
+          "line": 113,
+          "expr": "system = entry;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "guard": "cond:packages/core/src/llm-overlay.ts@L114",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L99",
+            "expr": "byTarget.values()"
+          },
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L112",
+            "expr": "a.layer === 'system'"
+          },
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L114",
+            "expr": "!stale",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1a4bb50041eb01ebb424eec2a98b47d5cd25d47991581e2c7361bf36fb8eaa91",
+          "target": "assign:packages/core/src/llm-overlay.ts@L114",
+          "line": 114,
+          "expr": "hasFreshSystem = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+        "procedureName": "readLlmOverlay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c77c9d072523a1fd7aa8e6c3b817b0da117a4ceb8bf3e333d6c951f6dd2ae572",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L117",
+          "line": 117,
+          "expr": "return { entries, hasFreshSystem, ...(system ? { system } : {}) };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 15,
+    "referencedByFiles": [
+      "packages/core/src/functional-map.ts",
+      "packages/ui/src/viz.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 15,
+    "assignments": 2,
+    "conditions": 6,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 16,
+      "unresolved": 9
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "9 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

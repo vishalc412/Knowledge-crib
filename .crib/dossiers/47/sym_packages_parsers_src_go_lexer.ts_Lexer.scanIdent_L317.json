@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanIdent@L317",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:e921cbfc6aadf4632695160fa54ed7c4015a71f98d04f9f7f199b479c7af7f75",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanIdent@L317",
@@ -115,11 +115,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:8be22c85870566a8ab9a7399436d0ef67647e9b45310533b1670b4f059da24e0",
-          "target": "sym:packages/parsers/src/go/lexer.ts#Lexer.advance@L448",
-          "expr": "advance",
-          "line": 321
+          "kind": "executes",
+          "edgeId": "e:3c4442b73d395316bf10f2e518e8b832514ee7e29fadb42cd7546a4281e96d85",
+          "target": "stmt:packages/parsers/src/go/lexer.ts@L321",
+          "line": 321,
+          "expr": "this.advance();"
         }
       },
       {
@@ -137,25 +137,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:3c4442b73d395316bf10f2e518e8b832514ee7e29fadb42cd7546a4281e96d85",
-          "target": "stmt:packages/parsers/src/go/lexer.ts@L321",
-          "line": 321,
-          "expr": "this.advance();"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanIdent@L317",
-        "procedureName": "Lexer.scanIdent",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "calls",
-          "edgeId": "e:a9072469a29696ccc24728fc8c67ac6de8b325c4390ec8f2c17192a3b7df0582",
-          "target": "sym:packages/parsers/src/go/lexer.ts#Lexer.emit@L459",
-          "expr": "emit",
-          "line": 322
+          "edgeId": "e:8be22c85870566a8ab9a7399436d0ef67647e9b45310533b1670b4f059da24e0",
+          "target": "sym:packages/parsers/src/go/lexer.ts#Lexer.advance@L448",
+          "expr": "advance",
+          "line": 321
         }
       },
       {
@@ -170,6 +156,20 @@
           "target": "stmt:packages/parsers/src/go/lexer.ts@L322",
           "line": 322,
           "expr": "this.emit('NAME', this.src.slice(start, this.pos), sl, sc);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanIdent@L317",
+        "procedureName": "Lexer.scanIdent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a9072469a29696ccc24728fc8c67ac6de8b325c4390ec8f2c17192a3b7df0582",
+          "target": "sym:packages/parsers/src/go/lexer.ts#Lexer.emit@L459",
+          "expr": "emit",
+          "line": 322
         }
       },
       {

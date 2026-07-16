@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseSimple@L1425",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:2b8b4de8687414e44b6a337b603031f01fad196e7fc25765bd07a24da2771a41",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseSimple@L1425",
@@ -79,11 +79,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:80e4d91b097f272b6cd83c2f993a6f00c0e95702b64cda1a0c79c94cf648eff8",
-          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.scanSimple@L1458",
-          "expr": "scanSimple",
-          "line": 1427
+          "kind": "executes",
+          "edgeId": "e:2ffc8b0cb021ddc3def0b97703ffd6732bda68fb967fd8c69d84c54a85c60faa",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1427",
+          "line": 1427,
+          "expr": "const scan = this.scanSimple(startIdx);"
         }
       },
       {
@@ -93,11 +93,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:2ffc8b0cb021ddc3def0b97703ffd6732bda68fb967fd8c69d84c54a85c60faa",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1427",
-          "line": 1427,
-          "expr": "const scan = this.scanSimple(startIdx);"
+          "kind": "calls",
+          "edgeId": "e:80e4d91b097f272b6cd83c2f993a6f00c0e95702b64cda1a0c79c94cf648eff8",
+          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.scanSimple@L1458",
+          "expr": "scanSimple",
+          "line": 1427
         }
       },
       {

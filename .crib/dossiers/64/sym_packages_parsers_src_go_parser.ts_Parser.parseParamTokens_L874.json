@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseParamTokens@L874",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:5b47a9973f92f2b45e22570f81b4a04beecceee4dad69067751dffde4fb7aedf",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseParamTokens@L874",
@@ -98,15 +98,53 @@
       "cond:packages/parsers/src/go/parser.ts@L883",
       "cond:packages/parsers/src/go/parser.ts@L884",
       "cond:packages/parsers/src/go/parser.ts@L886",
+      "cond:packages/parsers/src/go/parser.ts@L888",
       "cond:packages/parsers/src/go/parser.ts@L892",
       "cond:packages/parsers/src/go/parser.ts@L894",
       "cond:packages/parsers/src/go/parser.ts@L896",
       "cond:packages/parsers/src/go/parser.ts@L898",
       "cond:packages/parsers/src/go/parser.ts@L900",
-      "cond:packages/parsers/src/go/parser.ts@L888",
       "cond:packages/parsers/src/go/parser.ts@L907"
     ],
     "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseParamTokens@L874",
+        "procedureName": "Parser.parseParamTokens",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L888",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L881",
+            "expr": "i < tokens.length && pdepth > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L883",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L884",
+            "expr": "tk.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L886",
+            "expr": "tk.value === ')'"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L888",
+            "expr": "pdepth === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29db58305a28eab504c1271bcb3e314b4afd79c6309a31db903b8c5545a7bc54",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L889",
+          "line": 889,
+          "expr": "this.collectParamName(cur, params);"
+        }
+      },
       {
         "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseParamTokens@L874",
         "procedureName": "Parser.parseParamTokens",
@@ -159,44 +197,6 @@
           "target": "sym:packages/parsers/src/go/parser.ts#Parser.collectParamName@L914",
           "expr": "collectParamName",
           "line": 889
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseParamTokens@L874",
-        "procedureName": "Parser.parseParamTokens",
-        "guard": "cond:packages/parsers/src/go/parser.ts@L888",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/go/parser.ts@L881",
-            "expr": "i < tokens.length && pdepth > 0"
-          },
-          {
-            "id": "cond:packages/parsers/src/go/parser.ts@L883",
-            "expr": "tk.type === 'OP'"
-          },
-          {
-            "id": "cond:packages/parsers/src/go/parser.ts@L884",
-            "expr": "tk.value === '('"
-          },
-          {
-            "id": "cond:packages/parsers/src/go/parser.ts@L886",
-            "expr": "tk.value === ')'"
-          },
-          {
-            "id": "cond:packages/parsers/src/go/parser.ts@L888",
-            "expr": "pdepth === 0",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:29db58305a28eab504c1271bcb3e314b4afd79c6309a31db903b8c5545a7bc54",
-          "target": "stmt:packages/parsers/src/go/parser.ts@L889",
-          "line": 889,
-          "expr": "this.collectParamName(cur, params);"
         }
       },
       {

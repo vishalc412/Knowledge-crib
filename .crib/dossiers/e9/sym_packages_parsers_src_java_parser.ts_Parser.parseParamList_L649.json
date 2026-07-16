@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamList@L649",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:8e6e5ded27b4a41b94d85aef900f2e6617bad0a805c75b3c852da68aab3ed90f",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamList@L649",
@@ -177,28 +177,6 @@
       {
         "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamList@L649",
         "procedureName": "Parser.parseParamList",
-        "guard": "cond:packages/parsers/src/java/parser.ts@L655",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/java/parser.ts@L655",
-            "expr": "!this.atEnd() && pdepth > 0",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:e1c15eee8f6700e215e4d404ab03f7315bb960ca556349831f1e60daf2d88889",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L885",
-          "expr": "next",
-          "line": 651
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamList@L649",
-        "procedureName": "Parser.parseParamList",
         "conditions": [],
         "inLoop": false,
         "inException": false,
@@ -226,10 +204,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:ca15c6ea5b5b738a55cdfe945cc02a31b201b9b6c54d13695061999651ecfde0",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L890",
-          "expr": "peek",
-          "line": 656
+          "edgeId": "e:e1c15eee8f6700e215e4d404ab03f7315bb960ca556349831f1e60daf2d88889",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L885",
+          "expr": "next",
+          "line": 651
         }
       },
       {
@@ -252,6 +230,28 @@
           "target": "stmt:packages/parsers/src/java/parser.ts@L656",
           "line": 656,
           "expr": "const tk = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.parseParamList@L649",
+        "procedureName": "Parser.parseParamList",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L655",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L655",
+            "expr": "!this.atEnd() && pdepth > 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ca15c6ea5b5b738a55cdfe945cc02a31b201b9b6c54d13695061999651ecfde0",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L890",
+          "expr": "peek",
+          "line": 656
         }
       },
       {

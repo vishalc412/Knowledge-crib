@@ -1,0 +1,997 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:6f028cac82ad49d14529aa81719ef8ce212079a236e5fb8f0e656b57d9717f2a",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+    "kind": "symbol",
+    "type": "method",
+    "name": "status",
+    "qualifiedName": "EnrichmentStore.status",
+    "signature": "status(args: EnrichStatusArgs = {}): EnrichStatus",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 382,
+      "end": 474
+    },
+    "callSites": [
+      {
+        "callee": "readManifest",
+        "line": 383
+      },
+      {
+        "callee": "fromEntries",
+        "line": 389
+      },
+      {
+        "callee": "map",
+        "line": 389
+      },
+      {
+        "callee": "countLayer",
+        "line": 389
+      },
+      {
+        "callee": "reduce",
+        "line": 393
+      },
+      {
+        "callee": "values",
+        "line": 393
+      },
+      {
+        "callee": "find",
+        "line": 398
+      },
+      {
+        "callee": "scopes",
+        "line": 407
+      },
+      {
+        "callee": "fromEntries",
+        "line": 412
+      },
+      {
+        "callee": "map",
+        "line": 413
+      },
+      {
+        "callee": "countLayer",
+        "line": 413
+      },
+      {
+        "callee": "countLayer",
+        "line": 416
+      },
+      {
+        "callee": "find",
+        "line": 423
+      },
+      {
+        "callee": "every",
+        "line": 424
+      },
+      {
+        "callee": "fromEntries",
+        "line": 438
+      },
+      {
+        "callee": "map",
+        "line": 438
+      },
+      {
+        "callee": "countLayer",
+        "line": 438
+      },
+      {
+        "callee": "find",
+        "line": 446
+      },
+      {
+        "callee": "progressFromLayers",
+        "line": 456
+      },
+      {
+        "callee": "costFromLayers",
+        "line": 457
+      },
+      {
+        "callee": "filter",
+        "line": 460
+      },
+      {
+        "callee": "allArtifacts",
+        "line": 460
+      },
+      {
+        "callee": "some",
+        "line": 465
+      },
+      {
+        "callee": "isStale",
+        "line": 465
+      }
+    ]
+  },
+  "source": {
+    "text": "  status(args: EnrichStatusArgs = {}): EnrichStatus {\n    const manifest = this.readManifest();\n    let result: EnrichStatus;\n    let layers: Record<EnrichLayer, EnrichLayerCounts>;\n\n    // Picker-discovery mode: no active scope, caller wants the ranked scopes for the picker.\n    if (args.scopes && !args.scope) {\n      layers = Object.fromEntries(LAYERS.map((layer) => [layer, this.countLayer(layer)])) as Record<\n        EnrichLayer,\n        EnrichLayerCounts\n      >;\n      const totalPending = Object.values(layers).reduce((n, l) => n + l.missing + l.stale, 0);\n      const nextLayer = args.layer\n        ? layers[args.layer].missing + layers[args.layer].stale > 0\n          ? args.layer\n          : undefined\n        : LAYERS.find((layer) => layers[layer].missing + layers[layer].stale > 0);\n      result = {\n        model: manifest?.model ?? null,\n        ...(manifest?.builtAgainstHead ? { builtAgainstHead: manifest.builtAgainstHead } : {}),\n        layers,\n        ...(nextLayer ? { nextLayer } : {}),\n        done: !nextLayer,\n        totalPending,\n        threshold: ENRICH_SCOPE_THRESHOLD,\n        scopes: this.scopes(),\n      };\n    } else if (args.scope) {\n      // Scoped mode: counts/nextLayer/done are over in-scope targets only; system is whole-repo.\n      const scope = args.scope;\n      layers = Object.fromEntries(\n        LAYERS_SCOPED.map((layer) => [layer, this.countLayer(layer, scope)]),\n      ) as Record<EnrichLayer, EnrichLayerCounts>;\n      // Report the whole-repo system layer separately so the user knows the bible still needs it.\n      (layers as Record<EnrichLayer, EnrichLayerCounts>).system = this.countLayer('system');\n      const reqLayer =\n        args.layer && args.layer !== 'system' ? (args.layer as EnrichLayer) : undefined;\n      const nextLayer = reqLayer\n        ? layers[reqLayer].missing + layers[reqLayer].stale > 0\n          ? reqLayer\n          : undefined\n        : LAYERS_SCOPED.find((layer) => layers[layer].missing + layers[layer].stale > 0);\n      const scopeEmpty = LAYERS_SCOPED.every((layer) => layers[layer].total === 0);\n      const wholeSystem = layers.system.missing + layers.system.stale;\n      result = {\n        model: manifest?.model ?? null,\n        ...(manifest?.builtAgainstHead ? { builtAgainstHead: manifest.builtAgainstHead } : {}),\n        layers,\n        ...(nextLayer ? { nextLayer } : {}),\n        done: !nextLayer,\n        scopeEcho: scope,\n        scopeEmpty,\n        wholeRepoPending: { system: wholeSystem },\n      };\n    } else {\n      // Unscoped (current behavior).\n      layers = Object.fromEntries(LAYERS.map((layer) => [layer, this.countLayer(layer)])) as Record<\n        EnrichLayer,\n        EnrichLayerCounts\n      >;\n      const nextLayer = args.layer\n        ? layers[args.layer].missing + layers[args.layer].stale > 0\n          ? args.layer\n          : undefined\n        : LAYERS.find((layer) => layers[layer].missing + layers[layer].stale > 0);\n      result = {\n        model: manifest?.model ?? null,\n        ...(manifest?.builtAgainstHead ? { builtAgainstHead: manifest.builtAgainstHead } : {}),\n        layers,\n        ...(nextLayer ? { nextLayer } : {}),\n        done: !nextLayer,\n      };\n    }\n\n    result.progress = progressFromLayers(layers);\n    result.costEstimate = costFromLayers(layers);\n    // Whole-repo skeleton-bible presence/freshness (Phase 0.5 signal). Reported in every mode so the\n    // skill can gate Phase 0.5 (`present === false` → author a skeleton) regardless of scope.\n    const skeletons = this.allArtifacts().filter(\n      (a) => a.layer === 'system' && a.mode === 'skeleton',\n    );\n    result.systemSkeleton = {\n      present: skeletons.length > 0,\n      fresh: skeletons.some((a) => !this.isStale(a)),\n    };\n    if (args.budgetTokens !== undefined) {\n      result.budget = args.budgetTokens;\n      if (result.costEstimate.pending > args.budgetTokens) {\n        result.budgetExceeded = true;\n      }\n    }\n    return result;\n  }",
+    "truncated": false,
+    "totalLines": 93,
+    "startLine": 382
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.next@L476",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "EnrichmentStore.next",
+      "signature": "next(args: EnrichNextArgs = {}): EnrichNextBatch",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 476
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+      "confidence": 1,
+      "name": "nextSkeletonSystem",
+      "qualifiedName": "EnrichmentStore.nextSkeletonSystem",
+      "signature": "nextSkeletonSystem(args: EnrichNextArgs): EnrichNextBatch",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 601
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+      "confidence": 1,
+      "name": "allArtifacts",
+      "qualifiedName": "EnrichmentStore.allArtifacts",
+      "signature": "allArtifacts(): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 825
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.countLayer@L993",
+      "confidence": 1,
+      "name": "countLayer",
+      "qualifiedName": "EnrichmentStore.countLayer",
+      "signature": "countLayer(layer: EnrichLayer, scope?: EnrichScope): EnrichLayerCounts",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 993
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.isStale@L1624",
+      "confidence": 1,
+      "name": "isStale",
+      "qualifiedName": "EnrichmentStore.isStale",
+      "signature": "isStale(artifact: LlmArtifact): boolean",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1624
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.readManifest@L1449",
+      "confidence": 1,
+      "name": "readManifest",
+      "qualifiedName": "EnrichmentStore.readManifest",
+      "signature": "readManifest(): | {\n        model?: string | null;\n        builtAgainstHead?: string | null;\n        lastIssued?: Record<string, { batchId: string }>;\n      }\n    | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1449
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L1154",
+      "confidence": 1,
+      "name": "scopes",
+      "qualifiedName": "EnrichmentStore.scopes",
+      "signature": "scopes(): EnrichScopeInfo[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1154
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#costFromLayers@L1876",
+      "confidence": 1,
+      "name": "costFromLayers",
+      "qualifiedName": "costFromLayers",
+      "signature": "costFromLayers(layers: Record<EnrichLayer, EnrichLayerCounts>): {\n  currency: 'tokens';\n  pending: number;\n  total: number;\n}",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1876
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#progressFromLayers@L1866",
+      "confidence": 1,
+      "name": "progressFromLayers",
+      "qualifiedName": "progressFromLayers",
+      "signature": "progressFromLayers(layers: Record<EnrichLayer, EnrichLayerCounts>): {\n  completed: number;\n  pending: number;\n  total: number;\n}",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1866
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "heading": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "anchor": "1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "snippet": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#known-non-blockers",
+      "heading": "Known Non-Blockers",
+      "anchor": "known-non-blockers",
+      "snippet": "Known Non-Blockers",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#security",
+      "heading": "Security",
+      "anchor": "security",
+      "snippet": "Security",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#table-of-contents",
+      "heading": "Table of contents",
+      "anchor": "table-of-contents",
+      "snippet": "Table of contents",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#8-troubleshooting",
+      "heading": "8. Troubleshooting",
+      "anchor": "8-troubleshooting",
+      "snippet": "8. Troubleshooting",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-3-capture-real-product-evidence",
+      "heading": "Task 3: Capture Real Product Evidence",
+      "anchor": "task-3-capture-real-product-evidence",
+      "snippet": "Task 3: Capture Real Product Evidence",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CODE_OF_CONDUCT.md#our-pledge",
+      "heading": "Our Pledge",
+      "anchor": "our-pledge",
+      "snippet": "Our Pledge",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-beta-installers.md#verify-the-bundle",
+      "heading": "Verify The Bundle",
+      "anchor": "verify-the-bundle",
+      "snippet": "Verify The Bundle",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#current-limits-say-before-architects-ask",
+      "heading": "Current limits — say before architects ask",
+      "anchor": "current-limits-say-before-architects-ask",
+      "snippet": "Current limits — say before architects ask",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#release-gate",
+      "heading": "Release Gate",
+      "anchor": "release-gate",
+      "snippet": "Release Gate",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#production-architecture",
+      "heading": "Production Architecture",
+      "anchor": "production-architecture",
+      "snippet": "Production Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CLAUDE.md#cli",
+      "heading": "CLI",
+      "anchor": "cli",
+      "snippet": "CLI",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:AGENTS.md#cli",
+      "heading": "CLI",
+      "anchor": "cli",
+      "snippet": "CLI",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-2-concrete-before-after-the-loan-rule-engine-procedure",
+      "heading": "1.2 Concrete before/after — the loan-rule-engine procedure",
+      "anchor": "1-2-concrete-before-after-the-loan-rule-engine-procedure",
+      "snippet": "1.2 Concrete before/after — the loan-rule-engine procedure",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added-2",
+      "heading": "Added",
+      "anchor": "added-2",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-7-mcp-server-verification-the-real-test",
+      "heading": "5.7 MCP server verification (the real test)",
+      "anchor": "5-7-mcp-server-verification-the-real-test",
+      "snippet": "5.7 MCP server verification (the real test)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+    "procedureName": "EnrichmentStore.status",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L388",
+      "cond:packages/mcp/src/enrichment.ts@L409",
+      "cond:packages/mcp/src/enrichment.ts@L467",
+      "cond:packages/mcp/src/enrichment.ts@L469"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:384548adac3c10eefa37ed28000d4b7ec11be00752e38cf8070243b48b31694d",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.readManifest@L1449",
+          "expr": "readManifest",
+          "line": 383
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b52250b1bf9efb1b48ea9d6247e7c7853fc962cb3424eb41ad8490e37a089297",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L383",
+          "line": 383,
+          "expr": "const manifest = this.readManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L409",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L409",
+            "expr": "args.scope",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4e69557614dfd99e6a6071beffe052228cdbed646b639b64d9869966e1041f13",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.countLayer@L993",
+          "expr": "countLayer",
+          "line": 389
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L388",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dda89b9000f1e6c88fa35d91574158acade24209f2c99d632767cdbbb77a1c85",
+          "target": "assign:packages/mcp/src/enrichment.ts@L389",
+          "line": 389,
+          "expr": "layers = Object.fromEntries(LAYERS.map((layer) => [layer, this.countLayer(layer)])) as Record<\n        EnrichLayer,\n        EnrichLayerCounts\n      >;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L388",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31876e16cae3d08eac6b043ab6d2a6efd8f5965d05c837dc6e3d3a4a8ebd836e",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L393",
+          "line": 393,
+          "expr": "const totalPending = Object.values(layers).reduce((n, l) => n + l.missing + l.stale, 0);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L388",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb6cdb1a211a4450f81bb9c22b5568114ba3026470fc4c230490af6c58e485fa",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L394",
+          "line": 394,
+          "expr": "const nextLayer = args.layer\n        ? layers[args.layer].missing + layers[args.layer].stale > 0\n          ? args.layer\n          : undefined\n        : LAYERS.find((layer) => layers[layer].missing + layers[layer].stale > 0);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L388",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6dbe89e0e67024a9c5ffcb5df46243a817fa151587033068fa08235c44fa26eb",
+          "target": "assign:packages/mcp/src/enrichment.ts@L399",
+          "line": 399,
+          "expr": "result = {\n        model: manifest?.model ?? null,\n        ...(manifest?.builtAgainstHead ? { builtAgainstHead: manifest.builtAgainstHead } : {}),\n        layers,\n        ...(nextLayer ? { nextLayer } : {}),\n        done: !nextLayer,\n        totalPending,\n        threshold: ENRICH_SCOPE_THRESHOLD,\n        scopes: this.scopes(),\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L388",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d07ae74dc20837910d7891951ca50157e7a1da1d61acd261705df2d108a9d8e9",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L1154",
+          "expr": "scopes",
+          "line": 407
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L409",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L409",
+            "expr": "args.scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a2f01be48930837578f48dba856624b7c1969952be86b0a7fc5f2ab4ee3dd996",
+          "target": "assign:packages/mcp/src/enrichment.ts@L412",
+          "line": 412,
+          "expr": "layers = Object.fromEntries(\n        LAYERS_SCOPED.map((layer) => [layer, this.countLayer(layer, scope)]),\n      ) as Record<EnrichLayer, EnrichLayerCounts>;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L409",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L409",
+            "expr": "args.scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:64b96eae112768e79d6974876aae93bdae69a48ec2110380acaa900705207cc3",
+          "target": "assign:packages/mcp/src/enrichment.ts@L416",
+          "line": 416,
+          "expr": "(layers as Record<EnrichLayer, EnrichLayerCounts>).system = this.countLayer('system');"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L409",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L409",
+            "expr": "args.scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ead3c7733384961ca6e1e631c5ccb11f53cebe3c3754acedab6f445e546c18ad",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L419",
+          "line": 419,
+          "expr": "const nextLayer = reqLayer\n        ? layers[reqLayer].missing + layers[reqLayer].stale > 0\n          ? reqLayer\n          : undefined\n        : LAYERS_SCOPED.find((layer) => layers[layer].missing + layers[layer].stale > 0);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L409",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L409",
+            "expr": "args.scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e97c772651aa4614a7c5072f73d1d180e2895189c0d725bebda4af26480a986a",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L424",
+          "line": 424,
+          "expr": "const scopeEmpty = LAYERS_SCOPED.every((layer) => layers[layer].total === 0);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L409",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L409",
+            "expr": "args.scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bad255b11d561f558df1d15be6d78c0e64f59a6a311bb7914d4010089d2a5477",
+          "target": "assign:packages/mcp/src/enrichment.ts@L426",
+          "line": 426,
+          "expr": "result = {\n        model: manifest?.model ?? null,\n        ...(manifest?.builtAgainstHead ? { builtAgainstHead: manifest.builtAgainstHead } : {}),\n        layers,\n        ...(nextLayer ? { nextLayer } : {}),\n        done: !nextLayer,\n        scopeEcho: scope,\n        scopeEmpty,\n        wholeRepoPending: { system: wholeSystem },\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L409",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L409",
+            "expr": "args.scope",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c81e1c178f90ac41d988a4ced3e19c8df497ba92466b57760bfd6078cea5a607",
+          "target": "assign:packages/mcp/src/enrichment.ts@L438",
+          "line": 438,
+          "expr": "layers = Object.fromEntries(LAYERS.map((layer) => [layer, this.countLayer(layer)])) as Record<\n        EnrichLayer,\n        EnrichLayerCounts\n      >;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L409",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L409",
+            "expr": "args.scope",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1e3fdc12e22971e4335fc03095a3cf0d14a5831060b90bb50bf73d8430687747",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L442",
+          "line": 442,
+          "expr": "const nextLayer = args.layer\n        ? layers[args.layer].missing + layers[args.layer].stale > 0\n          ? args.layer\n          : undefined\n        : LAYERS.find((layer) => layers[layer].missing + layers[layer].stale > 0);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L409",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L388",
+            "expr": "args.scopes && !args.scope"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L409",
+            "expr": "args.scope",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d841ad537dc8b7639538f93989e1491d35f2706b038c76c8d977c2e05177d528",
+          "target": "assign:packages/mcp/src/enrichment.ts@L447",
+          "line": 447,
+          "expr": "result = {\n        model: manifest?.model ?? null,\n        ...(manifest?.builtAgainstHead ? { builtAgainstHead: manifest.builtAgainstHead } : {}),\n        layers,\n        ...(nextLayer ? { nextLayer } : {}),\n        done: !nextLayer,\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:055aa008d1b2a3997ee807d890c61066e46b4cc045add9dc18366b20cc6e6765",
+          "target": "sym:packages/mcp/src/enrichment.ts#progressFromLayers@L1866",
+          "expr": "progressFromLayers",
+          "line": 456
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bdaa340d0af40333e5dc7ec35d8b63415e35ea7b86ae6bdb8df94d313395461c",
+          "target": "assign:packages/mcp/src/enrichment.ts@L456",
+          "line": 456,
+          "expr": "result.progress = progressFromLayers(layers);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:256bb824ef7a35941052ce191686c5e658c1b4f672f6cb450926d4e90a2fe9b0",
+          "target": "sym:packages/mcp/src/enrichment.ts#costFromLayers@L1876",
+          "expr": "costFromLayers",
+          "line": 457
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cdb5c6579b2afc50d821742c2f14a2b6e0006106e7f849512e0773de1c78af66",
+          "target": "assign:packages/mcp/src/enrichment.ts@L457",
+          "line": 457,
+          "expr": "result.costEstimate = costFromLayers(layers);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:10990a8f380a1327387263fe1be43e8c3531ea4b471861afeb5a16fb80a4c498",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+          "expr": "allArtifacts",
+          "line": 460
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cccc83add4bc1e53e91255bb746cf117ce7952d9a879889052ffaca70a037e25",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L460",
+          "line": 460,
+          "expr": "const skeletons = this.allArtifacts().filter(\n      (a) => a.layer === 'system' && a.mode === 'skeleton',\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:914bc15b1d73601e2d9705280979a7893f1ff11cee679ee50c3d9c921fe2223a",
+          "target": "assign:packages/mcp/src/enrichment.ts@L463",
+          "line": 463,
+          "expr": "result.systemSkeleton = {\n      present: skeletons.length > 0,\n      fresh: skeletons.some((a) => !this.isStale(a)),\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2ff8560f91b336be628b86978040a8bde50dde172dc2f6df01bbf7a110b1abea",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.isStale@L1624",
+          "expr": "isStale",
+          "line": 465
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L467",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L467",
+            "expr": "args.budgetTokens !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2910f25c0258951cd84d7805a62ad4ab3445339ac080fc40232af863a45cf5c3",
+          "target": "assign:packages/mcp/src/enrichment.ts@L468",
+          "line": 468,
+          "expr": "result.budget = args.budgetTokens;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L469",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L467",
+            "expr": "args.budgetTokens !== undefined"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L469",
+            "expr": "result.costEstimate.pending > args.budgetTokens",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a09c188d0d3b3ea013bc7aa7dbc89b1aa045d8b9e219d1c6bfcc770558598504",
+          "target": "assign:packages/mcp/src/enrichment.ts@L470",
+          "line": 470,
+          "expr": "result.budgetExceeded = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+        "procedureName": "EnrichmentStore.status",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31e737fb4cffb8e1543bf99629ee10f46780ae922c92995f3fb96e1c671c29f0",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L473",
+          "line": 473,
+          "expr": "return result;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 20,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 20,
+    "assignments": 12,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 7,
+      "recorded": 24,
+      "unresolved": 11
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "11 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

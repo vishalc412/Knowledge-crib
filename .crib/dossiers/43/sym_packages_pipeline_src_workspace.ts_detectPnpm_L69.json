@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:c3f728d1c77e45a9ec6536fb4adc7ec1001772883f4407e233e09bf8040cc691",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
@@ -56,24 +56,24 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L210",
+      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
       "confidence": 1,
       "name": "expandPatterns",
       "qualifiedName": "expandPatterns",
       "signature": "expandPatterns(root: string, patterns: string[]): WorkspacePackage[]",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 210
+      "line": 208
     },
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L136",
+      "id": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
       "confidence": 1,
       "name": "parsePnpmWorkspacePatterns",
       "qualifiedName": "parsePnpmWorkspacePatterns",
       "signature": "parsePnpmWorkspacePatterns(content: string): string[]",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 136
+      "line": 134
     }
   ],
   "docs": [],
@@ -128,20 +128,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:cf7fef07fe70379990f6fa827d73066d1ae0d31a60c0e9905cbc16925069aa4f",
-          "target": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L136",
-          "expr": "parsePnpmWorkspacePatterns",
-          "line": 72
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
-        "procedureName": "detectPnpm",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:52e2f966f8818bbecc08d80ccaf52dfd21762ea71c4e1654409df9325e84c120",
           "target": "stmt:packages/pipeline/src/workspace.ts@L72",
@@ -157,10 +143,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:ac192c67c36f4ac3dc9db73216ee232e2c9ef4c93820b74a3cd59d9b8d4de672",
-          "target": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L210",
-          "expr": "expandPatterns",
-          "line": 73
+          "edgeId": "e:ea64a623e2c74cecb36f5f3eb9384ba78420f601e885ba618573b6a284bf2979",
+          "target": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+          "expr": "parsePnpmWorkspacePatterns",
+          "line": 72
         }
       },
       {
@@ -175,6 +161,20 @@
           "target": "stmt:packages/pipeline/src/workspace.ts@L73",
           "line": 73,
           "expr": "const packages = expandPatterns(root, patterns);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
+        "procedureName": "detectPnpm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c424090da9b322bb0516701a149a9616ddc136182706eed46f931bf30b9c6b05",
+          "target": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
+          "expr": "expandPatterns",
+          "line": 73
         }
       },
       {

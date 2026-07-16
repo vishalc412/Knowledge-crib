@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/lexer.ts#tokenize@L173",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:e034d03b985521bb6278640575d1e1344aa664b33698bfa7d8eee3f86f2f9784",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/lexer.ts#tokenize@L173",
@@ -76,11 +76,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b14e245c12748e8bbb639976620f4e8437b6566d015b06e04f0632c0bfd241e7",
-          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
-          "expr": "tokens",
-          "line": 174
+          "kind": "executes",
+          "edgeId": "e:9f0dde5ca94e8ddc6b51c5c1ce89bba6bb9678ea17f2d992e60970f99d9e120e",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L174",
+          "line": 174,
+          "expr": "return new Lexer(src).tokens();"
         }
       },
       {
@@ -90,11 +90,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:9f0dde5ca94e8ddc6b51c5c1ce89bba6bb9678ea17f2d992e60970f99d9e120e",
-          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L174",
-          "line": 174,
-          "expr": "return new Lexer(src).tokens();"
+          "kind": "calls",
+          "edgeId": "e:b14e245c12748e8bbb639976620f4e8437b6566d015b06e04f0632c0bfd241e7",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+          "expr": "tokens",
+          "line": 174
         }
       }
     ]

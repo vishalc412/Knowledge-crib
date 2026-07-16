@@ -1,0 +1,187 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#nestStereotypeOf@L330",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:c69eaf72d67bf3f6f2d2dbe228be3cc926d620282f32601aae3214bf22c988d8",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#nestStereotypeOf@L330",
+    "kind": "symbol",
+    "type": "function",
+    "name": "nestStereotypeOf",
+    "qualifiedName": "nestStereotypeOf",
+    "signature": "nestStereotypeOf(classDecs: ts.Decorator[]): { stereotype: string; framework: string } | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 330,
+      "end": 338
+    },
+    "callSites": [
+      {
+        "callee": "simpleName",
+        "line": 334
+      }
+    ]
+  },
+  "source": {
+    "text": "function nestStereotypeOf(\n  classDecs: ts.Decorator[],\n): { stereotype: string; framework: string } | undefined {\n  for (const d of classDecs) {\n    const s = CLASS_STEREOTYPE[simpleName(d)];\n    if (s) return s;\n  }\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 330
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 104
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
+      "confidence": 1,
+      "name": "simpleName",
+      "qualifiedName": "simpleName",
+      "signature": "simpleName(d: ts.Decorator): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 571
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L329",
+      "snippet": "/** The architectural stereotype for a class from its decorators (first match wins). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#nestStereotypeOf@L330",
+    "procedureName": "nestStereotypeOf",
+    "conditions": [
+      "cond:packages/parsers/src/ts/nest.ts@L333",
+      "cond:packages/parsers/src/ts/nest.ts@L335"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#nestStereotypeOf@L330",
+        "procedureName": "nestStereotypeOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L333",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L333",
+            "expr": "classDecs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:49141c62fe9d81a216b04fd056d3ff511bd36b515205748c18c60d2db93cc4c1",
+          "target": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
+          "expr": "simpleName",
+          "line": 334
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#nestStereotypeOf@L330",
+        "procedureName": "nestStereotypeOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L333",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L333",
+            "expr": "classDecs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9698dfa87200c9769402382beb24365b53b7598283d117ffb9c324ec46851655",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L334",
+          "line": 334,
+          "expr": "const s = CLASS_STEREOTYPE[simpleName(d)];"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#nestStereotypeOf@L330",
+        "procedureName": "nestStereotypeOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L335",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L333",
+            "expr": "classDecs"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L335",
+            "expr": "s",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:18a2fa5412252e6829287e154d523dfedb2edd153f22358622332fa2b4d3fce7",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L335",
+          "line": 335,
+          "expr": "return s;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#nestStereotypeOf@L330",
+        "procedureName": "nestStereotypeOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bcfdd06070a41169f217ae5593a1484b472c0e0409a2ab0046a63262186a75a2",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L337",
+          "line": 337,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

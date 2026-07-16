@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L659",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:20f4729677ca05042706edc501ca1228aaeeb06adecc0c33d695d55e577185da",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L659",
@@ -127,11 +127,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:f022bc604e857d4136dec4a59f50a70a90188ed4e18ad95585f23885826399ba",
-          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.exceptionHandler@L726",
-          "expr": "exceptionHandler",
-          "line": 665
+          "kind": "executes",
+          "edgeId": "e:790967d1154adf481b2d7fb97b619d8b910d8ab92c1206431156639d4cfe3011",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L665",
+          "line": 665,
+          "expr": "const excId = this.exceptionHandler(handler.condition, handler.span.start);"
         }
       },
       {
@@ -149,11 +149,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:790967d1154adf481b2d7fb97b619d8b910d8ab92c1206431156639d4cfe3011",
-          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L665",
-          "line": 665,
-          "expr": "const excId = this.exceptionHandler(handler.condition, handler.span.start);"
+          "kind": "calls",
+          "edgeId": "e:f022bc604e857d4136dec4a59f50a70a90188ed4e18ad95585f23885826399ba",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.exceptionHandler@L726",
+          "expr": "exceptionHandler",
+          "line": 665
         }
       },
       {
@@ -241,11 +241,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:34c732b0b79f0a437d784181deaf6809ff04529d3a4b49ef2bc76836021b52cb",
-          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L798",
-          "expr": "edge",
-          "line": 678
+          "kind": "executes",
+          "edgeId": "e:1c7f446c176745565c99de803474c004e7e43f8b2b4f3e6f6ca7fcb6b9a3531d",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L678",
+          "line": 678,
+          "expr": "this.edges.push(this.edge(excId, target.id, 'handles', handler.condition));"
         }
       },
       {
@@ -267,11 +267,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:1c7f446c176745565c99de803474c004e7e43f8b2b4f3e6f6ca7fcb6b9a3531d",
-          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L678",
-          "line": 678,
-          "expr": "this.edges.push(this.edge(excId, target.id, 'handles', handler.condition));"
+          "kind": "calls",
+          "edgeId": "e:34c732b0b79f0a437d784181deaf6809ff04529d3a4b49ef2bc76836021b52cb",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L798",
+          "expr": "edge",
+          "line": 678
         }
       }
     ]

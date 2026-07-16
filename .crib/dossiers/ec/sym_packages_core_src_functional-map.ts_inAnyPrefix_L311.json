@@ -1,0 +1,110 @@
+{
+  "id": "sym:packages/core/src/functional-map.ts#inAnyPrefix@L311",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:8ac71832ba63a2bd57a1f0690dde097cd821195a596c4ec42a794d6fa95a2db3",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/functional-map.ts#inAnyPrefix@L311",
+    "kind": "symbol",
+    "type": "function",
+    "name": "inAnyPrefix",
+    "qualifiedName": "inAnyPrefix",
+    "signature": "inAnyPrefix(file: string, prefixes: Array<{ pathPrefix: string }>): boolean",
+    "lang": "typescript",
+    "file": "packages/core/src/functional-map.ts",
+    "span": {
+      "start": 311,
+      "end": 313
+    },
+    "callSites": [
+      {
+        "callee": "some",
+        "line": 312
+      },
+      {
+        "callee": "startsWith",
+        "line": 312
+      }
+    ]
+  },
+  "source": {
+    "text": "function inAnyPrefix(file: string, prefixes: Array<{ pathPrefix: string }>): boolean {\n  return prefixes.some((p) => file === p.pathPrefix || file.startsWith(`${p.pathPrefix}/`));\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 311
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
+      "confidence": 1,
+      "name": "buildFunctionalMap",
+      "qualifiedName": "buildFunctionalMap",
+      "signature": "buildFunctionalMap(soul: SoulStore, opts: BuildFunctionalMapOpts = {}): FunctionalMap",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 74
+    },
+    {
+      "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap.inModule@L127",
+      "confidence": 1,
+      "name": "inModule",
+      "qualifiedName": "buildFunctionalMap.inModule",
+      "signature": "inModule(…)",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 127
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/functional-map.ts#inAnyPrefix@L311",
+    "procedureName": "inAnyPrefix",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#inAnyPrefix@L311",
+        "procedureName": "inAnyPrefix",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:15801fdfdf02cc6d5f8e4b65c87e623d787ea708c0094a2e76ecc98f31585975",
+          "target": "stmt:packages/core/src/functional-map.ts@L312",
+          "line": 312,
+          "expr": "return prefixes.some((p) => file === p.pathPrefix || file.startsWith(`${p.pathPrefix}/`));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/functional-map.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

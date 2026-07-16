@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/delta.ts#inScope@L61",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:b98a537a889091113ec79fbbd2e205a038c13eeb003e7416e9054585548c47ba",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/delta.ts#inScope@L61",
@@ -95,11 +95,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:add472017bc7cb5de1d185a49919536984a0a40e2c474e5ea0a1ac6099cb9c05",
-          "target": "stmt:packages/core/src/delta.ts@L63",
-          "line": 63,
-          "expr": "const p = pathFromId(id);"
+          "kind": "calls",
+          "edgeId": "e:048a0a9d8e651501e0f35c591a1cb9c152283c32684f8b3476c89e4062aca8a4",
+          "target": "sym:packages/core/src/shard.ts#pathFromId@L16",
+          "expr": "pathFromId",
+          "line": 63
         }
       },
       {
@@ -109,11 +109,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:048a0a9d8e651501e0f35c591a1cb9c152283c32684f8b3476c89e4062aca8a4",
-          "target": "sym:packages/core/src/shard.ts#pathFromId@L16",
-          "expr": "pathFromId",
-          "line": 63
+          "kind": "executes",
+          "edgeId": "e:add472017bc7cb5de1d185a49919536984a0a40e2c474e5ea0a1ac6099cb9c05",
+          "target": "stmt:packages/core/src/delta.ts@L63",
+          "line": 63,
+          "expr": "const p = pathFromId(id);"
         }
       },
       {

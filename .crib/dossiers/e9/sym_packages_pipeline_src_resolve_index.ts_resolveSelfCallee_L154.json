@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/index.ts#resolveSelfCallee@L154",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:f8255f20a0fb895dc8321f54bc9f190977ef96cf47288790bdb035ae2cff29d0",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/index.ts#resolveSelfCallee@L154",
@@ -68,6 +68,16 @@
   ],
   "callees": [
     {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
       "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
       "confidence": 1,
       "name": "find",
@@ -108,6 +118,20 @@
           "target": "stmt:packages/pipeline/src/resolve/index.ts@L160",
           "line": 160,
           "expr": "const c = callee.toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/index.ts#resolveSelfCallee@L154",
+        "procedureName": "resolveSelfCallee",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8eaab6cdbade1f6caa76a6f0fd1aebf59775ae9ce8f9d9fd73a3b2ddb9018051",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 161
         }
       },
       {
@@ -258,14 +282,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 1,
+      "resolved": 2,
       "recorded": 7,
-      "unresolved": 6
+      "unresolved": 4
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

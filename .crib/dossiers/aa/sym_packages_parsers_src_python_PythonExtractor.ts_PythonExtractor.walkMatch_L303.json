@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkMatch@L303",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:4a291ef7a81bf8f8dcbf86f0a298420d6d20f899699a247cc36b751610895499",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkMatch@L303",
@@ -100,28 +100,6 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:78bc44f3cd610bfdedb5dcc05d9c83269f329e719693b1bea3a93940ab4725cd",
-          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.caseBranch@L537",
-          "expr": "caseBranch",
-          "line": 313
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkMatch@L303",
-        "procedureName": "PythonExtractor.walkMatch",
-        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L311",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L311",
-            "expr": "s.cases ?? []",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:2434384ce232b495387b5cdcbe754cd01ffd4028b38ae9020897091ce2067e05",
           "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L313",
@@ -145,10 +123,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:a98a184885a69d70f06869f60bd7bd9e463958dcd30fba9b37b113e0791b5355",
-          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
-          "expr": "walkBody",
-          "line": 314
+          "edgeId": "e:78bc44f3cd610bfdedb5dcc05d9c83269f329e719693b1bea3a93940ab4725cd",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.caseBranch@L537",
+          "expr": "caseBranch",
+          "line": 313
         }
       },
       {
@@ -171,6 +149,28 @@
           "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L314",
           "line": 314,
           "expr": "this.walkBody(c.body, procId, [...guardStack, cbId], 'CASE', inLoop, inException, w);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkMatch@L303",
+        "procedureName": "PythonExtractor.walkMatch",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L311",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L311",
+            "expr": "s.cases ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a98a184885a69d70f06869f60bd7bd9e463958dcd30fba9b37b113e0791b5355",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
+          "expr": "walkBody",
+          "line": 314
         }
       }
     ]

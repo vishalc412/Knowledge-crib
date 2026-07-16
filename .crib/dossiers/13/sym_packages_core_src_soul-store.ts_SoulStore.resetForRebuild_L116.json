@@ -1,0 +1,187 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L116",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:cb0f2f281ebcfdbc78e951ee27b47e99986bc07f1ec853df0ef28d9c60963576",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L116",
+    "kind": "symbol",
+    "type": "method",
+    "name": "resetForRebuild",
+    "qualifiedName": "SoulStore.resetForRebuild",
+    "signature": "resetForRebuild(): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 116,
+      "end": 127
+    },
+    "callSites": [
+      {
+        "callee": "clear",
+        "line": 117
+      },
+      {
+        "callee": "clear",
+        "line": 118
+      },
+      {
+        "callee": "add",
+        "line": 120
+      },
+      {
+        "callee": "add",
+        "line": 122
+      }
+    ]
+  },
+  "source": {
+    "text": "  resetForRebuild(): void {\n    this.nodes.clear();\n    this.edges.clear();\n    const nodesRoot = this.nodesRoot;\n    if (existsSync(nodesRoot)) for (const s of readdirSync(nodesRoot)) this.dirtyNodeShards.add(s);\n    const edgesRoot = this.edgesRoot;\n    if (existsSync(edgesRoot)) for (const s of readdirSync(edgesRoot)) this.dirtyEdgeShards.add(s);\n    this.clustersDirty = true;\n    // The dossier cache stays in place here. The post-commit runDossiers phase compares rebuilt\n    // graph-dependent content while ignoring only `builtAt`, preserving byte stability for true\n    // no-ops and pruning artifacts whose node disappeared.\n  }",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 116
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/soul-store.ts@L108",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L116",
+    "procedureName": "SoulStore.resetForRebuild",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L120",
+      "cond:packages/core/src/soul-store.ts@L122"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L116",
+        "procedureName": "SoulStore.resetForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0b41bc0c070aa49968bab6d0e4cd787fd3b991accba997968cfbe379077cd4cf",
+          "target": "stmt:packages/core/src/soul-store.ts@L117",
+          "line": 117,
+          "expr": "this.nodes.clear();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L116",
+        "procedureName": "SoulStore.resetForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2f8a95f4f29ca3228b0f52cb6771d2a4ab33a4a3bfdd3d14eb2cd034dc3d6e80",
+          "target": "stmt:packages/core/src/soul-store.ts@L118",
+          "line": 118,
+          "expr": "this.edges.clear();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L116",
+        "procedureName": "SoulStore.resetForRebuild",
+        "guard": "cond:packages/core/src/soul-store.ts@L120",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L120",
+            "expr": "existsSync(nodesRoot)"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L120",
+            "expr": "existsSync(nodesRoot)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:19b1cd18147804c4bdbac6d4b490a64564afcb15a8855bdd02eff29bba110207",
+          "target": "stmt:packages/core/src/soul-store.ts@L120",
+          "line": 120,
+          "expr": "this.dirtyNodeShards.add(s);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L116",
+        "procedureName": "SoulStore.resetForRebuild",
+        "guard": "cond:packages/core/src/soul-store.ts@L122",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L122",
+            "expr": "existsSync(edgesRoot)"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L122",
+            "expr": "existsSync(edgesRoot)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a87862ea5a6a38fd77a254500d7ab7a3376cf41633dcca7bbd6015daf84f2a38",
+          "target": "stmt:packages/core/src/soul-store.ts@L122",
+          "line": 122,
+          "expr": "this.dirtyEdgeShards.add(s);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.resetForRebuild@L116",
+        "procedureName": "SoulStore.resetForRebuild",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9fe8db68c2136faee9801fe5a590dd688fe05ed6e74fe26cd839a33c7872ed99",
+          "target": "assign:packages/core/src/soul-store.ts@L123",
+          "line": 123,
+          "expr": "this.clustersDirty = true;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

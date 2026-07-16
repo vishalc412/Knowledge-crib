@@ -1,0 +1,346 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:0f3ceb933e1f92ccb7372546b3776893c08dd78fc162b604ee2250c1e47a5b87",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+    "kind": "symbol",
+    "type": "function",
+    "name": "label",
+    "qualifiedName": "label",
+    "signature": "label(soul: SoulStore, id: string): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/rust-resolver.test.ts",
+    "span": {
+      "start": 161,
+      "end": 172
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 162
+      },
+      {
+        "callee": "iterate",
+        "line": 162
+      },
+      {
+        "callee": "shortFile",
+        "line": 168
+      }
+    ]
+  },
+  "source": {
+    "text": "function label(soul: SoulStore, id: string): string {\n  const n: Node | undefined = [...soul.iterate()].find((x) => x.id === id);\n  if (!n) return id;\n  switch (n.kind) {\n    case 'symbol':\n      return `sym:${n.qualifiedName ?? n.name}`;\n    case 'file':\n      return `file:${shortFile(n.file)}`;\n    default:\n      return n.kind;\n  }\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 161
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#pair@L157",
+      "confidence": 1,
+      "name": "pair",
+      "qualifiedName": "pair",
+      "signature": "pair(soul: SoulStore, srcId: string, dstId: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/rust-resolver.test.ts",
+      "line": 157
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#shortFile@L223",
+      "confidence": 1,
+      "name": "shortFile",
+      "qualifiedName": "shortFile",
+      "signature": "shortFile(p: string | undefined): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "line": 223
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#shortFile@L174",
+      "confidence": 1,
+      "name": "shortFile",
+      "qualifiedName": "shortFile",
+      "signature": "shortFile(p: string | undefined): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/rust-resolver.test.ts",
+      "line": 174
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#4-link-precision-measurement-m4-the-trust-gate",
+      "heading": "4. Link-precision measurement (M4 — the trust gate)",
+      "anchor": "4-link-precision-measurement-m4-the-trust-gate",
+      "snippet": "4. Link-precision measurement (M4 — the trust gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#4-9-seconds-the-product",
+      "heading": "4-9 seconds: The Product",
+      "anchor": "4-9-seconds-the-product",
+      "snippet": "4-9 seconds: The Product",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#creative-direction-signal-grid",
+      "heading": "Creative Direction: Signal Grid",
+      "anchor": "creative-direction-signal-grid",
+      "snippet": "Creative Direction: Signal Grid",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+    "procedureName": "label",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/rust-resolver.test.ts@L163",
+      "case:packages/pipeline/src/resolve/rust-resolver.test.ts@L165",
+      "case:packages/pipeline/src/resolve/rust-resolver.test.ts@L167"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2734af2328d54fe36d0d76072dfb69db414c21071dda33314959a0802f01cf3c",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 162
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af9de65060c40fd88b99ed5af0882757eb09ef6a9758a23a3500b51f3d8ffccf",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.test.ts@L162",
+          "line": 162,
+          "expr": "const n: Node | undefined = [...soul.iterate()].find((x) => x.id === id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+        "procedureName": "label",
+        "guard": "cond:packages/pipeline/src/resolve/rust-resolver.test.ts@L163",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/rust-resolver.test.ts@L163",
+            "expr": "!n",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dbf5b7a559abf7c48063afea8e749d0e3983153aaa39a4ffae14e18f6f01700a",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.test.ts@L163",
+          "line": 163,
+          "expr": "return id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:67e610e64047dcc792f7db7cdd827bc50c0bbd74b6fd231254bc4643c500cd50",
+          "target": "case:packages/pipeline/src/resolve/rust-resolver.test.ts@L165",
+          "line": 165,
+          "expr": "symbol"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/rust-resolver.test.ts@L165",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/rust-resolver.test.ts@L165",
+            "expr": "symbol",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:896eb121ab62c1eacab25db4d1893313e87d6f91b3b5dee10118be35af2dd14b",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.test.ts@L166",
+          "line": 166,
+          "expr": "return `sym:${n.qualifiedName ?? n.name}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bcaf15343eaec091f867ab7c183a833c91b391edfcc8446c0978a65ae3740892",
+          "target": "case:packages/pipeline/src/resolve/rust-resolver.test.ts@L167",
+          "line": 167,
+          "expr": "file"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/rust-resolver.test.ts@L167",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/rust-resolver.test.ts@L167",
+            "expr": "file",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:45d2c2d64569e78ea2817622fff56def37fd905d6ab64701f7d2f07b46fa02e6",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.test.ts@L168",
+          "line": 168,
+          "expr": "return `file:${shortFile(n.file)}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8539da515a1d57c015f4fecf96c0c90f31a3520f9b263ee93cf3b0a7163194c7",
+          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#shortFile@L223",
+          "expr": "shortFile",
+          "line": 168
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+        "procedureName": "label",
+        "guard": "case:packages/pipeline/src/resolve/rust-resolver.test.ts@L167",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/pipeline/src/resolve/rust-resolver.test.ts@L167",
+            "expr": "file",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a97e4be074f43522d6269f54bff4ec0ea9eef35402fab341bd5ed42266ea7e0d",
+          "target": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#shortFile@L174",
+          "expr": "shortFile",
+          "line": 168
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1e3e1a32c39cc8197763b13935b89491c037e240b207b4cbf4d75be7c077b248",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.test.ts@L170",
+          "line": 170,
+          "expr": "return n.kind;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/rust-resolver.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 2,
+    "calls": {
+      "resolved": 3,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

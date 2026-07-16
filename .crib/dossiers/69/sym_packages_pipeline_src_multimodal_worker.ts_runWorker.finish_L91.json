@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker.finish@L91",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:d084519244378cbfccd2d5c960e6ff4b7f2350c023b86248b36ae03cef3c8a61",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker.finish@L91",
@@ -46,7 +46,18 @@
       "line": 74
     }
   ],
-  "callees": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    }
+  ],
   "docs": [],
   "rules": {
     "procedure": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker.finish@L91",
@@ -112,6 +123,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:5a2bfd027c6d646eff808fc8bd353d122a298699b393bf52e559027a7f428d3b",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 95
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker.finish@L91",
+        "procedureName": "runWorker.finish",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
           "edgeId": "e:add005ce90ef71585997fd02c0552e616ae3776908929dc0e4534ba8572b08cf",
           "target": "stmt:packages/pipeline/src/multimodal/worker.ts@L95",
@@ -139,7 +164,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 0,
+      "resolved": 1,
       "recorded": 2,
       "unresolved": 1
     },

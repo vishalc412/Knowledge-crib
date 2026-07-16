@@ -1,0 +1,317 @@
+{
+  "id": "sym:packages/ui/web/support.js#createRuntime.ensureFetched@L1348",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:925922a749fa28f6e0cadd5920e3850f8f34282578bf86e38c8420050469b646",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#createRuntime.ensureFetched@L1348",
+    "kind": "symbol",
+    "type": "function",
+    "name": "ensureFetched",
+    "qualifiedName": "createRuntime.ensureFetched",
+    "signature": "ensureFetched(name)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 1348,
+      "end": 1387
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 1349
+      },
+      {
+        "callee": "encodeURIComponent",
+        "line": 1352
+      },
+      {
+        "callee": "catch",
+        "line": 1353
+      },
+      {
+        "callee": "then",
+        "line": 1353
+      },
+      {
+        "callee": "then",
+        "line": 1353
+      },
+      {
+        "callee": "fetch",
+        "line": 1353
+      },
+      {
+        "callee": "error",
+        "line": 1355
+      },
+      {
+        "callee": "text",
+        "line": 1364
+      },
+      {
+        "callee": "parseDcText",
+        "line": 1367
+      },
+      {
+        "callee": "error",
+        "line": 1369
+      },
+      {
+        "callee": "updateHtml",
+        "line": 1378
+      },
+      {
+        "callee": "updateJs",
+        "line": 1379
+      },
+      {
+        "callee": "error",
+        "line": 1381
+      }
+    ]
+  },
+  "source": {
+    "text": "    function ensureFetched(name) {\n      const r = registry.get(name);\n      if (r.fetched) return;\n      r.fetched = true;\n      const url = COMPONENT_DIR + \"/\" + encodeURIComponent(name) + \".dc.html\";\n      fetch(url).then((res) => {\n        if (!res.ok) {\n          console.error(\n            \"[dc-runtime] sibling fetch for <\" + name + \"/> failed:\",\n            url,\n            \"returned\",\n            res.status,\n            \"\\u2014 the reference renders as an empty placeholder.\"\n          );\n          return \"\";\n        }\n        return res.text();\n      }).then((t) => {\n        if (!t) return;\n        const parsed = parseDcText(t);\n        if (!parsed) {\n          console.error(\n            \"[dc-runtime] sibling fetch for <\" + name + \"/>:\",\n            url,\n            \"has no <x-dc> block \\u2014 not a Design Component.\"\n          );\n          return;\n        }\n        if (parsed.props) r.propsMeta = parsed.props;\n        if (parsed.preview) r.preview = parsed.preview;\n        if (parsed.template && !r.html) updateHtml(name, parsed.template);\n        if (parsed.js && !r.Logic) updateJs(name, parsed.js);\n      }).catch(\n        (e) => console.error(\n          \"[dc-runtime] sibling fetch for <\" + name + \"/> threw:\",\n          url,\n          e\n        )\n      );\n    }",
+    "truncated": false,
+    "totalLines": 40,
+    "startLine": 1348
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent@L749",
+      "confidence": 1,
+      "name": "StreamableComponent",
+      "qualifiedName": "createComponentFactory.StreamableComponent",
+      "signature": "class StreamableComponent extends React.Component",
+      "type": "class",
+      "file": "packages/ui/web/support.js",
+      "line": 749
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createComponentFactory.getDC.Dispatcher@L971",
+      "confidence": 1,
+      "name": "Dispatcher",
+      "qualifiedName": "createComponentFactory.getDC.Dispatcher",
+      "signature": "Dispatcher(p)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 971
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRuntime.updateHtml@L1389",
+      "confidence": 1,
+      "name": "updateHtml",
+      "qualifiedName": "createRuntime.updateHtml",
+      "signature": "updateHtml(name, html)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1389
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRuntime.updateJs@L1403",
+      "confidence": 1,
+      "name": "updateJs",
+      "qualifiedName": "createRuntime.updateJs",
+      "signature": "updateJs(name, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1403
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#parseDcText@L38",
+      "confidence": 1,
+      "name": "parseDcText",
+      "qualifiedName": "parseDcText",
+      "signature": "parseDcText(src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 38
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#createRuntime.ensureFetched@L1348",
+    "procedureName": "createRuntime.ensureFetched",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L1350"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.ensureFetched@L1348",
+        "procedureName": "createRuntime.ensureFetched",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:71c3dedb7af5e51291c912773ee430c4bbeef99cda9cc872a1e71f1a32d14072",
+          "target": "stmt:packages/ui/web/support.js@L1349",
+          "line": 1349,
+          "expr": "const r = registry.get(name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.ensureFetched@L1348",
+        "procedureName": "createRuntime.ensureFetched",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:80bdd8e9c5f29f34801037f15eb3feb20e23f119bfe7d87d7e69ac33ddfa3d70",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 1349
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.ensureFetched@L1348",
+        "procedureName": "createRuntime.ensureFetched",
+        "guard": "cond:packages/ui/web/support.js@L1350",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1350",
+            "expr": "r.fetched",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9236fc60cc1a7dc47525d9644e1e7f46fa6080f3d96c64d84fc429aa66cf3748",
+          "target": "stmt:packages/ui/web/support.js@L1350",
+          "line": 1350,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.ensureFetched@L1348",
+        "procedureName": "createRuntime.ensureFetched",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:66b2c8ff671d0e646ce3c3ba2a10233c94ae0d76a2615ef4cc45b148d567888f",
+          "target": "assign:packages/ui/web/support.js@L1351",
+          "line": 1351,
+          "expr": "r.fetched = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.ensureFetched@L1348",
+        "procedureName": "createRuntime.ensureFetched",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c1ab97ff0b247002a29923e0ef9741438871f5731f42e96f5be8b7bbfab49ffe",
+          "target": "stmt:packages/ui/web/support.js@L1352",
+          "line": 1352,
+          "expr": "const url = COMPONENT_DIR + \"/\" + encodeURIComponent(name) + \".dc.html\";"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.ensureFetched@L1348",
+        "procedureName": "createRuntime.ensureFetched",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b895d22066e5cd5c851de6e15cbcd4678156d78703026dde426aaef8a22c1a0c",
+          "target": "stmt:packages/ui/web/support.js@L1353",
+          "line": 1353,
+          "expr": "fetch(url).then((res) => {\n        if (!res.ok) {\n          console.error(\n            \"[dc-runtime] sibling fetch for <\" + name + \"/> failed:\",\n            url,\n            \"returned\",\n            res.status,\n            \"\\u2014 the reference renders as an empty placeholder.\"\n          );\n          return \"\";\n        }\n        return res.text();\n      }).then((t) => {\n        if (!t) return;\n        const parsed = parseDcText(t);\n        if (!parsed) {\n          console.error(\n            \"[dc-runtime] sibling fetch for <\" + name + \"/>:\",\n            url,\n            \"has no <x-dc> block \\u2014 not a Design Component.\"\n          );\n          return;\n        }\n        if (parsed.props) r.propsMeta = parsed.props;\n        if (parsed.preview) r.preview = parsed.preview;\n        if (parsed.template && !r.html) updateHtml(name, parsed.template);\n        if (parsed.js && !r.Logic) updateJs(name, parsed.js);\n      }).catch(\n        (e) => console.error(\n          \"[dc-runtime] sibling fetch for <\" + name + \"/> threw:\",\n          url,\n          e\n        )\n      );"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.ensureFetched@L1348",
+        "procedureName": "createRuntime.ensureFetched",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fd4124e90a0a4cec6f342761b07f63a466a702d1171b758741cd401a96445561",
+          "target": "sym:packages/ui/web/support.js#parseDcText@L38",
+          "expr": "parseDcText",
+          "line": 1367
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.ensureFetched@L1348",
+        "procedureName": "createRuntime.ensureFetched",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1d14523b0c8d9797c18299f5bba2c1eafbe05da7fb9c74d53aa31214d4a27c86",
+          "target": "sym:packages/ui/web/support.js#createRuntime.updateHtml@L1389",
+          "expr": "updateHtml",
+          "line": 1378
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.ensureFetched@L1348",
+        "procedureName": "createRuntime.ensureFetched",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7c89d009f41058d89b76af4cd477cabbf81d5de10e2098e4f31e7be50e402abf",
+          "target": "sym:packages/ui/web/support.js#createRuntime.updateJs@L1403",
+          "expr": "updateJs",
+          "line": 1379
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 13,
+      "unresolved": 9
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "9 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

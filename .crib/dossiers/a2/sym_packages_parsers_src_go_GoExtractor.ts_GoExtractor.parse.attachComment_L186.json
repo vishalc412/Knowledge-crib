@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.parse.attachComment@L186",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:f4e2f1fac669ce3e1aa12397327acae8b28c10a9c040030b895b5200eff129b5",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.parse.attachComment@L186",
@@ -78,14 +78,14 @@
       "line": 16
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 122
+      "line": 141
     },
     {
       "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
@@ -98,14 +98,14 @@
       "line": 38
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 77
+      "line": 88
     },
     {
       "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
@@ -199,8 +199,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:95563bb9807a2d683bf799f7477d11b4863b9f9d0241d4c0ba8c22ab0946954a",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+          "edgeId": "e:75fe2049cb42323b58c80cab8bc5376230b9e381ab9e07d724750cd05e2af407",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
           "expr": "idFor",
           "line": 189
         }
@@ -234,20 +234,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:fdb2a70be4ac42b471d798c82795ceecdb056a994be5fe2193c2522d2e9adf71",
-          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L191",
-          "line": 191,
-          "expr": "explSeen.add(id);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.parse.attachComment@L186",
-        "procedureName": "GoExtractor.parse.attachComment",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "calls",
           "edgeId": "e:7a22a9d1dfdcd73d1cf816fffff731c41f23f21aabe85a26293b393571a54d78",
           "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
@@ -263,10 +249,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:dc1e50aa2251eb5f8f4e76415fabab6f02d081447485d6f49082f52c40c87938",
-          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L192",
-          "line": 192,
-          "expr": "nodes.push({\n        id,\n        kind: 'explanation',\n        commentRef: { file: path, span: { start: block.start, end: block.end } },\n        file: path,\n        span: { start: block.start, end: block.end },\n        lang: 'go',\n        hash: ctx.hash(`${path}:${block.start}:${block.text}`),\n        meta: { text: block.text },\n      });"
+          "edgeId": "e:fdb2a70be4ac42b471d798c82795ceecdb056a994be5fe2193c2522d2e9adf71",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L191",
+          "line": 191,
+          "expr": "explSeen.add(id);"
         }
       },
       {
@@ -291,6 +277,20 @@
         "inException": false,
         "action": {
           "kind": "executes",
+          "edgeId": "e:dc1e50aa2251eb5f8f4e76415fabab6f02d081447485d6f49082f52c40c87938",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L192",
+          "line": 192,
+          "expr": "nodes.push({\n        id,\n        kind: 'explanation',\n        commentRef: { file: path, span: { start: block.start, end: block.end } },\n        file: path,\n        span: { start: block.start, end: block.end },\n        lang: 'go',\n        hash: ctx.hash(`${path}:${block.start}:${block.text}`),\n        meta: { text: block.text },\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.parse.attachComment@L186",
+        "procedureName": "GoExtractor.parse.attachComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
           "edgeId": "e:422877e918c8cd2afe7665854074f66055a85e1ce6fcedcd96d6c824e5ce0efa",
           "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L202",
           "line": 202,
@@ -305,8 +305,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:5058443872efa9ee9a208e9f09d5fa4aa76d0fbe527edd5f7e51372e4d180e72",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "edgeId": "e:1a7220dcb2dd1bd21faa41cb60d514b5476626f644d2bb65a3f4fdb09cca99d1",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
           "expr": "edgeId",
           "line": 203
         }

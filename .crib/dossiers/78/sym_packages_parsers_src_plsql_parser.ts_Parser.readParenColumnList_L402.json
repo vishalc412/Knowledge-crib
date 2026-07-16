@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.readParenColumnList@L402",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:bda1c681bcc9fb1297dd7f939fa1f6d2d40583ea2433697b3a801a0648e81544",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.readParenColumnList@L402",
@@ -164,11 +164,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:a25cc1708ddfcbc4f878a2ce716f69a57f7ac8c3bf67ef77834643b3e1d6c3a6",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.next@L122",
-          "expr": "next",
-          "line": 423
+          "kind": "executes",
+          "edgeId": "e:9dd0f92470397cf1f1d57a280c82ac8d27bbd7ae90440afa0769065dd0f2b2db",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L423",
+          "line": 423,
+          "expr": "out.push(this.next().raw);"
         }
       },
       {
@@ -190,11 +190,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:9dd0f92470397cf1f1d57a280c82ac8d27bbd7ae90440afa0769065dd0f2b2db",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L423",
-          "line": 423,
-          "expr": "out.push(this.next().raw);"
+          "kind": "calls",
+          "edgeId": "e:a25cc1708ddfcbc4f878a2ce716f69a57f7ac8c3bf67ef77834643b3e1d6c3a6",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.next@L122",
+          "expr": "next",
+          "line": 423
         }
       },
       {

@@ -1,0 +1,243 @@
+{
+  "id": "sym:scripts/stats-check.mjs#buildRepo@L68",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:361c38e9790ef983da050f53001ee3a7877bf2a9fe98abe1b06490037c5b1aeb",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/stats-check.mjs#buildRepo@L68",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildRepo",
+    "qualifiedName": "buildRepo",
+    "signature": "buildRepo(…)",
+    "lang": "javascript",
+    "file": "scripts/stats-check.mjs",
+    "span": {
+      "start": 68,
+      "end": 87
+    },
+    "callSites": [
+      {
+        "callee": "mkdtempSync",
+        "line": 69
+      },
+      {
+        "callee": "join",
+        "line": 69
+      },
+      {
+        "callee": "tmpdir",
+        "line": 69
+      },
+      {
+        "callee": "gitInit",
+        "line": 70
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 71
+      },
+      {
+        "callee": "join",
+        "line": 72
+      },
+      {
+        "callee": "join",
+        "line": 73
+      },
+      {
+        "callee": "execFileSync",
+        "line": 81
+      },
+      {
+        "callee": "commit",
+        "line": 85
+      }
+    ]
+  },
+  "source": {
+    "text": "const buildRepo = () => {\n  const repo = mkdtempSync(join(tmpdir(), 'crib-stats-'));\n  gitInit(repo);\n  writeFileSync(\n    join(repo, 'greeter.ts'),\n    [\n      '// stats-check fixture — one callable for context/impact verbs.',\n      'export function greet(name: string): string {',\n      '  return `hello ${name}`;',\n      '}',\n      '',\n    ].join('\\n'),\n  );\n  execFileSync('git', ['-C', repo, 'add', 'greeter.ts'], {\n    encoding: 'utf8',\n    stdio: ['ignore', 'pipe', 'pipe'],\n  });\n  commit(repo, 'greeter');\n  return repo;\n};",
+    "truncated": false,
+    "totalLines": 20,
+    "startLine": 68
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:scripts/stats-check.mjs#commit@L58",
+      "confidence": 1,
+      "name": "commit",
+      "qualifiedName": "commit",
+      "signature": "commit(…)",
+      "type": "function",
+      "file": "scripts/stats-check.mjs",
+      "line": 58
+    },
+    {
+      "id": "sym:scripts/stats-check.mjs#gitInit@L47",
+      "confidence": 1,
+      "name": "gitInit",
+      "qualifiedName": "gitInit",
+      "signature": "gitInit(…)",
+      "type": "function",
+      "file": "scripts/stats-check.mjs",
+      "line": 47
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/stats-check.mjs@L67",
+      "snippet": "// A one-function TS repo: indexRepo extracts `greet` as a callable symbol + a `calls` edge into it.",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/stats-check.mjs#buildRepo@L68",
+    "procedureName": "buildRepo",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/stats-check.mjs#buildRepo@L68",
+        "procedureName": "buildRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:de03bbf9b17e552e9cbf057dc2b00fe6472198590c43e48ccf108b021280c195",
+          "target": "stmt:scripts/stats-check.mjs@L69",
+          "line": 69,
+          "expr": "const repo = mkdtempSync(join(tmpdir(), 'crib-stats-'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/stats-check.mjs#buildRepo@L68",
+        "procedureName": "buildRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:552c8cfb91f137b6e9b321348c12f45b399878e49945a0d8185e190413c80244",
+          "target": "stmt:scripts/stats-check.mjs@L70",
+          "line": 70,
+          "expr": "gitInit(repo);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/stats-check.mjs#buildRepo@L68",
+        "procedureName": "buildRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:70841ad784fddb883b665beb203acb9497c15eb90edc0c6b3199e5f3a30a61dc",
+          "target": "sym:scripts/stats-check.mjs#gitInit@L47",
+          "expr": "gitInit",
+          "line": 70
+        }
+      },
+      {
+        "procedure": "sym:scripts/stats-check.mjs#buildRepo@L68",
+        "procedureName": "buildRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1a675f97c103f83f414d0bff6a99d77f78806b7359ac730a388622d881f6f6d6",
+          "target": "stmt:scripts/stats-check.mjs@L71",
+          "line": 71,
+          "expr": "writeFileSync(\n    join(repo, 'greeter.ts'),\n    [\n      '// stats-check fixture — one callable for context/impact verbs.',\n      'export function greet(name: string): string {',\n      '  return `hello ${name}`;',\n      '}',\n      '',\n    ].join('\\n'),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:scripts/stats-check.mjs#buildRepo@L68",
+        "procedureName": "buildRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2b711e1ba6bf30d1580ef7e9925bbb1936394beb2b7689c79a8bed4644b6cfc3",
+          "target": "stmt:scripts/stats-check.mjs@L81",
+          "line": 81,
+          "expr": "execFileSync('git', ['-C', repo, 'add', 'greeter.ts'], {\n    encoding: 'utf8',\n    stdio: ['ignore', 'pipe', 'pipe'],\n  });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/stats-check.mjs#buildRepo@L68",
+        "procedureName": "buildRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3e8087beb8b42d23717d780f6e3c7cb16ce0cdbc396d2efd687947143b13cd60",
+          "target": "sym:scripts/stats-check.mjs#commit@L58",
+          "expr": "commit",
+          "line": 85
+        }
+      },
+      {
+        "procedure": "sym:scripts/stats-check.mjs#buildRepo@L68",
+        "procedureName": "buildRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:88b6d66ad0aa5d4b8a98dc2b3b7eba5bea02e7669df7dbbcdb668976067f9846",
+          "target": "stmt:scripts/stats-check.mjs@L85",
+          "line": 85,
+          "expr": "commit(repo, 'greeter');"
+        }
+      },
+      {
+        "procedure": "sym:scripts/stats-check.mjs#buildRepo@L68",
+        "procedureName": "buildRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fc8395044742a94e0247fba0c9cc22c9d92c52c735f6f8b4ebf72ca858f03983",
+          "target": "stmt:scripts/stats-check.mjs@L86",
+          "line": 86,
+          "expr": "return repo;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 9,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

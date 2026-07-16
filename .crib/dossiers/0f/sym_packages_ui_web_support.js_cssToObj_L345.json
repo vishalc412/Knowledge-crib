@@ -1,0 +1,231 @@
+{
+  "id": "sym:packages/ui/web/support.js#cssToObj@L345",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:4f190386e302261100b9ff7488dc6d761193e21ba09182f914b30664347a9e69",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#cssToObj@L345",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cssToObj",
+    "qualifiedName": "cssToObj",
+    "signature": "cssToObj(css)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 345,
+      "end": 354
+    },
+    "callSites": [
+      {
+        "callee": "indexOf",
+        "line": 348
+      },
+      {
+        "callee": "trim",
+        "line": 350
+      },
+      {
+        "callee": "slice",
+        "line": 350
+      },
+      {
+        "callee": "startsWith",
+        "line": 351
+      },
+      {
+        "callee": "kebabToCamel",
+        "line": 351
+      },
+      {
+        "callee": "trim",
+        "line": 351
+      },
+      {
+        "callee": "slice",
+        "line": 351
+      }
+    ]
+  },
+  "source": {
+    "text": "  function cssToObj(css) {\n    const o = {};\n    for (const decl of css.split(\";\")) {\n      const i = decl.indexOf(\":\");\n      if (i < 0) continue;\n      const prop = decl.slice(0, i).trim();\n      o[prop.startsWith(\"--\") ? prop : kebabToCamel(prop)] = decl.slice(i + 1).trim();\n    }\n    return o;\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 345
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#hostPositionStyle@L411",
+      "confidence": 1,
+      "name": "hostPositionStyle",
+      "qualifiedName": "hostPositionStyle",
+      "signature": "hostPositionStyle(style)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 411
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#walkElement@L652",
+      "confidence": 1,
+      "name": "walkElement",
+      "qualifiedName": "walkElement",
+      "signature": "walkElement(el, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 652
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#kebabToCamel@L342",
+      "confidence": 1,
+      "name": "kebabToCamel",
+      "qualifiedName": "kebabToCamel",
+      "signature": "kebabToCamel(s)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 342
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#cssToObj@L345",
+    "procedureName": "cssToObj",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L347"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#cssToObj@L345",
+        "procedureName": "cssToObj",
+        "guard": "cond:packages/ui/web/support.js@L347",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L347",
+            "expr": "css.split(\";\")",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0fdfd13d85b7e426c1a70d77e429a2100ff559538c857e97b4ed09e84d76457f",
+          "target": "stmt:packages/ui/web/support.js@L348",
+          "line": 348,
+          "expr": "const i = decl.indexOf(\":\");"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#cssToObj@L345",
+        "procedureName": "cssToObj",
+        "guard": "cond:packages/ui/web/support.js@L347",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L347",
+            "expr": "css.split(\";\")",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2f50040f48c6a95cb3fe1902c8bf50c26e99eeedbea4033cdbf52848b91dd317",
+          "target": "stmt:packages/ui/web/support.js@L350",
+          "line": 350,
+          "expr": "const prop = decl.slice(0, i).trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#cssToObj@L345",
+        "procedureName": "cssToObj",
+        "guard": "cond:packages/ui/web/support.js@L347",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L347",
+            "expr": "css.split(\";\")",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1a591d41c8ca984d1e47c203afc4c57a56d3b3090943de04449b8299257e76cb",
+          "target": "sym:packages/ui/web/support.js#kebabToCamel@L342",
+          "expr": "kebabToCamel",
+          "line": 351
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#cssToObj@L345",
+        "procedureName": "cssToObj",
+        "guard": "cond:packages/ui/web/support.js@L347",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L347",
+            "expr": "css.split(\";\")",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d2a8c198a6942c25e8fb076e102a8db0e95e5c56a14cf83c6cf38ebbf421e2f3",
+          "target": "assign:packages/ui/web/support.js@L351",
+          "line": 351,
+          "expr": "o[prop.startsWith(\"--\") ? prop : kebabToCamel(prop)] = decl.slice(i + 1).trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#cssToObj@L345",
+        "procedureName": "cssToObj",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:05f6d67677f0f4f8e98f5c9be135d56e9b095148038a0da29cd7ac0f791bb00e",
+          "target": "stmt:packages/ui/web/support.js@L353",
+          "line": 353,
+          "expr": "return o;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 7,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

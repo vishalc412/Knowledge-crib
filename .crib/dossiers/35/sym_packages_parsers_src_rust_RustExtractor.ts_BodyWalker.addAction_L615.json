@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.addAction@L615",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:59101e62f36de79eecf904488123a87a5a19a76d015b0849917bae69fc76730c",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.addAction@L615",
@@ -138,11 +138,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:f6c23e3fb5aa88306d7b7e2dc89d98ce1acdcf925976f2c85172c79e1d3c8391",
-          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.addRaise@L733",
-          "expr": "addRaise",
-          "line": 624
+          "kind": "executes",
+          "edgeId": "e:ec18bfa1fcb2e2444501317fb0ce0f8bf50023d0c90c1fd1d130450cf1e59493",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L624",
+          "line": 624,
+          "expr": "this.addRaise(s, procId, guardStack, inLoop, inException, sites);"
         }
       },
       {
@@ -160,11 +160,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:ec18bfa1fcb2e2444501317fb0ce0f8bf50023d0c90c1fd1d130450cf1e59493",
-          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L624",
-          "line": 624,
-          "expr": "this.addRaise(s, procId, guardStack, inLoop, inException, sites);"
+          "kind": "calls",
+          "edgeId": "e:f6c23e3fb5aa88306d7b7e2dc89d98ce1acdcf925976f2c85172c79e1d3c8391",
+          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.addRaise@L733",
+          "expr": "addRaise",
+          "line": 624
         }
       },
       {

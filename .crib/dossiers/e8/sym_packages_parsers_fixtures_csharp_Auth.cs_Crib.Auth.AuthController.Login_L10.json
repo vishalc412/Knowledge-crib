@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/fixtures/csharp/Auth.cs#Crib.Auth.AuthController.Login@L10",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:aed7076d89037754e4063010a5d72c8e73302cf9cd9b812a730573e539754355",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/fixtures/csharp/Auth.cs#Crib.Auth.AuthController.Login@L10",
@@ -66,11 +66,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:aeaa014c27d1a4a55a2cb135244ae0c0ceafad7900376444de0de339b3c7d6b8",
-          "target": "sym:packages/parsers/fixtures/csharp/Auth.cs#Crib.Auth.AuthController.Validate@L25",
-          "expr": "Validate",
-          "line": 13
+          "kind": "executes",
+          "edgeId": "e:6873ed9bec1db05d44ad993b837b8ed35823a1643e19d35107057c04f412c471",
+          "target": "stmt:packages/parsers/fixtures/csharp/Auth.cs@L13",
+          "line": 13,
+          "expr": "this.Validate(user)"
         }
       },
       {
@@ -80,11 +80,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:6873ed9bec1db05d44ad993b837b8ed35823a1643e19d35107057c04f412c471",
-          "target": "stmt:packages/parsers/fixtures/csharp/Auth.cs@L13",
-          "line": 13,
-          "expr": "this.Validate(user)"
+          "kind": "calls",
+          "edgeId": "e:aeaa014c27d1a4a55a2cb135244ae0c0ceafad7900376444de0de339b3c7d6b8",
+          "target": "sym:packages/parsers/fixtures/csharp/Auth.cs#Crib.Auth.AuthController.Validate@L25",
+          "expr": "Validate",
+          "line": 13
         }
       },
       {

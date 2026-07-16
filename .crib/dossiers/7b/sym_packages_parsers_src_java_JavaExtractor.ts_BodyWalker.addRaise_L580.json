@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addRaise@L580",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:7bf2a35465172a931af74690bfab9b1964406a405dd3368f3a728aed57737589",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addRaise@L580",
@@ -185,6 +185,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "executes",
+          "edgeId": "e:71ceccc7b36633c9f21832b13553793a9e83dd60bc0e732537eddc9247d5fed6",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L590",
+          "line": 590,
+          "expr": "const errorMessage = throwErrorMessage(s.text);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addRaise@L580",
+        "procedureName": "BodyWalker.addRaise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "calls",
           "edgeId": "e:8ebd1e80099bf22d84b8105bd98bc987f9c90525dda8ad9a28910df9b0da267f",
           "target": "sym:packages/parsers/src/java/JavaExtractor.ts#throwErrorMessage@L369",
@@ -200,10 +214,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:71ceccc7b36633c9f21832b13553793a9e83dd60bc0e732537eddc9247d5fed6",
-          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L590",
-          "line": 590,
-          "expr": "const errorMessage = throwErrorMessage(s.text);"
+          "edgeId": "e:97a43837fcae6de10deb9702803383f2e0c7f04aaa0a9ef3f888d27ec1d04992",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L591",
+          "line": 591,
+          "expr": "const name = throwTypeName(s.text);"
         }
       },
       {
@@ -228,10 +242,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:97a43837fcae6de10deb9702803383f2e0c7f04aaa0a9ef3f888d27ec1d04992",
-          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L591",
-          "line": 591,
-          "expr": "const name = throwTypeName(s.text);"
+          "edgeId": "e:ce0bdc114e72f6abe9990e9eb21f67e057bf8df75dc50ccfdb4ae523c338972d",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L592",
+          "line": 592,
+          "expr": "this.nodes.push({\n      id,\n      kind: 'raise',\n      ...(name ? { name } : {}),\n      file: this.path,\n      span: { start: s.startLine, end: s.endLine },\n      lang: 'java',\n      hash: this.ctx.hash(`${this.path}:${s.startLine}:raise`),\n      ...(errorMessage ? { errorMessage } : {}),\n      meta: { inLoop, inException },\n    });"
         }
       },
       {
@@ -242,10 +256,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:ce0bdc114e72f6abe9990e9eb21f67e057bf8df75dc50ccfdb4ae523c338972d",
-          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L592",
-          "line": 592,
-          "expr": "this.nodes.push({\n      id,\n      kind: 'raise',\n      ...(name ? { name } : {}),\n      file: this.path,\n      span: { start: s.startLine, end: s.endLine },\n      lang: 'java',\n      hash: this.ctx.hash(`${this.path}:${s.startLine}:raise`),\n      ...(errorMessage ? { errorMessage } : {}),\n      meta: { inLoop, inException },\n    });"
+          "edgeId": "e:7835ec89c2a9f47848195561230e05c25d53c4e02d8ffe3ee92296539b45cd35",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L603",
+          "line": 603,
+          "expr": "this.edges.push(this.edge(procId, id, 'raises', s.text ?? 'throw'));"
         }
       },
       {
@@ -268,20 +282,6 @@
           "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.edge@L653",
           "expr": "edge",
           "line": 603
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addRaise@L580",
-        "procedureName": "BodyWalker.addRaise",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:7835ec89c2a9f47848195561230e05c25d53c4e02d8ffe3ee92296539b45cd35",
-          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L603",
-          "line": 603,
-          "expr": "this.edges.push(this.edge(procId, id, 'raises', s.text ?? 'throw'));"
         }
       },
       {

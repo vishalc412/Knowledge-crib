@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:7b345908844359946b33e6ed1eb50589162bc6a533bab6850fff6bd6fad1f323",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeIfaceSegment@L715",
@@ -382,11 +382,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:c111088f17db8e24c454104d3255a5f237df63d8b5099ff131d62f72df7da124",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.collectReturnsAfter@L933",
-          "expr": "collectReturnsAfter",
-          "line": 757
+          "kind": "executes",
+          "edgeId": "e:0a6c485e9ec7fb862597c82708e62eab7da747769ebfa0f98b2ae7bb9c027e7b",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L757",
+          "line": 757,
+          "expr": "const ret = this.collectReturnsAfter(seg, i + 1);"
         }
       },
       {
@@ -412,11 +412,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:0a6c485e9ec7fb862597c82708e62eab7da747769ebfa0f98b2ae7bb9c027e7b",
-          "target": "stmt:packages/parsers/src/go/parser.ts@L757",
-          "line": 757,
-          "expr": "const ret = this.collectReturnsAfter(seg, i + 1);"
+          "kind": "calls",
+          "edgeId": "e:c111088f17db8e24c454104d3255a5f237df63d8b5099ff131d62f72df7da124",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.collectReturnsAfter@L933",
+          "expr": "collectReturnsAfter",
+          "line": 757
         }
       },
       {

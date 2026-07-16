@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanChar@L554",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:de7761036e8a364a7bde31c593f35c1cb0bf70c7aacbb3cbdaee81ce1af8dc4b",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanChar@L554",
@@ -147,6 +147,28 @@
       {
         "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanChar@L554",
         "procedureName": "Lexer.scanChar",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L559",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L559",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:662b988dad0e2961aed84908a11c52a3b3a9b63029ffc238665e5a06ec04737a",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L560",
+          "line": 560,
+          "expr": "const c = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanChar@L554",
+        "procedureName": "Lexer.scanChar",
         "guard": "cond:packages/parsers/src/csharp/lexer.ts@L564",
         "branch": "THEN",
         "conditions": [
@@ -172,28 +194,6 @@
           "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.peek@L614",
           "expr": "peek",
           "line": 560
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanChar@L554",
-        "procedureName": "Lexer.scanChar",
-        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L559",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/csharp/lexer.ts@L559",
-            "expr": "this.pos < this.src.length",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:662b988dad0e2961aed84908a11c52a3b3a9b63029ffc238665e5a06ec04737a",
-          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L560",
-          "line": 560,
-          "expr": "const c = this.peek();"
         }
       },
       {

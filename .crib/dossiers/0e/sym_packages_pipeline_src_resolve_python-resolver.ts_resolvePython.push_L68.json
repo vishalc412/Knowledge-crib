@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython.push@L68",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:5d5c2507725643cef056a93d40491259a31e88d02c2576a1d3bf48e6ded0ef9e",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython.push@L68",
@@ -82,14 +82,14 @@
       "line": 16
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 122
+      "line": 141
     },
     {
       "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
@@ -117,11 +117,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:7ca6aed29145e04b9d3e3bf1308285f4ce8ef56bd86e5eed91888ff3dc9fc80b",
-          "target": "stmt:packages/pipeline/src/resolve/python-resolver.ts@L69",
-          "line": 69,
-          "expr": "const id = edgeId(src, dst, rel);"
+          "kind": "calls",
+          "edgeId": "e:4bd384c07113be28a72c094e2f1a70297a86e0326b0fa20ffe5e54a780e6d014",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+          "expr": "edgeId",
+          "line": 69
         }
       },
       {
@@ -131,11 +131,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:0053d9b35ad0a9caad13c7d56839d5b038bee9a7b48c640bb48b9f6558b7bcc5",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
-          "expr": "edgeId",
-          "line": 69
+          "kind": "executes",
+          "edgeId": "e:7ca6aed29145e04b9d3e3bf1308285f4ce8ef56bd86e5eed91888ff3dc9fc80b",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.ts@L69",
+          "line": 69,
+          "expr": "const id = edgeId(src, dst, rel);"
         }
       },
       {
@@ -195,11 +195,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:2c95354ae923cf2cd8d520508a8aa06173d8c33cb928b7e6459a1a268e3a1e1a",
-          "target": "stmt:packages/pipeline/src/resolve/python-resolver.ts@L72",
-          "line": 72,
-          "expr": "edges.push({\n      id,\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'python-resolver', snippet },\n    });"
+          "kind": "calls",
+          "edgeId": "e:2381c24fecde1b5157f831dfd5c6c60fa5582ec208ac08512cad1b5e8549c60f",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 72
         }
       },
       {
@@ -209,11 +209,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:2381c24fecde1b5157f831dfd5c6c60fa5582ec208ac08512cad1b5e8549c60f",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 72
+          "kind": "executes",
+          "edgeId": "e:2c95354ae923cf2cd8d520508a8aa06173d8c33cb928b7e6459a1a268e3a1e1a",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.ts@L72",
+          "line": 72,
+          "expr": "edges.push({\n      id,\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'python-resolver', snippet },\n    });"
         }
       }
     ]

@@ -1,0 +1,87 @@
+{
+  "id": "sym:packages/core/src/materialize.test.ts#sortedIds@L73",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:b81a270c15afcd895dfdd0560fab562b08591899d5eb75f3404bdf21b1c057c9",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/materialize.test.ts#sortedIds@L73",
+    "kind": "symbol",
+    "type": "function",
+    "name": "sortedIds",
+    "qualifiedName": "sortedIds",
+    "signature": "sortedIds(items: T[]): string[]",
+    "lang": "typescript",
+    "file": "packages/core/src/materialize.test.ts",
+    "span": {
+      "start": 73,
+      "end": 75
+    },
+    "callSites": [
+      {
+        "callee": "sort",
+        "line": 74
+      },
+      {
+        "callee": "map",
+        "line": 74
+      }
+    ]
+  },
+  "source": {
+    "text": "function sortedIds<T extends { id: string }>(items: T[]): string[] {\n  return items.map((item) => item.id).sort();\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 73
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/materialize.test.ts#sortedIds@L73",
+    "procedureName": "sortedIds",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/materialize.test.ts#sortedIds@L73",
+        "procedureName": "sortedIds",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:65335eff812fbb85c0da5c08400c1447c206257e85709ecf3ce56307b3275af9",
+          "target": "stmt:packages/core/src/materialize.test.ts@L74",
+          "line": 74,
+          "expr": "return items.map((item) => item.id).sort();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

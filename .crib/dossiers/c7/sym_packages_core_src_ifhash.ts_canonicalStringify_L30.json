@@ -1,0 +1,182 @@
+{
+  "id": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:f02e644df1a2641f0a12dd0c09834dc2242218326ecc41bf79d6639d8872dde6",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
+    "kind": "symbol",
+    "type": "function",
+    "name": "canonicalStringify",
+    "qualifiedName": "canonicalStringify",
+    "signature": "canonicalStringify(value: unknown): string",
+    "lang": "typescript",
+    "file": "packages/core/src/ifhash.ts",
+    "span": {
+      "start": 30,
+      "end": 33
+    },
+    "callSites": [
+      {
+        "callee": "stringify",
+        "line": 32
+      },
+      {
+        "callee": "sortKeys",
+        "line": 32
+      }
+    ]
+  },
+  "source": {
+    "text": "export function canonicalStringify(value: unknown): string {\n  if (typeof value === 'string') return value;\n  return JSON.stringify(sortKeys(value));\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 30
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/ifhash.ts#ifHash@L51",
+      "confidence": 1,
+      "name": "ifHash",
+      "qualifiedName": "ifHash",
+      "signature": "ifHash(value: unknown): string",
+      "type": "function",
+      "file": "packages/core/src/ifhash.ts",
+      "line": 51
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/ifhash.ts#sortKeys@L35",
+      "confidence": 1,
+      "name": "sortKeys",
+      "qualifiedName": "sortKeys",
+      "signature": "sortKeys(value: unknown): unknown",
+      "type": "function",
+      "file": "packages/core/src/ifhash.ts",
+      "line": 35
+    },
+    {
+      "id": "sym:packages/core/src/merge.ts#sortKeys@L147",
+      "confidence": 1,
+      "name": "sortKeys",
+      "qualifiedName": "sortKeys",
+      "signature": "sortKeys(value: unknown): unknown",
+      "type": "function",
+      "file": "packages/core/src/merge.ts",
+      "line": 147
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/ifhash.ts@L24",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
+    "procedureName": "canonicalStringify",
+    "conditions": [
+      "cond:packages/core/src/ifhash.ts@L31"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
+        "procedureName": "canonicalStringify",
+        "guard": "cond:packages/core/src/ifhash.ts@L31",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/ifhash.ts@L31",
+            "expr": "typeof value === 'string'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f7e16bacfd45b1fe8c6c1ad118700a5ae5baf5fd34bacd4d567350aff5183a1b",
+          "target": "stmt:packages/core/src/ifhash.ts@L31",
+          "line": 31,
+          "expr": "return value;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
+        "procedureName": "canonicalStringify",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9c57244597495af09722dd1e30f20f1a5a4b25342751f9a377a610fa720c3eff",
+          "target": "sym:packages/core/src/ifhash.ts#sortKeys@L35",
+          "expr": "sortKeys",
+          "line": 32
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
+        "procedureName": "canonicalStringify",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca481bfeec55806308816c0e5b190d8e54242a914ad6430b14782e5f5ec44e5e",
+          "target": "stmt:packages/core/src/ifhash.ts@L32",
+          "line": 32,
+          "expr": "return JSON.stringify(sortKeys(value));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
+        "procedureName": "canonicalStringify",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cb5aa9f1f0d0f2d6da66f1286fa59e4eb6b8ef40ec096e1c0661e050d71a3a24",
+          "target": "sym:packages/core/src/merge.ts#sortKeys@L147",
+          "expr": "sortKeys",
+          "line": 32
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/ifhash.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

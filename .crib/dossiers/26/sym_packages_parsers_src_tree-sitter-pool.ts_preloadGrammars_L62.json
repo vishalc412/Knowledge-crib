@@ -1,0 +1,258 @@
+{
+  "id": "sym:packages/parsers/src/tree-sitter-pool.ts#preloadGrammars@L62",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2aa1ff75da01148800ef2f8f7240f4ace93962484387110316279ad525bb7849",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/tree-sitter-pool.ts#preloadGrammars@L62",
+    "kind": "symbol",
+    "type": "function",
+    "name": "preloadGrammars",
+    "qualifiedName": "preloadGrammars",
+    "signature": "preloadGrammars(names: readonly string[]): Promise<void>",
+    "lang": "typescript",
+    "file": "packages/parsers/src/tree-sitter-pool.ts",
+    "span": {
+      "start": 62,
+      "end": 72
+    },
+    "callSites": [
+      {
+        "callee": "load",
+        "line": 69
+      },
+      {
+        "callee": "join",
+        "line": 69
+      },
+      {
+        "callee": "grammarsDir",
+        "line": 69
+      },
+      {
+        "callee": "set",
+        "line": 70
+      }
+    ]
+  },
+  "source": {
+    "text": "export async function preloadGrammars(names: readonly string[]): Promise<void> {\n  if (names.length === 0) return;\n  await ensureInitialized();\n  for (const name of names) {\n    if (loadedLanguages.has(name)) continue;\n    const file = GRAMMAR_FILES[name];\n    if (!file) throw new Error(`no vendored grammar for \"${name}\"`);\n    const lang = await Parser.Language.load(join(grammarsDir(), file));\n    loadedLanguages.set(name, lang);\n  }\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 62
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
+    {
+      "id": "sym:packages/parsers/src/tree-sitter-pool.ts#ensureInitialized@L52",
+      "confidence": 1,
+      "name": "ensureInitialized",
+      "qualifiedName": "ensureInitialized",
+      "signature": "ensureInitialized(): Promise<void>",
+      "type": "function",
+      "file": "packages/parsers/src/tree-sitter-pool.ts",
+      "line": 52
+    },
+    {
+      "id": "sym:packages/parsers/src/tree-sitter-pool.ts#grammarsDir@L34",
+      "confidence": 1,
+      "name": "grammarsDir",
+      "qualifiedName": "grammarsDir",
+      "signature": "grammarsDir(): string",
+      "type": "function",
+      "file": "packages/parsers/src/tree-sitter-pool.ts",
+      "line": 34
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/tree-sitter-pool.ts@L57",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/tree-sitter-pool.ts#preloadGrammars@L62",
+    "procedureName": "preloadGrammars",
+    "conditions": [
+      "cond:packages/parsers/src/tree-sitter-pool.ts@L63",
+      "cond:packages/parsers/src/tree-sitter-pool.ts@L65"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/tree-sitter-pool.ts#preloadGrammars@L62",
+        "procedureName": "preloadGrammars",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:01893e06c480acc5f8131fe8c6acae038a5ed8016f93945d7e46ed91b7867d21",
+          "target": "sym:packages/parsers/src/tree-sitter-pool.ts#ensureInitialized@L52",
+          "expr": "ensureInitialized"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/tree-sitter-pool.ts#preloadGrammars@L62",
+        "procedureName": "preloadGrammars",
+        "guard": "cond:packages/parsers/src/tree-sitter-pool.ts@L63",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/tree-sitter-pool.ts@L63",
+            "expr": "names.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8df11f11a8b176a30b4d25d4fa077703239d4cd7ee60f72c10cd613f606415aa",
+          "target": "stmt:packages/parsers/src/tree-sitter-pool.ts@L63",
+          "line": 63,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/tree-sitter-pool.ts#preloadGrammars@L62",
+        "procedureName": "preloadGrammars",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2c9f38d288f0f52bd7a7a905713e58226360c73be84935c6c80cc533d6a93bda",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 69
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/tree-sitter-pool.ts#preloadGrammars@L62",
+        "procedureName": "preloadGrammars",
+        "guard": "cond:packages/parsers/src/tree-sitter-pool.ts@L65",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/tree-sitter-pool.ts@L65",
+            "expr": "names",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6f651a856534f1ebd08bb96bc395dea63869aa06984a8d7544e3ab444fa21cad",
+          "target": "sym:packages/parsers/src/tree-sitter-pool.ts#grammarsDir@L34",
+          "expr": "grammarsDir",
+          "line": 69
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/tree-sitter-pool.ts#preloadGrammars@L62",
+        "procedureName": "preloadGrammars",
+        "guard": "cond:packages/parsers/src/tree-sitter-pool.ts@L65",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/tree-sitter-pool.ts@L65",
+            "expr": "names",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca1d4d40c7d55af6660f2e8781209f6590f9c56076ebcab43ebe0ab92294ac64",
+          "target": "stmt:packages/parsers/src/tree-sitter-pool.ts@L69",
+          "line": 69,
+          "expr": "const lang = await Parser.Language.load(join(grammarsDir(), file));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/tree-sitter-pool.ts#preloadGrammars@L62",
+        "procedureName": "preloadGrammars",
+        "guard": "cond:packages/parsers/src/tree-sitter-pool.ts@L65",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/tree-sitter-pool.ts@L65",
+            "expr": "names",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5028dac9960c01318f1a6196ccb3b72482a67e74c37e664a1cdac8f15419c631",
+          "target": "stmt:packages/parsers/src/tree-sitter-pool.ts@L70",
+          "line": 70,
+          "expr": "loadedLanguages.set(name, lang);"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:packages/parsers/src/tree-sitter-pool.ts@L68",
+        "kind": "raise",
+        "lang": "typescript",
+        "file": "packages/parsers/src/tree-sitter-pool.ts",
+        "span": {
+          "start": 68,
+          "end": 68
+        },
+        "errorMessage": "new Error(`no vendored grammar for \"${name}\"`)",
+        "confidence": 1
+      }
+    ],
+    "handles": [],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 1,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 4,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#Parser.isNameToken@L882",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:40e1acf0a2f11e5745257724fc29063039b76b10fc6750b6ae19e15ea0217a6b",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#Parser.isNameToken@L882",
@@ -107,11 +107,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:62e2152565f16cf1e393993d1c44e0d41365482d259330eb7ac8dd0071bb7a3f",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L890",
-          "expr": "peek",
-          "line": 883
+          "kind": "executes",
+          "edgeId": "e:353d1d8d9ce0ad10fd8164a25f5bc33cd4d6604a415b17ba810dd60d405ca7b0",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L883",
+          "line": 883,
+          "expr": "return this.peek().type === 'NAME';"
         }
       },
       {
@@ -121,11 +121,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:353d1d8d9ce0ad10fd8164a25f5bc33cd4d6604a415b17ba810dd60d405ca7b0",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L883",
-          "line": 883,
-          "expr": "return this.peek().type === 'NAME';"
+          "kind": "calls",
+          "edgeId": "e:62e2152565f16cf1e393993d1c44e0d41365482d259330eb7ac8dd0071bb7a3f",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L890",
+          "expr": "peek",
+          "line": 883
         }
       }
     ]

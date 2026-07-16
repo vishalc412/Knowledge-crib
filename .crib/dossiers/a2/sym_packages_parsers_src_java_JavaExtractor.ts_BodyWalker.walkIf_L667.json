@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkIf@L667",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:b404a889f228ec608c7be75de921bac6833984add9d0eaefb11b1b097d23d59f",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkIf@L667",
@@ -92,11 +92,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:e50eac996a1543019e3a17a568fb2ccdf0317731f2c1dda56cf31d4644015e6b",
-          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.condition@L520",
-          "expr": "condition",
-          "line": 676
+          "kind": "executes",
+          "edgeId": "e:6b667888a0693ec1d06a089f5141c01a3f9abdefe61c905c45da62e47a661995",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L676",
+          "line": 676,
+          "expr": "const condId = this.condition(first?.predicate, s.startLine, 'THEN');"
         }
       },
       {
@@ -106,11 +106,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:6b667888a0693ec1d06a089f5141c01a3f9abdefe61c905c45da62e47a661995",
-          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L676",
-          "line": 676,
-          "expr": "const condId = this.condition(first?.predicate, s.startLine, 'THEN');"
+          "kind": "calls",
+          "edgeId": "e:e50eac996a1543019e3a17a568fb2ccdf0317731f2c1dda56cf31d4644015e6b",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.condition@L520",
+          "expr": "condition",
+          "line": 676
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:5b7bdd15d5cbc3be330640faebd7f05a35536145e25e2aff79008a8210714383",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
@@ -170,28 +170,6 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:c17b9e256efda1f51fa06d4c62ac45692377d7c6ad25409c50b5810ac0d28fed",
-          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
-          "expr": "peek",
-          "line": 891
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
-        "procedureName": "Parser.skipBalancedParens",
-        "guard": "cond:packages/parsers/src/rust/parser.ts@L890",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/rust/parser.ts@L890",
-            "expr": "!this.atEnd()",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:178ce569ee1f96d506aa2c703f3e6764719c53c6f34d14791e6fa25beec2b863",
           "target": "stmt:packages/parsers/src/rust/parser.ts@L891",
@@ -215,10 +193,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:7ee241a5edbd3458555ff50cfe653a53562349141fc479f848ff840e6bad7cef",
-          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.next@L1478",
-          "expr": "next",
-          "line": 895
+          "edgeId": "e:c17b9e256efda1f51fa06d4c62ac45692377d7c6ad25409c50b5810ac0d28fed",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
+          "expr": "peek",
+          "line": 891
         }
       },
       {
@@ -249,6 +227,28 @@
           "target": "stmt:packages/parsers/src/rust/parser.ts@L895",
           "line": 895,
           "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+        "procedureName": "Parser.skipBalancedParens",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L890",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L890",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7ee241a5edbd3458555ff50cfe653a53562349141fc479f848ff840e6bad7cef",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.next@L1478",
+          "expr": "next",
+          "line": 895
         }
       },
       {

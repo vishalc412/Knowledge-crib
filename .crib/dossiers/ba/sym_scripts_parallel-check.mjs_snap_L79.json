@@ -1,0 +1,242 @@
+{
+  "id": "sym:scripts/parallel-check.mjs#snap@L79",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:8b92d240f4a2bd2df0212c71f2e8796d59d1316d5a2677e761c69b56bcc8a194",
+  "builtAt": "2026-07-16T14:53:52.220Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/parallel-check.mjs#snap@L79",
+    "kind": "symbol",
+    "type": "function",
+    "name": "snap",
+    "qualifiedName": "snap",
+    "signature": "snap(repo)",
+    "lang": "javascript",
+    "file": "scripts/parallel-check.mjs",
+    "span": {
+      "start": 79,
+      "end": 97
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 80
+      },
+      {
+        "callee": "sort",
+        "line": 83
+      },
+      {
+        "callee": "readdirSync",
+        "line": 83
+      },
+      {
+        "callee": "join",
+        "line": 84
+      },
+      {
+        "callee": "isDirectory",
+        "line": 87
+      },
+      {
+        "callee": "statSync",
+        "line": 87
+      },
+      {
+        "callee": "walk",
+        "line": 88
+      },
+      {
+        "callee": "push",
+        "line": 91
+      },
+      {
+        "callee": "push",
+        "line": 92
+      },
+      {
+        "callee": "readFileSync",
+        "line": 92
+      },
+      {
+        "callee": "walk",
+        "line": 95
+      },
+      {
+        "callee": "join",
+        "line": 96
+      }
+    ]
+  },
+  "source": {
+    "text": "function snap(repo) {\n  const crib = join(repo, '.crib');\n  const out = [];\n  const walk = (dir, rel) => {\n    for (const name of readdirSync(dir).sort()) {\n      const abs = join(dir, name);\n      const r = rel === '.crib' ? `.crib/${name}` : `${rel}/${name}`;\n      if (r === '.crib/index' || r === '.crib/embeddings') continue; // gitignored derived state\n      if (statSync(abs).isDirectory()) {\n        walk(abs, r);\n        continue;\n      }\n      out.push(r);\n      out.push(readFileSync(abs, 'utf8'));\n    }\n  };\n  walk(crib, '.crib');\n  return out.join('\\n');\n}",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 79
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:scripts/parallel-check.mjs#snap.walk@L82",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "snap.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/parallel-check.mjs",
+      "line": 82
+    },
+    {
+      "id": "sym:scripts/docs-stats.mjs#walk@L31",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/docs-stats.mjs",
+      "line": 31
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/parallel-check.mjs#snap@L79",
+    "procedureName": "snap",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/parallel-check.mjs#snap@L79",
+        "procedureName": "snap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4eb003b09a572af483e4842b6d1a5dbab8cf29533d51c5de6124c1457ecf4316",
+          "target": "stmt:scripts/parallel-check.mjs@L80",
+          "line": 80,
+          "expr": "const crib = join(repo, '.crib');"
+        }
+      },
+      {
+        "procedure": "sym:scripts/parallel-check.mjs#snap@L79",
+        "procedureName": "snap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7d6e7ee3cd73161274be3f82fb6fad737d7308584088ca6207035cc39f9ddb5e",
+          "target": "stmt:scripts/parallel-check.mjs@L82",
+          "line": 82,
+          "expr": "const walk = (dir, rel) => {\n    for (const name of readdirSync(dir).sort()) {\n      const abs = join(dir, name);\n      const r = rel === '.crib' ? `.crib/${name}` : `${rel}/${name}`;\n      if (r === '.crib/index' || r === '.crib/embeddings') continue; // gitignored derived state\n      if (statSync(abs).isDirectory()) {\n        walk(abs, r);\n        continue;\n      }\n      out.push(r);\n      out.push(readFileSync(abs, 'utf8'));\n    }\n  };"
+        }
+      },
+      {
+        "procedure": "sym:scripts/parallel-check.mjs#snap@L79",
+        "procedureName": "snap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:20b8e9631e70f282dec609fdcb767713ba59a5871094306af92b8cc606a5eef1",
+          "target": "sym:scripts/parallel-check.mjs#snap.walk@L82",
+          "expr": "walk",
+          "line": 88
+        }
+      },
+      {
+        "procedure": "sym:scripts/parallel-check.mjs#snap@L79",
+        "procedureName": "snap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f00b07a69cca3d0e7cc62427c381b05317250a4079d3826fe8c433affbd45489",
+          "target": "sym:scripts/docs-stats.mjs#walk@L31",
+          "expr": "walk",
+          "line": 88
+        }
+      },
+      {
+        "procedure": "sym:scripts/parallel-check.mjs#snap@L79",
+        "procedureName": "snap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d0b6ae6b86e1022df20695b71c73b9696d90f26248b5dfc811b9a68f7ae470c8",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 91
+        }
+      },
+      {
+        "procedure": "sym:scripts/parallel-check.mjs#snap@L79",
+        "procedureName": "snap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:008a5bc88b7c41085a2e6e88279852c69fe5f9128e6130911cda05047f717fd6",
+          "target": "stmt:scripts/parallel-check.mjs@L95",
+          "line": 95,
+          "expr": "walk(crib, '.crib');"
+        }
+      },
+      {
+        "procedure": "sym:scripts/parallel-check.mjs#snap@L79",
+        "procedureName": "snap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:63c43e556dc56416ab80d33c167ded8cc1f0102e524f3fd28189a710d77a270a",
+          "target": "stmt:scripts/parallel-check.mjs@L96",
+          "line": 96,
+          "expr": "return out.join('\\n');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 12,
+      "unresolved": 8
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "8 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

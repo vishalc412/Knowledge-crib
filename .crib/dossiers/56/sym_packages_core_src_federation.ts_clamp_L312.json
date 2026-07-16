@@ -1,0 +1,166 @@
+{
+  "id": "sym:packages/core/src/federation.ts#clamp@L312",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:3dcbf5b33b4eda668a73aba7bd0be6ea3874ca4b3d83c8e7071f341c002aca24",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/federation.ts#clamp@L312",
+    "kind": "symbol",
+    "type": "function",
+    "name": "clamp",
+    "qualifiedName": "clamp",
+    "signature": "clamp(v: number | undefined, def: number, max: number): number",
+    "lang": "typescript",
+    "file": "packages/core/src/federation.ts",
+    "span": {
+      "start": 312,
+      "end": 317
+    },
+    "callSites": [
+      {
+        "callee": "floor",
+        "line": 316
+      }
+    ]
+  },
+  "source": {
+    "text": "function clamp(v: number | undefined, def: number, max: number): number {\n  if (v === undefined || !Number.isFinite(v)) return def;\n  if (v < 1) return 1;\n  if (v > max) return max;\n  return Math.floor(v);\n}",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 312
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/federation.ts#federatedImpact@L106",
+      "confidence": 1,
+      "name": "federatedImpact",
+      "qualifiedName": "federatedImpact",
+      "signature": "federatedImpact(fed: Federation, startRoot: string, id: string, dir: Dir, opts: { depth?: number; limit?: number; extractedOnly?: boolean } = {}): FederatedImpactResult",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 106
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/federation.ts#clamp@L312",
+    "procedureName": "clamp",
+    "conditions": [
+      "cond:packages/core/src/federation.ts@L313",
+      "cond:packages/core/src/federation.ts@L314",
+      "cond:packages/core/src/federation.ts@L315"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/federation.ts#clamp@L312",
+        "procedureName": "clamp",
+        "guard": "cond:packages/core/src/federation.ts@L313",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/federation.ts@L313",
+            "expr": "v === undefined || !Number.isFinite(v)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0680ea074910fde63d01921cb95d29ec246bff1ec8a432044f74c74ffe2035dc",
+          "target": "stmt:packages/core/src/federation.ts@L313",
+          "line": 313,
+          "expr": "return def;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#clamp@L312",
+        "procedureName": "clamp",
+        "guard": "cond:packages/core/src/federation.ts@L314",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/federation.ts@L314",
+            "expr": "v < 1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c856d3234ff0f4dc46351a5491e7e2f55c07f6ef21be57517aab7266a7374a08",
+          "target": "stmt:packages/core/src/federation.ts@L314",
+          "line": 314,
+          "expr": "return 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#clamp@L312",
+        "procedureName": "clamp",
+        "guard": "cond:packages/core/src/federation.ts@L315",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/federation.ts@L315",
+            "expr": "v > max",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5e8cb1dafe28858c2db46a30e5362c17fb8e93a6cd49b264d617d69b8451efa4",
+          "target": "stmt:packages/core/src/federation.ts@L315",
+          "line": 315,
+          "expr": "return max;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#clamp@L312",
+        "procedureName": "clamp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7c3440b03c0063d77e6256a7d5472abbd4ddd420c44665eb826f7447ac9f1c64",
+          "target": "stmt:packages/core/src/federation.ts@L316",
+          "line": 316,
+          "expr": "return Math.floor(v);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/core/src/federation.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

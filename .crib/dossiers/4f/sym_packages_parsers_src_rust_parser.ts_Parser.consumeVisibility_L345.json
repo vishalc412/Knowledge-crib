@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/parser.ts#Parser.consumeVisibility@L345",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:7beee2eb53d6aed43cc51edc13af71937f46b535f514f7cea927f7483b735275",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/parser.ts#Parser.consumeVisibility@L345",
@@ -128,20 +128,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:cb3a9a4da921f279364813e250a969274941a3c5ee04b3f030a4f02a8321068e",
-          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
-          "expr": "peek",
-          "line": 346
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.consumeVisibility@L345",
-        "procedureName": "Parser.consumeVisibility",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:c058a44b73a84a386fef443009d85fc4142e91da1d52045ba6ade3eaaab6106f",
           "target": "stmt:packages/parsers/src/rust/parser.ts@L346",
@@ -157,10 +143,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:6939a1d434735b4c08a21246f2429cd71400ffa7f8b5e4fe1177b265b2c82a14",
-          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.next@L1478",
-          "expr": "next",
-          "line": 347
+          "edgeId": "e:cb3a9a4da921f279364813e250a969274941a3c5ee04b3f030a4f02a8321068e",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
+          "expr": "peek",
+          "line": 346
         }
       },
       {
@@ -175,6 +161,20 @@
           "target": "stmt:packages/parsers/src/rust/parser.ts@L347",
           "line": 347,
           "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.consumeVisibility@L345",
+        "procedureName": "Parser.consumeVisibility",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6939a1d434735b4c08a21246f2429cd71400ffa7f8b5e4fe1177b265b2c82a14",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.next@L1478",
+          "expr": "next",
+          "line": 347
         }
       },
       {

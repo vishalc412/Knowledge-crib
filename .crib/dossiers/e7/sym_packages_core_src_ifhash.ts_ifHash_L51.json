@@ -1,0 +1,203 @@
+{
+  "id": "sym:packages/core/src/ifhash.ts#ifHash@L51",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:60234860f4d64a03bdff14939607bb408923b3337714fadfd44a033bde6647ca",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/ifhash.ts#ifHash@L51",
+    "kind": "symbol",
+    "type": "function",
+    "name": "ifHash",
+    "qualifiedName": "ifHash",
+    "signature": "ifHash(value: unknown): string",
+    "lang": "typescript",
+    "file": "packages/core/src/ifhash.ts",
+    "span": {
+      "start": 51,
+      "end": 53
+    },
+    "callSites": [
+      {
+        "callee": "contentHash",
+        "line": 52
+      },
+      {
+        "callee": "canonicalStringify",
+        "line": 52
+      }
+    ]
+  },
+  "source": {
+    "text": "export function ifHash(value: unknown): string {\n  return contentHash(canonicalStringify(value));\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 51
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
+      "confidence": 1,
+      "name": "canonicalStringify",
+      "qualifiedName": "canonicalStringify",
+      "signature": "canonicalStringify(value: unknown): string",
+      "type": "function",
+      "file": "packages/core/src/ifhash.ts",
+      "line": 30
+    },
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/ifhash.ts@L46",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/launch/comparison.md#the-7-column-matrix",
+      "heading": "The 7-column matrix",
+      "anchor": "the-7-column-matrix",
+      "snippet": "The 7-column matrix",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#agent-and-llm-design",
+      "heading": "Agent and LLM design",
+      "anchor": "agent-and-llm-design",
+      "snippet": "Agent and LLM design",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/launch/show-hn.md#body",
+      "heading": "Body",
+      "anchor": "body",
+      "snippet": "Body",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/launch/publish-runbook.md#changelog-cut-autonomous-prep-the-user-triggers",
+      "heading": "Changelog cut (autonomous prep the user triggers)",
+      "anchor": "changelog-cut-autonomous-prep-the-user-triggers",
+      "snippet": "Changelog cut (autonomous prep the user triggers)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-remaining-deterministic-verbs-compact",
+      "heading": "The remaining deterministic verbs (compact)",
+      "anchor": "the-remaining-deterministic-verbs-compact",
+      "snippet": "The remaining deterministic verbs (compact)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/ifhash.ts#ifHash@L51",
+    "procedureName": "ifHash",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/ifhash.ts#ifHash@L51",
+        "procedureName": "ifHash",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:03998fb4679bf35ac1b31714039966f09d51fc32841577c70f80819af4ef8bef",
+          "target": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
+          "expr": "canonicalStringify",
+          "line": 52
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/ifhash.ts#ifHash@L51",
+        "procedureName": "ifHash",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e1de80f21ff220cb7220e4e6ecfaab8c38046e05c4de941dcd75b2b6e637e38",
+          "target": "stmt:packages/core/src/ifhash.ts@L52",
+          "line": 52,
+          "expr": "return contentHash(canonicalStringify(value));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/ifhash.ts#ifHash@L51",
+        "procedureName": "ifHash",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c12f429b84b209de08ee33d54de43ce85f18aacabc063a64ef56cccf1c69e6a8",
+          "target": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+          "expr": "contentHash",
+          "line": 52
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

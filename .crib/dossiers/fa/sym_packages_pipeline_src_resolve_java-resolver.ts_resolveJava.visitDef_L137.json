@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.visitDef@L137",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:c5ea0f41cb598e1398560d8cb6ef25863c81853c1d7565300ce2b3387a9a0ec3",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.visitDef@L137",
@@ -175,8 +175,8 @@
       "cond:packages/pipeline/src/resolve/java-resolver.ts@L208",
       "cond:packages/pipeline/src/resolve/java-resolver.ts@L140",
       "cond:packages/pipeline/src/resolve/java-resolver.ts@L141",
-      "cond:packages/pipeline/src/resolve/java-resolver.ts@L210",
       "cond:packages/pipeline/src/resolve/java-resolver.ts@L143",
+      "cond:packages/pipeline/src/resolve/java-resolver.ts@L210",
       "cond:packages/pipeline/src/resolve/java-resolver.ts@L150",
       "cond:packages/pipeline/src/resolve/java-resolver.ts@L152",
       "cond:packages/pipeline/src/resolve/java-resolver.ts@L164",
@@ -300,33 +300,13 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.visitDef@L137",
         "procedureName": "resolveJava.visitDef",
-        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L210",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L205",
-            "expr": "d.kind === 'interface'"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L207",
-            "expr": "ifaceId"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L208",
-            "expr": "d.bases"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L210",
-            "expr": "target",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": true,
+        "conditions": [],
+        "inLoop": false,
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:750a67a69e6d6ed8a0433e99b01b8369cf3710d9077509a2454229e4f6b27ced",
-          "target": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
+          "edgeId": "e:566f1e838dc25d7eef6c115828575aa5d57fe195c1b500fba19ab1512da3d624",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
           "expr": "push",
           "line": 144
         }
@@ -368,13 +348,33 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.visitDef@L137",
         "procedureName": "resolveJava.visitDef",
-        "conditions": [],
-        "inLoop": false,
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L210",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L205",
+            "expr": "d.kind === 'interface'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L207",
+            "expr": "ifaceId"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L208",
+            "expr": "d.bases"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L210",
+            "expr": "target",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:566f1e838dc25d7eef6c115828575aa5d57fe195c1b500fba19ab1512da3d624",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:750a67a69e6d6ed8a0433e99b01b8369cf3710d9077509a2454229e4f6b27ced",
+          "target": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
           "expr": "push",
           "line": 144
         }

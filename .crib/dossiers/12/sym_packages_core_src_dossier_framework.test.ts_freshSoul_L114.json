@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/dossier/framework.test.ts#freshSoul@L114",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:ccecb946c8c4aa17bef261c430b4e515b72c542420c4076b3aa4b63ceda5c1c6",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/framework.test.ts#freshSoul@L114",
@@ -48,6 +48,16 @@
   ],
   "callees": [
     {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
+    {
       "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
       "confidence": 1,
       "name": "newManifest",
@@ -71,20 +81,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:a4a27b330e67e50deb629e1803d9b9cdc0ef7540f55afa4e2e6a28d58c65ff2f",
-          "target": "stmt:packages/core/src/dossier/framework.test.ts@L115",
-          "line": 115,
-          "expr": "const s = new SoulStore(crib, { manifest: newManifest({ now: NOW, root: repo }) });"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/framework.test.ts#freshSoul@L114",
-        "procedureName": "freshSoul",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "calls",
           "edgeId": "e:1022a70e07a6e97f189fd3f74b63f5d8e0a4f957e3d69e0fb0636d288c0ad547",
           "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
@@ -100,10 +96,38 @@
         "inException": false,
         "action": {
           "kind": "executes",
+          "edgeId": "e:a4a27b330e67e50deb629e1803d9b9cdc0ef7540f55afa4e2e6a28d58c65ff2f",
+          "target": "stmt:packages/core/src/dossier/framework.test.ts@L115",
+          "line": 115,
+          "expr": "const s = new SoulStore(crib, { manifest: newManifest({ now: NOW, root: repo }) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.test.ts#freshSoul@L114",
+        "procedureName": "freshSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
           "edgeId": "e:46a738f951cc6a73dd421b797dd0e97aad7f353ca1765b1fa355ab26cc83d390",
           "target": "stmt:packages/core/src/dossier/framework.test.ts@L116",
           "line": 116,
           "expr": "s.load();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.test.ts#freshSoul@L114",
+        "procedureName": "freshSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4c8f17ce44afda5005164332e4af529898b54b3fa2e59ad740e37333a04f1814",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 116
         }
       },
       {
@@ -140,7 +164,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 1,
+      "resolved": 2,
       "recorded": 2,
       "unresolved": 0
     },

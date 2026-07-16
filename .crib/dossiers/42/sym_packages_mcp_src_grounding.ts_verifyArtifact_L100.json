@@ -1,0 +1,210 @@
+{
+  "id": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:9dd450e3ae964ff462cf434a52a2309147b9d426f98e221ee3fd5dcd91d21ad2",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
+    "kind": "symbol",
+    "type": "function",
+    "name": "verifyArtifact",
+    "qualifiedName": "verifyArtifact",
+    "signature": "verifyArtifact(soul: SoulStore, repoRoot: string, artifact: LlmArtifact): GroundingResult",
+    "lang": "typescript",
+    "file": "packages/mcp/src/grounding.ts",
+    "span": {
+      "start": 100,
+      "end": 126
+    },
+    "callSites": [
+      {
+        "callee": "verifyEvidence",
+        "line": 110
+      },
+      {
+        "callee": "push",
+        "line": 111
+      }
+    ]
+  },
+  "source": {
+    "text": "export function verifyArtifact(\n  soul: SoulStore,\n  repoRoot: string,\n  artifact: LlmArtifact,\n): GroundingResult {\n  let grounded = 0;\n  let ungrounded = 0;\n  let unsupported = 0;\n  const checks: EvidenceCheck[] = [];\n  for (const ev of artifact.evidence ?? []) {\n    const check = verifyEvidence(soul, repoRoot, ev);\n    checks.push(check);\n    if (check.verdict === 'grounded') grounded++;\n    else if (check.verdict === 'ungrounded') ungrounded++;\n    else unsupported++;\n  }\n  const total = (artifact.evidence ?? []).length;\n  const score = total > 0 ? grounded / total : 0;\n  return {\n    score,\n    grounded,\n    ungrounded,\n    unsupported,\n    verified: grounded > 0,\n    checks,\n  };\n}",
+    "truncated": false,
+    "totalLines": 27,
+    "startLine": 100
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+      "confidence": 1,
+      "name": "auditLlm",
+      "qualifiedName": "EnrichmentStore.auditLlm",
+      "signature": "auditLlm(): AuditLlmResult",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 870
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+      "confidence": 1,
+      "name": "verifyEvidence",
+      "qualifiedName": "verifyEvidence",
+      "signature": "verifyEvidence(soul: SoulStore, repoRoot: string, evidence: LlmEvidence): EvidenceCheck",
+      "type": "function",
+      "file": "packages/mcp/src/grounding.ts",
+      "line": 65
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/grounding.ts@L99",
+      "snippet": "/** Verify every evidence item on an artifact. PURE over the soul + repoRoot. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
+    "procedureName": "verifyArtifact",
+    "conditions": [
+      "cond:packages/mcp/src/grounding.ts@L109"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
+        "procedureName": "verifyArtifact",
+        "guard": "cond:packages/mcp/src/grounding.ts@L109",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/grounding.ts@L109",
+            "expr": "artifact.evidence ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:15a40a5c94f565b6693bf977e2661057dc96034988506db876c1aeac97e6d454",
+          "target": "stmt:packages/mcp/src/grounding.ts@L110",
+          "line": 110,
+          "expr": "const check = verifyEvidence(soul, repoRoot, ev);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
+        "procedureName": "verifyArtifact",
+        "guard": "cond:packages/mcp/src/grounding.ts@L109",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/grounding.ts@L109",
+            "expr": "artifact.evidence ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d3b86549e2932b7a298b02ecbe9c25a322a8fd0e9af13e4a6be52ab14f86e5b7",
+          "target": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+          "expr": "verifyEvidence",
+          "line": 110
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
+        "procedureName": "verifyArtifact",
+        "guard": "cond:packages/mcp/src/grounding.ts@L109",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/grounding.ts@L109",
+            "expr": "artifact.evidence ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f6458433fb6cfa9d7d0ccafdf61a6ac52a6ff1754e76cf7e80226af6d3700e8",
+          "target": "stmt:packages/mcp/src/grounding.ts@L111",
+          "line": 111,
+          "expr": "checks.push(check);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
+        "procedureName": "verifyArtifact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d279a3000be620e133b5ad6b362dee38ca43dfaf1321c1f2038ec7793f9cd5f6",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 111
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
+        "procedureName": "verifyArtifact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a0fd822dcf2008cd421e0b8a7958fa119aee3d6d3d4357d1c0ab8afb53ce29b4",
+          "target": "stmt:packages/mcp/src/grounding.ts@L118",
+          "line": 118,
+          "expr": "return {\n    score,\n    grounded,\n    ungrounded,\n    unsupported,\n    verified: grounded > 0,\n    checks,\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

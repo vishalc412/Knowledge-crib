@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanIdent@L203",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:e921cbfc6aadf4632695160fa54ed7c4015a71f98d04f9f7f199b479c7af7f75",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanIdent@L203",
@@ -115,11 +115,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:f4e05df07fffafd96d4b714642312b49bc91df0e4a2ad1e1d587e0c4f766850a",
-          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.advance@L466",
-          "expr": "advance",
-          "line": 207
+          "kind": "executes",
+          "edgeId": "e:3d33f3df5128b7ce1c401c6a4a5a56dec6d443318b5ca7a453dc131150ed281f",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L207",
+          "line": 207,
+          "expr": "this.advance();"
         }
       },
       {
@@ -137,11 +137,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:3d33f3df5128b7ce1c401c6a4a5a56dec6d443318b5ca7a453dc131150ed281f",
-          "target": "stmt:packages/parsers/src/rust/lexer.ts@L207",
-          "line": 207,
-          "expr": "this.advance();"
+          "kind": "calls",
+          "edgeId": "e:f4e05df07fffafd96d4b714642312b49bc91df0e4a2ad1e1d587e0c4f766850a",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.advance@L466",
+          "expr": "advance",
+          "line": 207
         }
       },
       {

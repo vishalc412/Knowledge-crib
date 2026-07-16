@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/fixtures/go/guarded.go#loopit@L15",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:3f735d11498af457643ded01358b606109bbf12dfe6da86baa60915dda44c036",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/fixtures/go/guarded.go#loopit@L15",
@@ -78,11 +78,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:dfe5f6e94b28be6c05abd548c43173927e4bcf4a7ad4b78cb751f3a9a58c7971",
-          "target": "sym:packages/parsers/fixtures/go/guarded.go#Log@L37",
-          "expr": "Log",
-          "line": 17
+          "kind": "executes",
+          "edgeId": "e:2a64661ebb0a1c384be419aebb495c5582edb06a1f62a2746755f94fa9e46554",
+          "target": "stmt:packages/parsers/fixtures/go/guarded.go@L17",
+          "line": 17,
+          "expr": "Log(\"iter\")"
         }
       },
       {
@@ -100,11 +100,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:2a64661ebb0a1c384be419aebb495c5582edb06a1f62a2746755f94fa9e46554",
-          "target": "stmt:packages/parsers/fixtures/go/guarded.go@L17",
-          "line": 17,
-          "expr": "Log(\"iter\")"
+          "kind": "calls",
+          "edgeId": "e:dfe5f6e94b28be6c05abd548c43173927e4bcf4a7ad4b78cb751f3a9a58c7971",
+          "target": "sym:packages/parsers/fixtures/go/guarded.go#Log@L37",
+          "expr": "Log",
+          "line": 17
         }
       }
     ]

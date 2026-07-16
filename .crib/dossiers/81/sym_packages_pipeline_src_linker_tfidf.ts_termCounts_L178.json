@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/linker/tfidf.ts#termCounts@L178",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:39579c9119ab3f102e4ad6da0a1e379673ac55546a2a837a0154b9dc4b5ae41a",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/linker/tfidf.ts#termCounts@L178",
@@ -55,7 +55,18 @@
       "line": 147
     }
   ],
-  "callees": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    }
+  ],
   "docs": [],
   "rules": {
     "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#termCounts@L178",
@@ -64,6 +75,20 @@
       "cond:packages/pipeline/src/linker/tfidf.ts@L180"
     ],
     "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#termCounts@L178",
+        "procedureName": "termCounts",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8267c47e38d51484a839c15d39e027f77d2f69ce4a160f75c454ab9dfd9dfb57",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 180
+        }
+      },
       {
         "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#termCounts@L178",
         "procedureName": "termCounts",
@@ -120,14 +145,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 0,
+      "resolved": 1,
       "recorded": 2,
-      "unresolved": 2
+      "unresolved": 1
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

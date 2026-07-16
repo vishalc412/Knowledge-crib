@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/lexer.ts#collectComments@L694",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:524fb1f98338b77c300b7acb58d84bdbd402eb1cd0b46e84bf13ee0441a51a4a",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/lexer.ts#collectComments@L694",
@@ -277,6 +277,20 @@
       {
         "procedure": "sym:packages/parsers/src/csharp/lexer.ts#collectComments@L694",
         "procedureName": "collectComments",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:072d6620817a506613e8a61833f61244c86f2b97cef1c1c3f348936bd9a5177b",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 708
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#collectComments@L694",
+        "procedureName": "collectComments",
         "guard": "cond:packages/parsers/src/csharp/lexer.ts@L705",
         "branch": "LOOP",
         "conditions": [
@@ -302,20 +316,6 @@
           "target": "stmt:packages/parsers/src/csharp/lexer.ts@L708",
           "line": 708,
           "expr": "parts.push(l.replace(/^\\/{2,3}\\s?/, '').trim());"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#collectComments@L694",
-        "procedureName": "collectComments",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:072d6620817a506613e8a61833f61244c86f2b97cef1c1c3f348936bd9a5177b",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 708
         }
       },
       {

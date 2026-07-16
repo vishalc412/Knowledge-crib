@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanString@L221",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:7f1eae6a0e675bbcd197f7995dac74fd9dfda89d35504347806ea08528b6958b",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanString@L221",
@@ -130,6 +130,20 @@
       {
         "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanString@L221",
         "procedureName": "Lexer.scanString",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:57f512c665ce64bfccd9885b5cef9d620b20a1fd7d10a87356c126bdb59f9cd8",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L224",
+          "line": 224,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanString@L221",
+        "procedureName": "Lexer.scanString",
         "guard": "cond:packages/parsers/src/rust/lexer.ts@L226",
         "branch": "LOOP",
         "conditions": [
@@ -152,15 +166,23 @@
       {
         "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanString@L221",
         "procedureName": "Lexer.scanString",
-        "conditions": [],
-        "inLoop": false,
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L226",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L226",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:57f512c665ce64bfccd9885b5cef9d620b20a1fd7d10a87356c126bdb59f9cd8",
-          "target": "stmt:packages/parsers/src/rust/lexer.ts@L224",
-          "line": 224,
-          "expr": "this.advance();"
+          "edgeId": "e:3ade1e393e68c267a1e57932179dbe3e211206d70595e340b91e78938e11c02e",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L227",
+          "line": 227,
+          "expr": "const c = this.peek();"
         }
       },
       {
@@ -191,28 +213,6 @@
           "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.peek@L455",
           "expr": "peek",
           "line": 227
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanString@L221",
-        "procedureName": "Lexer.scanString",
-        "guard": "cond:packages/parsers/src/rust/lexer.ts@L226",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/rust/lexer.ts@L226",
-            "expr": "this.pos < this.src.length",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:3ade1e393e68c267a1e57932179dbe3e211206d70595e340b91e78938e11c02e",
-          "target": "stmt:packages/parsers/src/rust/lexer.ts@L227",
-          "line": 227,
-          "expr": "const c = this.peek();"
         }
       },
       {
@@ -378,11 +378,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:82f7109d77e5212cc52af9f19efcdb0c052ca4ee522b858cbfe880ca7160e5ee",
-          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.emit@L477",
-          "expr": "emit",
-          "line": 242
+          "kind": "executes",
+          "edgeId": "e:4308696c33b058fd8b10669e3cc042bd91e2be1a760343842c37dd99ecfb1bb6",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L242",
+          "line": 242,
+          "expr": "this.emit('STRING', value, sl, sc);"
         }
       },
       {
@@ -392,11 +392,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:4308696c33b058fd8b10669e3cc042bd91e2be1a760343842c37dd99ecfb1bb6",
-          "target": "stmt:packages/parsers/src/rust/lexer.ts@L242",
-          "line": 242,
-          "expr": "this.emit('STRING', value, sl, sc);"
+          "kind": "calls",
+          "edgeId": "e:82f7109d77e5212cc52af9f19efcdb0c052ca4ee522b858cbfe880ca7160e5ee",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.emit@L477",
+          "expr": "emit",
+          "line": 242
         }
       }
     ]

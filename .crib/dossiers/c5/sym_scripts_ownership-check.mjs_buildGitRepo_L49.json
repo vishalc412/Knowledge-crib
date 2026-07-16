@@ -1,0 +1,297 @@
+{
+  "id": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:f93830ac9d67a5c1295dba35be5d2a01050545ab84186b438268831b9efd68c2",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildGitRepo",
+    "qualifiedName": "buildGitRepo",
+    "signature": "buildGitRepo(…)",
+    "lang": "javascript",
+    "file": "scripts/ownership-check.mjs",
+    "span": {
+      "start": 49,
+      "end": 82
+    },
+    "callSites": [
+      {
+        "callee": "mkdtempSync",
+        "line": 50
+      },
+      {
+        "callee": "join",
+        "line": 50
+      },
+      {
+        "callee": "tmpdir",
+        "line": 50
+      },
+      {
+        "callee": "execFileSync",
+        "line": 52
+      },
+      {
+        "callee": "g",
+        "line": 56
+      },
+      {
+        "callee": "g",
+        "line": 57
+      },
+      {
+        "callee": "g",
+        "line": 58
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 59
+      },
+      {
+        "callee": "join",
+        "line": 60
+      },
+      {
+        "callee": "join",
+        "line": 61
+      },
+      {
+        "callee": "g",
+        "line": 73
+      },
+      {
+        "callee": "execFileSync",
+        "line": 76
+      }
+    ]
+  },
+  "source": {
+    "text": "const buildGitRepo = () => {\n  const repo = mkdtempSync(join(tmpdir(), 'crib-ownership-'));\n  const g = (args) =>\n    execFileSync('git', ['-C', repo, ...args], {\n      encoding: 'utf8',\n      stdio: ['ignore', 'pipe', 'pipe'],\n    });\n  g(['init']);\n  g(['config', 'user.name', AUTHOR_NAME]);\n  g(['config', 'user.email', AUTHOR_EMAIL]);\n  writeFileSync(\n    join(repo, 'loan.ts'),\n    [\n      'export function assess(amount: number, score: number): string {',\n      '  const base = amount * 0.4 + score * 0.6;',\n      '  const risk = base + (amount > 50000 ? 100 : 0);',\n      '  return risk > 700 ? \"decline\" : risk > 500 ? \"review\" : \"approve\";',\n      '}',\n      'export function helper(n: number): number {',\n      '  return Math.round(n * 100) / 100;',\n      '}',\n      '',\n    ].join('\\n'),\n  );\n  g(['add', 'loan.ts']);\n  // GIT_AUTHOR/COMMITTER dates pin the commit deterministically (no wall clock leaks into blame).\n  const env = { ...process.env, GIT_AUTHOR_DATE: NOW, GIT_COMMITTER_DATE: NOW };\n  execFileSync('git', ['-C', repo, 'commit', '-m', 'init'], {\n    encoding: 'utf8',\n    stdio: ['ignore', 'pipe', 'pipe'],\n    env,\n  });\n  return repo;\n};",
+    "truncated": false,
+    "totalLines": 34,
+    "startLine": 49
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#G@L201",
+      "confidence": 1,
+      "name": "G",
+      "qualifiedName": "G",
+      "signature": "G(a, b, c)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 201
+    },
+    {
+      "id": "sym:scripts/ownership-check.mjs#buildGitRepo.g@L51",
+      "confidence": 1,
+      "name": "g",
+      "qualifiedName": "buildGitRepo.g",
+      "signature": "g(…)",
+      "type": "function",
+      "file": "scripts/ownership-check.mjs",
+      "line": 51
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/ownership-check.mjs@L48",
+      "snippet": "/** `git init` + author config + first commit of one TypeScript file, so `git blame` has a history. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+    "procedureName": "buildGitRepo",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+        "procedureName": "buildGitRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:267ba3a8d8b377eda1da76e722526bb19480d032d6b48dff0166bc5277f6d572",
+          "target": "stmt:scripts/ownership-check.mjs@L50",
+          "line": 50,
+          "expr": "const repo = mkdtempSync(join(tmpdir(), 'crib-ownership-'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+        "procedureName": "buildGitRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1e3565095bc3b17158869c7c2b9dd42973838faf96ee4a87b373a0904fdda8fa",
+          "target": "stmt:scripts/ownership-check.mjs@L51",
+          "line": 51,
+          "expr": "const g = (args) =>\n    execFileSync('git', ['-C', repo, ...args], {\n      encoding: 'utf8',\n      stdio: ['ignore', 'pipe', 'pipe'],\n    });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+        "procedureName": "buildGitRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2c021823be37345a67bb66be644997349c936f082793ba3d2caf5c06f6c0cb90",
+          "target": "sym:scripts/ownership-check.mjs#buildGitRepo.g@L51",
+          "expr": "g",
+          "line": 56
+        }
+      },
+      {
+        "procedure": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+        "procedureName": "buildGitRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3d6695c2fdc16cef5a83b5ef4d8ee8ba0a4b2c8d722aa52529ca234cb0c4c5c1",
+          "target": "stmt:scripts/ownership-check.mjs@L56",
+          "line": 56,
+          "expr": "g(['init']);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+        "procedureName": "buildGitRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3f8d200bcfde1b2f5ad1ec1a99521c5d42e8aadfff1fb4d905e2ff5feff7e8b3",
+          "target": "sym:packages/ui/web/vendor/react-dom.production.min.js#G@L201",
+          "expr": "G",
+          "line": 56
+        }
+      },
+      {
+        "procedure": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+        "procedureName": "buildGitRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4b1b1c2fdf3c698bbf87b94cd24d13a1616a4178e6a72597b0b76f9ab0aea87f",
+          "target": "stmt:scripts/ownership-check.mjs@L57",
+          "line": 57,
+          "expr": "g(['config', 'user.name', AUTHOR_NAME]);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+        "procedureName": "buildGitRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e3112aa1b0aa5318b21ec22f205cc79ba7dcf646edc7bfe2cdfd09066f51c2ee",
+          "target": "stmt:scripts/ownership-check.mjs@L58",
+          "line": 58,
+          "expr": "g(['config', 'user.email', AUTHOR_EMAIL]);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+        "procedureName": "buildGitRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:869ba6d73cd6fc3528ca46f78e092755e679e83526ae1820d628727a77bbc1aa",
+          "target": "stmt:scripts/ownership-check.mjs@L59",
+          "line": 59,
+          "expr": "writeFileSync(\n    join(repo, 'loan.ts'),\n    [\n      'export function assess(amount: number, score: number): string {',\n      '  const base = amount * 0.4 + score * 0.6;',\n      '  const risk = base + (amount > 50000 ? 100 : 0);',\n      '  return risk > 700 ? \"decline\" : risk > 500 ? \"review\" : \"approve\";',\n      '}',\n      'export function helper(n: number): number {',\n      '  return Math.round(n * 100) / 100;',\n      '}',\n      '',\n    ].join('\\n'),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+        "procedureName": "buildGitRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d2d5731f1c52282a72c4fef5a929b787268edf9f7dcef154bc6d3a86f84d3379",
+          "target": "stmt:scripts/ownership-check.mjs@L73",
+          "line": 73,
+          "expr": "g(['add', 'loan.ts']);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+        "procedureName": "buildGitRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:722cc26536f6bde94ecc6b084e1f854949689037f001ba51e090639420ed595d",
+          "target": "stmt:scripts/ownership-check.mjs@L76",
+          "line": 76,
+          "expr": "execFileSync('git', ['-C', repo, 'commit', '-m', 'init'], {\n    encoding: 'utf8',\n    stdio: ['ignore', 'pipe', 'pipe'],\n    env,\n  });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ownership-check.mjs#buildGitRepo@L49",
+        "procedureName": "buildGitRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b05aa6107ecfded1bd726e7676d4e7327faaa38debf1eccc67aadb1b380d4721",
+          "target": "stmt:scripts/ownership-check.mjs@L81",
+          "line": 81,
+          "expr": "return repo;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 12,
+      "unresolved": 8
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "8 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

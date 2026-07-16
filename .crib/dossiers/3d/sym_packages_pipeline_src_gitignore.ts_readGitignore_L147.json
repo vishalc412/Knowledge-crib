@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/gitignore.ts#readGitignore@L147",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:a81e1aef714e8bb4c8d498b4416fc01c65c3b45065dc6a4b694587dde540e1cf",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/gitignore.ts#readGitignore@L147",
@@ -136,11 +136,11 @@
         "inLoop": false,
         "inException": true,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:3304a7f45317ee01f316efa08e9720f8f59db9df72f6209e17d20258ecb35d16",
-          "target": "sym:packages/pipeline/src/gitignore.ts#parseGitignore@L48",
-          "expr": "parseGitignore",
-          "line": 151
+          "kind": "executes",
+          "edgeId": "e:11cd16aa2c0e2b62f2f40c69084bc0b6c875289e1736b772a3c81aa001f96936",
+          "target": "stmt:packages/pipeline/src/gitignore.ts@L151",
+          "line": 151,
+          "expr": "return parseGitignore(readFileSync(path, 'utf8'));"
         }
       },
       {
@@ -150,11 +150,11 @@
         "inLoop": false,
         "inException": true,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:11cd16aa2c0e2b62f2f40c69084bc0b6c875289e1736b772a3c81aa001f96936",
-          "target": "stmt:packages/pipeline/src/gitignore.ts@L151",
-          "line": 151,
-          "expr": "return parseGitignore(readFileSync(path, 'utf8'));"
+          "kind": "calls",
+          "edgeId": "e:3304a7f45317ee01f316efa08e9720f8f59db9df72f6209e17d20258ecb35d16",
+          "target": "sym:packages/pipeline/src/gitignore.ts#parseGitignore@L48",
+          "expr": "parseGitignore",
+          "line": 151
         }
       },
       {

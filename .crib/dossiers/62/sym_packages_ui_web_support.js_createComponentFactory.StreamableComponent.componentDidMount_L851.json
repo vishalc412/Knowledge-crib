@@ -1,0 +1,190 @@
+{
+  "id": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.componentDidMount@L851",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:19f9a48705f60dc49e356aadb1965bd4c75ba43964ce38bfc1dae7a1599a1fba",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.componentDidMount@L851",
+    "kind": "symbol",
+    "type": "method",
+    "name": "componentDidMount",
+    "qualifiedName": "createComponentFactory.StreamableComponent.componentDidMount",
+    "signature": "componentDidMount()",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 851,
+      "end": 858
+    },
+    "callSites": [
+      {
+        "callee": "add",
+        "line": 852
+      },
+      {
+        "callee": "get",
+        "line": 852
+      },
+      {
+        "callee": "componentDidMount",
+        "line": 854
+      },
+      {
+        "callee": "error",
+        "line": 856
+      }
+    ]
+  },
+  "source": {
+    "text": "      componentDidMount() {\n        registry.get(this.__name).subs.add(this.__sub);\n        try {\n          this.logic.componentDidMount();\n        } catch (e) {\n          console.error(e);\n        }\n      }",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 851
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#componentDidMount@L689",
+      "confidence": 1,
+      "name": "componentDidMount",
+      "qualifiedName": "componentDidMount",
+      "signature": "componentDidMount()",
+      "type": "method",
+      "file": "packages/ui/web/support.js",
+      "line": 689
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.componentDidMount@L851",
+    "procedureName": "createComponentFactory.StreamableComponent.componentDidMount",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.componentDidMount@L851",
+        "procedureName": "createComponentFactory.StreamableComponent.componentDidMount",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:306bac89bb7753e7cde8d4b0ebf82d5eb01f925246868e9508cce556cac8e767",
+          "target": "stmt:packages/ui/web/support.js@L852",
+          "line": 852,
+          "expr": "registry.get(this.__name).subs.add(this.__sub);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.componentDidMount@L851",
+        "procedureName": "createComponentFactory.StreamableComponent.componentDidMount",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5a737c5b29543298c915d0b0e820c26e28438889e909c0148a05542da2d7a2b9",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 852
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.componentDidMount@L851",
+        "procedureName": "createComponentFactory.StreamableComponent.componentDidMount",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:50bd4be5887f5985e72052ae1d5c6cefc070fdf84b309d5e6ce14c4a065c51a7",
+          "target": "sym:packages/ui/web/support.js#componentDidMount@L689",
+          "expr": "componentDidMount",
+          "line": 854
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.componentDidMount@L851",
+        "procedureName": "createComponentFactory.StreamableComponent.componentDidMount",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b00e69a522ef451c87f4777f0ec5c118a014bca07c9609e12b012c4dca34edc8",
+          "target": "stmt:packages/ui/web/support.js@L854",
+          "line": 854,
+          "expr": "this.logic.componentDidMount();"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.componentDidMount@L851",
+        "procedureName": "createComponentFactory.StreamableComponent.componentDidMount",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:639d0305cd24a505eb83a3288be319eb22c8c8cf40fe60f1952a6045f99d0870",
+          "target": "stmt:packages/ui/web/support.js@L856",
+          "line": 856,
+          "expr": "console.error(e);"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/ui/web/support.js@L855",
+        "kind": "exception-handler",
+        "lang": "javascript",
+        "file": "packages/ui/web/support.js",
+        "span": {
+          "start": 855,
+          "end": 855
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

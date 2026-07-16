@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseCaseBody@L1373",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:c7c1e48a5fe93ee77aaf57a91eb005da1c35b290950fd1b932b022ce65b22cd8",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseCaseBody@L1373",
@@ -324,11 +324,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:33ad934bb71db6be4f59d4ef66250b405c2f7e33dad4ab0e3f573da95284c555",
-          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseStmt@L1193",
-          "expr": "parseStmt",
-          "line": 1393
+          "kind": "executes",
+          "edgeId": "e:1e64f439c4072db3d3002ef28ab967e9db5e3de33507e4e23d0da5c6b60064dd",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1393",
+          "line": 1393,
+          "expr": "const s = this.parseStmt();"
         }
       },
       {
@@ -346,11 +346,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:1e64f439c4072db3d3002ef28ab967e9db5e3de33507e4e23d0da5c6b60064dd",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1393",
-          "line": 1393,
-          "expr": "const s = this.parseStmt();"
+          "kind": "calls",
+          "edgeId": "e:33ad934bb71db6be4f59d4ef66250b405c2f7e33dad4ab0e3f573da95284c555",
+          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseStmt@L1193",
+          "expr": "parseStmt",
+          "line": 1393
         }
       },
       {

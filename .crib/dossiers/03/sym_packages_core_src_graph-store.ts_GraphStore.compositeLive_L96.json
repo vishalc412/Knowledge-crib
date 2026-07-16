@@ -1,0 +1,275 @@
+{
+  "id": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:7146d7c834ff8eebfd2ef81cdca1cfa69edf94a7fb9dd0c58916436e4fe439c0",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+    "kind": "symbol",
+    "type": "method",
+    "name": "compositeLive",
+    "qualifiedName": "GraphStore.compositeLive",
+    "signature": "compositeLive(): GraphSnapshot",
+    "lang": "typescript",
+    "file": "packages/core/src/graph-store.ts",
+    "span": {
+      "start": 96,
+      "end": 107
+    },
+    "callSites": [
+      {
+        "callee": "extracted",
+        "line": 97
+      },
+      {
+        "callee": "semantic",
+        "line": 98
+      },
+      {
+        "callee": "map",
+        "line": 99
+      },
+      {
+        "callee": "set",
+        "line": 100
+      },
+      {
+        "callee": "keys",
+        "line": 101
+      },
+      {
+        "callee": "filter",
+        "line": 104
+      },
+      {
+        "callee": "has",
+        "line": 104
+      },
+      {
+        "callee": "has",
+        "line": 104
+      },
+      {
+        "callee": "values",
+        "line": 106
+      }
+    ]
+  },
+  "source": {
+    "text": "  compositeLive(): GraphSnapshot {\n    const extracted = this.extracted();\n    const semantic = this.semantic();\n    const nodes = new Map(extracted.nodes.map((node) => [node.id, node]));\n    for (const node of semantic.nodes) if (!nodes.has(node.id)) nodes.set(node.id, node);\n    const valid = new Set(nodes.keys());\n    const edges = [\n      ...extracted.edges,\n      ...semantic.edges.filter((edge) => valid.has(edge.src) && valid.has(edge.dst)),\n    ];\n    return { nodes: [...nodes.values()], edges, diagnostics: semantic.diagnostics };\n  }",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 96
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/graph-store.ts#GraphStore.composite@L90",
+      "confidence": 1,
+      "name": "composite",
+      "qualifiedName": "GraphStore.composite",
+      "signature": "composite(): GraphSnapshot",
+      "type": "method",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 90
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/graph-store.ts#GraphStore.extracted@L77",
+      "confidence": 1,
+      "name": "extracted",
+      "qualifiedName": "GraphStore.extracted",
+      "signature": "extracted(): GraphSnapshot",
+      "type": "method",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 77
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#GraphStore.semantic@L86",
+      "confidence": 1,
+      "name": "semantic",
+      "qualifiedName": "GraphStore.semantic",
+      "signature": "semantic(): GraphSnapshot",
+      "type": "method",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 86
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+    "procedureName": "GraphStore.compositeLive",
+    "conditions": [
+      "cond:packages/core/src/graph-store.ts@L100"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+        "procedureName": "GraphStore.compositeLive",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1992840477b2e7e6e927fffac5ac9239233877746b0f9f4455396289297039d2",
+          "target": "sym:packages/core/src/graph-store.ts#GraphStore.extracted@L77",
+          "expr": "extracted",
+          "line": 97
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+        "procedureName": "GraphStore.compositeLive",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:55d1ebd6553b1556a2f99ea52977f6c7a4150f62cd273641be07f35ee1116d6f",
+          "target": "stmt:packages/core/src/graph-store.ts@L97",
+          "line": 97,
+          "expr": "const extracted = this.extracted();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+        "procedureName": "GraphStore.compositeLive",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1dee6ed3f982afff8dad797b0feac6238c5a018f49ff85cc6c51912688b1af21",
+          "target": "stmt:packages/core/src/graph-store.ts@L98",
+          "line": 98,
+          "expr": "const semantic = this.semantic();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+        "procedureName": "GraphStore.compositeLive",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e1df138f11f0412607bcdf846f1df16c9ed4f341c6dddf885f039176ab148acf",
+          "target": "sym:packages/core/src/graph-store.ts#GraphStore.semantic@L86",
+          "expr": "semantic",
+          "line": 98
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+        "procedureName": "GraphStore.compositeLive",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e376838ea5dedb08a912ce4120454c335372645f24ea6d89b92ea35eef7b23ad",
+          "target": "stmt:packages/core/src/graph-store.ts@L99",
+          "line": 99,
+          "expr": "const nodes = new Map(extracted.nodes.map((node) => [node.id, node]));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+        "procedureName": "GraphStore.compositeLive",
+        "guard": "cond:packages/core/src/graph-store.ts@L100",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L100",
+            "expr": "semantic.nodes"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L100",
+            "expr": "semantic.nodes",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:65b265e9ca25b8645beb0770be46daff5ea38c08cee380f8414d111a08591fa7",
+          "target": "stmt:packages/core/src/graph-store.ts@L100",
+          "line": 100,
+          "expr": "nodes.set(node.id, node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+        "procedureName": "GraphStore.compositeLive",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:70d370647eda18f407d50ceba353abf9f45973baeccc638016ae6361132fa8fd",
+          "target": "stmt:packages/core/src/graph-store.ts@L101",
+          "line": 101,
+          "expr": "const valid = new Set(nodes.keys());"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+        "procedureName": "GraphStore.compositeLive",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e369495a331bf60dfb6e63a034b1012c9bbe69df11518b58f9e3ad623684d524",
+          "target": "stmt:packages/core/src/graph-store.ts@L102",
+          "line": 102,
+          "expr": "const edges = [\n      ...extracted.edges,\n      ...semantic.edges.filter((edge) => valid.has(edge.src) && valid.has(edge.dst)),\n    ];"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+        "procedureName": "GraphStore.compositeLive",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:91446087fca8d5b059b00f4af8287df4ea4f82205d35d04bd44895ededc6a95a",
+          "target": "stmt:packages/core/src/graph-store.ts@L106",
+          "line": 106,
+          "expr": "return { nodes: [...nodes.values()], edges, diagnostics: semantic.diagnostics };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/core/src/graph-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 9,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

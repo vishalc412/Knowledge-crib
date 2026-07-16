@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/lexer.ts#isIdentPart@L178",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:77409fbf6ad71526e40cca8c7b741e12cc7763f91756e20893da5375510fc399",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/lexer.ts#isIdentPart@L178",
@@ -102,20 +102,6 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:67a7c8a33739b9af955b674d4ba2f9953e7f37c9db31e500c5837f31eebf05c3",
-          "target": "sym:packages/parsers/src/plsql/lexer.ts#isIdentStart@L175",
-          "expr": "isIdentStart",
-          "line": 179
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/plsql/lexer.ts#isIdentPart@L178",
-        "procedureName": "isIdentPart",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
           "edgeId": "e:26df1b30112214565ce3fadb1fcdf6a0c6bda934d12fddb103968b5fa5dd4784",
           "target": "sym:packages/parsers/src/plsql/lexer.ts#isDigit@L172",
           "expr": "isDigit",
@@ -129,11 +115,25 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:775f837554d7c4a0a7081db3ce092b3b2159b83ffa1df29b48fc8c119dce3e7d",
-          "target": "stmt:packages/parsers/src/plsql/lexer.ts@L179",
-          "line": 179,
-          "expr": "return isIdentStart(c) || isDigit(c) || c === '$' || c === '#';"
+          "kind": "calls",
+          "edgeId": "e:6046d9178e6777d04c8ba4780625a9c2cf1354dd044b5616c4b1d9c6b1771c6e",
+          "target": "sym:packages/parsers/src/python/lexer.ts#isDigit@L454",
+          "expr": "isDigit",
+          "line": 179
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/lexer.ts#isIdentPart@L178",
+        "procedureName": "isIdentPart",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:67a7c8a33739b9af955b674d4ba2f9953e7f37c9db31e500c5837f31eebf05c3",
+          "target": "sym:packages/parsers/src/plsql/lexer.ts#isIdentStart@L175",
+          "expr": "isIdentStart",
+          "line": 179
         }
       },
       {
@@ -157,11 +157,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:6046d9178e6777d04c8ba4780625a9c2cf1354dd044b5616c4b1d9c6b1771c6e",
-          "target": "sym:packages/parsers/src/python/lexer.ts#isDigit@L454",
-          "expr": "isDigit",
-          "line": 179
+          "kind": "executes",
+          "edgeId": "e:775f837554d7c4a0a7081db3ce092b3b2159b83ffa1df29b48fc8c119dce3e7d",
+          "target": "stmt:packages/parsers/src/plsql/lexer.ts@L179",
+          "line": 179,
+          "expr": "return isIdentStart(c) || isDigit(c) || c === '$' || c === '#';"
         }
       }
     ]

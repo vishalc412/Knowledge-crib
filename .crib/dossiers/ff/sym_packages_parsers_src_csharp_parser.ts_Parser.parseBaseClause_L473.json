@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseBaseClause@L473",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:d9fbedb1b06347bc4750919c86a50064f59cc041924a4a9b2bd90eef42add99b",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseBaseClause@L473",
@@ -82,44 +82,44 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.atEnd@L1531",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.atEnd@L1537",
       "confidence": 1,
       "name": "atEnd",
       "qualifiedName": "Parser.atEnd",
       "signature": "atEnd(): boolean",
       "type": "method",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1531
+      "line": 1537
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isName@L1513",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isName@L1519",
       "confidence": 1,
       "name": "isName",
       "qualifiedName": "Parser.isName",
       "signature": "isName(v: string): boolean",
       "type": "method",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1513
+      "line": 1519
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1510",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1516",
       "confidence": 1,
       "name": "isOp",
       "qualifiedName": "Parser.isOp",
       "signature": "isOp(v: string): boolean",
       "type": "method",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1510
+      "line": 1516
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1523",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1529",
       "confidence": 1,
       "name": "next",
       "qualifiedName": "Parser.next",
       "signature": "next(): Token",
       "type": "method",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1523
+      "line": 1529
     },
     {
       "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedTypeName@L833",
@@ -142,14 +142,14 @@
       "line": 846
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#lastSegment@L1816",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#lastSegment@L1822",
       "confidence": 1,
       "name": "lastSegment",
       "qualifiedName": "lastSegment",
       "signature": "lastSegment(dotted: string): string",
       "type": "function",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1816
+      "line": 1822
     }
   ],
   "docs": [
@@ -211,8 +211,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:ea8d109573036156e10482e71754973b13ddb4f2ff4dec62801e1dac6bd199c0",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1523",
+          "edgeId": "e:989d319d53e9eb97efb9f0d286030109293763808d5bc03189668f7089dd4b88",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1529",
           "expr": "next",
           "line": 477
         }
@@ -294,11 +294,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:6072698715dd9d49fdb68543a109991e1cf8fcf185bf57bfe89779eec1f30d9a",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#lastSegment@L1816",
-          "expr": "lastSegment",
-          "line": 481
+          "kind": "executes",
+          "edgeId": "e:41c635bdb9bfd434c9bda19ae985d84b450af0c4bf3bb548d23179cde7d143d5",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L481",
+          "line": 481,
+          "expr": "const last = lastSegment(name);"
         }
       },
       {
@@ -320,11 +320,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:41c635bdb9bfd434c9bda19ae985d84b450af0c4bf3bb548d23179cde7d143d5",
-          "target": "stmt:packages/parsers/src/csharp/parser.ts@L481",
-          "line": 481,
-          "expr": "const last = lastSegment(name);"
+          "kind": "calls",
+          "edgeId": "e:c9286b9cdcde96550e62b61738dc25a7c07a07eb3a03c27124403b151d3f46ff",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#lastSegment@L1822",
+          "expr": "lastSegment",
+          "line": 481
         }
       },
       {
@@ -501,8 +501,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:a453e2a4e004c6acbcbde64b88deaf65ea62486331a40860e25efc6fac5e2d53",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1510",
+          "edgeId": "e:52d6280706bf365c331b849b6c1e623d4a409ed8dc65d4fbbc8ebef1f2d1396f",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1516",
           "expr": "isOp"
         }
       },
@@ -514,8 +514,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:a6754d156df9dd28f11fb8e876faba80b119156a480a942205e836363f76524b",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isName@L1513",
+          "edgeId": "e:fce8f5c296219521e896430d6f1b6d9c1886eda564afbfcaa6f57f63a34c0260",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isName@L1519",
           "expr": "isName"
         }
       },
@@ -527,8 +527,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:972c4f0cdda37f9a1e2107f4b0c01250bc60cd67836edf6ef3130f8f840608f2",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.atEnd@L1531",
+          "edgeId": "e:511312f9c442e7815840f8ba5c0ad524939d88c5cb390bdc71f6eb6226ae5b17",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.atEnd@L1537",
           "expr": "atEnd"
         }
       }

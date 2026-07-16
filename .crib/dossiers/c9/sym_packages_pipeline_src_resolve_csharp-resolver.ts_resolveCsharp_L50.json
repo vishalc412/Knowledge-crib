@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp@L50",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:e5920c4dd9a37b3e33d73f20b66c11ac6da87285057cc0c1520f9f01a2682d1b",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp@L50",
@@ -171,14 +171,24 @@
       "line": 16
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 122
+      "line": 141
     },
     {
       "id": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
@@ -338,8 +348,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:3ecd3a798e000ca00e8b539417e1209fcd08f2fcc2da988e8ee3b062e5488066",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "edgeId": "e:fc051e8dd4eb94cc7ac5ae2f04c50bd81e3aa10c817daaf17a512b4121b2beb9",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
           "expr": "edgeId",
           "line": 60
         }
@@ -356,6 +366,20 @@
           "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
           "expr": "add",
           "line": 62
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp@L50",
+        "procedureName": "resolveCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e65ea244b53516b28a9b2fa33615bc95447d77e475ff6a8473af9ba285caac41",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 63
         }
       },
       {
@@ -387,15 +411,23 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp@L50",
         "procedureName": "resolveCsharp",
-        "conditions": [],
-        "inLoop": false,
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:e65ea244b53516b28a9b2fa33615bc95447d77e475ff6a8473af9ba285caac41",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 63
+          "kind": "executes",
+          "edgeId": "e:0493d3b54392fe4712b344553eb706dc0c43e7ef9a76041f9e12b9b93bdfcf56",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L79",
+          "line": 79,
+          "expr": "const text = safeRead(join(root, file.path));"
         }
       },
       {
@@ -418,28 +450,6 @@
           "target": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#safeRead@L267",
           "expr": "safeRead",
           "line": 79
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp@L50",
-        "procedureName": "resolveCsharp",
-        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L77",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L77",
-            "expr": "files",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:0493d3b54392fe4712b344553eb706dc0c43e7ef9a76041f9e12b9b93bdfcf56",
-          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L79",
-          "line": 79,
-          "expr": "const text = safeRead(join(root, file.path));"
         }
       },
       {
@@ -542,6 +552,20 @@
           "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L104",
           "line": 104,
           "expr": "const targetFile =\n        fqnFile.get(fqn) ??\n        (imp.module ? findFileBySuffix(imp.module, imp.name, parsed) : undefined);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp@L50",
+        "procedureName": "resolveCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:373d60986da607fe13e40cbbcd101f84a61e953a5b33c62a942e4a34564e1a34",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 105
         }
       },
       {
@@ -919,14 +943,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 13,
+      "resolved": 14,
       "recorded": 30,
-      "unresolved": 6
+      "unresolved": 4
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

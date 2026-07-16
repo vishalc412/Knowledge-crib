@@ -1,0 +1,336 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#shard@L1791",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:0e95cd8e5dc51deffd514e4fc0bd2e67c9a12f082c1941c2e123792d0766ad65",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#shard@L1791",
+    "kind": "symbol",
+    "type": "function",
+    "name": "shard",
+    "qualifiedName": "shard",
+    "signature": "shard(id: string): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1791,
+      "end": 1793
+    },
+    "callSites": [
+      {
+        "callee": "slice",
+        "line": 1792
+      },
+      {
+        "callee": "blake3Hex",
+        "line": 1792
+      }
+    ]
+  },
+  "source": {
+    "text": "function shard(id: string): string {\n  return blake3Hex(id).slice(0, SHARD_HEX);\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1791
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.read@L1368",
+      "confidence": 1,
+      "name": "read",
+      "qualifiedName": "EnrichmentStore.read",
+      "signature": "read(layer: EnrichLayer, targetId: string, liveHash: string): LlmRead",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1368
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#artifactPath@L1773",
+      "confidence": 1,
+      "name": "artifactPath",
+      "qualifiedName": "artifactPath",
+      "signature": "artifactPath(artifactsRoot: string, layer: EnrichLayer, targetId: string, hash: string): string",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1773
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+      "confidence": 1,
+      "name": "blake3Hex",
+      "qualifiedName": "blake3Hex",
+      "signature": "blake3Hex(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 15
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#1-soulstore-source-of-truth",
+      "heading": "1. SoulStore (source of truth)",
+      "anchor": "1-soulstore-source-of-truth",
+      "snippet": "1. SoulStore (source of truth)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#2-on-disk-layout",
+      "heading": "2. On-disk layout",
+      "anchor": "2-on-disk-layout",
+      "snippet": "2. On-disk layout",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#6-soul-index-lifecycle-incremental",
+      "heading": "6. Soul ↔ index lifecycle (incremental)",
+      "anchor": "6-soul-index-lifecycle-incremental",
+      "snippet": "6. Soul ↔ index lifecycle (incremental)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
+      "heading": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
+      "anchor": "c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
+      "snippet": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "heading": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "anchor": "3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "snippet": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-1-the-enrich-save-validation-pipeline",
+      "heading": "3.2.1 The `enrich_save` Validation Pipeline",
+      "anchor": "3-2-1-the-enrich-save-validation-pipeline",
+      "snippet": "3.2.1 The `enrich_save` Validation Pipeline",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-3-staleness-detection-how-the-system-knows-llm-artifacts-are-outdated",
+      "heading": "3.2.3 Staleness Detection — How the System Knows LLM Artifacts Are Outdated",
+      "anchor": "3-2-3-staleness-detection-how-the-system-knows-llm-artifacts-are-outdated",
+      "snippet": "3.2.3 Staleness Detection — How the System Knows LLM Artifacts Are Outdated",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#option-b-per-module-souls-lazy-shard-loading",
+      "heading": "Option B — Per-module souls + lazy shard loading",
+      "anchor": "option-b-per-module-souls-lazy-shard-loading",
+      "snippet": "Option B — Per-module souls + lazy shard loading",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#adr-002-scale-storage-single-soul-vs-per-module-souls-lazy-shard-loading-dossiers-in-git",
+      "heading": "ADR-002 — Scale storage: single soul vs per-module souls, lazy shard loading, dossiers-in-git",
+      "anchor": "adr-002-scale-storage-single-soul-vs-per-module-souls-lazy-shard-loading-dossiers-in-git",
+      "snippet": "ADR-002 — Scale storage: single soul vs per-module souls, lazy shard loading, dossiers-in-git",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#context",
+      "heading": "Context",
+      "anchor": "context",
+      "snippet": "Context",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#option-c-single-soul-lazy-load-shards-within-one-soul-loaded-on-demand",
+      "heading": "Option C — Single soul, lazy load (shards within one soul, loaded on demand)",
+      "anchor": "option-c-single-soul-lazy-load-shards-within-one-soul-loaded-on-demand",
+      "snippet": "Option C — Single soul, lazy load (shards within one soul, loaded on demand)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#what-the-curve-says-two-different-shapes",
+      "heading": "What the curve says — two different shapes",
+      "anchor": "what-the-curve-says-two-different-shapes",
+      "snippet": "What the curve says — two different shapes",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#lazy-shard-loading-defer-not-warranted-by-data",
+      "heading": "Lazy shard loading — DEFER (not warranted by data)",
+      "anchor": "lazy-shard-loading-defer-not-warranted-by-data",
+      "snippet": "Lazy shard loading — DEFER (not warranted by data)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/bench/scale-curve.md#reading-the-curve",
+      "heading": "Reading the curve",
+      "anchor": "reading-the-curve",
+      "snippet": "Reading the curve",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#5-incremental-update-protocol-the-upgrades-as-project-evolves-part",
+      "heading": "5. Incremental update protocol (the \"upgrades as project evolves\" part)",
+      "anchor": "5-incremental-update-protocol-the-upgrades-as-project-evolves-part",
+      "snippet": "5. Incremental update protocol (the \"upgrades as project evolves\" part)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#8-open-confirmations-don-t-block-m0",
+      "heading": "8. Open confirmations (don't block M0)",
+      "anchor": "8-open-confirmations-don-t-block-m0",
+      "snippet": "8. Open confirmations (don't block M0)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#incremental-update",
+      "heading": "Incremental update",
+      "anchor": "incremental-update",
+      "snippet": "Incremental update",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "heading": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "anchor": "3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "snippet": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#shard@L1791",
+    "procedureName": "shard",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#shard@L1791",
+        "procedureName": "shard",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:458b0d9114707e3f2d4475f4a89f454cb16e2de3ec710e91f71c8f781fc523ab",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1792",
+          "line": 1792,
+          "expr": "return blake3Hex(id).slice(0, SHARD_HEX);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#shard@L1791",
+        "procedureName": "shard",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ccc46a4f9369bbc528eed61450d76447a5c5f7a2a6f20b18b86f1298dc8247ba",
+          "target": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+          "expr": "blake3Hex",
+          "line": 1792
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

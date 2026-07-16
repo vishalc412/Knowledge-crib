@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/spring.test.ts#route@L451",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:7328f18601761288509987ceffb5cb2bf4656c1fa6301529618c464f4ddf0cf3",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/spring.test.ts#route@L451",
@@ -24,7 +24,18 @@
     "totalLines": 2,
     "startLine": 451
   },
-  "callers": [],
+  "callers": [
+    {
+      "id": "sym:packages/core/src/federation.test.ts#fixture@L144",
+      "confidence": 1,
+      "name": "fixture",
+      "qualifiedName": "fixture",
+      "signature": "fixture(): {\n    rootA: string;\n    rootB: string;\n    fetchLoan: Node;\n    call: Node;\n    handler: Node;\n    rt: Node;\n  }",
+      "type": "function",
+      "file": "packages/core/src/federation.test.ts",
+      "line": 144
+    }
+  ],
   "callees": [],
   "docs": [
     {
@@ -56,40 +67,10 @@
       "confidence": 0.99
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
-      "heading": "Decision Log",
-      "anchor": "decision-log",
-      "snippet": "Decision Log",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.99
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
-      "heading": "M14 — Framework-semantics layer (schema 1.3)",
-      "anchor": "m14-framework-semantics-layer-schema-1-3",
-      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.99
-    },
-    {
       "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
       "heading": "`context(symbol)`",
       "anchor": "context-symbol",
       "snippet": "`context(symbol)`",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.99
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-2b-framework-semantics-1-3-the-above-sql-tier-for-app-frameworks",
-      "heading": "Phase 2b — Framework-semantics *(1.3, the \"above SQL\" tier for app frameworks)*",
-      "anchor": "phase-2b-framework-semantics-1-3-the-above-sql-tier-for-app-frameworks",
-      "snippet": "Phase 2b — Framework-semantics *(1.3, the \"above SQL\" tier for app frameworks)*",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -126,44 +107,44 @@
       "confidence": 0.99
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
-      "heading": "5. Milestones (each = one flagged PR + test gate)",
-      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
-      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "sectionId": "doc:SECURITY.md#network-surface-inventory-the-whole-product",
+      "heading": "Network surface inventory (the whole product)",
+      "anchor": "network-surface-inventory-the-whole-product",
+      "snippet": "Network surface inventory (the whole product)",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
-      "confidence": 0.95
+      "confidence": 0.99
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-data-model.md#1-node-kinds",
-      "heading": "1. Node kinds",
-      "anchor": "1-node-kinds",
-      "snippet": "1. Node kinds",
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-2b-framework-semantics-1-3-the-above-sql-tier-for-app-frameworks",
+      "heading": "Phase 2b — Framework-semantics *(1.3, the \"above SQL\" tier for app frameworks)*",
+      "anchor": "phase-2b-framework-semantics-1-3-the-above-sql-tier-for-app-frameworks",
+      "snippet": "Phase 2b — Framework-semantics *(1.3, the \"above SQL\" tier for app frameworks)*",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
-      "confidence": 0.95
+      "confidence": 0.99
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-overview",
-      "heading": "Phase overview",
-      "anchor": "phase-overview",
-      "snippet": "Phase overview",
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
-      "confidence": 0.95
+      "confidence": 0.99
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-soul-format.md#6-versioning-migration",
-      "heading": "6. Versioning & migration",
-      "anchor": "6-versioning-migration",
-      "snippet": "6. Versioning & migration",
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
-      "confidence": 0.95
+      "confidence": 0.99
     },
     {
       "sectionId": "doc:docs/knowledge-crib-soul-format.md#new-node-kinds",
@@ -186,10 +167,10 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-soul-format.md#planned-tracks-not-yet-built",
-      "heading": "Planned tracks (not yet built)",
-      "anchor": "planned-tracks-not-yet-built",
-      "snippet": "Planned tracks (not yet built)",
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#6-versioning-migration",
+      "heading": "6. Versioning & migration",
+      "anchor": "6-versioning-migration",
+      "snippet": "6. Versioning & migration",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -206,14 +187,44 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#the-problem-3",
-      "heading": "The problem",
-      "anchor": "the-problem-3",
-      "snippet": "The problem",
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#planned-tracks-not-yet-built",
+      "heading": "Planned tracks (not yet built)",
+      "anchor": "planned-tracks-not-yet-built",
+      "snippet": "Planned tracks (not yet built)",
       "edgeType": "describes",
-      "method": "identifier",
+      "method": "explicit",
       "provenance": "EXTRACTED",
-      "confidence": 0.8
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-overview",
+      "heading": "Phase overview",
+      "anchor": "phase-overview",
+      "snippet": "Phase overview",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#1-node-kinds",
+      "heading": "1. Node kinds",
+      "anchor": "1-node-kinds",
+      "snippet": "1. Node kinds",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
     },
     {
       "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests-3",
@@ -226,10 +237,80 @@
       "confidence": 0.8
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-edge-relations-rel",
-      "heading": "2. Edge relations (`rel`)",
-      "anchor": "2-edge-relations-rel",
-      "snippet": "2. Edge relations (`rel`)",
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#the-problem-3",
+      "heading": "The problem",
+      "anchor": "the-problem-3",
+      "snippet": "The problem",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#7-integration",
+      "heading": "7. Integration",
+      "anchor": "7-integration",
+      "snippet": "7. Integration",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "heading": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "anchor": "3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "snippet": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/comparison.md#the-7-column-matrix",
+      "heading": "The 7-column matrix",
+      "anchor": "the-7-column-matrix",
+      "snippet": "The 7-column matrix",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#technical-depth",
+      "heading": "Technical depth",
+      "anchor": "technical-depth",
+      "snippet": "Technical depth",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#why-it-matters",
+      "heading": "Why it matters",
+      "anchor": "why-it-matters",
+      "snippet": "Why it matters",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#model-tier-hints-cost-model-m2-7",
+      "heading": "Model-tier hints + cost model (M2.7)",
+      "anchor": "model-tier-hints-cost-model-m2-7",
+      "snippet": "Model-tier hints + cost model (M2.7)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#the-author-contract-what-you-write-per-item",
+      "heading": "The author contract — what you write per item",
+      "anchor": "the-author-contract-what-you-write-per-item",
+      "snippet": "The author contract — what you write per item",
       "edgeType": "describes",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -256,14 +337,64 @@
       "confidence": 0.8
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-testing.md#3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
-      "heading": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
-      "anchor": "3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
-      "snippet": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-edge-relations-rel",
+      "heading": "2. Edge relations (`rel`)",
+      "anchor": "2-edge-relations-rel",
+      "snippet": "2. Edge relations (`rel`)",
       "edgeType": "describes",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#per-module-souls-yes-driven-by-index-time-not-memory",
+      "heading": "Per-module souls — YES, driven by INDEX TIME (not memory)",
+      "anchor": "per-module-souls-yes-driven-by-index-time-not-memory",
+      "snippet": "Per-module souls — YES, driven by INDEX TIME (not memory)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/demo-recipe.md#shot-2-impact-blast-radius-the-enterprise-pull-25s",
+      "heading": "Shot 2 — impact blast-radius (the enterprise pull)  · ~25s",
+      "anchor": "shot-2-impact-blast-radius-the-enterprise-pull-25s",
+      "snippet": "Shot 2 — impact blast-radius (the enterprise pull)  · ~25s",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#tools",
+      "heading": "Tools",
+      "anchor": "tools",
+      "snippet": "Tools",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-remaining-deterministic-verbs-compact",
+      "heading": "The remaining deterministic verbs (compact)",
+      "anchor": "the-remaining-deterministic-verbs-compact",
+      "snippet": "The remaining deterministic verbs (compact)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
     }
   ],
   "rules": {
@@ -275,7 +406,9 @@
   "implementation": {
     "status": "unimplemented",
     "executesCount": 0,
-    "referencedByFiles": []
+    "referencedByFiles": [
+      "packages/core/src/federation.test.ts"
+    ]
   },
   "coverage": {
     "readiness": "unimplemented",

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/cli/src/registry.ts#listProjects@L92",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:380452d53c4a5480df57f7c7307309710f279d0502c1f1ed781af1b323b5e3c2",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/cli/src/registry.ts#listProjects@L92",
@@ -79,11 +79,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:f41821677c6166e0644a28a8cb8ed66f1bb22458356ff536947290757cbb1809",
-          "target": "sym:packages/cli/src/registry.ts#readRegistry@L60",
-          "expr": "readRegistry",
-          "line": 95
+          "kind": "executes",
+          "edgeId": "e:189ab1288a8f4b263636b63d211870654347df5b9083ec0a2049a77d913284f4",
+          "target": "stmt:packages/cli/src/registry.ts@L95",
+          "line": 95,
+          "expr": "return Object.entries(readRegistry(env).projects);"
         }
       },
       {
@@ -93,11 +93,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:189ab1288a8f4b263636b63d211870654347df5b9083ec0a2049a77d913284f4",
-          "target": "stmt:packages/cli/src/registry.ts@L95",
-          "line": 95,
-          "expr": "return Object.entries(readRegistry(env).projects);"
+          "kind": "calls",
+          "edgeId": "e:f41821677c6166e0644a28a8cb8ed66f1bb22458356ff536947290757cbb1809",
+          "target": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+          "expr": "readRegistry",
+          "line": 95
         }
       }
     ]

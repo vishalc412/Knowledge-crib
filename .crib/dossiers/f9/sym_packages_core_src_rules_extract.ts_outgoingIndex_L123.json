@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L123",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:740e9f64556c7296450404b8308ee87588b7a129003d4fd1711a23503a37bf9f",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L123",
@@ -52,6 +52,16 @@
   ],
   "callees": [
     {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
       "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
       "confidence": 1,
       "name": "push",
@@ -83,6 +93,20 @@
       {
         "procedure": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L123",
         "procedureName": "outgoingIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c7afd3a97ba07ac25c91631a0ca9f043dcaec675dca0244c7e7544200084387a",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 126
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L123",
+        "procedureName": "outgoingIndex",
         "guard": "cond:packages/core/src/rules/extract.ts@L125",
         "branch": "LOOP",
         "conditions": [
@@ -100,6 +124,20 @@
           "target": "stmt:packages/core/src/rules/extract.ts@L126",
           "line": 126,
           "expr": "const list = idx.get(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L123",
+        "procedureName": "outgoingIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:38e925a70182d339efed41aa588709c0a04877267f6835a00a0cb838a001c44a",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 127
         }
       },
       {
@@ -126,20 +164,6 @@
           "target": "stmt:packages/core/src/rules/extract.ts@L127",
           "line": 127,
           "expr": "list.push(e);"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/rules/extract.ts#outgoingIndex@L123",
-        "procedureName": "outgoingIndex",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:38e925a70182d339efed41aa588709c0a04877267f6835a00a0cb838a001c44a",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 127
         }
       },
       {
@@ -202,14 +226,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 1,
+      "resolved": 2,
       "recorded": 3,
-      "unresolved": 2
+      "unresolved": 1
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

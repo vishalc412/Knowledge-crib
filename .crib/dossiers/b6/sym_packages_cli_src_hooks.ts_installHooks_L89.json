@@ -1,0 +1,374 @@
+{
+  "id": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:bfd52ee95461b6d86761853eb50ee778b1707df64b8bd32ce116dc2d265d10ce",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+    "kind": "symbol",
+    "type": "function",
+    "name": "installHooks",
+    "qualifiedName": "installHooks",
+    "signature": "installHooks(root: string, opts: HookInstallOptions = {}): HookInstallResult",
+    "lang": "typescript",
+    "file": "packages/cli/src/hooks.ts",
+    "span": {
+      "start": 89,
+      "end": 122
+    },
+    "callSites": [
+      {
+        "callee": "gitDir",
+        "line": 91
+      },
+      {
+        "callee": "join",
+        "line": 92
+      },
+      {
+        "callee": "join",
+        "line": 93
+      },
+      {
+        "callee": "join",
+        "line": 94
+      },
+      {
+        "callee": "join",
+        "line": 97
+      },
+      {
+        "callee": "existsSync",
+        "line": 98
+      },
+      {
+        "callee": "readFileSync",
+        "line": 98
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 99
+      },
+      {
+        "callee": "spliceManaged",
+        "line": 101
+      },
+      {
+        "callee": "join",
+        "line": 106
+      },
+      {
+        "callee": "existsSync",
+        "line": 107
+      },
+      {
+        "callee": "readFileSync",
+        "line": 108
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 110
+      },
+      {
+        "callee": "spliceManaged",
+        "line": 112
+      },
+      {
+        "callee": "execFileSync",
+        "line": 117
+      }
+    ]
+  },
+  "source": {
+    "text": "export function installHooks(root: string, opts: HookInstallOptions = {}): HookInstallResult {\n  const bin = opts.driverBin ?? 'crib';\n  const gdir = gitDir(root);\n  const hooksDir = join(gdir, 'hooks');\n  const postCommitPath = join(hooksDir, 'post-commit');\n  const gitattributesPath = join(root, '.gitattributes');\n\n  // 1. post-commit hook with a managed block (idempotent replace).\n  const hookBlock = [MANAGED_BEGIN, `\"${bin}\" update`, MANAGED_END].join('\\n');\n  const existing = existsSync(postCommitPath) ? readFileSync(postCommitPath, 'utf8') : '';\n  writeFileSync(\n    postCommitPath,\n    spliceManaged(existing, hookBlock, MANAGED_BEGIN, MANAGED_END, !existing.length),\n    { mode: 0o755 },\n  );\n\n  // 2. .gitattributes: route .crib chunks through the kcrib merge driver (idempotent).\n  const attrBlock = [GITATTR_BEGIN, '.crib/** merge=kcrib', GITATTR_END].join('\\n');\n  const attrsExisting = existsSync(gitattributesPath)\n    ? readFileSync(gitattributesPath, 'utf8')\n    : '';\n  writeFileSync(\n    gitattributesPath,\n    spliceManaged(attrsExisting, attrBlock, GITATTR_BEGIN, GITATTR_END, false),\n  );\n\n  // 3. git config merge.kcrib.driver — overwritten to the canonical value each run.\n  const driverConfig = `\"${bin}\" merge-driver %O %A %B %P`;\n  execFileSync('git', ['-C', root, 'config', 'merge.kcrib.driver', driverConfig], {\n    stdio: ['ignore', 'ignore', 'ignore'],\n  });\n\n  return { gitDir: gdir, postCommitPath, gitattributesPath, driverConfig };\n}",
+    "truncated": false,
+    "totalLines": 34,
+    "startLine": 89
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L1405",
+      "confidence": 1,
+      "name": "cmdInstallHooks",
+      "qualifiedName": "cmdInstallHooks",
+      "signature": "cmdInstallHooks(args: string[], ctx?: CmdCtx): number",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1405
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/hooks.ts#gitDir@L41",
+      "confidence": 1,
+      "name": "gitDir",
+      "qualifiedName": "gitDir",
+      "signature": "gitDir(root: string): string",
+      "type": "function",
+      "file": "packages/cli/src/hooks.ts",
+      "line": 41
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.ts#spliceManaged@L131",
+      "confidence": 1,
+      "name": "spliceManaged",
+      "qualifiedName": "spliceManaged",
+      "signature": "spliceManaged(content: string, block: string, beginMarker: string, endMarker: string, fresh: boolean): string",
+      "type": "function",
+      "file": "packages/cli/src/hooks.ts",
+      "line": 131
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/hooks.ts@L88",
+      "snippet": "/** Install/refresh the post-commit managed block, the `.gitattributes` merge entry, and the driver config. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+    "procedureName": "installHooks",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:143a0e086f5bb21067761da13c46b9a1fcbdddf8e45e8e05c7d31e98422ca441",
+          "target": "stmt:packages/cli/src/hooks.ts@L91",
+          "line": 91,
+          "expr": "const gdir = gitDir(root);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6ab186de1179abde32497ba0b76f2e4ee1b5213c7d791c547e5e350daee6acc0",
+          "target": "sym:packages/cli/src/hooks.ts#gitDir@L41",
+          "expr": "gitDir",
+          "line": 91
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:62019a2e4fd611e16584099292cbba44828e118f331563cede51dfe23f16ec5c",
+          "target": "stmt:packages/cli/src/hooks.ts@L92",
+          "line": 92,
+          "expr": "const hooksDir = join(gdir, 'hooks');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4149b0a3c6a349edefcb1fca5f6dffea199f96f4217cb88e22749f56371a6a5c",
+          "target": "stmt:packages/cli/src/hooks.ts@L93",
+          "line": 93,
+          "expr": "const postCommitPath = join(hooksDir, 'post-commit');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cd5c9d557e3e87ce237fc9bfc4a5dd04b64332cccc378f5b4d17b7be2e629c4d",
+          "target": "stmt:packages/cli/src/hooks.ts@L94",
+          "line": 94,
+          "expr": "const gitattributesPath = join(root, '.gitattributes');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a333300326afe3f746e5376ac5da7c7b5532830346cc5d1970eb861d2041746a",
+          "target": "stmt:packages/cli/src/hooks.ts@L97",
+          "line": 97,
+          "expr": "const hookBlock = [MANAGED_BEGIN, `\"${bin}\" update`, MANAGED_END].join('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1a5a33d5ba6452b8e81847b569319b68d4f425d99bc5fe9826d5d28a493c2b75",
+          "target": "stmt:packages/cli/src/hooks.ts@L98",
+          "line": 98,
+          "expr": "const existing = existsSync(postCommitPath) ? readFileSync(postCommitPath, 'utf8') : '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:99153324269d19a872dda575a39f70c49c275ff6804b19cec629f468167a066e",
+          "target": "stmt:packages/cli/src/hooks.ts@L99",
+          "line": 99,
+          "expr": "writeFileSync(\n    postCommitPath,\n    spliceManaged(existing, hookBlock, MANAGED_BEGIN, MANAGED_END, !existing.length),\n    { mode: 0o755 },\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ef3cc9a62865842efd72e2ecb5921d1d53274c9db8b04473af9503a5adfb0c22",
+          "target": "sym:packages/cli/src/hooks.ts#spliceManaged@L131",
+          "expr": "spliceManaged",
+          "line": 101
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db9113e74a246c70b6fb6e97c89a4b94ceb8fea1e767bb23be42f08473abde31",
+          "target": "stmt:packages/cli/src/hooks.ts@L106",
+          "line": 106,
+          "expr": "const attrBlock = [GITATTR_BEGIN, '.crib/** merge=kcrib', GITATTR_END].join('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:82033ee4d683a14b70c6463ac37d1dca9df1bf7c58ba66c5ae4d2df39b29823b",
+          "target": "stmt:packages/cli/src/hooks.ts@L107",
+          "line": 107,
+          "expr": "const attrsExisting = existsSync(gitattributesPath)\n    ? readFileSync(gitattributesPath, 'utf8')\n    : '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3895a1e9ac56623070ae86a277034fde22e1daef3fb849a05bb1f8897e79480c",
+          "target": "stmt:packages/cli/src/hooks.ts@L110",
+          "line": 110,
+          "expr": "writeFileSync(\n    gitattributesPath,\n    spliceManaged(attrsExisting, attrBlock, GITATTR_BEGIN, GITATTR_END, false),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:06edbbb151bd0fb90988ac01e60046ff864fcf9cd4e6172c452606e4997aab57",
+          "target": "stmt:packages/cli/src/hooks.ts@L117",
+          "line": 117,
+          "expr": "execFileSync('git', ['-C', root, 'config', 'merge.kcrib.driver', driverConfig], {\n    stdio: ['ignore', 'ignore', 'ignore'],\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#installHooks@L89",
+        "procedureName": "installHooks",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dae78c6cdfdae7cc05dbdf32a4a9ee95b256894506875c864c0665c922daf541",
+          "target": "stmt:packages/cli/src/hooks.ts@L121",
+          "line": 121,
+          "expr": "return { gitDir: gdir, postCommitPath, gitattributesPath, driverConfig };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 15,
+      "unresolved": 12
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "12 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

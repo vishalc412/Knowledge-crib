@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/soul-store.test.ts#open@L58",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:0427f7e69268a3c2672ea1dd2cef06aae117e6c97cea44a374dcdc8fe9c95034",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/soul-store.test.ts#open@L58",
@@ -34,8 +34,29 @@
     "totalLines": 5,
     "startLine": 58
   },
-  "callers": [],
+  "callers": [
+    {
+      "id": "sym:packages/core/src/federation.test.ts#fixture@L144",
+      "confidence": 1,
+      "name": "fixture",
+      "qualifiedName": "fixture",
+      "signature": "fixture(): {\n    rootA: string;\n    rootB: string;\n    fetchLoan: Node;\n    call: Node;\n    handler: Node;\n    rt: Node;\n  }",
+      "type": "function",
+      "file": "packages/core/src/federation.test.ts",
+      "line": 144
+    }
+  ],
   "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
     {
       "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
       "confidence": 1,
@@ -49,10 +70,30 @@
   ],
   "docs": [
     {
-      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#knowledge-crib-implementation-plan-detailed",
-      "heading": "Knowledge-crib — Implementation Plan (detailed)",
-      "anchor": "knowledge-crib-implementation-plan-detailed",
-      "snippet": "Knowledge-crib — Implementation Plan (detailed)",
+      "sectionId": "doc:docs/launch/demo-recipe.md#shot-1-the-graph-viz-20s",
+      "heading": "Shot 1 — the graph (viz)  · ~20s",
+      "anchor": "shot-1-the-graph-viz-20s",
+      "snippet": "Shot 1 — the graph (viz)  · ~20s",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#3-what-it-is-in-plain-terms",
+      "heading": "3. What it is (in plain terms)",
+      "anchor": "3-what-it-is-in-plain-terms",
+      "snippet": "3. What it is (in plain terms)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#9-risks-guardrails",
+      "heading": "9. Risks & guardrails",
+      "anchor": "9-risks-guardrails",
+      "snippet": "9. Risks & guardrails",
       "edgeType": "describes",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -79,86 +120,6 @@
       "confidence": 0.8
     },
     {
-      "sectionId": "doc:PLAN_MAKE_A_BEATS_B.md#ws-a2-body-present-data-flow-verification-finish-ws-7",
-      "heading": "WS-A2 — Body-present data-flow verification (finish WS-7)",
-      "anchor": "ws-a2-body-present-data-flow-verification-finish-ws-7",
-      "snippet": "WS-A2 — Body-present data-flow verification (finish WS-7)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
-      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
-      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
-      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:SECURITY.md#reporting-a-vulnerability",
-      "heading": "Reporting a Vulnerability",
-      "anchor": "reporting-a-vulnerability",
-      "snippet": "Reporting a Vulnerability",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a5aca268aa0995cac.md#caveats-why-medium-not-high",
-      "heading": "Caveats (why medium, not high)",
-      "anchor": "caveats-why-medium-not-high",
-      "snippet": "Caveats (why medium, not high)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-viz-path-port-n",
-      "heading": "`crib viz [path] [--port <N>]`",
-      "anchor": "crib-viz-path-port-n",
-      "snippet": "`crib viz [path] [--port <N>]`",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-decisions.md#unified-kg-platform-gitnexus-graphify-design-decisions",
-      "heading": "Unified KG Platform (GitNexus × Graphify) — Design Decisions",
-      "anchor": "unified-kg-platform-gitnexus-graphify-design-decisions",
-      "snippet": "Unified KG Platform (GitNexus × Graphify) — Design Decisions",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-decisions.md#key-divergences",
-      "heading": "Key Divergences",
-      "anchor": "key-divergences",
-      "snippet": "Key Divergences",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-prd.md#8-license-open-source-q26-q37",
-      "heading": "8. License & Open Source [Q26, Q37]",
-      "anchor": "8-license-open-source-q26-q37",
-      "snippet": "8. License & Open Source [Q26, Q37]",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
       "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-7-mvp-scope-roadmap",
       "heading": "Branch 7 — MVP Scope & Roadmap",
       "anchor": "branch-7-mvp-scope-roadmap",
@@ -169,10 +130,30 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
-      "heading": "Commands",
-      "anchor": "commands",
-      "snippet": "Commands",
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#context",
+      "heading": "Context",
+      "anchor": "context",
+      "snippet": "Context",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#adr-002-scale-storage-single-soul-vs-per-module-souls-lazy-shard-loading-dossiers-in-git",
+      "heading": "ADR-002 — Scale storage: single soul vs per-module souls, lazy shard loading, dossiers-in-git",
+      "anchor": "adr-002-scale-storage-single-soul-vs-per-module-souls-lazy-shard-loading-dossiers-in-git",
+      "snippet": "ADR-002 — Scale storage: single soul vs per-module souls, lazy shard loading, dossiers-in-git",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#reporting-a-vulnerability",
+      "heading": "Reporting a Vulnerability",
+      "anchor": "reporting-a-vulnerability",
+      "snippet": "Reporting a Vulnerability",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -197,6 +178,86 @@
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-viz-path-port-n",
+      "heading": "`crib viz [path] [--port <N>]`",
+      "anchor": "crib-viz-path-port-n",
+      "snippet": "`crib viz [path] [--port <N>]`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#key-divergences",
+      "heading": "Key Divergences",
+      "anchor": "key-divergences",
+      "snippet": "Key Divergences",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#unified-kg-platform-gitnexus-graphify-design-decisions",
+      "heading": "Unified KG Platform (GitNexus × Graphify) — Design Decisions",
+      "anchor": "unified-kg-platform-gitnexus-graphify-design-decisions",
+      "snippet": "Unified KG Platform (GitNexus × Graphify) — Design Decisions",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/signing-deferral-adr.md#what-the-user-does-to-close-m4-7",
+      "heading": "What the user does to close M4.7",
+      "anchor": "what-the-user-does-to-close-m4-7",
+      "snippet": "What the user does to close M4.7",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#8-license-open-source-q26-q37",
+      "heading": "8. License & Open Source [Q26, Q37]",
+      "anchor": "8-license-open-source-q26-q37",
+      "snippet": "8. License & Open Source [Q26, Q37]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a2-body-present-data-flow-verification-finish-ws-7",
+      "heading": "WS-A2 — Body-present data-flow verification (finish WS-7)",
+      "anchor": "ws-a2-body-present-data-flow-verification-finish-ws-7",
+      "snippet": "WS-A2 — Body-present data-flow verification (finish WS-7)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
+      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
     }
   ],
   "rules": {
@@ -204,6 +265,20 @@
     "procedureName": "open",
     "conditions": [],
     "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#open@L58",
+        "procedureName": "open",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7c20260ea6ec036ed4829a7484282e637e4488b251f9965ce727976981e32ea6",
+          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
+          "expr": "newManifest",
+          "line": 59
+        }
+      },
       {
         "procedure": "sym:packages/core/src/soul-store.test.ts#open@L58",
         "procedureName": "open",
@@ -226,10 +301,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:7c20260ea6ec036ed4829a7484282e637e4488b251f9965ce727976981e32ea6",
-          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
-          "expr": "newManifest",
-          "line": 59
+          "edgeId": "e:8bb8ddae5674d57c3f10bc9cf9bc2cedd77a9ab8d3053b99339eda96a68bff02",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 60
         }
       },
       {
@@ -265,7 +340,9 @@
   "implementation": {
     "status": "implemented",
     "executesCount": 3,
-    "referencedByFiles": []
+    "referencedByFiles": [
+      "packages/core/src/federation.test.ts"
+    ]
   },
   "coverage": {
     "readiness": "complete",
@@ -278,7 +355,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 1,
+      "resolved": 2,
       "recorded": 2,
       "unresolved": 0
     },

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/spring.ts#requestMethodsOf@L385",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:06485fad11a0ca3561a61c5e11812870e7147f1567ee35f6acd9cacce6840315",
-  "builtAt": "2026-06-26T05:10:32.429Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/spring.ts#requestMethodsOf@L385",
@@ -97,6 +97,20 @@
       {
         "procedure": "sym:packages/parsers/src/java/spring.ts#requestMethodsOf@L385",
         "procedureName": "requestMethodsOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:575fd13f3a04fabf959bc453f50bebdc8deba7cd145e5bf665be1b161549ddad",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 388
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#requestMethodsOf@L385",
+        "procedureName": "requestMethodsOf",
         "guard": "cond:packages/parsers/src/java/spring.ts@L388",
         "branch": "LOOP",
         "conditions": [
@@ -114,20 +128,6 @@
           "target": "stmt:packages/parsers/src/java/spring.ts@L388",
           "line": 388,
           "expr": "out.push(m[1]!);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/spring.ts#requestMethodsOf@L385",
-        "procedureName": "requestMethodsOf",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:575fd13f3a04fabf959bc453f50bebdc8deba7cd145e5bf665be1b161549ddad",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 388
         }
       },
       {

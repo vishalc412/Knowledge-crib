@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1278",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:ed8969289814340cf861a8768a6e9b4ff91b12ba21c04431e72c05beae03ca19",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1278",
@@ -171,6 +171,20 @@
       {
         "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1278",
         "procedureName": "BodyParser.parseDo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b7f8cc9358521054be2a33f20cae2d29f8002286497f739b218f6919dc0c9a4f",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1279",
+          "line": 1279,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1278",
+        "procedureName": "BodyParser.parseDo",
         "guard": "cond:packages/parsers/src/java/parser.ts@L1286",
         "branch": "THEN",
         "conditions": [
@@ -198,10 +212,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:b7f8cc9358521054be2a33f20cae2d29f8002286497f739b218f6919dc0c9a4f",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1279",
-          "line": 1279,
-          "expr": "this.next();"
+          "edgeId": "e:6ba1e10b316bb3fa2541cea35021fbb5c198dc294ed222a84908a4e734a9913e",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1280",
+          "line": 1280,
+          "expr": "const body = this.parseBlockOrStmt();"
         }
       },
       {
@@ -216,20 +230,6 @@
           "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseBlockOrStmt@L1555",
           "expr": "parseBlockOrStmt",
           "line": 1280
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseDo@L1278",
-        "procedureName": "BodyParser.parseDo",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:6ba1e10b316bb3fa2541cea35021fbb5c198dc294ed222a84908a4e734a9913e",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1280",
-          "line": 1280,
-          "expr": "const body = this.parseBlockOrStmt();"
         }
       },
       {

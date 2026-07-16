@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust@L53",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:153a87af20b2d0e7a4dd6acaabe141533c6bd83fdb30d874897c904affe5699f",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust@L53",
@@ -177,14 +177,24 @@
       "line": 224
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 122
+      "line": 141
     },
     {
       "id": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
@@ -324,8 +334,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:81339509df28a5ba0510de4ed68f39d447d698e39cf3d109b6bed788d9ff6987",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "edgeId": "e:def240dce6cb336c765b134695868e3d6e0b08fac750714297bb18889ce0acb4",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
           "expr": "edgeId",
           "line": 63
         }
@@ -342,6 +352,20 @@
           "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
           "expr": "add",
           "line": 65
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust@L53",
+        "procedureName": "resolveRust",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:870115fcfd1c844cec7b01dcd80e0778c7bc49ffcfdf3cf011377a30c2d6bf74",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 66
         }
       },
       {
@@ -373,15 +397,23 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust@L53",
         "procedureName": "resolveRust",
-        "conditions": [],
-        "inLoop": false,
+        "guard": "cond:packages/pipeline/src/resolve/rust-resolver.ts@L80",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/rust-resolver.ts@L80",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:870115fcfd1c844cec7b01dcd80e0778c7bc49ffcfdf3cf011377a30c2d6bf74",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 66
+          "kind": "executes",
+          "edgeId": "e:0f6a74bf90c779722aee73299b776bf09083cf49fe9af80e654f2670d1f0f284",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L82",
+          "line": 82,
+          "expr": "const text = safeRead(join(root, file.path));"
         }
       },
       {
@@ -409,23 +441,15 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust@L53",
         "procedureName": "resolveRust",
-        "guard": "cond:packages/pipeline/src/resolve/rust-resolver.ts@L80",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/resolve/rust-resolver.ts@L80",
-            "expr": "files",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
+        "conditions": [],
+        "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:0f6a74bf90c779722aee73299b776bf09083cf49fe9af80e654f2670d1f0f284",
-          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L82",
-          "line": 82,
-          "expr": "const text = safeRead(join(root, file.path));"
+          "kind": "calls",
+          "edgeId": "e:77387d6919d1b9fabaeaed81d734c7148f25576edfc63a13cfb2686afcb6c412",
+          "target": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
+          "expr": "safeRead",
+          "line": 82
         }
       },
       {
@@ -436,10 +460,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:77387d6919d1b9fabaeaed81d734c7148f25576edfc63a13cfb2686afcb6c412",
-          "target": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
-          "expr": "safeRead",
-          "line": 82
+          "edgeId": "e:1c224c616b9c74daf64a5eb30044ddc5fef0ea39d8675d52ef630e3ff785dcc5",
+          "target": "sym:packages/parsers/src/rust/parser.ts#parseRust@L192",
+          "expr": "parseRust",
+          "line": 84
         }
       },
       {
@@ -462,20 +486,6 @@
           "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L84",
           "line": 84,
           "expr": "parsed.push({ path: file.path, mod: parseRust(text) });"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust@L53",
-        "procedureName": "resolveRust",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:1c224c616b9c74daf64a5eb30044ddc5fef0ea39d8675d52ef630e3ff785dcc5",
-          "target": "sym:packages/parsers/src/rust/parser.ts#parseRust@L192",
-          "expr": "parseRust",
-          "line": 84
         }
       },
       {
@@ -620,6 +630,20 @@
           "target": "stmt:packages/pipeline/src/resolve/rust-resolver.ts@L109",
           "line": 109,
           "expr": "const targetFile = fqnFile.get(fqn) ?? findFileByModule(imp.module, imp.original, parsed);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust@L53",
+        "procedureName": "resolveRust",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fa2ff7c9b4eb0272ee70b878ccd37ad7ae699fc34e3372e9c19e2fa46afd7a68",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 109
         }
       },
       {
@@ -944,14 +968,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 12,
+      "resolved": 13,
       "recorded": 29,
-      "unresolved": 6
+      "unresolved": 4
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

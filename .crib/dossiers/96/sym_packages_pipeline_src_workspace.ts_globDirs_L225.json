@@ -1,0 +1,338 @@
+{
+  "id": "sym:packages/pipeline/src/workspace.ts#globDirs@L225",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:13f91f48e3538bac5176b6168a0f8f8deb721c3d40f510384e7dfb3a22bb8bad",
+  "builtAt": "2026-07-16T14:53:52.220Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/workspace.ts#globDirs@L225",
+    "kind": "symbol",
+    "type": "function",
+    "name": "globDirs",
+    "qualifiedName": "globDirs",
+    "signature": "globDirs(root: string, pattern: string): string[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/workspace.ts",
+    "span": {
+      "start": 225,
+      "end": 295
+    },
+    "callSites": [
+      {
+        "callee": "split",
+        "line": 226
+      },
+      {
+        "callee": "isDirectory",
+        "line": 231
+      },
+      {
+        "callee": "statSync",
+        "line": 231
+      },
+      {
+        "callee": "isDirectory",
+        "line": 242
+      },
+      {
+        "callee": "statSync",
+        "line": 242
+      },
+      {
+        "callee": "push",
+        "line": 242
+      },
+      {
+        "callee": "readdirSync",
+        "line": 248
+      },
+      {
+        "callee": "startsWith",
+        "line": 249
+      },
+      {
+        "callee": "join",
+        "line": 250
+      },
+      {
+        "callee": "isDirectory",
+        "line": 252
+      },
+      {
+        "callee": "statSync",
+        "line": 252
+      },
+      {
+        "callee": "push",
+        "line": 257
+      },
+      {
+        "callee": "walk",
+        "line": 257
+      },
+      {
+        "callee": "push",
+        "line": 258
+      },
+      {
+        "callee": "walk",
+        "line": 258
+      },
+      {
+        "callee": "dedup",
+        "line": 263
+      },
+      {
+        "callee": "readdirSync",
+        "line": 268
+      },
+      {
+        "callee": "startsWith",
+        "line": 269
+      },
+      {
+        "callee": "join",
+        "line": 270
+      },
+      {
+        "callee": "isDirectory",
+        "line": 272
+      },
+      {
+        "callee": "statSync",
+        "line": 272
+      },
+      {
+        "callee": "push",
+        "line": 277
+      },
+      {
+        "callee": "walk",
+        "line": 277
+      },
+      {
+        "callee": "join",
+        "line": 285
+      },
+      {
+        "callee": "isDirectory",
+        "line": 287
+      },
+      {
+        "callee": "statSync",
+        "line": 287
+      },
+      {
+        "callee": "walk",
+        "line": 292
+      },
+      {
+        "callee": "walk",
+        "line": 294
+      }
+    ]
+  },
+  "source": {
+    "text": "function globDirs(root: string, pattern: string): string[] {\n  const segs = pattern.split('/');\n  const walk = (dir: string, idx: number, prefix: string): string[] => {\n    if (idx >= segs.length) {\n      // pattern resolved to a path; include only if it's a directory\n      try {\n        return statSync(dir).isDirectory() ? [prefix] : [];\n      } catch {\n        return [];\n      }\n    }\n    const seg = segs[idx]!;\n    if (seg === '**') {\n      // zero or more dirs; collect this dir (if it's the tail) and recurse\n      const results: string[] = [];\n      if (idx === segs.length - 1) {\n        try {\n          if (statSync(dir).isDirectory()) results.push(prefix);\n        } catch {\n          // unreadable\n        }\n      }\n      try {\n        for (const entry of readdirSync(dir)) {\n          if (entry.startsWith('.')) continue;\n          const abs = join(dir, entry);\n          try {\n            if (!statSync(abs).isDirectory()) continue;\n          } catch {\n            continue;\n          }\n          const childPrefix = prefix === '' ? entry : `${prefix}/${entry}`;\n          results.push(...walk(abs, idx, childPrefix));\n          results.push(...walk(abs, idx + 1, childPrefix));\n        }\n      } catch {\n        // unreadable dir\n      }\n      return dedup(results);\n    }\n    if (seg === '*' || seg === '') {\n      const results: string[] = [];\n      try {\n        for (const entry of readdirSync(dir)) {\n          if (entry.startsWith('.')) continue;\n          const abs = join(dir, entry);\n          try {\n            if (!statSync(abs).isDirectory()) continue;\n          } catch {\n            continue;\n          }\n          const childPrefix = prefix === '' ? entry : `${prefix}/${entry}`;\n          results.push(...walk(abs, idx + 1, childPrefix));\n        }\n      } catch {\n        // unreadable\n      }\n      return results;\n    }\n    // literal segment\n    const abs = join(dir, seg);\n    try {\n      if (!statSync(abs).isDirectory()) return [];\n    } catch {\n      return [];\n    }\n    const childPrefix = prefix === '' ? seg : `${prefix}/${seg}`;\n    return walk(abs, idx + 1, childPrefix);\n  };\n  return walk(root, 0, '');\n}",
+    "truncated": false,
+    "totalLines": 71,
+    "startLine": 225
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
+      "confidence": 1,
+      "name": "expandPatterns",
+      "qualifiedName": "expandPatterns",
+      "signature": "expandPatterns(root: string, patterns: string[]): WorkspacePackage[]",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 208
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#dedup@L333",
+      "confidence": 1,
+      "name": "dedup",
+      "qualifiedName": "dedup",
+      "signature": "dedup(arr: string[]): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 333
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#globDirs.walk@L227",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "globDirs.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 227
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:scripts/docs-stats.mjs#walk@L31",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/docs-stats.mjs",
+      "line": 31
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/workspace.ts@L224",
+      "snippet": "/** Minimal glob → existing directory lister. Supports `*` (one non-dot segment) and `**` (any depth). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/workspace.ts#globDirs@L225",
+    "procedureName": "globDirs",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#globDirs@L225",
+        "procedureName": "globDirs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9286eb4917dec94ab47d7f448887ad4982589f28295607ae595d71ce59c9bb8f",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L226",
+          "line": 226,
+          "expr": "const segs = pattern.split('/');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#globDirs@L225",
+        "procedureName": "globDirs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9741aa882293788ee12cbcf49bcf71aa70b4bd7ab52ff63701138ac0c63ed9cf",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L227",
+          "line": 227,
+          "expr": "const walk = (dir: string, idx: number, prefix: string): string[] => {\n    if (idx >= segs.length) {\n      // pattern resolved to a path; include only if it's a directory\n      try {\n        return statSync(dir).isDirectory() ? [prefix] : [];\n      } catch {\n        return [];\n      }\n    }\n    const seg = segs[idx]!;\n    if (seg === '**') {\n      // zero or more dirs; collect this dir (if it's the tail) and recurse\n      const results: string[] = [];\n      if (idx === segs.length - 1) {\n        try {\n          if (statSync(dir).isDirectory()) results.push(prefix);\n        } catch {\n          // unreadable\n        }\n      }\n      try {\n        for (const entry of readdirSync(dir)) {\n          if (entry.startsWith('.')) continue;\n          const abs = join(dir, entry);\n          try {\n            if (!statSync(abs).isDirectory()) continue;\n          } catch {\n            continue;\n          }\n          const childPrefix = prefix === '' ? entry : `${prefix}/${entry}`;\n          results.push(...walk(abs, idx, childPrefix));\n          results.push(...walk(abs, idx + 1, childPrefix));\n        }\n      } catch {\n        // unreadable dir\n      }\n      return dedup(results);\n    }\n    if (seg === '*' || seg === '') {\n      const results: string[] = [];\n      try {\n        for (const entry of readdirSync(dir)) {\n          if (entry.startsWith('.')) continue;\n          const abs = join(dir, entry);\n          try {\n            if (!statSync(abs).isDirectory()) continue;\n          } catch {\n            continue;\n          }\n          const childPrefix = prefix === '' ? entry : `${prefix}/${entry}`;\n          results.push(...walk(abs, idx + 1, childPrefix));\n        }\n      } catch {\n        // unreadable\n      }\n      return results;\n    }\n    // literal segment\n    const abs = join(dir, seg);\n    try {\n      if (!statSync(abs).isDirectory()) return [];\n    } catch {\n      return [];\n    }\n    const childPrefix = prefix === '' ? seg : `${prefix}/${seg}`;\n    return walk(abs, i…"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#globDirs@L225",
+        "procedureName": "globDirs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2bde1c233a1e2426c7dc2467bb318c6c2a3f4d64bd8707b017314ef3768c5bd0",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 242
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#globDirs@L225",
+        "procedureName": "globDirs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3d629c66cc45e75f3f8aabd4b95e9cdec5dd53a4a42c082faa222ddd08ef605f",
+          "target": "sym:packages/pipeline/src/workspace.ts#globDirs.walk@L227",
+          "expr": "walk",
+          "line": 257
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#globDirs@L225",
+        "procedureName": "globDirs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cf44d0919756ac3e3740fca77f55b3b6568e65574b82ea62ed4ccbb6509f75a8",
+          "target": "sym:scripts/docs-stats.mjs#walk@L31",
+          "expr": "walk",
+          "line": 257
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#globDirs@L225",
+        "procedureName": "globDirs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6f937b4e510be5c3d10d72a1784e3ba460d8fc48db04e46f718683e51481fae2",
+          "target": "sym:packages/pipeline/src/workspace.ts#dedup@L333",
+          "expr": "dedup",
+          "line": 263
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#globDirs@L225",
+        "procedureName": "globDirs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8a1922e3c837e78d20afac3d926e502688f4b193818a1f256f148e473e35f773",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L294",
+          "line": 294,
+          "expr": "return walk(root, 0, '');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/pipeline/src/workspace.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 28,
+      "unresolved": 16
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "16 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkMatch@L588",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:7217e65d091ef78edc9471ae95082ee6d0003ab9f0efe2064a9447fcabf6c281",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkMatch@L588",
@@ -100,28 +100,6 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:7d94448873fcea22cf93662a567f77a8f41d42e4594dd7e213fecf0375287d1b",
-          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.caseBranch@L711",
-          "expr": "caseBranch",
-          "line": 597
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkMatch@L588",
-        "procedureName": "BodyWalker.walkMatch",
-        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L596",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L596",
-            "expr": "s.arms",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:7b995dd48f782b4af8ad00d3a4138dda6cf67f5a8a58ad44af45a4714c163a51",
           "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L597",
@@ -145,10 +123,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:c58b96486bafaf4a84cad8d3b0fff49078883244253bd8e2cc6fddd4376b5712",
-          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkBody@L482",
-          "expr": "walkBody",
-          "line": 598
+          "edgeId": "e:7d94448873fcea22cf93662a567f77a8f41d42e4594dd7e213fecf0375287d1b",
+          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.caseBranch@L711",
+          "expr": "caseBranch",
+          "line": 597
         }
       },
       {
@@ -171,6 +149,28 @@
           "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L598",
           "line": 598,
           "expr": "this.walkBody(\n        arm.body,\n        procId,\n        [...guardStack, { condId, branch: 'CASE' }],\n        inLoop,\n        inException,\n        sites,\n      );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkMatch@L588",
+        "procedureName": "BodyWalker.walkMatch",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L596",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L596",
+            "expr": "s.arms",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c58b96486bafaf4a84cad8d3b0fff49078883244253bd8e2cc6fddd4376b5712",
+          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkBody@L482",
+          "expr": "walkBody",
+          "line": 598
         }
       }
     ]

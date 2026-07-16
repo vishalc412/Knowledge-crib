@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/workspace.ts#detectWorkspace@L40",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:06fe86a27b63f64149e96aecbe71c9157ff78efd0ba9439acfa74d3475a5bdcf",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/workspace.ts#detectWorkspace@L40",
@@ -48,26 +48,26 @@
   },
   "callers": [
     {
-      "id": "sym:packages/cli/src/cli.ts#resolvePackageScope@L146",
+      "id": "sym:packages/cli/src/cli.ts#resolvePackageScope@L175",
       "confidence": 1,
       "name": "resolvePackageScope",
       "qualifiedName": "resolvePackageScope",
-      "signature": "resolvePackageScope(repoRoot: string, args: string[]): { status: number; packageRoots?: string[]; layout: WorkspaceLayout | null; indexedPackages: string[] }",
+      "signature": "resolvePackageScope(repoRoot: string, args: string[]): {\n  status: number;\n  packageRoots?: string[];\n  layout: WorkspaceLayout | null;\n  indexedPackages: string[];\n}",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 146
+      "line": 175
     }
   ],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#detectCargo@L125",
+      "id": "sym:packages/pipeline/src/workspace.ts#detectCargo@L123",
       "confidence": 1,
       "name": "detectCargo",
       "qualifiedName": "detectCargo",
       "signature": "detectCargo(root: string): WorkspaceLayout | null",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 125
+      "line": 123
     },
     {
       "id": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
@@ -238,11 +238,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:e5f818adf3aac5d0cc9a92e3e21429d72c78cdb3ef17f81fa2b3abde88d1c7a4",
-          "target": "sym:packages/pipeline/src/workspace.ts#detectNx@L95",
-          "expr": "detectNx",
-          "line": 45
+          "kind": "executes",
+          "edgeId": "e:3c21eb2eaa159f3dcd971393fe7d883526de853ed79033f97b06b1d131490189",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L45",
+          "line": 45,
+          "expr": "const nx = detectNx(root);"
         }
       },
       {
@@ -252,11 +252,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:3c21eb2eaa159f3dcd971393fe7d883526de853ed79033f97b06b1d131490189",
-          "target": "stmt:packages/pipeline/src/workspace.ts@L45",
-          "line": 45,
-          "expr": "const nx = detectNx(root);"
+          "kind": "calls",
+          "edgeId": "e:e5f818adf3aac5d0cc9a92e3e21429d72c78cdb3ef17f81fa2b3abde88d1c7a4",
+          "target": "sym:packages/pipeline/src/workspace.ts#detectNx@L95",
+          "expr": "detectNx",
+          "line": 45
         }
       },
       {
@@ -288,11 +288,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:3db7817d090be591794e31ba537b25ed29ce55f86a24a9df02a13b8cc7314c11",
-          "target": "sym:packages/pipeline/src/workspace.ts#detectNpmWorkspaces@L106",
-          "expr": "detectNpmWorkspaces",
-          "line": 47
+          "kind": "executes",
+          "edgeId": "e:29b450588544847a0010f268681c1de879a66da0561b62ee3ae2b154c1a47624",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L47",
+          "line": 47,
+          "expr": "const npm = detectNpmWorkspaces(root);"
         }
       },
       {
@@ -302,11 +302,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:29b450588544847a0010f268681c1de879a66da0561b62ee3ae2b154c1a47624",
-          "target": "stmt:packages/pipeline/src/workspace.ts@L47",
-          "line": 47,
-          "expr": "const npm = detectNpmWorkspaces(root);"
+          "kind": "calls",
+          "edgeId": "e:3db7817d090be591794e31ba537b25ed29ce55f86a24a9df02a13b8cc7314c11",
+          "target": "sym:packages/pipeline/src/workspace.ts#detectNpmWorkspaces@L106",
+          "expr": "detectNpmWorkspaces",
+          "line": 47
         }
       },
       {
@@ -339,8 +339,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:a621e758536ccf32227db57bd177c1c9f813ecc4e6086ae516595a2f8b115dbc",
-          "target": "sym:packages/pipeline/src/workspace.ts#detectCargo@L125",
+          "edgeId": "e:3bcde3f3f97a08e7f3b248dc345ddd3b04adf9376302f3b253a11dccd075c346",
+          "target": "sym:packages/pipeline/src/workspace.ts#detectCargo@L123",
           "expr": "detectCargo",
           "line": 49
         }

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/parser.ts#Parser.skipReturnType@L953",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:259239ee3f61db1f13faae687da2852a529de59bae5a1d4428507b684194018c",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/parser.ts#Parser.skipReturnType@L953",
@@ -223,11 +223,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:418e5438337934c6eccf55d9866314c312ec3fe86ed71c361189386ff8a88ff1",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.next@L1690",
-          "expr": "next",
-          "line": 962
+          "kind": "executes",
+          "edgeId": "e:0214e09dac8e4a824f7e4ce5f87cc902d8ae6da91d7f0852d258ac6b37e5ab51",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L962",
+          "line": 962,
+          "expr": "this.next();"
         }
       },
       {
@@ -245,11 +245,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:0214e09dac8e4a824f7e4ce5f87cc902d8ae6da91d7f0852d258ac6b37e5ab51",
-          "target": "stmt:packages/parsers/src/go/parser.ts@L962",
-          "line": 962,
-          "expr": "this.next();"
+          "kind": "calls",
+          "edgeId": "e:418e5438337934c6eccf55d9866314c312ec3fe86ed71c361189386ff8a88ff1",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.next@L1690",
+          "expr": "next",
+          "line": 962
         }
       },
       {

@@ -1,0 +1,157 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.artifactImportance@L1577",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:5e011d05bcbaed95083aedf5a66788e3aadc07b80e2b00218b9ae6cf12ac25df",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.artifactImportance@L1577",
+    "kind": "symbol",
+    "type": "method",
+    "name": "artifactImportance",
+    "qualifiedName": "EnrichmentStore.artifactImportance",
+    "signature": "artifactImportance(a: LlmArtifact, importance: Map<string, ImportanceEntry>): number",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1577,
+      "end": 1583
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 1579
+      },
+      {
+        "callee": "clusterImportance",
+        "line": 1580
+      },
+      {
+        "callee": "get",
+        "line": 1582
+      }
+    ]
+  },
+  "source": {
+    "text": "  private artifactImportance(a: LlmArtifact, importance: Map<string, ImportanceEntry>): number {\n    if (a.layer === 'cluster') {\n      const node = this.soul.getNode(a.targetId);\n      return node ? clusterImportance(this.soul, node, importance) : 0;\n    }\n    return importance.get(a.targetId)?.importance ?? 0;\n  }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 1577
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.buildOverview@L1483",
+      "confidence": 1,
+      "name": "buildOverview",
+      "qualifiedName": "EnrichmentStore.buildOverview",
+      "signature": "buildOverview(scope?: EnrichScope, withLlm = false): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1483
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L1574",
+      "snippet": "/** Importance of an artifact's target — symbol/file degree-weighted importance, or summed member",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.artifactImportance@L1577",
+    "procedureName": "EnrichmentStore.artifactImportance",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1578"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.artifactImportance@L1577",
+        "procedureName": "EnrichmentStore.artifactImportance",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1578",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1578",
+            "expr": "a.layer === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1aeefd43a352ebb5525f89ffb8125b3fa987f1794b40ebd8722de3f93921f6dc",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1579",
+          "line": 1579,
+          "expr": "const node = this.soul.getNode(a.targetId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.artifactImportance@L1577",
+        "procedureName": "EnrichmentStore.artifactImportance",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1578",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1578",
+            "expr": "a.layer === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df4bbb6c52182a793853367ddaba41f4d98ae050ef280aa0d123191ef82dfb50",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1580",
+          "line": 1580,
+          "expr": "return node ? clusterImportance(this.soul, node, importance) : 0;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.artifactImportance@L1577",
+        "procedureName": "EnrichmentStore.artifactImportance",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4109c83fe220bfadff6975adea165442a939c613ba4c409de08e2321573f0ab2",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1582",
+          "line": 1582,
+          "expr": "return importance.get(a.targetId)?.importance ?? 0;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

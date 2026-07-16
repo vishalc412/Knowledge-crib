@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/workspace.ts#detectNpmWorkspaces@L106",
-  "schemaVersion": "1.3",
-  "nodeHash": "blake3:2b53935ce5d8078a5bc38ee25f92e31f1907a03ae53c62aee64e54f3d8c91e13",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:51d4987c05942eca2edfdc68f6b4a7e0ae62324b05361d39a60a34a0c02167ca",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/workspace.ts#detectNpmWorkspaces@L106",
@@ -15,7 +15,7 @@
     "file": "packages/pipeline/src/workspace.ts",
     "span": {
       "start": 106,
-      "end": 123
+      "end": 121
     },
     "callSites": [
       {
@@ -36,18 +36,18 @@
       },
       {
         "callee": "toStringArray",
-        "line": 118
+        "line": 116
       },
       {
         "callee": "expandPatterns",
-        "line": 120
+        "line": 118
       }
     ]
   },
   "source": {
-    "text": "function detectNpmWorkspaces(root: string): WorkspaceLayout | null {\n  const file = join(root, 'package.json');\n  if (!existsSync(file)) return null;\n  let pkg: { workspaces?: string[] | { packages?: string[] } };\n  try {\n    pkg = JSON.parse(readFileSync(file, 'utf8'));\n  } catch {\n    return null;\n  }\n  const patterns = Array.isArray(pkg.workspaces)\n    ? pkg.workspaces\n    : pkg.workspaces?.packages;\n  const arr = toStringArray(patterns);\n  if (arr.length === 0) return null;\n  const packages = expandPatterns(root, arr);\n  if (packages.length === 0) return null;\n  return { tool: 'npm-workspaces', packages };\n}",
+    "text": "function detectNpmWorkspaces(root: string): WorkspaceLayout | null {\n  const file = join(root, 'package.json');\n  if (!existsSync(file)) return null;\n  let pkg: { workspaces?: string[] | { packages?: string[] } };\n  try {\n    pkg = JSON.parse(readFileSync(file, 'utf8'));\n  } catch {\n    return null;\n  }\n  const patterns = Array.isArray(pkg.workspaces) ? pkg.workspaces : pkg.workspaces?.packages;\n  const arr = toStringArray(patterns);\n  if (arr.length === 0) return null;\n  const packages = expandPatterns(root, arr);\n  if (packages.length === 0) return null;\n  return { tool: 'npm-workspaces', packages };\n}",
     "truncated": false,
-    "totalLines": 18,
+    "totalLines": 16,
     "startLine": 106
   },
   "callers": [
@@ -74,34 +74,34 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L210",
+      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
       "confidence": 1,
       "name": "expandPatterns",
       "qualifiedName": "expandPatterns",
       "signature": "expandPatterns(root: string, patterns: string[]): WorkspacePackage[]",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 210
+      "line": 208
     },
     {
-      "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
       "confidence": 1,
       "name": "parse",
       "qualifiedName": "parse",
-      "signature": "parse(…)",
+      "signature": "parse(input)",
       "type": "function",
-      "file": "packages/parsers/src/java/parser.test.ts",
-      "line": 35
+      "file": "packages/pipeline/fixtures/plain-js/src/legacy.cjs",
+      "line": 4
     },
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#toStringArray@L321",
+      "id": "sym:packages/pipeline/src/workspace.ts#toStringArray@L319",
       "confidence": 1,
       "name": "toStringArray",
       "qualifiedName": "toStringArray",
       "signature": "toStringArray(v: unknown): string[]",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 321
+      "line": 319
     }
   ],
   "docs": [],
@@ -110,8 +110,8 @@
     "procedureName": "detectNpmWorkspaces",
     "conditions": [
       "cond:packages/pipeline/src/workspace.ts@L108",
-      "cond:packages/pipeline/src/workspace.ts@L119",
-      "cond:packages/pipeline/src/workspace.ts@L121"
+      "cond:packages/pipeline/src/workspace.ts@L117",
+      "cond:packages/pipeline/src/workspace.ts@L119"
     ],
     "rules": [
       {
@@ -155,13 +155,13 @@
         "procedureName": "detectNpmWorkspaces",
         "conditions": [],
         "inLoop": false,
-        "inException": true,
+        "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:fee849a901d9844dcea9829167ff79a6af21f68adebfc5a77d1c224d98628852",
-          "target": "assign:packages/pipeline/src/workspace.ts@L111",
-          "line": 111,
-          "expr": "pkg = JSON.parse(readFileSync(file, 'utf8'));"
+          "kind": "calls",
+          "edgeId": "e:53d52b6f9b5352f1ca085c68814fb1397ab6c59b07ec6c8e875db5d462d2945a",
+          "target": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+          "expr": "parse",
+          "line": 111
         }
       },
       {
@@ -169,13 +169,13 @@
         "procedureName": "detectNpmWorkspaces",
         "conditions": [],
         "inLoop": false,
-        "inException": false,
+        "inException": true,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:0f768a8e5349c123abc8ec57c1f1d335bac8cca0ac48ac516dd31751852b6fae",
-          "target": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
-          "expr": "parse",
-          "line": 111
+          "kind": "executes",
+          "edgeId": "e:fee849a901d9844dcea9829167ff79a6af21f68adebfc5a77d1c224d98628852",
+          "target": "assign:packages/pipeline/src/workspace.ts@L111",
+          "line": 111,
+          "expr": "pkg = JSON.parse(readFileSync(file, 'utf8'));"
         }
       },
       {
@@ -203,7 +203,21 @@
           "edgeId": "e:8fc610f240a27ed3446e9de9533f6f67d079adca21608615aedd331d415a3cf6",
           "target": "stmt:packages/pipeline/src/workspace.ts@L115",
           "line": 115,
-          "expr": "const patterns = Array.isArray(pkg.workspaces)\n    ? pkg.workspaces\n    : pkg.workspaces?.packages;"
+          "expr": "const patterns = Array.isArray(pkg.workspaces) ? pkg.workspaces : pkg.workspaces?.packages;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectNpmWorkspaces@L106",
+        "procedureName": "detectNpmWorkspaces",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af0beb36fea8d8f94cb2aa97203fa0d36cadde99a255162decdf19f47bafaa32",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L116",
+          "line": 116,
+          "expr": "const arr = toStringArray(patterns);"
         }
       },
       {
@@ -214,10 +228,32 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:eb514af0aa95cbd25ee0915babe329014111bff03209cc9bc597c287bfbab9e1",
-          "target": "sym:packages/pipeline/src/workspace.ts#toStringArray@L321",
+          "edgeId": "e:d417f17a3ee2d6930cfc724e0a9c84c6a9f6d16b82dd8eb145a5bfae5605304f",
+          "target": "sym:packages/pipeline/src/workspace.ts#toStringArray@L319",
           "expr": "toStringArray",
-          "line": 118
+          "line": 116
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectNpmWorkspaces@L106",
+        "procedureName": "detectNpmWorkspaces",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L117",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L117",
+            "expr": "arr.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:02d8fca24a47791d0ff85052ac1a871ce0b41ddad838a5be83cd30ab1b5dd1ac",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L117",
+          "line": 117,
+          "expr": "return null;"
         }
       },
       {
@@ -231,7 +267,21 @@
           "edgeId": "e:6b3cd868f86f17c9f654f9d84a1de55bef1265dbbe6f71c38e59de8f140a035f",
           "target": "stmt:packages/pipeline/src/workspace.ts@L118",
           "line": 118,
-          "expr": "const arr = toStringArray(patterns);"
+          "expr": "const packages = expandPatterns(root, arr);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectNpmWorkspaces@L106",
+        "procedureName": "detectNpmWorkspaces",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b3023f9e4ae9bf45a5146b40cb7a031d1cb493a45b004a0ed369398cf910f64e",
+          "target": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
+          "expr": "expandPatterns",
+          "line": 118
         }
       },
       {
@@ -242,7 +292,7 @@
         "conditions": [
           {
             "id": "cond:packages/pipeline/src/workspace.ts@L119",
-            "expr": "arr.length === 0",
+            "expr": "packages.length === 0",
             "polarity": "THEN"
           }
         ],
@@ -263,60 +313,10 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:8b5ae0172dd14fa7579cf99d437d459e7f567be84e04dd31c0b54bfeda61595d",
-          "target": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L210",
-          "expr": "expandPatterns",
-          "line": 120
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/workspace.ts#detectNpmWorkspaces@L106",
-        "procedureName": "detectNpmWorkspaces",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:57bc441af8386656e6fb18fedc89c6ddeb14f327420c6702fbf79e60943eb69a",
           "target": "stmt:packages/pipeline/src/workspace.ts@L120",
           "line": 120,
-          "expr": "const packages = expandPatterns(root, arr);"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/workspace.ts#detectNpmWorkspaces@L106",
-        "procedureName": "detectNpmWorkspaces",
-        "guard": "cond:packages/pipeline/src/workspace.ts@L121",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/workspace.ts@L121",
-            "expr": "packages.length === 0",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:e4f98c2a21b570fea011999143dcbfcdd7f18bb9a3a0023634291cebc9b670cb",
-          "target": "stmt:packages/pipeline/src/workspace.ts@L121",
-          "line": 121,
-          "expr": "return null;"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/workspace.ts#detectNpmWorkspaces@L106",
-        "procedureName": "detectNpmWorkspaces",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:1a45256a0668e9f13dd3290dcaeda56010431714cc7e8d731724e4d890b4df42",
-          "target": "stmt:packages/pipeline/src/workspace.ts@L122",
-          "line": 122,
           "expr": "return { tool: 'npm-workspaces', packages };"
         }
       }

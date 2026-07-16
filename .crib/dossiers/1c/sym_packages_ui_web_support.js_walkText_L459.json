@@ -1,0 +1,330 @@
+{
+  "id": "sym:packages/ui/web/support.js#walkText@L459",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:05d67e2edd5a47c49e3102f6ff8a28ad945b451dd22fcd29b566c95fb7c3eb9c",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#walkText@L459",
+    "kind": "symbol",
+    "type": "function",
+    "name": "walkText",
+    "qualifiedName": "walkText",
+    "signature": "walkText(node)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 459,
+      "end": 500
+    },
+    "callSites": [
+      {
+        "callee": "split",
+        "line": 465
+      },
+      {
+        "callee": "h",
+        "line": 466
+      },
+      {
+        "callee": "getReact",
+        "line": 467
+      },
+      {
+        "callee": "map",
+        "line": 469
+      },
+      {
+        "callee": "resolve",
+        "line": 471
+      },
+      {
+        "callee": "hasAttribute",
+        "line": 474
+      },
+      {
+        "callee": "h",
+        "line": 475
+      },
+      {
+        "callee": "trim",
+        "line": 478
+      },
+      {
+        "callee": "warnUnresolved",
+        "line": 481
+      },
+      {
+        "callee": "trim",
+        "line": 483
+      },
+      {
+        "callee": "h",
+        "line": 487
+      },
+      {
+        "callee": "trim",
+        "line": 490
+      },
+      {
+        "callee": "isValidElement",
+        "line": 493
+      },
+      {
+        "callee": "getReact",
+        "line": 493
+      },
+      {
+        "callee": "isArray",
+        "line": 493
+      },
+      {
+        "callee": "h",
+        "line": 494
+      },
+      {
+        "callee": "getReact",
+        "line": 494
+      },
+      {
+        "callee": "h",
+        "line": 497
+      },
+      {
+        "callee": "String",
+        "line": 497
+      }
+    ]
+  },
+  "source": {
+    "text": "  function walkText(node) {\n    const txt = node.nodeValue ?? \"\";\n    if (!txt.includes(\"{{\")) {\n      if (!txt.trim() && !txt.includes(\" \")) return null;\n      return () => txt;\n    }\n    const parts = txt.split(/\\{\\{([\\s\\S]+?)\\}\\}/g);\n    return (vals, ctx, key) => h(\n      getReact().Fragment,\n      { key },\n      ...parts.map((p, i) => {\n        if (!(i & 1)) return p;\n        const v = resolve(vals, p);\n        if (v === void 0) {\n          if (!ctx?.__streamingNow) {\n            if (document.body?.hasAttribute(\"data-dc-editor-on\")) {\n              return h(\n                \"span\",\n                { key: i, className: \"sc-interp sc-unresolved\" },\n                \"{{ \" + p.trim() + \" }}\"\n              );\n            }\n            warnUnresolved(\n              ctx,\n              \"{{ \" + p.trim() + \" }} never resolved \\u2014 rendered as empty\"\n            );\n            return null;\n          }\n          return h(\n            \"span\",\n            { key: i, className: \"sc-interp sc-missing\" },\n            p.trim()\n          );\n        }\n        if (getReact().isValidElement(v) || Array.isArray(v)) {\n          return h(getReact().Fragment, { key: i }, v);\n        }\n        if (v === null || typeof v === \"boolean\") return null;\n        return h(\"span\", { key: i, className: \"sc-interp\" }, String(v));\n      })\n    );\n  }",
+    "truncated": false,
+    "totalLines": 42,
+    "startLine": 459
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#walk@L440",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "walk",
+      "signature": "walk(node, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 440
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#getReact@L9",
+      "confidence": 1,
+      "name": "getReact",
+      "qualifiedName": "getReact",
+      "signature": "getReact()",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 9
+    },
+    {
+      "id": "sym:packages/core/src/dossier/reconstruct.ts#reconstructionToMarkdown.h@L359",
+      "confidence": 1,
+      "name": "h",
+      "qualifiedName": "reconstructionToMarkdown.h",
+      "signature": "h(…)",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.ts",
+      "line": 359
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#warnUnresolved@L453",
+      "confidence": 1,
+      "name": "warnUnresolved",
+      "qualifiedName": "warnUnresolved",
+      "signature": "warnUnresolved(ctx, what)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 453
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#walkText@L459",
+    "procedureName": "walkText",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L461",
+      "cond:packages/ui/web/support.js@L462"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkText@L459",
+        "procedureName": "walkText",
+        "guard": "cond:packages/ui/web/support.js@L462",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L461",
+            "expr": "!txt.includes(\"{{\")"
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L462",
+            "expr": "!txt.trim() && !txt.includes(\" \")",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:52fdec3c693f34c99d8b347e8125c3e47ffb99e36ca93b01b09c59c4a81a4210",
+          "target": "stmt:packages/ui/web/support.js@L462",
+          "line": 462,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkText@L459",
+        "procedureName": "walkText",
+        "guard": "cond:packages/ui/web/support.js@L461",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L461",
+            "expr": "!txt.includes(\"{{\")",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6a90b5b7b1dfcbc3ba489d59782dec7b54ecbf780d08dcba4f1ee75b4f2d28eb",
+          "target": "stmt:packages/ui/web/support.js@L463",
+          "line": 463,
+          "expr": "return () => txt;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkText@L459",
+        "procedureName": "walkText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1e30aa39edda93f28c5de7c328e1b6459efb367612012c155d3e200743874b70",
+          "target": "stmt:packages/ui/web/support.js@L465",
+          "line": 465,
+          "expr": "const parts = txt.split(/\\{\\{([\\s\\S]+?)\\}\\}/g);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkText@L459",
+        "procedureName": "walkText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f21f833a23f52e434c06e36a7a0d36d8cad1f34d7a4de59a63be45c63bb557c",
+          "target": "stmt:packages/ui/web/support.js@L466",
+          "line": 466,
+          "expr": "return (vals, ctx, key) => h(\n      getReact().Fragment,\n      { key },\n      ...parts.map((p, i) => {\n        if (!(i & 1)) return p;\n        const v = resolve(vals, p);\n        if (v === void 0) {\n          if (!ctx?.__streamingNow) {\n            if (document.body?.hasAttribute(\"data-dc-editor-on\")) {\n              return h(\n                \"span\",\n                { key: i, className: \"sc-interp sc-unresolved\" },\n                \"{{ \" + p.trim() + \" }}\"\n              );\n            }\n            warnUnresolved(\n              ctx,\n              \"{{ \" + p.trim() + \" }} never resolved \\u2014 rendered as empty\"\n            );\n            return null;\n          }\n          return h(\n            \"span\",\n            { key: i, className: \"sc-interp sc-missing\" },\n            p.trim()\n          );\n        }\n        if (getReact().isValidElement(v) || Array.isArray(v)) {\n          return h(getReact().Fragment, { key: i }, v);\n        }\n        if (v === null || typeof v === \"boolean\") return null;\n        return h(\"span\", { key: i, className: \"sc-interp\" }, String(v));\n      })\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkText@L459",
+        "procedureName": "walkText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:be0d38fc26cb8f8ce496fa7d73f1b53eef883065def4150986ef011c2b239936",
+          "target": "sym:packages/core/src/dossier/reconstruct.ts#reconstructionToMarkdown.h@L359",
+          "expr": "h",
+          "line": 466
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkText@L459",
+        "procedureName": "walkText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:00bf63c53a703bb060d0add227fa52d01c822435123aa8013df5983ba3839105",
+          "target": "sym:packages/ui/web/support.js#getReact@L9",
+          "expr": "getReact",
+          "line": 467
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkText@L459",
+        "procedureName": "walkText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ad6f19e2cb2b845fc39e4965bb01e6156092a48a4d4f719c960eb92b53e2afde",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 471
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkText@L459",
+        "procedureName": "walkText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fb18a0679fa004b1f33979ba6717110fa066d5f4e289e6393571ca6598e26039",
+          "target": "sym:packages/ui/web/support.js#warnUnresolved@L453",
+          "expr": "warnUnresolved",
+          "line": 481
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 19,
+      "unresolved": 9
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "9 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

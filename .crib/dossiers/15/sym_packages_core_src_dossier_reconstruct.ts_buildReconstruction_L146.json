@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:0f298fbbeb0cb4c06323c6339563d6524f6f6996edfde7ee1fb7491f31141345",
-  "builtAt": "2026-06-30T15:54:03.404Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
@@ -280,6 +280,16 @@
       "line": 187
     },
     {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
       "id": "sym:packages/core/src/dossier/reconstruct.ts#expectedBodyFile@L34",
       "confidence": 1,
       "name": "expectedBodyFile",
@@ -364,11 +374,11 @@
       "cond:packages/core/src/dossier/reconstruct.ts@L219",
       "cond:packages/core/src/dossier/reconstruct.ts@L222",
       "cond:packages/core/src/dossier/reconstruct.ts@L229",
-      "cond:packages/core/src/dossier/reconstruct.ts@L241",
-      "cond:packages/core/src/dossier/reconstruct.ts@L243",
       "cond:packages/core/src/dossier/reconstruct.ts@L230",
       "cond:packages/core/src/dossier/reconstruct.ts@L231",
       "cond:packages/core/src/dossier/reconstruct.ts@L233",
+      "cond:packages/core/src/dossier/reconstruct.ts@L241",
+      "cond:packages/core/src/dossier/reconstruct.ts@L243",
       "cond:packages/core/src/dossier/reconstruct.ts@L234",
       "cond:packages/core/src/dossier/reconstruct.ts@L270",
       "cond:packages/core/src/dossier/reconstruct.ts@L271"
@@ -413,6 +423,20 @@
       {
         "procedure": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
         "procedureName": "buildReconstruction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b68cc9a5aefcfddb9dfdad301f37d24d8eeae4c319fe787c8e7c1fac060a03a4",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 164
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
+        "procedureName": "buildReconstruction",
         "guard": "cond:packages/core/src/dossier/reconstruct.ts@L163",
         "branch": "LOOP",
         "conditions": [
@@ -430,6 +454,20 @@
           "target": "stmt:packages/core/src/dossier/reconstruct.ts@L164",
           "line": 164,
           "expr": "const o = outgoing.get(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
+        "procedureName": "buildReconstruction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:207b27c3bd77f0555f618ce907b849ef6800cf9f3ab161fb4ff2407f26b3cec7",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 165
         }
       },
       {
@@ -456,20 +494,6 @@
           "target": "stmt:packages/core/src/dossier/reconstruct.ts@L165",
           "line": 165,
           "expr": "o.push(e);"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
-        "procedureName": "buildReconstruction",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:207b27c3bd77f0555f618ce907b849ef6800cf9f3ab161fb4ff2407f26b3cec7",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 165
         }
       },
       {
@@ -575,6 +599,20 @@
       {
         "procedure": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
         "procedureName": "buildReconstruction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5a0822a67851ece290c198d7cf51088f550b998096c57281afd52c5ae19f308f",
+          "target": "stmt:packages/core/src/dossier/reconstruct.ts@L174",
+          "line": 174,
+          "expr": "const memberEdges = (incoming.get(pkgId) ?? []).filter((e) => e.rel === 'member-of' && keep(e));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
+        "procedureName": "buildReconstruction",
         "guard": "cond:packages/core/src/dossier/reconstruct.ts@L214",
         "branch": "LOOP",
         "conditions": [
@@ -592,20 +630,6 @@
           "target": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction.keep@L155",
           "expr": "keep",
           "line": 174
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
-        "procedureName": "buildReconstruction",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:5a0822a67851ece290c198d7cf51088f550b998096c57281afd52c5ae19f308f",
-          "target": "stmt:packages/core/src/dossier/reconstruct.ts@L174",
-          "line": 174,
-          "expr": "const memberEdges = (incoming.get(pkgId) ?? []).filter((e) => e.rel === 'member-of' && keep(e));"
         }
       },
       {
@@ -837,40 +861,6 @@
       {
         "procedure": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
         "procedureName": "buildReconstruction",
-        "guard": "cond:packages/core/src/dossier/reconstruct.ts@L243",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/core/src/dossier/reconstruct.ts@L214",
-            "expr": "capped"
-          },
-          {
-            "id": "cond:packages/core/src/dossier/reconstruct.ts@L229",
-            "expr": "includeTables"
-          },
-          {
-            "id": "cond:packages/core/src/dossier/reconstruct.ts@L241",
-            "expr": "out"
-          },
-          {
-            "id": "cond:packages/core/src/dossier/reconstruct.ts@L243",
-            "expr": "outgoing.get(dc.dst) ?? []",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:a05da5e86ce3220f9ad45b319c5dedcd67cb96757610259a37f713686a0544e8",
-          "target": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction.touch@L187",
-          "expr": "touch",
-          "line": 233
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
-        "procedureName": "buildReconstruction",
         "guard": "cond:packages/core/src/dossier/reconstruct.ts@L233",
         "branch": "THEN",
         "conditions": [
@@ -904,6 +894,40 @@
           "target": "stmt:packages/core/src/dossier/reconstruct.ts@L233",
           "line": 233,
           "expr": "touch(soul.getNode(re.dst), m, 'reads');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction@L146",
+        "procedureName": "buildReconstruction",
+        "guard": "cond:packages/core/src/dossier/reconstruct.ts@L243",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/reconstruct.ts@L214",
+            "expr": "capped"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/reconstruct.ts@L229",
+            "expr": "includeTables"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/reconstruct.ts@L241",
+            "expr": "out"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/reconstruct.ts@L243",
+            "expr": "outgoing.get(dc.dst) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a05da5e86ce3220f9ad45b319c5dedcd67cb96757610259a37f713686a0544e8",
+          "target": "sym:packages/core/src/dossier/reconstruct.ts#buildReconstruction.touch@L187",
+          "expr": "touch",
+          "line": 233
         }
       },
       {
@@ -1131,11 +1155,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:fb7de517dbb1869cfbebf26423dab3d492efb147d0746fc45904c380ca9b5cd2",
-          "target": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
-          "expr": "readVariables",
-          "line": 291
+          "kind": "executes",
+          "edgeId": "e:8d9da628f6b69a049576caccfbc6793914c27e55dd7838dea574da926733c8a4",
+          "target": "stmt:packages/core/src/dossier/reconstruct.ts@L291",
+          "line": 291,
+          "expr": "const allVars = readVariables(node);"
         }
       },
       {
@@ -1145,11 +1169,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:8d9da628f6b69a049576caccfbc6793914c27e55dd7838dea574da926733c8a4",
-          "target": "stmt:packages/core/src/dossier/reconstruct.ts@L291",
-          "line": 291,
-          "expr": "const allVars = readVariables(node);"
+          "kind": "calls",
+          "edgeId": "e:fb7de517dbb1869cfbebf26423dab3d492efb147d0746fc45904c380ca9b5cd2",
+          "target": "sym:packages/core/src/dossier/reconstruct.ts#readVariables@L322",
+          "expr": "readVariables",
+          "line": 291
         }
       },
       {
@@ -1240,14 +1264,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 8,
+      "resolved": 9,
       "recorded": 55,
-      "unresolved": 28
+      "unresolved": 23
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "28 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "23 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

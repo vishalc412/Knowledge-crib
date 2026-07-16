@@ -1,0 +1,281 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L328",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:f90c50431d795f336bcceb24dd4ae97e51b76108e1b03aec2f79ce76b1664a31",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L328",
+    "kind": "symbol",
+    "type": "method",
+    "name": "neighbors",
+    "qualifiedName": "SqliteIndexStore.neighbors",
+    "signature": "neighbors(id: string, rel?: Rel, dir?: Dir): Edge[]",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 328,
+      "end": 341
+    },
+    "callSites": [
+      {
+        "callee": "add",
+        "line": 336
+      },
+      {
+        "callee": "push",
+        "line": 337
+      }
+    ]
+  },
+  "source": {
+    "text": "  neighbors(id: string, rel?: Rel, dir?: Dir): Edge[] {\n    const dirs: Dir[] = dir ? [dir] : ['down', 'up'];\n    const out: Edge[] = [];\n    const seen = new Set<string>();\n    for (const dd of dirs) {\n      for (const edge of this.adjacent(id, dd)) {\n        if (rel && edge.rel !== rel) continue;\n        if (seen.has(edge.id)) continue;\n        seen.add(edge.id);\n        out.push(edge);\n      }\n    }\n    return out;\n  }",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 328
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.adjacent@L406",
+      "confidence": 1,
+      "name": "adjacent",
+      "qualifiedName": "SqliteIndexStore.adjacent",
+      "signature": "adjacent(id: string, dir: Dir): Edge[]",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 406
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse.add@L64",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "rrfFuse.add",
+      "signature": "add(…)",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 64
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#5-how-it-works-the-actual-mechanism",
+      "heading": "5. How it works (the actual mechanism)",
+      "anchor": "5-how-it-works-the-actual-mechanism",
+      "snippet": "5. How it works (the actual mechanism)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#1-executive-summary",
+      "heading": "1. Executive Summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#table-of-contents",
+      "heading": "Table of contents",
+      "anchor": "table-of-contents",
+      "snippet": "Table of contents",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-26-large-project-viz-design.md#approved-direction",
+      "heading": "Approved Direction",
+      "anchor": "approved-direction",
+      "snippet": "Approved Direction",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-26-large-project-viz-design.md#user-experience",
+      "heading": "User Experience",
+      "anchor": "user-experience",
+      "snippet": "User Experience",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L328",
+    "procedureName": "SqliteIndexStore.neighbors",
+    "conditions": [
+      "cond:packages/core/src/index/sqlite-index.ts@L332",
+      "cond:packages/core/src/index/sqlite-index.ts@L333"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L328",
+        "procedureName": "SqliteIndexStore.neighbors",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L333",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L332",
+            "expr": "dirs"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L333",
+            "expr": "this.adjacent(id, dd)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:30ed39c7859b07c580767b2c82235727f6d8fb2c9bdd69f5c56a9611703e954b",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse.add@L64",
+          "expr": "add",
+          "line": 336
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L328",
+        "procedureName": "SqliteIndexStore.neighbors",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L333",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L332",
+            "expr": "dirs"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L333",
+            "expr": "this.adjacent(id, dd)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:993f94aa548f39f3a74d1359fcd8cfc22b6b855f40dcb9fb1be4c281d412deaa",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L336",
+          "line": 336,
+          "expr": "seen.add(edge.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L328",
+        "procedureName": "SqliteIndexStore.neighbors",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L333",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L332",
+            "expr": "dirs"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L333",
+            "expr": "this.adjacent(id, dd)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2b5576a2eca8de4b96d0ed2bd9e6cb9665d36fe8f42dbfdd674d66310866d39a",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L337",
+          "line": 337,
+          "expr": "out.push(edge);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L328",
+        "procedureName": "SqliteIndexStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8b8414f76fc130eb21539b28d7c3f93a60506e70244d25a7fea1025638138563",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L340",
+          "line": 340,
+          "expr": "return out;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.neighbors@L328",
+        "procedureName": "SqliteIndexStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:db8ef288ccd5f21f1207f741fc98218fdf521e493ed2baad70a725c36f2b10f8",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.adjacent@L406",
+          "expr": "adjacent"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

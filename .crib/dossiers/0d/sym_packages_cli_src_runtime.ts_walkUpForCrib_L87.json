@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:3f7738a436a6d4f1308826bc198f01be0f89b404bf9615f355bb7f7c14c71069",
-  "builtAt": "2026-06-27T16:00:56.397Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
@@ -46,7 +46,18 @@
       "line": 53
     }
   ],
-  "callees": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    }
+  ],
   "docs": [
     {
       "sectionId": "expl:packages/cli/src/runtime.ts@L86",
@@ -66,6 +77,20 @@
       "cond:packages/cli/src/runtime.ts@L93"
     ],
     "rules": [
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+        "procedureName": "walkUpForCrib",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:882266d45bcc8a9ea5bf9e2b8b1e44edad280cc6db1f98f08372516d7a2440d4",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 88
+        }
+      },
       {
         "procedure": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
         "procedureName": "walkUpForCrib",
@@ -210,7 +235,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 0,
+      "resolved": 1,
       "recorded": 2,
       "unresolved": 1
     },

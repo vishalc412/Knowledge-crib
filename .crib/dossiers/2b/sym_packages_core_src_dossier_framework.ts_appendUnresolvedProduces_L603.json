@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L603",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:d42c4513243b856093ed5b5771e17cacc934ec9d700d53505536273caa8a6b00",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L603",
@@ -222,6 +222,20 @@
       {
         "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L603",
         "procedureName": "appendUnresolvedProduces",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4c2b766896105825a129261dfb0c746b9b6c21a8fe2d6a290f2f5beb786aad07",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 623
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L603",
+        "procedureName": "appendUnresolvedProduces",
         "guard": "cond:packages/core/src/dossier/framework.ts@L615",
         "branch": "LOOP",
         "conditions": [
@@ -239,20 +253,6 @@
           "target": "stmt:packages/core/src/dossier/framework.ts@L623",
           "line": 623,
           "expr": "produces.push({\n      id: '?',\n      confidence: 0,\n      brief: { id: '?', confidence: 0, qualifiedName: t },\n      unresolved: true,\n    });"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedProduces@L603",
-        "procedureName": "appendUnresolvedProduces",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:4c2b766896105825a129261dfb0c746b9b6c21a8fe2d6a290f2f5beb786aad07",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 623
         }
       }
     ]

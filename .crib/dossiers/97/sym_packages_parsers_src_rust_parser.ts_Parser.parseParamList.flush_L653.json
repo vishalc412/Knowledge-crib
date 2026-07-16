@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList.flush@L653",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:8596d01065f7426ff533d10598218d70eccc7264d49fa6d44d7d8086ae0a60a7",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList.flush@L653",
@@ -75,6 +75,20 @@
       {
         "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList.flush@L653",
         "procedureName": "Parser.parseParamList.flush",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0c642b4e1fcd9362a8e572cd16be8b3982615f807fc3489a2d9f4a7677c6f3ac",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 655
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList.flush@L653",
+        "procedureName": "Parser.parseParamList.flush",
         "guard": "cond:packages/parsers/src/rust/parser.ts@L654",
         "branch": "THEN",
         "conditions": [
@@ -92,20 +106,6 @@
           "target": "stmt:packages/parsers/src/rust/parser.ts@L655",
           "line": 655,
           "expr": "params.push(paramName);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseParamList.flush@L653",
-        "procedureName": "Parser.parseParamList.flush",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:0c642b4e1fcd9362a8e572cd16be8b3982615f807fc3489a2d9f4a7677c6f3ac",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 655
         }
       },
       {

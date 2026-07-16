@@ -1,0 +1,180 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#allStringArgs@L597",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:86f67f0141eeb9399712288ae053c4068235a4021f3144269e07d00caafebc8c",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#allStringArgs@L597",
+    "kind": "symbol",
+    "type": "function",
+    "name": "allStringArgs",
+    "qualifiedName": "allStringArgs",
+    "signature": "allStringArgs(d: ts.Decorator): string[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 597,
+      "end": 603
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 600
+      }
+    ]
+  },
+  "source": {
+    "text": "function allStringArgs(d: ts.Decorator): string[] {\n  const out: string[] = [];\n  for (const a of decArgs(d)) {\n    if (ts.isStringLiteral(a)) out.push(a.text);\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 597
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 104
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#decArgs@L587",
+      "confidence": 1,
+      "name": "decArgs",
+      "qualifiedName": "decArgs",
+      "signature": "decArgs(d: ts.Decorator): readonly ts.Expression[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 587
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L596",
+      "snippet": "/** Every string-literal arg of a decorator (the paths), in order. `@Get('/a','/b')` → ['/a','/b']. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#allStringArgs@L597",
+    "procedureName": "allStringArgs",
+    "conditions": [
+      "cond:packages/parsers/src/ts/nest.ts@L599",
+      "cond:packages/parsers/src/ts/nest.ts@L600"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#allStringArgs@L597",
+        "procedureName": "allStringArgs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:feac9f9626037011fee3c04b9f3ca1dac32b905203a6dd4b2d550c3aa95a2cf2",
+          "target": "sym:packages/parsers/src/ts/nest.ts#decArgs@L587",
+          "expr": "decArgs"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#allStringArgs@L597",
+        "procedureName": "allStringArgs",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L600",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L599",
+            "expr": "decArgs(d)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L600",
+            "expr": "ts.isStringLiteral(a)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:43fc29a8090ab4c54d83f536904170dd3e7b8820afda5e1ec23b640fc1b541b4",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L600",
+          "line": 600,
+          "expr": "out.push(a.text);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#allStringArgs@L597",
+        "procedureName": "allStringArgs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:efccbedcb49f23174e7e2b5fcc93f68e2bd2d5f2c316ac9534a246dc964cb625",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 600
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#allStringArgs@L597",
+        "procedureName": "allStringArgs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:276b02a491bcaeb577b53eb28a180fec3fda8cb908f255e8d5c153dd1edb97b1",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L602",
+          "line": 602,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

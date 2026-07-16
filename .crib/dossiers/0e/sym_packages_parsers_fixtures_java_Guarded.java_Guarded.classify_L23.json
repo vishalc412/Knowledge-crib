@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.classify@L23",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:ff866dc415074316216daf000bf0c1786360ab1628f883b9b89f6cde78bb304b",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.classify@L23",
@@ -84,11 +84,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:c40518caab85831360819ab26796665c282a24bb6f3d3de79117d903d6fad417",
-          "target": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.weekday@L43",
-          "expr": "weekday",
-          "line": 26
+          "kind": "executes",
+          "edgeId": "e:30a53f78924ce03876bed7fb85e9f7225cae8ab872579e3d17cc62de4a161ddf",
+          "target": "stmt:packages/parsers/fixtures/java/Guarded.java@L26",
+          "line": 26,
+          "expr": "return weekday()"
         }
       },
       {
@@ -106,11 +106,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:30a53f78924ce03876bed7fb85e9f7225cae8ab872579e3d17cc62de4a161ddf",
-          "target": "stmt:packages/parsers/fixtures/java/Guarded.java@L26",
-          "line": 26,
-          "expr": "return weekday()"
+          "kind": "calls",
+          "edgeId": "e:c40518caab85831360819ab26796665c282a24bb6f3d3de79117d903d6fad417",
+          "target": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.weekday@L43",
+          "expr": "weekday",
+          "line": 26
         }
       },
       {

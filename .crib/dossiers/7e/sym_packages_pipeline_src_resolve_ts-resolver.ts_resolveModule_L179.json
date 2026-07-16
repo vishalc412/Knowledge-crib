@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveModule@L179",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:e7e3fabb11200e1715ab4ea9ce4eada2f4c982ccc13d216d7450b5be2935b373",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveModule@L179",
@@ -205,11 +205,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:eae153b217098b9ae2f6abf48bb390b1db25fae24ceabbd3090b0dc86e6f433a",
-          "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L183",
-          "line": 183,
-          "expr": "const jsExt = JS_EXTS.find((e) => spec.endsWith(e));"
+          "kind": "calls",
+          "edgeId": "e:3f6a50e1ba844ee8195e66f9bc78622af0f87d993eeea6c40029de8dd6a5c1d3",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 183
         }
       },
       {
@@ -219,11 +219,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:3f6a50e1ba844ee8195e66f9bc78622af0f87d993eeea6c40029de8dd6a5c1d3",
-          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
-          "expr": "find",
-          "line": 183
+          "kind": "executes",
+          "edgeId": "e:eae153b217098b9ae2f6abf48bb390b1db25fae24ceabbd3090b0dc86e6f433a",
+          "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L183",
+          "line": 183,
+          "expr": "const jsExt = JS_EXTS.find((e) => spec.endsWith(e));"
         }
       },
       {
@@ -309,6 +309,20 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveModule@L179",
         "procedureName": "resolveModule",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:56a4b38e72a1ea71268454604ac4b22fe7cd73398c8054090dae0f166efdcbf1",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 188
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveModule@L179",
+        "procedureName": "resolveModule",
         "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L187",
         "branch": "THEN",
         "conditions": [
@@ -326,20 +340,6 @@
           "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L188",
           "line": 188,
           "expr": "candidates.push(joined);"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveModule@L179",
-        "procedureName": "resolveModule",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:56a4b38e72a1ea71268454604ac4b22fe7cd73398c8054090dae0f166efdcbf1",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 188
         }
       },
       {

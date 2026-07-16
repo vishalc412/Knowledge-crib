@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.linkCursor@L591",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:066da9d7c068368bb5f61494507a8f59361d8b3c838152cd8a0b0feb5b25995f",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.linkCursor@L591",
@@ -118,11 +118,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:61320d67f3af9ade363ef7e375439907dfeb5a1885ee7e5a04bbe20ef3c0c1d8",
-          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L798",
-          "expr": "edge",
-          "line": 593
+          "kind": "executes",
+          "edgeId": "e:4b17ec57d5df4f35060e3d86791483d58deeda6de8bfe0d63e30a1ccfb5f21f0",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L593",
+          "line": 593,
+          "expr": "this.edges.push(this.edge(stmtId, cursorId, 'iterates', name));"
         }
       },
       {
@@ -140,11 +140,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:4b17ec57d5df4f35060e3d86791483d58deeda6de8bfe0d63e30a1ccfb5f21f0",
-          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L593",
-          "line": 593,
-          "expr": "this.edges.push(this.edge(stmtId, cursorId, 'iterates', name));"
+          "kind": "calls",
+          "edgeId": "e:61320d67f3af9ade363ef7e375439907dfeb5a1885ee7e5a04bbe20ef3c0c1d8",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.edge@L798",
+          "expr": "edge",
+          "line": 593
         }
       }
     ]
@@ -157,7 +157,7 @@
     ]
   },
   "coverage": {
-    "readiness": "partial",
+    "readiness": "complete",
     "bodyPresent": true,
     "executes": 2,
     "assignments": 0,
@@ -169,12 +169,10 @@
     "calls": {
       "resolved": 1,
       "recorded": 3,
-      "unresolved": 1
+      "unresolved": 0
     },
     "recursive": false,
     "exprTruncated": 0,
-    "caveats": [
-      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
-    ]
+    "caveats": []
   }
 }

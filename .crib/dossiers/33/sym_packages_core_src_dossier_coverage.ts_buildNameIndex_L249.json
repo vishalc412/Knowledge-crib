@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/dossier/coverage.ts#buildNameIndex@L249",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:51d726dd07637607cbcce40d57150a6fd60f7abf6028b61d5881571f6e124100",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/coverage.ts#buildNameIndex@L249",
@@ -104,6 +104,20 @@
       {
         "procedure": "sym:packages/core/src/dossier/coverage.ts#buildNameIndex@L249",
         "procedureName": "buildNameIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5c409bf0375fb8e9e9c6a1e494977013a317b7d9a871503c702f733475e16235",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 252
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#buildNameIndex@L249",
+        "procedureName": "buildNameIndex",
         "guard": "cond:packages/core/src/dossier/coverage.ts@L252",
         "branch": "THEN",
         "conditions": [
@@ -125,20 +139,6 @@
           "target": "stmt:packages/core/src/dossier/coverage.ts@L252",
           "line": 252,
           "expr": "idx.add(n.name.toLowerCase());"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/coverage.ts#buildNameIndex@L249",
-        "procedureName": "buildNameIndex",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:5c409bf0375fb8e9e9c6a1e494977013a317b7d9a871503c702f733475e16235",
-          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
-          "expr": "add",
-          "line": 252
         }
       },
       {

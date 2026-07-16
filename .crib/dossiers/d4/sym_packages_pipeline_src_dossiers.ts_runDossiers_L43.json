@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:013d70b417bd591f50eaf0793b59e3a4dc6c2d9c3ecd905c74f7a71ee40006a9",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
@@ -52,24 +52,24 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L108",
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
       "confidence": 1,
       "name": "indexRepo",
       "qualifiedName": "indexRepo",
       "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
       "type": "function",
       "file": "packages/pipeline/src/pipeline.ts",
-      "line": 108
+      "line": 94
     },
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L94",
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 94
+      "line": 112
     }
   ],
   "callees": [
@@ -178,6 +178,20 @@
       {
         "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
         "procedureName": "runDossiers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8a565041da23d2ac78e441a1aa3c03225158173ee98fd00e41a61e3fa6760523",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 53
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
+        "procedureName": "runDossiers",
         "guard": "cond:packages/pipeline/src/dossiers.ts@L52",
         "branch": "LOOP",
         "conditions": [
@@ -195,20 +209,6 @@
           "target": "stmt:packages/pipeline/src/dossiers.ts@L53",
           "line": 53,
           "expr": "liveNodeIds.add(node.id);"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
-        "procedureName": "runDossiers",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:8a565041da23d2ac78e441a1aa3c03225158173ee98fd00e41a61e3fa6760523",
-          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
-          "expr": "add",
-          "line": 53
         }
       },
       {
@@ -250,6 +250,20 @@
       {
         "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
         "procedureName": "runDossiers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4a843e477307e1bd5687310263cd130753b3364fa9413f4e40fefa89d4b11d81",
+          "target": "sym:packages/core/src/dossier/persist.ts#readDossier@L65",
+          "expr": "readDossier",
+          "line": 61
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
+        "procedureName": "runDossiers",
         "guard": "cond:packages/pipeline/src/dossiers.ts@L52",
         "branch": "LOOP",
         "conditions": [
@@ -277,10 +291,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:4a843e477307e1bd5687310263cd130753b3364fa9413f4e40fefa89d4b11d81",
-          "target": "sym:packages/core/src/dossier/persist.ts#readDossier@L65",
-          "expr": "readDossier",
-          "line": 61
+          "edgeId": "e:05e55dac7a20a75fe8465511dd507bb527e607e452e0dc63ab6765279c1b011e",
+          "target": "sym:packages/core/src/dossier/persist.ts#writeDossier@L40",
+          "expr": "writeDossier",
+          "line": 74
         }
       },
       {
@@ -313,10 +327,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:05e55dac7a20a75fe8465511dd507bb527e607e452e0dc63ab6765279c1b011e",
-          "target": "sym:packages/core/src/dossier/persist.ts#writeDossier@L40",
-          "expr": "writeDossier",
-          "line": 74
+          "edgeId": "e:78714e6744138876000d83e440dd1cc44585fe7a14fdd54a5608ca402c3e8959",
+          "target": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+          "expr": "pruneDossiers",
+          "line": 78
         }
       },
       {
@@ -331,20 +345,6 @@
           "target": "stmt:packages/pipeline/src/dossiers.ts@L78",
           "line": 78,
           "expr": "const pruned = pruneDossiers(cribDir, liveNodeIds);"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
-        "procedureName": "runDossiers",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:78714e6744138876000d83e440dd1cc44585fe7a14fdd54a5608ca402c3e8959",
-          "target": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
-          "expr": "pruneDossiers",
-          "line": 78
         }
       },
       {

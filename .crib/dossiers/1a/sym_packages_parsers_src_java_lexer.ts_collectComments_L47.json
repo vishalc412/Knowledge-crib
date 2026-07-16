@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:4cc6bec37ee0d202ed84791a1e529511e53c9601ccb956049a4809f96a8df3d1",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
@@ -328,11 +328,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:dfafe5746a37d77358d451e1b3ee1697111bd2435b7fb4092f4b462c3260fac3",
-          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.startsWith@L434",
-          "expr": "startsWith",
-          "line": 72
+          "kind": "executes",
+          "edgeId": "e:4dfb29ab469b00bdcdf73a07488d4c3e75c080229cff13799365226de9031cb0",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L72",
+          "line": 72,
+          "expr": "const javadoc = trimmed.startsWith('/**') && !trimmed.startsWith('/**/');"
         }
       },
       {
@@ -354,11 +354,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:4dfb29ab469b00bdcdf73a07488d4c3e75c080229cff13799365226de9031cb0",
-          "target": "stmt:packages/parsers/src/java/lexer.ts@L72",
-          "line": 72,
-          "expr": "const javadoc = trimmed.startsWith('/**') && !trimmed.startsWith('/**/');"
+          "kind": "calls",
+          "edgeId": "e:dfafe5746a37d77358d451e1b3ee1697111bd2435b7fb4092f4b462c3260fac3",
+          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.startsWith@L434",
+          "expr": "startsWith",
+          "line": 72
         }
       },
       {

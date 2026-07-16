@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseStruct@L396",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:85903c26c375b055a0f35aae40160cbc008da380f78d2baa932c83a0cfe6bbce",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseStruct@L396",
@@ -192,6 +192,20 @@
       {
         "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseStruct@L396",
         "procedureName": "Parser.parseStruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:850717e377442d459d9aecee0d9d71b04bd5e9b8256debd54dd2cd8f7ab19838",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L402",
+          "line": 402,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseStruct@L396",
+        "procedureName": "Parser.parseStruct",
         "guard": "cond:packages/parsers/src/rust/parser.ts@L417",
         "branch": "THEN",
         "conditions": [
@@ -217,20 +231,6 @@
           "target": "sym:packages/parsers/src/rust/parser.ts#Parser.next@L1478",
           "expr": "next",
           "line": 402
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseStruct@L396",
-        "procedureName": "Parser.parseStruct",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:850717e377442d459d9aecee0d9d71b04bd5e9b8256debd54dd2cd8f7ab19838",
-          "target": "stmt:packages/parsers/src/rust/parser.ts@L402",
-          "line": 402,
-          "expr": "this.next();"
         }
       },
       {
@@ -432,11 +432,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:793102ba2652232098f7afc5fe339c31de5d299b707b631023e5d0745f41cfc1",
-          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
-          "expr": "skipBalancedParens",
-          "line": 412
+          "kind": "executes",
+          "edgeId": "e:25f5e39251f1aef26f1219a26a71fd62af77224b8398c3c4665ed1fd233c73f9",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L412",
+          "line": 412,
+          "expr": "this.skipBalancedParens();"
         }
       },
       {
@@ -458,11 +458,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:25f5e39251f1aef26f1219a26a71fd62af77224b8398c3c4665ed1fd233c73f9",
-          "target": "stmt:packages/parsers/src/rust/parser.ts@L412",
-          "line": 412,
-          "expr": "this.skipBalancedParens();"
+          "kind": "calls",
+          "edgeId": "e:793102ba2652232098f7afc5fe339c31de5d299b707b631023e5d0745f41cfc1",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+          "expr": "skipBalancedParens",
+          "line": 412
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:32e43e9e99da4caa5073499234242509dd1fa7ba3bbc7770efa83605b352717c",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
@@ -94,24 +94,24 @@
       "line": 21
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 122
+      "line": 141
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 77
+      "line": 88
     },
     {
       "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
@@ -212,28 +212,6 @@
       {
         "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
         "procedureName": "ingestStaging",
-        "guard": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
-            "expr": "mediaPaths",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:2bcf7b761fe17e8f48d6d9ff7520171cb5feda1333a56999be7590fb9435ca9c",
-          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L73",
-          "line": 73,
-          "expr": "const payload = opts.workerFn ? await opts.workerFn(abs) : await runWorker(abs, opts);"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
-        "procedureName": "ingestStaging",
         "conditions": [],
         "inLoop": false,
         "inException": false,
@@ -261,10 +239,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:8a43718c66df881f7d0157416abe9c76a1a6ff5360e4bd86f00db5556d9ff72e",
-          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L78",
-          "line": 78,
-          "expr": "const fileId = idFor({ kind: 'file', path: mediaPath });"
+          "edgeId": "e:2bcf7b761fe17e8f48d6d9ff7520171cb5feda1333a56999be7590fb9435ca9c",
+          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L73",
+          "line": 73,
+          "expr": "const payload = opts.workerFn ? await opts.workerFn(abs) : await runWorker(abs, opts);"
         }
       },
       {
@@ -275,10 +253,32 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:0eb8a32fc82a8a008d4e7f65811fb03ad5257977e3568b2600028ea0498412f1",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+          "edgeId": "e:7e8d2b5edcd2a3572b503d7a7ca1290013cf5fa974d17cc5bef00aa520d0abda",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
           "expr": "idFor",
           "line": 78
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+        "procedureName": "ingestStaging",
+        "guard": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/multimodal/ingest.ts@L71",
+            "expr": "mediaPaths",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8a43718c66df881f7d0157416abe9c76a1a6ff5360e4bd86f00db5556d9ff72e",
+          "target": "stmt:packages/pipeline/src/multimodal/ingest.ts@L78",
+          "line": 78,
+          "expr": "const fileId = idFor({ kind: 'file', path: mediaPath });"
         }
       },
       {
@@ -395,8 +395,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:fe3a6cbc936057833a1f4bfa07f03e8cee9c60bb3dfbd507455d19c6a677e5a5",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "edgeId": "e:8bdfb8b071be0430e102502cb7700c8d51b14394a0ded712cd80c333c2379938",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
           "expr": "edgeId",
           "line": 96
         }

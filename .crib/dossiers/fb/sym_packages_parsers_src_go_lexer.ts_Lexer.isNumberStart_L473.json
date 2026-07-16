@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.isNumberStart@L473",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:8411fa46a7a6423ae37bf8ad73cd4f85b49175a238fedfb6e17d53fca661ac5c",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.isNumberStart@L473",
@@ -71,11 +71,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:42a8d90dbb70e1fd7782e31888941ca6fba6c407948dd02e7c125967f803345c",
-          "target": "sym:packages/parsers/src/go/lexer.ts#Lexer.peek@L437",
-          "expr": "peek",
-          "line": 474
+          "kind": "executes",
+          "edgeId": "e:036704d80c07db3ea18ffc0dda17fd1c30497e6865c9c68061acf09bd2c84b33",
+          "target": "stmt:packages/parsers/src/go/lexer.ts@L474",
+          "line": 474,
+          "expr": "return (c >= '0' && c <= '9') || (c === '.' && this.peek(1) >= '0' && this.peek(1) <= '9');"
         }
       },
       {
@@ -85,11 +85,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:036704d80c07db3ea18ffc0dda17fd1c30497e6865c9c68061acf09bd2c84b33",
-          "target": "stmt:packages/parsers/src/go/lexer.ts@L474",
-          "line": 474,
-          "expr": "return (c >= '0' && c <= '9') || (c === '.' && this.peek(1) >= '0' && this.peek(1) <= '9');"
+          "kind": "calls",
+          "edgeId": "e:42a8d90dbb70e1fd7782e31888941ca6fba6c407948dd02e7c125967f803345c",
+          "target": "sym:packages/parsers/src/go/lexer.ts#Lexer.peek@L437",
+          "expr": "peek",
+          "line": 474
         }
       }
     ]

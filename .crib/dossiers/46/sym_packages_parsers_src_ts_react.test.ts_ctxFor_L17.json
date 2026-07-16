@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/ts/react.test.ts#ctxFor@L17",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:7dff3969b22661799819630d0ba7df570c32eadcf3b545cb6b6a209654e17975",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/ts/react.test.ts#ctxFor@L17",
@@ -32,14 +32,34 @@
   },
   "callers": [
     {
-      "id": "sym:packages/parsers/src/ts/react.test.ts#run@L30",
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#run@L25",
       "confidence": 1,
       "name": "run",
       "qualifiedName": "run",
-      "signature": "run(src: string): Promise<ExtractResult>",
+      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
       "type": "function",
-      "file": "packages/parsers/src/ts/react.test.ts",
-      "line": 30
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
+      "line": 25
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.test.ts#run@L32",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/go/GoExtractor.test.ts",
+      "line": 32
+    },
+    {
+      "id": "sym:packages/parsers/src/php/PhpExtractor.test.ts#run@L27",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/php/PhpExtractor.test.ts",
+      "line": 27
     },
     {
       "id": "sym:packages/parsers/src/csharp/CsharpExtractor.loan-rule.test.ts#run@L30",
@@ -52,24 +72,34 @@
       "line": 30
     },
     {
-      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#run@L32",
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#run@L28",
       "confidence": 1,
       "name": "run",
       "qualifiedName": "run",
       "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
       "type": "function",
-      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
-      "line": 32
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
+      "line": 28
     },
     {
-      "id": "sym:packages/parsers/src/go/GoExtractor.test.ts#run@L32",
+      "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#run@L28",
       "confidence": 1,
       "name": "run",
       "qualifiedName": "run",
       "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
       "type": "function",
-      "file": "packages/parsers/src/go/GoExtractor.test.ts",
-      "line": 32
+      "file": "packages/parsers/src/python/PythonExtractor.test.ts",
+      "line": 28
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/express.test.ts#run@L29",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(src: string): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/express.test.ts",
+      "line": 29
     },
     {
       "id": "sym:packages/parsers/src/java/JavaExtractor.test.ts#run@L28",
@@ -92,26 +122,6 @@
       "line": 30
     },
     {
-      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#run@L25",
-      "confidence": 1,
-      "name": "run",
-      "qualifiedName": "run",
-      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
-      "type": "function",
-      "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
-      "line": 25
-    },
-    {
-      "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#run@L28",
-      "confidence": 1,
-      "name": "run",
-      "qualifiedName": "run",
-      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
-      "type": "function",
-      "file": "packages/parsers/src/python/PythonExtractor.test.ts",
-      "line": 28
-    },
-    {
       "id": "sym:packages/parsers/src/rust/RustExtractor.test.ts#run@L30",
       "confidence": 1,
       "name": "run",
@@ -122,24 +132,34 @@
       "line": 30
     },
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#run@L28",
-      "confidence": 1,
-      "name": "run",
-      "qualifiedName": "run",
-      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
-      "type": "function",
-      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
-      "line": 28
-    },
-    {
-      "id": "sym:packages/parsers/src/ts/express.test.ts#run@L29",
+      "id": "sym:packages/parsers/src/ts/react.test.ts#run@L30",
       "confidence": 1,
       "name": "run",
       "qualifiedName": "run",
       "signature": "run(src: string): Promise<ExtractResult>",
       "type": "function",
-      "file": "packages/parsers/src/ts/express.test.ts",
-      "line": 29
+      "file": "packages/parsers/src/ts/react.test.ts",
+      "line": 30
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.test.ts#run@L32",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(src: string): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.test.ts",
+      "line": 32
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#run@L32",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+      "line": 32
     },
     {
       "id": "sym:packages/parsers/src/ts/nest.test.ts#run@L30",
@@ -152,24 +172,14 @@
       "line": 30
     },
     {
-      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#runBehavior@L44",
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runBehavior@L354",
       "confidence": 1,
       "name": "runBehavior",
       "qualifiedName": "runBehavior",
-      "signature": "runBehavior(text = readFileSync(BEHAVIOR, 'utf8')): Promise<ExtractResult>",
+      "signature": "runBehavior(text: string = BEHAVIOR_SRC, path: string = BEHAVIOR_PATH): Promise<ExtractResult>",
       "type": "function",
-      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
-      "line": 44
-    },
-    {
-      "id": "sym:packages/parsers/src/java/JavaExtractor.test.ts#runBehavior@L503",
-      "confidence": 1,
-      "name": "runBehavior",
-      "qualifiedName": "runBehavior",
-      "signature": "runBehavior(): Promise<ExtractResult>",
-      "type": "function",
-      "file": "packages/parsers/src/java/JavaExtractor.test.ts",
-      "line": 503
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
+      "line": 354
     },
     {
       "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#runBehavior@L392",
@@ -182,6 +192,16 @@
       "line": 392
     },
     {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.test.ts#runBehavior@L503",
+      "confidence": 1,
+      "name": "runBehavior",
+      "qualifiedName": "runBehavior",
+      "signature": "runBehavior(): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.test.ts",
+      "line": 503
+    },
+    {
       "id": "sym:packages/parsers/src/rust/RustExtractor.test.ts#runBehavior@L455",
       "confidence": 1,
       "name": "runBehavior",
@@ -192,14 +212,14 @@
       "line": 455
     },
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runBehavior@L354",
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#runBehavior@L44",
       "confidence": 1,
       "name": "runBehavior",
       "qualifiedName": "runBehavior",
-      "signature": "runBehavior(text: string = BEHAVIOR_SRC, path: string = BEHAVIOR_PATH): Promise<ExtractResult>",
+      "signature": "runBehavior(text = readFileSync(BEHAVIOR, 'utf8')): Promise<ExtractResult>",
       "type": "function",
-      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
-      "line": 354
+      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+      "line": 44
     },
     {
       "id": "sym:packages/parsers/src/go/GoExtractor.test.ts#runDeep@L42",
@@ -210,16 +230,6 @@
       "type": "function",
       "file": "packages/parsers/src/go/GoExtractor.test.ts",
       "line": 42
-    },
-    {
-      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#runGuarded@L38",
-      "confidence": 1,
-      "name": "runGuarded",
-      "qualifiedName": "runGuarded",
-      "signature": "runGuarded(text = readFileSync(GUARDED, 'utf8')): Promise<ExtractResult>",
-      "type": "function",
-      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
-      "line": 38
     },
     {
       "id": "sym:packages/parsers/src/go/GoExtractor.test.ts#runGuarded@L37",
@@ -242,6 +252,16 @@
       "line": 231
     },
     {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#runGuarded@L38",
+      "confidence": 1,
+      "name": "runGuarded",
+      "qualifiedName": "runGuarded",
+      "signature": "runGuarded(text = readFileSync(GUARDED, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+      "line": 38
+    },
+    {
       "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runLoan@L326",
       "confidence": 1,
       "name": "runLoan",
@@ -250,6 +270,16 @@
       "type": "function",
       "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
       "line": 326
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runRules@L115",
+      "confidence": 1,
+      "name": "runRules",
+      "qualifiedName": "runRules",
+      "signature": "runRules(text: string = readFileSync(RULES_FIXTURE, 'utf8'), path: string = RULES_PATH): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
+      "line": 115
     },
     {
       "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#runRules@L186",
@@ -272,14 +302,14 @@
       "line": 258
     },
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runRules@L115",
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runText@L634",
       "confidence": 1,
-      "name": "runRules",
-      "qualifiedName": "runRules",
-      "signature": "runRules(text: string = readFileSync(RULES_FIXTURE, 'utf8'), path: string = RULES_PATH): Promise<ExtractResult>",
+      "name": "runText",
+      "qualifiedName": "runText",
+      "signature": "runText(text: string, path = 'fixtures/plsql/dataflow.pkb'): Promise<ExtractResult>",
       "type": "function",
-      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
-      "line": 115
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
+      "line": 634
     },
     {
       "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runText@L524",
@@ -290,16 +320,6 @@
       "type": "function",
       "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
       "line": 524
-    },
-    {
-      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runText@L634",
-      "confidence": 1,
-      "name": "runText",
-      "qualifiedName": "runText",
-      "signature": "runText(text: string, path = 'fixtures/plsql/dataflow.pkb'): Promise<ExtractResult>",
-      "type": "function",
-      "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
-      "line": 634
     },
     {
       "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runTypes@L244",
@@ -314,14 +334,14 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 77
+      "line": 88
     }
   ],
   "docs": [
@@ -363,8 +383,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:2979d61fc82722d987512a19dbfd3369c7d2265ea0e87878410e5b72f5537f72",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+          "edgeId": "e:93acd190b17341db9ac92cf46052474230ea90d55552ea988387e096ae632e2b",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
           "expr": "idFor",
           "line": 26
         }
@@ -380,11 +400,13 @@
       "packages/parsers/src/go/GoExtractor.test.ts",
       "packages/parsers/src/java/JavaExtractor.test.ts",
       "packages/parsers/src/java/spring.test.ts",
+      "packages/parsers/src/php/PhpExtractor.test.ts",
       "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
       "packages/parsers/src/python/PythonExtractor.test.ts",
       "packages/parsers/src/rust/RustExtractor.test.ts",
       "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
       "packages/parsers/src/ts/express.test.ts",
+      "packages/parsers/src/ts/http-client.test.ts",
       "packages/parsers/src/ts/nest.test.ts",
       "packages/parsers/src/ts/react.test.ts"
     ]

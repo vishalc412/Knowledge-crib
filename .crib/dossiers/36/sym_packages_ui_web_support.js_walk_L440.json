@@ -1,0 +1,696 @@
+{
+  "id": "sym:packages/ui/web/support.js#walk@L440",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:bc98d91a3424967e3c46c5cf43ef7661a8111f0f3f7bec7dc3f3af50cf9609ec",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#walk@L440",
+    "kind": "symbol",
+    "type": "function",
+    "name": "walk",
+    "qualifiedName": "walk",
+    "signature": "walk(node, host)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 440,
+      "end": 451
+    },
+    "callSites": [
+      {
+        "callee": "walkText",
+        "line": 441
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 444
+      },
+      {
+        "callee": "walkFor",
+        "line": 445
+      },
+      {
+        "callee": "walkIf",
+        "line": 446
+      },
+      {
+        "callee": "walkXImport",
+        "line": 447
+      },
+      {
+        "callee": "helmet",
+        "line": 448
+      },
+      {
+        "callee": "walkComponent",
+        "line": 449
+      },
+      {
+        "callee": "walkElement",
+        "line": 450
+      }
+    ]
+  },
+  "source": {
+    "text": "  function walk(node, host) {\n    if (node.nodeType === Node.TEXT_NODE) return walkText(node);\n    if (node.nodeType !== Node.ELEMENT_NODE) return null;\n    const el = node;\n    const tag = el.tagName.toLowerCase();\n    if (tag === \"sc-for\") return walkFor(el, host);\n    if (tag === \"sc-if\") return walkIf(el, host);\n    if (tag === \"x-import\") return walkXImport(el, host);\n    if (tag === \"sc-helmet\") return host.helmet(el);\n    if (tag === \"dc-import\") return walkComponent(el, host);\n    return walkElement(el, host);\n  }",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 440
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#walkChildren@L437",
+      "confidence": 1,
+      "name": "walkChildren",
+      "qualifiedName": "walkChildren",
+      "signature": "walkChildren(node, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 437
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#walkComponent@L551",
+      "confidence": 1,
+      "name": "walkComponent",
+      "qualifiedName": "walkComponent",
+      "signature": "walkComponent(el, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 551
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#walkElement@L652",
+      "confidence": 1,
+      "name": "walkElement",
+      "qualifiedName": "walkElement",
+      "signature": "walkElement(el, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 652
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#walkFor@L501",
+      "confidence": 1,
+      "name": "walkFor",
+      "qualifiedName": "walkFor",
+      "signature": "walkFor(el, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 501
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#walkIf@L536",
+      "confidence": 1,
+      "name": "walkIf",
+      "qualifiedName": "walkIf",
+      "signature": "walkIf(el, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 536
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#walkText@L459",
+      "confidence": 1,
+      "name": "walkText",
+      "qualifiedName": "walkText",
+      "signature": "walkText(node)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 459
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#walkXImport@L580",
+      "confidence": 1,
+      "name": "walkXImport",
+      "qualifiedName": "walkXImport",
+      "signature": "walkXImport(el, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 580
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#root-resolution-req-1",
+      "heading": "Root resolution (REQ-1)",
+      "anchor": "root-resolution-req-1",
+      "snippet": "Root resolution (REQ-1)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#tools",
+      "heading": "Tools",
+      "anchor": "tools",
+      "snippet": "Tools",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-1-principal-engineer",
+      "heading": "2.1 Principal Engineer",
+      "anchor": "2-1-principal-engineer",
+      "snippet": "2.1 Principal Engineer",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-3-solution-architect",
+      "heading": "2.3 Solution Architect",
+      "anchor": "2-3-solution-architect",
+      "snippet": "2.3 Solution Architect",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#documents-updated",
+      "heading": "Documents updated",
+      "anchor": "documents-updated",
+      "snippet": "Documents updated",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#summary",
+      "heading": "Summary",
+      "anchor": "summary",
+      "snippet": "Summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests",
+      "heading": "Tests",
+      "anchor": "tests",
+      "snippet": "Tests",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
+      "heading": "What was built",
+      "anchor": "what-was-built-2",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#what-each-language-extractor-must-emit-additive-keep-existing-symbol-member-of-calls-behavior",
+      "heading": "What each language extractor must emit (additive — keep existing symbol/member-of/calls behavior)",
+      "anchor": "what-each-language-extractor-must-emit-additive-keep-existing-symbol-member-of-calls-behavior",
+      "snippet": "What each language extractor must emit (additive — keep existing symbol/member-of/calls behavior)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#per-language-parser-work",
+      "heading": "Per-language parser work",
+      "anchor": "per-language-parser-work",
+      "snippet": "Per-language parser work",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "heading": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "anchor": "3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "snippet": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#global-flags",
+      "heading": "Global flags",
+      "anchor": "global-flags",
+      "snippet": "Global flags",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-index-path",
+      "heading": "`crib index [path]`",
+      "anchor": "crib-index-path",
+      "snippet": "`crib index [path]`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#4-claude-code",
+      "heading": "4. Claude Code",
+      "anchor": "4-claude-code",
+      "snippet": "4. Claude Code",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#root-resolution-one-entry-every-project",
+      "heading": "Root resolution — one entry, every project",
+      "anchor": "root-resolution-one-entry-every-project",
+      "snippet": "Root resolution — one entry, every project",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-4-technical-architect",
+      "heading": "2.4 Technical Architect",
+      "anchor": "2-4-technical-architect",
+      "snippet": "2.4 Technical Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#one-ide-entry-for-every-project-root-resolution",
+      "heading": "One IDE entry for every project (root resolution)",
+      "anchor": "one-ide-entry-for-every-project-root-resolution",
+      "snippet": "One IDE entry for every project (root resolution)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-6-llm-graph-verbs",
+      "heading": "The 6 LLM-graph verbs",
+      "anchor": "the-6-llm-graph-verbs",
+      "snippet": "The 6 LLM-graph verbs",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#walk@L440",
+    "procedureName": "walk",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L441",
+      "cond:packages/ui/web/support.js@L442",
+      "cond:packages/ui/web/support.js@L445",
+      "cond:packages/ui/web/support.js@L446",
+      "cond:packages/ui/web/support.js@L447",
+      "cond:packages/ui/web/support.js@L448",
+      "cond:packages/ui/web/support.js@L449"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "guard": "cond:packages/ui/web/support.js@L441",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L441",
+            "expr": "node.nodeType === Node.TEXT_NODE",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:816df2927533a8bdcad4fbaab364eaff4ce9be0785dd63a7576bd195f9d875e5",
+          "target": "stmt:packages/ui/web/support.js@L441",
+          "line": 441,
+          "expr": "return walkText(node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "guard": "cond:packages/ui/web/support.js@L441",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L441",
+            "expr": "node.nodeType === Node.TEXT_NODE",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8bccd932e09bf838ae3f805232b93f64cfe9f16d7c2f836cc90a530e65f56168",
+          "target": "sym:packages/ui/web/support.js#walkText@L459",
+          "expr": "walkText",
+          "line": 441
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "guard": "cond:packages/ui/web/support.js@L442",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L442",
+            "expr": "node.nodeType !== Node.ELEMENT_NODE",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:edaa55f5cb032fb5d2b8d9d5063975bef435f6bd95d0d3aaf5b5eaf2ac664784",
+          "target": "stmt:packages/ui/web/support.js@L442",
+          "line": 442,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce16866f9ea1496a4ef1090cb654b574f9dff80387ad444ae958ddef5d12f117",
+          "target": "stmt:packages/ui/web/support.js@L444",
+          "line": 444,
+          "expr": "const tag = el.tagName.toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "guard": "cond:packages/ui/web/support.js@L445",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L445",
+            "expr": "tag === \"sc-for\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:201fa9ee37e57703dbe4d65f780515928be51c1c50e3fc1065c309e1f9e9fdef",
+          "target": "sym:packages/ui/web/support.js#walkFor@L501",
+          "expr": "walkFor",
+          "line": 445
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "guard": "cond:packages/ui/web/support.js@L445",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L445",
+            "expr": "tag === \"sc-for\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cf4411108d33ed3eba854ac2a8039bb391138358aec967e9754cc9eab1f2bd7a",
+          "target": "stmt:packages/ui/web/support.js@L445",
+          "line": 445,
+          "expr": "return walkFor(el, host);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "guard": "cond:packages/ui/web/support.js@L446",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L446",
+            "expr": "tag === \"sc-if\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:651175ebb272d56d562295f20c56a52c380672a2d6f072ef63c38a92386131af",
+          "target": "stmt:packages/ui/web/support.js@L446",
+          "line": 446,
+          "expr": "return walkIf(el, host);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "guard": "cond:packages/ui/web/support.js@L446",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L446",
+            "expr": "tag === \"sc-if\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:98916f02584df0b35c9ffab0208cf5f384121a8b73b0f417b0c84dee15cfa765",
+          "target": "sym:packages/ui/web/support.js#walkIf@L536",
+          "expr": "walkIf",
+          "line": 446
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "guard": "cond:packages/ui/web/support.js@L447",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L447",
+            "expr": "tag === \"x-import\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:130218592e34bdc620ed991402b179bb2ccfea18614e1c12a64e0aba5a421187",
+          "target": "stmt:packages/ui/web/support.js@L447",
+          "line": 447,
+          "expr": "return walkXImport(el, host);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "guard": "cond:packages/ui/web/support.js@L447",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L447",
+            "expr": "tag === \"x-import\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4b2009a1fde3eba6b120fec2e96de604328a1b4e993c8bcfabb34f847670681b",
+          "target": "sym:packages/ui/web/support.js#walkXImport@L580",
+          "expr": "walkXImport",
+          "line": 447
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "guard": "cond:packages/ui/web/support.js@L448",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L448",
+            "expr": "tag === \"sc-helmet\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df73eea472dadcd0f14ec3e308c035ddaaf6b6d69caabec7c1bff2910985778a",
+          "target": "stmt:packages/ui/web/support.js@L448",
+          "line": 448,
+          "expr": "return host.helmet(el);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "guard": "cond:packages/ui/web/support.js@L449",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L449",
+            "expr": "tag === \"dc-import\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0b659a337dbfdeaf294a90335d317453e57acde2190fc278b7e785eec1918b65",
+          "target": "sym:packages/ui/web/support.js#walkComponent@L551",
+          "expr": "walkComponent",
+          "line": 449
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "guard": "cond:packages/ui/web/support.js@L449",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L449",
+            "expr": "tag === \"dc-import\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cbb6ab8cf342c95887bfef9b6013ba0d71790dcfd87febe856f76ac9601be294",
+          "target": "stmt:packages/ui/web/support.js@L449",
+          "line": 449,
+          "expr": "return walkComponent(el, host);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:11d4d60c7ffcb4436e739435e429f34c09e2b6226ee5025539c9998aff5a82aa",
+          "target": "sym:packages/ui/web/support.js#walkElement@L652",
+          "expr": "walkElement",
+          "line": 450
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walk@L440",
+        "procedureName": "walk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bb519acb8cf065f1509cb7e99d424c37629f620feb689459f54daf89242c489d",
+          "target": "stmt:packages/ui/web/support.js@L450",
+          "line": 450,
+          "expr": "return walkElement(el, host);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 0,
+    "conditions": 7,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 8,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

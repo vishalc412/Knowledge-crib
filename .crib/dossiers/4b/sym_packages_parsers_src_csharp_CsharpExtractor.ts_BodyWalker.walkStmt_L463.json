@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkStmt@L463",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:b125faf7a737c71643f4a2c2cf353f5f7f73793e539ca6ad6c36ef647f9865bf",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkStmt@L463",
@@ -255,11 +255,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:bdfa26b89ae238ab36ffd8d4386cc20cb2983212786888d586a48f497e3de3f0",
-          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkLoop@L539",
-          "expr": "walkLoop",
-          "line": 469
+          "kind": "executes",
+          "edgeId": "e:9f97cb8a765b119f3a11ab5ca9d639124ecc3d74c613c4c79daf1e7863b76cb3",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L469",
+          "line": 469,
+          "expr": "this.walkLoop(s, procId, env);"
         }
       },
       {
@@ -277,11 +277,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:9f97cb8a765b119f3a11ab5ca9d639124ecc3d74c613c4c79daf1e7863b76cb3",
-          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L469",
-          "line": 469,
-          "expr": "this.walkLoop(s, procId, env);"
+          "kind": "calls",
+          "edgeId": "e:bdfa26b89ae238ab36ffd8d4386cc20cb2983212786888d586a48f497e3de3f0",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkLoop@L539",
+          "expr": "walkLoop",
+          "line": 469
         }
       },
       {
@@ -313,11 +313,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b5ec8d59499c22c1faa18a4fb67571be4dc1c5647a19b6c5f4c8d6c08d7cea8a",
-          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkSwitch@L560",
-          "expr": "walkSwitch",
-          "line": 472
+          "kind": "executes",
+          "edgeId": "e:75d121272fd98117ea92cec422ffad846c84e34c4017d4f9b79170d2c5deac8a",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L472",
+          "line": 472,
+          "expr": "this.walkSwitch(s, procId, env);"
         }
       },
       {
@@ -335,11 +335,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:75d121272fd98117ea92cec422ffad846c84e34c4017d4f9b79170d2c5deac8a",
-          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L472",
-          "line": 472,
-          "expr": "this.walkSwitch(s, procId, env);"
+          "kind": "calls",
+          "edgeId": "e:b5ec8d59499c22c1faa18a4fb67571be4dc1c5647a19b6c5f4c8d6c08d7cea8a",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkSwitch@L560",
+          "expr": "walkSwitch",
+          "line": 472
         }
       },
       {
@@ -371,11 +371,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:8a33d04196a52a4588319f07df4fa970d3d58ce5b91fdd6f532fa080ea11bb84",
-          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkTry@L574",
-          "expr": "walkTry",
-          "line": 475
+          "kind": "executes",
+          "edgeId": "e:5d60ec7449a74acb50f848687a7b15db2a31f57c3af19dd28405021b5737bafc",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L475",
+          "line": 475,
+          "expr": "this.walkTry(s, procId, env);"
         }
       },
       {
@@ -393,11 +393,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:5d60ec7449a74acb50f848687a7b15db2a31f57c3af19dd28405021b5737bafc",
-          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L475",
-          "line": 475,
-          "expr": "this.walkTry(s, procId, env);"
+          "kind": "calls",
+          "edgeId": "e:8a33d04196a52a4588319f07df4fa970d3d58ce5b91fdd6f532fa080ea11bb84",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkTry@L574",
+          "expr": "walkTry",
+          "line": 475
         }
       },
       {
@@ -501,11 +501,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:c9027a220ae8f03770dc66313665b6683e302d9c431c9a5946a69f8ee79f4d56",
-          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
-          "expr": "addCallStatement",
-          "line": 482
+          "kind": "executes",
+          "edgeId": "e:741be974e37fb855eee0b8cefdf8a419949a0b2ffd54aa0785231cf9561b9e2b",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L482",
+          "line": 482,
+          "expr": "this.addCallStatement(s, procId, env);"
         }
       },
       {
@@ -523,11 +523,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:741be974e37fb855eee0b8cefdf8a419949a0b2ffd54aa0785231cf9561b9e2b",
-          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L482",
-          "line": 482,
-          "expr": "this.addCallStatement(s, procId, env);"
+          "kind": "calls",
+          "edgeId": "e:c9027a220ae8f03770dc66313665b6683e302d9c431c9a5946a69f8ee79f4d56",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+          "expr": "addCallStatement",
+          "line": 482
         }
       },
       {
@@ -621,11 +621,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:8c5ee4fa9e988a0c5ba3d7de0e7bb71235dde1f4cbf1b1e722518bef1fed8ae8",
-          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitSwitchArms@L757",
-          "expr": "emitSwitchArms",
-          "line": 489
+          "kind": "executes",
+          "edgeId": "e:1bf1f166257e3c1afa57274251b5f30c6e281c19dae240e72a04b53ca0a8e12d",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L489",
+          "line": 489,
+          "expr": "this.emitSwitchArms(s.switchArms);"
         }
       },
       {
@@ -647,11 +647,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:1bf1f166257e3c1afa57274251b5f30c6e281c19dae240e72a04b53ca0a8e12d",
-          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L489",
-          "line": 489,
-          "expr": "this.emitSwitchArms(s.switchArms);"
+          "kind": "calls",
+          "edgeId": "e:8c5ee4fa9e988a0c5ba3d7de0e7bb71235dde1f4cbf1b1e722518bef1fed8ae8",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitSwitchArms@L757",
+          "expr": "emitSwitchArms",
+          "line": 489
         }
       }
     ]

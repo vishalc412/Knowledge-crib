@@ -1,0 +1,162 @@
+{
+  "id": "sym:packages/core/src/lock.ts#CribLock.steal@L168",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2fd5c6b2d963d2e57fa435e38819eaa6cc5158c2c8aa1336eb4a856496732ce1",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/lock.ts#CribLock.steal@L168",
+    "kind": "symbol",
+    "type": "method",
+    "name": "steal",
+    "qualifiedName": "CribLock.steal",
+    "signature": "steal(): void",
+    "lang": "typescript",
+    "file": "packages/core/src/lock.ts",
+    "span": {
+      "start": 168,
+      "end": 181
+    },
+    "callSites": [
+      {
+        "callee": "unlinkSync",
+        "line": 170
+      }
+    ]
+  },
+  "source": {
+    "text": "  private steal(): void {\n    try {\n      unlinkSync(this.path);\n    } catch {\n      // ignore — the tryCreate below will fail loudly if it still exists\n    }\n    if (!this.tryCreate(this.path)) {\n      // raced: someone else recreated it between our unlink and create\n      throw new LockBusyError(\n        this.readHolder(),\n        `crib is busy: lock ${this.path} is held by another process`,\n      );\n    }\n  }",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 168
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/lock.ts#CribLock.acquire@L100",
+      "confidence": 1,
+      "name": "acquire",
+      "qualifiedName": "CribLock.acquire",
+      "signature": "acquire(): void",
+      "type": "method",
+      "file": "packages/core/src/lock.ts",
+      "line": 100
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/lock.ts#CribLock.readHolder@L147",
+      "confidence": 1,
+      "name": "readHolder",
+      "qualifiedName": "CribLock.readHolder",
+      "signature": "readHolder(): number",
+      "type": "method",
+      "file": "packages/core/src/lock.ts",
+      "line": 147
+    },
+    {
+      "id": "sym:packages/core/src/lock.ts#CribLock.tryCreate@L134",
+      "confidence": 1,
+      "name": "tryCreate",
+      "qualifiedName": "CribLock.tryCreate",
+      "signature": "tryCreate(p: string): boolean",
+      "type": "method",
+      "file": "packages/core/src/lock.ts",
+      "line": 134
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/lock.ts#CribLock.steal@L168",
+    "procedureName": "CribLock.steal",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/lock.ts#CribLock.steal@L168",
+        "procedureName": "CribLock.steal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7a238aa83823c729ac1eccd4f7cacb218d5416615401a8d8fe2de41e7e03b47f",
+          "target": "sym:packages/core/src/lock.ts#CribLock.tryCreate@L134",
+          "expr": "tryCreate"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/lock.ts#CribLock.steal@L168",
+        "procedureName": "CribLock.steal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2fc9f682eca239150fcb2c756438cc1d31d406e6e85c5f71504efa99e8a34ad6",
+          "target": "sym:packages/core/src/lock.ts#CribLock.readHolder@L147",
+          "expr": "readHolder"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/lock.ts#CribLock.steal@L168",
+        "procedureName": "CribLock.steal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:943c42c7500520006279004c644b2ce0dcd1b373e7e362b6648a3b012cec086a",
+          "target": "stmt:packages/core/src/lock.ts@L170",
+          "line": 170,
+          "expr": "unlinkSync(this.path);"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:packages/core/src/lock.ts@L176",
+        "kind": "raise",
+        "lang": "typescript",
+        "file": "packages/core/src/lock.ts",
+        "span": {
+          "start": 176,
+          "end": 176
+        },
+        "errorMessage": "new LockBusyError(\n        this.readHolder(),\n        `crib is busy: lock ${this.path} is held by another process`,\n      )",
+        "confidence": 1
+      }
+    ],
+    "handles": [],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/lock.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 1,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

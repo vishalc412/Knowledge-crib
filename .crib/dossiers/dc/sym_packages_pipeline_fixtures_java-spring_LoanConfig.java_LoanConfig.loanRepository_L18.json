@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/fixtures/java-spring/LoanConfig.java#LoanConfig.loanRepository@L18",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:79f5ee4d7b8dc7c549022785ae3ad57b6f65b81591af2e362f60e931b82a4d66",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/fixtures/java-spring/LoanConfig.java#LoanConfig.loanRepository@L18",
@@ -81,11 +81,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:ccf0ab7087523a080d3ed81e1a79424b8283d5777ee481aca7322b8693e2650c",
-          "target": "stmt:packages/pipeline/fixtures/java-spring/LoanConfig.java@L20",
-          "line": 20,
-          "expr": "return new LoanRepository()"
+          "kind": "calls",
+          "edgeId": "e:b4d3148b1cf9f6012d3bfcd53284a5abe18a22eea698397a92f9ec1f41ac2b0b",
+          "target": "sym:packages/pipeline/fixtures/java-spring/LoanRepository.java#LoanRepository@L5",
+          "expr": "LoanRepository",
+          "line": 20
         }
       },
       {
@@ -95,11 +95,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b4d3148b1cf9f6012d3bfcd53284a5abe18a22eea698397a92f9ec1f41ac2b0b",
-          "target": "sym:packages/pipeline/fixtures/java-spring/LoanRepository.java#LoanRepository@L5",
-          "expr": "LoanRepository",
-          "line": 20
+          "kind": "executes",
+          "edgeId": "e:ccf0ab7087523a080d3ed81e1a79424b8283d5777ee481aca7322b8693e2650c",
+          "target": "stmt:packages/pipeline/fixtures/java-spring/LoanConfig.java@L20",
+          "line": 20,
+          "expr": "return new LoanRepository()"
         }
       }
     ]

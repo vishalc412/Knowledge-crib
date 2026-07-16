@@ -1,0 +1,177 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.artifactsRoot@L1661",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:1ef4cf7c987aad8c270c78a974f29506e9dd6b0e58b3b8b18ef74fe06dc1d0dd",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.artifactsRoot@L1661",
+    "kind": "symbol",
+    "type": "method",
+    "name": "artifactsRoot",
+    "qualifiedName": "EnrichmentStore.artifactsRoot",
+    "signature": "artifactsRoot(): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1661,
+      "end": 1664
+    },
+    "callSites": [
+      {
+        "callee": "root",
+        "line": 1662
+      },
+      {
+        "callee": "endsWith",
+        "line": 1663
+      },
+      {
+        "callee": "join",
+        "line": 1663
+      },
+      {
+        "callee": "join",
+        "line": 1663
+      }
+    ]
+  },
+  "source": {
+    "text": "  private artifactsRoot(): string {\n    const root = this.root();\n    return root.endsWith(`${sep}llm`) ? join(root, 'analysis') : join(root, 'artifacts');\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 1661
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+      "confidence": 1,
+      "name": "allArtifacts",
+      "qualifiedName": "EnrichmentStore.allArtifacts",
+      "signature": "allArtifacts(): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 825
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.pruneStale@L837",
+      "confidence": 1,
+      "name": "pruneStale",
+      "qualifiedName": "EnrichmentStore.pruneStale",
+      "signature": "pruneStale(apply = false): {\n    apply: boolean;\n    candidates: Array<{ path: string; targetId: string; reason: 'stale' | 'orphaned' }>;\n    removed: number;\n  }",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 837
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.read@L1368",
+      "confidence": 1,
+      "name": "read",
+      "qualifiedName": "EnrichmentStore.read",
+      "signature": "read(layer: EnrichLayer, targetId: string, liveHash: string): LlmRead",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1368
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L1400",
+      "confidence": 1,
+      "name": "writeArtifact",
+      "qualifiedName": "EnrichmentStore.writeArtifact",
+      "signature": "writeArtifact(artifact: LlmArtifact): string",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1400
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.root@L1654",
+      "confidence": 1,
+      "name": "root",
+      "qualifiedName": "EnrichmentStore.root",
+      "signature": "root(): string",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1654
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.artifactsRoot@L1661",
+    "procedureName": "EnrichmentStore.artifactsRoot",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.artifactsRoot@L1661",
+        "procedureName": "EnrichmentStore.artifactsRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:31664a4d14e70f4c54d568eae531b5d8668498c2ea535d464ba09c8f616e792d",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.root@L1654",
+          "expr": "root",
+          "line": 1662
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.artifactsRoot@L1661",
+        "procedureName": "EnrichmentStore.artifactsRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3e108e30c367b27917bff34531988bf48e1831f8de13d7eb285111008d0bbfa0",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1662",
+          "line": 1662,
+          "expr": "const root = this.root();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.artifactsRoot@L1661",
+        "procedureName": "EnrichmentStore.artifactsRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8580db28d1d87b92bc579d4fb363b2b70dc124bcae6f5b5b45a648d849233381",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1663",
+          "line": 1663,
+          "expr": "return root.endsWith(`${sep}llm`) ? join(root, 'analysis') : join(root, 'artifacts');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 4,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

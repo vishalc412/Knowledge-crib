@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/fixtures/python/auth.py#top_level@L23",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:cc287767308cf539ce71c5ff275e7a9f8a458b46eca0dbe3586b5810519c2049",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/fixtures/python/auth.py#top_level@L23",
@@ -60,11 +60,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:574f4e7756f3ac2c74c8354c366879f2da049335a705b9ce848da4fbb3638fb3",
-          "target": "sym:packages/parsers/fixtures/python/auth.py#Auth@L12",
-          "expr": "Auth",
-          "line": 24
+          "kind": "executes",
+          "edgeId": "e:4389f407f674d320eec8e773392c23fd21b6557a4177fcc171226529886f8e12",
+          "target": "assign:packages/parsers/fixtures/python/auth.py@L24",
+          "line": 24,
+          "expr": "a = Auth()"
         }
       },
       {
@@ -74,11 +74,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:4389f407f674d320eec8e773392c23fd21b6557a4177fcc171226529886f8e12",
-          "target": "assign:packages/parsers/fixtures/python/auth.py@L24",
-          "line": 24,
-          "expr": "a = Auth()"
+          "kind": "calls",
+          "edgeId": "e:574f4e7756f3ac2c74c8354c366879f2da049335a705b9ce848da4fbb3638fb3",
+          "target": "sym:packages/parsers/fixtures/python/auth.py#Auth@L12",
+          "expr": "Auth",
+          "line": 24
         }
       },
       {

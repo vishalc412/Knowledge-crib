@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L418",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:4c66835cf4c9034a0caeb8bec2bbdfadfd3453afea493bff6e6197e5dbd6d000",
-  "builtAt": "2026-06-26T05:10:32.429Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L418",
@@ -88,28 +88,6 @@
       {
         "procedure": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L418",
         "procedureName": "routeParamsOf",
-        "guard": "cond:packages/parsers/src/java/spring.ts@L423",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/java/spring.ts@L423",
-            "expr": "i < names.length",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:48bde3dfd4868a6840460aa1d5226f6358db71e05f0dd74ec3c596edd5d3d538",
-          "target": "stmt:packages/parsers/src/java/spring.ts@L425",
-          "line": 425,
-          "expr": "const binding = annos.find((a) => PARAM_BINDING[a]);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L418",
-        "procedureName": "routeParamsOf",
         "conditions": [],
         "inLoop": false,
         "inException": false,
@@ -137,10 +115,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:f8629cba4b60d23d93b3ed150c71aca2bf8e9c49f746322bb53a0eedcd7d32f8",
-          "target": "stmt:packages/parsers/src/java/spring.ts@L427",
-          "line": 427,
-          "expr": "out.push({\n      name: names[i]!,\n      ...(types[i] ? { type: types[i] } : {}),\n      in: PARAM_BINDING[binding]!,\n    });"
+          "edgeId": "e:48bde3dfd4868a6840460aa1d5226f6358db71e05f0dd74ec3c596edd5d3d538",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L425",
+          "line": 425,
+          "expr": "const binding = annos.find((a) => PARAM_BINDING[a]);"
         }
       },
       {
@@ -155,6 +133,28 @@
           "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
           "expr": "push",
           "line": 427
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L418",
+        "procedureName": "routeParamsOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L423",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L423",
+            "expr": "i < names.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f8629cba4b60d23d93b3ed150c71aca2bf8e9c49f746322bb53a0eedcd7d32f8",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L427",
+          "line": 427,
+          "expr": "out.push({\n      name: names[i]!,\n      ...(types[i] ? { type: types[i] } : {}),\n      in: PARAM_BINDING[binding]!,\n    });"
         }
       },
       {

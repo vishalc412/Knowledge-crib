@@ -1,0 +1,167 @@
+{
+  "id": "sym:packages/parsers/src/ts/http-client.ts#collectShadowedCallNames.visit@L308",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:863d1bc878e211189b9e3f48f143cdf75e3359f6962777f65e4a2a11e0b54c45",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/http-client.ts#collectShadowedCallNames.visit@L308",
+    "kind": "symbol",
+    "type": "function",
+    "name": "visit",
+    "qualifiedName": "collectShadowedCallNames.visit",
+    "signature": "visit(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/http-client.ts",
+    "span": {
+      "start": 308,
+      "end": 321
+    },
+    "callSites": [
+      {
+        "callee": "add",
+        "line": 310
+      },
+      {
+        "callee": "add",
+        "line": 318
+      },
+      {
+        "callee": "forEachChild",
+        "line": 320
+      }
+    ]
+  },
+  "source": {
+    "text": "  const visit = (node: ts.Node): void => {\n    if (ts.isFunctionDeclaration(node) && node.name && SHADOW_NAMES.has(node.name.text)) {\n      out.add(node.name.text);\n    } else if (\n      ts.isVariableDeclaration(node) &&\n      ts.isIdentifier(node.name) &&\n      SHADOW_NAMES.has(node.name.text) &&\n      node.initializer &&\n      (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))\n    ) {\n      out.add(node.name.text);\n    }\n    ts.forEachChild(node, visit);\n  };",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 308
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/http-client.ts#collectShadowedCallNames.visit@L308",
+    "procedureName": "collectShadowedCallNames.visit",
+    "conditions": [
+      "cond:packages/parsers/src/ts/http-client.ts@L309",
+      "cond:packages/parsers/src/ts/http-client.ts@L311"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#collectShadowedCallNames.visit@L308",
+        "procedureName": "collectShadowedCallNames.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:42427092f2288da5b97678aaa07506daf457af164b37c4d487ae9fcbc50300cb",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 310
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#collectShadowedCallNames.visit@L308",
+        "procedureName": "collectShadowedCallNames.visit",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L309",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L309",
+            "expr": "ts.isFunctionDeclaration(node) && node.name && SHADOW_NAMES.has(node.name.text)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7cf8ab3de8cb703ab01af70249f6aa2e742a9ae5946be41f9e963596ea918087",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L310",
+          "line": 310,
+          "expr": "out.add(node.name.text);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#collectShadowedCallNames.visit@L308",
+        "procedureName": "collectShadowedCallNames.visit",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L311",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L309",
+            "expr": "ts.isFunctionDeclaration(node) && node.name && SHADOW_NAMES.has(node.name.text)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L311",
+            "expr": "ts.isVariableDeclaration(node) &&\n      ts.isIdentifier(node.name) &&\n      SHADOW_NAMES.has(node.name.text) &&\n      node.initializer &&\n      (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3eda370e7fdf10045f1440b12d5f983619520c41d3c5bc85ffaafef08ae8b04f",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L318",
+          "line": 318,
+          "expr": "out.add(node.name.text);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#collectShadowedCallNames.visit@L308",
+        "procedureName": "collectShadowedCallNames.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:09c87ab52545e7e3a71537fc3b9b203745965facfceade4f255f8725ea00e2fd",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L320",
+          "line": 320,
+          "expr": "ts.forEachChild(node, visit);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

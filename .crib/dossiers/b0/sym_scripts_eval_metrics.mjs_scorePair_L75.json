@@ -1,0 +1,194 @@
+{
+  "id": "sym:scripts/eval/metrics.mjs#scorePair@L75",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:6f2e8081f07a44b88be5a9c7dd17984e7ee8aacc9f5c88491325308ab33ebf51",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/eval/metrics.mjs#scorePair@L75",
+    "kind": "symbol",
+    "type": "function",
+    "name": "scorePair",
+    "qualifiedName": "scorePair",
+    "signature": "scorePair(retrieved, expected, k = 10)",
+    "lang": "javascript",
+    "file": "scripts/eval/metrics.mjs",
+    "span": {
+      "start": 75,
+      "end": 81
+    },
+    "callSites": [
+      {
+        "callee": "recallAtK",
+        "line": 77
+      },
+      {
+        "callee": "mrr",
+        "line": 78
+      },
+      {
+        "callee": "ndcgAtK",
+        "line": 79
+      }
+    ]
+  },
+  "source": {
+    "text": "export function scorePair(retrieved, expected, k = 10) {\n  return {\n    recall: recallAtK(retrieved, expected, k),\n    mrr: mrr(retrieved, expected),\n    ndcg: ndcgAtK(retrieved, expected, k),\n  };\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 75
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/eval/harness.mjs#scoreFixture@L105",
+      "confidence": 1,
+      "name": "scoreFixture",
+      "qualifiedName": "scoreFixture",
+      "signature": "scoreFixture(lang, fixtureDir, core, pipeline, opts = {})",
+      "type": "function",
+      "file": "scripts/eval/harness.mjs",
+      "line": 105
+    },
+    {
+      "id": "sym:scripts/eval/harness.mjs#scoreFixture.scoreAll@L153",
+      "confidence": 1,
+      "name": "scoreAll",
+      "qualifiedName": "scoreFixture.scoreAll",
+      "signature": "scoreAll(…)",
+      "type": "function",
+      "file": "scripts/eval/harness.mjs",
+      "line": 153
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:scripts/eval/metrics.mjs#mrr@L33",
+      "confidence": 1,
+      "name": "mrr",
+      "qualifiedName": "mrr",
+      "signature": "mrr(retrieved, expected)",
+      "type": "function",
+      "file": "scripts/eval/metrics.mjs",
+      "line": 33
+    },
+    {
+      "id": "sym:scripts/eval/metrics.mjs#ndcgAtK@L45",
+      "confidence": 1,
+      "name": "ndcgAtK",
+      "qualifiedName": "ndcgAtK",
+      "signature": "ndcgAtK(retrieved, expected, k)",
+      "type": "function",
+      "file": "scripts/eval/metrics.mjs",
+      "line": 45
+    },
+    {
+      "id": "sym:scripts/eval/metrics.mjs#recallAtK@L21",
+      "confidence": 1,
+      "name": "recallAtK",
+      "qualifiedName": "recallAtK",
+      "signature": "recallAtK(retrieved, expected, k)",
+      "type": "function",
+      "file": "scripts/eval/metrics.mjs",
+      "line": 21
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/eval/metrics.mjs@L71",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/eval/metrics.mjs#scorePair@L75",
+    "procedureName": "scorePair",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/eval/metrics.mjs#scorePair@L75",
+        "procedureName": "scorePair",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:08fc61b84c3b71dff0cf2ba77fdfb0a82ee0d1b34169cc4732e8ace05265cd2a",
+          "target": "stmt:scripts/eval/metrics.mjs@L76",
+          "line": 76,
+          "expr": "return {\n    recall: recallAtK(retrieved, expected, k),\n    mrr: mrr(retrieved, expected),\n    ndcg: ndcgAtK(retrieved, expected, k),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval/metrics.mjs#scorePair@L75",
+        "procedureName": "scorePair",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:93bb5bb89612d9f1107277c7b7fa70f09864b23902dfb5fe958b3654b67f6a39",
+          "target": "sym:scripts/eval/metrics.mjs#recallAtK@L21",
+          "expr": "recallAtK",
+          "line": 77
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval/metrics.mjs#scorePair@L75",
+        "procedureName": "scorePair",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0f4ca4b3886eec3abf9507a567a9c4f8ec98ef65eb8d9392f075161fc1ecfaf9",
+          "target": "sym:scripts/eval/metrics.mjs#mrr@L33",
+          "expr": "mrr",
+          "line": 78
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval/metrics.mjs#scorePair@L75",
+        "procedureName": "scorePair",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:47c33ddaa5e6223a8c102d0a8b01af4aa0f0af489fa53f4064acc129455f941b",
+          "target": "sym:scripts/eval/metrics.mjs#ndcgAtK@L45",
+          "expr": "ndcgAtK",
+          "line": 79
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "scripts/eval/harness.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

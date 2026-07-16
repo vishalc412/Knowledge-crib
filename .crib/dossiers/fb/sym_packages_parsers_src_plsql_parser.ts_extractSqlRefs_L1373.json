@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs@L1373",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:58e8127efa47cb1e911021c8bcad74d55b59c6e171a1b1bb28df57a35fec4266",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs@L1373",
@@ -128,6 +128,16 @@
   ],
   "callees": [
     {
+      "id": "sym:packages/parsers/src/ts/react.ts#dedupe@L364",
+      "confidence": 1,
+      "name": "dedupe",
+      "qualifiedName": "dedupe",
+      "signature": "dedupe(xs: string[]): string[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 364
+    },
+    {
       "id": "sym:packages/parsers/src/plsql/parser.ts#dedupe@L1482",
       "confidence": 1,
       "name": "dedupe",
@@ -136,16 +146,6 @@
       "type": "function",
       "file": "packages/parsers/src/plsql/parser.ts",
       "line": 1482
-    },
-    {
-      "id": "sym:packages/parsers/src/ts/react.ts#dedupe@L361",
-      "confidence": 1,
-      "name": "dedupe",
-      "qualifiedName": "dedupe",
-      "signature": "dedupe(xs: string[]): string[]",
-      "type": "function",
-      "file": "packages/parsers/src/ts/react.ts",
-      "line": 361
     },
     {
       "id": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs.collectFromTables@L1382",
@@ -308,6 +308,28 @@
       {
         "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs@L1373",
         "procedureName": "extractSqlRefs",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1391",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1391",
+            "expr": "verb === 'select'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:08d40d487f95c07d46e2bb5c91c1dd78b22750218e30aa79c833780edc2716ee",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1393",
+          "line": 1393,
+          "expr": "collectFromTables();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs@L1373",
+        "procedureName": "extractSqlRefs",
         "guard": "cond:packages/parsers/src/plsql/parser.ts@L1469",
         "branch": "THEN",
         "conditions": [
@@ -337,28 +359,6 @@
           "target": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs.collectFromTables@L1382",
           "expr": "collectFromTables",
           "line": 1393
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs@L1373",
-        "procedureName": "extractSqlRefs",
-        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1391",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/plsql/parser.ts@L1391",
-            "expr": "verb === 'select'",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:08d40d487f95c07d46e2bb5c91c1dd78b22750218e30aa79c833780edc2716ee",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1393",
-          "line": 1393,
-          "expr": "collectFromTables();"
         }
       },
       {
@@ -458,6 +458,20 @@
       {
         "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs@L1373",
         "procedureName": "extractSqlRefs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2a5695307353926d01f05277fb34262bc6dd225303f2c7d70296c439bc7e2ab6",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1416
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs@L1373",
+        "procedureName": "extractSqlRefs",
         "guard": "cond:packages/parsers/src/plsql/parser.ts@L1416",
         "branch": "THEN",
         "conditions": [
@@ -487,20 +501,6 @@
           "target": "stmt:packages/parsers/src/plsql/parser.ts@L1416",
           "line": 1416,
           "expr": "intoParts.push(t.raw);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs@L1373",
-        "procedureName": "extractSqlRefs",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:2a5695307353926d01f05277fb34262bc6dd225303f2c7d70296c439bc7e2ab6",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 1416
         }
       },
       {
@@ -1069,8 +1069,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:d3e1718b0dbf756bfbfa4fb0ac4659afefd9e2ceeae8c93a335ea5bbb9ceb4ae",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#dedupe@L1482",
+          "edgeId": "e:4eca01cf05375e4d7b10956efcb498578f22e5b7c8d843a1bee8fee4ba123ce7",
+          "target": "sym:packages/parsers/src/ts/react.ts#dedupe@L364",
           "expr": "dedupe",
           "line": 1475
         }
@@ -1083,8 +1083,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:1f1235d0126aa4d564cdcd39e15dd23c0602f940cc28f703d7079454a1ede0ff",
-          "target": "sym:packages/parsers/src/ts/react.ts#dedupe@L361",
+          "edgeId": "e:d3e1718b0dbf756bfbfa4fb0ac4659afefd9e2ceeae8c93a335ea5bbb9ceb4ae",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#dedupe@L1482",
           "expr": "dedupe",
           "line": 1475
         }

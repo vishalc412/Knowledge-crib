@@ -1,0 +1,150 @@
+{
+  "id": "sym:scripts/build-installers.mjs#installSh@L53",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:499959f92fd9968c25e9c66b5e8d4c32979d19e0a4a11d7a2c9fe3a0326efb7c",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/build-installers.mjs#installSh@L53",
+    "kind": "symbol",
+    "type": "function",
+    "name": "installSh",
+    "qualifiedName": "installSh",
+    "signature": "installSh(tarballNames)",
+    "lang": "javascript",
+    "file": "scripts/build-installers.mjs",
+    "span": {
+      "start": 53,
+      "end": 103
+    },
+    "callSites": [
+      {
+        "callee": "isArray",
+        "line": 54
+      },
+      {
+        "callee": "shellTarballArgs",
+        "line": 100
+      }
+    ]
+  },
+  "source": {
+    "text": "export function installSh(tarballNames) {\n  const tarballs = Array.isArray(tarballNames) ? tarballNames : [tarballNames];\n  return `#!/usr/bin/env sh\nset -eu\n\nSCRIPT_DIR=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\nCACHE_DIR=$(mktemp -d \"\\${TMPDIR:-/tmp}/knowledge-crib-npm-cache.XXXXXX\")\ncleanup() {\n  rm -rf \"$CACHE_DIR\"\n}\ntrap cleanup EXIT\n\nif ! command -v node >/dev/null 2>&1; then\n  echo \"Knowledge-crib requires Node.js 22.5 or newer. Install Node, then rerun this installer.\" >&2\n  exit 1\nfi\n\nif ! command -v npm >/dev/null 2>&1; then\n  echo \"Knowledge-crib requires npm. Install Node.js with npm, then rerun this installer.\" >&2\n  exit 1\nfi\n\nNODE_MAJOR=$(node -p 'process.versions.node.split(\".\")[0]')\ncase \"$NODE_MAJOR\" in\n  ''|*[!0-9]*)\n    echo \"Could not determine the installed Node.js version.\" >&2\n    exit 1\n    ;;\nesac\nif [ \"$NODE_MAJOR\" -lt 22 ]; then\n  echo \"Knowledge-crib requires Node.js 22.5 or newer; found Node.js $(node --version).\" >&2\n  exit 1\nfi\n\nif [ ! -f \"$SCRIPT_DIR/SHA256SUMS.txt\" ]; then\n  echo \"Installer bundle is missing SHA256SUMS.txt.\" >&2\n  exit 1\nfi\nif command -v shasum >/dev/null 2>&1; then\n  (cd \"$SCRIPT_DIR\" && shasum -a 256 -c SHA256SUMS.txt)\nelif command -v sha256sum >/dev/null 2>&1; then\n  (cd \"$SCRIPT_DIR\" && sha256sum -c SHA256SUMS.txt)\nelse\n  echo \"A SHA-256 verifier (shasum or sha256sum) is required.\" >&2\n  exit 1\nfi\n\nnpm install -g --cache \"$CACHE_DIR\" --no-audit --no-fund ${shellTarballArgs(tarballs)}\necho \"Knowledge-crib installed. Run: crib --help\"\n`;\n}",
+    "truncated": false,
+    "totalLines": 51,
+    "startLine": 53
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/build-installers.mjs#buildInstallers@L175",
+      "confidence": 1,
+      "name": "buildInstallers",
+      "qualifiedName": "buildInstallers",
+      "signature": "buildInstallers({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
+      "type": "function",
+      "file": "scripts/build-installers.mjs",
+      "line": 175
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:scripts/build-installers.mjs#shellTarballArgs@L45",
+      "confidence": 1,
+      "name": "shellTarballArgs",
+      "qualifiedName": "shellTarballArgs",
+      "signature": "shellTarballArgs(tarballNames)",
+      "type": "function",
+      "file": "scripts/build-installers.mjs",
+      "line": 45
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-26-beta-installers.md#task-1-installer-builder-script",
+      "heading": "Task 1: Installer Builder Script",
+      "anchor": "task-1-installer-builder-script",
+      "snippet": "Task 1: Installer Builder Script",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/build-installers.mjs#installSh@L53",
+    "procedureName": "installSh",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/build-installers.mjs#installSh@L53",
+        "procedureName": "installSh",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e1dbcd398a0681b8b6f15f834b9b2fc282cd14907eb026cf5046d6fda0ac985e",
+          "target": "stmt:scripts/build-installers.mjs@L54",
+          "line": 54,
+          "expr": "const tarballs = Array.isArray(tarballNames) ? tarballNames : [tarballNames];"
+        }
+      },
+      {
+        "procedure": "sym:scripts/build-installers.mjs#installSh@L53",
+        "procedureName": "installSh",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c478f9a0d53f39a6cc9f62cdcc0d558258fc8701521a4962d2370067c48ad2dc",
+          "target": "stmt:scripts/build-installers.mjs@L55",
+          "line": 55,
+          "expr": "return `#!/usr/bin/env sh\nset -eu\n\nSCRIPT_DIR=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\nCACHE_DIR=$(mktemp -d \"\\${TMPDIR:-/tmp}/knowledge-crib-npm-cache.XXXXXX\")\ncleanup() {\n  rm -rf \"$CACHE_DIR\"\n}\ntrap cleanup EXIT\n\nif ! command -v node >/dev/null 2>&1; then\n  echo \"Knowledge-crib requires Node.js 22.5 or newer. Install Node, then rerun this installer.\" >&2\n  exit 1\nfi\n\nif ! command -v npm >/dev/null 2>&1; then\n  echo \"Knowledge-crib requires npm. Install Node.js with npm, then rerun this installer.\" >&2\n  exit 1\nfi\n\nNODE_MAJOR=$(node -p 'process.versions.node.split(\".\")[0]')\ncase \"$NODE_MAJOR\" in\n  ''|*[!0-9]*)\n    echo \"Could not determine the installed Node.js version.\" >&2\n    exit 1\n    ;;\nesac\nif [ \"$NODE_MAJOR\" -lt 22 ]; then\n  echo \"Knowledge-crib requires Node.js 22.5 or newer; found Node.js $(node --version).\" >&2\n  exit 1\nfi\n\nif [ ! -f \"$SCRIPT_DIR/SHA256SUMS.txt\" ]; then\n  echo \"Installer bundle is missing SHA256SUMS.txt.\" >&2\n  exit 1\nfi\nif command -v shasum >/dev/null 2>&1; then\n  (cd \"$SCRIPT_DIR\" && shasum -a 256 -c SHA256SUMS.txt)\nelif command -v sha256sum >/dev/null 2>&1; then\n  (cd \"$SCRIPT_DIR\" && sha256sum -c SHA256SUMS.txt)\nelse\n  echo \"A SHA-256 verifier (shasum or sha256sum) is required.\" >&2\n  exit 1\nfi\n\nnpm install -g --cache \"$CACHE_DIR\" --no-audit --no-fund ${shellTarballArgs(tarballs)}\necho \"Knowledge-crib installed. Run: crib --help\"\n`;"
+        }
+      },
+      {
+        "procedure": "sym:scripts/build-installers.mjs#installSh@L53",
+        "procedureName": "installSh",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7b9c40c2c42b9e9b578faf851f80879538d45031d96abea30e70212dace15c8f",
+          "target": "sym:scripts/build-installers.mjs#shellTarballArgs@L45",
+          "expr": "shellTarballArgs",
+          "line": 100
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "scripts/build-installers.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "id": "sym:scripts/install-smoke.mjs#expectedBinPaths@L20",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:44ee70e75f51f7a25d283f371c9de0f34501a9ba3a116d5e9d65afda36d21397",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/install-smoke.mjs#expectedBinPaths@L20",
+    "kind": "symbol",
+    "type": "function",
+    "name": "expectedBinPaths",
+    "qualifiedName": "expectedBinPaths",
+    "signature": "expectedBinPaths(prefix, platform = process.platform)",
+    "lang": "javascript",
+    "file": "scripts/install-smoke.mjs",
+    "span": {
+      "start": 20,
+      "end": 36
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 22
+      },
+      {
+        "callee": "join",
+        "line": 26
+      },
+      {
+        "callee": "join",
+        "line": 30
+      },
+      {
+        "callee": "join",
+        "line": 34
+      }
+    ]
+  },
+  "source": {
+    "text": "export function expectedBinPaths(prefix, platform = process.platform) {\n  if (platform === 'win32') {\n    const bin = path.win32.join(prefix, 'crib.cmd');\n    return {\n      bin,\n      primary: bin,\n      direct: path.win32.join(prefix, 'node_modules', 'knowledge-crib', 'dist', 'cli.js'),\n    };\n  }\n\n  const bin = path.posix.join(prefix, 'bin', 'crib');\n  return {\n    bin,\n    primary: bin,\n    direct: path.posix.join(prefix, 'lib', 'node_modules', 'knowledge-crib', 'dist', 'cli.js'),\n  };\n}",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 20
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+      "confidence": 1,
+      "name": "smokeInstall",
+      "qualifiedName": "smokeInstall",
+      "signature": "smokeInstall({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
+      "type": "function",
+      "file": "scripts/install-smoke.mjs",
+      "line": 135
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-26-beta-installers.md#task-2-installer-smoke-verification",
+      "heading": "Task 2: Installer Smoke Verification",
+      "anchor": "task-2-installer-smoke-verification",
+      "snippet": "Task 2: Installer Smoke Verification",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/install-smoke.mjs#expectedBinPaths@L20",
+    "procedureName": "expectedBinPaths",
+    "conditions": [
+      "cond:scripts/install-smoke.mjs@L21"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#expectedBinPaths@L20",
+        "procedureName": "expectedBinPaths",
+        "guard": "cond:scripts/install-smoke.mjs@L21",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/install-smoke.mjs@L21",
+            "expr": "platform === 'win32'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c8ccb7f7bf243149a6864f869c32007583ad3c4fe868c9958cfd319e1d4541f3",
+          "target": "stmt:scripts/install-smoke.mjs@L22",
+          "line": 22,
+          "expr": "const bin = path.win32.join(prefix, 'crib.cmd');"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#expectedBinPaths@L20",
+        "procedureName": "expectedBinPaths",
+        "guard": "cond:scripts/install-smoke.mjs@L21",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/install-smoke.mjs@L21",
+            "expr": "platform === 'win32'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5b4bdba1f70adb98ea6a90f9af041a77a8a018e5f150a7c0d273cb1330024646",
+          "target": "stmt:scripts/install-smoke.mjs@L23",
+          "line": 23,
+          "expr": "return {\n      bin,\n      primary: bin,\n      direct: path.win32.join(prefix, 'node_modules', 'knowledge-crib', 'dist', 'cli.js'),\n    };"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#expectedBinPaths@L20",
+        "procedureName": "expectedBinPaths",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e671575ad4e6f0947ab9456a25821665fd44b9281a85cb6baff103c40651904f",
+          "target": "stmt:scripts/install-smoke.mjs@L30",
+          "line": 30,
+          "expr": "const bin = path.posix.join(prefix, 'bin', 'crib');"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#expectedBinPaths@L20",
+        "procedureName": "expectedBinPaths",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0bb32ef9521e8b9d813d9d3accb8dbd9be5befd39143a770b25026b5a18c45f7",
+          "target": "stmt:scripts/install-smoke.mjs@L31",
+          "line": 31,
+          "expr": "return {\n    bin,\n    primary: bin,\n    direct: path.posix.join(prefix, 'lib', 'node_modules', 'knowledge-crib', 'dist', 'cli.js'),\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "scripts/install-smoke.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

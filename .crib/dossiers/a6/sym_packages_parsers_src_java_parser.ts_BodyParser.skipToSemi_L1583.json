@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipToSemi@L1583",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:2cbc0b00c80545ec6fe5fdfd385e7abef9607da4a1e70a31c0948a9e3bf25d42",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipToSemi@L1583",
@@ -149,11 +149,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:26b9e221c557cd1b6c49f1e449565c5562f2552459a4b02dccc087fccf2e85da",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L890",
-          "expr": "peek",
-          "line": 1588
+          "kind": "executes",
+          "edgeId": "e:1713408cc4da3971427355267742f1467fda963a9042354f61ed69c04f4f70b3",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1588",
+          "line": 1588,
+          "expr": "const tk = this.peek();"
         }
       },
       {
@@ -171,11 +171,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:1713408cc4da3971427355267742f1467fda963a9042354f61ed69c04f4f70b3",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1588",
-          "line": 1588,
-          "expr": "const tk = this.peek();"
+          "kind": "calls",
+          "edgeId": "e:26b9e221c557cd1b6c49f1e449565c5562f2552459a4b02dccc087fccf2e85da",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L890",
+          "expr": "peek",
+          "line": 1588
         }
       },
       {
@@ -207,28 +207,6 @@
       {
         "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipToSemi@L1583",
         "procedureName": "BodyParser.skipToSemi",
-        "guard": "cond:packages/parsers/src/java/parser.ts@L1587",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/java/parser.ts@L1587",
-            "expr": "this.i < this.end",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:905c85f1d3956561691b3dddbe45f9ea96f6f1a4e7388d57faaf4ff73e5273ba",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L885",
-          "expr": "next",
-          "line": 1591
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipToSemi@L1583",
-        "procedureName": "BodyParser.skipToSemi",
         "guard": "cond:packages/parsers/src/java/parser.ts@L1590",
         "branch": "THEN",
         "conditions": [
@@ -250,6 +228,28 @@
           "target": "stmt:packages/parsers/src/java/parser.ts@L1591",
           "line": 1591,
           "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.skipToSemi@L1583",
+        "procedureName": "BodyParser.skipToSemi",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1587",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1587",
+            "expr": "this.i < this.end",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:905c85f1d3956561691b3dddbe45f9ea96f6f1a4e7388d57faaf4ff73e5273ba",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.next@L885",
+          "expr": "next",
+          "line": 1591
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython@L56",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:da8bb17ec77b3e830e41addce71bf971de61ebdfeeed44f150d3c3eedb5b96d6",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython@L56",
@@ -199,14 +199,24 @@
       "line": 16
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 122
+      "line": 141
     },
     {
       "id": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
@@ -249,16 +259,6 @@
       "line": 39
     },
     {
-      "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveModule@L264",
-      "confidence": 1,
-      "name": "resolveModule",
-      "qualifiedName": "resolveModule",
-      "signature": "resolveModule(fromPath: string, spec: string, relative: number, table: SymbolTable): string | undefined",
-      "type": "function",
-      "file": "packages/pipeline/src/resolve/python-resolver.ts",
-      "line": 264
-    },
-    {
       "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveModule@L179",
       "confidence": 1,
       "name": "resolveModule",
@@ -267,6 +267,16 @@
       "type": "function",
       "file": "packages/pipeline/src/resolve/ts-resolver.ts",
       "line": 179
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveModule@L264",
+      "confidence": 1,
+      "name": "resolveModule",
+      "qualifiedName": "resolveModule",
+      "signature": "resolveModule(fromPath: string, spec: string, relative: number, table: SymbolTable): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/python-resolver.ts",
+      "line": 264
     },
     {
       "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython.push@L68",
@@ -376,8 +386,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:c6cc9f6aec4f0ec391f1c9f2bca268588f9db512953bcab244b48f7ab07fdc39",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "edgeId": "e:242fc84ee681653c6554b7bf4bfd3d48256d3dd1a1196f15f55b052cf161a327",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
           "expr": "edgeId",
           "line": 69
         }
@@ -457,6 +467,20 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython@L56",
         "procedureName": "resolvePython",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:96a7a126de6489ca3013936740539e07aa6e90be3e336086d95c6716d3257ca5",
+          "target": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
+          "expr": "safeRead",
+          "line": 86
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython@L56",
+        "procedureName": "resolvePython",
         "guard": "cond:packages/pipeline/src/resolve/python-resolver.ts@L84",
         "branch": "LOOP",
         "conditions": [
@@ -474,20 +498,6 @@
           "target": "stmt:packages/pipeline/src/resolve/python-resolver.ts@L86",
           "line": 86,
           "expr": "const text = safeRead(join(root, file.path));"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython@L56",
-        "procedureName": "resolvePython",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:96a7a126de6489ca3013936740539e07aa6e90be3e336086d95c6716d3257ca5",
-          "target": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
-          "expr": "safeRead",
-          "line": 86
         }
       },
       {
@@ -559,33 +569,13 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython@L56",
         "procedureName": "resolvePython",
-        "guard": "cond:packages/pipeline/src/resolve/python-resolver.ts@L181",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L84",
-            "expr": "files"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L172",
-            "expr": "mod.calls"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L175",
-            "expr": "c.tail.length === 0"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L181",
-            "expr": "mb",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": true,
+        "conditions": [],
+        "inLoop": false,
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:ca62fe1b08be9b8792787728ee8e24f76b1b4640b3f81f50fd83f04ab4c5b8e3",
-          "target": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveModule@L264",
+          "edgeId": "e:0da1ee0d23f63a60e595a886652425f1a9473d737ce6ba4fbf9bb6347e8022e2",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveModule@L179",
           "expr": "resolveModule",
           "line": 98
         }
@@ -623,13 +613,33 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython@L56",
         "procedureName": "resolvePython",
-        "conditions": [],
-        "inLoop": false,
+        "guard": "cond:packages/pipeline/src/resolve/python-resolver.ts@L181",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L84",
+            "expr": "files"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L172",
+            "expr": "mod.calls"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L175",
+            "expr": "c.tail.length === 0"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L181",
+            "expr": "mb",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:0da1ee0d23f63a60e595a886652425f1a9473d737ce6ba4fbf9bb6347e8022e2",
-          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveModule@L179",
+          "edgeId": "e:ca62fe1b08be9b8792787728ee8e24f76b1b4640b3f81f50fd83f04ab4c5b8e3",
+          "target": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveModule@L264",
           "expr": "resolveModule",
           "line": 98
         }
@@ -982,6 +992,20 @@
           "target": "stmt:packages/pipeline/src/resolve/python-resolver.ts@L164",
           "line": 164,
           "expr": "push(table.fileId(file.path), target.id, 'imports', `from import ${binding.name}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython@L56",
+        "procedureName": "resolvePython",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4dbd3a5a1749d87d7a8d9be54e729ed7cba8a7c347a3d58d2fee20ae676ff56e",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 176
         }
       },
       {
@@ -1385,14 +1409,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 13,
+      "resolved": 14,
       "recorded": 37,
-      "unresolved": 14
+      "unresolved": 12
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "14 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "12 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

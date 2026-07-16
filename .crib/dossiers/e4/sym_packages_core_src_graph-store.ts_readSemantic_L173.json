@@ -1,0 +1,889 @@
+{
+  "id": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:3fc6383ff228aac156aff131f5273196baaf28da83d1c7e3ff94cc27b3456853",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readSemantic",
+    "qualifiedName": "readSemantic",
+    "signature": "readSemantic(soul: SoulStore): GraphSnapshot",
+    "lang": "typescript",
+    "file": "packages/core/src/graph-store.ts",
+    "span": {
+      "start": 173,
+      "end": 245
+    },
+    "callSites": [
+      {
+        "callee": "graphPaths",
+        "line": 174
+      },
+      {
+        "callee": "existsSync",
+        "line": 175
+      },
+      {
+        "callee": "join",
+        "line": 177
+      },
+      {
+        "callee": "existsSync",
+        "line": 178
+      },
+      {
+        "callee": "join",
+        "line": 180
+      },
+      {
+        "callee": "readJson",
+        "line": 181
+      },
+      {
+        "callee": "emptyDiagnostics",
+        "line": 182
+      },
+      {
+        "callee": "readJson",
+        "line": 185
+      },
+      {
+        "callee": "freshness",
+        "line": 188
+      },
+      {
+        "callee": "get",
+        "line": 194
+      },
+      {
+        "callee": "set",
+        "line": 196
+      },
+      {
+        "callee": "String",
+        "line": 206
+      },
+      {
+        "callee": "String",
+        "line": 208
+      },
+      {
+        "callee": "set",
+        "line": 209
+      },
+      {
+        "callee": "push",
+        "line": 210
+      },
+      {
+        "callee": "String",
+        "line": 213
+      },
+      {
+        "callee": "resolveEndpoint",
+        "line": 221
+      },
+      {
+        "callee": "String",
+        "line": 221
+      },
+      {
+        "callee": "resolveEndpoint",
+        "line": 222
+      },
+      {
+        "callee": "String",
+        "line": 222
+      },
+      {
+        "callee": "String",
+        "line": 223
+      },
+      {
+        "callee": "max",
+        "line": 227
+      },
+      {
+        "callee": "min",
+        "line": 227
+      },
+      {
+        "callee": "push",
+        "line": 229
+      },
+      {
+        "callee": "blake3Hex",
+        "line": 230
+      }
+    ]
+  },
+  "source": {
+    "text": "function readSemantic(soul: SoulStore): GraphSnapshot {\n  const canonical = graphPaths(soul.cribDir);\n  const artifactsRoot = existsSync(canonical.artifacts)\n    ? canonical.artifacts\n    : join(soul.cribDir, 'llm', 'analysis');\n  const statePath = existsSync(canonical.state)\n    ? canonical.state\n    : join(soul.cribDir, 'llm', 'manifest.json');\n  const state = readJson<{ builtAgainstHead?: string | null }>(statePath);\n  const diagnostics = emptyDiagnostics();\n  const candidates = new Map<string, SemanticArtifact>();\n  for (const file of walkJson(artifactsRoot)) {\n    const artifact = readJson<SemanticArtifact>(file);\n    if (!artifact?.targetId || !artifact.layer) continue;\n    diagnostics.artifacts++;\n    const verdict = freshness(soul, artifact, state?.builtAgainstHead ?? null);\n    if (verdict === 'orphaned') diagnostics.orphaned++;\n    else if (verdict === 'stale') diagnostics.stale++;\n    else if (verdict === 'ungrounded') diagnostics.ungrounded++;\n    else {\n      diagnostics.fresh++;\n      const previous = candidates.get(artifact.targetId);\n      if (!previous || (artifact.builtAt ?? '') > (previous.builtAt ?? '')) {\n        candidates.set(artifact.targetId, artifact);\n      }\n    }\n  }\n\n  const nodes: CompositeNode[] = [];\n  const edges: CompositeEdge[] = [];\n  for (const artifact of candidates.values()) {\n    const localIds = new Map<string, string>();\n    for (const raw of artifact.graph?.nodes ?? []) {\n      const localId = String(raw.localId ?? raw.id ?? '');\n      if (!localId) continue;\n      const id = String(raw.id ?? `llm:${artifact.targetId}#${localId}`);\n      localIds.set(localId, id);\n      nodes.push({\n        ...raw,\n        id,\n        kind: String(raw.kind ?? 'concept'),\n        origin: 'semantic',\n        targetId: artifact.targetId,\n        ...(artifact.model ? { model: artifact.model } : {}),\n        freshness: 'fresh',\n      });\n    }\n    for (const raw of artifact.graph?.edges ?? []) {\n      const from = resolveEndpoint(String(raw.from ?? ''), artifact.targetId, localIds);\n      const to = resolveEndpoint(String(raw.to ?? ''), artifact.targetId, localIds);\n      const rel = String(raw.rel ?? '');\n      if (!from || !to || !rel) continue;\n      const confidence =\n        typeof raw.confidence === 'number'\n          ? Math.max(0, Math.min(1, raw.confidence))\n          : (artifact.analysis?.confidence ?? 0.5);\n      edges.push({\n        id: `llm-edge:${blake3Hex(`${from}|${to}|${rel}|${artifact.targetId}`)}`,\n        src: from,\n        dst: to,\n        rel,\n        method: 'inferred',\n        provenance: 'INFERRED',\n        confidence,\n        origin: 'semantic',\n        targetId: artifact.targetId,\n        ...(artifact.model ? { model: artifact.model } : {}),\n        ...(typeof raw.rationale === 'string' ? { rationale: raw.rationale } : {}),\n      });\n    }\n  }\n  return { nodes, edges, diagnostics };\n}",
+    "truncated": false,
+    "totalLines": 73,
+    "startLine": 173
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/graph-store.ts#GraphStore.semantic@L86",
+      "confidence": 1,
+      "name": "semantic",
+      "qualifiedName": "GraphStore.semantic",
+      "signature": "semantic(): GraphSnapshot",
+      "type": "method",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 86
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+      "confidence": 1,
+      "name": "blake3Hex",
+      "qualifiedName": "blake3Hex",
+      "signature": "blake3Hex(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 15
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#emptyDiagnostics@L278",
+      "confidence": 1,
+      "name": "emptyDiagnostics",
+      "qualifiedName": "emptyDiagnostics",
+      "signature": "emptyDiagnostics(): SemanticDiagnostics",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 278
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#freshness@L247",
+      "confidence": 1,
+      "name": "freshness",
+      "qualifiedName": "freshness",
+      "signature": "freshness(soul: SoulStore, artifact: SemanticArtifact, builtAgainstHead: string | null): 'fresh' | 'stale' | 'orphaned' | 'ungrounded'",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 247
+    },
+    {
+      "id": "sym:packages/core/src/graph-layout.ts#graphPaths@L33",
+      "confidence": 1,
+      "name": "graphPaths",
+      "qualifiedName": "graphPaths",
+      "signature": "graphPaths(cribDir: string): GraphPaths",
+      "type": "function",
+      "file": "packages/core/src/graph-layout.ts",
+      "line": 33
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+      "confidence": 1,
+      "name": "readJson",
+      "qualifiedName": "readJson",
+      "signature": "readJson(path: string): T | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1824
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#readJson@L282",
+      "confidence": 1,
+      "name": "readJson",
+      "qualifiedName": "readJson",
+      "signature": "readJson(path: string): T | undefined",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 282
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#resolveEndpoint@L264",
+      "confidence": 1,
+      "name": "resolveEndpoint",
+      "qualifiedName": "resolveEndpoint",
+      "signature": "resolveEndpoint(endpoint: string, targetId: string, localIds: Map<string, string>): string",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 264
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#walkJson@L290",
+      "confidence": 1,
+      "name": "walkJson",
+      "qualifiedName": "walkJson",
+      "signature": "walkJson(root: string): Iterable<string>",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 290
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+    "procedureName": "readSemantic",
+    "conditions": [
+      "cond:packages/core/src/graph-store.ts@L184",
+      "cond:packages/core/src/graph-store.ts@L189",
+      "cond:packages/core/src/graph-store.ts@L190",
+      "cond:packages/core/src/graph-store.ts@L191",
+      "cond:packages/core/src/graph-store.ts@L195",
+      "cond:packages/core/src/graph-store.ts@L203",
+      "cond:packages/core/src/graph-store.ts@L205",
+      "cond:packages/core/src/graph-store.ts@L220"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:06208a48bcd8f015dbb31ac40193b61bf07e170953b81c37fdbdcf5f5b046598",
+          "target": "sym:packages/core/src/graph-layout.ts#graphPaths@L33",
+          "expr": "graphPaths",
+          "line": 174
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2eac7bdea12f830c0a97093677455d4c475ca26dbc25eab235b013dd0539ff77",
+          "target": "stmt:packages/core/src/graph-store.ts@L174",
+          "line": 174,
+          "expr": "const canonical = graphPaths(soul.cribDir);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7fab4bd4258ca3c6a1761894352b66753fa9db0af2bdb77bf0816497a451e15c",
+          "target": "stmt:packages/core/src/graph-store.ts@L175",
+          "line": 175,
+          "expr": "const artifactsRoot = existsSync(canonical.artifacts)\n    ? canonical.artifacts\n    : join(soul.cribDir, 'llm', 'analysis');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6d16999e7b7eafbeb339c2bdc6f7de78ef2152eb616e22c37d63aa91e28cd14c",
+          "target": "stmt:packages/core/src/graph-store.ts@L178",
+          "line": 178,
+          "expr": "const statePath = existsSync(canonical.state)\n    ? canonical.state\n    : join(soul.cribDir, 'llm', 'manifest.json');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:149b85d9469bab03318d44891de3b67fb968ae99042422f8f1f83da9cb5939b4",
+          "target": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+          "expr": "readJson",
+          "line": 181
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f2d2b17a48cd645f2a088d41e784ba66a46a4636112ebd928ffa8c7fac049dd",
+          "target": "stmt:packages/core/src/graph-store.ts@L181",
+          "line": 181,
+          "expr": "const state = readJson<{ builtAgainstHead?: string | null }>(statePath);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L184",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L184",
+            "expr": "walkJson(artifactsRoot)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:23c472aca8c5477fd79bbd5505eaf5d76c7ad5dac1b482b2badf0a5dfed59fee",
+          "target": "sym:packages/core/src/graph-store.ts#readJson@L282",
+          "expr": "readJson",
+          "line": 181
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6cf72eba51c7421e55c0f9e3ed7c2d1388948d8f3c3f7aba7f4549dfb770884e",
+          "target": "sym:packages/core/src/graph-store.ts#emptyDiagnostics@L278",
+          "expr": "emptyDiagnostics",
+          "line": 182
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8fad46ada907ee1cac32ccfacd9f2737a25924a2826be4ff7ec95e2bc7531d8",
+          "target": "stmt:packages/core/src/graph-store.ts@L182",
+          "line": 182,
+          "expr": "const diagnostics = emptyDiagnostics();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L184",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L184",
+            "expr": "walkJson(artifactsRoot)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3d0ed33a2109a420e58fde5067c63c718f579eab0ed502774fa46df7cb137dec",
+          "target": "stmt:packages/core/src/graph-store.ts@L185",
+          "line": 185,
+          "expr": "const artifact = readJson<SemanticArtifact>(file);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L184",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L184",
+            "expr": "walkJson(artifactsRoot)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3688cb46acde45213a39b1d342b8450198cc6731df9dbc704641f357e1a017d7",
+          "target": "sym:packages/core/src/graph-store.ts#freshness@L247",
+          "expr": "freshness",
+          "line": 188
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L184",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L184",
+            "expr": "walkJson(artifactsRoot)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8af5c8b476a9b49b26e6aa5ad5e57313f92ecd91e2e17b57a2e677ac9d5aee08",
+          "target": "stmt:packages/core/src/graph-store.ts@L188",
+          "line": 188,
+          "expr": "const verdict = freshness(soul, artifact, state?.builtAgainstHead ?? null);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L191",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L184",
+            "expr": "walkJson(artifactsRoot)"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L189",
+            "expr": "verdict === 'orphaned'"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L190",
+            "expr": "verdict === 'stale'"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L191",
+            "expr": "verdict === 'ungrounded'",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2a96ad4e1612b251020e15079d86ab38401854e789664c9305bb9bbc0990b278",
+          "target": "stmt:packages/core/src/graph-store.ts@L194",
+          "line": 194,
+          "expr": "const previous = candidates.get(artifact.targetId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a8066af7ded4607eebdebde2110c6fd1d6cff89b8af8c0ba5680dc1b69d101b7",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 194
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L195",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L184",
+            "expr": "walkJson(artifactsRoot)"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L189",
+            "expr": "verdict === 'orphaned'"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L190",
+            "expr": "verdict === 'stale'"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L191",
+            "expr": "verdict === 'ungrounded'"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L195",
+            "expr": "!previous || (artifact.builtAt ?? '') > (previous.builtAt ?? '')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4798d00045ae0dea85998bf181abe380c57f7c8f5425ef4f80285003f889f91c",
+          "target": "stmt:packages/core/src/graph-store.ts@L196",
+          "line": 196,
+          "expr": "candidates.set(artifact.targetId, artifact);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L205",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L203",
+            "expr": "candidates.values()"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L205",
+            "expr": "artifact.graph?.nodes ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29e0643e578458ec1a8e30e5db7e656e98258d30ef8487544ae882090949f631",
+          "target": "stmt:packages/core/src/graph-store.ts@L206",
+          "line": 206,
+          "expr": "const localId = String(raw.localId ?? raw.id ?? '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L205",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L203",
+            "expr": "candidates.values()"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L205",
+            "expr": "artifact.graph?.nodes ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fae6f811f2ec55d00453d55634803245871ebf360a3b23315500d38e218617d3",
+          "target": "stmt:packages/core/src/graph-store.ts@L208",
+          "line": 208,
+          "expr": "const id = String(raw.id ?? `llm:${artifact.targetId}#${localId}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L205",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L203",
+            "expr": "candidates.values()"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L205",
+            "expr": "artifact.graph?.nodes ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5eef904a680d6e7a1e88bab889a58dfb65dd5a969d7a586d7baa35ee07573ce2",
+          "target": "stmt:packages/core/src/graph-store.ts@L209",
+          "line": 209,
+          "expr": "localIds.set(localId, id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c44e202c65f3c6b8e84cfb551c4eeb7a184b4da78c0c851c33a141a26472afd7",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 210
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L205",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L203",
+            "expr": "candidates.values()"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L205",
+            "expr": "artifact.graph?.nodes ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e3b589b07fa4af1b36e4801623f55a8038aa429066edd2ba411d556f82767ee5",
+          "target": "stmt:packages/core/src/graph-store.ts@L210",
+          "line": 210,
+          "expr": "nodes.push({\n        ...raw,\n        id,\n        kind: String(raw.kind ?? 'concept'),\n        origin: 'semantic',\n        targetId: artifact.targetId,\n        ...(artifact.model ? { model: artifact.model } : {}),\n        freshness: 'fresh',\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L220",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L203",
+            "expr": "candidates.values()"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L220",
+            "expr": "artifact.graph?.edges ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:23c43e629b3ceb8bc96495860d2a889b1402514cdf355aae62b0cd67bc387781",
+          "target": "sym:packages/core/src/graph-store.ts#resolveEndpoint@L264",
+          "expr": "resolveEndpoint",
+          "line": 221
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L220",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L203",
+            "expr": "candidates.values()"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L220",
+            "expr": "artifact.graph?.edges ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:260440d84afec55e486ae39061bc1d1bd323a3ea87074d84b5a5003c37e67790",
+          "target": "stmt:packages/core/src/graph-store.ts@L221",
+          "line": 221,
+          "expr": "const from = resolveEndpoint(String(raw.from ?? ''), artifact.targetId, localIds);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L220",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L203",
+            "expr": "candidates.values()"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L220",
+            "expr": "artifact.graph?.edges ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:19860d452729e025660f4303d90766c3066c89a425d7572cb3b69df3478ef9b4",
+          "target": "stmt:packages/core/src/graph-store.ts@L222",
+          "line": 222,
+          "expr": "const to = resolveEndpoint(String(raw.to ?? ''), artifact.targetId, localIds);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L220",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L203",
+            "expr": "candidates.values()"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L220",
+            "expr": "artifact.graph?.edges ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:377e23adce0f80cea938f42e84f44a822bda10edecec617af9b2efb390492b92",
+          "target": "stmt:packages/core/src/graph-store.ts@L223",
+          "line": 223,
+          "expr": "const rel = String(raw.rel ?? '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L220",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L203",
+            "expr": "candidates.values()"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L220",
+            "expr": "artifact.graph?.edges ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ea755a0d849b85fcddcf0292d90c18844a6412c27342f57fb9d2644efb0eb77a",
+          "target": "stmt:packages/core/src/graph-store.ts@L225",
+          "line": 225,
+          "expr": "const confidence =\n        typeof raw.confidence === 'number'\n          ? Math.max(0, Math.min(1, raw.confidence))\n          : (artifact.analysis?.confidence ?? 0.5);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "guard": "cond:packages/core/src/graph-store.ts@L220",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L203",
+            "expr": "candidates.values()"
+          },
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L220",
+            "expr": "artifact.graph?.edges ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cf95cc5ecd1b1f6bf7c4ea08977102aca6d929cdf6059e215721227da0fc5261",
+          "target": "stmt:packages/core/src/graph-store.ts@L229",
+          "line": 229,
+          "expr": "edges.push({\n        id: `llm-edge:${blake3Hex(`${from}|${to}|${rel}|${artifact.targetId}`)}`,\n        src: from,\n        dst: to,\n        rel,\n        method: 'inferred',\n        provenance: 'INFERRED',\n        confidence,\n        origin: 'semantic',\n        targetId: artifact.targetId,\n        ...(artifact.model ? { model: artifact.model } : {}),\n        ...(typeof raw.rationale === 'string' ? { rationale: raw.rationale } : {}),\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f2139cc58db9287b89b925710a2670d5593f4aaaac6b2e98cbec4ff8b6146ed3",
+          "target": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+          "expr": "blake3Hex",
+          "line": 230
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:be3b0ac3c97cd817ba220ddc2f536edc80fc9436bd4211eb2ebedc5dd39f0ac2",
+          "target": "stmt:packages/core/src/graph-store.ts@L244",
+          "line": 244,
+          "expr": "return { nodes, edges, diagnostics };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+        "procedureName": "readSemantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:255e21c089dd2473c4b8ba9b95a76c5289562e91ccfe5f17439b266cc1303488",
+          "target": "sym:packages/core/src/graph-store.ts#walkJson@L290",
+          "expr": "walkJson"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 19,
+    "referencedByFiles": [
+      "packages/core/src/graph-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 19,
+    "assignments": 0,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 10,
+      "recorded": 25,
+      "unresolved": 14
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "14 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

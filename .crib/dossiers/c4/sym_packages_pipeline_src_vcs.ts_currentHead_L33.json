@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/vcs.ts#currentHead@L33",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:7cbc9d28ab7d252e1dfbd8a7e04a6b9b022029bdad30cda180de5a6c44de032d",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/vcs.ts#currentHead@L33",
@@ -32,36 +32,56 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L108",
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
       "confidence": 1,
       "name": "indexRepo",
       "qualifiedName": "indexRepo",
       "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
       "type": "function",
       "file": "packages/pipeline/src/pipeline.ts",
-      "line": 108
+      "line": 94
     },
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L94",
+      "id": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+      "confidence": 1,
+      "name": "runOwnership",
+      "qualifiedName": "runOwnership",
+      "signature": "runOwnership(soul: SoulStore, root: string, onlyFiles?: Set<string>): OwnershipStats",
+      "type": "function",
+      "file": "packages/pipeline/src/ownership.ts",
+      "line": 77
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 94
+      "line": 112
     }
   ],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/vcs.ts#git@L79",
+      "id": "sym:packages/pipeline/src/vcs.ts#git@L125",
       "confidence": 1,
       "name": "git",
       "qualifiedName": "git",
       "signature": "git(root: string, args: string[]): string | undefined",
       "type": "function",
       "file": "packages/pipeline/src/vcs.ts",
-      "line": 79
+      "line": 125
+    },
+    {
+      "id": "sym:scripts/soul-refresh-check.mjs#git@L93",
+      "confidence": 1,
+      "name": "git",
+      "qualifiedName": "git",
+      "signature": "git(…)",
+      "type": "function",
+      "file": "scripts/soul-refresh-check.mjs",
+      "line": 93
     }
   ],
   "docs": [
@@ -117,8 +137,22 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:ab7e0ef43417b5edf5089e2ef2593b1c5a52e70e5eb48dc8e21e375378bce0e3",
-          "target": "sym:packages/pipeline/src/vcs.ts#git@L79",
+          "edgeId": "e:581384147933978d3d080ea524bcf92747d14ce77bafa272ecae5969c30d2d51",
+          "target": "sym:packages/pipeline/src/vcs.ts#git@L125",
+          "expr": "git",
+          "line": 34
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#currentHead@L33",
+        "procedureName": "currentHead",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:657483c7626a1ba5802125264ef1e42955847e95c71ed8f6c8349039b4af610a",
+          "target": "sym:scripts/soul-refresh-check.mjs#git@L93",
           "expr": "git",
           "line": 34
         }
@@ -176,6 +210,7 @@
     "status": "implemented",
     "executesCount": 2,
     "referencedByFiles": [
+      "packages/pipeline/src/ownership.ts",
       "packages/pipeline/src/pipeline.ts",
       "packages/pipeline/src/update.ts"
     ]
@@ -191,7 +226,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 1,
+      "resolved": 2,
       "recorded": 1,
       "unresolved": 0
     },

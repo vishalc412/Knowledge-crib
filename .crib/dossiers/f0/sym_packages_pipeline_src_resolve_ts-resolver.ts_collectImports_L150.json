@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:b819688dab0e78320b1968b90272250459d1ae8bcc56b8b7ace6b484d8e9b809",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
@@ -147,11 +147,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:be06097b69de633fbccb61434b01bbe2a2019ad5c6b538ede4c2a20690fbb047",
-          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveModule@L179",
-          "expr": "resolveModule",
-          "line": 158
+          "kind": "executes",
+          "edgeId": "e:6248007945d70a52ba3b845e7dc32b82a0dc5f356a327c9c149739f4c31fcf9a",
+          "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L158",
+          "line": 158,
+          "expr": "const targetFile = resolveModule(fromPath, stmt.moduleSpecifier.text, table);"
         }
       },
       {
@@ -169,11 +169,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:6248007945d70a52ba3b845e7dc32b82a0dc5f356a327c9c149739f4c31fcf9a",
-          "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L158",
-          "line": 158,
-          "expr": "const targetFile = resolveModule(fromPath, stmt.moduleSpecifier.text, table);"
+          "kind": "calls",
+          "edgeId": "e:be06097b69de633fbccb61434b01bbe2a2019ad5c6b538ede4c2a20690fbb047",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveModule@L179",
+          "expr": "resolveModule",
+          "line": 158
         }
       },
       {

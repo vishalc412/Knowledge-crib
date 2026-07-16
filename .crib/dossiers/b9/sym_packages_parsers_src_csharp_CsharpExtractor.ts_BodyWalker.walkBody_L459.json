@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkBody@L459",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:84c4521a895767a3ed0b6192483e5b25a484728adc1619874c251ef10a95cace",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkBody@L459",
@@ -117,11 +117,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:9666b4b8befabe6e742625bd13486bef8f17d67ecf11ac00cf9c40fe3dc81930",
-          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkStmt@L463",
-          "expr": "walkStmt",
-          "line": 460
+          "kind": "executes",
+          "edgeId": "e:3cc98a878e4b43035d5cb44b7ff69740e60680aacdce301e33c405e5176c5e5e",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L460",
+          "line": 460,
+          "expr": "this.walkStmt(s, procId, env);"
         }
       },
       {
@@ -139,11 +139,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:3cc98a878e4b43035d5cb44b7ff69740e60680aacdce301e33c405e5176c5e5e",
-          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L460",
-          "line": 460,
-          "expr": "this.walkStmt(s, procId, env);"
+          "kind": "calls",
+          "edgeId": "e:9666b4b8befabe6e742625bd13486bef8f17d67ecf11ac00cf9c40fe3dc81930",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkStmt@L463",
+          "expr": "walkStmt",
+          "line": 460
         }
       }
     ]

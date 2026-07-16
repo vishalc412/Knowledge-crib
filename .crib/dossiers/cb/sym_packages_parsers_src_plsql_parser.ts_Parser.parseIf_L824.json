@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseIf@L824",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:625c483e0c1426e25c68a94832cfbaf33bde55564d68f105cc50a98e4774d4b4",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseIf@L824",
@@ -221,11 +221,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b456ddd3ec8d405977209dfaec642bddd50d123f0e5eef948d9d1ccfa112cff4",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.eatWord@L133",
-          "expr": "eatWord",
-          "line": 826
+          "kind": "executes",
+          "edgeId": "e:09d0a83189d977cfe568259b95d758e11952b61860bdd8ec37df7d0c20300310",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L826",
+          "line": 826,
+          "expr": "this.eatWord('if');"
         }
       },
       {
@@ -235,11 +235,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:09d0a83189d977cfe568259b95d758e11952b61860bdd8ec37df7d0c20300310",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L826",
-          "line": 826,
-          "expr": "this.eatWord('if');"
+          "kind": "calls",
+          "edgeId": "e:b456ddd3ec8d405977209dfaec642bddd50d123f0e5eef948d9d1ccfa112cff4",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.eatWord@L133",
+          "expr": "eatWord",
+          "line": 826
         }
       },
       {
@@ -295,6 +295,20 @@
       {
         "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseIf@L824",
         "procedureName": "Parser.parseIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:95017114a556d53a016ce01da73f96738a24d68de9d66a46e2d06bef9f31fa7f",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L830",
+          "line": 830,
+          "expr": "const thenBody = this.parseBlock(BLOCK_STOP);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseIf@L824",
+        "procedureName": "Parser.parseIf",
         "guard": "cond:packages/parsers/src/plsql/parser.ts@L839",
         "branch": "THEN",
         "conditions": [
@@ -312,20 +326,6 @@
           "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseBlock@L780",
           "expr": "parseBlock",
           "line": 830
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseIf@L824",
-        "procedureName": "Parser.parseIf",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:95017114a556d53a016ce01da73f96738a24d68de9d66a46e2d06bef9f31fa7f",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L830",
-          "line": 830,
-          "expr": "const thenBody = this.parseBlock(BLOCK_STOP);"
         }
       },
       {

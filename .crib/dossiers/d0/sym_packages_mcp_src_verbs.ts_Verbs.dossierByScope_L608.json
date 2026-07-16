@@ -1,0 +1,520 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:33f6280cb261a2b61550599cd72135e61d7835b834c4725d6e03c044361b1fdb",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+    "kind": "symbol",
+    "type": "method",
+    "name": "dossierByScope",
+    "qualifiedName": "Verbs.dossierByScope",
+    "signature": "dossierByScope(args: {\n    /** the scope kind: 'package' (the package's member symbols), 'file' (a file's symbols), or\n     *  'cluster' (a cluster's symbols). */\n    scope: 'package' | 'file' | 'cluster';\n    /** the scope node id, OR — for a package — the qualified/simple name (parity with the other node\n     *  verbs); for a file, the path (with or without the `file:` prefix); for a cluster, the slug. */\n    id: string;\n    extractedOnly?: boolean;\n    /** resolve reads/writes table names in each callable's decision table (extra lookups). */\n    includeTables?: boolean;\n    /** cap on the number of per-symbol dossiers returned (default 1000; `truncated` flags a cap). */\n    maxSymbols?: number;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    format?: 'json' | 'markdown';\n    /** resume cursor (a prior response's `cursor`) — skip the first N resolved symbols. Decoupled\n     *  from `maxTokens` (paging works without a budget), but a cursor is only RETURNED when `maxTokens`\n     *  is set (the opt-in budget path). (M1.2) */\n    cursor?: string;\n    /** response-wide token budget (chars/4). When set, the dossiers list is trimmed to the largest\n     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.\n     *  (M1.2) */\n    maxTokens?: number;\n  }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 608,
+      "end": 686
+    },
+    "callSites": [
+      {
+        "callee": "resolveNodeId",
+        "line": 635
+      },
+      {
+        "callee": "getManifest",
+        "line": 636
+      },
+      {
+        "callee": "max",
+        "line": 637
+      },
+      {
+        "callee": "parseInt",
+        "line": 637
+      },
+      {
+        "callee": "buildDossiersByScope",
+        "line": 638
+      },
+      {
+        "callee": "clampMax",
+        "line": 648
+      },
+      {
+        "callee": "clampMax",
+        "line": 651
+      },
+      {
+        "callee": "clampMax",
+        "line": 654
+      },
+      {
+        "callee": "notFound",
+        "line": 659
+      },
+      {
+        "callee": "dossiersByScopeToMarkdown",
+        "line": 661
+      },
+      {
+        "callee": "capMaxTokens",
+        "line": 670
+      },
+      {
+        "callee": "fitTokenBudget",
+        "line": 672
+      },
+      {
+        "callee": "stringify",
+        "line": 673
+      },
+      {
+        "callee": "String",
+        "line": 677
+      },
+      {
+        "callee": "String",
+        "line": 684
+      }
+    ]
+  },
+  "source": {
+    "text": "  dossierByScope(args: {\n    /** the scope kind: 'package' (the package's member symbols), 'file' (a file's symbols), or\n     *  'cluster' (a cluster's symbols). */\n    scope: 'package' | 'file' | 'cluster';\n    /** the scope node id, OR — for a package — the qualified/simple name (parity with the other node\n     *  verbs); for a file, the path (with or without the `file:` prefix); for a cluster, the slug. */\n    id: string;\n    extractedOnly?: boolean;\n    /** resolve reads/writes table names in each callable's decision table (extra lookups). */\n    includeTables?: boolean;\n    /** cap on the number of per-symbol dossiers returned (default 1000; `truncated` flags a cap). */\n    maxSymbols?: number;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    format?: 'json' | 'markdown';\n    /** resume cursor (a prior response's `cursor`) — skip the first N resolved symbols. Decoupled\n     *  from `maxTokens` (paging works without a budget), but a cursor is only RETURNED when `maxTokens`\n     *  is set (the opt-in budget path). (M1.2) */\n    cursor?: string;\n    /** response-wide token budget (chars/4). When set, the dossiers list is trimmed to the largest\n     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.\n     *  (M1.2) */\n    maxTokens?: number;\n  }): Record<string, unknown> {\n    const soul = this.deps.soul;\n    // package: use the standard qname resolver for parity with `dossier`/`context`; file/cluster: pass\n    // the raw id (buildDossiersByScope handles the file:/c: prefix + path/slug resolution itself).\n    const resolved = args.scope === 'package' ? (this.resolveNodeId(args.id) ?? args.id) : args.id;\n    const manifest = soul.getManifest();\n    const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);\n    const result = buildDossiersByScope(\n      soul,\n      this.deps.repoRoot,\n      args.scope,\n      resolved,\n      manifest.stats.lastUpdated,\n      {\n        ...(args.extractedOnly ? { extractedOnly: true } : {}),\n        ...(args.includeTables ? { includeTables: true } : {}),\n        ...(args.maxSymbols !== undefined\n          ? { maxSymbols: clampMax(args.maxSymbols, MAX_SCOPE_SYMBOLS) }\n          : {}),\n        ...(args.sourceMaxChars !== undefined\n          ? { sourceMaxChars: clampMax(args.sourceMaxChars, MAX_SOURCE_CHARS) }\n          : {}),\n        ...(args.sourceMaxLines !== undefined\n          ? { sourceMaxLines: clampMax(args.sourceMaxLines, MAX_SOURCE_LINES) }\n          : {}),\n        offset,\n      },\n    );\n    if (!result) return notFound(args.id);\n    if (args.format === 'markdown') {\n      return { id: result.id, markdown: dossiersByScopeToMarkdown(result) };\n    }\n    // M1.2 response-wide token budget (opt-in). Fit the per-symbol dossiers to the largest leading\n    // prefix whose serialized response fits (chars/4). The scope metadata + symbolCount + truncated\n    // + skipped are fixed; symbols is the variable. `truncated` (core cap/offset) is unchanged;\n    // `budgetExhausted` is the new token-cut signal; `cursor` resumes at the next dossier.\n    if (args.maxTokens === undefined) {\n      return result as unknown as Record<string, unknown>;\n    }\n    const maxTokens = capMaxTokens(args.maxTokens);\n    const symbols = result.symbols;\n    const fitted = fitTokenBudget(symbols, maxTokens, (prefix) =>\n      JSON.stringify({\n        ...result,\n        symbols: prefix,\n        budgetExhausted: true,\n        cursor: String(offset + prefix.length),\n      }),\n    );\n    const out = { ...result, symbols: fitted.items } as unknown as Record<string, unknown>;\n    const more = fitted.budgetExhausted || result.truncated;\n    // when maxTokens is opted in, always report budgetExhausted (true/false); cursor only when more.\n    out.budgetExhausted = fitted.budgetExhausted;\n    if (more) out.cursor = String(offset + fitted.items.length);\n    return out;\n  }",
+    "truncated": false,
+    "totalLines": 79,
+    "startLine": 608
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+      "confidence": 1,
+      "name": "resolveNodeId",
+      "qualifiedName": "Verbs.resolveNodeId",
+      "signature": "resolveNodeId(idOrName: string): string | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1688
+    },
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#capMaxTokens@L110",
+      "confidence": 1,
+      "name": "capMaxTokens",
+      "qualifiedName": "capMaxTokens",
+      "signature": "capMaxTokens(value: number | undefined): number",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 110
+    },
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#clampMax@L99",
+      "confidence": 1,
+      "name": "clampMax",
+      "qualifiedName": "clampMax",
+      "signature": "clampMax(value: number | undefined, max: number): number | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 99
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1910",
+      "confidence": 1,
+      "name": "dossiersByScopeToMarkdown",
+      "qualifiedName": "dossiersByScopeToMarkdown",
+      "signature": "dossiersByScopeToMarkdown(r: DossiersByScopeShape): string",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1910
+    },
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#fitTokenBudget@L128",
+      "confidence": 1,
+      "name": "fitTokenBudget",
+      "qualifiedName": "fitTokenBudget",
+      "signature": "fitTokenBudget(items: T[], maxTokens: number, serialize: (prefix: T[]) => string): Fitted<T>",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 128
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#notFound@L1874",
+      "confidence": 1,
+      "name": "notFound",
+      "qualifiedName": "notFound",
+      "signature": "notFound(id: string): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1874
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L595",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a7-scale-and-performance-hardening",
+      "heading": "WS-A7 — Scale and performance hardening",
+      "anchor": "ws-a7-scale-and-performance-hardening",
+      "snippet": "WS-A7 — Scale and performance hardening",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "heading": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "anchor": "phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "snippet": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+    "procedureName": "Verbs.dossierByScope",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L659",
+      "cond:packages/mcp/src/verbs.ts@L660",
+      "cond:packages/mcp/src/verbs.ts@L667",
+      "cond:packages/mcp/src/verbs.ts@L684"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3fde38f57dbefc3ce60b47dec1d4d594c66aa14b1dda720f71c1fed6039cd5ac",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+          "expr": "resolveNodeId",
+          "line": 635
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b8cfbef41d523396958022cb3694cd9a81df7d45da1c02bde373f06856fce6f4",
+          "target": "stmt:packages/mcp/src/verbs.ts@L635",
+          "line": 635,
+          "expr": "const resolved = args.scope === 'package' ? (this.resolveNodeId(args.id) ?? args.id) : args.id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:79c1047b0c414913336cb978a2e68b079adff91af3a567f399e9b9636da6fd5e",
+          "target": "stmt:packages/mcp/src/verbs.ts@L636",
+          "line": 636,
+          "expr": "const manifest = soul.getManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1bce9dec5e004262655f32f86db3a60afd9c462fed33be0211c0c3292a244d9d",
+          "target": "stmt:packages/mcp/src/verbs.ts@L637",
+          "line": 637,
+          "expr": "const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3e4f7b8a273e464132438016a88d30b910a0af9302000d6a7ddeb9810a8b6768",
+          "target": "stmt:packages/mcp/src/verbs.ts@L638",
+          "line": 638,
+          "expr": "const result = buildDossiersByScope(\n      soul,\n      this.deps.repoRoot,\n      args.scope,\n      resolved,\n      manifest.stats.lastUpdated,\n      {\n        ...(args.extractedOnly ? { extractedOnly: true } : {}),\n        ...(args.includeTables ? { includeTables: true } : {}),\n        ...(args.maxSymbols !== undefined\n          ? { maxSymbols: clampMax(args.maxSymbols, MAX_SCOPE_SYMBOLS) }\n          : {}),\n        ...(args.sourceMaxChars !== undefined\n          ? { sourceMaxChars: clampMax(args.sourceMaxChars, MAX_SOURCE_CHARS) }\n          : {}),\n        ...(args.sourceMaxLines !== undefined\n          ? { sourceMaxLines: clampMax(args.sourceMaxLines, MAX_SOURCE_LINES) }\n          : {}),\n        offset,\n      },\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f488414d5f04e6387aa48c47b0330bef7c617c0ddc31d9e7428c8f1b6fc4a94d",
+          "target": "sym:packages/mcp/src/token-budget.ts#clampMax@L99",
+          "expr": "clampMax",
+          "line": 648
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "guard": "cond:packages/mcp/src/verbs.ts@L659",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L659",
+            "expr": "!result",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:46d08dc36f562d1833244775b016613a50fe27a6cd281e37f3d993116c47b781",
+          "target": "sym:packages/mcp/src/verbs.ts#notFound@L1874",
+          "expr": "notFound",
+          "line": 659
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "guard": "cond:packages/mcp/src/verbs.ts@L659",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L659",
+            "expr": "!result",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db69713d406edb2124b0925df1d22e35d0767d7ce6d00b34cc98507033790bc1",
+          "target": "stmt:packages/mcp/src/verbs.ts@L659",
+          "line": 659,
+          "expr": "return notFound(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "guard": "cond:packages/mcp/src/verbs.ts@L660",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L660",
+            "expr": "args.format === 'markdown'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9cac5425c04e84e68d2305273041cf7c2b8a1bd315ac8de8f8a591c9087bcb81",
+          "target": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1910",
+          "expr": "dossiersByScopeToMarkdown",
+          "line": 661
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "guard": "cond:packages/mcp/src/verbs.ts@L660",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L660",
+            "expr": "args.format === 'markdown'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d85a1792137d65ca31a8c05ce27ec073aa11e7236b4472372e0a4824a8915a93",
+          "target": "stmt:packages/mcp/src/verbs.ts@L661",
+          "line": 661,
+          "expr": "return { id: result.id, markdown: dossiersByScopeToMarkdown(result) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "guard": "cond:packages/mcp/src/verbs.ts@L667",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L667",
+            "expr": "args.maxTokens === undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:de88dbc62b3adea248f3c0f01b1855af54af25bc5465a159f69e2812c31fdeb3",
+          "target": "stmt:packages/mcp/src/verbs.ts@L668",
+          "line": 668,
+          "expr": "return result as unknown as Record<string, unknown>;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a08d0a4061e0b9984492b1ee65787a1592774daffac32dfd550d2e79447a36ba",
+          "target": "sym:packages/mcp/src/token-budget.ts#capMaxTokens@L110",
+          "expr": "capMaxTokens",
+          "line": 670
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f1cedb31bcf2fff137c6993bb8f41f8ec80409ab25bc7d1765c0d7514046ae52",
+          "target": "stmt:packages/mcp/src/verbs.ts@L670",
+          "line": 670,
+          "expr": "const maxTokens = capMaxTokens(args.maxTokens);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4738b2f0404dea2cb37d44177b13ecc7cffb4c40991af164f2d88f64c65abff5",
+          "target": "stmt:packages/mcp/src/verbs.ts@L672",
+          "line": 672,
+          "expr": "const fitted = fitTokenBudget(symbols, maxTokens, (prefix) =>\n      JSON.stringify({\n        ...result,\n        symbols: prefix,\n        budgetExhausted: true,\n        cursor: String(offset + prefix.length),\n      }),\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:92c5b1b97234aac1ffa239748d5b6aba608340c0e1b9c98addac5e1da78b1f53",
+          "target": "sym:packages/mcp/src/token-budget.ts#fitTokenBudget@L128",
+          "expr": "fitTokenBudget",
+          "line": 672
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6bc786813b6c229e09942c46cc123a68b57da9ed3bbbe1361b0c523ad01f003c",
+          "target": "assign:packages/mcp/src/verbs.ts@L683",
+          "line": 683,
+          "expr": "out.budgetExhausted = fitted.budgetExhausted;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "guard": "cond:packages/mcp/src/verbs.ts@L684",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L684",
+            "expr": "more",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:907b8859bca740898d2dc5f348b37a554bf506752edae4eef6319c05acdf2c86",
+          "target": "assign:packages/mcp/src/verbs.ts@L684",
+          "line": 684,
+          "expr": "out.cursor = String(offset + fitted.items.length);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+        "procedureName": "Verbs.dossierByScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c10c4c827c7052e0e90b96029e904fe7783af560bf305312f446741f4a3160df",
+          "target": "stmt:packages/mcp/src/verbs.ts@L685",
+          "line": 685,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 2,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 15,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

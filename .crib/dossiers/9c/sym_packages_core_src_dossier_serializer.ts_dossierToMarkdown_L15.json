@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:0640adae056ad4f7f3ec1d7b609e39316f41400f7b992dc9dca0033eebc41f59",
-  "builtAt": "2026-06-30T16:18:20.420Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
@@ -653,14 +653,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1419",
+      "id": "sym:packages/mcp/src/verbs.ts#dossiersByScopeToMarkdown@L1910",
       "confidence": 1,
       "name": "dossiersByScopeToMarkdown",
       "qualifiedName": "dossiersByScopeToMarkdown",
       "signature": "dossiersByScopeToMarkdown(r: DossiersByScopeShape): string",
       "type": "function",
       "file": "packages/mcp/src/verbs.ts",
-      "line": 1419
+      "line": 1910
     }
   ],
   "callees": [
@@ -779,9 +779,9 @@
       "cond:packages/core/src/dossier/serializer.ts@L133",
       "cond:packages/core/src/dossier/serializer.ts@L152",
       "cond:packages/core/src/dossier/serializer.ts@L154",
+      "cond:packages/core/src/dossier/serializer.ts@L156",
       "cond:packages/core/src/dossier/serializer.ts@L171",
       "cond:packages/core/src/dossier/serializer.ts@L173",
-      "cond:packages/core/src/dossier/serializer.ts@L156",
       "cond:packages/core/src/dossier/serializer.ts@L161",
       "cond:packages/core/src/dossier/serializer.ts@L163",
       "cond:packages/core/src/dossier/serializer.ts@L166",
@@ -828,6 +828,20 @@
       {
         "procedure": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
         "procedureName": "dossierToMarkdown",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b78315272308be4cc64589a3b557b6b8cf841068f6ddb70893eae14c2c349405",
+          "target": "stmt:packages/core/src/dossier/serializer.ts@L20",
+          "line": 20,
+          "expr": "h(`# ${String(n.qualifiedName ?? n.name ?? d.id)}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
+        "procedureName": "dossierToMarkdown",
         "guard": "cond:packages/core/src/dossier/serializer.ts@L277",
         "branch": "THEN",
         "conditions": [
@@ -845,20 +859,6 @@
           "target": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown.h@L18",
           "expr": "h",
           "line": 20
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
-        "procedureName": "dossierToMarkdown",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:b78315272308be4cc64589a3b557b6b8cf841068f6ddb70893eae14c2c349405",
-          "target": "stmt:packages/core/src/dossier/serializer.ts@L20",
-          "line": 20,
-          "expr": "h(`# ${String(n.qualifiedName ?? n.name ?? d.id)}`);"
         }
       },
       {
@@ -1894,6 +1894,20 @@
       {
         "procedure": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
         "procedureName": "dossierToMarkdown",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8c631e36e1f10301ab02dd54f8ce2465e0b2321e474ccc66da3bb48fbf1dbdc9",
+          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
+          "expr": "label",
+          "line": 124
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
+        "procedureName": "dossierToMarkdown",
         "guard": "cond:packages/core/src/dossier/serializer.ts@L124",
         "branch": "LOOP",
         "conditions": [
@@ -1915,20 +1929,6 @@
           "target": "stmt:packages/core/src/dossier/serializer.ts@L124",
           "line": 124,
           "expr": "h(`- ${label(c)} (confidence ${c.confidence})`);"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
-        "procedureName": "dossierToMarkdown",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:8c631e36e1f10301ab02dd54f8ce2465e0b2321e474ccc66da3bb48fbf1dbdc9",
-          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
-          "expr": "label",
-          "line": 124
         }
       },
       {
@@ -2206,36 +2206,6 @@
       {
         "procedure": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
         "procedureName": "dossierToMarkdown",
-        "guard": "cond:packages/core/src/dossier/serializer.ts@L173",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/core/src/dossier/serializer.ts@L152",
-            "expr": "d.controlFlow"
-          },
-          {
-            "id": "cond:packages/core/src/dossier/serializer.ts@L171",
-            "expr": "cf.declares.length > 0"
-          },
-          {
-            "id": "cond:packages/core/src/dossier/serializer.ts@L173",
-            "expr": "cf.declares",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:e2ca5a4135bf6eacd989a9f35248c559c9c641fe30fc1b6de1b5d8394e8e400e",
-          "target": "sym:packages/core/src/dossier/serializer.ts#loc@L292",
-          "expr": "loc",
-          "line": 157
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
-        "procedureName": "dossierToMarkdown",
         "guard": "cond:packages/core/src/dossier/serializer.ts@L156",
         "branch": "LOOP",
         "conditions": [
@@ -2261,6 +2231,36 @@
           "target": "stmt:packages/core/src/dossier/serializer.ts@L157",
           "line": 157,
           "expr": "h(`- ${String(r.errorCode ?? '?')} ${String(r.errorMessage ?? '')} (@${loc(r)})`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/serializer.ts#dossierToMarkdown@L15",
+        "procedureName": "dossierToMarkdown",
+        "guard": "cond:packages/core/src/dossier/serializer.ts@L173",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/serializer.ts@L152",
+            "expr": "d.controlFlow"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/serializer.ts@L171",
+            "expr": "cf.declares.length > 0"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/serializer.ts@L173",
+            "expr": "cf.declares",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e2ca5a4135bf6eacd989a9f35248c559c9c641fe30fc1b6de1b5d8394e8e400e",
+          "target": "sym:packages/core/src/dossier/serializer.ts#loc@L292",
+          "expr": "loc",
+          "line": 157
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:11a6e1f79d017fbf03164295ccb74700f7b9335994ec8e8c62694f89ee8cacbc",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
@@ -157,28 +157,6 @@
       {
         "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
         "procedureName": "Parser.skipToSemi",
-        "guard": "cond:packages/parsers/src/go/parser.ts@L993",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/go/parser.ts@L993",
-            "expr": "!this.atEnd()",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:f142b52774b0f6084e75556cd1ac7d1cb909cdf66d81253aa834276df64c907b",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.next@L1690",
-          "expr": "next",
-          "line": 995
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
-        "procedureName": "Parser.skipToSemi",
         "guard": "cond:packages/parsers/src/go/parser.ts@L994",
         "branch": "THEN",
         "conditions": [
@@ -200,6 +178,28 @@
           "target": "stmt:packages/parsers/src/go/parser.ts@L995",
           "line": 995,
           "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+        "procedureName": "Parser.skipToSemi",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L993",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L993",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f142b52774b0f6084e75556cd1ac7d1cb909cdf66d81253aa834276df64c907b",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.next@L1690",
+          "expr": "next",
+          "line": 995
         }
       },
       {

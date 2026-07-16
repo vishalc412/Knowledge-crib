@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/fixtures/java-spring/LoanConfig.java#LoanConfig.auditClient@L13",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:a525dd1f5af07a1da76ee0191793e2c47c026dabe5719aeef73257bdb3d8b602",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/fixtures/java-spring/LoanConfig.java#LoanConfig.auditClient@L13",
@@ -69,11 +69,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:7b304f3331e4ee96182c62fdd35b301676129c9d73830997265bf5c32f32987c",
-          "target": "stmt:packages/pipeline/fixtures/java-spring/LoanConfig.java@L15",
-          "line": 15,
-          "expr": "return new AuditClient()"
+          "kind": "calls",
+          "edgeId": "e:11f7211fc444ce48ef1ecabd0ed54cbedf3f571f856c05b2e009b0d2551a34d0",
+          "target": "sym:packages/pipeline/fixtures/java-spring/AuditClient.java#AuditClient@L5",
+          "expr": "AuditClient",
+          "line": 15
         }
       },
       {
@@ -83,11 +83,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:11f7211fc444ce48ef1ecabd0ed54cbedf3f571f856c05b2e009b0d2551a34d0",
-          "target": "sym:packages/pipeline/fixtures/java-spring/AuditClient.java#AuditClient@L5",
-          "expr": "AuditClient",
-          "line": 15
+          "kind": "executes",
+          "edgeId": "e:7b304f3331e4ee96182c62fdd35b301676129c9d73830997265bf5c32f32987c",
+          "target": "stmt:packages/pipeline/fixtures/java-spring/LoanConfig.java@L15",
+          "line": 15,
+          "expr": "return new AuditClient()"
         }
       }
     ]

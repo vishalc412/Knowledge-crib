@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:7ec3a76b3afc913518c9d066e74333353bac034d09dce83c5e7c5015c2256fe6",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
@@ -36,14 +36,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/cli/src/cli.ts#resolvePackageScope@L146",
+      "id": "sym:packages/cli/src/cli.ts#resolvePackageScope@L175",
       "confidence": 1,
       "name": "resolvePackageScope",
       "qualifiedName": "resolvePackageScope",
-      "signature": "resolvePackageScope(repoRoot: string, args: string[]): { status: number; packageRoots?: string[]; layout: WorkspaceLayout | null; indexedPackages: string[] }",
+      "signature": "resolvePackageScope(repoRoot: string, args: string[]): {\n  status: number;\n  packageRoots?: string[];\n  layout: WorkspaceLayout | null;\n  indexedPackages: string[];\n}",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 146
+      "line": 175
     }
   ],
   "callees": [
@@ -58,14 +58,14 @@
       "line": 38
     },
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#toPosix@L338",
+      "id": "sym:packages/pipeline/src/workspace.ts#toPosix@L337",
       "confidence": 1,
       "name": "toPosix",
       "qualifiedName": "toPosix",
       "signature": "toPosix(p: string): string",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 338
+      "line": 337
     }
   ],
   "docs": [
@@ -138,6 +138,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:143adf5d6d10839e42ef210ed0544e1a21eca7f12c924dca017af421de37bbe1",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 62
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
+        "procedureName": "resolvePackageArg",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
           "edgeId": "e:998615af0eab1ce1947ef2a5e7620c3c488c68b1b48ff514287babb9c1bb1daf",
           "target": "stmt:packages/pipeline/src/workspace.ts@L62",
@@ -153,22 +167,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:143adf5d6d10839e42ef210ed0544e1a21eca7f12c924dca017af421de37bbe1",
-          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
-          "expr": "find",
-          "line": 62
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
-        "procedureName": "resolvePackageArg",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:db4204a250d0a87637618b83775a6da07ef17b57517a162b70a62b6fef5284b8",
-          "target": "sym:packages/pipeline/src/workspace.ts#toPosix@L338",
+          "edgeId": "e:8801580dbe3fabcd428596db178df89accc9d4f056871afd8aba73559fd13471",
+          "target": "sym:packages/pipeline/src/workspace.ts#toPosix@L337",
           "expr": "toPosix",
           "line": 63
         }

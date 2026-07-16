@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.exceptionHandler@L559",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:8e95713972a2ffac5caefe91c17f599bce950f94b24ecf24a999725ead79ff66",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.exceptionHandler@L559",
@@ -138,11 +138,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:e1642f65f3148a7326edaef0c93cfea1a99b9e7096f4436a3770f3dc1aa16cb8",
-          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#catchSelector@L348",
-          "expr": "catchSelector",
-          "line": 563
+          "kind": "executes",
+          "edgeId": "e:dc776c4a50c510373b34715cd5ba07b90928237a34d8a374225bc5b93b7c35fc",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L563",
+          "line": 563,
+          "expr": "const whenSelector = catchSelector(predicate);"
         }
       },
       {
@@ -160,11 +160,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:dc776c4a50c510373b34715cd5ba07b90928237a34d8a374225bc5b93b7c35fc",
-          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L563",
-          "line": 563,
-          "expr": "const whenSelector = catchSelector(predicate);"
+          "kind": "calls",
+          "edgeId": "e:e1642f65f3148a7326edaef0c93cfea1a99b9e7096f4436a3770f3dc1aa16cb8",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#catchSelector@L348",
+          "expr": "catchSelector",
+          "line": 563
         }
       },
       {

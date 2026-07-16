@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:3a2407acabafdb496ab65afecf1380b2421b28d10f29560255f40125291116df",
-  "builtAt": "2026-06-30T22:39:43.179Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
@@ -88,14 +88,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/cli/src/cli.ts#cmdMcp@L1035",
+      "id": "sym:packages/cli/src/cli.ts#cmdMcp@L1421",
       "confidence": 1,
       "name": "cmdMcp",
       "qualifiedName": "cmdMcp",
       "signature": "cmdMcp(args: string[], ctx?: CmdCtx): number",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 1035
+      "line": 1421
     }
   ],
   "callees": [
@@ -110,6 +110,16 @@
       "line": 39
     },
     {
+      "id": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+      "confidence": 1,
+      "name": "readJson",
+      "qualifiedName": "readJson",
+      "signature": "readJson(path: string): T | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1824
+    },
+    {
       "id": "sym:packages/cli/src/mcp-install.ts#readJson@L84",
       "confidence": 1,
       "name": "readJson",
@@ -118,16 +128,6 @@
       "type": "function",
       "file": "packages/cli/src/mcp-install.ts",
       "line": 84
-    },
-    {
-      "id": "sym:packages/mcp/src/enrichment.ts#readJson@L1173",
-      "confidence": 1,
-      "name": "readJson",
-      "qualifiedName": "readJson",
-      "signature": "readJson(path: string): T | undefined",
-      "type": "function",
-      "file": "packages/mcp/src/enrichment.ts",
-      "line": 1173
     },
     {
       "id": "sym:packages/cli/src/mcp-install.ts#readOrEmpty@L79",
@@ -148,6 +148,16 @@
       "type": "function",
       "file": "packages/cli/src/mcp-install.ts",
       "line": 374
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
     },
     {
       "id": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
@@ -220,23 +230,15 @@
       {
         "procedure": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
         "procedureName": "removeMcp",
-        "guard": "cond:packages/cli/src/mcp-install.ts@L286",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/cli/src/mcp-install.ts@L286",
-            "expr": "ides",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
+        "conditions": [],
+        "inLoop": false,
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:77649ffb0057f31acdcd5f43d9dcbda399326fa089916e393227393d1b7a8e68",
-          "target": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
-          "expr": "targetFor",
-          "line": 287
+          "edgeId": "e:db28799605ebd0d206df4f38d48d59385c6eee65789c28f7d6a333c9ad5060de",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 284
         }
       },
       {
@@ -259,6 +261,28 @@
           "target": "stmt:packages/cli/src/mcp-install.ts@L287",
           "line": 287,
           "expr": "const target = targetFor(ide, scope, absRoot);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
+        "procedureName": "removeMcp",
+        "guard": "cond:packages/cli/src/mcp-install.ts@L286",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/mcp-install.ts@L286",
+            "expr": "ides",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:77649ffb0057f31acdcd5f43d9dcbda399326fa089916e393227393d1b7a8e68",
+          "target": "sym:packages/cli/src/mcp-install.ts#targetFor@L144",
+          "expr": "targetFor",
+          "line": 287
         }
       },
       {
@@ -424,11 +448,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:8a3557b9c5edce5e0ff789dde468b0f1adcbef96e448eccb50d0be5d61417d63",
-          "target": "sym:packages/cli/src/mcp-install.ts#readOrEmpty@L79",
-          "expr": "readOrEmpty",
-          "line": 338
+          "kind": "executes",
+          "edgeId": "e:6c2932e0dcc361610ab2c6177872960c027731f24fc642e2cf42de4129ad46ce",
+          "target": "stmt:packages/cli/src/mcp-install.ts@L338",
+          "line": 338,
+          "expr": "const existing = readOrEmpty(target.configPath);"
         }
       },
       {
@@ -450,11 +474,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:6c2932e0dcc361610ab2c6177872960c027731f24fc642e2cf42de4129ad46ce",
-          "target": "stmt:packages/cli/src/mcp-install.ts@L338",
-          "line": 338,
-          "expr": "const existing = readOrEmpty(target.configPath);"
+          "kind": "calls",
+          "edgeId": "e:8a3557b9c5edce5e0ff789dde468b0f1adcbef96e448eccb50d0be5d61417d63",
+          "target": "sym:packages/cli/src/mcp-install.ts#readOrEmpty@L79",
+          "expr": "readOrEmpty",
+          "line": 338
         }
       },
       {
@@ -580,9 +604,23 @@
         "inLoop": true,
         "inException": false,
         "action": {
+          "kind": "executes",
+          "edgeId": "e:44e384d51efae9e98e08e563517e0bffbf9607b75c13ce923106a41a52a424b8",
+          "target": "stmt:packages/cli/src/mcp-install.ts@L352",
+          "line": 352,
+          "expr": "const obj = readJson(target.configPath);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
+        "procedureName": "removeMcp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "calls",
-          "edgeId": "e:c3ec68a2d3ca7e1ff206963585cb30c36bd93b20f9932f90d827e8c30dee7255",
-          "target": "sym:packages/cli/src/mcp-install.ts#readJson@L84",
+          "edgeId": "e:86a34f8a8972e501a736af886fc30176e08fb468bba38e9d0b91fbab977c9833",
+          "target": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
           "expr": "readJson",
           "line": 352
         }
@@ -602,51 +640,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:44e384d51efae9e98e08e563517e0bffbf9607b75c13ce923106a41a52a424b8",
-          "target": "stmt:packages/cli/src/mcp-install.ts@L352",
-          "line": 352,
-          "expr": "const obj = readJson(target.configPath);"
-        }
-      },
-      {
-        "procedure": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
-        "procedureName": "removeMcp",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "calls",
-          "edgeId": "e:3e8be01f485cffbe8ece8271a239f8b23ec4bfecd627e5385ee5363822b09613",
-          "target": "sym:packages/mcp/src/enrichment.ts#readJson@L1173",
+          "edgeId": "e:c3ec68a2d3ca7e1ff206963585cb30c36bd93b20f9932f90d827e8c30dee7255",
+          "target": "sym:packages/cli/src/mcp-install.ts#readJson@L84",
           "expr": "readJson",
           "line": 352
-        }
-      },
-      {
-        "procedure": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
-        "procedureName": "removeMcp",
-        "guard": "cond:packages/cli/src/mcp-install.ts@L354",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/cli/src/mcp-install.ts@L286",
-            "expr": "ides"
-          },
-          {
-            "id": "cond:packages/cli/src/mcp-install.ts@L354",
-            "expr": "servers && SERVER_NAME in servers",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:e67b9c271c88714c612b0ec9e4d87006a0794bf964c30ad2997bbf048dfc84b2",
-          "target": "sym:packages/cli/src/mcp-install.ts#writeJson@L94",
-          "expr": "writeJson",
-          "line": 357
         }
       },
       {
@@ -673,6 +671,32 @@
           "target": "stmt:packages/cli/src/mcp-install.ts@L357",
           "line": 357,
           "expr": "writeJson(target.configPath, obj);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
+        "procedureName": "removeMcp",
+        "guard": "cond:packages/cli/src/mcp-install.ts@L354",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/mcp-install.ts@L286",
+            "expr": "ides"
+          },
+          {
+            "id": "cond:packages/cli/src/mcp-install.ts@L354",
+            "expr": "servers && SERVER_NAME in servers",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e67b9c271c88714c612b0ec9e4d87006a0794bf964c30ad2997bbf048dfc84b2",
+          "target": "sym:packages/cli/src/mcp-install.ts#writeJson@L94",
+          "expr": "writeJson",
+          "line": 357
         }
       },
       {
@@ -779,7 +803,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 7,
+      "resolved": 8,
       "recorded": 15,
       "unresolved": 2
     },

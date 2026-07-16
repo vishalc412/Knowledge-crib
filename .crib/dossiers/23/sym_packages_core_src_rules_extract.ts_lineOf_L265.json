@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/rules/extract.ts#lineOf@L265",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:b2b6364fbac68cf9950101fa5c857a3d009009029857b263ded10e1cc060e308",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-13T11:04:33.459Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/rules/extract.ts#lineOf@L265",
@@ -52,24 +52,24 @@
   },
   "callers": [
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#enclosingSymbol@L1098",
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#enclosingSymbol@L1138",
       "confidence": 1,
       "name": "enclosingSymbol",
       "qualifiedName": "enclosingSymbol",
       "signature": "enclosingSymbol(node: ts.Node, symbols: LocalSymbol[], lineOf: (pos: number) => number): string | undefined",
       "type": "function",
       "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
-      "line": 1098
+      "line": 1138
     },
     {
-      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L102",
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
       "confidence": 1,
       "name": "extractNestSemantics",
       "qualifiedName": "extractNestSemantics",
       "signature": "extractNestSemantics(input: NestPassInput): void",
       "type": "function",
       "file": "packages/parsers/src/ts/nest.ts",
-      "line": 102
+      "line": 104
     },
     {
       "id": "sym:packages/core/src/rules/extract.ts#extractRules@L134",
@@ -82,14 +82,24 @@
       "line": 134
     },
     {
-      "id": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L105",
+      "id": "sym:packages/parsers/src/ts/http-client.ts#matchHttpCall@L118",
+      "confidence": 1,
+      "name": "matchHttpCall",
+      "qualifiedName": "matchHttpCall",
+      "signature": "matchHttpCall(call: ts.CallExpression, lineOf: (pos: number) => number, shadowed: ReadonlySet<string>): | {\n      method: string;\n      routePath: string;\n      framework: string;\n      callLine: number;\n      callEnd: number;\n    }\n  | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.ts",
+      "line": 118
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L107",
       "confidence": 1,
       "name": "matchRouteCall",
       "qualifiedName": "matchRouteCall",
       "signature": "matchRouteCall(call: ts.CallExpression, byKey: Map<string, string>, lineOf: (pos: number) => number): | {\n      verb: string;\n      paths: string[];\n      handlerId: string | undefined;\n      callLine: number;\n      callEnd: number;\n    }\n  | undefined",
       "type": "function",
       "file": "packages/parsers/src/ts/express.ts",
-      "line": 105
+      "line": 107
     },
     {
       "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
@@ -102,7 +112,18 @@
       "line": 52
     }
   ],
-  "callees": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    }
+  ],
   "docs": [
     {
       "sectionId": "expl:packages/core/src/rules/extract.ts@L263",
@@ -213,6 +234,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:2e060ad9041982685438d25bdbbcb57c2ca4e61fc26d14b54b7a7c37b651f323",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 273
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#lineOf@L265",
+        "procedureName": "lineOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
           "edgeId": "e:0e679c10c6e04520713206ea42585f220c2fd8210a22395523f673f2ee6affdb",
           "target": "stmt:packages/core/src/rules/extract.ts@L274",
@@ -229,6 +264,7 @@
       "packages/core/src/rules/extract.ts",
       "packages/parsers/src/ts/TypeScriptExtractor.ts",
       "packages/parsers/src/ts/express.ts",
+      "packages/parsers/src/ts/http-client.ts",
       "packages/parsers/src/ts/nest.ts",
       "packages/pipeline/src/resolve/ts-resolver.ts"
     ]
@@ -244,14 +280,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 0,
+      "resolved": 1,
       "recorded": 6,
-      "unresolved": 4
+      "unresolved": 3
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

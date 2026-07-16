@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isIdentPart@L484",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:f7edb70383b56c15f64f4f9f63f2a5dd4e2571604f11ff68ef1408b05ec83808",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isIdentPart@L484",
@@ -77,11 +77,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:c263d20e31be49cbe1607b3b3293359e1e869be8339288d40b2b2420c6902b47",
-          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isIdentStart@L481",
-          "expr": "isIdentStart",
-          "line": 485
+          "kind": "executes",
+          "edgeId": "e:a32c2968597cf40ad0f65d3218eb3e1bb70aed79fb3de85cc04c0369fc5edbeb",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L485",
+          "line": 485,
+          "expr": "return this.isIdentStart(c) || (c >= '0' && c <= '9');"
         }
       },
       {
@@ -91,11 +91,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:a32c2968597cf40ad0f65d3218eb3e1bb70aed79fb3de85cc04c0369fc5edbeb",
-          "target": "stmt:packages/parsers/src/rust/lexer.ts@L485",
-          "line": 485,
-          "expr": "return this.isIdentStart(c) || (c >= '0' && c <= '9');"
+          "kind": "calls",
+          "edgeId": "e:c263d20e31be49cbe1607b3b3293359e1e869be8339288d40b2b2420c6902b47",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isIdentStart@L481",
+          "expr": "isIdentStart",
+          "line": 485
         }
       }
     ]

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/cluster/louvain.ts#louvain@L52",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:f2e9905d45d6c06a8394b9000693695d1d978b3297d1402abcd22c91fd2393c6",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/cluster/louvain.ts#louvain@L52",
@@ -36,14 +36,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L39",
+      "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
       "confidence": 1,
       "name": "runCluster",
       "qualifiedName": "runCluster",
       "signature": "runCluster(soul: SoulStore): ClusterStats",
       "type": "function",
       "file": "packages/pipeline/src/cluster/cluster.ts",
-      "line": 39
+      "line": 40
     }
   ],
   "callees": [
@@ -125,11 +125,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:7ccc1c65bfb93a1900a395993461bc35a86a9102fa5817f376dd90b38c6c7d98",
-          "target": "sym:packages/pipeline/src/cluster/louvain.ts#oneLevel@L76",
-          "expr": "oneLevel",
-          "line": 60
+          "kind": "executes",
+          "edgeId": "e:384eed6ad621a0472aa9fcc0ec53967306b7c3af94c5d242a836697f6829bd93",
+          "target": "stmt:packages/pipeline/src/cluster/louvain.ts@L60",
+          "line": 60,
+          "expr": "const level = oneLevel(g);"
         }
       },
       {
@@ -147,11 +147,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:384eed6ad621a0472aa9fcc0ec53967306b7c3af94c5d242a836697f6829bd93",
-          "target": "stmt:packages/pipeline/src/cluster/louvain.ts@L60",
-          "line": 60,
-          "expr": "const level = oneLevel(g);"
+          "kind": "calls",
+          "edgeId": "e:7ccc1c65bfb93a1900a395993461bc35a86a9102fa5817f376dd90b38c6c7d98",
+          "target": "sym:packages/pipeline/src/cluster/louvain.ts#oneLevel@L76",
+          "expr": "oneLevel",
+          "line": 60
         }
       },
       {

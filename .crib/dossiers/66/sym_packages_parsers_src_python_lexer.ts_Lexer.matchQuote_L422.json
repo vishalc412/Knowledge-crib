@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:7d26d146df981524b58f364eb68f7839e538c40306a0a82d18f970f5aea21a34",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
@@ -96,20 +96,6 @@
       {
         "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
         "procedureName": "Lexer.matchQuote",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:9e21bbc525c47833e23f2aac2e8e56ba6df3310469e11818a076042195453638",
-          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
-          "expr": "peek",
-          "line": 428
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
-        "procedureName": "Lexer.matchQuote",
         "guard": "cond:packages/parsers/src/python/lexer.ts@L423",
         "branch": "THEN",
         "conditions": [
@@ -127,6 +113,20 @@
           "target": "stmt:packages/parsers/src/python/lexer.ts@L428",
           "line": 428,
           "expr": "const d = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+        "procedureName": "Lexer.matchQuote",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9e21bbc525c47833e23f2aac2e8e56ba6df3310469e11818a076042195453638",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
+          "expr": "peek",
+          "line": 428
         }
       },
       {

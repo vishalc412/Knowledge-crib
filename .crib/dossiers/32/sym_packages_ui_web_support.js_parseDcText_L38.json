@@ -1,0 +1,286 @@
+{
+  "id": "sym:packages/ui/web/support.js#parseDcText@L38",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:938c370a731d61cae6a7b5d466ea0da1e9985d63e4ed03db5be0781f9e86ead6",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#parseDcText@L38",
+    "kind": "symbol",
+    "type": "function",
+    "name": "parseDcText",
+    "qualifiedName": "parseDcText",
+    "signature": "parseDcText(src)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 38,
+      "end": 55
+    },
+    "callSites": [
+      {
+        "callee": "exec",
+        "line": 39
+      },
+      {
+        "callee": "lastIndexOf",
+        "line": 41
+      },
+      {
+        "callee": "slice",
+        "line": 43
+      },
+      {
+        "callee": "parseFromString",
+        "line": 44
+      },
+      {
+        "callee": "querySelector",
+        "line": 45
+      },
+      {
+        "callee": "parseDataProps",
+        "line": 46
+      },
+      {
+        "callee": "getAttribute",
+        "line": 47
+      }
+    ]
+  },
+  "source": {
+    "text": "  function parseDcText(src) {\n    const openMatch = /<x-dc(?:\\s[^>]*)?>/.exec(src);\n    if (!openMatch) return null;\n    const close = src.lastIndexOf(\"</x-dc>\");\n    if (close === -1 || close < openMatch.index) return null;\n    const template = src.slice(openMatch.index + openMatch[0].length, close);\n    const doc = new DOMParser().parseFromString(src, \"text/html\");\n    const scriptEl = doc.querySelector(\"script[data-dc-script]\");\n    const { props, preview } = parseDataProps(\n      scriptEl?.getAttribute(\"data-props\") ?? null\n    );\n    return {\n      template,\n      js: scriptEl ? scriptEl.textContent || \"\" : \"\",\n      props,\n      preview\n    };\n  }",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 38
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#boot@L148",
+      "confidence": 1,
+      "name": "boot",
+      "qualifiedName": "boot",
+      "signature": "boot(runtime, doc = document)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 148
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRuntime.ensureFetched@L1348",
+      "confidence": 1,
+      "name": "ensureFetched",
+      "qualifiedName": "createRuntime.ensureFetched",
+      "signature": "ensureFetched(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1348
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#parseDataProps@L56",
+      "confidence": 1,
+      "name": "parseDataProps",
+      "qualifiedName": "parseDataProps",
+      "signature": "parseDataProps(raw)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 56
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#parseDcText@L38",
+    "procedureName": "parseDcText",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L40",
+      "cond:packages/ui/web/support.js@L42"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#parseDcText@L38",
+        "procedureName": "parseDcText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b91c229116aa1ed95a489a250205733d003fc17642bc9515df037df740856083",
+          "target": "stmt:packages/ui/web/support.js@L39",
+          "line": 39,
+          "expr": "const openMatch = /<x-dc(?:\\s[^>]*)?>/.exec(src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#parseDcText@L38",
+        "procedureName": "parseDcText",
+        "guard": "cond:packages/ui/web/support.js@L40",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L40",
+            "expr": "!openMatch",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cc0839fc21ff18f1fcfd01f66186b4cb5522a823cadf5a164a19204486bdfcaa",
+          "target": "stmt:packages/ui/web/support.js@L40",
+          "line": 40,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#parseDcText@L38",
+        "procedureName": "parseDcText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5997e52e18ee331e145feb56774fe87f0da18f240c3a55593a8154b7e5532231",
+          "target": "stmt:packages/ui/web/support.js@L41",
+          "line": 41,
+          "expr": "const close = src.lastIndexOf(\"</x-dc>\");"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#parseDcText@L38",
+        "procedureName": "parseDcText",
+        "guard": "cond:packages/ui/web/support.js@L42",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L42",
+            "expr": "close === -1 || close < openMatch.index",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:677c8f4315151581af7bc006b52475b6ff7b7a84329f04344bf9b0052b5fd57b",
+          "target": "stmt:packages/ui/web/support.js@L42",
+          "line": 42,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#parseDcText@L38",
+        "procedureName": "parseDcText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1f3b872721a09f6c0badc177e6e96cbcb977c6ad701321f07806361fc1a36e9",
+          "target": "stmt:packages/ui/web/support.js@L43",
+          "line": 43,
+          "expr": "const template = src.slice(openMatch.index + openMatch[0].length, close);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#parseDcText@L38",
+        "procedureName": "parseDcText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:99fed0e812e6e575a8ca2b9f7e76c403645032b4d2c39a9644fd7f2fac0f133c",
+          "target": "stmt:packages/ui/web/support.js@L44",
+          "line": 44,
+          "expr": "const doc = new DOMParser().parseFromString(src, \"text/html\");"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#parseDcText@L38",
+        "procedureName": "parseDcText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb56ffa6e1e4da086c1aae1f27aa24aa48b547a3d376c934732fca74ec17b25b",
+          "target": "stmt:packages/ui/web/support.js@L45",
+          "line": 45,
+          "expr": "const scriptEl = doc.querySelector(\"script[data-dc-script]\");"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#parseDcText@L38",
+        "procedureName": "parseDcText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0a7c55c9839abb374b9b9c12814dce73bc6566e51bd0c039b373011d7e367c76",
+          "target": "stmt:packages/ui/web/support.js@L46",
+          "line": 46,
+          "expr": "const { props, preview } = parseDataProps(\n      scriptEl?.getAttribute(\"data-props\") ?? null\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#parseDcText@L38",
+        "procedureName": "parseDcText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a4ff7a06ec94dc5e3f8b8ba3ca94810d00c4e5e5e9617d66a56104429c84563c",
+          "target": "sym:packages/ui/web/support.js#parseDataProps@L56",
+          "expr": "parseDataProps",
+          "line": 46
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#parseDcText@L38",
+        "procedureName": "parseDcText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8899967f145ea7c4d7a32ddea6f45b325df4ab9bc59e5b4a8ec6a858a2e7d7d2",
+          "target": "stmt:packages/ui/web/support.js@L49",
+          "line": 49,
+          "expr": "return {\n      template,\n      js: scriptEl ? scriptEl.textContent || \"\" : \"\",\n      props,\n      preview\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 7,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

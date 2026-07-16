@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.collectCalls@L292",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:c8ba0c782d6b5b833df5b7774247c51d1b4ee7ff67f0c55def607b8ae6717cff",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.collectCalls@L292",
@@ -208,11 +208,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:ff560338a5232e804e73bf3cbf48a2d008410ccfb7fe622bd5fd74be1730f51c",
-          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#enclosingSymbolId@L388",
-          "expr": "enclosingSymbolId",
-          "line": 315
+          "kind": "executes",
+          "edgeId": "e:b810493a6821acdd15c738681c61e24475fa88cef3d1c5e67345f3d19e25d901",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L315",
+          "line": 315,
+          "expr": "const caller = enclosingSymbolId(c.line, symbols);"
         }
       },
       {
@@ -230,11 +230,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:b810493a6821acdd15c738681c61e24475fa88cef3d1c5e67345f3d19e25d901",
-          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L315",
-          "line": 315,
-          "expr": "const caller = enclosingSymbolId(c.line, symbols);"
+          "kind": "calls",
+          "edgeId": "e:ff560338a5232e804e73bf3cbf48a2d008410ccfb7fe622bd5fd74be1730f51c",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#enclosingSymbolId@L388",
+          "expr": "enclosingSymbolId",
+          "line": 315
         }
       },
       {
@@ -347,12 +347,12 @@
     "calls": {
       "resolved": 2,
       "recorded": 8,
-      "unresolved": 4
+      "unresolved": 2
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

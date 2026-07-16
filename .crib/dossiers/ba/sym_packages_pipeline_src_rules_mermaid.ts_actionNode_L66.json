@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/rules/mermaid.ts#actionNode@L66",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:aa5ecf7c6c8e0fea38b356506aaa7fbe4438ac5ae1b1cff5fbb325359f38247b",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/rules/mermaid.ts#actionNode@L66",
@@ -80,11 +80,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:fe516911e734985ea77e7174fb321605068bd1dc60c4ac92da0dd8c3a1e4555b",
-          "target": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid.nid@L14",
-          "expr": "nid",
-          "line": 68
+          "kind": "executes",
+          "edgeId": "e:6ac8a18b536e74a48ae898cb87843e4ab8f6f2b890ec9fea37713722bcb8af62",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L68",
+          "line": 68,
+          "expr": "const id = nid(`act:${a.edgeId}`);"
         }
       },
       {
@@ -94,11 +94,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:6ac8a18b536e74a48ae898cb87843e4ab8f6f2b890ec9fea37713722bcb8af62",
-          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L68",
-          "line": 68,
-          "expr": "const id = nid(`act:${a.edgeId}`);"
+          "kind": "calls",
+          "edgeId": "e:fe516911e734985ea77e7174fb321605068bd1dc60c4ac92da0dd8c3a1e4555b",
+          "target": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid.nid@L14",
+          "expr": "nid",
+          "line": 68
         }
       },
       {

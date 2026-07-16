@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/merge.ts#mergeThreeWay@L64",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:185231af9c4583fdf6abb4d09e17d1adfe52fd9691e7147254d55c3989141810",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/merge.ts#mergeThreeWay@L64",
@@ -132,17 +132,27 @@
   },
   "callers": [
     {
-      "id": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L122",
+      "id": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L161",
       "confidence": 1,
       "name": "mergeDriverFiles",
       "qualifiedName": "mergeDriverFiles",
       "signature": "mergeDriverFiles(basePath: string, oursPath: string, theirsPath: string): MergeDriverOutcome",
       "type": "function",
       "file": "packages/cli/src/hooks.ts",
-      "line": 122
+      "line": 161
     }
   ],
   "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
     {
       "id": "sym:packages/core/src/merge.ts#equal@L137",
       "confidence": 1,
@@ -278,6 +288,20 @@
       {
         "procedure": "sym:packages/core/src/merge.ts#mergeThreeWay@L64",
         "procedureName": "mergeThreeWay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:74cbbeb73023ecfe37c136cefd2ef3a3df34bf1d3cc7bae2b4bb828f6f50f3b2",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 74
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/merge.ts#mergeThreeWay@L64",
+        "procedureName": "mergeThreeWay",
         "guard": "cond:packages/core/src/merge.ts@L73",
         "branch": "LOOP",
         "conditions": [
@@ -356,6 +380,20 @@
       {
         "procedure": "sym:packages/core/src/merge.ts#mergeThreeWay@L64",
         "procedureName": "mergeThreeWay",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4276164b923f46c6a76b88d47dd7f7cfbc292c642e5f12ab227f4dbbcd7b0ebb",
+          "target": "sym:packages/core/src/conflict-rule.ts#resolveEdgeConflict@L22",
+          "expr": "resolveEdgeConflict",
+          "line": 82
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/merge.ts#mergeThreeWay@L64",
+        "procedureName": "mergeThreeWay",
         "guard": "cond:packages/core/src/merge.ts@L82",
         "branch": "THEN",
         "conditions": [
@@ -389,20 +427,6 @@
           "target": "stmt:packages/core/src/merge.ts@L82",
           "line": 82,
           "expr": "merged.set(id, resolveEdgeConflict(o, t));"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/merge.ts#mergeThreeWay@L64",
-        "procedureName": "mergeThreeWay",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:4276164b923f46c6a76b88d47dd7f7cfbc292c642e5f12ab227f4dbbcd7b0ebb",
-          "target": "sym:packages/core/src/conflict-rule.ts#resolveEdgeConflict@L22",
-          "expr": "resolveEdgeConflict",
-          "line": 82
         }
       },
       {
@@ -544,11 +568,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:385ecd9f2e48fa62ca2aecd9da5d561b1e3b844c242bf3a8a5ea65f987e53ba8",
-          "target": "sym:packages/core/src/merge.ts#equal@L137",
-          "expr": "equal",
-          "line": 100
+          "kind": "executes",
+          "edgeId": "e:085de724659faec9dd71138c58691ac26963554bc260cb639bedd491a486ceaa",
+          "target": "stmt:packages/core/src/merge.ts@L100",
+          "line": 100,
+          "expr": "const oChanged = o === undefined ? false : !equal(b, o);"
         }
       },
       {
@@ -566,11 +590,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:085de724659faec9dd71138c58691ac26963554bc260cb639bedd491a486ceaa",
-          "target": "stmt:packages/core/src/merge.ts@L100",
-          "line": 100,
-          "expr": "const oChanged = o === undefined ? false : !equal(b, o);"
+          "kind": "calls",
+          "edgeId": "e:385ecd9f2e48fa62ca2aecd9da5d561b1e3b844c242bf3a8a5ea65f987e53ba8",
+          "target": "sym:packages/core/src/merge.ts#equal@L137",
+          "expr": "equal",
+          "line": 100
         }
       },
       {
@@ -1183,14 +1207,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 4,
+      "resolved": 5,
       "recorded": 26,
-      "unresolved": 18
+      "unresolved": 15
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "18 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "15 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

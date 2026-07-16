@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/dossier/persist.ts#dossierPath@L34",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:96bd4003561e2ef192452d3a903d4cebc9174945271fb4430b9e7e1e1bc73bcf",
-  "builtAt": "2026-06-30T16:18:20.420Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/persist.ts#dossierPath@L34",
@@ -110,14 +110,14 @@
       "line": 125
     },
     {
-      "id": "sym:packages/mcp/src/enrichment.ts#safeName@L1147",
+      "id": "sym:packages/mcp/src/enrichment.ts#safeName@L1795",
       "confidence": 1,
       "name": "safeName",
       "qualifiedName": "safeName",
       "signature": "safeName(id: string): string",
       "type": "function",
       "file": "packages/mcp/src/enrichment.ts",
-      "line": 1147
+      "line": 1795
     }
   ],
   "docs": [
@@ -142,6 +142,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:f034ba36b390c5d374c80f5badcb57546823f4510cadfd09ee4da12358e5fdbe",
+          "target": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+          "expr": "blake3Hex",
+          "line": 35
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#dossierPath@L34",
+        "procedureName": "dossierPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
           "edgeId": "e:feca800b215d802b8afc3bc8b780f46b39b3ba38ea9237fc66430233930e527e",
           "target": "stmt:packages/core/src/dossier/persist.ts@L35",
@@ -157,37 +171,9 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:f034ba36b390c5d374c80f5badcb57546823f4510cadfd09ee4da12358e5fdbe",
-          "target": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
-          "expr": "blake3Hex",
-          "line": 35
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/persist.ts#dossierPath@L34",
-        "procedureName": "dossierPath",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
           "edgeId": "e:26a389f258fbc58172184777d66eb05eb624e59992b0feeedd239948ab6dc48b",
           "target": "sym:packages/core/src/dossier/persist.ts#dossiersDir@L29",
           "expr": "dossiersDir",
-          "line": 36
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/persist.ts#dossierPath@L34",
-        "procedureName": "dossierPath",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:7382093d075875a11468be07c16be53a1e0c34075941e6f18af01dd1b179297e",
-          "target": "sym:packages/core/src/dossier/persist.ts#safeName@L125",
-          "expr": "safeName",
           "line": 36
         }
       },
@@ -213,8 +199,22 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:db485d92a3892b2240139b815c3f26cce2016af89fd78b1a07b213a1f250df27",
-          "target": "sym:packages/mcp/src/enrichment.ts#safeName@L1147",
+          "edgeId": "e:7382093d075875a11468be07c16be53a1e0c34075941e6f18af01dd1b179297e",
+          "target": "sym:packages/core/src/dossier/persist.ts#safeName@L125",
+          "expr": "safeName",
+          "line": 36
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#dossierPath@L34",
+        "procedureName": "dossierPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dfae16456a1f8bc54d223d513e0886feea58ecaeccdc9bd4ab4d9df5dddcfeef",
+          "target": "sym:packages/mcp/src/enrichment.ts#safeName@L1795",
           "expr": "safeName",
           "line": 36
         }

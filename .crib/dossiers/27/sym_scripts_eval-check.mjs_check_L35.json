@@ -1,0 +1,405 @@
+{
+  "id": "sym:scripts/eval-check.mjs#check@L35",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:1e051a9b9d51d0b0359c6987fe0b358d0e716854c73f3ac0ff5ee3a5c687652f",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/eval-check.mjs#check@L35",
+    "kind": "symbol",
+    "type": "function",
+    "name": "check",
+    "qualifiedName": "check",
+    "signature": "check(name, fn)",
+    "lang": "javascript",
+    "file": "scripts/eval-check.mjs",
+    "span": {
+      "start": 35,
+      "end": 44
+    },
+    "callSites": [
+      {
+        "callee": "write",
+        "line": 38
+      },
+      {
+        "callee": "String",
+        "line": 40
+      },
+      {
+        "callee": "push",
+        "line": 41
+      },
+      {
+        "callee": "write",
+        "line": 42
+      }
+    ]
+  },
+  "source": {
+    "text": "async function check(name, fn) {\n  try {\n    await fn();\n    process.stdout.write(`  ok  ${name}\\n`);\n  } catch (e) {\n    const msg = e instanceof Error ? e.message : String(e);\n    failures.push(`${name}: ${msg}`);\n    process.stdout.write(`FAIL  ${name}: ${msg}\\n`);\n  }\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 35
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
+      "heading": "What was built",
+      "anchor": "what-was-built-2",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#the-measured-curve",
+      "heading": "The measured curve",
+      "anchor": "the-measured-curve",
+      "snippet": "The measured curve",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#7-seeroflow-read-contract-q38-and-any-external-consumer",
+      "heading": "7. SeeroFlow read contract [Q38] (and any external consumer)",
+      "anchor": "7-seeroflow-read-contract-q38-and-any-external-consumer",
+      "snippet": "7. SeeroFlow read contract [Q38] (and any external consumer)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#stride-summary",
+      "heading": "STRIDE summary",
+      "anchor": "stride-summary",
+      "snippet": "STRIDE summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-1-scaffold-the-reproducible-media-workspace",
+      "heading": "Task 1: Scaffold The Reproducible Media Workspace",
+      "anchor": "task-1-scaffold-the-reproducible-media-workspace",
+      "snippet": "Task 1: Scaffold The Reproducible Media Workspace",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/linkedin-series.md#post-4-the-proof-reproducible-not-vibes",
+      "heading": "Post 4 — The proof (reproducible, not vibes)",
+      "anchor": "post-4-the-proof-reproducible-not-vibes",
+      "snippet": "Post 4 — The proof (reproducible, not vibes)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-3-2-within-a-layer-missing-before-stale-hash-deterministic-ordering",
+      "heading": "3.3.2 Within a Layer: Missing Before Stale, Hash-Deterministic Ordering",
+      "anchor": "3-3-2-within-a-layer-missing-before-stale-hash-deterministic-ordering",
+      "snippet": "3.3.2 Within a Layer: Missing Before Stale, Hash-Deterministic Ordering",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-3-staleness-detection-how-the-system-knows-llm-artifacts-are-outdated",
+      "heading": "3.2.3 Staleness Detection — How the System Knows LLM Artifacts Are Outdated",
+      "anchor": "3-2-3-staleness-detection-how-the-system-knows-llm-artifacts-are-outdated",
+      "snippet": "3.2.3 Staleness Detection — How the System Knows LLM Artifacts Are Outdated",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#the-two-rules-that-prevent-the-infinite-loop",
+      "heading": "⚠️ The two rules that prevent the infinite loop",
+      "anchor": "the-two-rules-that-prevent-the-infinite-loop",
+      "snippet": "⚠️ The two rules that prevent the infinite loop",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#tools",
+      "heading": "Tools",
+      "anchor": "tools",
+      "snippet": "Tools",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#grounding-contract-m1-3-the-moat",
+      "heading": "Grounding contract (M1.3 — the moat)",
+      "anchor": "grounding-contract-m1-3-the-moat",
+      "snippet": "Grounding contract (M1.3 — the moat)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#8-verify-it-works-any-client",
+      "heading": "8. Verify it works (any client)",
+      "anchor": "8-verify-it-works-any-client",
+      "snippet": "8. Verify it works (any client)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#release-gate",
+      "heading": "Release Gate",
+      "anchor": "release-gate",
+      "snippet": "Release Gate",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CLAUDE.md#resources",
+      "heading": "Resources",
+      "anchor": "resources",
+      "snippet": "Resources",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CLAUDE.md#never-do",
+      "heading": "Never Do",
+      "anchor": "never-do",
+      "snippet": "Never Do",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:AGENTS.md#resources",
+      "heading": "Resources",
+      "anchor": "resources",
+      "snippet": "Resources",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:AGENTS.md#never-do",
+      "heading": "Never Do",
+      "anchor": "never-do",
+      "snippet": "Never Do",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-3-solution-architect",
+      "heading": "2.3 Solution Architect",
+      "anchor": "2-3-solution-architect",
+      "snippet": "2.3 Solution Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
+      "heading": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
+      "anchor": "ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
+      "snippet": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/eval-check.mjs#check@L35",
+    "procedureName": "check",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/eval-check.mjs#check@L35",
+        "procedureName": "check",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cba9ac2ad683c31e61c1a6dcb264ec4b0500081001685eff7f672aa189135726",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 38
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval-check.mjs#check@L35",
+        "procedureName": "check",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ecd3bb0929660199119e526d6df4dc978e773051cd207c8dec4f3c11a6378a15",
+          "target": "stmt:scripts/eval-check.mjs@L38",
+          "line": 38,
+          "expr": "process.stdout.write(`  ok  ${name}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval-check.mjs#check@L35",
+        "procedureName": "check",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5db92f41f5daaf8c17ab03f112e6f03e7436a4796abf9ad8caeaaa2b49f0c17",
+          "target": "stmt:scripts/eval-check.mjs@L40",
+          "line": 40,
+          "expr": "const msg = e instanceof Error ? e.message : String(e);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval-check.mjs#check@L35",
+        "procedureName": "check",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:77b72a5ce85e5f924054736186097d3449add4490b93b855956cd30fa562ec04",
+          "target": "stmt:scripts/eval-check.mjs@L41",
+          "line": 41,
+          "expr": "failures.push(`${name}: ${msg}`);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval-check.mjs#check@L35",
+        "procedureName": "check",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:89a88d567cc0f9bd8f140350159ad611c54e65f18975c256a8ad6fc666304e57",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 41
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval-check.mjs#check@L35",
+        "procedureName": "check",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b5b80ff438340700471c9aba1083b32fc34136edc3466da4a7b2a77c7f691c85",
+          "target": "stmt:scripts/eval-check.mjs@L42",
+          "line": 42,
+          "expr": "process.stdout.write(`FAIL  ${name}: ${msg}\\n`);"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:scripts/eval-check.mjs@L39",
+        "kind": "exception-handler",
+        "lang": "javascript",
+        "file": "scripts/eval-check.mjs",
+        "span": {
+          "start": 39,
+          "end": 39
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

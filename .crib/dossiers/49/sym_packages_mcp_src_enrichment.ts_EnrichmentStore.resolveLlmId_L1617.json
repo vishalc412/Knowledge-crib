@@ -1,0 +1,181 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L1617",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:9a2317d983e9c3bc671b873155346974706248b29fb8c315b61f1f9895f38e34",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L1617",
+    "kind": "symbol",
+    "type": "method",
+    "name": "resolveLlmId",
+    "qualifiedName": "EnrichmentStore.resolveLlmId",
+    "signature": "resolveLlmId(id: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1617,
+      "end": 1622
+    },
+    "callSites": [
+      {
+        "callee": "knownLlmNodeIds",
+        "line": 1618
+      },
+      {
+        "callee": "filter",
+        "line": 1620
+      },
+      {
+        "callee": "endsWith",
+        "line": 1620
+      }
+    ]
+  },
+  "source": {
+    "text": "  private resolveLlmId(id: string): string | undefined {\n    const ids = this.knownLlmNodeIds();\n    if (ids.has(id)) return id;\n    const matches = [...ids].filter((candidate) => candidate.endsWith(`#${id}`));\n    return matches.length === 1 ? matches[0] : undefined;\n  }",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 1617
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L959",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "EnrichmentStore.neighbors",
+      "signature": "neighbors(id: string): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 959
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.knownLlmNodeIds@L1613",
+      "confidence": 1,
+      "name": "knownLlmNodeIds",
+      "qualifiedName": "EnrichmentStore.knownLlmNodeIds",
+      "signature": "knownLlmNodeIds(): Set<string>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1613
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L1617",
+    "procedureName": "EnrichmentStore.resolveLlmId",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1619"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L1617",
+        "procedureName": "EnrichmentStore.resolveLlmId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6110e7d7f547156816516590c4240bf857551b0f7916ee0d68621f7945dcec38",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.knownLlmNodeIds@L1613",
+          "expr": "knownLlmNodeIds",
+          "line": 1618
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L1617",
+        "procedureName": "EnrichmentStore.resolveLlmId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7d93fe780013e53f00c24237c5d03d2630334961fe1331ce62f971647ef94416",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1618",
+          "line": 1618,
+          "expr": "const ids = this.knownLlmNodeIds();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L1617",
+        "procedureName": "EnrichmentStore.resolveLlmId",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1619",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1619",
+            "expr": "ids.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5449afd331f69cd231b8124082f80c5a9174f7bb9ea8c7d057506ee4e019c8bc",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1619",
+          "line": 1619,
+          "expr": "return id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L1617",
+        "procedureName": "EnrichmentStore.resolveLlmId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7f7fb79317f63143f0d562b2a9e42ee7ee2af145d157687387a51e5173ea4fb0",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1620",
+          "line": 1620,
+          "expr": "const matches = [...ids].filter((candidate) => candidate.endsWith(`#${id}`));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L1617",
+        "procedureName": "EnrichmentStore.resolveLlmId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9b00d06214e2443e0563c48f959cf1db3edd1cc55f65c7873b5482933ec8d082",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1621",
+          "line": 1621,
+          "expr": "return matches.length === 1 ? matches[0] : undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

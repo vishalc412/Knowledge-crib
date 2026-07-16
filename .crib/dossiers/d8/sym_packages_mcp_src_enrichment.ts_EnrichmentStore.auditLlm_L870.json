@@ -1,0 +1,272 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:c97acef446ef09435a1f9c6da4531b8d4f50177a6d534f00538120c4af880a06",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+    "kind": "symbol",
+    "type": "method",
+    "name": "auditLlm",
+    "qualifiedName": "EnrichmentStore.auditLlm",
+    "signature": "auditLlm(): AuditLlmResult",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 870,
+      "end": 903
+    },
+    "callSites": [
+      {
+        "callee": "targetFor",
+        "line": 877
+      },
+      {
+        "callee": "getManifest",
+        "line": 880
+      },
+      {
+        "callee": "verifyArtifact",
+        "line": 883
+      },
+      {
+        "callee": "push",
+        "line": 889
+      }
+    ]
+  },
+  "source": {
+    "text": "  auditLlm(): AuditLlmResult {\n    const targets: AuditTarget[] = [];\n    let grounded = 0;\n    let ungrounded = 0;\n    let drifted = 0;\n    let stale = 0;\n    for (const artifact of this.allArtifacts()) {\n      const target = this.targetFor(artifact.targetId);\n      const isStale = target\n        ? artifact.nodeHash !== target.hash ||\n          artifact.schemaVersion !== this.soul.getManifest().schemaVersion\n        : true;\n      if (isStale) stale++;\n      const result: GroundingResult = verifyArtifact(this.soul, this.repoRoot, artifact);\n      const recomputedGrounded = result.verified;\n      if (recomputedGrounded) grounded++;\n      else ungrounded++;\n      const stamped = artifact.grounded;\n      if (stamped !== undefined && stamped !== recomputedGrounded) drifted++;\n      targets.push({\n        targetId: artifact.targetId,\n        layer: artifact.layer,\n        stale: isStale,\n        ...(stamped !== undefined ? { stampedGrounded: stamped } : {}),\n        grounded: recomputedGrounded,\n        score: result.score,\n        groundedCount: result.grounded,\n        ungroundedCount: result.ungrounded,\n        unsupportedCount: result.unsupported,\n        checks: result.checks,\n      });\n    }\n    return { checked: targets.length, grounded, ungrounded, drifted, stale, targets };\n  }",
+    "truncated": false,
+    "totalLines": 34,
+    "startLine": 870
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+      "confidence": 1,
+      "name": "allArtifacts",
+      "qualifiedName": "EnrichmentStore.allArtifacts",
+      "signature": "allArtifacts(): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 825
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+      "confidence": 1,
+      "name": "targetFor",
+      "qualifiedName": "EnrichmentStore.targetFor",
+      "signature": "targetFor(targetId: string): { layer: EnrichLayer; id: string; hash: string; node?: Node } | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1229
+    },
+    {
+      "id": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
+      "confidence": 1,
+      "name": "verifyArtifact",
+      "qualifiedName": "verifyArtifact",
+      "signature": "verifyArtifact(soul: SoulStore, repoRoot: string, artifact: LlmArtifact): GroundingResult",
+      "type": "function",
+      "file": "packages/mcp/src/grounding.ts",
+      "line": 100
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L863",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+    "procedureName": "EnrichmentStore.auditLlm",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L876"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+        "procedureName": "EnrichmentStore.auditLlm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1f385677cad01d3ca54b1c6f32d633c4d50f7799c360cc201d19780db7ebe90f",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+          "expr": "allArtifacts"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+        "procedureName": "EnrichmentStore.auditLlm",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L876",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L876",
+            "expr": "this.allArtifacts()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c0d6654ccbeb8bad76e40d6fa598a1d1f3f51139b78dc451916cc9854b175fcb",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L877",
+          "line": 877,
+          "expr": "const target = this.targetFor(artifact.targetId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+        "procedureName": "EnrichmentStore.auditLlm",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L876",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L876",
+            "expr": "this.allArtifacts()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c3f3bc3154af05b19ebf631879b7982e6257a6925198388e61aeccc191154bc1",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+          "expr": "targetFor",
+          "line": 877
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+        "procedureName": "EnrichmentStore.auditLlm",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L876",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L876",
+            "expr": "this.allArtifacts()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e44d36c6612dd0cc77b8d56d368c5ea019575a15bf35b382cf42cc5c0acaecaa",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L878",
+          "line": 878,
+          "expr": "const isStale = target\n        ? artifact.nodeHash !== target.hash ||\n          artifact.schemaVersion !== this.soul.getManifest().schemaVersion\n        : true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+        "procedureName": "EnrichmentStore.auditLlm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:05a0342da530ba1dc8859dadc209384ddbeb7f3ededfaa801c81552d0891340b",
+          "target": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
+          "expr": "verifyArtifact",
+          "line": 883
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+        "procedureName": "EnrichmentStore.auditLlm",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L876",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L876",
+            "expr": "this.allArtifacts()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b247715ad580fb030aaeeadc4a579ea4bf350238b7cf8822dd7d14e964f403ab",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L883",
+          "line": 883,
+          "expr": "const result: GroundingResult = verifyArtifact(this.soul, this.repoRoot, artifact);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+        "procedureName": "EnrichmentStore.auditLlm",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L876",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L876",
+            "expr": "this.allArtifacts()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f0040d570ced1887c91014993d9890ca298db1f07c8c61916dd4aaa505502e3",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L889",
+          "line": 889,
+          "expr": "targets.push({\n        targetId: artifact.targetId,\n        layer: artifact.layer,\n        stale: isStale,\n        ...(stamped !== undefined ? { stampedGrounded: stamped } : {}),\n        grounded: recomputedGrounded,\n        score: result.score,\n        groundedCount: result.grounded,\n        ungroundedCount: result.ungrounded,\n        unsupportedCount: result.unsupported,\n        checks: result.checks,\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+        "procedureName": "EnrichmentStore.auditLlm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:997e992ecc67b05de2e586eb72a5254e13d033bdf9f906eb735e15cf889d262c",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L902",
+          "line": 902,
+          "expr": "return { checked: targets.length, grounded, ungrounded, drifted, stale, targets };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

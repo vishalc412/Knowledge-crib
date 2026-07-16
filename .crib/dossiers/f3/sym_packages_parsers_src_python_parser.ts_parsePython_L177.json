@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/parser.ts#parsePython@L177",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:2a154d6c07333da36eb0715aa51f89cd9bfcae0ffd413082fbf9c006116f75dd",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/parser.ts#parsePython@L177",
@@ -76,16 +76,6 @@
       "line": 208
     },
     {
-      "id": "sym:packages/parsers/src/python/parser.ts#collectCallSites@L1041",
-      "confidence": 1,
-      "name": "collectCallSites",
-      "qualifiedName": "collectCallSites",
-      "signature": "collectCallSites(tokens: Token[]): PyCallSite[]",
-      "type": "function",
-      "file": "packages/parsers/src/python/parser.ts",
-      "line": 1041
-    },
-    {
       "id": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
       "confidence": 1,
       "name": "collectCallSites",
@@ -96,14 +86,14 @@
       "line": 1590
     },
     {
-      "id": "sym:packages/parsers/src/python/parser.ts#collectImports@L1096",
+      "id": "sym:packages/parsers/src/python/parser.ts#collectCallSites@L1041",
       "confidence": 1,
-      "name": "collectImports",
-      "qualifiedName": "collectImports",
-      "signature": "collectImports(tokens: Token[]): PyImport[]",
+      "name": "collectCallSites",
+      "qualifiedName": "collectCallSites",
+      "signature": "collectCallSites(tokens: Token[]): PyCallSite[]",
       "type": "function",
       "file": "packages/parsers/src/python/parser.ts",
-      "line": 1096
+      "line": 1041
     },
     {
       "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
@@ -114,6 +104,16 @@
       "type": "function",
       "file": "packages/pipeline/src/resolve/ts-resolver.ts",
       "line": 150
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#collectImports@L1096",
+      "confidence": 1,
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(tokens: Token[]): PyImport[]",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 1096
     },
     {
       "id": "sym:packages/parsers/src/python/lexer.ts#tokenize@L79",
@@ -228,20 +228,6 @@
         "inLoop": false,
         "inException": true,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:f64e6888a448689be272e37741a31990403bd3572e7d4dd30a52cb0da36edda5",
-          "target": "sym:packages/parsers/src/python/parser.ts#collectCallSites@L1041",
-          "expr": "collectCallSites",
-          "line": 182
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/parser.ts#parsePython@L177",
-        "procedureName": "parsePython",
-        "conditions": [],
-        "inLoop": false,
-        "inException": true,
-        "action": {
           "kind": "executes",
           "edgeId": "e:80fad935f1946c1eba3ba9538c2056c0f2409b75369d21abbc95220861ee95d8",
           "target": "stmt:packages/parsers/src/python/parser.ts@L182",
@@ -271,6 +257,34 @@
         "inException": true,
         "action": {
           "kind": "calls",
+          "edgeId": "e:f64e6888a448689be272e37741a31990403bd3572e7d4dd30a52cb0da36edda5",
+          "target": "sym:packages/parsers/src/python/parser.ts#collectCallSites@L1041",
+          "expr": "collectCallSites",
+          "line": 182
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#parsePython@L177",
+        "procedureName": "parsePython",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:60e738d4f18e985b6a553486994782a689a4df33411ee2ecf308c1fe98310c6b",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
+          "expr": "collectImports",
+          "line": 183
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#parsePython@L177",
+        "procedureName": "parsePython",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
           "edgeId": "e:d4402f66b15bca32f482388eaae66952a349ac245804e98b16194fbc9a14decb",
           "target": "sym:packages/parsers/src/python/parser.ts#collectImports@L1096",
           "expr": "collectImports",
@@ -289,20 +303,6 @@
           "target": "stmt:packages/parsers/src/python/parser.ts@L183",
           "line": 183,
           "expr": "const imports = collectImports(tokens);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/parser.ts#parsePython@L177",
-        "procedureName": "parsePython",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:60e738d4f18e985b6a553486994782a689a4df33411ee2ecf308c1fe98310c6b",
-          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
-          "expr": "collectImports",
-          "line": 183
         }
       },
       {

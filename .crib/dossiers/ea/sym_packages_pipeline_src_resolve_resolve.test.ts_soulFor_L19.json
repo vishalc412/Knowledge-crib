@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/resolve.test.ts#soulFor@L19",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:4e89a41098733845b91d916d248652dc46dfc9fc3d34fcad731c3effa2c3f8e2",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/resolve.test.ts#soulFor@L19",
@@ -37,6 +37,16 @@
   "callers": [],
   "callees": [
     {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
+    {
       "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
       "confidence": 1,
       "name": "newManifest",
@@ -60,20 +70,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:942bc6c57c140d062ac2d1e74f1de72552d478620d2f33f3e9e91be6a44ab33e",
-          "target": "stmt:packages/pipeline/src/resolve/resolve.test.ts@L20",
-          "line": 20,
-          "expr": "const s = new SoulStore(cribDir, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/resolve.test.ts#soulFor@L19",
-        "procedureName": "soulFor",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "calls",
           "edgeId": "e:49f873c2f6f46865d4d72d54d282e45c62fea23145177b489dbcaf7c1d828ec0",
           "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
@@ -89,10 +85,38 @@
         "inException": false,
         "action": {
           "kind": "executes",
+          "edgeId": "e:942bc6c57c140d062ac2d1e74f1de72552d478620d2f33f3e9e91be6a44ab33e",
+          "target": "stmt:packages/pipeline/src/resolve/resolve.test.ts@L20",
+          "line": 20,
+          "expr": "const s = new SoulStore(cribDir, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/resolve.test.ts#soulFor@L19",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
           "edgeId": "e:39b1fda56da8e13dd173c72e389aed684153b49007abd3017c2dc7acb2ab1818",
           "target": "stmt:packages/pipeline/src/resolve/resolve.test.ts@L21",
           "line": 21,
           "expr": "s.load();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/resolve.test.ts#soulFor@L19",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:70c71cfc4bfd47d17b1ca44341a371c2dab9d119ace0c021c00f07b3c7f6f382",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 21
         }
       },
       {
@@ -127,7 +151,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 1,
+      "resolved": 2,
       "recorded": 2,
       "unresolved": 0
     },

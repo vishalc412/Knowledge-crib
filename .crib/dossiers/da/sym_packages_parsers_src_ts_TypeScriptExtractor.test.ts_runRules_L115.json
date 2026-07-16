@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runRules@L115",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:1a5dc52f11d83edb10eed9fdf1a05eaae2f8d45944b57c28c5a1e7c7187ac983",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runRules@L115",
@@ -70,11 +70,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:18fac346c8b76cad9371b34ec9a200b72a151212d128a313e8ca697f8f39ccf3",
-          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
-          "expr": "ctxFor",
-          "line": 120
+          "kind": "executes",
+          "edgeId": "e:075e49a0e461e772ae5c25cf888b3dbc3203f6100ebcf1dc9851f4f01594e97e",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.test.ts@L120",
+          "line": 120,
+          "expr": "return new TypeScriptExtractor().extract(meta, ctxFor(text));"
         }
       },
       {
@@ -84,11 +84,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:075e49a0e461e772ae5c25cf888b3dbc3203f6100ebcf1dc9851f4f01594e97e",
-          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.test.ts@L120",
-          "line": 120,
-          "expr": "return new TypeScriptExtractor().extract(meta, ctxFor(text));"
+          "kind": "calls",
+          "edgeId": "e:18fac346c8b76cad9371b34ec9a200b72a151212d128a313e8ca697f8f39ccf3",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+          "expr": "ctxFor",
+          "line": 120
         }
       },
       {

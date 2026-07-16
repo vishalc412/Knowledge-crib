@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseWith@L494",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:5a56d4d98d530858d02129034456d1e3da1b47aa94ed7e604b86b6c23cb9cfb8",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseWith@L494",
@@ -148,20 +148,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:7bce0f273634d2aec6be367f6d8db79ccf4a09b5829450b605b147dd051c0b5c",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
-          "expr": "peek",
-          "line": 495
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseWith@L494",
-        "procedureName": "Parser.parseWith",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:1dceb5f788623c9a40fcc5f6fcb82ed67a718ffdc5904a5f3c89243ffc068a36",
           "target": "stmt:packages/parsers/src/python/parser.ts@L495",
@@ -177,10 +163,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:87e84e6c8850c219fdc2c7b328b7d424468b8966d8b0ae2e555faaf4a61b11b6",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.next@L781",
-          "expr": "next",
-          "line": 496
+          "edgeId": "e:7bce0f273634d2aec6be367f6d8db79ccf4a09b5829450b605b147dd051c0b5c",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+          "expr": "peek",
+          "line": 495
         }
       },
       {
@@ -205,10 +191,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:d1959ae719cda87876eac1d5b8ef3a2e76f13d77fafe25e7e1552d41d867bfb8",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.capturePredicate@L684",
-          "expr": "capturePredicate",
-          "line": 497
+          "edgeId": "e:87e84e6c8850c219fdc2c7b328b7d424468b8966d8b0ae2e555faaf4a61b11b6",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.next@L781",
+          "expr": "next",
+          "line": 496
         }
       },
       {
@@ -228,23 +214,15 @@
       {
         "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseWith@L494",
         "procedureName": "Parser.parseWith",
-        "guard": "cond:packages/parsers/src/python/parser.ts@L498",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/python/parser.ts@L498",
-            "expr": "!pred.ok",
-            "polarity": "THEN"
-          }
-        ],
+        "conditions": [],
         "inLoop": false,
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:788f86bd1d5929cba09b3c7ee3d18790848e83d2a9e158bc5612a0ab4c51c4d5",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.skipToNewline@L776",
-          "expr": "skipToNewline",
-          "line": 499
+          "edgeId": "e:d1959ae719cda87876eac1d5b8ef3a2e76f13d77fafe25e7e1552d41d867bfb8",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.capturePredicate@L684",
+          "expr": "capturePredicate",
+          "line": 497
         }
       },
       {
@@ -267,6 +245,28 @@
           "target": "stmt:packages/parsers/src/python/parser.ts@L499",
           "line": 499,
           "expr": "this.skipToNewline();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseWith@L494",
+        "procedureName": "Parser.parseWith",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L498",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L498",
+            "expr": "!pred.ok",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:788f86bd1d5929cba09b3c7ee3d18790848e83d2a9e158bc5612a0ab4c51c4d5",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.skipToNewline@L776",
+          "expr": "skipToNewline",
+          "line": 499
         }
       },
       {

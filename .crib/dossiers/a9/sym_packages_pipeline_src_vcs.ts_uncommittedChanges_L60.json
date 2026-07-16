@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:8b0d0f86efaa64e3fe4c8c99f2dd045a6b0a7aeb19e06711f5f2a16aeef01c31",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
@@ -62,14 +62,14 @@
       "line": 74
     },
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L94",
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 94
+      "line": 112
     }
   ],
   "callees": [
@@ -84,34 +84,44 @@
       "line": 16
     },
     {
-      "id": "sym:packages/pipeline/src/vcs.ts#git@L79",
+      "id": "sym:scripts/soul-refresh-check.mjs#git@L93",
+      "confidence": 1,
+      "name": "git",
+      "qualifiedName": "git",
+      "signature": "git(…)",
+      "type": "function",
+      "file": "scripts/soul-refresh-check.mjs",
+      "line": 93
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#git@L125",
       "confidence": 1,
       "name": "git",
       "qualifiedName": "git",
       "signature": "git(root: string, args: string[]): string | undefined",
       "type": "function",
       "file": "packages/pipeline/src/vcs.ts",
-      "line": 79
+      "line": 125
     },
     {
-      "id": "sym:packages/pipeline/src/vcs.ts#toPosix@L90",
-      "confidence": 1,
-      "name": "toPosix",
-      "qualifiedName": "toPosix",
-      "signature": "toPosix(p: string): string",
-      "type": "function",
-      "file": "packages/pipeline/src/vcs.ts",
-      "line": 90
-    },
-    {
-      "id": "sym:packages/pipeline/src/workspace.ts#toPosix@L338",
+      "id": "sym:packages/pipeline/src/workspace.ts#toPosix@L337",
       "confidence": 1,
       "name": "toPosix",
       "qualifiedName": "toPosix",
       "signature": "toPosix(p: string): string",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 338
+      "line": 337
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#toPosix@L136",
+      "confidence": 1,
+      "name": "toPosix",
+      "qualifiedName": "toPosix",
+      "signature": "toPosix(p: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 136
     }
   ],
   "docs": [
@@ -141,8 +151,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:607eacfa2171db9b2834d9fff3be7da35a5cc29861854972ac4b545cc8ca3679",
-          "target": "sym:packages/pipeline/src/vcs.ts#git@L79",
+          "edgeId": "e:576dd04fada1db95d874ae49715b705f7edc1f6e6bde483a099ee47c86f24e39",
+          "target": "sym:scripts/soul-refresh-check.mjs#git@L93",
           "expr": "git",
           "line": 61
         }
@@ -159,6 +169,20 @@
           "target": "stmt:packages/pipeline/src/vcs.ts@L61",
           "line": 61,
           "expr": "const cached = git(root, ['diff', '--cached', '--name-only', '--no-renames']) ?? '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+        "procedureName": "uncommittedChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8dbe4bd8f72e676f9a43641f7578177eea97f7746787fd394aa267c1459dcadb",
+          "target": "sym:packages/pipeline/src/vcs.ts#git@L125",
+          "expr": "git",
+          "line": 61
         }
       },
       {
@@ -204,6 +228,34 @@
       {
         "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
         "procedureName": "uncommittedChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:650e8ff220232ff35df0b2c98ca3e35cc08286848596749fcad20f480403a7f9",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 67
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+        "procedureName": "uncommittedChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6922875e1cb2e804a8d8676c22396e637f6de02e9c8653c4e578ee2c856d3b5e",
+          "target": "sym:packages/pipeline/src/workspace.ts#toPosix@L337",
+          "expr": "toPosix",
+          "line": 67
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+        "procedureName": "uncommittedChanges",
         "guard": "cond:packages/pipeline/src/vcs.ts@L67",
         "branch": "THEN",
         "conditions": [
@@ -225,8 +277,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:d791b4e6f142a42e82e1d6afbe9ef09ef0f21d52a89652f1df957d4bee6f5669",
-          "target": "sym:packages/pipeline/src/vcs.ts#toPosix@L90",
+          "edgeId": "e:ab3553f0e381280b4eeed16a478928171571e8fc9f5543e831954cf5d92257ab",
+          "target": "sym:packages/pipeline/src/vcs.ts#toPosix@L136",
           "expr": "toPosix",
           "line": 67
         }
@@ -268,34 +320,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:650e8ff220232ff35df0b2c98ca3e35cc08286848596749fcad20f480403a7f9",
-          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
-          "expr": "add",
-          "line": 67
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
-        "procedureName": "uncommittedChanges",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:0eccbf0ea7da01fdc9203ae3af88c93f5b549dc1cd06295512bfccb89fc4857f",
-          "target": "sym:packages/pipeline/src/workspace.ts#toPosix@L338",
-          "expr": "toPosix",
-          "line": 67
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
-        "procedureName": "uncommittedChanges",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:fac2a4d5d05b8842cc6a7ca0ddbb56da7a8b10accb02673bef1c12fae2a767eb",
           "target": "stmt:packages/pipeline/src/vcs.ts@L70",
@@ -324,7 +348,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 4,
+      "resolved": 5,
       "recorded": 6,
       "unresolved": 2
     },

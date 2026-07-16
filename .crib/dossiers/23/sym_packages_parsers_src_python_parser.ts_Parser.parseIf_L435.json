@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseIf@L435",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:29d0a10573b480d745cf9b802dd89e73607b19276711af07bfa035f88f568dbb",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseIf@L435",
@@ -228,6 +228,20 @@
       {
         "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseIf@L435",
         "procedureName": "Parser.parseIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ddd476305cc1d317b884ff6713d00f8e5ae3ed2299aacf858bf7471e22d40f8",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L436",
+          "line": 436,
+          "expr": "const ifLine = this.peek().line;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseIf@L435",
+        "procedureName": "Parser.parseIf",
         "guard": "cond:packages/parsers/src/python/parser.ts@L458",
         "branch": "THEN",
         "conditions": [
@@ -245,20 +259,6 @@
           "target": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
           "expr": "peek",
           "line": 436
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseIf@L435",
-        "procedureName": "Parser.parseIf",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:0ddd476305cc1d317b884ff6713d00f8e5ae3ed2299aacf858bf7471e22d40f8",
-          "target": "stmt:packages/parsers/src/python/parser.ts@L436",
-          "line": 436,
-          "expr": "const ifLine = this.peek().line;"
         }
       },
       {
@@ -406,32 +406,6 @@
       {
         "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseIf@L435",
         "procedureName": "Parser.parseIf",
-        "guard": "cond:packages/parsers/src/python/parser.ts@L461",
-        "branch": "ELSE",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/python/parser.ts@L458",
-            "expr": "this.isName('else')"
-          },
-          {
-            "id": "cond:packages/parsers/src/python/parser.ts@L461",
-            "expr": "!this.consumeColon()",
-            "polarity": "ELSE"
-          }
-        ],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:f1b98c5536201498609b54c476e8c6696e69d525984b2961201bc59062bc9f7d",
-          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseSuite@L415",
-          "expr": "parseSuite",
-          "line": 443
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseIf@L435",
-        "procedureName": "Parser.parseIf",
         "conditions": [],
         "inLoop": false,
         "inException": false,
@@ -463,10 +437,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:d2ef88a5f21e4773e9c319446405b858e1dc788a05c259cfc58802b14b8c2a6a",
-          "target": "sym:packages/parsers/src/python/parser.ts#stmtsEnd@L814",
-          "expr": "stmtsEnd",
-          "line": 445
+          "edgeId": "e:f1b98c5536201498609b54c476e8c6696e69d525984b2961201bc59062bc9f7d",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseSuite@L415",
+          "expr": "parseSuite",
+          "line": 443
         }
       },
       {
@@ -481,6 +455,32 @@
           "target": "stmt:packages/parsers/src/python/parser.ts@L445",
           "line": 445,
           "expr": "let endLine = stmtsEnd(body, this.lastContentLine, ifLine);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseIf@L435",
+        "procedureName": "Parser.parseIf",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L461",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L458",
+            "expr": "this.isName('else')"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L461",
+            "expr": "!this.consumeColon()",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d2ef88a5f21e4773e9c319446405b858e1dc788a05c259cfc58802b14b8c2a6a",
+          "target": "sym:packages/parsers/src/python/parser.ts#stmtsEnd@L814",
+          "expr": "stmtsEnd",
+          "line": 445
         }
       },
       {

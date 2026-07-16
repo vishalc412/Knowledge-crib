@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRawStringBody@L523",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:bae70e882172f8a626be4a7fea723dc7eb4500cda5791340494df59ea345fad4",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRawStringBody@L523",
@@ -425,11 +425,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:a7a75e95215b23e83f97ab362fbe11f2676118c7673fdab82fb1ca035d52a37c",
-          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.emit@L636",
-          "expr": "emit",
-          "line": 551
+          "kind": "executes",
+          "edgeId": "e:182a9a0b0927280d32d75f8d0bf4713c387c845a6670b22760e2c681fef40421",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L551",
+          "line": 551,
+          "expr": "this.emit('STRING', value, sl, sc);"
         }
       },
       {
@@ -439,11 +439,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:182a9a0b0927280d32d75f8d0bf4713c387c845a6670b22760e2c681fef40421",
-          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L551",
-          "line": 551,
-          "expr": "this.emit('STRING', value, sl, sc);"
+          "kind": "calls",
+          "edgeId": "e:a7a75e95215b23e83f97ab362fbe11f2676118c7673fdab82fb1ca035d52a37c",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.emit@L636",
+          "expr": "emit",
+          "line": 551
         }
       }
     ]

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#runBehavior@L44",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:093188f730e62f3f1795c2a266c458e97da3991816eb00e7f7c6035db3077b99",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#runBehavior@L44",
@@ -79,11 +79,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:2ecc4697ff4caa67d713c61bb06b3b0ed1c7153cf95b2507c9fc8b75d1e7c269",
-          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#ctxFor@L19",
-          "expr": "ctxFor",
-          "line": 46
+          "kind": "executes",
+          "edgeId": "e:17b0e621cbcb8bfc7b6689a1774d06e0dacf755c3c09184b3f1c506c803269a5",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.test.ts@L46",
+          "line": 46,
+          "expr": "return new CsharpExtractor().extract(meta, ctxFor(text));"
         }
       },
       {
@@ -93,11 +93,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:17b0e621cbcb8bfc7b6689a1774d06e0dacf755c3c09184b3f1c506c803269a5",
-          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.test.ts@L46",
-          "line": 46,
-          "expr": "return new CsharpExtractor().extract(meta, ctxFor(text));"
+          "kind": "calls",
+          "edgeId": "e:2ecc4697ff4caa67d713c61bb06b3b0ed1c7153cf95b2507c9fc8b75d1e7c269",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#ctxFor@L19",
+          "expr": "ctxFor",
+          "line": 46
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipBlockComment@L599",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:1ee4b4edddd7dc50b03bcec41840b1e4c4bbf512d8ed8f6ea377c9d607ebe72e",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipBlockComment@L599",
@@ -92,6 +92,20 @@
       {
         "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipBlockComment@L599",
         "procedureName": "Lexer.skipBlockComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:692e5e02a2f423d7b2734208996c4a936acde82175944d538a641ba55f9268ea",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L600",
+          "line": 600,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipBlockComment@L599",
+        "procedureName": "Lexer.skipBlockComment",
         "guard": "cond:packages/parsers/src/csharp/lexer.ts@L602",
         "branch": "LOOP",
         "conditions": [
@@ -109,20 +123,6 @@
           "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
           "expr": "advance",
           "line": 600
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipBlockComment@L599",
-        "procedureName": "Lexer.skipBlockComment",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:692e5e02a2f423d7b2734208996c4a936acde82175944d538a641ba55f9268ea",
-          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L600",
-          "line": 600,
-          "expr": "this.advance();"
         }
       },
       {

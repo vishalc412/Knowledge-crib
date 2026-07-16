@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseExceptionBlock@L927",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:0103d22ecbc9468c89fa0b196e98541f6089bc1fcb2b7f140c0b87a98aaa213d",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseExceptionBlock@L927",
@@ -167,11 +167,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b655489b4a7ca19d863fbadfde3381231a47d05f4458759ce9fc977e9568947c",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.lineOf@L147",
-          "expr": "lineOf",
-          "line": 928
+          "kind": "executes",
+          "edgeId": "e:368cf80ece5ce99be421d27a8aa235ccce30fc4f357add348fbf22d5848f7e00",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L928",
+          "line": 928,
+          "expr": "const startLine = this.lineOf();"
         }
       },
       {
@@ -181,11 +181,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:368cf80ece5ce99be421d27a8aa235ccce30fc4f357add348fbf22d5848f7e00",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L928",
-          "line": 928,
-          "expr": "const startLine = this.lineOf();"
+          "kind": "calls",
+          "edgeId": "e:b655489b4a7ca19d863fbadfde3381231a47d05f4458759ce9fc977e9568947c",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.lineOf@L147",
+          "expr": "lineOf",
+          "line": 928
         }
       },
       {
@@ -349,11 +349,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:8eb29f47d3ffad0badfac89566d9ff76c6aa9cf36e5c2b5dfc574052c72229ec",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseBlock@L780",
-          "expr": "parseBlock",
-          "line": 936
+          "kind": "executes",
+          "edgeId": "e:0335f6dceebdebd0ded69c7cfb5cc1409200eb2af2e4367be3d855432c7cee69",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L936",
+          "line": 936,
+          "expr": "const body = this.parseBlock(HANDLER_STOP);"
         }
       },
       {
@@ -371,11 +371,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:0335f6dceebdebd0ded69c7cfb5cc1409200eb2af2e4367be3d855432c7cee69",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L936",
-          "line": 936,
-          "expr": "const body = this.parseBlock(HANDLER_STOP);"
+          "kind": "calls",
+          "edgeId": "e:8eb29f47d3ffad0badfac89566d9ff76c6aa9cf36e5c2b5dfc574052c72229ec",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseBlock@L780",
+          "expr": "parseBlock",
+          "line": 936
         }
       },
       {

@@ -1,0 +1,289 @@
+{
+  "id": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:c1a8ac1985f31629a3d3dbb68fd0c9ec8b9812ac5d88cfb91a0bee264acc1b77",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+    "kind": "symbol",
+    "type": "function",
+    "name": "majorityAuthor",
+    "qualifiedName": "majorityAuthor",
+    "signature": "majorityAuthor(blame: Map<number, { name: string; email?: string; commit: string }>, start: number, end: number): { name: string; email?: string; commit: string } | null",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/ownership.ts",
+    "span": {
+      "start": 46,
+      "end": 71
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 57
+      },
+      {
+        "callee": "get",
+        "line": 61
+      },
+      {
+        "callee": "set",
+        "line": 63
+      }
+    ]
+  },
+  "source": {
+    "text": "function majorityAuthor(\n  blame: Map<number, { name: string; email?: string; commit: string }>,\n  start: number,\n  end: number,\n): { name: string; email?: string; commit: string } | null {\n  const tally = new Map<\n    string,\n    { count: number; rec: { name: string; email?: string; commit: string } }\n  >();\n  let first: { name: string; email?: string; commit: string } | null = null;\n  for (let line = start; line <= end; line++) {\n    const rec = blame.get(line);\n    if (!rec) continue;\n    const key = rec.email ?? rec.name;\n    if (!first) first = rec;\n    const entry = tally.get(key);\n    if (entry) entry.count++;\n    else tally.set(key, { count: 1, rec });\n  }\n  if (tally.size === 0) return first;\n  let best: { count: number; rec: { name: string; email?: string; commit: string } } | null = null;\n  for (const entry of tally.values()) {\n    if (!best || entry.count > best.count) best = entry;\n  }\n  return best?.rec ?? first;\n}",
+    "truncated": false,
+    "totalLines": 26,
+    "startLine": 46
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+      "confidence": 1,
+      "name": "runOwnership",
+      "qualifiedName": "runOwnership",
+      "signature": "runOwnership(soul: SoulStore, root: string, onlyFiles?: Set<string>): OwnershipStats",
+      "type": "function",
+      "file": "packages/pipeline/src/ownership.ts",
+      "line": 77
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/ownership.ts@L44",
+      "snippet": "/** Majority author across a symbol's span lines; ties break toward the start-line author (the one who",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+    "procedureName": "majorityAuthor",
+    "conditions": [
+      "cond:packages/pipeline/src/ownership.ts@L56",
+      "cond:packages/pipeline/src/ownership.ts@L60",
+      "cond:packages/pipeline/src/ownership.ts@L62",
+      "cond:packages/pipeline/src/ownership.ts@L65",
+      "cond:packages/pipeline/src/ownership.ts@L67",
+      "cond:packages/pipeline/src/ownership.ts@L68"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+        "procedureName": "majorityAuthor",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L56",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L56",
+            "expr": "line <= end",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:20978583844d4f33160766cd50c3856a89bed950258750a2dc6676db3075f474",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L57",
+          "line": 57,
+          "expr": "const rec = blame.get(line);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+        "procedureName": "majorityAuthor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:de67fe36b9757e48fec9717740b30f537af3c750a3aae9a8911832a11ce42b7e",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 57
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+        "procedureName": "majorityAuthor",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L60",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L56",
+            "expr": "line <= end"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L60",
+            "expr": "!first",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ea97ba52ad1be972ff11ab6bb8fd38b3e8319ff3eb21945b511d8e72092d89e0",
+          "target": "assign:packages/pipeline/src/ownership.ts@L60",
+          "line": 60,
+          "expr": "first = rec;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+        "procedureName": "majorityAuthor",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L56",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L56",
+            "expr": "line <= end",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b1ef24a3952f6fa653e5f1f6433e512404db65684690bad860c6066ef1c7c3ef",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L61",
+          "line": 61,
+          "expr": "const entry = tally.get(key);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+        "procedureName": "majorityAuthor",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L62",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L56",
+            "expr": "line <= end"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L62",
+            "expr": "entry",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1079e9e011dd968cd9258b8c54d11086c5b04ff64570f17f72bbb640299d1000",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L63",
+          "line": 63,
+          "expr": "tally.set(key, { count: 1, rec });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+        "procedureName": "majorityAuthor",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L65",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L65",
+            "expr": "tally.size === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0152bf55dd914bd4ac7a88978fadfd454fa44e61bc0dfb07a49241662ff777a5",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L65",
+          "line": 65,
+          "expr": "return first;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+        "procedureName": "majorityAuthor",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L68",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L67",
+            "expr": "tally.values()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L68",
+            "expr": "!best || entry.count > best.count",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2aca73e96cf935fe88a1ed5a54feca52612478b2fadab9d66c019498599dbe49",
+          "target": "assign:packages/pipeline/src/ownership.ts@L68",
+          "line": 68,
+          "expr": "best = entry;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+        "procedureName": "majorityAuthor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:909e9ede08b334c24174772da854108d48339c0c4d1c78329f1e22682fc394e4",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L70",
+          "line": 70,
+          "expr": "return best?.rec ?? first;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/pipeline/src/ownership.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 2,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

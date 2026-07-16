@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.collectCalls@L291",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:a7190eb4a51c4a705c3a439553da45632462f1ff2087fb6b58290a8ab62499d9",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.collectCalls@L291",
@@ -129,11 +129,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:c7c602f4dfe8a142abeb6ff4fda5be918edeb30d595dfeb1050cfec7afe12904",
-          "target": "sym:packages/parsers/src/go/GoExtractor.ts#enclosingSymbolId@L329",
-          "expr": "enclosingSymbolId",
-          "line": 302
+          "kind": "executes",
+          "edgeId": "e:bb82b886eff6a2a0c86da3b6f6ef303153f08b92b808082804b41e4cfb486429",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L302",
+          "line": 302,
+          "expr": "const caller = enclosingSymbolId(c.line, symbols);"
         }
       },
       {
@@ -151,11 +151,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:bb82b886eff6a2a0c86da3b6f6ef303153f08b92b808082804b41e4cfb486429",
-          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L302",
-          "line": 302,
-          "expr": "const caller = enclosingSymbolId(c.line, symbols);"
+          "kind": "calls",
+          "edgeId": "e:c7c602f4dfe8a142abeb6ff4fda5be918edeb30d595dfeb1050cfec7afe12904",
+          "target": "sym:packages/parsers/src/go/GoExtractor.ts#enclosingSymbolId@L329",
+          "expr": "enclosingSymbolId",
+          "line": 302
         }
       },
       {
@@ -242,7 +242,7 @@
     ]
   },
   "coverage": {
-    "readiness": "partial",
+    "readiness": "complete",
     "bodyPresent": true,
     "executes": 5,
     "assignments": 0,
@@ -254,12 +254,10 @@
     "calls": {
       "resolved": 1,
       "recorded": 6,
-      "unresolved": 2
+      "unresolved": 0
     },
     "recursive": false,
     "exprTruncated": 0,
-    "caveats": [
-      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
-    ]
+    "caveats": []
   }
 }

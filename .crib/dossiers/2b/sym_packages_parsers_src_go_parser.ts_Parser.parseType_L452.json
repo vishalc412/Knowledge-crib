@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseType@L452",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:af64dd26ff3bee9c8d93f2206a5bd5a5c15e60cfb91b8d279bb9337fa1764934",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseType@L452",
@@ -151,6 +151,20 @@
       {
         "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseType@L452",
         "procedureName": "Parser.parseType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1b83a47aa4bdec5c5afa03f8e87f81e9b0fe7f847ca528e7575ada0da4bedadc",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L453",
+          "line": 453,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseType@L452",
+        "procedureName": "Parser.parseType",
         "guard": "cond:packages/parsers/src/go/parser.ts@L469",
         "branch": "THEN",
         "conditions": [
@@ -180,20 +194,6 @@
           "target": "sym:packages/parsers/src/go/parser.ts#Parser.next@L1690",
           "expr": "next",
           "line": 453
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseType@L452",
-        "procedureName": "Parser.parseType",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:1b83a47aa4bdec5c5afa03f8e87f81e9b0fe7f847ca528e7575ada0da4bedadc",
-          "target": "stmt:packages/parsers/src/go/parser.ts@L453",
-          "line": 453,
-          "expr": "this.next();"
         }
       },
       {

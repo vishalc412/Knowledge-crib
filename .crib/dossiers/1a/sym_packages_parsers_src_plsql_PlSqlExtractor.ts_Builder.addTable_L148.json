@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:fb1b435b159051110e94ea4d56f5c4e117778b2b82c82b9a431576818ce5f8df",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTable@L148",
@@ -179,11 +179,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:202f58c29104ca722e1c0c842a70c883fc9e50913a5ae40b6be29095ae04f723",
-          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.indexTable@L782",
-          "expr": "indexTable",
-          "line": 166
+          "kind": "executes",
+          "edgeId": "e:18d21b02981f244a87d364f6a4e943b21f72a0547ad6a2c7c42ad033847b6759",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L166",
+          "line": 166,
+          "expr": "this.indexTable(def.schema, def.name, id);"
         }
       },
       {
@@ -193,11 +193,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:18d21b02981f244a87d364f6a4e943b21f72a0547ad6a2c7c42ad033847b6759",
-          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L166",
-          "line": 166,
-          "expr": "this.indexTable(def.schema, def.name, id);"
+          "kind": "calls",
+          "edgeId": "e:202f58c29104ca722e1c0c842a70c883fc9e50913a5ae40b6be29095ae04f723",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.indexTable@L782",
+          "expr": "indexTable",
+          "line": 166
         }
       },
       {

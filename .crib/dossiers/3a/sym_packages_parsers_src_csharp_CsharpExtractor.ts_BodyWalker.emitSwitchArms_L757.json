@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitSwitchArms@L757",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:e39bb377c7e0d185b6d6b17275c4942614564325ed89ccd01a818d827691daca",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitSwitchArms@L757",
@@ -116,11 +116,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:5a69afd35c01e5dd7eb23802c2028e68150b43b459fb6b022d66e34845e3f0a4",
-          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.caseBranch@L717",
-          "expr": "caseBranch",
-          "line": 759
+          "kind": "executes",
+          "edgeId": "e:2b13ff034c1329e994609964f3f8a82478cc2098cc68b5bdca820ed2d9f3fdc0",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L759",
+          "line": 759,
+          "expr": "this.caseBranch(a.predicate ?? '', a.condLine, false);"
         }
       },
       {
@@ -138,11 +138,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:2b13ff034c1329e994609964f3f8a82478cc2098cc68b5bdca820ed2d9f3fdc0",
-          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L759",
-          "line": 759,
-          "expr": "this.caseBranch(a.predicate ?? '', a.condLine, false);"
+          "kind": "calls",
+          "edgeId": "e:5a69afd35c01e5dd7eb23802c2028e68150b43b459fb6b022d66e34845e3f0a4",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.caseBranch@L717",
+          "expr": "caseBranch",
+          "line": 759
         }
       }
     ]

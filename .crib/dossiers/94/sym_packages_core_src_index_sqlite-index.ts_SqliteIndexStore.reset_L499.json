@@ -1,0 +1,198 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reset@L499",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:8f5545a0a187dff4cc43ddc3c6c280e103409d820a6216d8990d9cc5288e3f0f",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reset@L499",
+    "kind": "symbol",
+    "type": "method",
+    "name": "reset",
+    "qualifiedName": "SqliteIndexStore.reset",
+    "signature": "reset(): void",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 499,
+      "end": 513
+    },
+    "callSites": [
+      {
+        "callee": "exec",
+        "line": 504
+      },
+      {
+        "callee": "createSchema",
+        "line": 512
+      }
+    ]
+  },
+  "source": {
+    "text": "  private reset(): void {\n    // DROP + recreate (not just DELETE rows) so a persisted index built with an older DDL\n    // — e.g. before the WS-1 `body` FTS column — is migrated to the current schema on the\n    // next full rebuild. reset() is only called by buildFromSoul (the full-rebuild path),\n    // so dropping here is semantically the same as the old row-delete and is safe.\n    this.db.exec(`\n      DROP TABLE IF EXISTS nodes_fts;\n      DROP TABLE IF EXISTS vectors;\n      DROP TABLE IF EXISTS edges;\n      DROP TABLE IF EXISTS nodes;\n    `);\n    this.builtEmbedderId = null;\n    this.builtDim = 0;\n    this.createSchema();\n  }",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 499
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+      "confidence": 1,
+      "name": "buildFromSoul",
+      "qualifiedName": "SqliteIndexStore.buildFromSoul",
+      "signature": "buildFromSoul(soul: SoulStore, repoRoot: string): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 119
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.createSchema@L468",
+      "confidence": 1,
+      "name": "createSchema",
+      "qualifiedName": "SqliteIndexStore.createSchema",
+      "signature": "createSchema(): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 468
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "heading": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "anchor": "a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "snippet": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#0-4-seconds-the-problem",
+      "heading": "0-4 seconds: The Problem",
+      "anchor": "0-4-seconds-the-problem",
+      "snippet": "0-4 seconds: The Problem",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reset@L499",
+    "procedureName": "SqliteIndexStore.reset",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reset@L499",
+        "procedureName": "SqliteIndexStore.reset",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dd0d1ae706fe59ac9fea505a3857775f2abb94ca9186582144cac47d32ef4e9e",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L504",
+          "line": 504,
+          "expr": "this.db.exec(`\n      DROP TABLE IF EXISTS nodes_fts;\n      DROP TABLE IF EXISTS vectors;\n      DROP TABLE IF EXISTS edges;\n      DROP TABLE IF EXISTS nodes;\n    `);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reset@L499",
+        "procedureName": "SqliteIndexStore.reset",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6d002d73388f4bc937b9624c3f26a346bcf5b2e39ac717649468ff8c8f21a26d",
+          "target": "assign:packages/core/src/index/sqlite-index.ts@L510",
+          "line": 510,
+          "expr": "this.builtEmbedderId = null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reset@L499",
+        "procedureName": "SqliteIndexStore.reset",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dcaf7a5a7d4659195d59e6a187a6483e14956e286cc3a94e9512279a4cc64fca",
+          "target": "assign:packages/core/src/index/sqlite-index.ts@L511",
+          "line": 511,
+          "expr": "this.builtDim = 0;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reset@L499",
+        "procedureName": "SqliteIndexStore.reset",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:315331cf521c10518865a4e2cd21302358077e9afe218d11b867394fe03f36cf",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L512",
+          "line": 512,
+          "expr": "this.createSchema();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reset@L499",
+        "procedureName": "SqliteIndexStore.reset",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:97673e44004c840892c5bedbd6c9a8ba757b12e6d369b8a0384b8b376eceeee1",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.createSchema@L468",
+          "expr": "createSchema",
+          "line": 512
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 2,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

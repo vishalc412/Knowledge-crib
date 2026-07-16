@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.collectCalls@L226",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:c3d3b8e22c4f65eeb6c39fc5165703dea24180c41f4f46fbaf8ea25b4dbafb2a",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.collectCalls@L226",
@@ -131,11 +131,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b39a9980bdd99888396baf7e7db7abed1dc6ff86824b286411f3cfb1f3a38b7a",
-          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
-          "expr": "methodInEnclosingClass",
-          "line": 241
+          "kind": "executes",
+          "edgeId": "e:5d3971200cc6ab3b5aa7ab8026568ac4fbbc1f5a5d1f8849af4952a8f3f65f11",
+          "target": "assign:packages/parsers/src/csharp/CsharpExtractor.ts@L241",
+          "line": 241,
+          "expr": "dstId = methodInEnclosingClass(c.line, c.name, symbols);"
         }
       },
       {
@@ -157,11 +157,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:5d3971200cc6ab3b5aa7ab8026568ac4fbbc1f5a5d1f8849af4952a8f3f65f11",
-          "target": "assign:packages/parsers/src/csharp/CsharpExtractor.ts@L241",
-          "line": 241,
-          "expr": "dstId = methodInEnclosingClass(c.line, c.name, symbols);"
+          "kind": "calls",
+          "edgeId": "e:b39a9980bdd99888396baf7e7db7abed1dc6ff86824b286411f3cfb1f3a38b7a",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+          "expr": "methodInEnclosingClass",
+          "line": 241
         }
       },
       {
@@ -356,12 +356,12 @@
     "calls": {
       "resolved": 2,
       "recorded": 8,
-      "unresolved": 3
+      "unresolved": 1
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

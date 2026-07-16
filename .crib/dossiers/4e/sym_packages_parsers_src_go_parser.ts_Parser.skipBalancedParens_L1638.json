@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/parser.ts#Parser.skipBalancedParens@L1638",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:5b7bdd15d5cbc3be330640faebd7f05a35536145e25e2aff79008a8210714383",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/parser.ts#Parser.skipBalancedParens@L1638",
@@ -160,11 +160,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:86de002212cb417689b447dddbf59d435376227e1a82791519265adf926a426e",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.peek@L1695",
-          "expr": "peek",
-          "line": 1642
+          "kind": "executes",
+          "edgeId": "e:666a39410f463c8124dc623a9173ca53c00acfc0b7c3b1ec866d720345b61d47",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L1642",
+          "line": 1642,
+          "expr": "const tk = this.peek();"
         }
       },
       {
@@ -182,11 +182,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:666a39410f463c8124dc623a9173ca53c00acfc0b7c3b1ec866d720345b61d47",
-          "target": "stmt:packages/parsers/src/go/parser.ts@L1642",
-          "line": 1642,
-          "expr": "const tk = this.peek();"
+          "kind": "calls",
+          "edgeId": "e:86de002212cb417689b447dddbf59d435376227e1a82791519265adf926a426e",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.peek@L1695",
+          "expr": "peek",
+          "line": 1642
         }
       },
       {

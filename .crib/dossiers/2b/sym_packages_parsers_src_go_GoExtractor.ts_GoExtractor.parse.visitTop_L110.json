@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.parse.visitTop@L110",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:5c3be36a55d6f870b52035ece9a9f31853c92216927cee737d60f13d463260d6",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.parse.visitTop@L110",
@@ -116,14 +116,14 @@
       "line": 241
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 77
+      "line": 88
     },
     {
       "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
@@ -171,11 +171,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:ed94c59e2b85934a771d1fe0fc6c8871ec0cda768d7c70bddd275af265ad6e06",
-          "target": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.qualifiedName@L236",
-          "expr": "qualifiedName",
-          "line": 113
+          "kind": "executes",
+          "edgeId": "e:1c95295f68fa078a73a47603a8ddb80cd93076663eac353017462dda151868b9",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L113",
+          "line": 113,
+          "expr": "const qualifiedName = this.qualifiedName(d, parentQ);"
         }
       },
       {
@@ -193,11 +193,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:1c95295f68fa078a73a47603a8ddb80cd93076663eac353017462dda151868b9",
-          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L113",
-          "line": 113,
-          "expr": "const qualifiedName = this.qualifiedName(d, parentQ);"
+          "kind": "calls",
+          "edgeId": "e:ed94c59e2b85934a771d1fe0fc6c8871ec0cda768d7c70bddd275af265ad6e06",
+          "target": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.qualifiedName@L236",
+          "expr": "qualifiedName",
+          "line": 113
         }
       },
       {
@@ -230,8 +230,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:fef526eab8ea1b99d14915fbcf3a04a6fd34480d807a619606a47be0e8b98ecd",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L77",
+          "edgeId": "e:7faa5c038f385645033ce0d6165ce2b4976983f410be29dd7119563c6a3f7a25",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
           "expr": "idFor",
           "line": 114
         }

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/cli/src/registry.ts#readRegistry@L60",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:df0ea012fc427894e877b487b09c13b28a2f7d2451438ff793e846faade8a84e",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/cli/src/registry.ts#readRegistry@L60",
@@ -92,14 +92,14 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
       "confidence": 1,
       "name": "parse",
       "qualifiedName": "parse",
-      "signature": "parse(…)",
+      "signature": "parse(input)",
       "type": "function",
-      "file": "packages/parsers/src/java/parser.test.ts",
-      "line": 35
+      "file": "packages/pipeline/fixtures/plain-js/src/legacy.cjs",
+      "line": 4
     },
     {
       "id": "sym:packages/cli/src/registry.ts#registryPath@L55",
@@ -146,11 +146,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:278ad5512a70e220f7a776218486ba7bf756b48c7b653878b6b0d742ec75d4ac",
-          "target": "sym:packages/cli/src/registry.ts#registryPath@L55",
-          "expr": "registryPath",
-          "line": 61
+          "kind": "executes",
+          "edgeId": "e:131bd5ced01ad30c209b7fc89432a504ef5fce9d684ae353347910ed0d579c68",
+          "target": "stmt:packages/cli/src/registry.ts@L61",
+          "line": 61,
+          "expr": "const path = registryPath(env);"
         }
       },
       {
@@ -160,11 +160,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:131bd5ced01ad30c209b7fc89432a504ef5fce9d684ae353347910ed0d579c68",
-          "target": "stmt:packages/cli/src/registry.ts@L61",
-          "line": 61,
-          "expr": "const path = registryPath(env);"
+          "kind": "calls",
+          "edgeId": "e:278ad5512a70e220f7a776218486ba7bf756b48c7b653878b6b0d742ec75d4ac",
+          "target": "sym:packages/cli/src/registry.ts#registryPath@L55",
+          "expr": "registryPath",
+          "line": 61
         }
       },
       {
@@ -194,13 +194,13 @@
         "procedureName": "readRegistry",
         "conditions": [],
         "inLoop": false,
-        "inException": true,
+        "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:a1b65fa2bcd5dd78235f67819f008479ee8912b015168b9aae08b01df95a2796",
-          "target": "stmt:packages/cli/src/registry.ts@L64",
-          "line": 64,
-          "expr": "const parsed = JSON.parse(readFileSync(path, 'utf8')) as Partial<Registry>;"
+          "kind": "calls",
+          "edgeId": "e:0e49965e77e5f1efd3fddd86bfc12e34f25417a3d47804a952861eea18e76a44",
+          "target": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+          "expr": "parse",
+          "line": 64
         }
       },
       {
@@ -208,13 +208,13 @@
         "procedureName": "readRegistry",
         "conditions": [],
         "inLoop": false,
-        "inException": false,
+        "inException": true,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:814d62fa8f70e0f741a81ebf520a058b5324fcc72f716fecca966f688920ec80",
-          "target": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
-          "expr": "parse",
-          "line": 64
+          "kind": "executes",
+          "edgeId": "e:a1b65fa2bcd5dd78235f67819f008479ee8912b015168b9aae08b01df95a2796",
+          "target": "stmt:packages/cli/src/registry.ts@L64",
+          "line": 64,
+          "expr": "const parsed = JSON.parse(readFileSync(path, 'utf8')) as Partial<Registry>;"
         }
       },
       {

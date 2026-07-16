@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/PythonExtractor.ts#exprFields@L26",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:93bdb14b1ebade7ab11cf304af634f307ccccd5d1147134302c74257aa3550b0",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/PythonExtractor.ts#exprFields@L26",
@@ -120,11 +120,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:a187dc9ef8caa96855fb5c1f1f21a86f9a07ba91847915d8eaadf8c69b4a806f",
-          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L28",
-          "line": 28,
-          "expr": "const { expr, truncated } = clampExpr(raw);"
+          "kind": "calls",
+          "edgeId": "e:7af8bd6ed2a27d54ebe1e31583bf64e0cb8a538b88eb55a39584c5381d9972b5",
+          "target": "sym:packages/parsers/src/types.ts#clampExpr@L30",
+          "expr": "clampExpr",
+          "line": 28
         }
       },
       {
@@ -134,11 +134,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:7af8bd6ed2a27d54ebe1e31583bf64e0cb8a538b88eb55a39584c5381d9972b5",
-          "target": "sym:packages/parsers/src/types.ts#clampExpr@L30",
-          "expr": "clampExpr",
-          "line": 28
+          "kind": "executes",
+          "edgeId": "e:a187dc9ef8caa96855fb5c1f1f21a86f9a07ba91847915d8eaadf8c69b4a806f",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L28",
+          "line": 28,
+          "expr": "const { expr, truncated } = clampExpr(raw);"
         }
       },
       {

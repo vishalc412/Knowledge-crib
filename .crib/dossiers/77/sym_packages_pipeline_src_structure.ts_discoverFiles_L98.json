@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/structure.ts#discoverFiles@L98",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:a6f90f5d16a97f058f1a3f15d0226ba1f981e7fefe998a1725a6488a7a1ae0ae",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/structure.ts#discoverFiles@L98",
@@ -124,14 +124,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L108",
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
       "confidence": 1,
       "name": "indexRepo",
       "qualifiedName": "indexRepo",
       "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
       "type": "function",
       "file": "packages/pipeline/src/pipeline.ts",
-      "line": 108
+      "line": 94
     },
     {
       "id": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
@@ -206,14 +206,14 @@
       "line": 147
     },
     {
-      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
+      "id": "sym:scripts/docs-stats.mjs#walk@L31",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "walk",
-      "signature": "walk(node: ts.Node, fn: (n: ts.Node) => void): void",
+      "signature": "walk(…)",
       "type": "function",
-      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
-      "line": 200
+      "file": "scripts/docs-stats.mjs",
+      "line": 31
     }
   ],
   "docs": [
@@ -226,10 +226,10 @@
       "confidence": 1
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m13-offline-multimodal-worker-pdf-image-whisper-audio",
-      "heading": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
-      "anchor": "m13-offline-multimodal-worker-pdf-image-whisper-audio",
-      "snippet": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "heading": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "anchor": "a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "snippet": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -246,30 +246,30 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/llm-integration-deep-dive.md#a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
-      "heading": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
-      "anchor": "a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
-      "snippet": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "heading": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "anchor": "m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "snippet": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#11-architecture",
-      "heading": "11. Architecture",
-      "anchor": "11-architecture",
-      "snippet": "11. Architecture",
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
       "edgeType": "describes",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
     },
     {
-      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
-      "heading": "7. The Complete Code Map (Quick Reference)",
-      "anchor": "7-the-complete-code-map-quick-reference",
-      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#11-architecture",
+      "heading": "11. Architecture",
+      "anchor": "11-architecture",
+      "snippet": "11. Architecture",
       "edgeType": "describes",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -288,11 +288,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:b22a361ffc6586fc32b69d4d7554b4655efe4d15108cc08fc9a8b84ced1e4968",
-          "target": "stmt:packages/pipeline/src/structure.ts@L101",
-          "line": 101,
-          "expr": "git.add('', readGitignore(root, ''));"
+          "kind": "calls",
+          "edgeId": "e:0a660826080dd009e10a24a601f8afdef57f876a53784d2d84f65d146d855afc",
+          "target": "sym:packages/pipeline/src/gitignore.ts#readGitignore@L147",
+          "expr": "readGitignore",
+          "line": 101
         }
       },
       {
@@ -302,11 +302,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:0a660826080dd009e10a24a601f8afdef57f876a53784d2d84f65d146d855afc",
-          "target": "sym:packages/pipeline/src/gitignore.ts#readGitignore@L147",
-          "expr": "readGitignore",
-          "line": 101
+          "kind": "executes",
+          "edgeId": "e:b22a361ffc6586fc32b69d4d7554b4655efe4d15108cc08fc9a8b84ced1e4968",
+          "target": "stmt:packages/pipeline/src/structure.ts@L101",
+          "line": 101,
+          "expr": "git.add('', readGitignore(root, ''));"
         }
       },
       {
@@ -401,24 +401,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:2826bd0c35482cee6da6c9bb1907fe8f9e02539fa41858dc15de4a0238dd9564",
-          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
+          "edgeId": "e:42f927c0bc83c9ebf99f7c54219ef19e00c7f80ac6bcd2b17f9cfa2a5ed7b818",
+          "target": "sym:scripts/docs-stats.mjs#walk@L31",
           "expr": "walk",
           "line": 142
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles@L98",
-        "procedureName": "discoverFiles",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:c8a085c90b2566ec75f642a69e11ee05fd771bdb4a3315ff7232e0511c9af232",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 145
         }
       },
       {
@@ -432,6 +418,20 @@
           "edgeId": "e:0cfdc7a5cf3b2856c6bb5d808a86f4c694e6875fb0e26133e58021a47cdffc52",
           "target": "sym:packages/pipeline/src/structure.ts#langForPath@L190",
           "expr": "langForPath",
+          "line": 145
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#discoverFiles@L98",
+        "procedureName": "discoverFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c8a085c90b2566ec75f642a69e11ee05fd771bdb4a3315ff7232e0511c9af232",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
           "line": 145
         }
       },

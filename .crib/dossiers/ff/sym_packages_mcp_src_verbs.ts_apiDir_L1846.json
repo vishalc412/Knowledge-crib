@@ -1,0 +1,135 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#apiDir@L1846",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:7a30fed5f098498a9474f7e141f6f5472e9a372d631b9ba5bb0aad6863939d77",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#apiDir@L1846",
+    "kind": "symbol",
+    "type": "function",
+    "name": "apiDir",
+    "qualifiedName": "apiDir",
+    "signature": "apiDir(d?: ApiDir): Dir | 'both'",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1846,
+      "end": 1850
+    }
+  },
+  "source": {
+    "text": "function apiDir(d?: ApiDir): Dir | 'both' {\n  if (d === 'in') return 'up';\n  if (d === 'out') return 'down';\n  return 'both';\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 1846
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L1231",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "Verbs.neighbors",
+      "signature": "neighbors(args: {\n    id: string;\n    rel?: string;\n    dir?: ApiDir;\n    limit?: number;\n    extractedOnly?: boolean;\n    includeLlm?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1231
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#apiDir@L1846",
+    "procedureName": "apiDir",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L1847",
+      "cond:packages/mcp/src/verbs.ts@L1848"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#apiDir@L1846",
+        "procedureName": "apiDir",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1847",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1847",
+            "expr": "d === 'in'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b6cb54430c4b4121251c04e2383c74fa6abe25f7222850aaf1747b910a106707",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1847",
+          "line": 1847,
+          "expr": "return 'up';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#apiDir@L1846",
+        "procedureName": "apiDir",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1848",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1848",
+            "expr": "d === 'out'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5832932c87a19799786a145314a764ee72167a7f94e5c3ac06539ef953a0c610",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1848",
+          "line": 1848,
+          "expr": "return 'down';"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#apiDir@L1846",
+        "procedureName": "apiDir",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1ee239a8ef1b6e8bad03f75b7d2f513a22345b9128ce482263c3c2969c452561",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1849",
+          "line": 1849,
+          "expr": "return 'both';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

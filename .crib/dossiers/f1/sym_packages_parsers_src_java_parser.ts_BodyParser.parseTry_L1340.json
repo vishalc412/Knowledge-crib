@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseTry@L1340",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:20bd79609d98ea3ef23f9e20be8471c6f3d65330e7e0329acacf85331751532f",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseTry@L1340",
@@ -180,6 +180,20 @@
       {
         "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseTry@L1340",
         "procedureName": "BodyParser.parseTry",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a72681a93cf1233362b888dd102ee057353adb649193f31fc9a61b1edc28d3bc",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1341",
+          "line": 1341,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseTry@L1340",
+        "procedureName": "BodyParser.parseTry",
         "guard": "cond:packages/parsers/src/java/parser.ts@L1354",
         "branch": "THEN",
         "conditions": [
@@ -210,15 +224,23 @@
       {
         "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseTry@L1340",
         "procedureName": "BodyParser.parseTry",
-        "conditions": [],
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1342",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1342",
+            "expr": "this.isOp('(')",
+            "polarity": "THEN"
+          }
+        ],
         "inLoop": false,
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:a72681a93cf1233362b888dd102ee057353adb649193f31fc9a61b1edc28d3bc",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1341",
-          "line": 1341,
-          "expr": "this.next();"
+          "edgeId": "e:7db793459e65fc06a53c2d4226734ed508d4215dff310b93334d3666a95721ba",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1342",
+          "line": 1342,
+          "expr": "this.readParenText();"
         }
       },
       {
@@ -250,23 +272,15 @@
       {
         "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseTry@L1340",
         "procedureName": "BodyParser.parseTry",
-        "guard": "cond:packages/parsers/src/java/parser.ts@L1342",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/java/parser.ts@L1342",
-            "expr": "this.isOp('(')",
-            "polarity": "THEN"
-          }
-        ],
+        "conditions": [],
         "inLoop": false,
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:7db793459e65fc06a53c2d4226734ed508d4215dff310b93334d3666a95721ba",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1342",
-          "line": 1342,
-          "expr": "this.readParenText();"
+          "edgeId": "e:54f7758c051f9ddd5bc65f9aa3e16e2d635d037245e3402898829229a4cafc7f",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1343",
+          "line": 1343,
+          "expr": "const tryBody = this.parseBlockOrStmt();"
         }
       },
       {
@@ -297,20 +311,6 @@
           "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseBlockOrStmt@L1555",
           "expr": "parseBlockOrStmt",
           "line": 1343
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseTry@L1340",
-        "procedureName": "BodyParser.parseTry",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:54f7758c051f9ddd5bc65f9aa3e16e2d635d037245e3402898829229a4cafc7f",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1343",
-          "line": 1343,
-          "expr": "const tryBody = this.parseBlockOrStmt();"
         }
       },
       {

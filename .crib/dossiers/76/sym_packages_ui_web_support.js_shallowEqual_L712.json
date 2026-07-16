@@ -1,0 +1,219 @@
+{
+  "id": "sym:packages/ui/web/support.js#shallowEqual@L712",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:f101f403250c08ca9685e7a4d2e9e452888e1a84c3e21e7b621318446cc1a808",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#shallowEqual@L712",
+    "kind": "symbol",
+    "type": "function",
+    "name": "shallowEqual",
+    "qualifiedName": "shallowEqual",
+    "signature": "shallowEqual(a, b)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 712,
+      "end": 719
+    },
+    "callSites": [
+      {
+        "callee": "filter",
+        "line": 714
+      },
+      {
+        "callee": "keys",
+        "line": 714
+      },
+      {
+        "callee": "filter",
+        "line": 715
+      },
+      {
+        "callee": "keys",
+        "line": 715
+      }
+    ]
+  },
+  "source": {
+    "text": "  function shallowEqual(a, b) {\n    if (!b) return false;\n    const ak = Object.keys(a).filter((k) => k !== \"children\");\n    const bk = Object.keys(b).filter((k) => k !== \"children\");\n    if (ak.length !== bk.length) return false;\n    for (const k of ak) if (a[k] !== b[k]) return false;\n    return true;\n  }",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 712
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.__reconcileLogic@L834",
+      "confidence": 1,
+      "name": "__reconcileLogic",
+      "qualifiedName": "createComponentFactory.StreamableComponent.__reconcileLogic",
+      "signature": "__reconcileLogic()",
+      "type": "method",
+      "file": "packages/ui/web/support.js",
+      "line": 834
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/ui/web/support.js@L711",
+      "snippet": "// src/component.ts",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#shallowEqual@L712",
+    "procedureName": "shallowEqual",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L713",
+      "cond:packages/ui/web/support.js@L716",
+      "cond:packages/ui/web/support.js@L717"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#shallowEqual@L712",
+        "procedureName": "shallowEqual",
+        "guard": "cond:packages/ui/web/support.js@L713",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L713",
+            "expr": "!b",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db6d336f1565784904a3f11be8e35c4a74e9abf77ae678ada645484e360b227e",
+          "target": "stmt:packages/ui/web/support.js@L713",
+          "line": 713,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#shallowEqual@L712",
+        "procedureName": "shallowEqual",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1aa3619bf08dc9f5f05f137dd1de5be6965c8d874464ab7c603307d7ae1ea9ba",
+          "target": "stmt:packages/ui/web/support.js@L714",
+          "line": 714,
+          "expr": "const ak = Object.keys(a).filter((k) => k !== \"children\");"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#shallowEqual@L712",
+        "procedureName": "shallowEqual",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9db4e5d13c8594b442225c4c6dee6ecbed5c6d1ce231b08bfbb230eac948b213",
+          "target": "stmt:packages/ui/web/support.js@L715",
+          "line": 715,
+          "expr": "const bk = Object.keys(b).filter((k) => k !== \"children\");"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#shallowEqual@L712",
+        "procedureName": "shallowEqual",
+        "guard": "cond:packages/ui/web/support.js@L716",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L716",
+            "expr": "ak.length !== bk.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a7cc843e0e31b39bd0db8c73443a1fea97415c60c495f3e06e0d3eef7bbc3d88",
+          "target": "stmt:packages/ui/web/support.js@L716",
+          "line": 716,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#shallowEqual@L712",
+        "procedureName": "shallowEqual",
+        "guard": "cond:packages/ui/web/support.js@L717",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L717",
+            "expr": "ak"
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L717",
+            "expr": "ak",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b7c9c3b176a7537210ef05f80a9014ab3377cd4b417bf8fb9be9024aceacf897",
+          "target": "stmt:packages/ui/web/support.js@L717",
+          "line": 717,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#shallowEqual@L712",
+        "procedureName": "shallowEqual",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f9ffa06036817f5a54b06beee9b0d44bf7041fe3b5b408eef0731f8ecc86505b",
+          "target": "stmt:packages/ui/web/support.js@L718",
+          "line": 718,
+          "expr": "return true;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "id": "sym:scripts/stats-check.mjs#gitInit.g@L48",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:735c1e4b4a2a55cc1f3e65daee3873cae5bc722bc282533e98b31c3c34da09e1",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/stats-check.mjs#gitInit.g@L48",
+    "kind": "symbol",
+    "type": "function",
+    "name": "g",
+    "qualifiedName": "gitInit.g",
+    "signature": "g(…)",
+    "lang": "javascript",
+    "file": "scripts/stats-check.mjs",
+    "span": {
+      "start": 48,
+      "end": 52
+    }
+  },
+  "source": {
+    "text": "  const g = (args) =>\n    execFileSync('git', ['-C', repo, ...args], {\n      encoding: 'utf8',\n      stdio: ['ignore', 'pipe', 'pipe'],\n    });",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 48
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/stats-check.mjs#gitInit@L47",
+      "confidence": 1,
+      "name": "gitInit",
+      "qualifiedName": "gitInit",
+      "signature": "gitInit(…)",
+      "type": "function",
+      "file": "scripts/stats-check.mjs",
+      "line": 47
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/stats-check.mjs#gitInit.g@L48",
+    "procedureName": "gitInit.g",
+    "conditions": [],
+    "rules": []
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": [
+      "scripts/stats-check.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

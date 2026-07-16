@@ -1,0 +1,185 @@
+{
+  "id": "sym:packages/core/src/materialize.test.ts#writeArtifact@L35",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:7d31f9b702a1130a9476a58d37d42dbe5cfacacd6ac3e4651ea624ec45938d89",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/materialize.test.ts#writeArtifact@L35",
+    "kind": "symbol",
+    "type": "function",
+    "name": "writeArtifact",
+    "qualifiedName": "writeArtifact",
+    "signature": "writeArtifact(crib: string, target: Node, schemaVersion: string, capName = 'Authentication'): void",
+    "lang": "typescript",
+    "file": "packages/core/src/materialize.test.ts",
+    "span": {
+      "start": 35,
+      "end": 71
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 41
+      },
+      {
+        "callee": "graphPaths",
+        "line": 41
+      },
+      {
+        "callee": "mkdirSync",
+        "line": 42
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 43
+      },
+      {
+        "callee": "join",
+        "line": 44
+      },
+      {
+        "callee": "stringify",
+        "line": 45
+      }
+    ]
+  },
+  "source": {
+    "text": "function writeArtifact(\n  crib: string,\n  target: Node,\n  schemaVersion: string,\n  capName = 'Authentication',\n): void {\n  const dir = join(graphPaths(crib).artifacts, 'file', '00');\n  mkdirSync(dir, { recursive: true });\n  writeFileSync(\n    join(dir, 'auth.json'),\n    JSON.stringify({\n      version: 1,\n      layer: 'file',\n      targetId: target.id,\n      nodeHash: target.hash,\n      schemaVersion,\n      builtAt: '2026-01-01T00:00:00Z',\n      model: 'test-model',\n      grounded: true,\n      analysis: { purpose: 'Authentication boundary', confidence: 0.9 },\n      graph: {\n        nodes: [\n          {\n            id: `llm:${target.id}#cap:auth`,\n            localId: 'cap:auth',\n            kind: 'capability',\n            name: capName,\n          },\n        ],\n        edges: [\n          { from: target.id, to: `llm:${target.id}#cap:auth`, rel: 'realizes', confidence: 0.9 },\n        ],\n      },\n      evidence: [{ soulId: target.id, why: 'file anchor' }],\n    }),\n  );\n}",
+    "truncated": false,
+    "totalLines": 37,
+    "startLine": 35
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/graph-layout.ts#graphPaths@L33",
+      "confidence": 1,
+      "name": "graphPaths",
+      "qualifiedName": "graphPaths",
+      "signature": "graphPaths(cribDir: string): GraphPaths",
+      "type": "function",
+      "file": "packages/core/src/graph-layout.ts",
+      "line": 33
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/materialize.test.ts@L34",
+      "snippet": "/** Write a fresh (grounded) semantic artifact for `target` so compositeLive() surfaces a semantic node. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#enrich-save-persist-an-externally-authored-batch",
+      "heading": "`enrich_save` *(persist an externally-authored batch)*",
+      "anchor": "enrich-save-persist-an-externally-authored-batch",
+      "snippet": "`enrich_save` *(persist an externally-authored batch)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/materialize.test.ts#writeArtifact@L35",
+    "procedureName": "writeArtifact",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/materialize.test.ts#writeArtifact@L35",
+        "procedureName": "writeArtifact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:44b43a367a8b5e59375d8525efbc542d5cfc07e2ea282ae2b4c2a0b6a1f5b23a",
+          "target": "sym:packages/core/src/graph-layout.ts#graphPaths@L33",
+          "expr": "graphPaths",
+          "line": 41
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/materialize.test.ts#writeArtifact@L35",
+        "procedureName": "writeArtifact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b55761c956e943e179a1b3cbb0f20d414579c41b6b635d5047b06ab612089f53",
+          "target": "stmt:packages/core/src/materialize.test.ts@L41",
+          "line": 41,
+          "expr": "const dir = join(graphPaths(crib).artifacts, 'file', '00');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/materialize.test.ts#writeArtifact@L35",
+        "procedureName": "writeArtifact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d74a99ab34220e717556ebc9bacae4d21dc999a5740195232f70232b8c843ca0",
+          "target": "stmt:packages/core/src/materialize.test.ts@L42",
+          "line": 42,
+          "expr": "mkdirSync(dir, { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/materialize.test.ts#writeArtifact@L35",
+        "procedureName": "writeArtifact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0d9938f7bdd92bdc17ddd56c6ffb90921bb75d7cff4eaddade8a17025b6fd1ca",
+          "target": "stmt:packages/core/src/materialize.test.ts@L43",
+          "line": 43,
+          "expr": "writeFileSync(\n    join(dir, 'auth.json'),\n    JSON.stringify({\n      version: 1,\n      layer: 'file',\n      targetId: target.id,\n      nodeHash: target.hash,\n      schemaVersion,\n      builtAt: '2026-01-01T00:00:00Z',\n      model: 'test-model',\n      grounded: true,\n      analysis: { purpose: 'Authentication boundary', confidence: 0.9 },\n      graph: {\n        nodes: [\n          {\n            id: `llm:${target.id}#cap:auth`,\n            localId: 'cap:auth',\n            kind: 'capability',\n            name: capName,\n          },\n        ],\n        edges: [\n          { from: target.id, to: `llm:${target.id}#cap:auth`, rel: 'realizes', confidence: 0.9 },\n        ],\n      },\n      evidence: [{ soulId: target.id, why: 'file anchor' }],\n    }),\n  );"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 6,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

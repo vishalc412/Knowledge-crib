@@ -1,0 +1,168 @@
+{
+  "id": "sym:packages/core/src/federation.ts#routeKey@L284",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:79e35d8b74fd1ab885c69d069c6352d4101bb60628f406414bb1169a99a6bcef",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/federation.ts#routeKey@L284",
+    "kind": "symbol",
+    "type": "function",
+    "name": "routeKey",
+    "qualifiedName": "routeKey",
+    "signature": "routeKey(method: string, path: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/core/src/federation.ts",
+    "span": {
+      "start": 284,
+      "end": 287
+    },
+    "callSites": [
+      {
+        "callee": "toUpperCase",
+        "line": 286
+      },
+      {
+        "callee": "normalizePath",
+        "line": 286
+      }
+    ]
+  },
+  "source": {
+    "text": "function routeKey(method: string, path: string): string | undefined {\n  if (!method || !path) return undefined;\n  return `${method.toUpperCase()} ${normalizePath(path)}`;\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 284
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/federation.ts#iterateRouteMatches@L221",
+      "confidence": 1,
+      "name": "iterateRouteMatches",
+      "qualifiedName": "iterateRouteMatches",
+      "signature": "iterateRouteMatches(fed: Federation, callMethod: string, callPath: string): Generator<{ soulRoot: string; node: Node }>",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 221
+    },
+    {
+      "id": "sym:packages/core/src/federation.ts#loadFederation@L43",
+      "confidence": 1,
+      "name": "loadFederation",
+      "qualifiedName": "loadFederation",
+      "signature": "loadFederation(roots: string[]): Federation",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 43
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/federation.ts#normalizePath@L293",
+      "confidence": 1,
+      "name": "normalizePath",
+      "qualifiedName": "normalizePath",
+      "signature": "normalizePath(p: string): string",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 293
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/federation.ts@L283",
+      "snippet": "/** `METHOD path` lookup key for the route index, or undefined if either part is empty. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/federation.ts#routeKey@L284",
+    "procedureName": "routeKey",
+    "conditions": [
+      "cond:packages/core/src/federation.ts@L285"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/federation.ts#routeKey@L284",
+        "procedureName": "routeKey",
+        "guard": "cond:packages/core/src/federation.ts@L285",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/federation.ts@L285",
+            "expr": "!method || !path",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9699a50e6f611fea7ca1000a2521b4f2640162cde641694c2d0b6f90e123bcdb",
+          "target": "stmt:packages/core/src/federation.ts@L285",
+          "line": 285,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#routeKey@L284",
+        "procedureName": "routeKey",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7b4afc50d6dc18aa98f828fbd02a4c64657504da56b10dc68abf19dcc6699207",
+          "target": "stmt:packages/core/src/federation.ts@L286",
+          "line": 286,
+          "expr": "return `${method.toUpperCase()} ${normalizePath(path)}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#routeKey@L284",
+        "procedureName": "routeKey",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:da2c433e53877abd36392164b3e5cfaf3e8b876ded9176c3fd215a663220337b",
+          "target": "sym:packages/core/src/federation.ts#normalizePath@L293",
+          "expr": "normalizePath",
+          "line": 286
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/federation.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

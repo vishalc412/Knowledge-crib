@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:ef49e47e5f88ab8d200c06311045d97e1486e6a4999e32d40cfbff51f3d3a9a5",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
@@ -168,14 +168,24 @@
       "line": 150
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 122
+      "line": 141
     },
     {
       "id": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
@@ -258,6 +268,16 @@
       "line": 196
     },
     {
+      "id": "sym:scripts/docs-stats.mjs#walk@L31",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/docs-stats.mjs",
+      "line": 31
+    },
+    {
       "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
       "confidence": 1,
       "name": "walk",
@@ -319,8 +339,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:18f2445b29b005b6ec3b8156f7c80277c174e87de997a9309cf4d8a1d404c046",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "edgeId": "e:eb9a2c646783db931e99c5f57b1739bdc0dd922135c706e7d5a8631a855e4e5e",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
           "expr": "edgeId",
           "line": 62
         }
@@ -337,28 +357,6 @@
           "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
           "expr": "add",
           "line": 64
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
-        "procedureName": "resolveTypeScript",
-        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
-            "expr": "files",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:997f544922761812f904c39a3c07702815cc54954fc290bc596d70f7e0f0b5fc",
-          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript.push@L61",
-          "expr": "push",
-          "line": 65
         }
       },
       {
@@ -391,8 +389,44 @@
         "inException": false,
         "action": {
           "kind": "calls",
+          "edgeId": "e:997f544922761812f904c39a3c07702815cc54954fc290bc596d70f7e0f0b5fc",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript.push@L61",
+          "expr": "push",
+          "line": 65
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
           "edgeId": "e:3042a60f0e80089900dc70981f1ee48b86f76d55ca401173b54d38d2c5cddb03",
           "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#safeRead@L205",
+          "expr": "safeRead",
+          "line": 79
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c4ab2b37f4458d6c2c91e2cb40b9ac2afe1028dd2a845ccaacadd10c380d9425",
+          "target": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
           "expr": "safeRead",
           "line": 79
         }
@@ -417,20 +451,6 @@
           "target": "stmt:packages/pipeline/src/resolve/ts-resolver.ts@L79",
           "line": 79,
           "expr": "const text = safeRead(join(root, file.path));"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
-        "procedureName": "resolveTypeScript",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:c4ab2b37f4458d6c2c91e2cb40b9ac2afe1028dd2a845ccaacadd10c380d9425",
-          "target": "sym:packages/pipeline/src/structure.ts#safeRead@L196",
-          "expr": "safeRead",
-          "line": 79
         }
       },
       {
@@ -580,21 +600,13 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
         "procedureName": "resolveTypeScript",
-        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
-            "expr": "files",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
+        "conditions": [],
+        "inLoop": false,
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:c57a9d77c4293ccec1d965d204976f0d1c8c2c29720598a1cfe11f92fde21a8c",
-          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
+          "edgeId": "e:7e9e24d8a936bf9569607275db0536d2b2480999174b560b7edc0e16f160685a",
+          "target": "sym:scripts/docs-stats.mjs#walk@L31",
           "expr": "walk",
           "line": 96
         }
@@ -637,8 +649,58 @@
         "inException": false,
         "action": {
           "kind": "calls",
+          "edgeId": "e:c57a9d77c4293ccec1d965d204976f0d1c8c2c29720598a1cfe11f92fde21a8c",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
+          "expr": "walk",
+          "line": 96
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a42834fa2b6a7ac5d3cb915afd5abbfd5f1615232a7f11ac098b40021629924d",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 99
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "guard": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/ts-resolver.ts@L77",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
           "edgeId": "e:1dfff391209c7aece97a9c73a3e73530598b35f807d71dc10798f428805aa1ea",
           "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript.lineOf@L83",
+          "expr": "lineOf",
+          "line": 102
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
+        "procedureName": "resolveTypeScript",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a5bb0ec43baa7b027fab0d0cf47212ab7de3b4ca1720f5b915f59580d13cca7a",
+          "target": "sym:packages/core/src/rules/extract.ts#lineOf@L265",
           "expr": "lineOf",
           "line": 102
         }
@@ -654,20 +716,6 @@
           "edgeId": "e:ceadac9e185de200d78a16cffa68e2220668b758b9be9954cd7aa68c9f382c2d",
           "target": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
           "expr": "enclosingSymbolId",
-          "line": 102
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
-        "procedureName": "resolveTypeScript",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:a5bb0ec43baa7b027fab0d0cf47212ab7de3b4ca1720f5b915f59580d13cca7a",
-          "target": "sym:packages/core/src/rules/extract.ts#lineOf@L265",
-          "expr": "lineOf",
           "line": 102
         }
       },
@@ -727,14 +775,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 12,
+      "resolved": 14,
       "recorded": 27,
-      "unresolved": 11
+      "unresolved": 10
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "11 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "10 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

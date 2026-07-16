@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkSwitch@L594",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:115e19e063748381447875f6e07647fe486bbb5d2315f37fd502f2c94c39320c",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkSwitch@L594",
@@ -144,11 +144,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b0011beddd22ec62f15c30a4aa52bc7136bbea3878a8f02a995ad9d3144dab22",
-          "target": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkBody@L415",
-          "expr": "walkBody",
-          "line": 604
+          "kind": "executes",
+          "edgeId": "e:8a8b235802ecb67c1e70783cc2771c44977f46813f70b512f835bddcc5ea1d1c",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L604",
+          "line": 604,
+          "expr": "this.walkBody(c.body, proc, [...guardStack, condId], label, inLoop, inException);"
         }
       },
       {
@@ -166,11 +166,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:8a8b235802ecb67c1e70783cc2771c44977f46813f70b512f835bddcc5ea1d1c",
-          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L604",
-          "line": 604,
-          "expr": "this.walkBody(c.body, proc, [...guardStack, condId], label, inLoop, inException);"
+          "kind": "calls",
+          "edgeId": "e:b0011beddd22ec62f15c30a4aa52bc7136bbea3878a8f02a995ad9d3144dab22",
+          "target": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkBody@L415",
+          "expr": "walkBody",
+          "line": 604
         }
       }
     ]

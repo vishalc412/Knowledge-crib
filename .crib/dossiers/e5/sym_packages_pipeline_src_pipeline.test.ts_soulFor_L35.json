@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/pipeline.test.ts#soulFor@L35",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:2df1b66d058565bdda3a003e0027791ca637378667bd5fbb8863e5de9026186a",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T14:53:52.220Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/pipeline.test.ts#soulFor@L35",
@@ -40,6 +40,16 @@
   },
   "callers": [],
   "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
     {
       "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
       "confidence": 1,
@@ -106,6 +116,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:b98ac124fcbb1d5889d4b20340a055c9154d2b2fefd3848c64c9056b83f0a76a",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 39
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.test.ts#soulFor@L35",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
           "edgeId": "e:80412aed4e2ef770b018b8c831a263154be8d97230a620cf9d7069ce61654ee4",
           "target": "stmt:packages/pipeline/src/pipeline.test.ts@L40",
@@ -131,7 +155,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 1,
+      "resolved": 2,
       "recorded": 3,
       "unresolved": 1
     },

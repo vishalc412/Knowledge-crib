@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#Parser.skipEnumConstants@L745",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:0c2d5216b19c70391f2d5ae10289398d71445ffb1df1fb5c5bd740cdbe3b778f",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#Parser.skipEnumConstants@L745",
@@ -166,11 +166,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b8d93d960b6225b3942881bd23a02bd463bf26f210dc6fab4e6ff189295fbeed",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.skipAnnotationNoCapture@L814",
-          "expr": "skipAnnotationNoCapture",
-          "line": 748
+          "kind": "executes",
+          "edgeId": "e:81ff28d8d7972668337a0293ad5dd8d5a3612022ddb169fd0667626992bb732e",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L748",
+          "line": 748,
+          "expr": "this.skipAnnotationNoCapture();"
         }
       },
       {
@@ -192,11 +192,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:81ff28d8d7972668337a0293ad5dd8d5a3612022ddb169fd0667626992bb732e",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L748",
-          "line": 748,
-          "expr": "this.skipAnnotationNoCapture();"
+          "kind": "calls",
+          "edgeId": "e:b8d93d960b6225b3942881bd23a02bd463bf26f210dc6fab4e6ff189295fbeed",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.skipAnnotationNoCapture@L814",
+          "expr": "skipAnnotationNoCapture",
+          "line": 748
         }
       },
       {
@@ -318,11 +318,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b01954069421f9f61e2033ac052e58280b53f4b58fe9959fbbc797ee4d902162",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.skipBalancedParens@L830",
-          "expr": "skipBalancedParens",
-          "line": 757
+          "kind": "executes",
+          "edgeId": "e:93dcd363f7553ba3449bdb29afedc90c73b8dac7e54990f6f8953dce6e114675",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L757",
+          "line": 757,
+          "expr": "this.skipBalancedParens();"
         }
       },
       {
@@ -344,37 +344,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:93dcd363f7553ba3449bdb29afedc90c73b8dac7e54990f6f8953dce6e114675",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L757",
-          "line": 757,
-          "expr": "this.skipBalancedParens();"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipEnumConstants@L745",
-        "procedureName": "Parser.skipEnumConstants",
-        "guard": "cond:packages/parsers/src/java/parser.ts@L760",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/java/parser.ts@L746",
-            "expr": "!this.atEnd()"
-          },
-          {
-            "id": "cond:packages/parsers/src/java/parser.ts@L760",
-            "expr": "this.isOp('{')",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
           "kind": "calls",
-          "edgeId": "e:c5b8a726e974179eb36662e4e033132bea4ffe64f5aa1ef1c629a8315123192f",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.skipBraces@L847",
-          "expr": "skipBraces",
-          "line": 761
+          "edgeId": "e:b01954069421f9f61e2033ac052e58280b53f4b58fe9959fbbc797ee4d902162",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.skipBalancedParens@L830",
+          "expr": "skipBalancedParens",
+          "line": 757
         }
       },
       {
@@ -401,6 +375,32 @@
           "target": "stmt:packages/parsers/src/java/parser.ts@L761",
           "line": 761,
           "expr": "this.skipBraces();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#Parser.skipEnumConstants@L745",
+        "procedureName": "Parser.skipEnumConstants",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L760",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L746",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L760",
+            "expr": "this.isOp('{')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c5b8a726e974179eb36662e4e033132bea4ffe64f5aa1ef1c629a8315123192f",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.skipBraces@L847",
+          "expr": "skipBraces",
+          "line": 761
         }
       },
       {

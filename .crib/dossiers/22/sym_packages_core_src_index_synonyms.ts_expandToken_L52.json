@@ -1,0 +1,148 @@
+{
+  "id": "sym:packages/core/src/index/synonyms.ts#expandToken@L52",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:634eed510325b6c1187cfff5c667279997ab5c3337adbbb7c9ff516464ea700a",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/synonyms.ts#expandToken@L52",
+    "kind": "symbol",
+    "type": "function",
+    "name": "expandToken",
+    "qualifiedName": "expandToken",
+    "signature": "expandToken(token: string): readonly string[]",
+    "lang": "typescript",
+    "file": "packages/core/src/index/synonyms.ts",
+    "span": {
+      "start": 52,
+      "end": 55
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 53
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 53
+      }
+    ]
+  },
+  "source": {
+    "text": "export function expandToken(token: string): readonly string[] {\n  const group = LOOKUP.get(token.toLowerCase());\n  return group ? [...group] : [token];\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 52
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L521",
+      "confidence": 1,
+      "name": "toFtsMatch",
+      "qualifiedName": "toFtsMatch",
+      "signature": "toFtsMatch(text: string): string | undefined",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 521
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/index/synonyms.ts@L48",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/synonyms.ts#expandToken@L52",
+    "procedureName": "expandToken",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/synonyms.ts#expandToken@L52",
+        "procedureName": "expandToken",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:45685e392033e7dbe5de46f214c2c514902b54d27051cb7e74b86d81e1f41fe5",
+          "target": "stmt:packages/core/src/index/synonyms.ts@L53",
+          "line": 53,
+          "expr": "const group = LOOKUP.get(token.toLowerCase());"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/synonyms.ts#expandToken@L52",
+        "procedureName": "expandToken",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f2c3db02ff9e62b46ea76a21c716cb98819ee8bf3627111792ad6e466a0983e7",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 53
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/synonyms.ts#expandToken@L52",
+        "procedureName": "expandToken",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:487affb910f0fe6548eb2f686b8a427b938831dfbd32154e9390c59ce164f0a1",
+          "target": "stmt:packages/core/src/index/synonyms.ts@L54",
+          "line": 54,
+          "expr": "return group ? [...group] : [token];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

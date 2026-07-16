@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/parser.ts#extractInlineFk@L1493",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:ed125066d5c8d8f6e66f03ed3c75392062c6dde11f50cacadf0526b8cd658973",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/parser.ts#extractInlineFk@L1493",
@@ -179,11 +179,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:d101a82350f17740e01f59e53aff807ac3ef130ff62803f7cbd02d4274c1437a",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
-          "expr": "readTableRef",
-          "line": 1497
+          "kind": "executes",
+          "edgeId": "e:cb4c7deebcf7384663c5f3d78bca9375edc014df60945466b36135087d4d2be8",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1497",
+          "line": 1497,
+          "expr": "const ref = readTableRef(cToks, i + 1);"
         }
       },
       {
@@ -201,11 +201,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:cb4c7deebcf7384663c5f3d78bca9375edc014df60945466b36135087d4d2be8",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1497",
-          "line": 1497,
-          "expr": "const ref = readTableRef(cToks, i + 1);"
+          "kind": "calls",
+          "edgeId": "e:d101a82350f17740e01f59e53aff807ac3ef130ff62803f7cbd02d4274c1437a",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+          "expr": "readTableRef",
+          "line": 1497
         }
       },
       {
@@ -315,6 +315,20 @@
       {
         "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractInlineFk@L1493",
         "procedureName": "extractInlineFk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4e99d34cc79355ba32baf685012be64e9085441774faacc096bb16bafc1433f5",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1525
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractInlineFk@L1493",
+        "procedureName": "extractInlineFk",
         "guard": "cond:packages/parsers/src/plsql/parser.ts@L1524",
         "branch": "THEN",
         "conditions": [
@@ -344,20 +358,6 @@
           "target": "stmt:packages/parsers/src/plsql/parser.ts@L1525",
           "line": 1525,
           "expr": "refColumns.push(c.raw);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractInlineFk@L1493",
-        "procedureName": "extractInlineFk",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:4e99d34cc79355ba32baf685012be64e9085441774faacc096bb16bafc1433f5",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 1525
         }
       },
       {

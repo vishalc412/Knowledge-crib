@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/GoExtractor.test.ts#runDeep@L42",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:abbd890c9b2ff7f2dbd4f3e6d585536b96fbc7b5c98d4f76dd63f9ced298c7ad",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/GoExtractor.test.ts#runDeep@L42",
@@ -37,16 +37,6 @@
   "callers": [],
   "callees": [
     {
-      "id": "sym:packages/parsers/src/go/GoExtractor.test.ts#ctxFor@L19",
-      "confidence": 1,
-      "name": "ctxFor",
-      "qualifiedName": "ctxFor",
-      "signature": "ctxFor(text: string): ExtractCtx",
-      "type": "function",
-      "file": "packages/parsers/src/go/GoExtractor.test.ts",
-      "line": 19
-    },
-    {
       "id": "sym:packages/parsers/src/ts/react.test.ts#ctxFor@L17",
       "confidence": 1,
       "name": "ctxFor",
@@ -55,6 +45,16 @@
       "type": "function",
       "file": "packages/parsers/src/ts/react.test.ts",
       "line": 17
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.test.ts#ctxFor@L19",
+      "confidence": 1,
+      "name": "ctxFor",
+      "qualifiedName": "ctxFor",
+      "signature": "ctxFor(text: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/parsers/src/go/GoExtractor.test.ts",
+      "line": 19
     }
   ],
   "docs": [],
@@ -71,8 +71,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:a70e18769f6d1448fac9165a5b69d0df5882cd295c064019eae9108936d6459b",
-          "target": "sym:packages/parsers/src/go/GoExtractor.test.ts#ctxFor@L19",
+          "edgeId": "e:14c9fc05fc06b8c417532ac93e13458cb8aea41a1682b3857f71c1a635c0e434",
+          "target": "sym:packages/parsers/src/ts/react.test.ts#ctxFor@L17",
           "expr": "ctxFor",
           "line": 44
         }
@@ -99,8 +99,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:14c9fc05fc06b8c417532ac93e13458cb8aea41a1682b3857f71c1a635c0e434",
-          "target": "sym:packages/parsers/src/ts/react.test.ts#ctxFor@L17",
+          "edgeId": "e:a70e18769f6d1448fac9165a5b69d0df5882cd295c064019eae9108936d6459b",
+          "target": "sym:packages/parsers/src/go/GoExtractor.test.ts#ctxFor@L19",
           "expr": "ctxFor",
           "line": 44
         }

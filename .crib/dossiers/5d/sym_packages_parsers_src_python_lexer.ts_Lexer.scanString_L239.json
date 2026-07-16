@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanString@L239",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:09987bc40ef1efe76aa3df9c911a9b330cba099b68ab2f4ea771169dca9c9595",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanString@L239",
@@ -164,28 +164,6 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:f5fafb5bfe0df02484c903da2c452cb6dceaa6da4440d7294519f781032ce003",
-          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
-          "expr": "peek",
-          "line": 245
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanString@L239",
-        "procedureName": "Lexer.scanString",
-        "guard": "cond:packages/parsers/src/python/lexer.ts@L244",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/python/lexer.ts@L244",
-            "expr": "this.pos < this.src.length && isStringPrefix(this.peek())",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:56c53ee92f71f601619ee560486de370c02fa6192294faa13d36e679f81228fd",
           "target": "assign:packages/parsers/src/python/lexer.ts@L245",
@@ -209,10 +187,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:3ec34a90747d841db7373ed1da66b19dd19aee5278f925feb2d782bb54f74736",
-          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.advance@L394",
-          "expr": "advance",
-          "line": 246
+          "edgeId": "e:f5fafb5bfe0df02484c903da2c452cb6dceaa6da4440d7294519f781032ce003",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
+          "expr": "peek",
+          "line": 245
         }
       },
       {
@@ -235,6 +213,28 @@
           "target": "stmt:packages/parsers/src/python/lexer.ts@L246",
           "line": 246,
           "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanString@L239",
+        "procedureName": "Lexer.scanString",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L244",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L244",
+            "expr": "this.pos < this.src.length && isStringPrefix(this.peek())",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3ec34a90747d841db7373ed1da66b19dd19aee5278f925feb2d782bb54f74736",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.advance@L394",
+          "expr": "advance",
+          "line": 246
         }
       },
       {
@@ -284,11 +284,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:55008bd457f06d871e3d6a7e57e05002cc2fdbf4165cb0add51a0ec9b8aae90e",
-          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.emit@L405",
-          "expr": "emit",
-          "line": 252
+          "kind": "executes",
+          "edgeId": "e:023ba5109955a2745e1710634eb10da283701a0eaf5ff59f0d267dc8facb24e0",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L252",
+          "line": 252,
+          "expr": "this.emit('NAME', c, startLine, startCol);"
         }
       },
       {
@@ -310,11 +310,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:023ba5109955a2745e1710634eb10da283701a0eaf5ff59f0d267dc8facb24e0",
-          "target": "stmt:packages/parsers/src/python/lexer.ts@L252",
-          "line": 252,
-          "expr": "this.emit('NAME', c, startLine, startCol);"
+          "kind": "calls",
+          "edgeId": "e:55008bd457f06d871e3d6a7e57e05002cc2fdbf4165cb0add51a0ec9b8aae90e",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.emit@L405",
+          "expr": "emit",
+          "line": 252
         }
       },
       {
@@ -376,11 +376,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:6e17c869e0855572c6775c6fe5246dec8115056a103a63da9d39110229b601bd",
-          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanInsideTriple@L305",
-          "expr": "scanInsideTriple",
-          "line": 263
+          "kind": "executes",
+          "edgeId": "e:0236310c0daed9a612200e34dc6e904fe5c4449a27e3e9556f35e96bfd07b52a",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L263",
+          "line": 263,
+          "expr": "this.scanInsideTriple(startLine, startCol, prefix + delim.repeat(3));"
         }
       },
       {
@@ -398,11 +398,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:0236310c0daed9a612200e34dc6e904fe5c4449a27e3e9556f35e96bfd07b52a",
-          "target": "stmt:packages/parsers/src/python/lexer.ts@L263",
-          "line": 263,
-          "expr": "this.scanInsideTriple(startLine, startCol, prefix + delim.repeat(3));"
+          "kind": "calls",
+          "edgeId": "e:6e17c869e0855572c6775c6fe5246dec8115056a103a63da9d39110229b601bd",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanInsideTriple@L305",
+          "expr": "scanInsideTriple",
+          "line": 263
         }
       },
       {
@@ -434,11 +434,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:0e14ef9d935f2be58c0ae96e483abe37310f768774d4af2b5b86309076b666fd",
-          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
-          "expr": "scanSingleString",
-          "line": 266
+          "kind": "executes",
+          "edgeId": "e:017773bde3cfbe3168f724162b696d00961e14ad93e60af1fe976eeefa078817",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L266",
+          "line": 266,
+          "expr": "this.scanSingleString(delim, startLine, startCol, prefix);"
         }
       },
       {
@@ -448,11 +448,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:017773bde3cfbe3168f724162b696d00961e14ad93e60af1fe976eeefa078817",
-          "target": "stmt:packages/parsers/src/python/lexer.ts@L266",
-          "line": 266,
-          "expr": "this.scanSingleString(delim, startLine, startCol, prefix);"
+          "kind": "calls",
+          "edgeId": "e:0e14ef9d935f2be58c0ae96e483abe37310f768774d4af2b5b86309076b666fd",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+          "expr": "scanSingleString",
+          "line": 266
         }
       },
       {

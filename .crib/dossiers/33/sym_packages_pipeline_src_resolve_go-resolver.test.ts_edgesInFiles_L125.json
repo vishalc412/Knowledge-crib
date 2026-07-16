@@ -1,0 +1,129 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#edgesInFiles@L125",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:83e3bf1a997bc45fb2320813d5f019f217dfafa686a1783d6038d30b0c6e59ee",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#edgesInFiles@L125",
+    "kind": "symbol",
+    "type": "function",
+    "name": "edgesInFiles",
+    "qualifiedName": "edgesInFiles",
+    "signature": "edgesInFiles(soul: SoulStore, exts: string[]): Edge[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/go-resolver.test.ts",
+    "span": {
+      "start": 125,
+      "end": 132
+    },
+    "callSites": [
+      {
+        "callee": "map",
+        "line": 127
+      },
+      {
+        "callee": "filter",
+        "line": 127
+      },
+      {
+        "callee": "iterate",
+        "line": 127
+      },
+      {
+        "callee": "some",
+        "line": 128
+      },
+      {
+        "callee": "endsWith",
+        "line": 128
+      },
+      {
+        "callee": "filter",
+        "line": 131
+      },
+      {
+        "callee": "iterateEdges",
+        "line": 131
+      },
+      {
+        "callee": "has",
+        "line": 131
+      },
+      {
+        "callee": "has",
+        "line": 131
+      }
+    ]
+  },
+  "source": {
+    "text": "function edgesInFiles(soul: SoulStore, exts: string[]): Edge[] {\n  const files = new Set(\n    [...soul.iterate()]\n      .filter((n) => n.file && exts.some((e) => n.file!.endsWith(e)))\n      .map((n) => n.id),\n  );\n  return [...soul.iterateEdges()].filter((e) => files.has(e.src) || files.has(e.dst));\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 125
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#edgesInFiles@L125",
+    "procedureName": "edgesInFiles",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#edgesInFiles@L125",
+        "procedureName": "edgesInFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:efb01229fecca89d0bf53a1945385eb1c441af9d564db112b26482b1c2d0617f",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.test.ts@L126",
+          "line": 126,
+          "expr": "const files = new Set(\n    [...soul.iterate()]\n      .filter((n) => n.file && exts.some((e) => n.file!.endsWith(e)))\n      .map((n) => n.id),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#edgesInFiles@L125",
+        "procedureName": "edgesInFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aa9d8ca5b4cee235afa7a4ea964a8b7b729ca94b22bd76e082395f06b00983a2",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.test.ts@L131",
+          "line": 131,
+          "expr": "return [...soul.iterateEdges()].filter((e) => files.has(e.src) || files.has(e.dst));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 9,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

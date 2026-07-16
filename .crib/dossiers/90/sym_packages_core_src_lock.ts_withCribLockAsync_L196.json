@@ -1,0 +1,190 @@
+{
+  "id": "sym:packages/core/src/lock.ts#withCribLockAsync@L196",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:96f85459afe2fdf2019342ae39e9e1dcf404a59424de7b6fe1735bb3f94d3c28",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/lock.ts#withCribLockAsync@L196",
+    "kind": "symbol",
+    "type": "function",
+    "name": "withCribLockAsync",
+    "qualifiedName": "withCribLockAsync",
+    "signature": "withCribLockAsync(opts: CribLockOptions, fn: () => T | Promise<T>): Promise<T>",
+    "lang": "typescript",
+    "file": "packages/core/src/lock.ts",
+    "span": {
+      "start": 196,
+      "end": 207
+    },
+    "callSites": [
+      {
+        "callee": "acquire",
+        "line": 201
+      },
+      {
+        "callee": "fn",
+        "line": 203
+      },
+      {
+        "callee": "release",
+        "line": 205
+      }
+    ]
+  },
+  "source": {
+    "text": "export async function withCribLockAsync<T>(\n  opts: CribLockOptions,\n  fn: () => T | Promise<T>,\n): Promise<T> {\n  const lock = new CribLock(opts);\n  lock.acquire();\n  try {\n    return await fn();\n  } finally {\n    lock.release();\n  }\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 196
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#runLocked@L407",
+      "confidence": 1,
+      "name": "runLocked",
+      "qualifiedName": "runLocked",
+      "signature": "runLocked(cribDir: string, fn: () => number | Promise<number>): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 407
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/lock.ts#CribLock.acquire@L100",
+      "confidence": 1,
+      "name": "acquire",
+      "qualifiedName": "CribLock.acquire",
+      "signature": "acquire(): void",
+      "type": "method",
+      "file": "packages/core/src/lock.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:packages/core/src/lock.ts#CribLock.release@L122",
+      "confidence": 1,
+      "name": "release",
+      "qualifiedName": "CribLock.release",
+      "signature": "release(): void",
+      "type": "method",
+      "file": "packages/core/src/lock.ts",
+      "line": 122
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/lock.ts@L195",
+      "snippet": "/** Run `fn` while holding the crib lock; release on resolve or reject (async). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/lock.ts#withCribLockAsync@L196",
+    "procedureName": "withCribLockAsync",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/lock.ts#withCribLockAsync@L196",
+        "procedureName": "withCribLockAsync",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1a82bba715b8b45bf8e3907fb97cc362f7a96e9b4623e171abf6f2cbd67673d5",
+          "target": "stmt:packages/core/src/lock.ts@L201",
+          "line": 201,
+          "expr": "lock.acquire();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/lock.ts#withCribLockAsync@L196",
+        "procedureName": "withCribLockAsync",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:933b986b5fe36e649148d4ee37a46ae97e26cf85bac87f0694906e67579248bf",
+          "target": "sym:packages/core/src/lock.ts#CribLock.acquire@L100",
+          "expr": "acquire",
+          "line": 201
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/lock.ts#withCribLockAsync@L196",
+        "procedureName": "withCribLockAsync",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9d04e06a08ed30461ea64106439aa48e57cfdd96ebb74015cf1b1006b67fcec4",
+          "target": "stmt:packages/core/src/lock.ts@L203",
+          "line": 203,
+          "expr": "return await fn();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/lock.ts#withCribLockAsync@L196",
+        "procedureName": "withCribLockAsync",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2702d1fd0c22eeec9c1efad6648c276673da31cb69071022cd5de199dbc73b5f",
+          "target": "stmt:packages/core/src/lock.ts@L205",
+          "line": 205,
+          "expr": "lock.release();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/lock.ts#withCribLockAsync@L196",
+        "procedureName": "withCribLockAsync",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:87f6568cb6a81fb581c7393ab5f71c865efa17dceb7f38019fb9a5e112e39ebc",
+          "target": "sym:packages/core/src/lock.ts#CribLock.release@L122",
+          "expr": "release",
+          "line": 205
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

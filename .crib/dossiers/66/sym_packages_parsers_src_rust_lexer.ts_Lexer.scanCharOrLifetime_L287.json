@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanCharOrLifetime@L287",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:e06a33ed4501407be1341b56b8d75b3762bae78e146704ed064b83768fcf37cf",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanCharOrLifetime@L287",
@@ -192,6 +192,20 @@
       {
         "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanCharOrLifetime@L287",
         "procedureName": "Lexer.scanCharOrLifetime",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6836dcf18e6920344505b5a7dabbee6c853ac89a3f75dd687f23391e24445af7",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L290",
+          "line": 290,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanCharOrLifetime@L287",
+        "procedureName": "Lexer.scanCharOrLifetime",
         "guard": "cond:packages/parsers/src/rust/lexer.ts@L331",
         "branch": "LOOP",
         "conditions": [
@@ -209,20 +223,6 @@
           "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.advance@L466",
           "expr": "advance",
           "line": 290
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanCharOrLifetime@L287",
-        "procedureName": "Lexer.scanCharOrLifetime",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:6836dcf18e6920344505b5a7dabbee6c853ac89a3f75dd687f23391e24445af7",
-          "target": "stmt:packages/parsers/src/rust/lexer.ts@L290",
-          "line": 290,
-          "expr": "this.advance();"
         }
       },
       {
@@ -470,20 +470,6 @@
       {
         "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanCharOrLifetime@L287",
         "procedureName": "Lexer.scanCharOrLifetime",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:d278e24a46394007d77761aa82e7ea857b30c7b2360aa76de555c00e1139350b",
-          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.emit@L477",
-          "expr": "emit",
-          "line": 311
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanCharOrLifetime@L287",
-        "procedureName": "Lexer.scanCharOrLifetime",
         "guard": "cond:packages/parsers/src/rust/lexer.ts@L292",
         "branch": "THEN",
         "conditions": [
@@ -501,6 +487,20 @@
           "target": "stmt:packages/parsers/src/rust/lexer.ts@L311",
           "line": 311,
           "expr": "this.emit('CHAR', value, sl, sc);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanCharOrLifetime@L287",
+        "procedureName": "Lexer.scanCharOrLifetime",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d278e24a46394007d77761aa82e7ea857b30c7b2360aa76de555c00e1139350b",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.emit@L477",
+          "expr": "emit",
+          "line": 311
         }
       },
       {

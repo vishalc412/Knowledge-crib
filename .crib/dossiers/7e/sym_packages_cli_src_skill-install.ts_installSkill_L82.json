@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/cli/src/skill-install.ts#installSkill@L82",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:185b0e8e194e12e4fb386980de5f0a58a834ea6d347d2d25a9656cb434f90194",
-  "builtAt": "2026-06-30T22:39:43.179Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/cli/src/skill-install.ts#installSkill@L82",
@@ -52,14 +52,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/cli/src/cli.ts#cmdSkill@L1450",
+      "id": "sym:packages/cli/src/cli.ts#cmdSkill@L2065",
       "confidence": 1,
       "name": "cmdSkill",
       "qualifiedName": "cmdSkill",
       "signature": "cmdSkill(args: string[]): number",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 1450
+      "line": 2065
     }
   ],
   "callees": [
@@ -118,11 +118,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:5dcc8781f773d62c09f8943657f6fc7f8a52a2b8681ba67adc3c6adadca96791",
-          "target": "sym:packages/cli/src/skill-install.ts#defaultSkillsRoot@L59",
-          "expr": "defaultSkillsRoot",
-          "line": 83
+          "kind": "executes",
+          "edgeId": "e:3f643807a1c9b8891d4beeca0b21c9df94f1955a00127094837a0bc97ca74405",
+          "target": "stmt:packages/cli/src/skill-install.ts@L83",
+          "line": 83,
+          "expr": "const destRoot = opts.destRoot ?? defaultSkillsRoot();"
         }
       },
       {
@@ -132,11 +132,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:3f643807a1c9b8891d4beeca0b21c9df94f1955a00127094837a0bc97ca74405",
-          "target": "stmt:packages/cli/src/skill-install.ts@L83",
-          "line": 83,
-          "expr": "const destRoot = opts.destRoot ?? defaultSkillsRoot();"
+          "kind": "calls",
+          "edgeId": "e:5dcc8781f773d62c09f8943657f6fc7f8a52a2b8681ba67adc3c6adadca96791",
+          "target": "sym:packages/cli/src/skill-install.ts#defaultSkillsRoot@L59",
+          "expr": "defaultSkillsRoot",
+          "line": 83
         }
       },
       {
@@ -196,11 +196,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:ec0f3d7788669df7fceda2f400ecb2bca6ed051fc952cebf21fa7a4af2d29b0e",
-          "target": "sym:packages/cli/src/skill-install.ts#installOne@L100",
-          "expr": "installOne",
-          "line": 97
+          "kind": "executes",
+          "edgeId": "e:dcb4a567275e4104e8e3ab895731986572067df6c99ce56326c6d6574aa998d5",
+          "target": "stmt:packages/cli/src/skill-install.ts@L97",
+          "line": 97,
+          "expr": "return skills.map((skill) => installOne(skill, destRoot));"
         }
       },
       {
@@ -210,11 +210,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:dcb4a567275e4104e8e3ab895731986572067df6c99ce56326c6d6574aa998d5",
-          "target": "stmt:packages/cli/src/skill-install.ts@L97",
-          "line": 97,
-          "expr": "return skills.map((skill) => installOne(skill, destRoot));"
+          "kind": "calls",
+          "edgeId": "e:ec0f3d7788669df7fceda2f400ecb2bca6ed051fc952cebf21fa7a4af2d29b0e",
+          "target": "sym:packages/cli/src/skill-install.ts#installOne@L100",
+          "expr": "installOne",
+          "line": 97
         }
       }
     ]

@@ -1,0 +1,111 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.manifestPath@L386",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:43296bfb6d449742dba2b3a02d7a5a148227cdde0fe28f13b5e2d61f910fc5f9",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.manifestPath@L386",
+    "kind": "symbol",
+    "type": "getter",
+    "name": "manifestPath",
+    "qualifiedName": "SoulStore.manifestPath",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 386,
+      "end": 390
+    },
+    "callSites": [
+      {
+        "callee": "graphPaths",
+        "line": 388
+      },
+      {
+        "callee": "join",
+        "line": 389
+      }
+    ]
+  },
+  "source": {
+    "text": "  private get manifestPath(): string {\n    return this.canonicalLayout\n      ? graphPaths(this.cribDirPrivate).manifest\n      : join(this.cribDirPrivate, MANIFEST_FILE);\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 386
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/graph-layout.ts#graphPaths@L33",
+      "confidence": 1,
+      "name": "graphPaths",
+      "qualifiedName": "graphPaths",
+      "signature": "graphPaths(cribDir: string): GraphPaths",
+      "type": "function",
+      "file": "packages/core/src/graph-layout.ts",
+      "line": 33
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.manifestPath@L386",
+    "procedureName": "SoulStore.manifestPath",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.manifestPath@L386",
+        "procedureName": "SoulStore.manifestPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:47960e98c947b64e3e8ad68ce699ae54f72b3b0be10307c20f11ef82b08a1d45",
+          "target": "stmt:packages/core/src/soul-store.ts@L387",
+          "line": 387,
+          "expr": "return this.canonicalLayout\n      ? graphPaths(this.cribDirPrivate).manifest\n      : join(this.cribDirPrivate, MANIFEST_FILE);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.manifestPath@L386",
+        "procedureName": "SoulStore.manifestPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4d6abc300b7e37ccd3e331305632d891af9afa9a04fc8026443a66853f638195",
+          "target": "sym:packages/core/src/graph-layout.ts#graphPaths@L33",
+          "expr": "graphPaths",
+          "line": 388
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

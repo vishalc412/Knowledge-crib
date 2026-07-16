@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipStringInHole@L480",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:5f6500af61b5061954d556384fde511b2a7d46464f9d001e64d6d72222bf5221",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipStringInHole@L480",
@@ -102,8 +102,8 @@
     "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipStringInHole@L480",
     "procedureName": "Lexer.skipStringInHole",
     "conditions": [
-      "cond:packages/parsers/src/csharp/lexer.ts@L505",
       "cond:packages/parsers/src/csharp/lexer.ts@L483",
+      "cond:packages/parsers/src/csharp/lexer.ts@L505",
       "cond:packages/parsers/src/csharp/lexer.ts@L487",
       "cond:packages/parsers/src/csharp/lexer.ts@L489",
       "cond:packages/parsers/src/csharp/lexer.ts@L490",
@@ -114,28 +114,6 @@
       "cond:packages/parsers/src/csharp/lexer.ts@L509"
     ],
     "rules": [
-      {
-        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipStringInHole@L480",
-        "procedureName": "Lexer.skipStringInHole",
-        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L505",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/csharp/lexer.ts@L505",
-            "expr": "this.pos < this.src.length",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:a43369d5dab8b6fed3e49be16901d0df5301e08ded490ddbfd7291b54a1901cb",
-          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
-          "expr": "advance",
-          "line": 485
-        }
-      },
       {
         "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipStringInHole@L480",
         "procedureName": "Lexer.skipStringInHole",
@@ -156,6 +134,28 @@
           "target": "stmt:packages/parsers/src/csharp/lexer.ts@L485",
           "line": 485,
           "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.skipStringInHole@L480",
+        "procedureName": "Lexer.skipStringInHole",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L505",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L505",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a43369d5dab8b6fed3e49be16901d0df5301e08ded490ddbfd7291b54a1901cb",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
+          "expr": "advance",
+          "line": 485
         }
       },
       {
@@ -311,11 +311,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:1a8162b921ae40ee94a62f6c2ba9c8d71156e4f82c9b488349d8df2c3e3df8ed",
-          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.peek@L614",
-          "expr": "peek",
-          "line": 506
+          "kind": "executes",
+          "edgeId": "e:190f2c85188281034dd7ebf2a5820b4eef5f2741284981aa0b0a3512b2e0b3a7",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L506",
+          "line": 506,
+          "expr": "const c = this.peek();"
         }
       },
       {
@@ -333,11 +333,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:190f2c85188281034dd7ebf2a5820b4eef5f2741284981aa0b0a3512b2e0b3a7",
-          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L506",
-          "line": 506,
-          "expr": "const c = this.peek();"
+          "kind": "calls",
+          "edgeId": "e:1a8162b921ae40ee94a62f6c2ba9c8d71156e4f82c9b488349d8df2c3e3df8ed",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.peek@L614",
+          "expr": "peek",
+          "line": 506
         }
       },
       {

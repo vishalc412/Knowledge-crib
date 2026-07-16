@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:84612c147b283f712dc4e2e74ba5b0fa1cb4d676fb0b0ae812bc8778a84fc758",
-  "builtAt": "2026-06-30T22:39:43.179Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
@@ -80,44 +80,54 @@
   },
   "callers": [
     {
-      "id": "sym:packages/cli/src/cli.ts#cmdExport@L1117",
+      "id": "sym:packages/cli/src/cli.ts#cmdDoctor@L1255",
+      "confidence": 1,
+      "name": "cmdDoctor",
+      "qualifiedName": "cmdDoctor",
+      "signature": "cmdDoctor(args: string[], ctx?: CmdCtx): number",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1255
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
       "confidence": 1,
       "name": "cmdExport",
       "qualifiedName": "cmdExport",
       "signature": "cmdExport(args: string[], ctx?: CmdCtx): Promise<number>",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 1117
+      "line": 1504
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#cmdQuery@L479",
+      "id": "sym:packages/cli/src/cli.ts#cmdQuery@L585",
       "confidence": 1,
       "name": "cmdQuery",
       "qualifiedName": "cmdQuery",
       "signature": "cmdQuery(args: string[], ctx?: CmdCtx): Promise<number>",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 479
+      "line": 585
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#cmdViz@L1164",
+      "id": "sym:packages/cli/src/cli.ts#cmdViz@L1574",
       "confidence": 1,
       "name": "cmdViz",
       "qualifiedName": "cmdViz",
       "signature": "cmdViz(args: string[], ctx?: CmdCtx): Promise<number>",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 1164
+      "line": 1574
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#resolveRoot@L227",
+      "id": "sym:packages/cli/src/cli.ts#resolveRoot@L262",
       "confidence": 1,
       "name": "resolveRoot",
       "qualifiedName": "resolveRoot",
       "signature": "resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot",
       "type": "function",
       "file": "packages/cli/src/cli.ts",
-      "line": 227
+      "line": 262
     }
   ],
   "callees": [
@@ -140,6 +150,16 @@
       "type": "function",
       "file": "packages/cli/src/registry.ts",
       "line": 60
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
     },
     {
       "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot.hasCrib@L58",
@@ -251,6 +271,20 @@
       {
         "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
         "procedureName": "resolveProjectRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1e04aca996a61dcef9e5d8e035c8b473861d7fba10769725be29254abae1cc1d",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 63
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
         "guard": "cond:packages/cli/src/runtime.ts@L62",
         "branch": "THEN",
         "conditions": [
@@ -352,28 +386,6 @@
         "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
         "procedureName": "resolveProjectRoot",
         "guard": "cond:packages/cli/src/runtime.ts@L71",
-        "branch": "ELSE",
-        "conditions": [
-          {
-            "id": "cond:packages/cli/src/runtime.ts@L71",
-            "expr": "candidate",
-            "polarity": "ELSE"
-          }
-        ],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:e36cb7be60f03c9a61fa5d87f36d651967d041a0d65332916347589044bf1129",
-          "target": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
-          "expr": "walkUpForCrib",
-          "line": 73
-        }
-      },
-      {
-        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
-        "procedureName": "resolveProjectRoot",
-        "guard": "cond:packages/cli/src/runtime.ts@L71",
         "branch": "THEN",
         "conditions": [
           {
@@ -407,6 +419,28 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:e36cb7be60f03c9a61fa5d87f36d651967d041a0d65332916347589044bf1129",
+          "target": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+          "expr": "walkUpForCrib",
+          "line": 73
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "procedureName": "resolveProjectRoot",
+        "guard": "cond:packages/cli/src/runtime.ts@L71",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/runtime.ts@L71",
+            "expr": "candidate",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
           "edgeId": "e:9eeb724be4529cc3e016298d88457ab96a2fbe89fc8379b5605041f7510929cc",
           "target": "assign:packages/cli/src/runtime.ts@L76",
@@ -421,11 +455,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:c2f85a884893965d9ebbf990125e4872a08b7fdbbb4514241d6f30fdf302e0e3",
-          "target": "stmt:packages/cli/src/runtime.ts@L80",
-          "line": 80,
-          "expr": "const entry = lookupProject(repoRoot, env) ?? registry.projects[repoRoot];"
+          "kind": "calls",
+          "edgeId": "e:861e9a4e4226577b91d0f9954b6bb23fc80ce62f780b95e029455584879ecb8d",
+          "target": "sym:packages/cli/src/registry.ts#lookupProject@L84",
+          "expr": "lookupProject",
+          "line": 80
         }
       },
       {
@@ -435,11 +469,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:861e9a4e4226577b91d0f9954b6bb23fc80ce62f780b95e029455584879ecb8d",
-          "target": "sym:packages/cli/src/registry.ts#lookupProject@L84",
-          "expr": "lookupProject",
-          "line": 80
+          "kind": "executes",
+          "edgeId": "e:c2f85a884893965d9ebbf990125e4872a08b7fdbbb4514241d6f30fdf302e0e3",
+          "target": "stmt:packages/cli/src/runtime.ts@L80",
+          "line": 80,
+          "expr": "const entry = lookupProject(repoRoot, env) ?? registry.projects[repoRoot];"
         }
       },
       {
@@ -490,7 +524,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 4,
+      "resolved": 5,
       "recorded": 13,
       "unresolved": 5
     },

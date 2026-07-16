@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.isWord@L125",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:cb522485a255dd4825af874993c9bb3a8446d4019d1d609468d6ddf28cba537d",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.isWord@L125",
@@ -201,11 +201,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:d56d73800306789a3c6e0577555a4a74af169d15616b5114b5ee973bf72439ab",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L119",
-          "expr": "at",
-          "line": 126
+          "kind": "executes",
+          "edgeId": "e:92bf921ca1b4ee97af565937ad4011db598d3c9e20c6d6c10be8a9b4a9b1a986",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L126",
+          "line": 126,
+          "expr": "const t = this.at();"
         }
       },
       {
@@ -215,11 +215,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:92bf921ca1b4ee97af565937ad4011db598d3c9e20c6d6c10be8a9b4a9b1a986",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L126",
-          "line": 126,
-          "expr": "const t = this.at();"
+          "kind": "calls",
+          "edgeId": "e:d56d73800306789a3c6e0577555a4a74af169d15616b5114b5ee973bf72439ab",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L119",
+          "expr": "at",
+          "line": 126
         }
       },
       {

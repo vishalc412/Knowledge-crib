@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/parser.ts#parseRaiseAppErrorArgs@L1544",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:09ed4efafa37c70198c36699efcdbbdc68d1397bd95b7145cf8bdd52736fdbd3",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/parser.ts#parseRaiseAppErrorArgs@L1544",
@@ -119,11 +119,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:a57b68741d626e257d8db84f47853c27f9efe541900deb74819fd16f24d17952",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#splitTopLevelCommas@L1559",
-          "expr": "splitTopLevelCommas",
-          "line": 1546
+          "kind": "executes",
+          "edgeId": "e:61c5c1ea75709741750f2843d64db0447a2d2e299acaf8583056126c418ec8c4",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1546",
+          "line": 1546,
+          "expr": "const parts = splitTopLevelCommas(argsText);"
         }
       },
       {
@@ -133,11 +133,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:61c5c1ea75709741750f2843d64db0447a2d2e299acaf8583056126c418ec8c4",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1546",
-          "line": 1546,
-          "expr": "const parts = splitTopLevelCommas(argsText);"
+          "kind": "calls",
+          "edgeId": "e:a57b68741d626e257d8db84f47853c27f9efe541900deb74819fd16f24d17952",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#splitTopLevelCommas@L1559",
+          "expr": "splitTopLevelCommas",
+          "line": 1546
         }
       },
       {

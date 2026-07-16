@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#topLevelTypeNames@L197",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:34eea7889967f2461fb527daa45f66f2fbf39f7a794b4f1ebfff6251944555ab",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#topLevelTypeNames@L197",
@@ -84,37 +84,21 @@
     "conditions": [
       "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L199",
       "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L200",
-      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L206",
       "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L203",
-      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L204"
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L204",
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L206"
     ],
     "rules": [
       {
         "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#topLevelTypeNames@L197",
         "procedureName": "topLevelTypeNames",
-        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L206",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L199",
-            "expr": "mod.defs"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L200",
-            "expr": "d.kind === 'namespace'"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L206",
-            "expr": "TYPE_KINDS.has(d.kind)",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": true,
+        "conditions": [],
+        "inLoop": false,
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:5d658e4c49ef02c7c8eac42e47ecd4e98b84725cd8473ff158ff468aa0c7ec62",
-          "target": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
+          "edgeId": "e:06e2a2c7ca07a843bf2ee1b79406a883e45cc7bd991d29d79b077b7c7f3cf50f",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
           "expr": "push",
           "line": 204
         }
@@ -156,13 +140,29 @@
       {
         "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#topLevelTypeNames@L197",
         "procedureName": "topLevelTypeNames",
-        "conditions": [],
-        "inLoop": false,
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L206",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L199",
+            "expr": "mod.defs"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L200",
+            "expr": "d.kind === 'namespace'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L206",
+            "expr": "TYPE_KINDS.has(d.kind)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:06e2a2c7ca07a843bf2ee1b79406a883e45cc7bd991d29d79b077b7c7f3cf50f",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:5d658e4c49ef02c7c8eac42e47ecd4e98b84725cd8473ff158ff468aa0c7ec62",
+          "target": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
           "expr": "push",
           "line": 204
         }

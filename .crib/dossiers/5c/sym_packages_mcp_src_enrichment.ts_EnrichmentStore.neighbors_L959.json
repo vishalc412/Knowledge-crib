@@ -1,0 +1,289 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L959",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:6c2ebf7fb313384dc2cdd3defda58042aec68a2fa1d6d6b89b67bf7e1618b0b7",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L959",
+    "kind": "symbol",
+    "type": "method",
+    "name": "neighbors",
+    "qualifiedName": "EnrichmentStore.neighbors",
+    "signature": "neighbors(id: string): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 959,
+      "end": 968
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 960
+      },
+      {
+        "callee": "resolveLlmId",
+        "line": 960
+      },
+      {
+        "callee": "sort",
+        "line": 963
+      },
+      {
+        "callee": "filter",
+        "line": 963
+      },
+      {
+        "callee": "flatMap",
+        "line": 963
+      },
+      {
+        "callee": "allArtifacts",
+        "line": 963
+      },
+      {
+        "callee": "localeCompare",
+        "line": 966
+      }
+    ]
+  },
+  "source": {
+    "text": "  neighbors(id: string): Record<string, unknown> {\n    const resolved = this.soul.getNode(id) ? id : this.resolveLlmId(id);\n    if (!resolved)\n      return { error: { code: 'NOT_FOUND', message: `no soul or LLM node with id ${id}` } };\n    const edges = this.allArtifacts()\n      .flatMap((a) => a.graph.edges)\n      .filter((e) => e.from === resolved || e.to === resolved)\n      .sort((a, b) => `${a.from}:${a.to}:${a.rel}`.localeCompare(`${b.from}:${b.to}:${b.rel}`));\n    return { id: resolved, edges };\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 959
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+      "confidence": 1,
+      "name": "allArtifacts",
+      "qualifiedName": "EnrichmentStore.allArtifacts",
+      "signature": "allArtifacts(): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 825
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L1617",
+      "confidence": 1,
+      "name": "resolveLlmId",
+      "qualifiedName": "EnrichmentStore.resolveLlmId",
+      "signature": "resolveLlmId(id: string): string | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1617
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-26-large-project-viz-design.md#approved-direction",
+      "heading": "Approved Direction",
+      "anchor": "approved-direction",
+      "snippet": "Approved Direction",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#5-how-it-works-the-actual-mechanism",
+      "heading": "5. How it works (the actual mechanism)",
+      "anchor": "5-how-it-works-the-actual-mechanism",
+      "snippet": "5. How it works (the actual mechanism)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#1-executive-summary",
+      "heading": "1. Executive Summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#table-of-contents",
+      "heading": "Table of contents",
+      "anchor": "table-of-contents",
+      "snippet": "Table of contents",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-26-large-project-viz-design.md#user-experience",
+      "heading": "User Experience",
+      "anchor": "user-experience",
+      "snippet": "User Experience",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L959",
+    "procedureName": "EnrichmentStore.neighbors",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L961"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L959",
+        "procedureName": "EnrichmentStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c160001f3c5ca50c0a74671e34924d923b2ef0f728f48a042961f8e6c2cc5996",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L1617",
+          "expr": "resolveLlmId",
+          "line": 960
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L959",
+        "procedureName": "EnrichmentStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c9c6c4c57328a03424a71aefa480825e0093a6894d3c20cb077d095bf2159861",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L960",
+          "line": 960,
+          "expr": "const resolved = this.soul.getNode(id) ? id : this.resolveLlmId(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L959",
+        "procedureName": "EnrichmentStore.neighbors",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L961",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L961",
+            "expr": "!resolved",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c7b5b2e4ba4bbb2c4db088edbe88ca14385704ef21b1d6bec43efe80a5284961",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L962",
+          "line": 962,
+          "expr": "return { error: { code: 'NOT_FOUND', message: `no soul or LLM node with id ${id}` } };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L959",
+        "procedureName": "EnrichmentStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:10cf2107f61e0fc43c8a5cd158b07c1d9bc36bef0abae4ec1c2b5e692352a02c",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L963",
+          "line": 963,
+          "expr": "const edges = this.allArtifacts()\n      .flatMap((a) => a.graph.edges)\n      .filter((e) => e.from === resolved || e.to === resolved)\n      .sort((a, b) => `${a.from}:${a.to}:${a.rel}`.localeCompare(`${b.from}:${b.to}:${b.rel}`));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L959",
+        "procedureName": "EnrichmentStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6da9c52a0601a0fd1be60852408deaef584ed3a94903682966d6fd61d5485034",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+          "expr": "allArtifacts",
+          "line": 963
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.neighbors@L959",
+        "procedureName": "EnrichmentStore.neighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:498baa67b60212e24078ed7dbcb9654e4c256506c68b5708e649330314daeed7",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L967",
+          "line": 967,
+          "expr": "return { id: resolved, edges };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 7,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

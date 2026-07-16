@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/structure.ts#metaForPaths@L164",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:8e56ea4f211d44d23e142a81b874c264c4e172b0a866ed2b647179dc036ab854",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/structure.ts#metaForPaths@L164",
@@ -48,14 +48,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L94",
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 94
+      "line": 112
     }
   ],
   "callees": [
@@ -159,6 +159,20 @@
       {
         "procedure": "sym:packages/pipeline/src/structure.ts#metaForPaths@L164",
         "procedureName": "metaForPaths",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ac2f77ebe629513dcf8d8e4391cef520804854ab6710fd2bdacd3102a81dd428",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 170
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/structure.ts#metaForPaths@L164",
+        "procedureName": "metaForPaths",
         "guard": "cond:packages/pipeline/src/structure.ts@L169",
         "branch": "THEN",
         "conditions": [
@@ -180,20 +194,6 @@
           "target": "stmt:packages/pipeline/src/structure.ts@L170",
           "line": 170,
           "expr": "out.push({ path: p, lang: langForPath(p), bytes: st.size, mtime: st.mtimeMs });"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/structure.ts#metaForPaths@L164",
-        "procedureName": "metaForPaths",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:ac2f77ebe629513dcf8d8e4391cef520804854ab6710fd2bdacd3102a81dd428",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 170
         }
       },
       {

@@ -1,0 +1,122 @@
+{
+  "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.enclosingSymbolId@L210",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:b3c3cb2e7b92b21ca14d37ea5a59ac8c8d5b162a9cf41f82c890639e39d2e3b3",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.enclosingSymbolId@L210",
+    "kind": "symbol",
+    "type": "function",
+    "name": "enclosingSymbolId",
+    "qualifiedName": "PhpExtractor.walk.enclosingSymbolId",
+    "signature": "enclosingSymbolId(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/php/PhpExtractor.ts",
+    "span": {
+      "start": 210,
+      "end": 218
+    }
+  },
+  "source": {
+    "text": "    const enclosingSymbolId = (line: number): string | undefined => {\n      let best: LocalSymbol | undefined;\n      for (const s of symbols) {\n        if (s.startLine <= line && line <= s.endLine) {\n          if (!best || s.startLine > best.startLine) best = s;\n        }\n      }\n      return best?.node.id;\n    };",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 210
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkCalls@L219",
+      "confidence": 1,
+      "name": "walkCalls",
+      "qualifiedName": "PhpExtractor.walk.walkCalls",
+      "signature": "walkCalls(…)",
+      "type": "function",
+      "file": "packages/parsers/src/php/PhpExtractor.ts",
+      "line": 219
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.enclosingSymbolId@L210",
+    "procedureName": "PhpExtractor.walk.enclosingSymbolId",
+    "conditions": [
+      "cond:packages/parsers/src/php/PhpExtractor.ts@L212",
+      "cond:packages/parsers/src/php/PhpExtractor.ts@L213",
+      "cond:packages/parsers/src/php/PhpExtractor.ts@L214"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.enclosingSymbolId@L210",
+        "procedureName": "PhpExtractor.walk.enclosingSymbolId",
+        "guard": "cond:packages/parsers/src/php/PhpExtractor.ts@L214",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/php/PhpExtractor.ts@L212",
+            "expr": "symbols"
+          },
+          {
+            "id": "cond:packages/parsers/src/php/PhpExtractor.ts@L213",
+            "expr": "s.startLine <= line && line <= s.endLine"
+          },
+          {
+            "id": "cond:packages/parsers/src/php/PhpExtractor.ts@L214",
+            "expr": "!best || s.startLine > best.startLine",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cee469cf1122c36fa829b0493189107962eaa86c7cd4c52deb8b8b7f007690b2",
+          "target": "assign:packages/parsers/src/php/PhpExtractor.ts@L214",
+          "line": 214,
+          "expr": "best = s;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.enclosingSymbolId@L210",
+        "procedureName": "PhpExtractor.walk.enclosingSymbolId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7dc517d47bd164beec0fd862658661587e334746d89333dec6dcdc1882b29317",
+          "target": "stmt:packages/parsers/src/php/PhpExtractor.ts@L217",
+          "line": 217,
+          "expr": "return best?.node.id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/php/PhpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

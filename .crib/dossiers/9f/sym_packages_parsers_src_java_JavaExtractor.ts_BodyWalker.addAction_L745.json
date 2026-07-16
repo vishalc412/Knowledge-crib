@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAction@L745",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:fc77068d0f7672c888e5fffe5d79665af46aaac2f4d5eb27fa5f3e6068464203",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAction@L745",
@@ -248,11 +248,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:61b873d59fbcf41146da6ebe0002bf26d3b7457528ee8407d8317d67296c3834",
-          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.resolveCallee@L868",
-          "expr": "resolveCallee",
-          "line": 795
+          "kind": "executes",
+          "edgeId": "e:4179e33b4f345f1aa17824d629fb3c0a5ab41223c7829ca80f9b386a473c0283",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L795",
+          "line": 795,
+          "expr": "const calleeId = this.resolveCallee(s.callChain, s.startLine);"
         }
       },
       {
@@ -270,11 +270,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:4179e33b4f345f1aa17824d629fb3c0a5ab41223c7829ca80f9b386a473c0283",
-          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L795",
-          "line": 795,
-          "expr": "const calleeId = this.resolveCallee(s.callChain, s.startLine);"
+          "kind": "calls",
+          "edgeId": "e:61b873d59fbcf41146da6ebe0002bf26d3b7457528ee8407d8317d67296c3834",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.resolveCallee@L868",
+          "expr": "resolveCallee",
+          "line": 795
         }
       },
       {

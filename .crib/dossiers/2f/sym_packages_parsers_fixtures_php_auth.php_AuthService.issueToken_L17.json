@@ -1,0 +1,87 @@
+{
+  "id": "sym:packages/parsers/fixtures/php/auth.php#AuthService.issueToken@L17",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:b30187d440ae2e74b7be70c0142758f752f9a050a4d9a36b4c5c9713928a51e5",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/php/auth.php#AuthService.issueToken@L17",
+    "kind": "symbol",
+    "type": "method",
+    "name": "issueToken",
+    "qualifiedName": "AuthService.issueToken",
+    "signature": "issueToken($email, $hash)",
+    "lang": "php",
+    "file": "packages/parsers/fixtures/php/auth.php",
+    "span": {
+      "start": 17,
+      "end": 19
+    }
+  },
+  "source": {
+    "text": "    private function issueToken($email, $hash) {\n        return verifyPassword($hash, $hash);\n    }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 17
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/php/auth.php#verifyPassword@L7",
+      "confidence": 1,
+      "name": "verifyPassword",
+      "qualifiedName": "verifyPassword",
+      "signature": "verifyPassword($password, $hash)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/php/auth.php",
+      "line": 7
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/php/auth.php#AuthService.issueToken@L17",
+    "procedureName": "AuthService.issueToken",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/php/auth.php#AuthService.issueToken@L17",
+        "procedureName": "AuthService.issueToken",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c039f03aa9e5d6c739fc7fc6d2fc29de5baa197868bff740f9ad47a5fc01ab21",
+          "target": "sym:packages/parsers/fixtures/php/auth.php#verifyPassword@L7",
+          "expr": "verifyPassword"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

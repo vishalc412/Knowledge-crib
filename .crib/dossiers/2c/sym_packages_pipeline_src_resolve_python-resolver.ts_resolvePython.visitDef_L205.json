@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython.visitDef@L205",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:f248b183d850d6c876f9e624f6df2164bd6486758e89ca84b418e28c3ce76cbf",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython.visitDef@L205",
@@ -187,11 +187,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:5b4922811d494b1509429f051a2b9963c1eb096204aedf03f6b43c5e46f70e7f",
-          "target": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveTypeName@L229",
-          "expr": "resolveTypeName",
-          "line": 210
+          "kind": "executes",
+          "edgeId": "e:3a51790e36b5946e7e5781c41655be7100b3ff6b750ebd342044010a812afe13",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.ts@L210",
+          "line": 210,
+          "expr": "const target = resolveTypeName(base, file.path, nameBindings, table);"
         }
       },
       {
@@ -217,11 +217,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:3a51790e36b5946e7e5781c41655be7100b3ff6b750ebd342044010a812afe13",
-          "target": "stmt:packages/pipeline/src/resolve/python-resolver.ts@L210",
-          "line": 210,
-          "expr": "const target = resolveTypeName(base, file.path, nameBindings, table);"
+          "kind": "calls",
+          "edgeId": "e:5b4922811d494b1509429f051a2b9963c1eb096204aedf03f6b43c5e46f70e7f",
+          "target": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveTypeName@L229",
+          "expr": "resolveTypeName",
+          "line": 210
         }
       },
       {
@@ -236,40 +236,6 @@
           "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeName@L138",
           "expr": "resolveTypeName",
           "line": 210
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython.visitDef@L205",
-        "procedureName": "resolvePython.visitDef",
-        "guard": "cond:packages/pipeline/src/resolve/python-resolver.ts@L211",
-        "branch": "THEN",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L206",
-            "expr": "d.kind === 'class' && d.bases.length"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L208",
-            "expr": "classId"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L209",
-            "expr": "d.bases"
-          },
-          {
-            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L211",
-            "expr": "target",
-            "polarity": "THEN"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:e6dc898fb210364275120401725891773127aee4318c7bb2faf114c6a9b32cc1",
-          "target": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython.push@L68",
-          "expr": "push",
-          "line": 212
         }
       },
       {
@@ -316,6 +282,40 @@
           "kind": "calls",
           "edgeId": "e:4ff91438c4dc761bb75dbc99ebd9e69c3675ee7a576eb754b28b113c179d78df",
           "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 212
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython.visitDef@L205",
+        "procedureName": "resolvePython.visitDef",
+        "guard": "cond:packages/pipeline/src/resolve/python-resolver.ts@L211",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L206",
+            "expr": "d.kind === 'class' && d.bases.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L208",
+            "expr": "classId"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L209",
+            "expr": "d.bases"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/python-resolver.ts@L211",
+            "expr": "target",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e6dc898fb210364275120401725891773127aee4318c7bb2faf114c6a9b32cc1",
+          "target": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolvePython.push@L68",
           "expr": "push",
           "line": 212
         }

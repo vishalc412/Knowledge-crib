@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:888aeb52803f4c3c9b4a7986790659316da4cd7319bf6e770e7c5548a68db633",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
@@ -184,11 +184,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:dadd74f141ab96fdca98fff1f14655c7feb7976ed7196c9aabd1f69f5d81cad5",
-          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRawStringBody@L523",
-          "expr": "scanRawStringBody",
-          "line": 317
+          "kind": "executes",
+          "edgeId": "e:b714ab1a13dc3b5331d2aa4ef9a98e1938af8c5b970e6e5ab16b1160f60bc798",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L317",
+          "line": 317,
+          "expr": "this.scanRawStringBody(quoteRun, sl, sc);"
         }
       },
       {
@@ -206,11 +206,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:b714ab1a13dc3b5331d2aa4ef9a98e1938af8c5b970e6e5ab16b1160f60bc798",
-          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L317",
-          "line": 317,
-          "expr": "this.scanRawStringBody(quoteRun, sl, sc);"
+          "kind": "calls",
+          "edgeId": "e:dadd74f141ab96fdca98fff1f14655c7feb7976ed7196c9aabd1f69f5d81cad5",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRawStringBody@L523",
+          "expr": "scanRawStringBody",
+          "line": 317
         }
       },
       {
@@ -250,11 +250,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:5d29e957c255238a7048d6d6d1f0519e85737348b6f6c447bd4140b9b4f1cac6",
-          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.emit@L636",
-          "expr": "emit",
-          "line": 321
+          "kind": "executes",
+          "edgeId": "e:20edb135bd9c3db6d17cddf98035f50ed55bd7882d877d577c9a4a0054b8188c",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L321",
+          "line": 321,
+          "expr": "this.emit('STRING', '\"\"', sl, sc);"
         }
       },
       {
@@ -272,11 +272,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:20edb135bd9c3db6d17cddf98035f50ed55bd7882d877d577c9a4a0054b8188c",
-          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L321",
-          "line": 321,
-          "expr": "this.emit('STRING', '\"\"', sl, sc);"
+          "kind": "calls",
+          "edgeId": "e:5d29e957c255238a7048d6d6d1f0519e85737348b6f6c447bd4140b9b4f1cac6",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.emit@L636",
+          "expr": "emit",
+          "line": 321
         }
       },
       {

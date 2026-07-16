@@ -1,0 +1,451 @@
+{
+  "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:78edad09b1c1fea33bdaab78f647c1a28a036dd4b9b2da27680644b728d6ffc5",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+    "kind": "symbol",
+    "type": "function",
+    "name": "slotLoop",
+    "qualifiedName": "runFuzz.slotLoop",
+    "signature": "slotLoop(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+    "span": {
+      "start": 180,
+      "end": 222
+    },
+    "callSites": [
+      {
+        "callee": "spawnInit",
+        "line": 181
+      },
+      {
+        "callee": "raceBudget",
+        "line": 186
+      },
+      {
+        "callee": "push",
+        "line": 191
+      },
+      {
+        "callee": "onProgress",
+        "line": 193
+      },
+      {
+        "callee": "spawnInit",
+        "line": 194
+      },
+      {
+        "callee": "push",
+        "line": 200
+      },
+      {
+        "callee": "push",
+        "line": 209
+      },
+      {
+        "callee": "onProgress",
+        "line": 218
+      },
+      {
+        "callee": "postMessage",
+        "line": 220
+      }
+    ]
+  },
+  "source": {
+    "text": "  const slotLoop = async (): Promise<void> => {\n    let w = await spawnInit(url, extractorName);\n    for (let idx = nextIdx(); idx >= 0; idx = nextIdx()) {\n      const text = inputs[idx]!;\n      let res: SlotResult;\n      try {\n        res = await raceBudget(w, idx, text, budgetMs);\n      } catch {\n        // Hang — terminate the stuck worker, record the reproducer, respawn a fresh one for the slot.\n        await w.terminate().catch(() => {});\n        outcome.hang++;\n        outcome.reproducers.push({ extractor: extractorName, outcome: 'hang', idx, text });\n        done++;\n        onProgress?.(done, iterations);\n        w = await spawnInit(url, extractorName);\n        continue;\n      }\n      if (res.outcome === 'ok') outcome.ok++;\n      else if (res.outcome === 'throw') {\n        outcome.throw++;\n        outcome.reproducers.push({\n          extractor: extractorName,\n          outcome: 'throw',\n          idx,\n          text,\n          reason: res.reason,\n        });\n      } else if (res.outcome === 'invalid') {\n        outcome.invalid++;\n        outcome.reproducers.push({\n          extractor: extractorName,\n          outcome: 'invalid',\n          idx,\n          text,\n          reason: res.reason,\n        });\n      }\n      done++;\n      onProgress?.(done, iterations);\n    }\n    w.postMessage({ kind: 'shutdown' });\n    await w.terminate().catch(() => {});\n  };",
+    "truncated": false,
+    "totalLines": 43,
+    "startLine": 180
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz@L147",
+      "confidence": 1,
+      "name": "runFuzz",
+      "qualifiedName": "runFuzz",
+      "signature": "runFuzz(extractorName: string, opts: RunFuzzOpts = {}): Promise<FuzzOutcome>",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+      "line": 147
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#raceBudget@L114",
+      "confidence": 1,
+      "name": "raceBudget",
+      "qualifiedName": "raceBudget",
+      "signature": "raceBudget(w: Worker, idx: number, text: string, budgetMs: number): Promise<SlotResult>",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+      "line": 114
+    },
+    {
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.nextIdx@L178",
+      "confidence": 1,
+      "name": "nextIdx",
+      "qualifiedName": "runFuzz.nextIdx",
+      "signature": "nextIdx(…)",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+      "line": 178
+    },
+    {
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#spawnInit@L95",
+      "confidence": 1,
+      "name": "spawnInit",
+      "qualifiedName": "spawnInit",
+      "signature": "spawnInit(url: string, extractorName: string): Promise<Worker>",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+      "line": 95
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+    "procedureName": "runFuzz.slotLoop",
+    "conditions": [
+      "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+      "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L197",
+      "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L198",
+      "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L207"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+        "procedureName": "runFuzz.slotLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e752458126992343fec71e6806771d67d66cbb3c244d52a04420d1ca2264cf30",
+          "target": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.nextIdx@L178",
+          "expr": "nextIdx"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+        "procedureName": "runFuzz.slotLoop",
+        "guard": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+            "expr": "idx >= 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ab72f722ec95563075cfe6f7d71d054fcf31556e26489195d0f3b1f14e017a1a",
+          "target": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#spawnInit@L95",
+          "expr": "spawnInit",
+          "line": 181
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+        "procedureName": "runFuzz.slotLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b40a13f3635ca229cdc0614f21ebbc97dbc4a33d70a144104ecac7836b3220ad",
+          "target": "stmt:packages/parsers/src/fuzz/extractor-fuzz.ts@L181",
+          "line": 181,
+          "expr": "let w = await spawnInit(url, extractorName);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+        "procedureName": "runFuzz.slotLoop",
+        "guard": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+            "expr": "idx >= 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:25735f35a32b7cac619acde16c7b23573bf29a21d0031b711e245ba9c412a728",
+          "target": "assign:packages/parsers/src/fuzz/extractor-fuzz.ts@L186",
+          "line": 186,
+          "expr": "res = await raceBudget(w, idx, text, budgetMs);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+        "procedureName": "runFuzz.slotLoop",
+        "guard": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+            "expr": "idx >= 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ac67a2314895bd9c09f4854768c4249a6cb450dd123677cacfc2ed78dec116f2",
+          "target": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#raceBudget@L114",
+          "expr": "raceBudget",
+          "line": 186
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+        "procedureName": "runFuzz.slotLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5396473804035edcc1e16ce548e47fa8c8aaa232031b3bb4c2619cbd50fc7631",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 191
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+        "procedureName": "runFuzz.slotLoop",
+        "guard": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+            "expr": "idx >= 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a5cb1b8bf506cbd8a0b2ae61ea389b3eaf8c8125f1fb3771a5185c05987541e2",
+          "target": "stmt:packages/parsers/src/fuzz/extractor-fuzz.ts@L191",
+          "line": 191,
+          "expr": "outcome.reproducers.push({ extractor: extractorName, outcome: 'hang', idx, text });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+        "procedureName": "runFuzz.slotLoop",
+        "guard": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+            "expr": "idx >= 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f8282b8fcdbb21501be03b95831d50bcc02843fe118f436373289a130824eb0e",
+          "target": "stmt:packages/parsers/src/fuzz/extractor-fuzz.ts@L193",
+          "line": 193,
+          "expr": "onProgress?.(done, iterations);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+        "procedureName": "runFuzz.slotLoop",
+        "guard": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+            "expr": "idx >= 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5df694293862394f7f11a1cab08058ca105f451f74f70f425fb58bd3d97ec348",
+          "target": "assign:packages/parsers/src/fuzz/extractor-fuzz.ts@L194",
+          "line": 194,
+          "expr": "w = await spawnInit(url, extractorName);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+        "procedureName": "runFuzz.slotLoop",
+        "guard": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L198",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+            "expr": "idx >= 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L197",
+            "expr": "res.outcome === 'ok'"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L198",
+            "expr": "res.outcome === 'throw'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5069a2430b1430cdb193ba2fb42cd99a4e6b3c1a925753eb70393abed8da6576",
+          "target": "stmt:packages/parsers/src/fuzz/extractor-fuzz.ts@L200",
+          "line": 200,
+          "expr": "outcome.reproducers.push({\n          extractor: extractorName,\n          outcome: 'throw',\n          idx,\n          text,\n          reason: res.reason,\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+        "procedureName": "runFuzz.slotLoop",
+        "guard": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L207",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+            "expr": "idx >= 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L197",
+            "expr": "res.outcome === 'ok'"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L198",
+            "expr": "res.outcome === 'throw'"
+          },
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L207",
+            "expr": "res.outcome === 'invalid'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:953e615a51fc8eef1fc29b9d91f97fda9aedfb1dcd6a572808feab653af8bbf4",
+          "target": "stmt:packages/parsers/src/fuzz/extractor-fuzz.ts@L209",
+          "line": 209,
+          "expr": "outcome.reproducers.push({\n          extractor: extractorName,\n          outcome: 'invalid',\n          idx,\n          text,\n          reason: res.reason,\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+        "procedureName": "runFuzz.slotLoop",
+        "guard": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/fuzz/extractor-fuzz.ts@L182",
+            "expr": "idx >= 0",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:edb81176b17056b4f1a05a75f6a7a29b6037a6def109178ef13775a19652bed4",
+          "target": "stmt:packages/parsers/src/fuzz/extractor-fuzz.ts@L218",
+          "line": 218,
+          "expr": "onProgress?.(done, iterations);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+        "procedureName": "runFuzz.slotLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:904729ce09a4de8281ba919399a503c302146c275d35c905c5a031a4492f6340",
+          "target": "stmt:packages/parsers/src/fuzz/extractor-fuzz.ts@L220",
+          "line": 220,
+          "expr": "w.postMessage({ kind: 'shutdown' });"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/parsers/src/fuzz/extractor-fuzz.ts@L187",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+        "span": {
+          "start": 187,
+          "end": 187
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/parsers/src/fuzz/extractor-fuzz.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 2,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 9,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

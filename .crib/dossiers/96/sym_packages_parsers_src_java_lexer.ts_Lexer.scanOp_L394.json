@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanOp@L394",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:3c1e8a9fdaf732fb014d2ab3709436a7036ae0d4b004893ed91fd9f60fc37642",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanOp@L394",
@@ -113,20 +113,6 @@
       {
         "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanOp@L394",
         "procedureName": "Lexer.scanOp",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:d775b3b3f2cab995e429bd52d43ae55bdf923ac24d0d79fd25fadaf3cdb6f018",
-          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.advance@L441",
-          "expr": "advance",
-          "line": 400
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanOp@L394",
-        "procedureName": "Lexer.scanOp",
         "guard": "cond:packages/parsers/src/java/lexer.ts@L400",
         "branch": "LOOP",
         "conditions": [
@@ -162,10 +148,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:c52c2f54a55593a334cee5c90e4e6cd5dc23717ef7d70630fd047495ad0e9551",
-          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.emit@L452",
-          "expr": "emit",
-          "line": 401
+          "edgeId": "e:d775b3b3f2cab995e429bd52d43ae55bdf923ac24d0d79fd25fadaf3cdb6f018",
+          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.advance@L441",
+          "expr": "advance",
+          "line": 400
         }
       },
       {
@@ -192,6 +178,20 @@
           "target": "stmt:packages/parsers/src/java/lexer.ts@L401",
           "line": 401,
           "expr": "this.emit('OP', op, sl, sc);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanOp@L394",
+        "procedureName": "Lexer.scanOp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c52c2f54a55593a334cee5c90e4e6cd5dc23717ef7d70630fd047495ad0e9551",
+          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.emit@L452",
+          "expr": "emit",
+          "line": 401
         }
       },
       {

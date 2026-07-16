@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseTableFk@L369",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:ce2361edc79077556920fe7aa01ac74b382f5a95c0393ef8d205ba7bbb339a5f",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseTableFk@L369",
@@ -202,6 +202,20 @@
       {
         "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseTableFk@L369",
         "procedureName": "Parser.parseTableFk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b14b5c201e782df9a32a4bff8568ef741bfaa2eb5a26a6fe9faeefb4eafd4883",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L374",
+          "line": 374,
+          "expr": "const cols = this.readParenColumnList();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseTableFk@L369",
+        "procedureName": "Parser.parseTableFk",
         "guard": "cond:packages/parsers/src/plsql/parser.ts@L392",
         "branch": "THEN",
         "conditions": [
@@ -219,20 +233,6 @@
           "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.readParenColumnList@L402",
           "expr": "readParenColumnList",
           "line": 374
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseTableFk@L369",
-        "procedureName": "Parser.parseTableFk",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:b14b5c201e782df9a32a4bff8568ef741bfaa2eb5a26a6fe9faeefb4eafd4883",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L374",
-          "line": 374,
-          "expr": "const cols = this.readParenColumnList();"
         }
       },
       {
@@ -330,11 +330,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:ad50c14fb181c857f39cc26a9befc28372cd1caed2ab1274c7579126cb20ce7c",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
-          "expr": "readTableRef",
-          "line": 384
+          "kind": "executes",
+          "edgeId": "e:74dba1afefd339822f7f716395ed010caebee2a6872246953abe6123d835b861",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L384",
+          "line": 384,
+          "expr": "const ref = readTableRef(this.toks, this.pos);"
         }
       },
       {
@@ -344,11 +344,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:74dba1afefd339822f7f716395ed010caebee2a6872246953abe6123d835b861",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L384",
-          "line": 384,
-          "expr": "const ref = readTableRef(this.toks, this.pos);"
+          "kind": "calls",
+          "edgeId": "e:ad50c14fb181c857f39cc26a9befc28372cd1caed2ab1274c7579126cb20ce7c",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#readTableRef@L1336",
+          "expr": "readTableRef",
+          "line": 384
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:0616b6c57477053424a47b3db95e1657faaa9a55d44eb9ed19d9058e24cdbe05",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
@@ -160,6 +160,20 @@
       {
         "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
         "procedureName": "PythonExtractor.addRaise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:073a126a90710a3717bdda3c2292141d28de835dce318da595a5fa2f0d923157",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L461",
+          "line": 461,
+          "expr": "const e = this.edge(procId, id, 'raises', name || 'RAISE');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
+        "procedureName": "PythonExtractor.addRaise",
         "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L470",
         "branch": "THEN",
         "conditions": [
@@ -177,20 +191,6 @@
           "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.edge@L650",
           "expr": "edge",
           "line": 461
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.addRaise@L436",
-        "procedureName": "PythonExtractor.addRaise",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:073a126a90710a3717bdda3c2292141d28de835dce318da595a5fa2f0d923157",
-          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L461",
-          "line": 461,
-          "expr": "const e = this.edge(procId, id, 'raises', name || 'RAISE');"
         }
       },
       {

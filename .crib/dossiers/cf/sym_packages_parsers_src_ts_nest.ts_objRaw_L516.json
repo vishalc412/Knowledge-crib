@@ -1,0 +1,136 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#objRaw@L516",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:a146ed113c6c25777a90f5a91d797a24cffa8f6cde96df07af298d2da2a7ec2b",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#objRaw@L516",
+    "kind": "symbol",
+    "type": "function",
+    "name": "objRaw",
+    "qualifiedName": "objRaw",
+    "signature": "objRaw(o: ts.ObjectLiteralExpression, key: string): ts.Expression | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 516,
+      "end": 523
+    }
+  },
+  "source": {
+    "text": "function objRaw(o: ts.ObjectLiteralExpression, key: string): ts.Expression | undefined {\n  for (const p of o.properties) {\n    if (ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === key) {\n      return p.initializer;\n    }\n  }\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 516
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#moduleProviders@L372",
+      "confidence": 1,
+      "name": "moduleProviders",
+      "qualifiedName": "moduleProviders",
+      "signature": "moduleProviders(modDec: ts.Decorator | undefined): string[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 372
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#objGet@L508",
+      "confidence": 1,
+      "name": "objGet",
+      "qualifiedName": "objGet",
+      "signature": "objGet(o: ts.ObjectLiteralExpression, key: string): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 508
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L515",
+      "snippet": "/** The raw initializer expression of a property, or undefined. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#objRaw@L516",
+    "procedureName": "objRaw",
+    "conditions": [
+      "cond:packages/parsers/src/ts/nest.ts@L517",
+      "cond:packages/parsers/src/ts/nest.ts@L518"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#objRaw@L516",
+        "procedureName": "objRaw",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L518",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L517",
+            "expr": "o.properties"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L518",
+            "expr": "ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === key",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e62a0199613962b7740cea9726cd40270cb8f775ddb0be0c76ec4cf55e949505",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L519",
+          "line": 519,
+          "expr": "return p.initializer;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#objRaw@L516",
+        "procedureName": "objRaw",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bf5a2ec3460d3a6ca5e1c46385729f800c3ac407104cc7c3dd759b64c382f557",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L522",
+          "line": 522,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

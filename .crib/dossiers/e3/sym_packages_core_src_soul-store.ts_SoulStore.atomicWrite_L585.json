@@ -1,0 +1,185 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L585",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:cb2595179d7fefe31f816a5f0ff406e9a76fc6f7f0e5deccf8cdad99992f5789",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L585",
+    "kind": "symbol",
+    "type": "method",
+    "name": "atomicWrite",
+    "qualifiedName": "SoulStore.atomicWrite",
+    "signature": "atomicWrite(path: string, content: string): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 585,
+      "end": 590
+    },
+    "callSites": [
+      {
+        "callee": "mkdirSync",
+        "line": 586
+      },
+      {
+        "callee": "dirname",
+        "line": 586
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 588
+      },
+      {
+        "callee": "renameSync",
+        "line": 589
+      }
+    ]
+  },
+  "source": {
+    "text": "  private atomicWrite(path: string, content: string): void {\n    mkdirSync(dirname(path), { recursive: true });\n    const tmp = `${path}.tmp`;\n    writeFileSync(tmp, content, 'utf8');\n    renameSync(tmp, path);\n  }",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 585
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeClusters@L508",
+      "confidence": 1,
+      "name": "writeClusters",
+      "qualifiedName": "SoulStore.writeClusters",
+      "signature": "writeClusters(): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 508
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeGitignore@L552",
+      "confidence": 1,
+      "name": "writeGitignore",
+      "qualifiedName": "SoulStore.writeGitignore",
+      "signature": "writeGitignore(): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 552
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeManifest@L559",
+      "confidence": 1,
+      "name": "writeManifest",
+      "qualifiedName": "SoulStore.writeManifest",
+      "signature": "writeManifest(): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 559
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeShardChunks@L522",
+      "confidence": 1,
+      "name": "writeShardChunks",
+      "qualifiedName": "SoulStore.writeShardChunks",
+      "signature": "writeShardChunks(shardDir: string, records: (Node | Edge)[]): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 522
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeVendoredSchemas@L544",
+      "confidence": 1,
+      "name": "writeVendoredSchemas",
+      "qualifiedName": "SoulStore.writeVendoredSchemas",
+      "signature": "writeVendoredSchemas(): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 544
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/soul-store.ts@L584",
+      "snippet": "/** Write-temp → rename, so a reader never sees a half-written file. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L585",
+    "procedureName": "SoulStore.atomicWrite",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L585",
+        "procedureName": "SoulStore.atomicWrite",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:19292ed8e5e984686852ffadd7cac0c3b5f76c6067af9d8f67b38ccb2ad04896",
+          "target": "stmt:packages/core/src/soul-store.ts@L586",
+          "line": 586,
+          "expr": "mkdirSync(dirname(path), { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L585",
+        "procedureName": "SoulStore.atomicWrite",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5e9302acb275aa97411222860473f6f4226f70cd5009a9eaf72ba0af3c4cb771",
+          "target": "stmt:packages/core/src/soul-store.ts@L588",
+          "line": 588,
+          "expr": "writeFileSync(tmp, content, 'utf8');"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.atomicWrite@L585",
+        "procedureName": "SoulStore.atomicWrite",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:12f308d4952d4c0a39060370fc7278053e83778d9f6277bd844fe42c6376f1ca",
+          "target": "stmt:packages/core/src/soul-store.ts@L589",
+          "line": 589,
+          "expr": "renameSync(tmp, path);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

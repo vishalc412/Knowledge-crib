@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.annotateCallEdge@L821",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:ca560e4ab46e5a3d5f93849adcb0ff12ea8dc802e095717c0af1f80a522b1d50",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.annotateCallEdge@L821",
@@ -112,11 +112,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:76a988a7dc3858e549bb66e95e20033632dd8a0d504d1b477ecb8a0b4d0ba239",
-          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.resolveCall@L836",
-          "expr": "resolveCall",
-          "line": 822
+          "kind": "executes",
+          "edgeId": "e:741e8c8335726d5f0b8e0fd7086a4699fc6cd924abae589c17de736baa026c18",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L822",
+          "line": 822,
+          "expr": "const dstId = this.resolveCall(c, procId);"
         }
       },
       {
@@ -126,11 +126,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:741e8c8335726d5f0b8e0fd7086a4699fc6cd924abae589c17de736baa026c18",
-          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L822",
-          "line": 822,
-          "expr": "const dstId = this.resolveCall(c, procId);"
+          "kind": "calls",
+          "edgeId": "e:76a988a7dc3858e549bb66e95e20033632dd8a0d504d1b477ecb8a0b4d0ba239",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.resolveCall@L836",
+          "expr": "resolveCall",
+          "line": 822
         }
       },
       {
@@ -299,12 +299,12 @@
     "calls": {
       "resolved": 1,
       "recorded": 4,
-      "unresolved": 2
+      "unresolved": 1
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

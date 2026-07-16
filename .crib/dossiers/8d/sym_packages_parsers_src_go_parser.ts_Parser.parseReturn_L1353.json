@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseReturn@L1353",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:a427a49a3400357b32a60ea7c40008599dee8ade763bf1004a8026f63b930b99",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseReturn@L1353",
@@ -124,11 +124,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:cfeb777cb28bf43c56bfd0fb37d7be2d8b865cd9f1a4603d8d81618126ffa515",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.peek@L1695",
-          "expr": "peek",
-          "line": 1354
+          "kind": "executes",
+          "edgeId": "e:428e2aa8e65acc10ae65acc406a4e6e6e9badd5690756ab40863db1cab98c86b",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L1354",
+          "line": 1354,
+          "expr": "const line = this.peek().line;"
         }
       },
       {
@@ -138,11 +138,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:428e2aa8e65acc10ae65acc406a4e6e6e9badd5690756ab40863db1cab98c86b",
-          "target": "stmt:packages/parsers/src/go/parser.ts@L1354",
-          "line": 1354,
-          "expr": "const line = this.peek().line;"
+          "kind": "calls",
+          "edgeId": "e:cfeb777cb28bf43c56bfd0fb37d7be2d8b865cd9f1a4603d8d81618126ffa515",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.peek@L1695",
+          "expr": "peek",
+          "line": 1354
         }
       },
       {
@@ -180,11 +180,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:dc05f7399f3e43c4b60ec9321e9f995331e6b8a7910fff0a0d763b80b91ed35d",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.collectSimpleUntilSemi@L1498",
-          "expr": "collectSimpleUntilSemi",
-          "line": 1356
+          "kind": "executes",
+          "edgeId": "e:57f8ca266365a1bbe90e74eb2a17d3f40932e6796bcca0c00ca8c8c5ab4a0939",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L1356",
+          "line": 1356,
+          "expr": "const { text, callee, isPanic } = this.collectSimpleUntilSemi();"
         }
       },
       {
@@ -194,11 +194,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:57f8ca266365a1bbe90e74eb2a17d3f40932e6796bcca0c00ca8c8c5ab4a0939",
-          "target": "stmt:packages/parsers/src/go/parser.ts@L1356",
-          "line": 1356,
-          "expr": "const { text, callee, isPanic } = this.collectSimpleUntilSemi();"
+          "kind": "calls",
+          "edgeId": "e:dc05f7399f3e43c4b60ec9321e9f995331e6b8a7910fff0a0d763b80b91ed35d",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.collectSimpleUntilSemi@L1498",
+          "expr": "collectSimpleUntilSemi",
+          "line": 1356
         }
       },
       {

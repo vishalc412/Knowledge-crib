@@ -1,0 +1,371 @@
+{
+  "id": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:200f37d5e1e11f0717f734b9619ba3145a6a5cf45bf42564104faca893153861",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+    "kind": "symbol",
+    "type": "function",
+    "name": "verifyEvidence",
+    "qualifiedName": "verifyEvidence",
+    "signature": "verifyEvidence(soul: SoulStore, repoRoot: string, evidence: LlmEvidence): EvidenceCheck",
+    "lang": "typescript",
+    "file": "packages/mcp/src/grounding.ts",
+    "span": {
+      "start": 65,
+      "end": 97
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 74
+      },
+      {
+        "callee": "rehydrateBody",
+        "line": 78
+      },
+      {
+        "callee": "normalize",
+        "line": 91
+      },
+      {
+        "callee": "normalize",
+        "line": 92
+      }
+    ]
+  },
+  "source": {
+    "text": "export function verifyEvidence(\n  soul: SoulStore,\n  repoRoot: string,\n  evidence: LlmEvidence,\n): EvidenceCheck {\n  const base: Pick<EvidenceCheck, 'soulId'> = { soulId: evidence.soulId };\n  if (!evidence.quote || !evidence.quote.trim()) {\n    return { ...base, verdict: 'unsupported', reason: 'no quote' };\n  }\n  const node: Node | undefined = soul.getNode(evidence.soulId);\n  if (!node || !node.file || !node.span) {\n    return { ...base, verdict: 'unsupported', reason: 'anchor node has no on-disk span' };\n  }\n  const body = rehydrateBody(repoRoot, node, {\n    maxChars: VERIFY_MAX_CHARS,\n    maxLines: Number.MAX_SAFE_INTEGER,\n    ...(evidence.startLine ? { startLine: evidence.startLine } : {}),\n  });\n  if (!body.text) {\n    return { ...base, verdict: 'unsupported', reason: 'anchor span rehydrated empty' };\n  }\n  // The char cap is generous (256 KiB). If the span still overflowed it, the quote may live in the\n  // un-paged tail — treat as unsupported rather than risk a false hallucination flag.\n  if (body.truncated && body.totalLines > 0 && body.text.length >= VERIFY_MAX_CHARS) {\n    return { ...base, verdict: 'unsupported', reason: 'span exceeds verify budget' };\n  }\n  const hay = normalize(body.text);\n  const needle = normalize(evidence.quote);\n  if (needle && hay.includes(needle)) {\n    return { ...base, verdict: 'grounded' };\n  }\n  return { ...base, verdict: 'ungrounded', reason: 'quote not found in anchor span' };\n}",
+    "truncated": false,
+    "totalLines": 33,
+    "startLine": 65
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L690",
+      "confidence": 1,
+      "name": "save",
+      "qualifiedName": "EnrichmentStore.save",
+      "signature": "save(args: EnrichSaveArgs): EnrichSaveResult",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 690
+    },
+    {
+      "id": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
+      "confidence": 1,
+      "name": "verifyArtifact",
+      "qualifiedName": "verifyArtifact",
+      "signature": "verifyArtifact(soul: SoulStore, repoRoot: string, artifact: LlmArtifact): GroundingResult",
+      "type": "function",
+      "file": "packages/mcp/src/grounding.ts",
+      "line": 100
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/grounding.ts#normalize@L52",
+      "confidence": 1,
+      "name": "normalize",
+      "qualifiedName": "normalize",
+      "signature": "normalize(text: string): string",
+      "type": "function",
+      "file": "packages/mcp/src/grounding.ts",
+      "line": 52
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#normalize@L196",
+      "confidence": 1,
+      "name": "normalize",
+      "qualifiedName": "normalize",
+      "signature": "normalize(p: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 196
+    },
+    {
+      "id": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+      "confidence": 1,
+      "name": "rehydrateBody",
+      "qualifiedName": "rehydrateBody",
+      "signature": "rehydrateBody(repoRoot: string, node: Node | undefined, opts: {\n    maxChars?: number;\n    maxLines?: number;\n    startLine?: number;\n    readLines?: (file: string) => string[] | undefined;\n  } = {}): RehydratedBody",
+      "type": "function",
+      "file": "packages/core/src/source.ts",
+      "line": 64
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/grounding.ts@L56",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+    "procedureName": "verifyEvidence",
+    "conditions": [
+      "cond:packages/mcp/src/grounding.ts@L71",
+      "cond:packages/mcp/src/grounding.ts@L75",
+      "cond:packages/mcp/src/grounding.ts@L83",
+      "cond:packages/mcp/src/grounding.ts@L88",
+      "cond:packages/mcp/src/grounding.ts@L93"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+        "procedureName": "verifyEvidence",
+        "guard": "cond:packages/mcp/src/grounding.ts@L71",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/grounding.ts@L71",
+            "expr": "!evidence.quote || !evidence.quote.trim()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a014453d5c0a1bb8b4121b5732202e7cd0d1e26ffe4603bed3e12de3c89c7fde",
+          "target": "stmt:packages/mcp/src/grounding.ts@L72",
+          "line": 72,
+          "expr": "return { ...base, verdict: 'unsupported', reason: 'no quote' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+        "procedureName": "verifyEvidence",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7f68f9b6897145d9570937bbca624b8c83d2acd09bdb357e9b3a8f0f643cd85c",
+          "target": "stmt:packages/mcp/src/grounding.ts@L74",
+          "line": 74,
+          "expr": "const node: Node | undefined = soul.getNode(evidence.soulId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+        "procedureName": "verifyEvidence",
+        "guard": "cond:packages/mcp/src/grounding.ts@L75",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/grounding.ts@L75",
+            "expr": "!node || !node.file || !node.span",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:37efd9c36d1589ff913ba21b380209ccad401147c5291026b86159fa67474938",
+          "target": "stmt:packages/mcp/src/grounding.ts@L76",
+          "line": 76,
+          "expr": "return { ...base, verdict: 'unsupported', reason: 'anchor node has no on-disk span' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+        "procedureName": "verifyEvidence",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:11fcbfe820b3a49123916ab0bfc70f8a1b73c7e1daca2b15599a5c188e73d47e",
+          "target": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+          "expr": "rehydrateBody",
+          "line": 78
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+        "procedureName": "verifyEvidence",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:493f49c6f8a4671164d350efab4d3bb0e90f60233dc40cef18899e88c0ee14e3",
+          "target": "stmt:packages/mcp/src/grounding.ts@L78",
+          "line": 78,
+          "expr": "const body = rehydrateBody(repoRoot, node, {\n    maxChars: VERIFY_MAX_CHARS,\n    maxLines: Number.MAX_SAFE_INTEGER,\n    ...(evidence.startLine ? { startLine: evidence.startLine } : {}),\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+        "procedureName": "verifyEvidence",
+        "guard": "cond:packages/mcp/src/grounding.ts@L83",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/grounding.ts@L83",
+            "expr": "!body.text",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:55ed9e1ba096e50fa38171e486f63edca373a449da6670652dcb51429bc5f281",
+          "target": "stmt:packages/mcp/src/grounding.ts@L84",
+          "line": 84,
+          "expr": "return { ...base, verdict: 'unsupported', reason: 'anchor span rehydrated empty' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+        "procedureName": "verifyEvidence",
+        "guard": "cond:packages/mcp/src/grounding.ts@L88",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/grounding.ts@L88",
+            "expr": "body.truncated && body.totalLines > 0 && body.text.length >= VERIFY_MAX_CHARS",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:80301f60c06b40d2bda06db86388a0f51407c7c614e9c8a1cf90993162de039e",
+          "target": "stmt:packages/mcp/src/grounding.ts@L89",
+          "line": 89,
+          "expr": "return { ...base, verdict: 'unsupported', reason: 'span exceeds verify budget' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+        "procedureName": "verifyEvidence",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:017a5ef2d986f9b741455aae911cfc31f6f3bdf87c570078dae45e0e0d39b526",
+          "target": "stmt:packages/mcp/src/grounding.ts@L91",
+          "line": 91,
+          "expr": "const hay = normalize(body.text);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+        "procedureName": "verifyEvidence",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7734312281cedfe216ad7173f15e366fc74fb96e1afcf138efd33a610d6a4259",
+          "target": "sym:packages/mcp/src/grounding.ts#normalize@L52",
+          "expr": "normalize",
+          "line": 91
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+        "procedureName": "verifyEvidence",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c33c5ae4379d449eb27d251739e80db168280e1906ab00bfa0645c5c07f1b4c0",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#normalize@L196",
+          "expr": "normalize",
+          "line": 91
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+        "procedureName": "verifyEvidence",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e7bdba1d76af0aba5584da7693aaf55c832a3b964883a3819e11dac46d4e8be",
+          "target": "stmt:packages/mcp/src/grounding.ts@L92",
+          "line": 92,
+          "expr": "const needle = normalize(evidence.quote);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+        "procedureName": "verifyEvidence",
+        "guard": "cond:packages/mcp/src/grounding.ts@L93",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/grounding.ts@L93",
+            "expr": "needle && hay.includes(needle)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e691febc530cb3bff2a534a8b30e3cb95561f06ed38f5e57e0d1e71ed460712f",
+          "target": "stmt:packages/mcp/src/grounding.ts@L94",
+          "line": 94,
+          "expr": "return { ...base, verdict: 'grounded' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
+        "procedureName": "verifyEvidence",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dc2ea134bdda7ae8e9972e98684f4b88e0a4e45774aab6eafd7f6bfe35b8d267",
+          "target": "stmt:packages/mcp/src/grounding.ts@L96",
+          "line": 96,
+          "expr": "return { ...base, verdict: 'ungrounded', reason: 'quote not found in anchor span' };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts",
+      "packages/mcp/src/grounding.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 0,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

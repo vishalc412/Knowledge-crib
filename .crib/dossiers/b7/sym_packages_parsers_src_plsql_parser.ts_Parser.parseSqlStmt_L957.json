@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L957",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:21871640158bd56cd8257b27768f049ce6c939648c3d8419fd25cf50f97279e8",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseSqlStmt@L957",
@@ -181,11 +181,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:ee6c04c579c552125c48f7567ef178a910c7dcfcdbc9c47a2c978cd7dc6f6ee5",
-          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L119",
-          "expr": "at",
-          "line": 958
+          "kind": "executes",
+          "edgeId": "e:194dad4e1f7ce80b6e7ecd57884c98b532d5ae662fab6630166cf0e6e45f0880",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L958",
+          "line": 958,
+          "expr": "const t = this.at();"
         }
       },
       {
@@ -195,11 +195,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:194dad4e1f7ce80b6e7ecd57884c98b532d5ae662fab6630166cf0e6e45f0880",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L958",
-          "line": 958,
-          "expr": "const t = this.at();"
+          "kind": "calls",
+          "edgeId": "e:ee6c04c579c552125c48f7567ef178a910c7dcfcdbc9c47a2c978cd7dc6f6ee5",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L119",
+          "expr": "at",
+          "line": 958
         }
       },
       {
@@ -325,11 +325,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:6c8604a36c9753b7ff97b97f10de31e039957f29584f4b780a4573cdb52418c2",
-          "target": "stmt:packages/parsers/src/plsql/parser.ts@L989",
-          "line": 989,
-          "expr": "const { expr, truncated } = clampExpr(\n      this.src.slice(startOff, endOff).replace(/\\s+/g, ' ').trim(),\n    );"
+          "kind": "calls",
+          "edgeId": "e:3f9943ce423b6f84d1e667f916360395d7aef20201153c540db11cb4c1b11c5e",
+          "target": "sym:packages/parsers/src/types.ts#clampExpr@L30",
+          "expr": "clampExpr",
+          "line": 989
         }
       },
       {
@@ -339,11 +339,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:3f9943ce423b6f84d1e667f916360395d7aef20201153c540db11cb4c1b11c5e",
-          "target": "sym:packages/parsers/src/types.ts#clampExpr@L30",
-          "expr": "clampExpr",
-          "line": 989
+          "kind": "executes",
+          "edgeId": "e:6c8604a36c9753b7ff97b97f10de31e039957f29584f4b780a4573cdb52418c2",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L989",
+          "line": 989,
+          "expr": "const { expr, truncated } = clampExpr(\n      this.src.slice(startOff, endOff).replace(/\\s+/g, ' ').trim(),\n    );"
         }
       },
       {

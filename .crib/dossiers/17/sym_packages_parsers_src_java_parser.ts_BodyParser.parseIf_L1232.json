@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseIf@L1232",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:3ff3b2c68b76dbe2f19098fd32e6626d4da29f4761a056ed2b8e9dc68c66d559",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseIf@L1232",
@@ -212,6 +212,20 @@
       {
         "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseIf@L1232",
         "procedureName": "BodyParser.parseIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4ad43cf575d97e2d5dd91709111949cbca242aaf0a1a9e2b589e8b00c9fdd19e",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1234",
+          "line": 1234,
+          "expr": "const predicate = this.readParenText();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseIf@L1232",
+        "procedureName": "BodyParser.parseIf",
         "guard": "cond:packages/parsers/src/java/parser.ts@L1243",
         "branch": "THEN",
         "conditions": [
@@ -233,20 +247,6 @@
           "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.readParenText@L1520",
           "expr": "readParenText",
           "line": 1234
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseIf@L1232",
-        "procedureName": "BodyParser.parseIf",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:4ad43cf575d97e2d5dd91709111949cbca242aaf0a1a9e2b589e8b00c9fdd19e",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1234",
-          "line": 1234,
-          "expr": "const predicate = this.readParenText();"
         }
       },
       {
@@ -274,6 +274,20 @@
       {
         "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseIf@L1232",
         "procedureName": "BodyParser.parseIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29608790edc798ab0356f95a3115d6daa72e5101a68361487bf6df539ec134e3",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1236",
+          "line": 1236,
+          "expr": "const body = this.parseBlockOrStmt();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseIf@L1232",
+        "procedureName": "BodyParser.parseIf",
         "guard": "cond:packages/parsers/src/java/parser.ts@L1243",
         "branch": "ELSE",
         "conditions": [
@@ -295,20 +309,6 @@
           "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseBlockOrStmt@L1555",
           "expr": "parseBlockOrStmt",
           "line": 1236
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseIf@L1232",
-        "procedureName": "BodyParser.parseIf",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:29608790edc798ab0356f95a3115d6daa72e5101a68361487bf6df539ec134e3",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1236",
-          "line": 1236,
-          "expr": "const body = this.parseBlockOrStmt();"
         }
       },
       {
@@ -354,6 +354,28 @@
       {
         "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseIf@L1232",
         "procedureName": "BodyParser.parseIf",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1240",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1240",
+            "expr": "this.peek().type === 'NAME' && this.peek().value === 'else'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c634cbc5912a61edc4dd118e89e04bbe7d462c9aae4d49b0f1454d878d32943c",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1241",
+          "line": 1241,
+          "expr": "const elseLine = this.peek().line;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseIf@L1232",
+        "procedureName": "BodyParser.parseIf",
         "guard": "cond:packages/parsers/src/java/parser.ts@L1243",
         "branch": "THEN",
         "conditions": [
@@ -375,28 +397,6 @@
           "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L890",
           "expr": "peek",
           "line": 1241
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseIf@L1232",
-        "procedureName": "BodyParser.parseIf",
-        "guard": "cond:packages/parsers/src/java/parser.ts@L1240",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/java/parser.ts@L1240",
-            "expr": "this.peek().type === 'NAME' && this.peek().value === 'else'",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:c634cbc5912a61edc4dd118e89e04bbe7d462c9aae4d49b0f1454d878d32943c",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L1241",
-          "line": 1241,
-          "expr": "const elseLine = this.peek().line;"
         }
       },
       {

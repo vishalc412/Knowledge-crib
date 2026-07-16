@@ -1,0 +1,109 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#decName@L581",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:ed41ebb964cc998e6987142a44a9be393af9063c3fe1cb3e3621bd55c7e8fb3a",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#decName@L581",
+    "kind": "symbol",
+    "type": "function",
+    "name": "decName",
+    "qualifiedName": "decName",
+    "signature": "decName(d: ts.Decorator): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 581,
+      "end": 584
+    },
+    "callSites": [
+      {
+        "callee": "getText",
+        "line": 583
+      },
+      {
+        "callee": "isCallExpression",
+        "line": 583
+      }
+    ]
+  },
+  "source": {
+    "text": "function decName(d: ts.Decorator): string {\n  const e = d.expression;\n  return (ts.isCallExpression(e) ? e.expression : e).getText();\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 581
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 104
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L580",
+      "snippet": "/** The full callee text of a decorator (for `meta.annotations`): `@Module({...})` → \"Module\". */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#decName@L581",
+    "procedureName": "decName",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#decName@L581",
+        "procedureName": "decName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6d13169ca30a0890c89f0e853e10d7fb955660944533a0cd29a8b6d3358b0db4",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L583",
+          "line": 583,
+          "expr": "return (ts.isCallExpression(e) ? e.expression : e).getText();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

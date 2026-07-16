@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularStringBody@L329",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:055088c2888e43e3c42c51fedf8499d2e8fe65342957f619391736561b0e40fe",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularStringBody@L329",
@@ -116,6 +116,28 @@
       {
         "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularStringBody@L329",
         "procedureName": "Lexer.scanRegularStringBody",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L331",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L331",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9ab903e8a88a0ea44db973499096f90d9d7e970868725d10022a731ab7692e02",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L332",
+          "line": 332,
+          "expr": "const c = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularStringBody@L329",
+        "procedureName": "Lexer.scanRegularStringBody",
         "guard": "cond:packages/parsers/src/csharp/lexer.ts@L336",
         "branch": "THEN",
         "conditions": [
@@ -141,28 +163,6 @@
           "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.peek@L614",
           "expr": "peek",
           "line": 332
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularStringBody@L329",
-        "procedureName": "Lexer.scanRegularStringBody",
-        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L331",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/csharp/lexer.ts@L331",
-            "expr": "this.pos < this.src.length",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:9ab903e8a88a0ea44db973499096f90d9d7e970868725d10022a731ab7692e02",
-          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L332",
-          "line": 332,
-          "expr": "const c = this.peek();"
         }
       },
       {
@@ -350,11 +350,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:b5c99a008acfb21c969d40a07bfa930fd42991239e6481728eb6222073b17749",
-          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.emit@L636",
-          "expr": "emit",
-          "line": 347
+          "kind": "executes",
+          "edgeId": "e:5accd07fde2032226fd194645656d856046fa9e817ab0fb2df935af5fd1bc345",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L347",
+          "line": 347,
+          "expr": "this.emit('STRING', value, sl, sc);"
         }
       },
       {
@@ -364,11 +364,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:5accd07fde2032226fd194645656d856046fa9e817ab0fb2df935af5fd1bc345",
-          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L347",
-          "line": 347,
-          "expr": "this.emit('STRING', value, sl, sc);"
+          "kind": "calls",
+          "edgeId": "e:b5c99a008acfb21c969d40a07bfa930fd42991239e6481728eb6222073b17749",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.emit@L636",
+          "expr": "emit",
+          "line": 347
         }
       }
     ]

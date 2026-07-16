@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/ts/react.test.ts#tagOf@L44",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:60a9ae6527196f0881b4f087bcb72a6d878952174a7a03252936e10d543239a0",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/ts/react.test.ts#tagOf@L44",
@@ -65,11 +65,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:e5fac2d026ca59a57116757e80b38c32138b57474d482d0f6aae2bf3a6db96b2",
-          "target": "stmt:packages/parsers/src/ts/react.test.ts@L45",
-          "line": 45,
-          "expr": "const n = r.nodes.find((x) => x.qualifiedName === q);"
+          "kind": "calls",
+          "edgeId": "e:1c60ff00c61a872d3a469046ca57d637e1baedd2b2e15ed5ce67ffdbae97d482",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 45
         }
       },
       {
@@ -79,11 +79,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:1c60ff00c61a872d3a469046ca57d637e1baedd2b2e15ed5ce67ffdbae97d482",
-          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
-          "expr": "find",
-          "line": 45
+          "kind": "executes",
+          "edgeId": "e:e5fac2d026ca59a57116757e80b38c32138b57474d482d0f6aae2bf3a6db96b2",
+          "target": "stmt:packages/parsers/src/ts/react.test.ts@L45",
+          "line": 45,
+          "expr": "const n = r.nodes.find((x) => x.qualifiedName === q);"
         }
       },
       {

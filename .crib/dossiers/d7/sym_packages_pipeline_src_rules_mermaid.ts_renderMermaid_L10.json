@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:c13b20df4a2c295e253f862c3ac0c865e1f031c7ce892e2259c762770fdcd142",
-  "builtAt": "2026-06-30T15:54:03.404Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
@@ -112,14 +112,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/rules/export.ts#renderExport@L156",
+      "id": "sym:packages/pipeline/src/rules/export.ts#renderExport@L161",
       "confidence": 1,
       "name": "renderExport",
       "qualifiedName": "renderExport",
-      "signature": "renderExport(soul: SoulStore, format: 'rules' | 'mermaid' | 'graph.json' | 'report', procedure?: string): string",
+      "signature": "renderExport(soul: SoulStore, format: 'rules' | 'mermaid' | 'graph.json' | 'report', procedure?: string, opts: { extractedOnly?: boolean } = {}): string",
       "type": "function",
       "file": "packages/pipeline/src/rules/export.ts",
-      "line": 156
+      "line": 161
     }
   ],
   "callees": [
@@ -132,6 +132,16 @@
       "type": "function",
       "file": "packages/pipeline/src/rules/mermaid.ts",
       "line": 66
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
     },
     {
       "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
@@ -202,9 +212,9 @@
       "cond:packages/pipeline/src/rules/mermaid.ts@L45",
       "cond:packages/pipeline/src/rules/mermaid.ts@L29",
       "cond:packages/pipeline/src/rules/mermaid.ts@L32",
-      "cond:packages/pipeline/src/rules/mermaid.ts@L49",
       "cond:packages/pipeline/src/rules/mermaid.ts@L37",
-      "cond:packages/pipeline/src/rules/mermaid.ts@L39"
+      "cond:packages/pipeline/src/rules/mermaid.ts@L39",
+      "cond:packages/pipeline/src/rules/mermaid.ts@L49"
     ],
     "rules": [
       {
@@ -228,11 +238,39 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:fc47b7e447754c654932d7f9955e8c10df59f87a113ed70ac26069722695186d",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 15
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
           "edgeId": "e:6e749ca90b1a86596c240c7a34225b664175e0e6162783588354eaf8c9965c13",
           "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L22",
           "line": 22,
           "expr": "const label = (s: string): string => s.replace(/\"/g, \"'\");"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e6484b7d043972caadb3fcb5e628561fe757aad9548ff4772813a8f2f04fa21",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L24",
+          "line": 24,
+          "expr": "const procNode = nid(`proc:${table.procedure}`);"
         }
       },
       {
@@ -265,10 +303,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:2e6484b7d043972caadb3fcb5e628561fe757aad9548ff4772813a8f2f04fa21",
-          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L24",
-          "line": 24,
-          "expr": "const procNode = nid(`proc:${table.procedure}`);"
+          "edgeId": "e:059648a4e9ff07f69605ffd203672a42a9915d53b7a246cc4901773e7cf744b4",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L25",
+          "line": 25,
+          "expr": "lines.push(`  ${procNode}[\"${label(table.procedureName ?? table.procedure)}\"]`);"
         }
       },
       {
@@ -304,11 +342,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:059648a4e9ff07f69605ffd203672a42a9915d53b7a246cc4901773e7cf744b4",
-          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L25",
-          "line": 25,
-          "expr": "lines.push(`  ${procNode}[\"${label(table.procedureName ?? table.procedure)}\"]`);"
+          "kind": "calls",
+          "edgeId": "e:8b84e3a6be190f3ac8d0f8cdae6763b8b13a9501886cd94f89b7888b62032f28",
+          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
+          "expr": "label",
+          "line": 25
         }
       },
       {
@@ -322,20 +360,6 @@
           "edgeId": "e:d9d301d93e3fd9efb415089dc8afd02f11ca0fc34d32a5190d7207b3ef7667f6",
           "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
           "expr": "push",
-          "line": 25
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
-        "procedureName": "renderMermaid",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:8b84e3a6be190f3ac8d0f8cdae6763b8b13a9501886cd94f89b7888b62032f28",
-          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
-          "expr": "label",
           "line": 25
         }
       },
@@ -438,32 +462,6 @@
       {
         "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
         "procedureName": "renderMermaid",
-        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L49",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
-            "expr": "byPath"
-          },
-          {
-            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L49",
-            "expr": "rules",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:639b263e9c562a8e847c53e67fb8cd305df13506b3a32bec7a5aa7a04260ea00",
-          "target": "sym:packages/pipeline/src/rules/mermaid.ts#actionNode@L66",
-          "expr": "actionNode",
-          "line": 39
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
-        "procedureName": "renderMermaid",
         "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L39",
         "branch": "LOOP",
         "conditions": [
@@ -489,6 +487,32 @@
           "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L39",
           "line": 39,
           "expr": "lines.push(`  ${procNode} --> ${actionNode(nid, r)}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L49",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+            "expr": "byPath"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L49",
+            "expr": "rules",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:639b263e9c562a8e847c53e67fb8cd305df13506b3a32bec7a5aa7a04260ea00",
+          "target": "sym:packages/pipeline/src/rules/mermaid.ts#actionNode@L66",
+          "expr": "actionNode",
+          "line": 39
         }
       },
       {
@@ -677,14 +701,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 6,
+      "resolved": 7,
       "recorded": 21,
-      "unresolved": 9
+      "unresolved": 7
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "9 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

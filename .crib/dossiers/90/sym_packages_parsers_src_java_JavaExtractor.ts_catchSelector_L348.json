@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/JavaExtractor.ts#catchSelector@L348",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:d2a486c07d170c90002b482b8248acbab8dd3a9cf9b518daf0a196f2e8fc87c0",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/JavaExtractor.ts#catchSelector@L348",
@@ -228,6 +228,20 @@
       {
         "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#catchSelector@L348",
         "procedureName": "catchSelector",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2fbd33c71b5273cb6843e027c96268486613ef7232b7570147d6f3ebb07c660d",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 359
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#catchSelector@L348",
+        "procedureName": "catchSelector",
         "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L359",
         "branch": "THEN",
         "conditions": [
@@ -245,20 +259,6 @@
           "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L359",
           "line": 359,
           "expr": "parts.push(m[1]!.trim());"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#catchSelector@L348",
-        "procedureName": "catchSelector",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:2fbd33c71b5273cb6843e027c96268486613ef7232b7570147d6f3ebb07c660d",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 359
         }
       },
       {

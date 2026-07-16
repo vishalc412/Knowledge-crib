@@ -1,0 +1,497 @@
+{
+  "id": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:6c40ac1e17da461d342e44c3187f24969bcb68cbda6352a015ba873608b4b498",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+    "kind": "symbol",
+    "type": "function",
+    "name": "matchAxios",
+    "qualifiedName": "matchAxios",
+    "signature": "matchAxios(call: ts.CallExpression, shadowed: ReadonlySet<string>): { method: string; routePath: string; framework: string } | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/http-client.ts",
+    "span": {
+      "start": 165,
+      "end": 196
+    },
+    "callSites": [
+      {
+        "callee": "pathOf",
+        "line": 174
+      },
+      {
+        "callee": "pathOf",
+        "line": 191
+      }
+    ]
+  },
+  "source": {
+    "text": "function matchAxios(\n  call: ts.CallExpression,\n  shadowed: ReadonlySet<string>,\n): { method: string; routePath: string; framework: string } | undefined {\n  const callee = call.expression;\n  // `axios('/x')` — bare call.\n  if (ts.isIdentifier(callee) && callee.text === 'axios') {\n    if (shadowed.has('axios')) return undefined; // a local `const axios = …` shadows the import.\n    if (call.arguments.length < 1) return undefined;\n    const routePath = pathOf(call.arguments[0]!);\n    if (routePath === undefined) return undefined;\n    return { method: 'GET', routePath, framework: 'axios' };\n  }\n  // `axios.<verb>(path, ...)` — receiver must resolve to an `axios` Identifier (so `res.get` is\n  // not mistaken for HTTP). Allow `axios.create(...).get(...)`? That is a chained receiver — the\n  // head is a CallExpression, not an Identifier; we skip it rather than guess. Honest over noise.\n  if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name)) {\n    const verb = AXIOS_VERBS[callee.name.text];\n    if (!verb) return undefined;\n    if (!isAxiosReceiver(callee.expression)) return undefined;\n    if (shadowed.has('axios')) return undefined; // local shadow — the receiver isn't the npm axios.\n    if (call.arguments.length < 1) return undefined;\n    // `axios.request({url, method})` — the url rides in a config object at `.url`, not arg0, so\n    // pathOf(arg0) is undefined (an object, not a path string) and we cannot read the url\n    // deterministically → no node. Reject explicitly so the `request` verb never emits a phantom.\n    if (callee.name.text === 'request') return undefined;\n    const routePath = pathOf(call.arguments[0]!);\n    if (routePath === undefined) return undefined;\n    return { method: verb, routePath, framework: 'axios' };\n  }\n  return undefined;\n}",
+    "truncated": false,
+    "totalLines": 32,
+    "startLine": 165
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.ts#matchHttpCall@L118",
+      "confidence": 1,
+      "name": "matchHttpCall",
+      "qualifiedName": "matchHttpCall",
+      "signature": "matchHttpCall(call: ts.CallExpression, lineOf: (pos: number) => number, shadowed: ReadonlySet<string>): | {\n      method: string;\n      routePath: string;\n      framework: string;\n      callLine: number;\n      callEnd: number;\n    }\n  | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.ts",
+      "line": 118
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.ts#isAxiosReceiver@L199",
+      "confidence": 1,
+      "name": "isAxiosReceiver",
+      "qualifiedName": "isAxiosReceiver",
+      "signature": "isAxiosReceiver(expr: ts.Expression): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.ts",
+      "line": 199
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.ts#pathOf@L208",
+      "confidence": 1,
+      "name": "pathOf",
+      "qualifiedName": "pathOf",
+      "signature": "pathOf(arg: ts.Expression): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.ts",
+      "line": 208
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/http-client.ts@L164",
+      "snippet": "/** `axios.<verb>(path, ...)` / `axios(path)` → { method, routePath, framework:'axios' }. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+    "procedureName": "matchAxios",
+    "conditions": [
+      "cond:packages/parsers/src/ts/http-client.ts@L171",
+      "cond:packages/parsers/src/ts/http-client.ts@L172",
+      "cond:packages/parsers/src/ts/http-client.ts@L173",
+      "cond:packages/parsers/src/ts/http-client.ts@L181",
+      "cond:packages/parsers/src/ts/http-client.ts@L175",
+      "cond:packages/parsers/src/ts/http-client.ts@L183",
+      "cond:packages/parsers/src/ts/http-client.ts@L184",
+      "cond:packages/parsers/src/ts/http-client.ts@L185",
+      "cond:packages/parsers/src/ts/http-client.ts@L186",
+      "cond:packages/parsers/src/ts/http-client.ts@L190",
+      "cond:packages/parsers/src/ts/http-client.ts@L192"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L172",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L171",
+            "expr": "ts.isIdentifier(callee) && callee.text === 'axios'"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L172",
+            "expr": "shadowed.has('axios')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8028a1278e4ab61d56fcb9e3c443a7cc9f43548f51b062de3a5907ef9d7117ba",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L172",
+          "line": 172,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L173",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L171",
+            "expr": "ts.isIdentifier(callee) && callee.text === 'axios'"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L173",
+            "expr": "call.arguments.length < 1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7d9100aad002d518107cba4a5e08f3e40dfae5ebb69edf51c8c3c519f0504187",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L173",
+          "line": 173,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L181",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L181",
+            "expr": "ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0d9c834e408da758870491e052f7c050ebd03769f3d9ac62cf69ae97d14ab11d",
+          "target": "sym:packages/parsers/src/ts/http-client.ts#pathOf@L208",
+          "expr": "pathOf",
+          "line": 174
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L171",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L171",
+            "expr": "ts.isIdentifier(callee) && callee.text === 'axios'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5031af3ef04739cfc4f38ca16b0c2b4d2bce388b4a72f5f69e2723619a97b69d",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L174",
+          "line": 174,
+          "expr": "const routePath = pathOf(call.arguments[0]!);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L175",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L171",
+            "expr": "ts.isIdentifier(callee) && callee.text === 'axios'"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L175",
+            "expr": "routePath === undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:627f31c0d442a31b81aa91cbec22464a5c47d3018bb4fe98801c47c3fcf83a54",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L175",
+          "line": 175,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L171",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L171",
+            "expr": "ts.isIdentifier(callee) && callee.text === 'axios'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:129cdf670dfc07f4a1c3dbb2538595b1bc9a04ad34dd2609934ae1cb73451a33",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L176",
+          "line": 176,
+          "expr": "return { method: 'GET', routePath, framework: 'axios' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L183",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L181",
+            "expr": "ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L183",
+            "expr": "!verb",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f2d9b35841fd2a1a7c1663b7324c5438f94950750d6914ddb02dba093bdc32e",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L183",
+          "line": 183,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L184",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L181",
+            "expr": "ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L184",
+            "expr": "!isAxiosReceiver(callee.expression)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:161ee496ad038b866791ac646c4ad7039064360523c43e26c5a52ce25aa080b5",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L184",
+          "line": 184,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L185",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L181",
+            "expr": "ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L185",
+            "expr": "shadowed.has('axios')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cf70f56427f72a81b24fc400256519a786c1d0e675ebab417f595efae2c99c6b",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L185",
+          "line": 185,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L186",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L181",
+            "expr": "ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L186",
+            "expr": "call.arguments.length < 1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e4ce294007a7e0ace5a405dc6b1235cb3925fa8415267f67d373837141fe45de",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L186",
+          "line": 186,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L190",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L181",
+            "expr": "ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L190",
+            "expr": "callee.name.text === 'request'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:069b119578d8d10ada6deb8149d61eefdcf139c941034af2f7565b91412d3931",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L190",
+          "line": 190,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L181",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L181",
+            "expr": "ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:12379221376d2bbc37c4eba559a28f2a21831710ee6d7750680ebb742c8a0e4c",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L191",
+          "line": 191,
+          "expr": "const routePath = pathOf(call.arguments[0]!);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L192",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L181",
+            "expr": "ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L192",
+            "expr": "routePath === undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a57af130348b4387d9ce4b4e37c2933b10b275a49d5221e81498a2b799cb1669",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L192",
+          "line": 192,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "guard": "cond:packages/parsers/src/ts/http-client.ts@L181",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/http-client.ts@L181",
+            "expr": "ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d2249ad2dc6ca9809909f2758eb9a18d76173ad5647ccba47498c976b6636316",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L193",
+          "line": 193,
+          "expr": "return { method: verb, routePath, framework: 'axios' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5948618ad1033cbddd627003fdf70cc6ba4768199ac508a29a02ed05a34b08f3",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L195",
+          "line": 195,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
+        "procedureName": "matchAxios",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:14ccad618c7dc4a7fa2586ba26cf38f493d5415757e00ee84ecaf89816f1b8ec",
+          "target": "sym:packages/parsers/src/ts/http-client.ts#isAxiosReceiver@L199",
+          "expr": "isAxiosReceiver"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 14,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/http-client.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 14,
+    "assignments": 0,
+    "conditions": 11,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:4a29cde49b988c75015ef907c14ca89a8fc0c474741a0eb9e0c452e65ab5b3e9",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
@@ -51,6 +51,16 @@
       "line": 38
     },
     {
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(input)",
+      "type": "function",
+      "file": "packages/pipeline/fixtures/plain-js/src/legacy.cjs",
+      "line": 4
+    },
+    {
       "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
       "confidence": 1,
       "name": "parse",
@@ -71,7 +81,7 @@
       "confidence": 1
     },
     {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
       "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
       "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
       "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
@@ -86,6 +96,20 @@
     "procedureName": "bodyOf",
     "conditions": [],
     "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
+        "procedureName": "bodyOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:31b8caca8a1432c9bef9244ee1131d1ae476801362b863543a0f97b81bdf54e3",
+          "target": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+          "expr": "parse",
+          "line": 489
+        }
+      },
       {
         "procedure": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
         "procedureName": "bodyOf",
@@ -121,11 +145,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:dd48680561748820d8200ab377fab56d09e0d482d6a993f2499833050878b370",
-          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
-          "expr": "find",
-          "line": 490
+          "kind": "executes",
+          "edgeId": "e:41946aba0ce9972ecd5a209fff6376d13ddb09aed631ef7b74cceb8121a859a6",
+          "target": "stmt:packages/parsers/src/java/parser.test.ts@L490",
+          "line": 490,
+          "expr": "const c = find(m.defs, 'C');"
         }
       },
       {
@@ -135,11 +159,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:41946aba0ce9972ecd5a209fff6376d13ddb09aed631ef7b74cceb8121a859a6",
-          "target": "stmt:packages/parsers/src/java/parser.test.ts@L490",
-          "line": 490,
-          "expr": "const c = find(m.defs, 'C');"
+          "kind": "calls",
+          "edgeId": "e:dd48680561748820d8200ab377fab56d09e0d482d6a993f2499833050878b370",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 490
         }
       },
       {
@@ -188,7 +212,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 2,
+      "resolved": 3,
       "recorded": 3,
       "unresolved": 0
     },

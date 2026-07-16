@@ -1,0 +1,229 @@
+{
+  "id": "sym:packages/core/src/functional-map.ts#dominantLabel@L407",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:f8a703eb5c9247b4831fd5b3b155db74c33f2b8947d449392f8d7134c1b9e658",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/functional-map.ts#dominantLabel@L407",
+    "kind": "symbol",
+    "type": "function",
+    "name": "dominantLabel",
+    "qualifiedName": "dominantLabel",
+    "signature": "dominantLabel(stereotypes: Record<string, number>, kindTally: Record<string, number>): string",
+    "lang": "typescript",
+    "file": "packages/core/src/functional-map.ts",
+    "span": {
+      "start": 407,
+      "end": 429
+    }
+  },
+  "source": {
+    "text": "function dominantLabel(\n  stereotypes: Record<string, number>,\n  kindTally: Record<string, number>,\n): string {\n  let bestStereo: string | undefined;\n  let bestStereoN = 0;\n  for (const [k, n] of Object.entries(stereotypes)) {\n    if (n > bestStereoN || (n === bestStereoN && (bestStereo === undefined || k < bestStereo))) {\n      bestStereo = k;\n      bestStereoN = n;\n    }\n  }\n  if (bestStereo) return bestStereo;\n  let bestKind: string | undefined;\n  let bestKindN = 0;\n  for (const [k, n] of Object.entries(kindTally)) {\n    if (n > bestKindN || (n === bestKindN && (bestKind === undefined || k < bestKind))) {\n      bestKind = k;\n      bestKindN = n;\n    }\n  }\n  return bestKind ?? 'code';\n}",
+    "truncated": false,
+    "totalLines": 23,
+    "startLine": 407
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/functional-map.ts#resolvePurpose@L343",
+      "confidence": 1,
+      "name": "resolvePurpose",
+      "qualifiedName": "resolvePurpose",
+      "signature": "resolvePurpose(clusterIds: string[], clusterMemberCounts: Map<string, { here: number; total: number }>, moduleFiles: Node[], moduleSymbols: Node[], overlay: Map<string, LlmOverlayEntry>, importance: Map<string, ImportanceEntry>, stereotypes: Record<string, number>, kindTally: Record<string, number>, name: string): FunctionalPurpose | undefined",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 343
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/functional-map.ts@L406",
+      "snippet": "/** Pick the dominant stereotype, else the dominant derived kind, for the heuristic label. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/functional-map.ts#dominantLabel@L407",
+    "procedureName": "dominantLabel",
+    "conditions": [
+      "cond:packages/core/src/functional-map.ts@L413",
+      "cond:packages/core/src/functional-map.ts@L414",
+      "cond:packages/core/src/functional-map.ts@L419",
+      "cond:packages/core/src/functional-map.ts@L422",
+      "cond:packages/core/src/functional-map.ts@L423"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#dominantLabel@L407",
+        "procedureName": "dominantLabel",
+        "guard": "cond:packages/core/src/functional-map.ts@L414",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L413",
+            "expr": "Object.entries(stereotypes)"
+          },
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L414",
+            "expr": "n > bestStereoN || (n === bestStereoN && (bestStereo === undefined || k < bestStereo))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:95e2722b139b71b27c7fe96abbbfff5ff58832caf1e0a5084d809554e27739f6",
+          "target": "assign:packages/core/src/functional-map.ts@L415",
+          "line": 415,
+          "expr": "bestStereo = k;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#dominantLabel@L407",
+        "procedureName": "dominantLabel",
+        "guard": "cond:packages/core/src/functional-map.ts@L414",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L413",
+            "expr": "Object.entries(stereotypes)"
+          },
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L414",
+            "expr": "n > bestStereoN || (n === bestStereoN && (bestStereo === undefined || k < bestStereo))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b3632a40240401e956779fa6057274e5163600762bf1cb1bde5b17fc251da94a",
+          "target": "assign:packages/core/src/functional-map.ts@L416",
+          "line": 416,
+          "expr": "bestStereoN = n;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#dominantLabel@L407",
+        "procedureName": "dominantLabel",
+        "guard": "cond:packages/core/src/functional-map.ts@L419",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L419",
+            "expr": "bestStereo",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4933cc420efecfac25f85a7513e9760671a7d39ab5ab4ee88d032946e03f56d1",
+          "target": "stmt:packages/core/src/functional-map.ts@L419",
+          "line": 419,
+          "expr": "return bestStereo;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#dominantLabel@L407",
+        "procedureName": "dominantLabel",
+        "guard": "cond:packages/core/src/functional-map.ts@L423",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L422",
+            "expr": "Object.entries(kindTally)"
+          },
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L423",
+            "expr": "n > bestKindN || (n === bestKindN && (bestKind === undefined || k < bestKind))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db1612a3942412143359310bd2dc2de8215469bce3a3e29a85206afc1d5f6315",
+          "target": "assign:packages/core/src/functional-map.ts@L424",
+          "line": 424,
+          "expr": "bestKind = k;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#dominantLabel@L407",
+        "procedureName": "dominantLabel",
+        "guard": "cond:packages/core/src/functional-map.ts@L423",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L422",
+            "expr": "Object.entries(kindTally)"
+          },
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L423",
+            "expr": "n > bestKindN || (n === bestKindN && (bestKind === undefined || k < bestKind))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d0d0f56daf4493d838b20669dc906761540862ac63399093a8b3c8c3f9e77ad3",
+          "target": "assign:packages/core/src/functional-map.ts@L425",
+          "line": 425,
+          "expr": "bestKindN = n;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#dominantLabel@L407",
+        "procedureName": "dominantLabel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0d5fa0bf20ae8a4fd2215c23e3c787027e3f598b7104cb8d76ce19a1526ed6c0",
+          "target": "stmt:packages/core/src/functional-map.ts@L428",
+          "line": 428,
+          "expr": "return bestKind ?? 'code';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/core/src/functional-map.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 4,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

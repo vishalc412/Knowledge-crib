@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAssign@L611",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:4de0cef80a3d37c97f422fc0fa814f040f7d7e6aacfdc3b43df8295b79748e48",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAssign@L611",
@@ -225,11 +225,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:a01aa9de8e9e87bc5c7ea96a1d1b3998c67a59c808befa24e7cc2eb460b6cc93",
-          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.edge@L653",
-          "expr": "edge",
-          "line": 649
+          "kind": "executes",
+          "edgeId": "e:736c17e0f22d652629aeb2b589b4602822fd812afd788e11cc79642845a9460c",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L649",
+          "line": 649,
+          "expr": "this.edges.push(this.edge(id, guard, 'guarded-by', 'assign'));"
         }
       },
       {
@@ -247,11 +247,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:736c17e0f22d652629aeb2b589b4602822fd812afd788e11cc79642845a9460c",
-          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L649",
-          "line": 649,
-          "expr": "this.edges.push(this.edge(id, guard, 'guarded-by', 'assign'));"
+          "kind": "calls",
+          "edgeId": "e:a01aa9de8e9e87bc5c7ea96a1d1b3998c67a59c808befa24e7cc2eb460b6cc93",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.edge@L653",
+          "expr": "edge",
+          "line": 649
         }
       }
     ]

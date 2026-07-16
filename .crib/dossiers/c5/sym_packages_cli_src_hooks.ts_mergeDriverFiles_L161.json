@@ -1,0 +1,268 @@
+{
+  "id": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L161",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:433174394a9f28946e6e54caee995e7956db0208f78a6badb6078982c94909e2",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L161",
+    "kind": "symbol",
+    "type": "function",
+    "name": "mergeDriverFiles",
+    "qualifiedName": "mergeDriverFiles",
+    "signature": "mergeDriverFiles(basePath: string, oursPath: string, theirsPath: string): MergeDriverOutcome",
+    "lang": "typescript",
+    "file": "packages/cli/src/hooks.ts",
+    "span": {
+      "start": 161,
+      "end": 172
+    },
+    "callSites": [
+      {
+        "callee": "readFileChunk",
+        "line": 166
+      },
+      {
+        "callee": "readFileChunk",
+        "line": 167
+      },
+      {
+        "callee": "readFileChunk",
+        "line": 168
+      },
+      {
+        "callee": "mergeThreeWay",
+        "line": 169
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 170
+      },
+      {
+        "callee": "serializeChunk",
+        "line": 170
+      }
+    ]
+  },
+  "source": {
+    "text": "export function mergeDriverFiles(\n  basePath: string,\n  oursPath: string,\n  theirsPath: string,\n): MergeDriverOutcome {\n  const base = readFileChunk(basePath);\n  const ours = readFileChunk(oursPath);\n  const theirs = readFileChunk(theirsPath);\n  const { merged, warnings } = mergeThreeWay(base, ours, theirs);\n  writeFileSync(oursPath, serializeChunk(merged));\n  return { warnings, conflicts: warnings.length > 0 };\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 161
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdMergeDriver@L1392",
+      "confidence": 1,
+      "name": "cmdMergeDriver",
+      "qualifiedName": "cmdMergeDriver",
+      "signature": "cmdMergeDriver(args: string[]): number",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1392
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/merge.ts#mergeThreeWay@L64",
+      "confidence": 1,
+      "name": "mergeThreeWay",
+      "qualifiedName": "mergeThreeWay",
+      "signature": "mergeThreeWay(base: Map<string, ChunkRecord>, ours: Map<string, ChunkRecord>, theirs: Map<string, ChunkRecord>): MergeResult",
+      "type": "function",
+      "file": "packages/core/src/merge.ts",
+      "line": 64
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.ts#readFileChunk@L174",
+      "confidence": 1,
+      "name": "readFileChunk",
+      "qualifiedName": "readFileChunk",
+      "signature": "readFileChunk(path: string): ChunkMap",
+      "type": "function",
+      "file": "packages/cli/src/hooks.ts",
+      "line": 174
+    },
+    {
+      "id": "sym:packages/core/src/merge.ts#serializeChunk@L46",
+      "confidence": 1,
+      "name": "serializeChunk",
+      "qualifiedName": "serializeChunk",
+      "signature": "serializeChunk(map: Map<string, ChunkRecord>): string",
+      "type": "function",
+      "file": "packages/core/src/merge.ts",
+      "line": 46
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/hooks.ts@L157",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L161",
+    "procedureName": "mergeDriverFiles",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L161",
+        "procedureName": "mergeDriverFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4c14186c41de60c0c2bef5f664e485303fefa3711ebc40bce9239312d5718019",
+          "target": "stmt:packages/cli/src/hooks.ts@L166",
+          "line": 166,
+          "expr": "const base = readFileChunk(basePath);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L161",
+        "procedureName": "mergeDriverFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7b66658d98b9d930d564b56daad18e5d2029c21af80338c032688f527b5e2a63",
+          "target": "sym:packages/cli/src/hooks.ts#readFileChunk@L174",
+          "expr": "readFileChunk",
+          "line": 166
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L161",
+        "procedureName": "mergeDriverFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e5169350e07dbb6b8e24661e90ef796aee82b9ec432c0b83b6ac2df2e3b53897",
+          "target": "stmt:packages/cli/src/hooks.ts@L167",
+          "line": 167,
+          "expr": "const ours = readFileChunk(oursPath);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L161",
+        "procedureName": "mergeDriverFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:846f99b33c4bdfa824d017a0e218f5ee895c37d4335753c43472e94579a3e800",
+          "target": "stmt:packages/cli/src/hooks.ts@L168",
+          "line": 168,
+          "expr": "const theirs = readFileChunk(theirsPath);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L161",
+        "procedureName": "mergeDriverFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7f2e03d1a112e02beed536484cbe1cdc2f2a053f48bec3e283d2e6282e38a5da",
+          "target": "stmt:packages/cli/src/hooks.ts@L169",
+          "line": 169,
+          "expr": "const { merged, warnings } = mergeThreeWay(base, ours, theirs);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L161",
+        "procedureName": "mergeDriverFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e2ebfe846cf9887879f3612c1bd5d6e42be194dc2be5a6e21a76b687aae0f2a0",
+          "target": "sym:packages/core/src/merge.ts#mergeThreeWay@L64",
+          "expr": "mergeThreeWay",
+          "line": 169
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L161",
+        "procedureName": "mergeDriverFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b2f99bc12b37b7fd96e7028eefa04747a14588db4bc44b3ddb590bc66b25aa3c",
+          "target": "stmt:packages/cli/src/hooks.ts@L170",
+          "line": 170,
+          "expr": "writeFileSync(oursPath, serializeChunk(merged));"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L161",
+        "procedureName": "mergeDriverFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b6c71364c8fcb3f1fcd90c08547e7390d86a28c108a666f897efa46880a256ed",
+          "target": "sym:packages/core/src/merge.ts#serializeChunk@L46",
+          "expr": "serializeChunk",
+          "line": 170
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L161",
+        "procedureName": "mergeDriverFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2fb0310648c9cde352bc93d1e08b76fc125e0c4bfd1701a169e0704b6da08d33",
+          "target": "stmt:packages/cli/src/hooks.ts@L171",
+          "line": 171,
+          "expr": "return { warnings, conflicts: warnings.length > 0 };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 6,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

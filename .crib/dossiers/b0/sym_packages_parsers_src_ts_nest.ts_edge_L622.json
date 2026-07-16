@@ -1,0 +1,806 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#edge@L622",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:0a31881b3e19859fc6c3f0f15b4afb2fac0a373818b228e599874efe87909933",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#edge@L622",
+    "kind": "symbol",
+    "type": "function",
+    "name": "edge",
+    "qualifiedName": "edge",
+    "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string, by = 'lang:typescript/nest', meta?: Record<string, unknown>): Edge",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 622,
+      "end": 642
+    },
+    "callSites": [
+      {
+        "callee": "edgeId",
+        "line": 631
+      }
+    ]
+  },
+  "source": {
+    "text": "function edge(\n  src: string,\n  dst: string,\n  rel: Edge['rel'],\n  snippet: string,\n  by = 'lang:typescript/nest',\n  meta?: Record<string, unknown>,\n): Edge {\n  const e: Edge = {\n    id: edgeId(src, dst, rel),\n    src,\n    dst,\n    rel,\n    method: 'static',\n    provenance: 'EXTRACTED',\n    confidence: 1,\n    evidence: { by, snippet },\n  };\n  if (meta && Object.keys(meta).length) e.meta = meta;\n  return e;\n}",
+    "truncated": false,
+    "totalLines": 21,
+    "startLine": 622
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#emitInject@L315",
+      "confidence": 1,
+      "name": "emitInject",
+      "qualifiedName": "emitInject",
+      "signature": "emitInject(consumerId: string, depType: string, byKey: Map<string, string>, edges: Edge[], recorded: string[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 315
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 104
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 141
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L619",
+      "snippet": "/** Edge factory. `by` defaults to nest; typeorm callers pass 'lang:typescript/typeorm'. `meta` is an",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "heading": "3.1 Framework-semantics tier (schema 1.3)",
+      "anchor": "3-1-framework-semantics-tier-schema-1-3",
+      "snippet": "3.1 Framework-semantics tier (schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests-3",
+      "heading": "Tests",
+      "anchor": "tests-3",
+      "snippet": "Tests",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#backward-compatibility-2",
+      "heading": "Backward compatibility",
+      "anchor": "backward-compatibility-2",
+      "snippet": "Backward compatibility",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#the-problem-3",
+      "heading": "The problem",
+      "anchor": "the-problem-3",
+      "snippet": "The problem",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#my-standing-assumptions-correct-me-if-wrong",
+      "heading": "My standing assumptions (correct me if wrong)",
+      "anchor": "my-standing-assumptions-correct-me-if-wrong",
+      "snippet": "My standing assumptions (correct me if wrong)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-9-architecture-reconciliation-unified-vs-federated",
+      "heading": "Branch 9 — Architecture Reconciliation (unified vs federated)",
+      "anchor": "branch-9-architecture-reconciliation-unified-vs-federated",
+      "snippet": "Branch 9 — Architecture Reconciliation (unified vs federated)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#0-the-mental-model-what-to-ask-for-when",
+      "heading": "0. The mental model — what to ask for, when",
+      "anchor": "0-the-mental-model-what-to-ask-for-when",
+      "snippet": "0. The mental model — what to ask for, when",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#consequences",
+      "heading": "Consequences",
+      "anchor": "consequences",
+      "snippet": "Consequences",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#enrich-save-persist-an-externally-authored-batch",
+      "heading": "`enrich_save` *(persist an externally-authored batch)*",
+      "anchor": "enrich-save-persist-an-externally-authored-batch",
+      "snippet": "`enrich_save` *(persist an externally-authored batch)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#gaps-missing-asset-detection",
+      "heading": "`gaps` *(missing-asset detection)*",
+      "anchor": "gaps-missing-asset-detection",
+      "snippet": "`gaps` *(missing-asset detection)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#conventions",
+      "heading": "Conventions",
+      "anchor": "conventions",
+      "snippet": "Conventions",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#format-extractor-docs-data",
+      "heading": "Format extractor (docs/data)",
+      "anchor": "format-extractor-docs-data",
+      "snippet": "Format extractor (docs/data)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#4-adding-a-language-worked-rust",
+      "heading": "4. Adding a language (worked: Rust)",
+      "anchor": "4-adding-a-language-worked-rust",
+      "snippet": "4. Adding a language (worked: Rust)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4c-cross-language-parity-track-3-workstream-b",
+      "heading": "4c. Cross-language parity (Track 3 + Workstream B)",
+      "anchor": "4c-cross-language-parity-track-3-workstream-b",
+      "snippet": "4c. Cross-language parity (Track 3 + Workstream B)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#new-edge-relations",
+      "heading": "New edge relations",
+      "anchor": "new-edge-relations",
+      "snippet": "New edge relations",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
+      "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "anchor": "java-spring-boot-track-built-tested-schema-1-3",
+      "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#node-edge-fields-1-3",
+      "heading": "Node + edge fields (1.3)",
+      "anchor": "node-edge-fields-1-3",
+      "snippet": "Node + edge fields (1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "heading": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "anchor": "surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "snippet": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#5-incremental-update-protocol-the-upgrades-as-project-evolves-part",
+      "heading": "5. Incremental update protocol (the \"upgrades as project evolves\" part)",
+      "anchor": "5-incremental-update-protocol-the-upgrades-as-project-evolves-part",
+      "snippet": "5. Incremental update protocol (the \"upgrades as project evolves\" part)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#9-framework-semantics-layer-1-3-the-above-sql-tier-for-app-frameworks",
+      "heading": "9. Framework-semantics layer (1.3) — the \"above SQL\" tier for app frameworks",
+      "anchor": "9-framework-semantics-layer-1-3-the-above-sql-tier-for-app-frameworks",
+      "snippet": "9. Framework-semantics layer (1.3) — the \"above SQL\" tier for app frameworks",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#0-repo-stack",
+      "heading": "0. Repo & stack",
+      "anchor": "0-repo-stack",
+      "snippet": "0. Repo & stack",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#network-surface-inventory-the-whole-product",
+      "heading": "Network surface inventory (the whole product)",
+      "anchor": "network-surface-inventory-the-whole-product",
+      "snippet": "Network surface inventory (the whole product)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#stride-summary",
+      "heading": "STRIDE summary",
+      "anchor": "stride-summary",
+      "snippet": "STRIDE summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-4-cross-modal-linker-the-differentiator",
+      "heading": "Phase 4 — Cross-modal linker (the differentiator)",
+      "anchor": "phase-4-cross-modal-linker-the-differentiator",
+      "snippet": "Phase 4 — Cross-modal linker (the differentiator)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-3d-cfg-condition-extraction-deep-extraction-the-deep-part",
+      "heading": "Phase 3d — CFG / condition extraction *(deep-extraction — the deep part)*",
+      "anchor": "phase-3d-cfg-condition-extraction-deep-extraction-the-deep-part",
+      "snippet": "Phase 3d — CFG / condition extraction *(deep-extraction — the deep part)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/repo-identity-decision.md#topics-social-card-the-rest-of-m4-5",
+      "heading": "Topics + social card (the rest of M4.5)",
+      "anchor": "topics-social-card-the-rest-of-m4-5",
+      "snippet": "Topics + social card (the rest of M4.5)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/comparison.md#the-7-column-matrix",
+      "heading": "The 7-column matrix",
+      "anchor": "the-7-column-matrix",
+      "snippet": "The 7-column matrix",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#track-3-statement-condition-cfg-extraction-for-all-parsers-design-spec",
+      "heading": "Track 3 — Statement/Condition/CFG extraction for all parsers (design spec)",
+      "anchor": "track-3-statement-condition-cfg-extraction-for-all-parsers-design-spec",
+      "snippet": "Track 3 — Statement/Condition/CFG extraction for all parsers (design spec)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/comparison.md#knowledge-crib-vs-the-field-the-capability-matrix",
+      "heading": "Knowledge-crib vs the field — the capability matrix",
+      "anchor": "knowledge-crib-vs-the-field-the-capability-matrix",
+      "snippet": "Knowledge-crib vs the field — the capability matrix",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#tests-each-language-add-to-the-existing-extractor-test-ts",
+      "heading": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "anchor": "tests-each-language-add-to-the-existing-extractor-test-ts",
+      "snippet": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "heading": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "anchor": "4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "snippet": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/linkedin-series.md#post-1-the-problem-why-agents-burn-tokens-break-architecture",
+      "heading": "Post 1 — The problem (why agents burn tokens + break architecture)",
+      "anchor": "post-1-the-problem-why-agents-burn-tokens-break-architecture",
+      "snippet": "Post 1 — The problem (why agents burn tokens + break architecture)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#8-confidence-self-assessment",
+      "heading": "8. Confidence Self-Assessment",
+      "anchor": "8-confidence-self-assessment",
+      "snippet": "8. Confidence Self-Assessment",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#required-fields-server-rejects-otherwise",
+      "heading": "Required fields (server rejects otherwise)",
+      "anchor": "required-fields-server-rejects-otherwise",
+      "snippet": "Required fields (server rejects otherwise)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#grounding-rule-anti-hallucination-the-server-enforces-this-on-save",
+      "heading": "Grounding rule (anti-hallucination) — the server enforces this on save",
+      "anchor": "grounding-rule-anti-hallucination-the-server-enforces-this-on-save",
+      "snippet": "Grounding rule (anti-hallucination) — the server enforces this on save",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-1-framework-semantics-edge-field-meta-1-3",
+      "heading": "2.1 Framework-semantics edge & field meta *(1.3)*",
+      "anchor": "2-1-framework-semantics-edge-field-meta-1-3",
+      "snippet": "2.1 Framework-semantics edge & field meta *(1.3)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-edge-relations-rel",
+      "heading": "2. Edge relations (`rel`)",
+      "anchor": "2-edge-relations-rel",
+      "snippet": "2. Edge relations (`rel`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#4-id-grammar-stable-deterministic-critical-for-diffs-cross-tool-refs-seeroflow",
+      "heading": "4. ID grammar (stable, deterministic — critical for diffs + cross-tool refs + SeeroFlow)",
+      "anchor": "4-id-grammar-stable-deterministic-critical-for-diffs-cross-tool-refs-seeroflow",
+      "snippet": "4. ID grammar (stable, deterministic — critical for diffs + cross-tool refs + SeeroFlow)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#5-invariants-enforced-by-core-tested-in-m0",
+      "heading": "5. Invariants (enforced by `core`, tested in M0)",
+      "anchor": "5-invariants-enforced-by-core-tested-in-m0",
+      "snippet": "5. Invariants (enforced by `core`, tested in M0)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#3-enumerations",
+      "heading": "3. Enumerations",
+      "anchor": "3-enumerations",
+      "snippet": "3. Enumerations",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/show-hn.md#body",
+      "heading": "Body",
+      "anchor": "body",
+      "snippet": "Body",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#12-future-seeroflow-integration-q38",
+      "heading": "12. Future: SeeroFlow Integration [Q38]",
+      "anchor": "12-future-seeroflow-integration-q38",
+      "snippet": "12. Future: SeeroFlow Integration [Q38]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "heading": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "anchor": "m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "snippet": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-5-ai-architect",
+      "heading": "2.5 AI Architect",
+      "anchor": "2-5-ai-architect",
+      "snippet": "2.5 AI Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-1-what-each-model-can-answer-about-one-procedure",
+      "heading": "1.1 What each model can answer about ONE procedure",
+      "anchor": "1-1-what-each-model-can-answer-about-one-procedure",
+      "snippet": "1.1 What each model can answer about ONE procedure",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/README.md#document-index-read-in-order",
+      "heading": "Document index (read in order)",
+      "anchor": "document-index-read-in-order",
+      "snippet": "Document index (read in order)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
+      "heading": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
+      "anchor": "plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
+      "snippet": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a5-automated-parity-golden-file-test-generation",
+      "heading": "WS-A5 — Automated parity / golden-file test generation",
+      "anchor": "ws-a5-automated-parity-golden-file-test-generation",
+      "snippet": "WS-A5 — Automated parity / golden-file test generation",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-1-language-agnostic-migration-core-8-days",
+      "heading": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "anchor": "phase-1-language-agnostic-migration-core-8-days",
+      "snippet": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-3-target-packs-parity-generation-skill-packs-8-days",
+      "heading": "Phase 3 — Target packs + parity generation + skill packs  ~8 days",
+      "anchor": "phase-3-target-packs-parity-generation-skill-packs-8-days",
+      "snippet": "Phase 3 — Target packs + parity generation + skill packs  ~8 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-4-bulk-package-level-context-closes-g4",
+      "heading": "WS-4 — Bulk / package-level context (closes G4)",
+      "anchor": "ws-4-bulk-package-level-context-closes-g4",
+      "snippet": "WS-4 — Bulk / package-level context (closes G4)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#4-architecture-invariants-to-preserve-do-not-break",
+      "heading": "4. Architecture invariants to preserve (do NOT break)",
+      "anchor": "4-architecture-invariants-to-preserve-do-not-break",
+      "snippet": "4. Architecture invariants to preserve (do NOT break)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "heading": "7. Risks",
+      "anchor": "7-risks",
+      "snippet": "7. Risks",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#edge@L622",
+    "procedureName": "edge",
+    "conditions": [
+      "cond:packages/parsers/src/ts/nest.ts@L640"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#edge@L622",
+        "procedureName": "edge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a94f44263664e51f5da1b5a8e4e7f8e0f1b958d56b7080ddb09b44c3ffa5d0d6",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L630",
+          "line": 630,
+          "expr": "const e: Edge = {\n    id: edgeId(src, dst, rel),\n    src,\n    dst,\n    rel,\n    method: 'static',\n    provenance: 'EXTRACTED',\n    confidence: 1,\n    evidence: { by, snippet },\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#edge@L622",
+        "procedureName": "edge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:070514a1e0d2b451ef1bd14148f5806b9a70e764b640789785c573b792ef9689",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+          "expr": "edgeId",
+          "line": 631
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#edge@L622",
+        "procedureName": "edge",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L640",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L640",
+            "expr": "meta && Object.keys(meta).length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ac09304087be9824253e5ac96c14a86290e5d146b4709d30a12eb27f9953a6cb",
+          "target": "assign:packages/parsers/src/ts/nest.ts@L640",
+          "line": 640,
+          "expr": "e.meta = meta;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#edge@L622",
+        "procedureName": "edge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a75b4045334a610385c63ced08a56d6d130b2d3213d1b5ac69aac43efc9967f2",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L641",
+          "line": 641,
+          "expr": "return e;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

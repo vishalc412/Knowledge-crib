@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:c726d61dd9f742762f9faac08e7c341659d8f47eac7ff84577ed6fef50554126",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-13T11:04:33.459Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
@@ -67,6 +67,16 @@
     }
   ],
   "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
     {
       "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
       "confidence": 1,
@@ -307,6 +317,20 @@
       {
         "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
         "procedureName": "actionFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7634e2b370b43ad25d1a1958f7c62b16620202610f0fa8a21c40fabd42ba0bf9",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 246
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#actionFor@L221",
+        "procedureName": "actionFor",
         "guard": "cond:packages/core/src/rules/extract.ts@L247",
         "branch": "THEN",
         "conditions": [
@@ -498,14 +522,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 1,
+      "resolved": 2,
       "recorded": 7,
-      "unresolved": 4
+      "unresolved": 3
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

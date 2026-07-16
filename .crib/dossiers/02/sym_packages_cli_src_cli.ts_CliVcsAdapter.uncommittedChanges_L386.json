@@ -1,0 +1,81 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#CliVcsAdapter.uncommittedChanges@L386",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:52c9b417710396d99d5cf4a4f819a5fd56c67640e78150dc3fc1c7c34fb11243",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#CliVcsAdapter.uncommittedChanges@L386",
+    "kind": "symbol",
+    "type": "method",
+    "name": "uncommittedChanges",
+    "qualifiedName": "CliVcsAdapter.uncommittedChanges",
+    "signature": "uncommittedChanges(root: string): string[]",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 386,
+      "end": 388
+    },
+    "callSites": [
+      {
+        "callee": "uncommittedChanges",
+        "line": 387
+      }
+    ]
+  },
+  "source": {
+    "text": "  uncommittedChanges(root: string): string[] {\n    return uncommittedChanges(root);\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 386
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#CliVcsAdapter.uncommittedChanges@L386",
+    "procedureName": "CliVcsAdapter.uncommittedChanges",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#CliVcsAdapter.uncommittedChanges@L386",
+        "procedureName": "CliVcsAdapter.uncommittedChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a503a4487dc1e27affbaac5c7aab2b98db9e943b1393fc2e76f1601d025d113",
+          "target": "stmt:packages/cli/src/cli.ts@L387",
+          "line": 387,
+          "expr": "return uncommittedChanges(root);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#loanLabel@L333",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:ccf284f6d276475773dd99a6a27879ccef0e92d0fb7def7f6dbec3a93394e958",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-13T11:04:33.459Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#loanLabel@L333",
@@ -35,7 +35,18 @@
     "startLine": 333
   },
   "callers": [],
-  "callees": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    }
+  ],
   "docs": [
     {
       "sectionId": "expl:packages/parsers/src/plsql/PlSqlExtractor.test.ts@L332",
@@ -78,6 +89,20 @@
           "line": 335,
           "expr": "return (id: string): string => {\n      const n = nm.get(id);\n      if (!n) return id;\n      switch (n.kind) {\n        case 'symbol':\n          return n.qualifiedName ?? n.name ?? id;\n        case 'table':\n          return `table:${n.name}`;\n        case 'statement':\n          return `stmt:L${n.span?.start}:${n.sqlKind ?? n.type}`;\n        case 'condition':\n          return `cond:L${n.span?.start}:${n.branch}`;\n        case 'cursor':\n          return `cursor:${n.name}`;\n        case 'raise':\n          return `raise:L${n.span?.start}:${n.errorCode ?? n.name}`;\n        case 'exception-handler':\n          return `exc:L${n.span?.start}:${n.whenSelector}`;\n        case 'case-branch':\n          return `case:L${n.span?.start}:${n.whenSelector ?? 'default'}`;\n        case 'assignment':\n          return `assign:L${n.span?.start}:${n.assignTarget}`;\n        case 'explanation':\n          return `expl:L${n.span?.start}`;\n        default:\n          return n.kind;\n      }\n    };"
         }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#loanLabel@L333",
+        "procedureName": "loanLabel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0577485d5333f7fadc6609885612ad7e10832fc1974ff1a0211e81228dfadb09",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 336
+        }
       }
     ]
   },
@@ -97,14 +122,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 0,
+      "resolved": 1,
       "recorded": 2,
-      "unresolved": 2
+      "unresolved": 1
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

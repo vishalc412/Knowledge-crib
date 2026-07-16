@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:65b56ec68765e142c75d1498cd7a67141cbfd01a95ae16282f9f87bdbda2e220",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
@@ -187,6 +187,20 @@
       {
         "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
         "procedureName": "PythonExtractor.attachExplanation",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ab6d1b3f7f4efba4426044bb43e229746479d46c4234cba588304ed13357b49b",
+          "target": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+          "expr": "stringLiteralInner",
+          "line": 577
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+        "procedureName": "PythonExtractor.attachExplanation",
         "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L575",
         "branch": "THEN",
         "conditions": [
@@ -208,20 +222,6 @@
           "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L577",
           "line": 577,
           "expr": "const inner = stringLiteralInner(def.docstring.text);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
-        "procedureName": "PythonExtractor.attachExplanation",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:ab6d1b3f7f4efba4426044bb43e229746479d46c4234cba588304ed13357b49b",
-          "target": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
-          "expr": "stringLiteralInner",
-          "line": 577
         }
       },
       {

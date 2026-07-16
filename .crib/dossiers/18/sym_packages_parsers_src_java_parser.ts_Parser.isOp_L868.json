@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L868",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:547383066846ceed7560e5f5421d07d3bf236530baf1bebc25fe11598e4e7b3d",
-  "builtAt": "2026-06-26T05:09:36.599Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/java/parser.ts#Parser.isOp@L868",
@@ -311,11 +311,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:94a843266d7dda3edf50d1ea887d39a5d677971edb6946964c19f2d3e07cb0dc",
-          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L890",
-          "expr": "peek",
-          "line": 869
+          "kind": "executes",
+          "edgeId": "e:27b4505523ce0ceca13dbab10eec0a63adc2635fef2da423ce5a475f6e9eb7db",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L869",
+          "line": 869,
+          "expr": "return this.peek().type === 'OP' && this.peek().value === v;"
         }
       },
       {
@@ -325,11 +325,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:27b4505523ce0ceca13dbab10eec0a63adc2635fef2da423ce5a475f6e9eb7db",
-          "target": "stmt:packages/parsers/src/java/parser.ts@L869",
-          "line": 869,
-          "expr": "return this.peek().type === 'OP' && this.peek().value === v;"
+          "kind": "calls",
+          "edgeId": "e:94a843266d7dda3edf50d1ea887d39a5d677971edb6946964c19f2d3e07cb0dc",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.peek@L890",
+          "expr": "peek",
+          "line": 869
         }
       }
     ]

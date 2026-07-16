@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runBehavior@L354",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:ad0d3970d88c34c23646e194c5b98108b0038cb870d356adf225ae67b35e2d90",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runBehavior@L354",
@@ -37,16 +37,6 @@
   "callers": [],
   "callees": [
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
-      "confidence": 1,
-      "name": "ctxFor",
-      "qualifiedName": "ctxFor",
-      "signature": "ctxFor(text: string): ExtractCtx",
-      "type": "function",
-      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
-      "line": 15
-    },
-    {
       "id": "sym:packages/parsers/src/ts/react.test.ts#ctxFor@L17",
       "confidence": 1,
       "name": "ctxFor",
@@ -55,6 +45,16 @@
       "type": "function",
       "file": "packages/parsers/src/ts/react.test.ts",
       "line": 17
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+      "confidence": 1,
+      "name": "ctxFor",
+      "qualifiedName": "ctxFor",
+      "signature": "ctxFor(text: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.test.ts",
+      "line": 15
     }
   ],
   "docs": [],
@@ -63,20 +63,6 @@
     "procedureName": "runBehavior",
     "conditions": [],
     "rules": [
-      {
-        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runBehavior@L354",
-        "procedureName": "runBehavior",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:d63563859903e919ffc05ff7cdf29921609bc723b651fa898c40d050e9394635",
-          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
-          "expr": "ctxFor",
-          "line": 359
-        }
-      },
       {
         "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runBehavior@L354",
         "procedureName": "runBehavior",
@@ -101,6 +87,20 @@
           "kind": "calls",
           "edgeId": "e:7e854f8a5f03a68d748f99970f2a542c4fd3228de0a27769ecb2270e0d8c0e57",
           "target": "sym:packages/parsers/src/ts/react.test.ts#ctxFor@L17",
+          "expr": "ctxFor",
+          "line": 359
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#runBehavior@L354",
+        "procedureName": "runBehavior",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d63563859903e919ffc05ff7cdf29921609bc723b651fa898c40d050e9394635",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
           "expr": "ctxFor",
           "line": 359
         }

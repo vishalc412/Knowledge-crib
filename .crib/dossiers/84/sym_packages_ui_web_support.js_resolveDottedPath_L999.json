@@ -1,0 +1,159 @@
+{
+  "id": "sym:packages/ui/web/support.js#resolveDottedPath@L999",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:ed99fa998457bc01045c3e265263d89bd02db13450cbab20ab76215347cddd7b",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#resolveDottedPath@L999",
+    "kind": "symbol",
+    "type": "function",
+    "name": "resolveDottedPath",
+    "qualifiedName": "resolveDottedPath",
+    "signature": "resolveDottedPath(root, name)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 999,
+      "end": 1006
+    }
+  },
+  "source": {
+    "text": "  function resolveDottedPath(root, name) {\n    let cur = root;\n    for (const seg of name.split(\".\")) {\n      if (cur == null) return void 0;\n      cur = cur[seg];\n    }\n    return cur;\n  }",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 999
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.resolveGlobal@L1131",
+      "confidence": 1,
+      "name": "resolveGlobal",
+      "qualifiedName": "createExternalModules.resolveGlobal",
+      "signature": "resolveGlobal(url, name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1131
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal@L1107",
+      "confidence": 1,
+      "name": "waitForGlobal",
+      "qualifiedName": "createExternalModules.waitForGlobal",
+      "signature": "waitForGlobal(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1107
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.waitForGlobal.tick@L1112",
+      "confidence": 1,
+      "name": "tick",
+      "qualifiedName": "createExternalModules.waitForGlobal.tick",
+      "signature": "tick(…)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1112
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#resolveDottedPath@L999",
+    "procedureName": "resolveDottedPath",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L1001",
+      "cond:packages/ui/web/support.js@L1002"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#resolveDottedPath@L999",
+        "procedureName": "resolveDottedPath",
+        "guard": "cond:packages/ui/web/support.js@L1002",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1001",
+            "expr": "name.split(\".\")"
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L1002",
+            "expr": "cur == null",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ecb144980fb32036a076406d9bc898a077addbabfec200560be1726e98f75a83",
+          "target": "stmt:packages/ui/web/support.js@L1002",
+          "line": 1002,
+          "expr": "return void 0;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#resolveDottedPath@L999",
+        "procedureName": "resolveDottedPath",
+        "guard": "cond:packages/ui/web/support.js@L1001",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1001",
+            "expr": "name.split(\".\")",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a6c3d51162fe84be93c79c6e7aeb27a96e266c7c33be2026f65954b30bb51149",
+          "target": "assign:packages/ui/web/support.js@L1003",
+          "line": 1003,
+          "expr": "cur = cur[seg];"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#resolveDottedPath@L999",
+        "procedureName": "resolveDottedPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:65a43c0635192bcf2568ba702cec8dfc6a403c5268902761a99d39c3b95d7ebb",
+          "target": "stmt:packages/ui/web/support.js@L1005",
+          "line": 1005,
+          "expr": "return cur;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

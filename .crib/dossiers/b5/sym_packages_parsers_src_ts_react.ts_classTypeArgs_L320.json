@@ -1,0 +1,203 @@
+{
+  "id": "sym:packages/parsers/src/ts/react.ts#classTypeArgs@L320",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:50d202e5627de7c79f16d9a7be41ae106b0bb4035c438ad1c52d4fe5a7b24b87",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/react.ts#classTypeArgs@L320",
+    "kind": "symbol",
+    "type": "function",
+    "name": "classTypeArgs",
+    "qualifiedName": "classTypeArgs",
+    "signature": "classTypeArgs(cls: ts.ClassDeclaration): { propsType?: string; stateType?: string }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/react.ts",
+    "span": {
+      "start": 320,
+      "end": 336
+    },
+    "callSites": [
+      {
+        "callee": "getText",
+        "line": 326
+      },
+      {
+        "callee": "getText",
+        "line": 327
+      }
+    ]
+  },
+  "source": {
+    "text": "function classTypeArgs(cls: ts.ClassDeclaration): { propsType?: string; stateType?: string } {\n  for (const h of cls.heritageClauses ?? []) {\n    if (h.token !== ts.SyntaxKind.ExtendsKeyword) continue;\n    for (const t of h.types) {\n      if (ts.isExpressionWithTypeArguments(t) && t.typeArguments) {\n        const args = [...t.typeArguments];\n        const props = args[0]?.getText();\n        const state = args[1]?.getText();\n        return {\n          ...(props ? { propsType: props } : {}),\n          ...(state ? { stateType: state } : {}),\n        };\n      }\n    }\n  }\n  return {};\n}",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 320
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#classify@L102",
+      "confidence": 1,
+      "name": "classify",
+      "qualifiedName": "classify",
+      "signature": "classify(s: ReactSymbolLike): {\n  kind: 'class' | 'function' | 'hook';\n  body?: ts.Node;\n  propsType?: string;\n  stateType?: string;\n} | null",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 102
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/react.ts@L319",
+      "snippet": "/** The props/state type-arg names of `class Foo extends Component<Props, State>` (text of each). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/react.ts#classTypeArgs@L320",
+    "procedureName": "classTypeArgs",
+    "conditions": [
+      "cond:packages/parsers/src/ts/react.ts@L321",
+      "cond:packages/parsers/src/ts/react.ts@L323",
+      "cond:packages/parsers/src/ts/react.ts@L324"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#classTypeArgs@L320",
+        "procedureName": "classTypeArgs",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L324",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L321",
+            "expr": "cls.heritageClauses ?? []"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L323",
+            "expr": "h.types"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L324",
+            "expr": "ts.isExpressionWithTypeArguments(t) && t.typeArguments",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f9f479ce2d80e7438963ea8b177eec1c7b7dac66be58713f7e546c437c645723",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L326",
+          "line": 326,
+          "expr": "const props = args[0]?.getText();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#classTypeArgs@L320",
+        "procedureName": "classTypeArgs",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L324",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L321",
+            "expr": "cls.heritageClauses ?? []"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L323",
+            "expr": "h.types"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L324",
+            "expr": "ts.isExpressionWithTypeArguments(t) && t.typeArguments",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f53a206ec73906ee25087aa494e6b3f35364585f1e1f5e5b33d2c821fded2c69",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L327",
+          "line": 327,
+          "expr": "const state = args[1]?.getText();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#classTypeArgs@L320",
+        "procedureName": "classTypeArgs",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L324",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L321",
+            "expr": "cls.heritageClauses ?? []"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L323",
+            "expr": "h.types"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L324",
+            "expr": "ts.isExpressionWithTypeArguments(t) && t.typeArguments",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6747f5113b1372754fa22d510861dfa6cc9cb3c48c47f0210719def7137766ca",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L328",
+          "line": 328,
+          "expr": "return {\n          ...(props ? { propsType: props } : {}),\n          ...(state ? { stateType: state } : {}),\n        };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#classTypeArgs@L320",
+        "procedureName": "classTypeArgs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a8e386935a1600ea8cce9fdecc511d0c29a76e3b3479a7e0667efa767316aa2",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L335",
+          "line": 335,
+          "expr": "return {};"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/react.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

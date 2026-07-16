@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/rust/lexer.ts#collectRustComments@L556",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:1944caa78ab8fdb457454fffa2d5cdf5ff6b3692b8e0387dec341e824fc191a2",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/rust/lexer.ts#collectRustComments@L556",
@@ -146,14 +146,14 @@
       "line": 527
     },
     {
-      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#stripBlockLine@L956",
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#stripBlockLine@L996",
       "confidence": 1,
       "name": "stripBlockLine",
       "qualifiedName": "stripBlockLine",
       "signature": "stripBlockLine(line: string): string",
       "type": "function",
       "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
-      "line": 956
+      "line": 996
     },
     {
       "id": "sym:packages/parsers/src/rust/lexer.ts#stripLineComment@L521",
@@ -278,6 +278,34 @@
       {
         "procedure": "sym:packages/parsers/src/rust/lexer.ts#collectRustComments@L556",
         "procedureName": "collectRustComments",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4163f1472a6c8851107d4bd801e1e5316e56d81c27f304e6e7c1adf6a5cda7ab",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 568
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#collectRustComments@L556",
+        "procedureName": "collectRustComments",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7085d95e06635bac0d46d126de055604c9efa72425fc3c1ad9b4dd61c118c05c",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#stripBlockLine@L996",
+          "expr": "stripBlockLine",
+          "line": 568
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#collectRustComments@L556",
+        "procedureName": "collectRustComments",
         "guard": "cond:packages/parsers/src/rust/lexer.ts@L566",
         "branch": "THEN",
         "conditions": [
@@ -299,34 +327,6 @@
           "target": "stmt:packages/parsers/src/rust/lexer.ts@L568",
           "line": 568,
           "expr": "blockParts.push(stripBlockLine(trimmed));"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/lexer.ts#collectRustComments@L556",
-        "procedureName": "collectRustComments",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:4163f1472a6c8851107d4bd801e1e5316e56d81c27f304e6e7c1adf6a5cda7ab",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 568
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/rust/lexer.ts#collectRustComments@L556",
-        "procedureName": "collectRustComments",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:cb132f6d29bdbf7bd4912d54cad511122fde521eb65a5604c8819d2358efc85b",
-          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#stripBlockLine@L956",
-          "expr": "stripBlockLine",
-          "line": 568
         }
       },
       {
@@ -494,11 +494,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:96e58021dc62bd4ee0ca18699da14af2d6188e443f09a0fd1634d5c521499689",
-          "target": "sym:packages/parsers/src/rust/lexer.ts#stripLineComment@L521",
-          "expr": "stripLineComment",
-          "line": 582
+          "kind": "executes",
+          "edgeId": "e:5ec02c77e5c5fc0dfef68654b86e0ed57ba899a4426d0ef2fef40f55bcd9cc29",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L582",
+          "line": 582,
+          "expr": "parts.push(stripLineComment((lines[i] ?? '').trim()));"
         }
       },
       {
@@ -524,11 +524,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:5ec02c77e5c5fc0dfef68654b86e0ed57ba899a4426d0ef2fef40f55bcd9cc29",
-          "target": "stmt:packages/parsers/src/rust/lexer.ts@L582",
-          "line": 582,
-          "expr": "parts.push(stripLineComment((lines[i] ?? '').trim()));"
+          "kind": "calls",
+          "edgeId": "e:96e58021dc62bd4ee0ca18699da14af2d6188e443f09a0fd1634d5c521499689",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#stripLineComment@L521",
+          "expr": "stripLineComment",
+          "line": 582
         }
       },
       {

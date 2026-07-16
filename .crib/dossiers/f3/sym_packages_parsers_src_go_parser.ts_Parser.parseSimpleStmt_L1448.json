@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseSimpleStmt@L1448",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:3662675f6e7e9a5a581ad2a4ea87c54bbd84b4d3f5720b87a255b30ad729ee46",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseSimpleStmt@L1448",
@@ -131,20 +131,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:ac5e2962b08beff77b6b1232a88fce7484ff6ea98df802ac342c39d232f13471",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.peek@L1695",
-          "expr": "peek",
-          "line": 1449
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseSimpleStmt@L1448",
-        "procedureName": "Parser.parseSimpleStmt",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:32ff9b9f7eb5f595f78848aaf6cbfe6208a7d7db775dd1b376bd4789edeb8934",
           "target": "stmt:packages/parsers/src/go/parser.ts@L1449",
@@ -160,10 +146,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:65b8ec93d787a7333d0eaa075214556495c9a0a1f61a012375357d10170862a7",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.collectSimpleUntilSemi@L1498",
-          "expr": "collectSimpleUntilSemi",
-          "line": 1451
+          "edgeId": "e:ac5e2962b08beff77b6b1232a88fce7484ff6ea98df802ac342c39d232f13471",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.peek@L1695",
+          "expr": "peek",
+          "line": 1449
         }
       },
       {
@@ -178,6 +164,20 @@
           "target": "stmt:packages/parsers/src/go/parser.ts@L1451",
           "line": 1451,
           "expr": "const { text, callee, hasAssign, isPanic, lhs } = this.collectSimpleUntilSemi();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseSimpleStmt@L1448",
+        "procedureName": "Parser.parseSimpleStmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:65b8ec93d787a7333d0eaa075214556495c9a0a1f61a012375357d10170862a7",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.collectSimpleUntilSemi@L1498",
+          "expr": "collectSimpleUntilSemi",
+          "line": 1451
         }
       },
       {

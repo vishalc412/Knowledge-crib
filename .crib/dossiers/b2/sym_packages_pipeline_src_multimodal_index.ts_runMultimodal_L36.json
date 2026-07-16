@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:1394b3f08b2ec9350e8137e428b32de0138c8009b1670cef0882363603808425",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
@@ -56,14 +56,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L108",
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
       "confidence": 1,
       "name": "indexRepo",
       "qualifiedName": "indexRepo",
       "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
       "type": "function",
       "file": "packages/pipeline/src/pipeline.ts",
-      "line": 108
+      "line": 94
     }
   ],
   "callees": [
@@ -174,11 +174,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:eabf6a4c518e8cf43f3e2805b409f2f8e3a3ee5582ccfde7864547674e7e03c4",
-          "target": "stmt:packages/pipeline/src/multimodal/index.ts@L48",
-          "line": 48,
-          "expr": "const ingest = await ingestStaging(soul, root, paths, workerOpts);"
+          "kind": "calls",
+          "edgeId": "e:dad0307b3957b50ca9a91ce380b686f626687ea27cefced173efaa0bdd308590",
+          "target": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+          "expr": "ingestStaging",
+          "line": 48
         }
       },
       {
@@ -188,11 +188,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:dad0307b3957b50ca9a91ce380b686f626687ea27cefced173efaa0bdd308590",
-          "target": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
-          "expr": "ingestStaging",
-          "line": 48
+          "kind": "executes",
+          "edgeId": "e:eabf6a4c518e8cf43f3e2805b409f2f8e3a3ee5582ccfde7864547674e7e03c4",
+          "target": "stmt:packages/pipeline/src/multimodal/index.ts@L48",
+          "line": 48,
+          "expr": "const ingest = await ingestStaging(soul, root, paths, workerOpts);"
         }
       },
       {

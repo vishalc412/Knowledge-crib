@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#soulFor@L16",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:af9e5ca2a90c740b827651094c8db846c24eface4f47c6ef36f8b3453cafc5e7",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T14:53:52.220Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#soulFor@L16",
@@ -36,6 +36,16 @@
   },
   "callers": [],
   "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
     {
       "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
       "confidence": 1,
@@ -102,6 +112,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:684bb7b1fb77fd99e910dcdcde5fb921eb3e0010aea2f7753de6338c1f8ed287",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 18
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#soulFor@L16",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
           "edgeId": "e:06fd34b2f99a2b7090a20d1acf738d977a0bc0e4756d506ffc51264454d76ab5",
           "target": "stmt:packages/pipeline/src/resolve/go-resolver.test.ts@L19",
@@ -127,7 +151,7 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 1,
+      "resolved": 2,
       "recorded": 2,
       "unresolved": 0
     },

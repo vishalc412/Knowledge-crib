@@ -1,0 +1,216 @@
+{
+  "id": "sym:packages/core/src/aliases.ts#parseAliases@L61",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:37fd02e095b393a6a85b0a0e35fac80959aa02d028c174dc82b2182a702a8c39",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/aliases.ts#parseAliases@L61",
+    "kind": "symbol",
+    "type": "function",
+    "name": "parseAliases",
+    "qualifiedName": "parseAliases",
+    "signature": "parseAliases(raw: unknown): AliasMap",
+    "lang": "typescript",
+    "file": "packages/core/src/aliases.ts",
+    "span": {
+      "start": 61,
+      "end": 82
+    },
+    "callSites": [
+      {
+        "callee": "set",
+        "line": 73
+      },
+      {
+        "callee": "set",
+        "line": 79
+      }
+    ]
+  },
+  "source": {
+    "text": "export function parseAliases(raw: unknown): AliasMap {\n  const out = new Map<string, string>();\n  if (!raw || typeof raw !== 'object') return out;\n  const obj = raw as Record<string, unknown>;\n  const list = obj.aliases;\n  if (Array.isArray(list)) {\n    for (const entry of list) {\n      if (!entry || typeof entry !== 'object') continue;\n      const e = entry as { alias?: unknown; expand?: unknown };\n      if (typeof e.alias !== 'string' || typeof e.expand !== 'string') continue;\n      if (e.alias.length === 0 || e.expand.length === 0) continue;\n      // first write wins — a duplicated alias keeps its earliest expansion (stable, reviewable).\n      if (!out.has(e.alias)) out.set(e.alias, e.expand);\n    }\n    return out;\n  }\n  // legacy plain map: { \"DTI\": \"debt to income\", ... }\n  for (const [k, v] of Object.entries(obj)) {\n    if (typeof v === 'string' && k.length > 0 && v.length > 0) out.set(k, v);\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 22,
+    "startLine": 61
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/aliases.ts#loadAliases@L47",
+      "confidence": 1,
+      "name": "loadAliases",
+      "qualifiedName": "loadAliases",
+      "signature": "loadAliases(cribDir: string): AliasMap",
+      "type": "function",
+      "file": "packages/core/src/aliases.ts",
+      "line": 47
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/aliases.ts@L60",
+      "snippet": "/** Parse a raw JSON value into an alias map. Tolerates the entry-list shape and a plain string map. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/aliases.ts#parseAliases@L61",
+    "procedureName": "parseAliases",
+    "conditions": [
+      "cond:packages/core/src/aliases.ts@L63",
+      "cond:packages/core/src/aliases.ts@L66",
+      "cond:packages/core/src/aliases.ts@L67",
+      "cond:packages/core/src/aliases.ts@L73",
+      "cond:packages/core/src/aliases.ts@L78",
+      "cond:packages/core/src/aliases.ts@L79"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/aliases.ts#parseAliases@L61",
+        "procedureName": "parseAliases",
+        "guard": "cond:packages/core/src/aliases.ts@L63",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/aliases.ts@L63",
+            "expr": "!raw || typeof raw !== 'object'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:61111d8382452e8d3f33f248ab3d83ac944bbf3c8f2224a0007cb3105dc5ffb5",
+          "target": "stmt:packages/core/src/aliases.ts@L63",
+          "line": 63,
+          "expr": "return out;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/aliases.ts#parseAliases@L61",
+        "procedureName": "parseAliases",
+        "guard": "cond:packages/core/src/aliases.ts@L73",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/aliases.ts@L66",
+            "expr": "Array.isArray(list)"
+          },
+          {
+            "id": "cond:packages/core/src/aliases.ts@L67",
+            "expr": "list"
+          },
+          {
+            "id": "cond:packages/core/src/aliases.ts@L73",
+            "expr": "!out.has(e.alias)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2aa64ec8254768ad26062ca823b0fd8b81f797427ded143afc2d41ffd94808a7",
+          "target": "stmt:packages/core/src/aliases.ts@L73",
+          "line": 73,
+          "expr": "out.set(e.alias, e.expand);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/aliases.ts#parseAliases@L61",
+        "procedureName": "parseAliases",
+        "guard": "cond:packages/core/src/aliases.ts@L66",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/aliases.ts@L66",
+            "expr": "Array.isArray(list)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6df77c485fdcdbc1b665a06f60e1a2a183bb8f9e1e0677edc9c3bfc0b849988b",
+          "target": "stmt:packages/core/src/aliases.ts@L75",
+          "line": 75,
+          "expr": "return out;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/aliases.ts#parseAliases@L61",
+        "procedureName": "parseAliases",
+        "guard": "cond:packages/core/src/aliases.ts@L79",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/aliases.ts@L78",
+            "expr": "Object.entries(obj)"
+          },
+          {
+            "id": "cond:packages/core/src/aliases.ts@L79",
+            "expr": "typeof v === 'string' && k.length > 0 && v.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ba52a309103e2b36a21810a93a16ce6794a803a87d1fa2c3bcef684e248a4a9f",
+          "target": "stmt:packages/core/src/aliases.ts@L79",
+          "line": 79,
+          "expr": "out.set(k, v);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/aliases.ts#parseAliases@L61",
+        "procedureName": "parseAliases",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:099a580eb005643ca6b231b533c38cc47c2d4eebd4d5a87acf2622386a2aeae8",
+          "target": "stmt:packages/core/src/aliases.ts@L81",
+          "line": 81,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/core/src/aliases.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

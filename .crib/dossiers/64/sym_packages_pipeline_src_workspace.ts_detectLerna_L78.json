@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:65fec5b99829644e8956f4a5304409b31f903553eb240b5abadd07dff9b62edc",
-  "builtAt": "2026-06-30T22:32:35.510Z",
+  "builtAt": "2026-07-13T11:04:33.459Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/workspace.ts#detectLerna@L78",
@@ -78,34 +78,34 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L210",
+      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
       "confidence": 1,
       "name": "expandPatterns",
       "qualifiedName": "expandPatterns",
       "signature": "expandPatterns(root: string, patterns: string[]): WorkspacePackage[]",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 210
+      "line": 208
     },
     {
-      "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
       "confidence": 1,
       "name": "parse",
       "qualifiedName": "parse",
-      "signature": "parse(…)",
+      "signature": "parse(input)",
       "type": "function",
-      "file": "packages/parsers/src/java/parser.test.ts",
-      "line": 35
+      "file": "packages/pipeline/fixtures/plain-js/src/legacy.cjs",
+      "line": 4
     },
     {
-      "id": "sym:packages/pipeline/src/workspace.ts#toStringArray@L321",
+      "id": "sym:packages/pipeline/src/workspace.ts#toStringArray@L319",
       "confidence": 1,
       "name": "toStringArray",
       "qualifiedName": "toStringArray",
       "signature": "toStringArray(v: unknown): string[]",
       "type": "function",
       "file": "packages/pipeline/src/workspace.ts",
-      "line": 321
+      "line": 319
     }
   ],
   "docs": [],
@@ -176,8 +176,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:8829dfcc1b38c67dbf6e18735db0ec1b7db03fca9467faa27485184bcba3ca1a",
-          "target": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+          "edgeId": "e:ef38c141ce674c6dbe118e76978e35c6484ac03e46ce33d4b07f3bcb8ac98e36",
+          "target": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
           "expr": "parse",
           "line": 83
         }
@@ -204,8 +204,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:2461a8383d4922f50212b5a7ea3b82dde5718c30cfa88c8e1b4b9effaa106634",
-          "target": "sym:packages/pipeline/src/workspace.ts#toStringArray@L321",
+          "edgeId": "e:7e0188b0590a846a6ccee3fd5b16c647a90de2be7606e5ea24cd36ccd64a3a24",
+          "target": "sym:packages/pipeline/src/workspace.ts#toStringArray@L319",
           "expr": "toStringArray",
           "line": 87
         }
@@ -254,8 +254,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:5b5626171adc4f4c749e4ae0d7a1d4bb155706c639ea9716956eb1f914b463b8",
-          "target": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L210",
+          "edgeId": "e:b5a6901d35e2c0346d0d45063f014462add8fb641b417a96e919c0104ad4a99f",
+          "target": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
           "expr": "expandPatterns",
           "line": 89
         }

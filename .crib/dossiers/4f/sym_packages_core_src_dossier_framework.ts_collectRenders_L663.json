@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:235435c67a52a4add07055052a58f09fa37ac17e0d6b8b542e0dc0f7df94a3da",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
@@ -116,6 +116,20 @@
       {
         "procedure": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
         "procedureName": "collectRenders",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4eed4a0c729d32086b40733dd8e74ebeb18c4e9ac33216ea7368e731671cf514",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 675
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
+        "procedureName": "collectRenders",
         "guard": "cond:packages/core/src/dossier/framework.ts@L672",
         "branch": "LOOP",
         "conditions": [
@@ -133,20 +147,6 @@
           "target": "stmt:packages/core/src/dossier/framework.ts@L675",
           "line": 675,
           "expr": "seen.add(e.dst);"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
-        "procedureName": "collectRenders",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:4eed4a0c729d32086b40733dd8e74ebeb18c4e9ac33216ea7368e731671cf514",
-          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
-          "expr": "add",
-          "line": 675
         }
       },
       {

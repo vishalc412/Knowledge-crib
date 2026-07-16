@@ -1,0 +1,596 @@
+{
+  "id": "sym:packages/core/src/lock.ts#CribLock.release@L122",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:f905dc453aed05d5f03cf62d7c23f3091f6f7c7aad9c01f17d27bd519f62931e",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/lock.ts#CribLock.release@L122",
+    "kind": "symbol",
+    "type": "method",
+    "name": "release",
+    "qualifiedName": "CribLock.release",
+    "signature": "release(): void",
+    "lang": "typescript",
+    "file": "packages/core/src/lock.ts",
+    "span": {
+      "start": 122,
+      "end": 132
+    },
+    "callSites": [
+      {
+        "callee": "unlinkSync",
+        "line": 127
+      }
+    ]
+  },
+  "source": {
+    "text": "  release(): void {\n    if (!this.held) return;\n    this.held = false;\n    try {\n      if (this.readHolder() === process.pid && existsSync(this.path)) {\n        unlinkSync(this.path);\n      }\n    } catch {\n      // best-effort: a failed unlink leaves a stale lock the next acquire recovers from\n    }\n  }",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 122
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/lock.ts#withCribLock@L185",
+      "confidence": 1,
+      "name": "withCribLock",
+      "qualifiedName": "withCribLock",
+      "signature": "withCribLock(opts: CribLockOptions, fn: () => T): T",
+      "type": "function",
+      "file": "packages/core/src/lock.ts",
+      "line": 185
+    },
+    {
+      "id": "sym:packages/core/src/lock.ts#withCribLockAsync@L196",
+      "confidence": 1,
+      "name": "withCribLockAsync",
+      "qualifiedName": "withCribLockAsync",
+      "signature": "withCribLockAsync(opts: CribLockOptions, fn: () => T | Promise<T>): Promise<T>",
+      "type": "function",
+      "file": "packages/core/src/lock.ts",
+      "line": 196
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/lock.ts#CribLock.readHolder@L147",
+      "confidence": 1,
+      "name": "readHolder",
+      "qualifiedName": "CribLock.readHolder",
+      "signature": "readHolder(): number",
+      "type": "method",
+      "file": "packages/core/src/lock.ts",
+      "line": 147
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/lock.ts@L118",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:CONTRIBUTING.md#before-opening-a-pull-request",
+      "heading": "Before Opening a Pull Request",
+      "anchor": "before-opening-a-pull-request",
+      "snippet": "Before Opening a Pull Request",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/launch/publish-runbook.md#changelog-cut-autonomous-prep-the-user-triggers",
+      "heading": "Changelog cut (autonomous prep the user triggers)",
+      "anchor": "changelog-cut-autonomous-prep-the-user-triggers",
+      "snippet": "Changelog cut (autonomous prep the user triggers)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:CONTRIBUTING.md#development-setup",
+      "heading": "Development Setup",
+      "anchor": "development-setup",
+      "snippet": "Development Setup",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#1-one-time-machine-setup",
+      "heading": "1. One-time machine setup",
+      "anchor": "1-one-time-machine-setup",
+      "snippet": "1. One-time machine setup",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#release-gate",
+      "heading": "Release Gate",
+      "anchor": "release-gate",
+      "snippet": "Release Gate",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:README.md#install",
+      "heading": "Install",
+      "anchor": "install",
+      "snippet": "Install",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:README.md#develop",
+      "heading": "Develop",
+      "anchor": "develop",
+      "snippet": "Develop",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#2-install",
+      "heading": "2. Install",
+      "anchor": "2-install",
+      "snippet": "2. Install",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-1-machine-setup-one-time",
+      "heading": "5.1 Machine setup (one-time)",
+      "anchor": "5-1-machine-setup-one-time",
+      "snippet": "5.1 Machine setup (one-time)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#knowledge-crib-executive-brief",
+      "heading": "Knowledge-crib — Executive Brief",
+      "anchor": "knowledge-crib-executive-brief",
+      "snippet": "Knowledge-crib — Executive Brief",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-26-beta-installers.md#task-2-installer-smoke-verification",
+      "heading": "Task 2: Installer Smoke Verification",
+      "anchor": "task-2-installer-smoke-verification",
+      "snippet": "Task 2: Installer Smoke Verification",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#recommended-pitch-close",
+      "heading": "Recommended pitch close",
+      "anchor": "recommended-pitch-close",
+      "snippet": "Recommended pitch close",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#current-limits-say-before-architects-ask",
+      "heading": "Current limits — say before architects ask",
+      "anchor": "current-limits-say-before-architects-ask",
+      "snippet": "Current limits — say before architects ask",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#consequences",
+      "heading": "Consequences",
+      "anchor": "consequences",
+      "snippet": "Consequences",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#references",
+      "heading": "References",
+      "anchor": "references",
+      "snippet": "References",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#supported-versions",
+      "heading": "Supported Versions",
+      "anchor": "supported-versions",
+      "snippet": "Supported Versions",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#threat-model-access-model-m3-7",
+      "heading": "Threat Model & Access Model (M3.7)",
+      "anchor": "threat-model-access-model-m3-7",
+      "snippet": "Threat Model & Access Model (M3.7)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-beta-installers.md#knowledge-crib-beta-installers",
+      "heading": "Knowledge-crib Beta Installers",
+      "anchor": "knowledge-crib-beta-installers",
+      "snippet": "Knowledge-crib Beta Installers",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-beta-installers.md#cross-platform-ci",
+      "heading": "Cross-platform CI",
+      "anchor": "cross-platform-ci",
+      "snippet": "Cross-platform CI",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-beta-installers.md#current-beta-limitation",
+      "heading": "Current Beta Limitation",
+      "anchor": "current-beta-limitation",
+      "snippet": "Current Beta Limitation",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-26-beta-installers.md#beta-installers-implementation-plan",
+      "heading": "Beta Installers Implementation Plan",
+      "anchor": "beta-installers-implementation-plan",
+      "snippet": "Beta Installers Implementation Plan",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-26-beta-installers.md#task-4-verification",
+      "heading": "Task 4: Verification",
+      "anchor": "task-4-verification",
+      "snippet": "Task 4: Verification",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-26-beta-installers.md#self-review",
+      "heading": "Self-Review",
+      "anchor": "self-review",
+      "snippet": "Self-Review",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-26-beta-installers.md#task-3-open-source-beta-release-docs",
+      "heading": "Task 3: Open-Source Beta Release Docs",
+      "anchor": "task-3-open-source-beta-release-docs",
+      "snippet": "Task 3: Open-Source Beta Release Docs",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/publish-runbook.md#pre-publish-checklist-tick-before-the-first-publish",
+      "heading": "Pre-publish checklist (tick before the first `publish`)",
+      "anchor": "pre-publish-checklist-tick-before-the-first-publish",
+      "snippet": "Pre-publish checklist (tick before the first `publish`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/publish-runbook.md#rollback-if-a-package-is-broken-post-publish",
+      "heading": "Rollback (if a package is broken post-publish)",
+      "anchor": "rollback-if-a-package-is-broken-post-publish",
+      "snippet": "Rollback (if a package is broken post-publish)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/publish-runbook.md#publish-sequence-user-executes-in-dependency-order",
+      "heading": "Publish sequence (user executes, in dependency order)",
+      "anchor": "publish-sequence-user-executes-in-dependency-order",
+      "snippet": "Publish sequence (user executes, in dependency order)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#knowledge-crib-technical-pitch",
+      "heading": "Knowledge-crib — Technical Pitch",
+      "anchor": "knowledge-crib-technical-pitch",
+      "snippet": "Knowledge-crib — Technical Pitch",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#proof-observed-in-this-audit",
+      "heading": "Proof observed in this audit",
+      "anchor": "proof-observed-in-this-audit",
+      "snippet": "Proof observed in this audit",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#fixed-for-release",
+      "heading": "Fixed For Release",
+      "anchor": "fixed-for-release",
+      "snippet": "Fixed For Release",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#knowledge-crib-production-readiness",
+      "heading": "Knowledge-crib Production Readiness",
+      "anchor": "knowledge-crib-production-readiness",
+      "snippet": "Knowledge-crib Production Readiness",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#release-checklist",
+      "heading": "Release Checklist",
+      "anchor": "release-checklist",
+      "snippet": "Release Checklist",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#known-non-blockers",
+      "heading": "Known Non-Blockers",
+      "anchor": "known-non-blockers",
+      "snippet": "Known Non-Blockers",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#capture-plan",
+      "heading": "Capture Plan",
+      "anchor": "capture-plan",
+      "snippet": "Capture Plan",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#verification",
+      "heading": "Verification",
+      "anchor": "verification",
+      "snippet": "Verification",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:outputs/knowledge-crib-coi-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added-2",
+      "heading": "Added",
+      "anchor": "added-2",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#security",
+      "heading": "Security",
+      "anchor": "security",
+      "snippet": "Security",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:README.md#knowledge-crib",
+      "heading": "Knowledge-crib",
+      "anchor": "knowledge-crib",
+      "snippet": "Knowledge-crib",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/README.md#open-source-release-files",
+      "heading": "Open-Source Release Files",
+      "anchor": "open-source-release-files",
+      "snippet": "Open-Source Release Files",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "heading": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "anchor": "5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "snippet": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/lock.ts#CribLock.release@L122",
+    "procedureName": "CribLock.release",
+    "conditions": [
+      "cond:packages/core/src/lock.ts@L123",
+      "cond:packages/core/src/lock.ts@L126"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/lock.ts#CribLock.release@L122",
+        "procedureName": "CribLock.release",
+        "guard": "cond:packages/core/src/lock.ts@L123",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/lock.ts@L123",
+            "expr": "!this.held",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:44e2d44f8a75e06091f839327bc9999ac1b794c6c82a16f6fca95b862b454510",
+          "target": "stmt:packages/core/src/lock.ts@L123",
+          "line": 123,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/lock.ts#CribLock.release@L122",
+        "procedureName": "CribLock.release",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b61bc8a152d03e5cbc9de3b88110821656d79f1c218866b2d0818d01905a81c3",
+          "target": "assign:packages/core/src/lock.ts@L124",
+          "line": 124,
+          "expr": "this.held = false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/lock.ts#CribLock.release@L122",
+        "procedureName": "CribLock.release",
+        "guard": "cond:packages/core/src/lock.ts@L126",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/lock.ts@L126",
+            "expr": "this.readHolder() === process.pid && existsSync(this.path)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3a342f2ad5f6a64ac35410fb1a065f8cbf78a8be798e821b0699b63d15694e13",
+          "target": "stmt:packages/core/src/lock.ts@L127",
+          "line": 127,
+          "expr": "unlinkSync(this.path);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/lock.ts#CribLock.release@L122",
+        "procedureName": "CribLock.release",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9de9954f729172f872f689eccb2466578c051a4d55d039591d1b0439dfd002a1",
+          "target": "sym:packages/core/src/lock.ts#CribLock.readHolder@L147",
+          "expr": "readHolder"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/lock.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

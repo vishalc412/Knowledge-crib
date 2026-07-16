@@ -1,0 +1,219 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#fieldElementType@L527",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:972b05182a638e93d013af8671bc52836787ffc3532ae59a801ce544d12e75ea",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#fieldElementType@L527",
+    "kind": "symbol",
+    "type": "function",
+    "name": "fieldElementType",
+    "qualifiedName": "fieldElementType",
+    "signature": "fieldElementType(t: string | undefined): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 527,
+      "end": 543
+    },
+    "callSites": [
+      {
+        "callee": "trim",
+        "line": 529
+      },
+      {
+        "callee": "match",
+        "line": 531
+      },
+      {
+        "callee": "trim",
+        "line": 533
+      },
+      {
+        "callee": "trim",
+        "line": 537
+      },
+      {
+        "callee": "replace",
+        "line": 537
+      }
+    ]
+  },
+  "source": {
+    "text": "function fieldElementType(t: string | undefined): string | undefined {\n  if (!t) return undefined;\n  let s = t.trim();\n  for (;;) {\n    const m = s.match(/^(?:Promise|Array|ReadonlyArray)<(.+)>$/);\n    if (m) {\n      s = m[1]!.trim();\n      continue;\n    }\n    if (/\\[\\s*\\]$/.test(s)) {\n      s = s.replace(/\\[\\s*\\]$/, '').trim();\n      continue;\n    }\n    break;\n  }\n  return s.length > 0 ? s : undefined;\n}",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 527
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 104
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L525",
+      "snippet": "/** Unwrap the element type behind `Payment[]` / `Array<Payment>` / `Promise<Payment>` / nested forms.",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#fieldElementType@L527",
+    "procedureName": "fieldElementType",
+    "conditions": [
+      "cond:packages/parsers/src/ts/nest.ts@L528",
+      "cond:packages/parsers/src/ts/nest.ts@L532",
+      "cond:packages/parsers/src/ts/nest.ts@L536"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#fieldElementType@L527",
+        "procedureName": "fieldElementType",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L528",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L528",
+            "expr": "!t",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:30c355179f842c18b4bd2c5f675a387a53e30e95f62849bacc248034b1c97330",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L528",
+          "line": 528,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#fieldElementType@L527",
+        "procedureName": "fieldElementType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bc617dd794d6434a1b9242ca1d92f3ae30610cb39f4c884dc2b0b202acdfc8a6",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L529",
+          "line": 529,
+          "expr": "let s = t.trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#fieldElementType@L527",
+        "procedureName": "fieldElementType",
+        "conditions": [],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1a4add3ed0c7e6c13cf871eef5928e6d12166fafa25322205afa973aab83ff6",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L531",
+          "line": 531,
+          "expr": "const m = s.match(/^(?:Promise|Array|ReadonlyArray)<(.+)>$/);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#fieldElementType@L527",
+        "procedureName": "fieldElementType",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L532",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L532",
+            "expr": "m",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d807b057a99fe5e7374482f98e4d001243ead6faac8d0d6bf2cec41050db75c2",
+          "target": "assign:packages/parsers/src/ts/nest.ts@L533",
+          "line": 533,
+          "expr": "s = m[1]!.trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#fieldElementType@L527",
+        "procedureName": "fieldElementType",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L536",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L536",
+            "expr": "/\\[\\s*\\]$/.test(s)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:84b46b34aeeca65df89577df5c223c7e72ab4d547e87c35397db7b0d5663c55b",
+          "target": "assign:packages/parsers/src/ts/nest.ts@L537",
+          "line": 537,
+          "expr": "s = s.replace(/\\[\\s*\\]$/, '').trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#fieldElementType@L527",
+        "procedureName": "fieldElementType",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:193e99b387351ab596a01f6cac6951eac1626975e5e041aec4708e9c0410fcf2",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L542",
+          "line": 542,
+          "expr": "return s.length > 0 ? s : undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 2,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 5,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

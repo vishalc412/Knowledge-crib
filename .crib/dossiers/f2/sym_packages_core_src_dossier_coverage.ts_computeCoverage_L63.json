@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:65723eeb368d2f446c5c0b50dbdbbd85bed346f3d805c1543d4523ba685e5236",
-  "builtAt": "2026-06-30T15:54:03.404Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
@@ -217,6 +217,16 @@
       "line": 116
     },
     {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
       "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
       "confidence": 1,
       "name": "push",
@@ -237,16 +247,6 @@
       "confidence": 1
     },
     {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#7-risks",
-      "heading": "7. Risks",
-      "anchor": "7-risks",
-      "snippet": "7. Risks",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
       "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
       "heading": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
       "anchor": "3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
@@ -257,7 +257,17 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "heading": "7. Risks",
+      "anchor": "7-risks",
+      "snippet": "7. Risks",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
       "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
       "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
       "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
@@ -267,7 +277,7 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-6-reconstruction-artifact-closes-g6",
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-6-reconstruction-artifact-closes-g6",
       "heading": "WS-6 — Reconstruction artifact (closes G6)",
       "anchor": "ws-6-reconstruction-artifact-closes-g6",
       "snippet": "WS-6 — Reconstruction artifact (closes G6)",
@@ -360,6 +370,34 @@
       {
         "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
         "procedureName": "computeCoverage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7dcdccb2464c9be85fa0f64d51a76024cfb71c3ebc2bffe2a449b1d8259ca773",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 82
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4ee13d8645ff25bf210fe4b1c7a6adaf361c98020c2bbb150bb81cddd10336f2",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 83
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
         "guard": "cond:packages/core/src/dossier/coverage.ts@L83",
         "branch": "THEN",
         "conditions": [
@@ -385,20 +423,6 @@
           "target": "stmt:packages/core/src/dossier/coverage.ts@L83",
           "line": 83,
           "expr": "o.push(e);"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
-        "procedureName": "computeCoverage",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:4ee13d8645ff25bf210fe4b1c7a6adaf361c98020c2bbb150bb81cddd10336f2",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 83
         }
       },
       {
@@ -624,11 +648,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:f6cbc833b5226a48fec5c52025c142a05b0fd43d4cfe4ea2c3d56202b285a195",
-          "target": "sym:packages/core/src/dossier/coverage.ts#computeCoverage.tally@L116",
-          "expr": "tally",
-          "line": 124
+          "kind": "executes",
+          "edgeId": "e:ee3497643975a97378d4452cabeebe8258959832c06bca30c28b45e2f5a8ac2d",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L124",
+          "line": 124,
+          "expr": "tally(n);"
         }
       },
       {
@@ -646,11 +670,11 @@
         "inLoop": true,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:ee3497643975a97378d4452cabeebe8258959832c06bca30c28b45e2f5a8ac2d",
-          "target": "stmt:packages/core/src/dossier/coverage.ts@L124",
-          "line": 124,
-          "expr": "tally(n);"
+          "kind": "calls",
+          "edgeId": "e:f6cbc833b5226a48fec5c52025c142a05b0fd43d4cfe4ea2c3d56202b285a195",
+          "target": "sym:packages/core/src/dossier/coverage.ts#computeCoverage.tally@L116",
+          "expr": "tally",
+          "line": 124
         }
       },
       {
@@ -1179,14 +1203,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 5,
+      "resolved": 6,
       "recorded": 34,
-      "unresolved": 13
+      "unresolved": 10
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "13 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "10 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

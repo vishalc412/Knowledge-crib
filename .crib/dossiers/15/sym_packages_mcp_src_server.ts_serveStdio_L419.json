@@ -1,0 +1,175 @@
+{
+  "id": "sym:packages/mcp/src/server.ts#serveStdio@L419",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:c7f4467d4e37ddab8dbb99ca04be40cb3377d8cec5b81240a872fb1f21de2a76",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/server.ts#serveStdio@L419",
+    "kind": "symbol",
+    "type": "function",
+    "name": "serveStdio",
+    "qualifiedName": "serveStdio",
+    "signature": "serveStdio(verbs: Verbs, version = '0.0.0'): Promise<void>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/server.ts",
+    "span": {
+      "start": 419,
+      "end": 427
+    },
+    "callSites": [
+      {
+        "callee": "buildServer",
+        "line": 420
+      }
+    ]
+  },
+  "source": {
+    "text": "export async function serveStdio(verbs: Verbs, version = '0.0.0'): Promise<void> {\n  const server = buildServer(verbs, version);\n  const transport = new StdioServerTransport();\n  await server.connect(transport);\n  await new Promise<void>((resolve) => {\n    process.stdin.on('end', resolve);\n    process.stdin.on('close', resolve);\n  });\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 419
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/server.ts#buildServer@L28",
+      "confidence": 1,
+      "name": "buildServer",
+      "qualifiedName": "buildServer",
+      "signature": "buildServer(verbs: Verbs, version = '0.1.0'): McpServer",
+      "type": "function",
+      "file": "packages/mcp/src/server.ts",
+      "line": 28
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/server.ts@L411",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:SECURITY.md#network-surface-inventory-the-whole-product",
+      "heading": "Network surface inventory (the whole product)",
+      "anchor": "network-surface-inventory-the-whole-product",
+      "snippet": "Network surface inventory (the whole product)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "heading": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "anchor": "5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "snippet": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#8-confidence-self-assessment",
+      "heading": "8. Confidence Self-Assessment",
+      "anchor": "8-confidence-self-assessment",
+      "snippet": "8. Confidence Self-Assessment",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/server.ts#serveStdio@L419",
+    "procedureName": "serveStdio",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#serveStdio@L419",
+        "procedureName": "serveStdio",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:24e76f75336032a0d3149ddbce0cb9b50a0b084457d2a6986903290099bf033a",
+          "target": "stmt:packages/mcp/src/server.ts@L420",
+          "line": 420,
+          "expr": "const server = buildServer(verbs, version);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#serveStdio@L419",
+        "procedureName": "serveStdio",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8a21596d75a8be8709809dca428d41984f42309845b401882910caecc367a450",
+          "target": "sym:packages/mcp/src/server.ts#buildServer@L28",
+          "expr": "buildServer",
+          "line": 420
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

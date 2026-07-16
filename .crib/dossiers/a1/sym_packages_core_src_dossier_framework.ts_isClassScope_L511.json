@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/dossier/framework.ts#isClassScope@L511",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:e04ce23ec022ccb91e62215673136e37e5099b830dc27aaede7e5c864bd1dbfc",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-13T11:04:33.459Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/framework.ts#isClassScope@L511",
@@ -46,7 +46,18 @@
       "line": 203
     }
   ],
-  "callees": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    }
+  ],
   "docs": [
     {
       "sectionId": "expl:packages/core/src/dossier/framework.ts@L510",
@@ -153,6 +164,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:400aa5c42a8230798db92bbf2706e852ded94bd761a42e754512a40b55603913",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 515
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#isClassScope@L511",
+        "procedureName": "isClassScope",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
           "edgeId": "e:a43ce097d47767fd6c173c6dd7d0e7b875eb732560036515ec63059e728329b0",
           "target": "stmt:packages/core/src/dossier/framework.ts@L516",
@@ -180,14 +205,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 0,
+      "resolved": 1,
       "recorded": 2,
-      "unresolved": 2
+      "unresolved": 1
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#findFileBySuffix@L278",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:44163684b8116bd4aa9008e7e02210f1cb53a616ee95c0520bc834c182d53143",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#findFileBySuffix@L278",
@@ -108,11 +108,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:d1fc06e8fb0d3662355beb571e2871d282316b3787abc2dbdaccbe59500be885",
-          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L284",
-          "line": 284,
-          "expr": "return parsed.find((p) => p.path === suffix || p.path.endsWith(`/${suffix}`))?.path;"
+          "kind": "calls",
+          "edgeId": "e:63a82ffa7b1cee799b7ac3612c660a268926b01c4d3548137c9f538c27bf74e0",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 284
         }
       },
       {
@@ -122,11 +122,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:63a82ffa7b1cee799b7ac3612c660a268926b01c4d3548137c9f538c27bf74e0",
-          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
-          "expr": "find",
-          "line": 284
+          "kind": "executes",
+          "edgeId": "e:d1fc06e8fb0d3662355beb571e2871d282316b3787abc2dbdaccbe59500be885",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L284",
+          "line": 284,
+          "expr": "return parsed.find((p) => p.path === suffix || p.path.endsWith(`/${suffix}`))?.path;"
         }
       }
     ]

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipWhereClauses@L498",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:91706fbfd5db4a6d03d361790a3e81b292c2c9610483bbe337b5654568ba0ec7",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipWhereClauses@L498",
@@ -74,54 +74,54 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.atEnd@L1531",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.atEnd@L1537",
       "confidence": 1,
       "name": "atEnd",
       "qualifiedName": "Parser.atEnd",
       "signature": "atEnd(): boolean",
       "type": "method",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1531
+      "line": 1537
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isName@L1513",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isName@L1519",
       "confidence": 1,
       "name": "isName",
       "qualifiedName": "Parser.isName",
       "signature": "isName(v: string): boolean",
       "type": "method",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1513
+      "line": 1519
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1520",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1526",
       "confidence": 1,
       "name": "isNameToken",
       "qualifiedName": "Parser.isNameToken",
       "signature": "isNameToken(): boolean",
       "type": "method",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1520
+      "line": 1526
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1510",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1516",
       "confidence": 1,
       "name": "isOp",
       "qualifiedName": "Parser.isOp",
       "signature": "isOp(v: string): boolean",
       "type": "method",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1510
+      "line": 1516
     },
     {
-      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1523",
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1529",
       "confidence": 1,
       "name": "next",
       "qualifiedName": "Parser.next",
       "signature": "next(): Token",
       "type": "method",
       "file": "packages/parsers/src/csharp/parser.ts",
-      "line": 1523
+      "line": 1529
     }
   ],
   "docs": [
@@ -152,32 +152,6 @@
       {
         "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipWhereClauses@L498",
         "procedureName": "Parser.skipWhereClauses",
-        "guard": "cond:packages/parsers/src/csharp/parser.ts@L507",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/csharp/parser.ts@L499",
-            "expr": "this.isName('where')"
-          },
-          {
-            "id": "cond:packages/parsers/src/csharp/parser.ts@L507",
-            "expr": "!this.atEnd()",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:5e1f5c1ee5ceccdc40829543b5ab1b234954c8389a5deaafa766ecc069f2dfd1",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1523",
-          "expr": "next",
-          "line": 500
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipWhereClauses@L498",
-        "procedureName": "Parser.skipWhereClauses",
         "guard": "cond:packages/parsers/src/csharp/parser.ts@L499",
         "branch": "LOOP",
         "conditions": [
@@ -195,6 +169,32 @@
           "target": "stmt:packages/parsers/src/csharp/parser.ts@L500",
           "line": 500,
           "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipWhereClauses@L498",
+        "procedureName": "Parser.skipWhereClauses",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L507",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L499",
+            "expr": "this.isName('where')"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L507",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:59fa7209c36f662e8b57806f1d7feeda1c61b813817f2f8faf35bec8b1fe8f43",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1529",
+          "expr": "next",
+          "line": 500
         }
       },
       {
@@ -389,8 +389,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:96ea4d0baef78489fae23b9cb6c5c8428531f8bc696727908e5f7a690bb0105d",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1510",
+          "edgeId": "e:b6ba5041d211251687156d898e3166b1cd95e45f8a1a06a9822dda771240387d",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1516",
           "expr": "isOp"
         }
       },
@@ -402,8 +402,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:e4b2a72dbb576a8bc4be2f9fb2643784b54cf5c209d9535b51ee131d068821fa",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isName@L1513",
+          "edgeId": "e:faa6eced5974eb5caf1715280952ccb48795d751d0733313adc867cec87319d6",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isName@L1519",
           "expr": "isName"
         }
       },
@@ -415,8 +415,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:552e1c449b63ba02b212c2db99d38c6369f80c97977b802ed03245c4cc7ef3d4",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1520",
+          "edgeId": "e:bc7a0ee263cc5fdcf977853c9d53bdfccde77c8306b60362901a73380b9a67bb",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1526",
           "expr": "isNameToken"
         }
       },
@@ -428,8 +428,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:13bcf9b7adfdffea878fbd83d338972a2848bd0f0e712d2a1fde04fe30218f3e",
-          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.atEnd@L1531",
+          "edgeId": "e:64672bb39c30551a4dcf826ce60f89a59ead3a15a27fe7c4fad7c6bc605d829b",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.atEnd@L1537",
           "expr": "atEnd"
         }
       }

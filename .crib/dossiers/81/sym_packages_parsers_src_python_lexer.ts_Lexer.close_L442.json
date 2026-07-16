@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.close@L442",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:e4733d1f39239b6df604fd7632fc9c9d87faa4a875ba3fa9f8593eeb0f10c26e",
-  "builtAt": "2026-06-27T16:07:10.655Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.close@L442",
@@ -68,7 +68,7 @@
   ],
   "docs": [
     {
-      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
       "heading": "7. Risks",
       "anchor": "7-risks",
       "snippet": "7. Risks",
@@ -89,20 +89,6 @@
       {
         "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.close@L442",
         "procedureName": "Lexer.close",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:d2866176cbc1018384cc1b89c7e5159d9b9602c1c00f5093b86821fc6d933b02",
-          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.emit@L405",
-          "expr": "emit",
-          "line": 445
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.close@L442",
-        "procedureName": "Lexer.close",
         "guard": "cond:packages/parsers/src/python/lexer.ts@L445",
         "branch": "THEN",
         "conditions": [
@@ -120,6 +106,20 @@
           "target": "stmt:packages/parsers/src/python/lexer.ts@L445",
           "line": 445,
           "expr": "this.emit('NEWLINE', '\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.close@L442",
+        "procedureName": "Lexer.close",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d2866176cbc1018384cc1b89c7e5159d9b9602c1c00f5093b86821fc6d933b02",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.emit@L405",
+          "expr": "emit",
+          "line": 445
         }
       },
       {

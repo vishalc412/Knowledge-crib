@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanInsideTriple@L305",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:0ac5be3b0fd6ad2efa74dd208d1763f7f1be9b66a303751e71c56f22771a9243",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanInsideTriple@L305",
@@ -170,6 +170,28 @@
       {
         "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanInsideTriple@L305",
         "procedureName": "Lexer.scanInsideTriple",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L311",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L311",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:82d0b273d4cd565f70089c64cf33200ef85471080c25cc2b994453573ab14e5f",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L312",
+          "line": 312,
+          "expr": "const c = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanInsideTriple@L305",
+        "procedureName": "Lexer.scanInsideTriple",
         "guard": "cond:packages/parsers/src/python/lexer.ts@L316",
         "branch": "THEN",
         "conditions": [
@@ -195,28 +217,6 @@
           "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
           "expr": "peek",
           "line": 312
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanInsideTriple@L305",
-        "procedureName": "Lexer.scanInsideTriple",
-        "guard": "cond:packages/parsers/src/python/lexer.ts@L311",
-        "branch": "LOOP",
-        "conditions": [
-          {
-            "id": "cond:packages/parsers/src/python/lexer.ts@L311",
-            "expr": "this.pos < this.src.length",
-            "polarity": "LOOP"
-          }
-        ],
-        "inLoop": true,
-        "inException": false,
-        "action": {
-          "kind": "executes",
-          "edgeId": "e:82d0b273d4cd565f70089c64cf33200ef85471080c25cc2b994453573ab14e5f",
-          "target": "stmt:packages/parsers/src/python/lexer.ts@L312",
-          "line": 312,
-          "expr": "const c = this.peek();"
         }
       },
       {

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseBlock@L1015",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:ecda5a32170e95709545af0c4579fd25849564becef1b39047b097663c3f1035",
-  "builtAt": "2026-06-26T05:08:13.198Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseBlock@L1015",
@@ -210,20 +210,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:f631377d7f81f2a74c8fee0f915b78f07a16d6cd17da2da67098245f0cd6b1ce",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.next@L1690",
-          "expr": "next",
-          "line": 1017
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseBlock@L1015",
-        "procedureName": "Parser.parseBlock",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:1b7c15b2e21411949b4aa124eaa1b6134aa20b9f340c20339f1b752c9370f248",
           "target": "stmt:packages/parsers/src/go/parser.ts@L1017",
@@ -239,10 +225,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:7b4b6dca9c280c02a4fc57a25cb224367903f717785b2cbd7b5878167d2bf09b",
-          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseStmts@L1026",
-          "expr": "parseStmts",
-          "line": 1018
+          "edgeId": "e:f631377d7f81f2a74c8fee0f915b78f07a16d6cd17da2da67098245f0cd6b1ce",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.next@L1690",
+          "expr": "next",
+          "line": 1017
         }
       },
       {
@@ -257,6 +243,20 @@
           "target": "stmt:packages/parsers/src/go/parser.ts@L1018",
           "line": 1018,
           "expr": "const res = this.parseStmts(false);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.parseBlock@L1015",
+        "procedureName": "Parser.parseBlock",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7b4b6dca9c280c02a4fc57a25cb224367903f717785b2cbd7b5878167d2bf09b",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.parseStmts@L1026",
+          "expr": "parseStmts",
+          "line": 1018
         }
       },
       {

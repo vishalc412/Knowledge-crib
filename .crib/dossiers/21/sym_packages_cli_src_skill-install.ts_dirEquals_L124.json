@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/cli/src/skill-install.ts#dirEquals@L124",
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.5",
   "nodeHash": "blake3:9eeee9dd34383ac2cd477e8ec285a1deddd59376ddefd34a2f051dfc5d09c91c",
-  "builtAt": "2026-06-26T14:33:33.998Z",
+  "builtAt": "2026-07-16T16:35:16.098Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/cli/src/skill-install.ts#dirEquals@L124",
@@ -66,14 +66,14 @@
       "line": 139
     },
     {
-      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
+      "id": "sym:scripts/docs-stats.mjs#walk@L31",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "walk",
-      "signature": "walk(node: ts.Node, fn: (n: ts.Node) => void): void",
+      "signature": "walk(…)",
       "type": "function",
-      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
-      "line": 200
+      "file": "scripts/docs-stats.mjs",
+      "line": 31
     }
   ],
   "docs": [
@@ -141,11 +141,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:950bcc59d72f225507601c91ed671ddf2e0afcb6ffd803ef41aefdf999265e2a",
-          "target": "stmt:packages/cli/src/skill-install.ts@L126",
-          "line": 126,
-          "expr": "const aFiles = walk(a);"
+          "kind": "calls",
+          "edgeId": "e:5dce38419f5b935a4e3cb8c395a826e4c75a61e89e66a0e4dfec457e53865471",
+          "target": "sym:scripts/docs-stats.mjs#walk@L31",
+          "expr": "walk",
+          "line": 126
         }
       },
       {
@@ -155,11 +155,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:69bb3ad418f5498b15741371f8254c367dd4c22f922c48f747a70413db68c7ed",
-          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
-          "expr": "walk",
-          "line": 126
+          "kind": "executes",
+          "edgeId": "e:950bcc59d72f225507601c91ed671ddf2e0afcb6ffd803ef41aefdf999265e2a",
+          "target": "stmt:packages/cli/src/skill-install.ts@L126",
+          "line": 126,
+          "expr": "const aFiles = walk(a);"
         }
       },
       {
