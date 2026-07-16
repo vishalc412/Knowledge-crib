@@ -1,0 +1,57 @@
+<style>
+  .system-grid { display:grid; grid-template-columns:1.2fr 1fr; gap:18px; margin-top:22px; }
+  .panel { border:1px solid var(--border); border-radius:8px; padding:18px; background:var(--surface); }
+  .panel h3 { margin:0 0 10px; font-size:16px; }
+  .panel p,.panel li { color:var(--muted); font-size:12px; line-height:1.55; }
+  .swatches { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:14px 0 4px; }
+  .swatch { height:58px; border-radius:4px; display:flex; align-items:flex-end; padding:6px; box-sizing:border-box; font:700 8px/1 ui-monospace,monospace; }
+  .energy { display:flex; align-items:flex-end; gap:4px; height:95px; margin-top:14px; border-bottom:1px solid #35423b; }
+  .energy span { flex:1; background:#43d8c9; min-height:12px; }
+  .energy span:nth-child(4n){background:#b8f044}.energy span:nth-child(7n){background:#ffb23f}
+  .timeline-labels { display:flex; justify-content:space-between; margin-top:5px; font:9px/1 ui-monospace,monospace; color:var(--muted); }
+  .specs { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:18px; }
+  .spec { padding:12px; border-left:3px solid #b8f044; background:#111412; }
+  .spec strong { display:block; font:700 13px/1.2 ui-monospace,monospace; color:#f3f6ef; }
+  .spec span { display:block; margin-top:4px; font-size:10px; color:#a8b1aa; }
+  @media(max-width:850px){.system-grid{grid-template-columns:1fr}.specs{grid-template-columns:1fr 1fr}}
+</style>
+
+<h2>Signal Grid production system</h2>
+<p class="subtitle">High-energy without looking like a gaming trailer: precise, technical, credible, and readable.</p>
+
+<div class="system-grid">
+  <div class="panel">
+    <h3>Visual grammar</h3>
+    <ul>
+      <li>Solid charcoal fields, fine grid lines, sharp cuts, graph traces, and compact data labels.</li>
+      <li>Real terminal and graph UI remain the hero; motion graphics frame and explain them.</li>
+      <li>Sans display type for claims; monospace for commands, metrics, and feature rails.</li>
+      <li>No decorative gradients, floating blobs, or stock imagery. Every frame signals product.</li>
+    </ul>
+    <div class="swatches">
+      <div class="swatch" style="background:#050706;color:#f3f6ef">#050706</div>
+      <div class="swatch" style="background:#111412;color:#f3f6ef">#111412</div>
+      <div class="swatch" style="background:#b8f044;color:#111412">#B8F044</div>
+      <div class="swatch" style="background:#43d8c9;color:#111412">#43D8C9</div>
+      <div class="swatch" style="background:#ffb23f;color:#111412">#FFB23F</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Voice + music</h3>
+    <p><strong>Voice:</strong> confident, neutral US English, roughly 150 words per minute. Natural phrasing, short pauses after each proof point.</p>
+    <p><strong>Music:</strong> original 132 BPM electronic pulse with tight drums, low synth bass, and a bright arpeggio. No licensed or copyrighted track.</p>
+    <p><strong>Mix:</strong> music ducks under narration, rises during product montages, and resolves cleanly on the GitHub CTA.</p>
+    <div class="energy">
+      <span style="height:30%"></span><span style="height:43%"></span><span style="height:52%"></span><span style="height:72%"></span><span style="height:62%"></span><span style="height:76%"></span><span style="height:85%"></span><span style="height:96%"></span><span style="height:78%"></span><span style="height:88%"></span><span style="height:68%"></span><span style="height:48%"></span>
+    </div>
+    <div class="timeline-labels"><span>HOOK</span><span>INDEX</span><span>PROOF MONTAGE</span><span>CTA</span></div>
+  </div>
+</div>
+
+<div class="specs">
+  <div class="spec"><strong>1920×1080</strong><span>Full HD landscape</span></div>
+  <div class="spec"><strong>30 FPS</strong><span>Clean UI motion</span></div>
+  <div class="spec"><strong>H.264 HIGH</strong><span>LinkedIn-ready MP4</span></div>
+  <div class="spec"><strong>−14 LUFS</strong><span>Platform-safe loudness</span></div>
+</div>
