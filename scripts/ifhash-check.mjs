@@ -26,15 +26,19 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, '..');
 const NOW = '2026-01-01T00:00:00.000Z';
 
-const core = await import(resolve(REPO, 'packages', 'core', 'dist', 'index.js'));
-const soulSchema = await import(resolve(REPO, 'packages', 'soul-schema', 'dist', 'index.js'));
-const mcp = await import(resolve(REPO, 'packages', 'mcp', 'dist', 'index.js'));
+const core = await import(
+  pathToFileURL(resolve(REPO, 'packages', 'core', 'dist', 'index.js')).href
+);
+const soulSchema = await import(
+  pathToFileURL(resolve(REPO, 'packages', 'soul-schema', 'dist', 'index.js')).href
+);
+const mcp = await import(pathToFileURL(resolve(REPO, 'packages', 'mcp', 'dist', 'index.js')).href);
 const { SoulStore, SqliteIndexStore, newManifest } = core;
 const { idFor, contentHash, edgeId } = soulSchema;
 const { Verbs } = mcp;

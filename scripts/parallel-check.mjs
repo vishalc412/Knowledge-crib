@@ -31,7 +31,7 @@ import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from
 import { availableParallelism, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, '..');
@@ -53,13 +53,21 @@ const SPEEDUP_FLOOR = 1.1;
 const ON_CI = process.env.GITHUB_ACTIONS === 'true';
 const CORES = availableParallelism();
 
-const core = await import(resolve(REPO, 'packages', 'core', 'dist', 'index.js'));
-const pipeline = await import(resolve(REPO, 'packages', 'pipeline', 'dist', 'index.js'));
-const parsers = await import(resolve(REPO, 'packages', 'parsers', 'dist', 'index.js'));
+const core = await import(
+  pathToFileURL(resolve(REPO, 'packages', 'core', 'dist', 'index.js')).href
+);
+const pipeline = await import(
+  pathToFileURL(resolve(REPO, 'packages', 'pipeline', 'dist', 'index.js')).href
+);
+const parsers = await import(
+  pathToFileURL(resolve(REPO, 'packages', 'parsers', 'dist', 'index.js')).href
+);
 const { SoulStore, newManifest } = core;
 const { indexRepo, discoverFiles, defaultExtractors } = pipeline;
 const { ExtractorRegistry } = parsers;
-const { runParse } = await import(resolve(REPO, 'packages', 'pipeline', 'dist', 'parse.js'));
+const { runParse } = await import(
+  pathToFileURL(resolve(REPO, 'packages', 'pipeline', 'dist', 'parse.js')).href
+);
 
 let failed = 0;
 const fail = (msg) => {
