@@ -1,12 +1,17 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const workflow = readFileSync('.github/workflows/beta-installers.yml', 'utf8');
-const releaseWorkflow = readFileSync('.github/workflows/ci.yml', 'utf8');
-const tagWorkflow = readFileSync('.github/workflows/release.yml', 'utf8');
-const soulRefreshWorkflow = readFileSync('.github/workflows/crib-soul-refresh.yml', 'utf8');
+// Windows runners default to core.autocrlf=true, so checked-out YAML carries \r\n line endings
+// and the structural regexes below (which match `on:\n  push:`) would fail. A workflow-shape test
+// must not depend on the host's line-ending policy, so normalize CRLF → LF at read time.
+const readLF = (p) => readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
+
+const workflow = readLF('.github/workflows/beta-installers.yml');
+const releaseWorkflow = readLF('.github/workflows/ci.yml');
+const tagWorkflow = readLF('.github/workflows/release.yml');
+const soulRefreshWorkflow = readLF('.github/workflows/crib-soul-refresh.yml');
 const occurrences = (text, pattern) => [...text.matchAll(pattern)].length;
-const dependabot = readFileSync('.github/dependabot.yml', 'utf8');
+const dependabot = readLF('.github/dependabot.yml');
 
 assert.match(workflow, /macos-latest/, 'beta installer CI must run on macOS');
 assert.match(workflow, /windows-latest/, 'beta installer CI must run on Windows');
