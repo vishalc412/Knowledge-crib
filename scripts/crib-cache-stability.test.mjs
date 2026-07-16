@@ -16,15 +16,28 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CLI = resolve('packages/cli/dist/cli.js');
+const DERIVED_INDEX = resolve('.crib/index/crib.sqlite');
 
 function query(args) {
   return execFileSync(process.execPath, [CLI, 'query', ...args], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'ignore'], // drop the SQLite experimental-warning on stderr
     maxBuffer: 64 * 1024 * 1024,
+  });
+}
+
+// The derived SQLite index (.crib/index/crib.sqlite) is a gitignored build artifact projected from
+// the committed JSONL soul — a fresh CI checkout has none, so `crib query` returns NOT_INDEXED (3)
+// and every assertion below is meaningless. Build it once here if absent; subsequent queries are
+// fast. release:verify does the same `crib index .` before running this gate locally.
+if (!existsSync(DERIVED_INDEX)) {
+  execFileSync(process.execPath, [CLI, 'index', '.'], {
+    stdio: 'inherit',
+    timeout: 8 * 60_000, // full repo re-parse is ~132s locally; allow headroom on slower CI runners
   });
 }
 
