@@ -154,6 +154,8 @@ export interface ManifestChunking {
 
 export interface ManifestStores {
   soul: 'jsonl-chunked';
+  /** Canonical layered graph store. `soul` remains legacy format capability metadata. */
+  graph?: { path: string; format: 'layered-jsonl' };
   /** reconciliation #7: concrete backend field (was hardcoded `ladybug.db`) */
   index: { backend: IndexBackend; path: string };
 }
@@ -177,6 +179,8 @@ export interface ManifestCapabilities {
 export interface Manifest {
   cribFormatVersion: string;
   schemaVersion: string;
+  /** Monotonic source generations for derived-cache invalidation. */
+  generation?: { extracted: number; semantic: number };
   repo: ManifestRepo;
   generator: { tool: string; version: string };
   chunking: ManifestChunking;

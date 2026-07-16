@@ -47,10 +47,13 @@ function soulFor(): SoulStore {
 function snapshotSoul(): Map<string, string> {
   const snap = new Map<string, string>();
   for (const sub of ['nodes', 'edges']) {
-    const base = join(repo, '.crib', sub);
+    const base = join(repo, '.crib', 'graph', 'extracted', sub);
     for (const p of walkJsonl(base)) snap.set(`${sub}/${rel(base, p)}`, readFileSync(p, 'utf8'));
   }
-  snap.set('crib.json', readFileSync(join(repo, '.crib', 'crib.json'), 'utf8'));
+  snap.set(
+    'graph/manifest.json',
+    readFileSync(join(repo, '.crib', 'graph', 'manifest.json'), 'utf8'),
+  );
   return snap;
 }
 function walkJsonl(dir: string): string[] {
@@ -159,7 +162,7 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     expect(changed).toContain(expectedChangedShard);
     expect(changed).not.toContain(`nodes/${bShard}/0000.jsonl`);
     // Every non-manifest change is exactly the a.ts node shard.
-    expect(changed.filter((k) => k !== 'crib.json')).toEqual([expectedChangedShard]);
+    expect(changed.filter((k) => k !== 'graph/manifest.json')).toEqual([expectedChangedShard]);
 
     // The manifest anchor advanced to the new HEAD.
     expect(reopened.getManifest().stats.incrementalSince).toBe(h2);

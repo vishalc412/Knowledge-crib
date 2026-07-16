@@ -14,7 +14,7 @@
  * Asserts:
  *   (1) Strict miss — raw `index.query({text:"DTI"})` returns ZERO hits to `DebtToIncomeCalculator`
  *       (the FTS token-prefix mismatch that motivates the whole feature).
- *   (2) Resolve — after writing `.crib/llm/aliases.json` with `DTI → debt to income` and routing the
+ *   (2) Resolve — after writing `.crib/graph/semantic/aliases.json` with `DTI → debt to income` and routing the
  *       same query through `Verbs.query`, the calculator class surfaces in the hits.
  *   (3) No-op regression — a Verbs constructed over a soul with NO aliases file behaves identically
  *       to the raw index (empty map ⇒ rewrite is a pure no-op ⇒ "DTI" still misses the class).

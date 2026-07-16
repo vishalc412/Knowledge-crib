@@ -3,8 +3,8 @@
  *
  * The MCP server never calls a model. It exposes a deterministic work queue (`enrich_next`) and a
  * persistence/validation surface (`enrich_save`) so the host IDE's selected agent model can author a
- * semantic graph grounded in the deterministic soul. The LLM layer lives beside the soul under
- * `.crib/llm/`; deterministic nodes/edges/dossiers remain byte-stable.
+ * semantic graph grounded in the deterministic soul. Canonical artifacts live under
+ * `.crib/graph/semantic/`; extracted nodes/edges remain byte-stable.
  */
 import {
   existsSync,
@@ -12,9 +12,10 @@ import {
   readFileSync,
   readdirSync,
   renameSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, sep } from 'node:path';
 import {
   type FunctionalModule,
   type ImportanceEntry,
@@ -39,7 +40,7 @@ import {
   verifyEvidence,
 } from './grounding.js';
 import { collectStrings, redactSecrets, scanSecrets } from './secrets.js';
-import { estimateTokens } from './token-budget.js';
+import { DEFAULT_BATCH_TOKENS, estimateTokens } from './token-budget.js';
 
 export type EnrichLayer = 'symbol' | 'file' | 'cluster' | 'system';
 
@@ -162,7 +163,13 @@ export interface EnrichNextArgs {
   layer?: EnrichLayer;
   limit?: number;
   scope?: EnrichScope;
-  /** Optional token budget guard. If the selected batch estimate exceeds this, items will be empty and `budgetExceeded: true`. */
+  /** Optional per-batch token budget. Acts as the **packer**: the greedy strict-prefix selector
+   *  accumulates items in importance order while their cumulative cost fits this budget, stopping at
+   *  the first item that does not fit (it stays first in line next turn — no skipping). When absent,
+   *  {@link DEFAULT_BATCH_TOKENS} is used. `limit` (default 25, the hard cap) is only the item-count
+   *  safety ceiling. If the FIRST item alone exceeds the budget, it is returned alone with
+   *  `budgetExceeded: true` + `oversized: true` so the queue never stalls — raise the budget or
+   *  route the item to a bigger tier. */
   budgetTokens?: number;
   /** When true with `layer:'system'`, return a single SKELETON system-bible work item (the quick
    *  Phase-0.5 draft pass) — a lightweight seed (functionalMap + top READMEs + top symbols) the
@@ -215,8 +222,15 @@ export interface EnrichNextBatch {
     perItem: Array<{ targetId: string; tokens: number; tier: SuggestedTier }>;
     totalPending: number;
   };
-  /** Set when `budgetTokens` was supplied and the batch estimate exceeds it. */
+  /** Set when `budgetTokens` was supplied and the batch estimate exceeds it. Under token-packed
+   *  selection this only happens when a single item alone exceeds the budget — the batch is still
+   *  returned (that one item) so the queue never stalls. Actionable: raise the budget or route the
+   *  item to a bigger model tier. */
   budgetExceeded?: boolean;
+  /** Set alongside `budgetExceeded` when the first item alone exceeded the budget and was returned
+   *  alone (the oversized-single-item case). Distinct from a normal packed batch, which never
+   *  exceeds the budget. */
+  oversized?: boolean;
   /** Echo of the supplied budget, if any. */
   budget?: number;
 }
@@ -460,7 +474,10 @@ export class EnrichmentStore {
   }
 
   next(args: EnrichNextArgs = {}): EnrichNextBatch {
-    const limit = Math.max(1, Math.min(args.limit ?? 4, 25));
+    // `limit` is now the item-count SAFETY CEILING only (default 25, the max). The real per-batch
+    // control is the token budget below — a fixed item count either wastes headroom on cheap items
+    // or blows it on fat ones (item cost varies ~15×).
+    const limit = Math.max(1, Math.min(args.limit ?? 25, 25));
     const scope = args.scope;
     // Under a scope, the system layer is never offered; default to the scoped nextLayer. If a caller
     // explicitly asks for system under a scope, fall back to the scoped nextLayer (preserving bottom-up
@@ -482,65 +499,60 @@ export class EnrichmentStore {
       const read = this.read(target.layer, target.id, target.hash);
       return read.missing || read.stale;
     });
-    const selected = pending.slice(0, limit);
-    // Deterministic batchId over the FULL pending set (not the limit-bounded slice): same pending set
-    // => same id => idempotent re-calls, and the id is stable regardless of `limit`. No Date.now() —
-    // the old time-based id re-issued the same targets under a fresh batchId forever (the churn trap).
+    // Deterministic batchId over the FULL pending set (not the selection): same pending set
+    // => same id => idempotent re-calls, and the id is stable regardless of `limit`/budget. No
+    // Date.now() — the old time-based id re-issued the same targets under a fresh batchId forever
+    // (the churn trap). Packing only changes `items`/`selectedTargetIds`, never the batchId, so the
+    // server-side zero-progress guard is preserved.
     const batchId = `llm:${layer}:${blake3Hex(
       pending
         .map((t) => t.id)
         .sort()
         .join('|'),
     ).slice(0, 12)}`;
-    const items = selected.map((target) => this.workItem(target));
-    const perItemCost = items.map((item) => ({
-      targetId: item.targetId,
-      tokens: estimateWorkItemCost(item),
-      tier: item.suggestedTier,
-    }));
-    const batchCost = perItemCost.reduce((n, c) => n + c.tokens, 0);
-    const remainingCount = Math.max(0, pending.length - selected.length);
-    const totalPendingCostEstimate = batchCost + remainingCount * HEURISTIC_TOKENS_PER_LAYER[layer];
 
-    const budgetExceeded = args.budgetTokens !== undefined && batchCost > args.budgetTokens;
-
-    // Server-side zero-progress detection: persist the last-issued batchId per (layer, scope) so a
-    // context-compacted host or a headless driver can detect a re-issue without remembering anything.
-    // Do NOT persist when the batch is blocked by a budget guard — that would be a false zero-progress.
-    if (!budgetExceeded) {
-      const key = this.lastIssuedKey(layer, scope);
-      const manifest = this.readManifest();
-      const previousBatchId = manifest?.lastIssued?.[key]?.batchId;
-      const zeroProgress = previousBatchId !== undefined && previousBatchId === batchId;
-      const lastIssued = { ...(manifest?.lastIssued ?? {}), [key]: { batchId } };
-      this.writeManifest(manifest?.model ?? null, lastIssued);
-      return {
-        batchId,
-        layer,
-        items,
-        remaining: remainingCount,
-        selectedTargetIds: selected.map((target) => target.id),
-        progress: this.status(scope ? { scope } : {}).progress,
-        costEstimate: {
-          currency: 'tokens',
-          batch: batchCost,
-          perItem: perItemCost,
-          totalPending: totalPendingCostEstimate,
-        },
-        ...(args.budgetTokens !== undefined ? { budget: args.budgetTokens } : {}),
-        ...(scope ? { scopeEcho: scope, scopeEmpty: all.length === 0 } : {}),
-        ...(previousBatchId !== undefined ? { previousBatchId } : {}),
-        ...(zeroProgress ? { zeroProgress: true } : {}),
-      };
+    // Token-packed greedy STRICT-PREFIX selection. Walk `pending` in importance order (already
+    // ranked by this.targets, tests last). Build each work item once, measure it with the existing
+    // estimateWorkItemCost, and accumulate while the cumulative cost fits the budget. Stop at the
+    // FIRST item that does not fit — do NOT skip it to fit a smaller later item: skipping breaks
+    // importance order and starves expensive-but-important targets forever (they would always sit
+    // behind smaller items). The fat item stays first in line for the next turn.
+    const hasExplicitBudget = args.budgetTokens !== undefined;
+    const budget = hasExplicitBudget ? (args.budgetTokens as number) : DEFAULT_BATCH_TOKENS;
+    const items: EnrichWorkItem[] = [];
+    const perItemCost: Array<{ targetId: string; tokens: number; tier: SuggestedTier }> = [];
+    let batchCost = 0;
+    let oversized = false;
+    for (const target of pending) {
+      if (items.length >= limit) break; // hard item-count ceiling
+      const item = this.workItem(target);
+      const cost = estimateWorkItemCost(item);
+      // Strict prefix: once we have ≥1 item, stop at the first item that would overflow the budget.
+      if (items.length > 0 && batchCost + cost > budget) break;
+      items.push(item);
+      batchCost += cost;
+      perItemCost.push({ targetId: item.targetId, tokens: cost, tier: item.suggestedTier });
+      // CRITICAL invariant — never return an empty batch. If the FIRST item alone exceeds the
+      // budget, return it alone (oversized) so a single fat target can never deadlock the queue.
+      // Without this, the packer would emit zero items and the same batchId would re-issue forever.
+      if (items.length === 1 && cost > budget) {
+        oversized = true;
+        break;
+      }
     }
+    const remainingCount = Math.max(0, pending.length - items.length);
+    const totalPendingCostEstimate = batchCost + remainingCount * HEURISTIC_TOKENS_PER_LAYER[layer];
+    // budgetExceeded is now ONLY the oversized-single-item case (a normal packed batch never
+    // exceeds the budget by construction). Report it only against an explicitly supplied budget —
+    // against the default it is not actionable and the single item is simply returned.
+    const budgetExceeded = hasExplicitBudget && oversized;
 
-    // Budget guard: return an empty batch with the cost preview so the caller can decide.
-    return {
+    const baseBatch: EnrichNextBatch = {
       batchId,
       layer,
-      items: [],
-      remaining: pending.length,
-      selectedTargetIds: [],
+      items,
+      remaining: remainingCount,
+      selectedTargetIds: items.map((item) => item.targetId),
       progress: this.status(scope ? { scope } : {}).progress,
       costEstimate: {
         currency: 'tokens',
@@ -548,10 +560,30 @@ export class EnrichmentStore {
         perItem: perItemCost,
         totalPending: totalPendingCostEstimate,
       },
-      budget: args.budgetTokens,
-      budgetExceeded: true,
+      ...(hasExplicitBudget ? { budget: args.budgetTokens } : {}),
+      ...(budgetExceeded ? { budgetExceeded: true, oversized: true } : {}),
       ...(scope ? { scopeEcho: scope, scopeEmpty: all.length === 0 } : {}),
     };
+
+    // Server-side zero-progress detection: persist the last-issued batchId per (layer, scope) so a
+    // context-compacted host or a headless driver can detect a re-issue without remembering anything.
+    // Persist whenever a workable batch was issued (items > 0) — including the oversized single
+    // item, which the caller is expected to author + save. An empty pending set issues nothing and
+    // is not persisted (no false zero-progress).
+    if (items.length > 0) {
+      const key = this.lastIssuedKey(layer, scope);
+      const manifest = this.readManifest();
+      const previousBatchId = manifest?.lastIssued?.[key]?.batchId;
+      const zeroProgress = previousBatchId !== undefined && previousBatchId === batchId;
+      const lastIssued = { ...(manifest?.lastIssued ?? {}), [key]: { batchId } };
+      this.writeManifest(manifest?.model ?? null, lastIssued);
+      return {
+        ...baseBatch,
+        ...(previousBatchId !== undefined ? { previousBatchId } : {}),
+        ...(zeroProgress ? { zeroProgress: true } : {}),
+      };
+    }
+    return baseBatch;
   }
 
   /** Stable key under which the last-issued batchId is persisted for zero-progress detection. */
@@ -767,7 +799,7 @@ export class EnrichmentStore {
         ...(groundedCount > 0 ? { grounded: true } : { grounded: false }),
       };
       const path = this.writeArtifact(artifact);
-      this.writeGraphProjection(artifact);
+      this.pruneSuperseded(artifact, path);
       for (const node of artifact.graph.nodes) knownLocalIds.add(node.id);
       accepted.push({
         targetId: item.targetId,
@@ -778,6 +810,7 @@ export class EnrichmentStore {
       });
     }
 
+    if (accepted.length > 0) this.bumpSemanticGeneration();
     this.writeManifest(model ?? null);
     this.writeOverview();
     return { accepted, rejected };
@@ -790,7 +823,7 @@ export class EnrichmentStore {
   }
 
   allArtifacts(): LlmArtifact[] {
-    const root = join(this.root(), 'analysis');
+    const root = this.artifactsRoot();
     if (!existsSync(root)) return [];
     const files = walkFiles(root).filter((p) => p.endsWith('.json'));
     const artifacts: LlmArtifact[] = [];
@@ -799,6 +832,32 @@ export class EnrichmentStore {
       if (artifact) artifacts.push(artifact);
     }
     return artifacts.sort((a, b) => a.targetId.localeCompare(b.targetId));
+  }
+
+  pruneStale(apply = false): {
+    apply: boolean;
+    candidates: Array<{ path: string; targetId: string; reason: 'stale' | 'orphaned' }>;
+    removed: number;
+  } {
+    const candidates: Array<{
+      path: string;
+      targetId: string;
+      reason: 'stale' | 'orphaned';
+    }> = [];
+    for (const path of walkFiles(this.artifactsRoot()).filter((p) => p.endsWith('.json'))) {
+      const artifact = readJson<LlmArtifact>(path);
+      if (!artifact) continue;
+      const target = this.targetFor(artifact.targetId);
+      const reason = !target ? 'orphaned' : this.isStale(artifact) ? 'stale' : undefined;
+      if (reason) candidates.push({ path, targetId: artifact.targetId, reason });
+    }
+    if (apply) for (const candidate of candidates) rmSync(candidate.path, { force: true });
+    if (apply && candidates.length > 0) {
+      this.bumpSemanticGeneration();
+      this.writeManifest(this.readManifest()?.model ?? null);
+      this.writeOverview();
+    }
+    return { apply, candidates, removed: apply ? candidates.length : 0 };
   }
 
   /**
@@ -847,7 +906,7 @@ export class EnrichmentStore {
    * `crib export --format llm` (M1.4): render the committed LLM layer as JSON. With `redact` (default)
    * every evidence `quote` is replaced by a span ref `{soulId, file, startLine, endLine}` — verbatim
    * source stripped — and any secret-pattern substring in analysis/graph strings is masked. Use this
-   * bundle, not the raw `.crib/llm` tree, when sharing the LLM graph externally.
+   * bundle, not raw `.crib/graph/semantic` artifacts, when sharing externally.
    */
   exportLlm(redact: boolean): string {
     const artifacts = this.allArtifacts().map((a) => {
@@ -882,7 +941,7 @@ export class EnrichmentStore {
     // (version absent or 1) auto-rebuild via the `version === 2` gate — free migration. `withLlm`
     // always computes live (blobs never cached).
     if (!scope) {
-      const overviewPath = join(this.root(), 'overview.json');
+      const overviewPath = join(this.soul.cribDir, 'index', 'overview.json');
       const currentHead = this.soul.getManifest().repo.vcsHead ?? null;
       if (!withLlm) {
         const cached = readJson<{ version?: number; builtAgainstHead?: string }>(overviewPath);
@@ -1307,7 +1366,7 @@ export class EnrichmentStore {
   }
 
   private read(layer: EnrichLayer, targetId: string, liveHash: string): LlmRead {
-    const dir = join(this.root(), 'analysis', layer, shard(targetId));
+    const dir = join(this.artifactsRoot(), layer, shard(targetId));
     const prefix = `${safeName(targetId)}_`;
     if (!existsSync(dir)) return { missing: true, stale: false };
     const candidates = readdirSync(dir)
@@ -1339,17 +1398,26 @@ export class EnrichmentStore {
   }
 
   private writeArtifact(artifact: LlmArtifact): string {
-    const path = artifactPath(this.root(), artifact.layer, artifact.targetId, artifact.nodeHash);
+    const path = artifactPath(
+      this.artifactsRoot(),
+      artifact.layer,
+      artifact.targetId,
+      artifact.nodeHash,
+    );
     writeJsonAtomic(path, artifact);
     return path;
   }
 
-  private writeGraphProjection(artifact: LlmArtifact): void {
-    const root = this.root();
-    const s = shard(artifact.targetId);
-    const name = `${safeName(artifact.targetId)}.jsonl`;
-    writeJsonlAtomic(join(root, 'graph', 'nodes', s, name), artifact.graph.nodes);
-    writeJsonlAtomic(join(root, 'graph', 'edges', s, name), artifact.graph.edges);
+  private pruneSuperseded(artifact: LlmArtifact, keepPath: string): void {
+    const dir = dirname(keepPath);
+    const prefix = `${safeName(artifact.targetId)}_`;
+    if (!existsSync(dir)) return;
+    for (const name of readdirSync(dir)) {
+      const path = join(dir, name);
+      if (path !== keepPath && name.startsWith(prefix) && name.endsWith('.json')) {
+        rmSync(path, { force: true });
+      }
+    }
   }
 
   private writeManifest(
@@ -1359,7 +1427,7 @@ export class EnrichmentStore {
     const status = Object.fromEntries(LAYERS.map((layer) => [layer, this.countLayer(layer)]));
     // Preserve the lastIssued zero-progress map across the save() path, which also writes the manifest.
     const preserved = lastIssued ?? this.readManifest()?.lastIssued;
-    writeJsonAtomic(join(this.root(), 'manifest.json'), {
+    writeJsonAtomic(this.statePath(), {
       version: LLM_VERSION,
       model,
       builtAgainstHead: this.soul.getManifest().repo.vcsHead ?? null,
@@ -1369,6 +1437,15 @@ export class EnrichmentStore {
     });
   }
 
+  /** Advance the authoritative graph generation whenever canonical semantic artifacts change. */
+  private bumpSemanticGeneration(): void {
+    if (!existsSync(join(this.soul.cribDir, 'graph', 'manifest.json'))) return;
+    const manifest = this.soul.getManifest();
+    const generation = manifest.generation ?? { extracted: 0, semantic: 0 };
+    manifest.generation = { ...generation, semantic: generation.semantic + 1 };
+    writeJsonAtomic(join(this.soul.cribDir, 'graph', 'manifest.json'), manifest);
+  }
+
   private readManifest():
     | {
         model?: string | null;
@@ -1376,11 +1453,14 @@ export class EnrichmentStore {
         lastIssued?: Record<string, { batchId: string }>;
       }
     | undefined {
-    return readJson(join(this.root(), 'manifest.json'));
+    return readJson(this.statePath());
   }
 
   private writeOverview(): void {
-    writeJsonAtomic(join(this.root(), 'overview.json'), this.buildOverview(undefined, false));
+    writeJsonAtomic(
+      join(this.soul.cribDir, 'index', 'overview.json'),
+      this.buildOverview(undefined, false),
+    );
   }
 
   /**
@@ -1572,7 +1652,20 @@ export class EnrichmentStore {
   }
 
   private root(): string {
-    return join(this.soul.cribDir, 'llm');
+    const canonical = join(this.soul.cribDir, 'graph', 'manifest.json');
+    return existsSync(canonical)
+      ? join(this.soul.cribDir, 'graph', 'semantic')
+      : join(this.soul.cribDir, 'llm');
+  }
+
+  private artifactsRoot(): string {
+    const root = this.root();
+    return root.endsWith(`${sep}llm`) ? join(root, 'analysis') : join(root, 'artifacts');
+  }
+
+  private statePath(): string {
+    const root = this.root();
+    return root.endsWith(`${sep}llm`) ? join(root, 'manifest.json') : join(root, 'state.json');
   }
 }
 
@@ -1677,10 +1770,14 @@ function instructionsFor(layer: EnrichLayer): string {
   return `${common} Produce the whole-system bible: architecture, subsystems, cross-cutting flows, glossary, stack, and risk map.`;
 }
 
-function artifactPath(root: string, layer: EnrichLayer, targetId: string, hash: string): string {
+function artifactPath(
+  artifactsRoot: string,
+  layer: EnrichLayer,
+  targetId: string,
+  hash: string,
+): string {
   return join(
-    root,
-    'analysis',
+    artifactsRoot,
     layer,
     shard(targetId),
     `${safeName(targetId)}_${safeName(hash)}.json`,
@@ -1721,17 +1818,6 @@ function writeJsonAtomic(path: string, value: unknown): void {
   const tmp = `${path}.tmp`;
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
-  renameSync(tmp, path);
-}
-
-function writeJsonlAtomic(path: string, values: unknown[]): void {
-  const tmp = `${path}.tmp`;
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(
-    tmp,
-    values.map((v) => JSON.stringify(v)).join('\n') + (values.length ? '\n' : ''),
-    'utf8',
-  );
   renameSync(tmp, path);
 }
 

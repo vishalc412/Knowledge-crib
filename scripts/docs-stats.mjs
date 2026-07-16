@@ -18,7 +18,7 @@
  *   - test files: every `.test.ts` file under `packages/`
  *   - test call-sites: regex count of `it(`/`test(` in test files (call-sites, not runtime count —
  *     `it.each` is one call-site; the runtime total is in CI / `pnpm test`)
- *   - soul stats: nodes/edges/clusters from `.crib/crib.json` manifest.stats when a self-index exists
+ *   - graph stats remain authoritative in `.crib/graph/manifest.json` but are intentionally omitted
  */
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';

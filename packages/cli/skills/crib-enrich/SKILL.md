@@ -1,6 +1,6 @@
 ---
 name: crib-enrich
-description: Drive the knowledge-crib LLM semantic-graph generation loop. Use when the user says "crib-enrich", "enrich the crib", "build the LLM graph", "generate the codebase bible", or when `crib enrich` / `mcp__knowledge-crib__enrich_status` shows pending LLM targets. On large repos it shows a graphify-style scope picker first (which module to enrich), then authors deep per-target analysis + a grounded semantic graph bottom-up across symbol → file → cluster → system, ONE batch per turn. The crib MCP server never calls a model — YOU (the host IDE LLM) are the generator; it only hands you grounded seed and persists what you author.
+description: Drive the knowledge-crib LLM semantic-graph generation loop. Use when the user says "crib-enrich", "enrich the crib", "build the LLM graph", "generate the codebase bible", or when `crib enrich` / `mcp__knowledge-crib__enrich_status` shows pending LLM targets. On large repos it shows a graphify-style scope picker first (which module to enrich), then authors deep per-target analysis + a grounded semantic graph bottom-up across symbol → file → cluster → system, one token-packed batch per turn by default (an opt-in bounded autonomous loop drains multiple batches when the user asks for --auto / "keep going"). The crib MCP server never calls a model — YOU (the host IDE LLM) are the generator; it only hands you grounded seed and persists what you author.
 ---
 
 # crib-enrich — author knowledge-crib's LLM semantic graph
@@ -25,8 +25,8 @@ enrichment queue. Tell the user to use the Knowledge-crib `query` MCP tool (or
 
 ## ⚠️ The two rules that prevent the infinite loop
 
-1. **ONE batch per turn. HARD STOP.** You pull one batch, author it, save it, report progress, and **return to the user**. You do NOT re-enter the loop inside one invocation. Never call `enrich_next` twice in one turn. The old "repeat until done" loop is gone on purpose — with thousands of pending targets it loops forever and burns tokens. Re-running `/crib-enrich` continues from where you left off.
-2. **Zero-progress guard.** `batchId` is deterministic (same pending set ⇒ same id) AND the server persists the last-issued batchId per `(layer, scope)` and echoes `previousBatchId` + `zeroProgress` in every `enrich_next` response. If `batchId === previousBatchId` (i.e. the response carries `zeroProgress: true`), do NOT author or save — break and report: *"No progress: `enrich_next` returned the same batchId (`<id>`) the server already issued for this (layer, scope) with no save landing in between. Stopping. Check that `enrich_save` is persisting (`rejected[].reason`)."* This is the **server-side source of truth** — it fires even after context compaction forgets the id you saw last turn, so a headless driver need not remember anything. The host-memory comparison (`batchId === lastBatchId`) is now a secondary backstop, not the primary check.
+1. **One batch per turn by default (token-packed); autonomous mode is opt-in.** The default turn pulls ONE batch, authors it, saves it, reports progress, and **returns to the user** — the review checkpoint is preserved. But the batch is now sized by **token budget**, not a hardcoded item count: call `enrich_next` with **no `limit`** (the server defaults to the 25-item ceiling) and let the token packer fill it. Do NOT pass `limit: 4` — that count-cap was the throttle that turned 34 symbols into 9 turns. Re-running `/crib-enrich` continues from where you left off. Only enter the explicit autonomous loop (below) when the user asks for `--auto` / "keep going".
+2. **Zero-progress guard.** `batchId` is deterministic (same pending set ⇒ same id, independent of `limit`/budget) AND the server persists the last-issued batchId per `(layer, scope)` and echoes `previousBatchId` + `zeroProgress` in every `enrich_next` response. If `batchId === previousBatchId` (i.e. the response carries `zeroProgress: true`), do NOT author or save — break and report: *"No progress: `enrich_next` returned the same batchId (`<id>`) the server already issued for this (layer, scope) with no save landing in between. Stopping. Check that `enrich_save` is persisting (`rejected[].reason`)."* This is the **server-side source of truth** — it fires even after context compaction forgets the id you saw last turn, so a headless driver need not remember anything. The host-memory comparison (`batchId === lastBatchId`) is now a secondary backstop, not the primary check.
 
 ## Phase 0 — the scope picker (first thing, once per session)
 
@@ -36,7 +36,7 @@ Call `mcp__knowledge-crib__enrich_status` with `{ scopes: true }` and NO scope.
 - If `totalPending > threshold` AND `scopes.length > 0`: print the picker block below **verbatim** (fill in the real numbers from the response), then **STOP and wait for the user**. Do not call `enrich_next`.
 
 ```
-This repo has <totalPending> pending LLM targets across 4 layers (symbol: <s> pending, file: <f> pending, cluster: <c> pending, system: 1 total), exceeding the recommended threshold of <threshold>. At 4 items/batch that is ~<totalPending/4> batches — enriching everything unattended is not realistic. Which module should I enrich first?
+This repo has <totalPending> pending LLM targets across 4 layers (symbol: <s> pending, file: <f> pending, cluster: <c> pending, system: 1 total), exceeding the recommended threshold of <threshold>. Batched by token budget that is ~<ceil(totalPending/16)> batches — enriching everything unattended is not realistic. Which module should I enrich first?
 
 Top-5 modules by pending symbols (the parenthesized counts are TOTAL symbols/files/clusters in that prefix; `pending` is pending symbols only):
   1. <scopes[0].pathPrefix>   — <scopes[0].pending> pending  (<scopes[0].symbols> symbols, <scopes[0].files> files, <scopes[0].clusters> clusters)
@@ -49,7 +49,7 @@ Options:
   • Type a number (1–5) to scope to that module.
   • Type a path prefix (e.g. packages/cli/src) for a finer scope.
   • Type 'list clusters <number>' to refine by cluster inside a module first.
-  • Type 'full' to enrich the whole repo (not recommended — ~<totalPending/4> batches).
+  • Type 'full' to enrich the whole repo (not recommended — ~<ceil(totalPending/16)> batches).
 
 I'll wait for your choice before proceeding.
 ```
@@ -89,13 +89,13 @@ if s.systemSkeleton.present === false:
   skeleton (with `systemProvenance.mode:"skeleton"`) only until the full bible lands.
 - **Scoped runs skip Phase 0.5** — the system layer is whole-repo only.
 
-## Phase 1 — one batch, author, save, stop (the loop, per turn)
+## Phase 1 — one batch, author, save, stop (the default loop, per turn)
 
 ```
 s = enrich_status({ ...(scope? {scope} : {}) })
 if s.scopeEmpty:  print "No pending targets under '<scope.pathPrefix>'. Check the path prefix." and re-present the picker; STOP.
 if s.done:        report completion (see below) and STOP. Do NOT call enrich_next.
-batch = enrich_next({ ...(scope? {scope} : {}), limit: 4 })     # grounded seed + schema per item
+batch = enrich_next({ ...(scope? {scope} : {}) })              # NO limit — token packer fills the batch
 # Server-side zero-progress guard (source of truth, survives context compaction):
 if batch.zeroProgress || batch.batchId === lastBatchId:  break + report zero-progress (see rule 2). Do NOT author.
 lastBatchId = batch.batchId
@@ -106,11 +106,43 @@ report: layer, accepted/rejected, droppedEdges, batch.remaining, overall done
 STOP — return to the user. Re-run /crib-enrich to continue.
 ```
 
+- **Do not pass `limit`.** The server's token packer walks the importance-ranked pending list and fills the batch against `DEFAULT_BATCH_TOKENS` (24k), capped at the 25-item safety ceiling. A fixed `limit: 4` was the throttle that made 34 symbols take 9 turns; the default now packs ≫4 cheap items per batch. Pass `limit` only to lower the ceiling; pass `budgetTokens` only to tighten/loosen the budget.
+- **`oversized` / `budgetExceeded`:** if you pass a `budgetTokens` and the FIRST item alone exceeds it, the server returns that one item alone with `oversized: true` (the queue never stalls). Author it — or raise the budget / route the item to a bigger tier — then continue.
 - **Layers run in order:** `symbol` → `file` → `cluster` → `system`. `enrich_status.nextLayer` tells you which is next; never jump ahead — higher layers' `lowerLayer` payload contains the saved child analyses you synthesize from. **Under a scope, `nextLayer` excludes `system`** (system is whole-repo only) — a scoped run ends at the cluster layer.
 - **Resumable:** already-`fresh` targets are skipped; `enrich_status` reports the first `missing|stale` layer. Just call `enrich_next` again next turn.
-- **Batched:** `limit` (default 4, max 25) bounds tokens per turn. Process one batch per turn and report progress.
 - **`remaining`** in each batch tells the user how many are left in that layer.
 - **Rejected items:** if `enrich_save` returns `rejected[].reason`, note them; the next turn's `enrich_next(scope)` still sees those targetIds as pending and re-offers them. Fix and re-submit — do not silently drop.
+
+## Phase 1-auto — bounded autonomous loop (opt-in only)
+
+Enter this mode **only** when the user explicitly asks ("keep going", "auto", "drain the queue", `--auto`). The default turn stays one batch. The autonomous loop runs multiple batches in one turn, bounded by **all three** of:
+
+- a **token ceiling** (`maxTokens`, default 100k) — the sum of batch costs across the loop,
+- a **max batch count** (`maxBatches`, default 5) — a hard turn cap, and
+- the **layer boundary** — STOP when `enrich_next` would cross to a new layer.
+
+```
+spent = 0; batches = 0; layer = (scope? scope-implied nextLayer : enrich_status().nextLayer)
+while true:
+    s = enrich_status({ ...(scope? {scope} : {}) })
+    if s.done or s.scopeEmpty:  report completion; break
+    if s.nextLayer !== layer:   print "reached layer boundary (<layer> → <s.nextLayer>) — stopping for review."; break
+    batch = enrich_next({ ...(scope? {scope} : {}) })
+    if batch.zeroProgress || batch.batchId === lastBatchId:  break + report zero-progress (rule 2). Do NOT author.
+    if batch.costEstimate.batch + spent > maxTokens:  print "token ceiling reached (~<spent> tokens) — stopping for review."; break
+    lastBatchId = batch.batchId
+    items = [author(item) for item in batch.items]
+    result = enrich_save({ batchId: batch.batchId, items })
+    if result.rejected and result.rejected.length > 0:  print "rejected items — stopping for review."; break
+    spent += batch.costEstimate.batch; batches += 1
+    report: batch <batches>: layer, accepted/rejected, droppedEdges, batch.remaining
+    if batches >= maxBatches:  print "max-batches reached (<maxBatches>) — stopping for review."; break
+report: total batches, tokens spent, remaining per layer, which bound stopped the loop
+```
+
+- **Break immediately** on `zeroProgress`, on any `rejected[]`, or at a layer boundary — do not power through. `zeroProgress` is the primary break (server-side, survives context compaction).
+- **Layer-boundary stop is deliberate:** lower layers feed upper ones (`lowerLayer` seed). Auto-draining `symbol` → `file` without review lets a bad symbol pattern propagate into every file synthesis before you see it. Stop at the boundary, let the user review, then resume.
+- **`maxTokens` is the sum of `costEstimate.batch` across the loop** (the packer already guarantees each batch fits its own `DEFAULT_BATCH_TOKENS`); the ceiling bounds the *turn*, not the batch.
 
 ### Completion reporting
 
@@ -210,7 +242,7 @@ cluster_count × 8000 × 3× + 1 × 12000 × 10×` — i.e. the per-symbol line 
 system line dominates by per-item cost, and the total stays a small multiple of the symbol-tier cost.
 The crib never calls a model; this is the estimate a host uses to budget a pass before it starts.
 
-## Alias dictionary (`.crib/llm/aliases.json`)
+## Alias dictionary (`.crib/graph/semantic/aliases.json`)
 
 Acronyms and domain shorthand ("DTI", "LTV", "AML") rarely share a token with the symbol that
 implements them: `DebtToIncomeCalculator` tokenizes (FTS5 `unicode61`, no camelCase split) to a
@@ -243,7 +275,7 @@ write the matching `aliases.json` via `writeAliases(cribDir, entries)` (exported
 - First write wins on a duplicated alias. An absent or malformed file is treated as an empty
   dictionary — every query path is byte-identical when no aliases are configured (zero regression
   for repos without a dictionary). Determinism is preserved: the rewrite is a pure function, and
-  the file lives in the committed `.crib/llm/` layer, never the derived index.
+  file lives in committed `.crib/graph/semantic/` layer, never derived index.
 
 ## Honesty
 
@@ -255,9 +287,9 @@ write the matching `aliases.json` via `writeAliases(cribDir, entries)` (exported
 ## Tools
 
 - `mcp__knowledge-crib__enrich_status` — `{ layer?, scope?, scopes? }`. Coverage + `nextLayer` + `done` + `systemSkeleton:{present,fresh}`; with `scopes:true` also returns `totalPending` + `threshold` + `scopes[]` for the picker; with `scope` also returns `scopeEcho` + `scopeEmpty` + `wholeRepoPending.system`.
-- `mcp__knowledge-crib__enrich_next` — `{ layer?, limit?, scope?, skeleton? }` → grounded batch + `batchId` + `selectedTargetIds` + `remaining` + `previousBatchId` + `zeroProgress`. `batchId` is deterministic over the full pending set (independent of `limit`); `zeroProgress: true` means the server already issued this `batchId` for this (layer, scope) with no save landing — break. Queue is importance-ranked (tests last). `skeleton:true` + `layer:'system'` → the Phase-0.5 draft-bible work item.
+- `mcp__knowledge-crib__enrich_next` — `{ layer?, limit?, scope?, budgetTokens?, skeleton? }` → grounded batch + `batchId` + `selectedTargetIds` + `remaining` + `previousBatchId` + `zeroProgress` + `oversized`. The batch is filled by a **token packer** (greedy strict-prefix over the importance-ranked pending list) against `budgetTokens` (default `DEFAULT_BATCH_TOKENS` = 24k), capped at `limit` (default 25, the hard ceiling). Do NOT pass `limit: 4`. `batchId` is deterministic over the full pending set (independent of `limit`/budget); `zeroProgress: true` means the server already issued this `batchId` for this (layer, scope) with no save landing — break. `oversized: true` (with `budgetExceeded: true`) means the first item alone exceeded `budgetTokens` and was returned alone — author it, or raise the budget / route to a bigger tier. Queue is importance-ranked (tests last). `skeleton:true` + `layer:'system'` → the Phase-0.5 draft-bible work item.
 - `mcp__knowledge-crib__enrich_save` — `{ batchId, items }` → `{ accepted, rejected }`. Scope is NOT a write constraint (cross-scope edges resolve against the full soul). A `llm:system-skeleton:` batch is stamped `mode:"skeleton"` server-side.
 - `mcp__knowledge-crib__overview` — `{ scope?, withLlm? }` → v2 bible: `modules` (always present) + lean `analyses` pointers + `system`/`systemProvenance`. Omit scope for the cached whole-repo overview.json; pass scope for a module bible (excludes the system layer). `withLlm:true` folds the full analysis+graph+evidence blobs into a `full` array (computed live).
 - `mcp__knowledge-crib__llm_neighbors` — (optional) walk the semantic graph around a symbol to sanity-check your edges.
 
-If the MCP server is not connected, the same loop is drivable headlessly via the CLI: `crib enrich --scopes` prints the ranked picker data; `crib enrich --next --scope <prefix> [--layer L] [--limit N]` prints a scoped grounded batch (author items to a JSON file `{batchId, items}` and persist with `crib enrich --save <file>`); `crib enrich --overview --scope <prefix>` prints a module bible; `crib enrich --scope <prefix>` prints scoped coverage.
+If the MCP server is not connected, the same loop is drivable headlessly via the CLI: `crib enrich --scopes` prints the ranked picker data; `crib enrich --next --scope <prefix> [--layer L] [--limit N] [--budget-tokens N]` prints a scoped grounded batch (author items to a JSON file `{batchId, items}` and persist with `crib enrich --save <file>`); `crib enrich --auto --max-tokens N --max-batches N [--layer L] [--scope PFX]` runs the bounded autonomous loop headlessly (per-batch progress, stops at the token ceiling / max-batches / layer boundary, exits non-zero on zero-progress or rejects); `crib enrich --overview --scope <prefix>` prints a module bible; `crib enrich --scope <prefix>` prints scoped coverage.

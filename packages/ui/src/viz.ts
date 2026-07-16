@@ -11,6 +11,7 @@ import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   type DerivedKind,
+  GraphStore,
   buildFunctionalMap,
   computeImportance,
   deriveNodeKind,
@@ -23,7 +24,7 @@ import type { Method } from '@knowledge-crib/soul-schema';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export type VizNodeKind = DerivedKind;
+export type VizNodeKind = DerivedKind | string;
 
 export interface VizNodeData {
   id: string;
@@ -59,6 +60,9 @@ export interface VizNodeData {
    *  shipped — nothing is hidden — but the client renders/labels primary first and reveals detail
    *  on demand, e.g. on focus-expand). */
   tier: 'primary' | 'detail';
+  origin?: 'extracted' | 'semantic';
+  targetId?: string;
+  model?: string;
 }
 
 export interface VizEdgeData {
@@ -66,11 +70,14 @@ export interface VizEdgeData {
   source: string;
   target: string;
   label: string;
-  rel: Rel;
-  method: Method;
+  rel: Rel | string;
+  method: Method | string;
   provenance: Provenance;
   confidence: number;
   evidence?: { snippet?: string; by?: string };
+  origin?: 'extracted' | 'semantic';
+  targetId?: string;
+  model?: string;
 }
 
 export interface VizCluster {
@@ -270,6 +277,7 @@ export function buildVizGraph(soul: SoulStore): VizGraph {
         degree,
         importance: entry?.importance ?? 0,
         tier: 'detail', // placeholder — the top-K pass below promotes the primary tier
+        origin: 'extracted',
       };
       if (node.name) data.name = node.name;
       if (node.qualifiedName) data.qualified = node.qualifiedName;
@@ -310,6 +318,7 @@ export function buildVizGraph(soul: SoulStore): VizGraph {
       method: edge.method,
       provenance: edge.provenance,
       confidence: edge.confidence,
+      origin: 'extracted' as const,
     };
     if (edge.evidence) {
       data.evidence = {
@@ -319,6 +328,44 @@ export function buildVizGraph(soul: SoulStore): VizGraph {
     }
     return { data };
   });
+
+  // Mandatory composite view: append only fresh, grounded semantic records. Heavy analysis and
+  // evidence blobs remain in canonical artifacts; viz receives lightweight graph metadata.
+  const semantic = new GraphStore(soul).semantic();
+  for (const node of semantic.nodes.sort(SORT_BY_ID)) {
+    const raw = node as Record<string, unknown>;
+    nodes.push({
+      data: {
+        id: node.id,
+        label: String(raw.name ?? raw.label ?? node.id),
+        kind: node.kind,
+        summary: typeof raw.summary === 'string' ? raw.summary : undefined,
+        importance: 0,
+        degree: 0,
+        tier: 'detail',
+        origin: 'semantic',
+        ...(node.targetId ? { targetId: node.targetId } : {}),
+        ...(node.model ? { model: node.model } : {}),
+      },
+    });
+  }
+  for (const edge of semantic.edges.sort(SORT_BY_ID)) {
+    edges.push({
+      data: {
+        id: edge.id,
+        source: edge.src,
+        target: edge.dst,
+        label: edge.rel,
+        rel: edge.rel,
+        method: edge.method,
+        provenance: edge.provenance,
+        confidence: edge.confidence,
+        origin: 'semantic',
+        ...(edge.targetId ? { targetId: edge.targetId } : {}),
+        ...(edge.model ? { model: edge.model } : {}),
+      },
+    });
+  }
 
   return {
     schemaVersion: soul.getManifest().schemaVersion,

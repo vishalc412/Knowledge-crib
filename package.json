@@ -53,7 +53,8 @@
     "onboarding:check": "node scripts/onboarding-check.mjs",
     "docs:stats": "node scripts/docs-stats.mjs",
     "docs:build": "node scripts/docs-site-build.mjs",
-    "docs-site:check": "node scripts/docs-site-check.mjs"
+    "docs-site:check": "node scripts/docs-site-check.mjs",
+    "self-hosted:check": "corepack pnpm@9.15.0 build && node scripts/crib-self-hosted-e2e.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

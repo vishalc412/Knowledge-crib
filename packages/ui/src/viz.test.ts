@@ -208,7 +208,16 @@ describe('buildVizOverview + LLM cluster label preference (outcome F + E)', () =
     soul.commit('2026-01-01T00:00:00.000Z');
 
     // Write a fresh LLM cluster artifact surfacing name='Loans API' + a purpose.
-    const artifactPath = join(dir, '.crib', 'llm', 'analysis', 'cluster', '00', 'art.json');
+    const artifactPath = join(
+      dir,
+      '.crib',
+      'graph',
+      'semantic',
+      'artifacts',
+      'cluster',
+      '00',
+      'art.json',
+    );
     mkdirSync(dirname(artifactPath), { recursive: true });
     writeFileSync(
       artifactPath,
@@ -219,6 +228,7 @@ describe('buildVizOverview + LLM cluster label preference (outcome F + E)', () =
         nodeHash: clusterContentHash(soul, cluster),
         schemaVersion: soul.getManifest().schemaVersion,
         builtAt: '2026-01-01T00:00:00.000Z',
+        grounded: true,
         analysis: { purpose: 'Loan origination surface', name: 'Loans API', confidence: 0.85 },
         graph: { nodes: [], edges: [] },
         evidence: [],

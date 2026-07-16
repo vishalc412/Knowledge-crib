@@ -21,13 +21,17 @@ import {
   LockBusyError,
   MANIFEST_FILE,
   SoulStore,
+  graphPaths,
+  hasLegacyGraph,
+  materializeComposite,
+  migrateLegacyGraph,
   newManifest,
   validateClusterIntegrity,
   withCribLockAsync,
 } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
 import { EnrichmentStore, Verbs, estimateTokens, serveStdio } from '@knowledge-crib/mcp';
-import type { EnrichLayer, EnrichScope, VcsAdapter } from '@knowledge-crib/mcp';
+import type { EnrichLayer, EnrichSaveItem, EnrichScope, VcsAdapter } from '@knowledge-crib/mcp';
 import {
   changedFilesSince,
   currentHead,
@@ -301,6 +305,10 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdUpdate(rest, ctx);
     case 'reindex':
       return cmdReindex(rest, ctx);
+    case 'migrate-graph':
+      return cmdMigrateGraph(rest, ctx);
+    case 'materialize':
+      return cmdMaterialize(rest, ctx);
     case 'merge-driver':
       return cmdMergeDriver(rest);
     case 'install-hooks':
@@ -331,6 +339,40 @@ async function main(argvRaw: string[]): Promise<number> {
       printHelp();
       return EXIT.BAD_ARGS;
   }
+}
+
+async function cmdMigrateGraph(args: string[], ctx?: CmdCtx): Promise<number> {
+  const resolved = resolveRoot(args, ctx);
+  if (!existsSync(join(resolved.cribDir, MANIFEST_FILE))) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const dryRun = args.includes('--dry-run');
+  if (dryRun) {
+    process.stdout.write(
+      `${JSON.stringify(migrateLegacyGraph(resolved.cribDir, true), null, 2)}\n`,
+    );
+    return EXIT.OK;
+  }
+  return runLocked(resolved.cribDir, () => {
+    const report = migrateLegacyGraph(resolved.cribDir, false);
+    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+    return EXIT.OK;
+  });
+}
+
+async function cmdMaterialize(args: string[], ctx?: CmdCtx): Promise<number> {
+  const resolved = resolveRoot(args, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  return runLocked(resolved.cribDir, () => {
+    const rt = openSoul(resolved);
+    const result = materializeComposite(rt.soul);
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return EXIT.OK;
+  });
 }
 
 /** Real VCS adapter backed by the pipeline's git helpers; injected into the MCP verbs for serve. */
@@ -500,7 +542,11 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
  * overwrite the fresh manifest (the root cause of the additive-corrupt re-index bug).
  */
 function freshSoulForRebuild(cribDir: string): SoulStore {
-  const manifestPath = join(cribDir, MANIFEST_FILE);
+  if (hasLegacyGraph(cribDir)) migrateLegacyGraph(cribDir);
+  const canonicalManifest = graphPaths(cribDir).manifest;
+  const manifestPath = existsSync(canonicalManifest)
+    ? canonicalManifest
+    : join(cribDir, MANIFEST_FILE);
   let repoId: string | undefined;
   if (existsSync(manifestPath)) {
     try {
@@ -863,12 +909,12 @@ async function cmdReconstruct(args: string[], ctx?: CmdCtx): Promise<number> {
 
 /** `crib impact <id> --dir up|down [--depth N]` — blast radius. */
 async function cmdImpact(args: string[], ctx?: CmdCtx): Promise<number> {
-  const id = args.find((a) => !a.startsWith('-'));
+  const id = positionalsOf(args)[0];
   const dirIdx = args.indexOf('--dir');
   const dir = dirIdx >= 0 ? (args[dirIdx + 1] as 'up' | 'down' | undefined) : undefined;
   if (!id || (dir !== 'up' && dir !== 'down')) {
     process.stderr.write(
-      'usage: crib impact <id> --dir up|down [--depth N] [--limit N] [--extracted-only]\n',
+      'usage: crib impact <id> --dir up|down [--depth N] [--limit N] [--include-llm] [--extracted-only]\n',
     );
     return EXIT.BAD_ARGS;
   }
@@ -887,6 +933,7 @@ async function cmdImpact(args: string[], ctx?: CmdCtx): Promise<number> {
         ...(Number.isFinite(depth) && depth! > 0 ? { depth } : {}),
         ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
         ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+        ...(args.includes('--include-llm') ? { includeLlm: true } : {}),
       }),
       null,
       2,
@@ -945,7 +992,9 @@ async function cmdPath(args: string[], ctx?: CmdCtx): Promise<number> {
   const positional = positionalsOf(args);
   const [from, to] = positional;
   if (!from || !to) {
-    process.stderr.write('usage: crib path <from> <to> [--max-hops N]\n');
+    process.stderr.write(
+      'usage: crib path <from> <to> [--max-hops N] [--include-llm] [--extracted-only]\n',
+    );
     return EXIT.BAD_ARGS;
   }
   const opened = openVerbs(args, ctx);
@@ -959,6 +1008,8 @@ async function cmdPath(args: string[], ctx?: CmdCtx): Promise<number> {
         from,
         to,
         ...(Number.isFinite(maxHops) && maxHops! > 0 ? { maxHops } : {}),
+        ...(args.includes('--include-llm') ? { includeLlm: true } : {}),
+        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
       }),
       null,
       2,
@@ -970,10 +1021,10 @@ async function cmdPath(args: string[], ctx?: CmdCtx): Promise<number> {
 
 /** `crib neighbors <id> [--rel reads] [--dir in|out|both]` — direct edges of one node. */
 async function cmdNeighbors(args: string[], ctx?: CmdCtx): Promise<number> {
-  const id = args.find((a) => !a.startsWith('-'));
+  const id = positionalsOf(args)[0];
   if (!id) {
     process.stderr.write(
-      'usage: crib neighbors <id> [--rel reads] [--dir in|out|both] [--limit N] [--extracted-only]\n',
+      'usage: crib neighbors <id> [--rel reads] [--dir in|out|both] [--limit N] [--include-llm] [--extracted-only]\n',
     );
     return EXIT.BAD_ARGS;
   }
@@ -994,6 +1045,7 @@ async function cmdNeighbors(args: string[], ctx?: CmdCtx): Promise<number> {
         ...(dir ? { dir } : {}),
         ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
         ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+        ...(args.includes('--include-llm') ? { includeLlm: true } : {}),
       }),
       null,
       2,
@@ -1493,7 +1545,7 @@ async function cmdExport(args: string[], ctx?: CmdCtx): Promise<number> {
   const rt = openSoul(resolved);
   try {
     if (fmt === 'llm') {
-      // M1.4: the `llm` format dumps the committed LLM layer (`.crib/llm/`). `--redact` (default)
+      // M1.4: `llm` dumps committed semantic layer (`.crib/graph/semantic/`). `--redact` (default)
       // strips every evidence `quote` to a span ref `{soulId, file, startLine, endLine}` and masks
       // any secret-pattern substring in analysis/graph strings, so the exported bundle never
       // carries verbatim source snippets or secrets even if the on-disk artifacts do.
@@ -1505,7 +1557,11 @@ async function cmdExport(args: string[], ctx?: CmdCtx): Promise<number> {
         );
       }
     } else {
-      process.stdout.write(renderExport(rt.soul, fmt, procedure));
+      process.stdout.write(
+        renderExport(rt.soul, fmt, procedure, {
+          extractedOnly: args.includes('--extracted-only'),
+        }),
+      );
     }
   } catch (err) {
     process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
@@ -1638,9 +1694,17 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
  * Usage:
  *   crib enrich [path] [--budget-tokens N]            coverage + pending count + follow-up hint
  *   crib enrich --next [path] [--layer L] [--limit N] [--scope PFX] [--budget-tokens N]  print the next grounded batch
+ *   crib enrich --auto [path] [--max-tokens N] [--max-batches N] [--layer L] [--scope PFX] [--budget-tokens N]
+ *                                                       bounded autonomous loop (stub-authors + saves per batch)
  *   crib enrich --save <file> [path] [--scope PFX]   persist a {batchId, items[]} JSON batch
  *   crib enrich --overview [path] [--scope PFX]     print the bible (scoped to PFX if given)
  *   crib enrich --scopes [path] [--budget-tokens N] ranked path-prefix scopes for the picker
+ *
+ * `--budget-tokens N` is a per-batch PACKER (not a guard): `--next` fills a batch whose estimated
+ * cost fits N, capped at `--limit` (default 25). If the first item alone exceeds N it is returned
+ * alone with `oversized:true` (the queue never stalls). `--auto --max-tokens N` bounds the whole
+ * turn (sum of batch costs); `--auto --max-batches N` caps the batch count; the loop also stops at
+ * a layer boundary and breaks on zero-progress or rejects (exit non-zero).
  *
  * `--scope <prefix>` restricts status/next to in-scope targets (system layer is whole-repo only).
  * `--scope-cluster <cluster>` optionally refines inside the prefix. `--scopes` is a discovery view.
@@ -1672,6 +1736,14 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
   const budgetIdx = args.indexOf('--budget-tokens');
   const budgetTokens = budgetIdx >= 0 ? Number.parseInt(args[budgetIdx + 1] ?? '', 10) : undefined;
   const budget = Number.isFinite(budgetTokens) && budgetTokens! > 0 ? budgetTokens : undefined;
+
+  if (args.includes('--prune-stale')) {
+    return runLocked(resolved.cribDir, () => {
+      const result = enrich.pruneStale(args.includes('--apply'));
+      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+      return EXIT.OK;
+    });
+  }
 
   // --scopes: discovery view — ranked path-prefix scopes for a headless/CI agent to pick from.
   if (args.includes('--scopes')) {
@@ -1727,6 +1799,112 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
     return EXIT.OK;
   }
 
+  if (args.includes('--auto')) {
+    const layerIdx = args.indexOf('--layer');
+    const layer = layerIdx >= 0 ? (args[layerIdx + 1] as EnrichLayer | undefined) : undefined;
+    const maxTokensIdx = args.indexOf('--max-tokens');
+    const maxTokensRaw =
+      maxTokensIdx >= 0 ? Number.parseInt(args[maxTokensIdx + 1] ?? '', 10) : undefined;
+    const maxBatchesIdx = args.indexOf('--max-batches');
+    const maxBatchesRaw =
+      maxBatchesIdx >= 0 ? Number.parseInt(args[maxBatchesIdx + 1] ?? '', 10) : undefined;
+    // Turn-level bounds (distinct from --budget-tokens, the per-batch packer ceiling). Defaults match
+    // the /crib-enrich skill's Phase 1-auto loop so a bare `crib enrich --auto` behaves identically to
+    // the interactive autonomous mode: ~100k tokens, ≤5 batches, stop at a layer boundary for review.
+    const maxTokens = Number.isFinite(maxTokensRaw) && maxTokensRaw! > 0 ? maxTokensRaw! : 100_000;
+    const maxBatches = Number.isFinite(maxBatchesRaw) && maxBatchesRaw! > 0 ? maxBatchesRaw! : 5;
+    return runLocked(resolved.cribDir, () => {
+      let spent = 0;
+      let batches = 0;
+      let startLayer: EnrichLayer | undefined;
+      let lastBatchId: string | undefined;
+      const nextArgs = {
+        ...(layer ? { layer } : {}),
+        ...(scope ? { scope } : {}),
+        ...(budget ? { budgetTokens: budget } : {}),
+      };
+      while (true) {
+        const batch = enrich.next(nextArgs);
+        // Nothing left for this layer/scope (pending drained) — done, not an error.
+        if (batch.items.length === 0) {
+          process.stdout.write(`auto: nothing pending for layer ${batch.layer} — done.\n`);
+          break;
+        }
+        // Zero-progress: the same batchId was already issued with no save landing. A headless driver
+        // hitting this is the churn trap — break non-zero so CI/loops notice instead of spinning.
+        if (batch.zeroProgress || batch.batchId === lastBatchId) {
+          process.stderr.write(
+            `zero-progress: batchId ${batch.batchId} re-issued for layer ${batch.layer} with no save landing — stopping (run \`crib enrich --next\` + \`--save\` to advance).\n`,
+          );
+          return EXIT.ERROR;
+        }
+        // Layer boundary: the queue advanced to a new layer since the first batch. Stop for human
+        // review rather than silently grinding through every layer in one turn.
+        if (startLayer === undefined) startLayer = batch.layer;
+        else if (batch.layer !== startLayer) {
+          process.stdout.write(
+            `auto: layer boundary ${startLayer} → ${batch.layer} — stopping for review.\n`,
+          );
+          break;
+        }
+        const batchCost = batch.costEstimate?.batch ?? 0;
+        // Token ceiling bounds the TURN, not the batch: the first batch always runs (batches===0 guard)
+        // so a single fat batch still makes progress; subsequent batches stop before overshooting.
+        if (batches > 0 && spent + batchCost > maxTokens) {
+          process.stdout.write(
+            `auto: token ceiling reached (~${spent} spent + ~${batchCost} next > ${maxTokens}) — stopping.\n`,
+          );
+          break;
+        }
+        lastBatchId = batch.batchId;
+        // Stub-author each item: the CLI has no model, so --auto cannot produce real analyses. A stub
+        // (model 'crib-auto-stub', confidence 0.1, empty graph/evidence) passes validation and marks
+        // its target fresh for queue purposes (read() checks nodeHash+schemaVersion, NOT grounded) — so
+        // the queue advances and a later /crib-enrich pass refines the stubs. Grounding/audit-llm will
+        // flag stubs as ungrounded in diagnostics, which is the correct signal: they are placeholders.
+        const items: EnrichSaveItem[] = batch.items.map((item) => ({
+          targetId: item.targetId,
+          model: 'crib-auto-stub',
+          analysis: {
+            purpose: 'Auto-stub placeholder — refine via /crib-enrich.',
+            responsibilities: [],
+            confidence: 0.1,
+          },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        }));
+        const result = enrich.save({ batchId: batch.batchId, items }) as {
+          accepted: unknown[];
+          rejected: Array<{ targetId: string; reason: string }>;
+        };
+        if (result.rejected.length > 0) {
+          process.stderr.write(
+            `auto: ${result.rejected.length} item(s) rejected — stopping for review:\n${result.rejected.map((r) => `  ${r.targetId}: ${r.reason}`).join('\n')}\n`,
+          );
+          return EXIT.ERROR;
+        }
+        spent += batchCost;
+        batches += 1;
+        process.stdout.write(
+          `auto batch ${batches}: layer=${batch.layer} accepted=${result.accepted.length}` +
+            ` remaining=${batch.remaining} cost=${batchCost} spent=${spent}/${maxTokens}\n`,
+        );
+        if (batches >= maxBatches) {
+          process.stdout.write(
+            `auto: max-batches reached (${maxBatches}) — stopping for review.\n`,
+          );
+          break;
+        }
+      }
+      process.stdout.write(
+        `auto: ${batches} batch(es), ~${spent} tokens spent${
+          startLayer ? `, layer ${startLayer}` : ''
+        }. Refine stubs via /crib-enrich.\n`,
+      );
+      return EXIT.OK;
+    });
+  }
+
   if (args.includes('--next')) {
     const layerIdx = args.indexOf('--layer');
     const layer = layerIdx >= 0 ? (args[layerIdx + 1] as EnrichLayer | undefined) : undefined;
@@ -1741,11 +1919,14 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
       ...(skeleton ? { skeleton: true } : {}),
     });
     process.stdout.write(`${JSON.stringify(batch, null, 2)}\n`);
+    // Under token-packed selection, budgetExceeded only fires when a single item alone exceeds the
+    // budget — and that item is STILL returned (oversized:true) so the queue never stalls. It is
+    // workable, not an error: warn and let the host author it (or raise --budget-tokens / route to a
+    // bigger tier). The old "reduce --limit" advice was for the pre-WP1 count-sliced semantics.
     if (batch.budgetExceeded) {
       process.stderr.write(
-        `budget guard: batch cost ~${batch.costEstimate?.batch} tokens exceeds --budget-tokens ${budget} — reduce --limit or raise the budget.\n`,
+        `warning: batch cost ~${batch.costEstimate?.batch} tokens exceeds --budget-tokens ${budget} — the single oversized item is returned alone (oversized). Author it, raise --budget-tokens, or route to a bigger model tier.\n`,
       );
-      return EXIT.ERROR;
     }
     if (batch.zeroProgress) {
       process.stderr.write(
@@ -1956,17 +2137,19 @@ function printHelp(): void {
       '  crib ask "<question>" [--format markdown] [--limit N] [--with-source] [--with-rules] [--with-framework]   natural-language answer from the crib (deterministic)',
       '  crib dossier <id> [--format markdown]    persisted deep artifact (body + callers/callees + rules + CFG constructs)',
       '  crib reconstruct <pkg> [--format markdown]   package reconstruction: CONSTANT values + members + referenced tables + docs + expectedBodyFile',
-      '  crib impact <id> --dir up|down [--depth N]   blast radius (dependents / dependencies)',
-      '  crib path <from> <to> [--max-hops N]     shortest dependency path between two nodes',
-      '  crib neighbors <id> [--rel reads] [--dir in|out|both]   direct edges of one node',
+      '  crib impact <id> --dir up|down [--depth N] [--include-llm]   blast radius',
+      '  crib path <from> <to> [--max-hops N] [--include-llm]   shortest path',
+      '  crib neighbors <id> [--rel reads] [--dir in|out|both] [--include-llm]   adjacency',
       '  crib serve [path]                        run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd)',
       '  crib update [path] [--since <sha>] [--dirty] [--package <name>]  incremental re-extract since the VCS anchor; --dirty includes working-tree changes without advancing vcsHead; --package scopes to one package of a monorepo without advancing the shared anchor if other packages changed too',
       '  crib reindex [path] [--package <name|all>...]     full re-index (alias for `crib index`; --package scopes to one monorepo package)',
+      '  crib migrate-graph [path] [--dry-run]     move legacy nodes/edges/llm into canonical .crib/graph',
+      '  crib materialize [path]                   build derived composite graph.json + sqlite',
       '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',
       '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',
-      '  crib export [--format F] [--procedure P] [--redact|--no-redact] render soul: rules|mermaid|graph.json|report|llm (--redact strips llm evidence quotes→span refs; default on for llm)',
+      '  crib export [--format F] [--procedure P] [--extracted-only] [--redact|--no-redact] render graph: rules|mermaid|graph.json|report|llm',
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
-      '  crib enrich [path] [--budget-tokens N]    LLM-graph work queue + driver: coverage, --next (grounded batch), --save <file>, --overview, --scope PFX, --scopes',
+      '  crib enrich [path] [--budget-tokens N]    semantic work queue; --next (token-packed batch) | --auto [--max-tokens N --max-batches N] | --save <file> | --overview | --scopes | --prune-stale [--apply]',
       '  crib audit-llm [path]                    re-verify every LLM artifact against the soul (grounding moat); exits non-zero on ungrounded/drift',
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]',
       '                                          auto-wire the MCP server into each IDE config (REQ-2)',

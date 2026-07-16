@@ -1,5 +1,5 @@
 /**
- * Read-only view of the `.crib/llm` layer — a lean overlay of every saved LLM artifact keyed by
+ * Read-only view of `.crib/graph/semantic` — a lean overlay of every saved LLM artifact keyed by
  * targetId, carrying just the surfaced fields (name, purpose, confidence, staleness, mode) the
  * functional map and the viz need to label modules/clusters WITHOUT paying the multi-KB
  * analysis+graph+evidence blob cost. The EnrichmentStore stays the only writer; this module never
@@ -14,6 +14,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { clusterContentHash } from './cluster-hash.js';
+import { graphPaths } from './graph-layout.js';
 import type { SoulStore } from './soul-store.js';
 
 /** The four LLM enrichment layers (mirrors `mcp/enrichment.ts:EnrichLayer`; duplicated here so core
@@ -56,16 +57,21 @@ interface ReadArtifact {
   mode?: 'skeleton' | 'full';
 }
 
-/** Read the `.crib/llm` overlay for a soul. `opts.includeStale` (default true) controls whether
+/** Read semantic overlay. `opts.includeStale` (default true) controls whether
  *  stale artifacts appear in the entries map (the viz wants them for fade-rendering; the functional
  *  map's purpose resolution only consumes fresh ones, filtering inline). */
 export function readLlmOverlay(soul: SoulStore, opts: { includeStale?: boolean } = {}): LlmOverlay {
   const includeStale = opts.includeStale ?? true;
-  const root = join(soul.cribDir, 'llm');
-  const analysisDir = join(root, 'analysis');
+  const canonical = graphPaths(soul.cribDir);
+  const legacyRoot = join(soul.cribDir, 'llm');
+  const analysisDir = existsSync(canonical.artifacts)
+    ? canonical.artifacts
+    : join(legacyRoot, 'analysis');
   const manifestSchema = soul.getManifest().schemaVersion;
   const vcsHead = soul.getManifest().repo.vcsHead ?? null;
-  const llmManifest = readJson<{ builtAgainstHead?: string | null }>(join(root, 'manifest.json'));
+  const llmManifest = readJson<{ builtAgainstHead?: string | null }>(
+    existsSync(canonical.state) ? canonical.state : join(legacyRoot, 'manifest.json'),
+  );
 
   const raw = existsSync(analysisDir) ? readAllArtifacts(analysisDir) : [];
 

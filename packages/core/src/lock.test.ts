@@ -180,3 +180,67 @@ describe('withCribLockAsync', () => {
     expect(existsSync(join(crib, '.lock'))).toBe(false);
   });
 });
+
+describe('concurrent writers contend on the shared lock (M0.6 / WP3)', () => {
+  // The plan's last row: concurrent index/enrich/migrate calls on the same crib must NOT interleave.
+  // The lock is O_EXCL + live-pid-checked, so of N concurrent withCribLockAsync holders exactly one
+  // wins (acquires synchronously at call time) and the rest reject with LockBusyError / "crib is busy"
+  // before their fn ever runs — the critical sections never overlap. This is the async-concurrent
+  // counterpart to the sync "blocks a second acquire" test above.
+  it('one of N concurrent holders wins; the rest get LockBusyError (no interleaving, no lock leak)', async () => {
+    let inside = 0;
+    let maxOverlap = 0;
+    const N = 5;
+    const tasks = Array.from({ length: N }, () =>
+      withCribLockAsync({ cribDir: crib }, async () => {
+        inside += 1;
+        maxOverlap = Math.max(maxOverlap, inside);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        inside -= 1;
+        return 'ok';
+      }).catch((error: unknown) =>
+        error instanceof LockBusyError ? 'busy' : Promise.reject(error),
+      ),
+    );
+    const results = await Promise.all(tasks);
+    const oks = results.filter((r) => r === 'ok').length;
+    const busys = results.filter((r) => r === 'busy').length;
+
+    expect(oks).toBe(1);
+    expect(busys).toBe(N - 1);
+    // The winner was the only fn body that ever ran — no two critical sections overlapped.
+    expect(maxOverlap).toBe(1);
+    // The holder released on resolve; the losers never acquired, so no .lock file leaks.
+    expect(existsSync(join(crib, '.lock'))).toBe(false);
+  });
+
+  it('a contender that retries after the holder releases eventually acquires (queue-style, no starvation)', async () => {
+    // First holder takes the lock for 30ms; a contender that polls every 10ms must acquire once the
+    // holder releases — proving the busy error is transient and the lock is reclaimable, not stuck.
+    let contenderAcquired = false;
+    const holder = withCribLockAsync({ cribDir: crib }, async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      return 'holder-ok';
+    });
+    const contender = (async () => {
+      // Poll until acquire succeeds. Cap attempts so a bug surfaces as a timeout, not a hang.
+      for (let attempt = 0; attempt < 50; attempt++) {
+        try {
+          const result = await withCribLockAsync({ cribDir: crib }, async () => 'contender-ok');
+          contenderAcquired = true;
+          return result;
+        } catch (error) {
+          if (!(error instanceof LockBusyError)) throw error;
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+      }
+      throw new Error('contender never acquired the lock');
+    })();
+
+    const [holderResult, contenderResult] = await Promise.all([holder, contender]);
+    expect(holderResult).toBe('holder-ok');
+    expect(contenderResult).toBe('contender-ok');
+    expect(contenderAcquired).toBe(true);
+    expect(existsSync(join(crib, '.lock'))).toBe(false);
+  });
+});

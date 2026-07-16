@@ -275,6 +275,51 @@ describe('crib enrich --scope / --scope-cluster / --save flag guards (scope-pick
   });
 });
 
+describe('crib enrich --auto — bounded autonomous loop (WP2b)', () => {
+  // --auto stub-authors + saves each batch headlessly (no model). Three independent stop conditions
+  // (token ceiling, max-batches, layer boundary) plus the zero-progress churn-trap break. Each test
+  // drives the BUILT dist/cli.js against a freshly-indexed temp repo so the enrich queue is non-empty.
+
+  it('stops at the layer boundary (default budget packs the symbol layer in one batch, next batch is file)', () => {
+    const r = runCliResult(['enrich', '--auto']);
+    expect(r.status).toBe(0);
+    // First batch drains the symbol layer; the second batch is the file layer → stop for review.
+    expect(r.stdout).toContain('auto batch 1');
+    expect(r.stdout).toContain('layer boundary');
+    expect(r.stdout).toContain('stopping for review');
+  });
+
+  it('stops at --max-batches (caps the batch count before the layer boundary would fire)', () => {
+    const r = runCliResult(['enrich', '--auto', '--max-batches', '1']);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('auto batch 1');
+    expect(r.stdout).toContain('max-batches reached (1)');
+    // The max-batches check ends the loop at the bottom of iteration 1, so the layer-boundary branch
+    // (top of iteration 2) never runs.
+    expect(r.stdout).not.toContain('layer boundary');
+  });
+
+  it('stops at the --max-tokens turn ceiling (first batch always runs, subsequent batches stop before overshooting)', () => {
+    // --budget-tokens 1 splits the symbol layer into one-item batches so iteration 2 stays in the
+    // symbol layer (no layer-boundary interference); --max-tokens 1 then trips the turn ceiling after
+    // the first batch. Robust to exact per-item costs: any C>0 gives spent+C > 1 on iteration 2.
+    const r = runCliResult(['enrich', '--auto', '--budget-tokens', '1', '--max-tokens', '1']);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('auto batch 1');
+    expect(r.stdout).toContain('token ceiling');
+  });
+
+  it('breaks on zeroProgress rather than spinning (exit non-zero when a primed batch re-issues with no save)', () => {
+    // Prime: `--next` issues a batch and persists lastIssued to disk WITHOUT saving. The next process
+    // sees the same batchId re-issued → zero-progress → the churn trap. --auto MUST break non-zero
+    // instead of looping forever on a batch it cannot advance.
+    runCliResult(['enrich', '--next']);
+    const r = runCliResult(['enrich', '--auto']);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('zero-progress');
+  });
+});
+
 describe('crib index --package (workspace-aware indexing) — CLI dispatch', () => {
   let wsRepo: string;
   const wsPkg = (name: string, rel: string): void => {
@@ -363,7 +408,9 @@ describe('crib index --package (workspace-aware indexing) — CLI dispatch', () 
     const r = runWs(['index', '.', '--package', 'ftc-cloud']);
     expect(r.status).toBe(0);
     const manifest = JSON.parse(
-      execFileSync('cat', [join(wsRepo, '.crib', 'crib.json')], { encoding: 'utf8' }),
+      execFileSync('cat', [join(wsRepo, '.crib', 'graph', 'manifest.json')], {
+        encoding: 'utf8',
+      }),
     ) as { meta?: { workspace?: { tool: string }; indexedPackages?: string[] } };
     expect(manifest.meta?.workspace?.tool).toBe('pnpm');
     expect(manifest.meta?.indexedPackages).toEqual(['packages/FTCCloud']);
@@ -518,7 +565,9 @@ describe('crib update --package (P4 multi-package federation) — CLI dispatch',
     expect(scoped.stdout).toContain('outside scope');
     expect(scoped.stdout).toContain('anchor not advanced');
 
-    const manifest = JSON.parse(readFileSync(join(fedRepo, '.crib', 'crib.json'), 'utf8')) as {
+    const manifest = JSON.parse(
+      readFileSync(join(fedRepo, '.crib', 'graph', 'manifest.json'), 'utf8'),
+    ) as {
       repo: { vcsHead: string };
     };
     expect(manifest.repo.vcsHead).toBe(h1);

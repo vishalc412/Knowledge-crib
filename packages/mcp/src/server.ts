@@ -141,6 +141,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         docLimit: z.number().int().positive().max(MAX_DOC_LIMIT).optional(),
         limit: z.number().int().positive().max(MAX_LIMIT).optional(),
         extractedOnly: z.boolean().optional(),
+        includeLlm: z.boolean().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.impact(a)),
@@ -206,7 +207,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'enrich_status',
     {
       description:
-        'Coverage/progress for the agent-driven LLM semantic graph layer under .crib/llm. Pass scopes:true (with no scope) to get ranked path-prefix scopes + totalPending + threshold for the graphify-style scope picker. Pass scope:{pathPrefix} to restrict counts/nextLayer/done to in-scope targets (system layer is whole-repo only and reported via wholeRepoPending). The server never calls a model.',
+        'Coverage/progress for agent-driven semantic layer under .crib/graph/semantic. Pass scopes:true (with no scope) to get ranked path-prefix scopes + totalPending + threshold. Pass scope:{pathPrefix} to restrict counts/nextLayer/done. Server never calls a model.',
       inputSchema: {
         layer: z.enum(['symbol', 'file', 'cluster', 'system']).optional(),
         scope: z
@@ -245,7 +246,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'enrich_save',
     {
       description:
-        'Validate and persist an IDE-agent-authored LLM semantic graph batch under .crib/llm.',
+        'Validate and persist an IDE-agent-authored semantic graph batch under .crib/graph/semantic.',
       inputSchema: {
         batchId: z.string(),
         items: z.array(
@@ -326,6 +327,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         dir: z.enum(['in', 'out', 'both']).optional(),
         limit: z.number().int().positive().max(MAX_LIMIT).optional(),
         extractedOnly: z.boolean().optional(),
+        includeLlm: z.boolean().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.neighbors(a)),
@@ -351,6 +353,8 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         from: z.string(),
         to: z.string(),
         maxHops: z.number().int().positive().max(MAX_HOPS).optional(),
+        includeLlm: z.boolean().optional(),
+        extractedOnly: z.boolean().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.shortestPath(a)),

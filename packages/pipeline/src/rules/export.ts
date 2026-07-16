@@ -5,26 +5,31 @@
  * also needs.
  */
 import type { SoulStore } from '@knowledge-crib/core';
-import { decisionTable, pathFromId } from '@knowledge-crib/core';
+import { GraphStore, decisionTable, pathFromId } from '@knowledge-crib/core';
+import type { CompositeEdge, CompositeNode } from '@knowledge-crib/core';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
 import { renderMermaid } from './mermaid.js';
 
 export interface GraphJson {
   schemaVersion: string;
   stats: { nodes: number; edges: number };
-  nodes: Node[];
-  edges: Edge[];
+  nodes: Array<Node | CompositeNode>;
+  edges: Array<Edge | CompositeEdge>;
+  semantic?: ReturnType<GraphStore['semantic']>['diagnostics'];
 }
 
 /** Deterministic whole-graph JSON: nodes then edges, in store iteration order. */
-export function exportGraph(soul: SoulStore): GraphJson {
-  const nodes = [...soul.iterate()];
-  const edges = [...soul.iterateEdges()];
+export function exportGraph(soul: SoulStore, extractedOnly = false): GraphJson {
+  const store = new GraphStore(soul);
+  const snapshot = extractedOnly ? store.extracted() : store.composite();
+  const nodes = snapshot.nodes;
+  const edges = snapshot.edges;
   return {
     schemaVersion: soul.getManifest().schemaVersion,
     stats: { nodes: nodes.length, edges: edges.length },
     nodes,
     edges,
+    ...(!extractedOnly ? { semantic: snapshot.diagnostics } : {}),
   };
 }
 
@@ -157,6 +162,7 @@ export function renderExport(
   soul: SoulStore,
   format: 'rules' | 'mermaid' | 'graph.json' | 'report',
   procedure?: string,
+  opts: { extractedOnly?: boolean } = {},
 ): string {
   switch (format) {
     case 'rules': {
@@ -168,7 +174,7 @@ export function renderExport(
       return `${renderMermaid(decisionTable(soul, procedure))}\n`;
     }
     case 'graph.json':
-      return `${JSON.stringify(exportGraph(soul), null, 2)}\n`;
+      return `${JSON.stringify(exportGraph(soul, opts.extractedOnly), null, 2)}\n`;
     case 'report':
       return `${renderReport(soul, procedure)}\n`;
   }

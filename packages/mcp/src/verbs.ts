@@ -7,7 +7,8 @@ import {
   loadFederation,
 } from '@knowledge-crib/core';
 import { ifHash, loadAliases, rewriteQuery } from '@knowledge-crib/core';
-import type { Dir, Dossier, IndexStore, SoulStore } from '@knowledge-crib/core';
+import { GraphStore } from '@knowledge-crib/core';
+import type { CompositeEdge, Dir, Dossier, IndexStore, SoulStore } from '@knowledge-crib/core';
 import {
   CALLABLE_SYMBOL_TYPES,
   buildDossier,
@@ -226,6 +227,7 @@ const PUBLIC_VERBS = new Set<string>([
 
 export class Verbs {
   private readonly llm: EnrichmentStore;
+  private readonly graph: GraphStore;
   /** M2.4 — per-repo alias dictionary loaded once at construction; empty when no file is committed. */
   private readonly aliases: AliasMap;
   /** M3.3 — runtime observability counters (per-verb count/latency + ifHash cache hit rate). */
@@ -233,6 +235,7 @@ export class Verbs {
 
   constructor(private readonly deps: VerbDeps) {
     this.llm = new EnrichmentStore(deps.soul, deps.repoRoot);
+    this.graph = new GraphStore(deps.soul);
     this.aliases = loadAliases(deps.soul.cribDir);
     // M3.3 — Proxy interceptor: wrap every PUBLIC verb method with `trackCall` so per-verb
     // count + latency is recorded for BOTH entry paths (direct in-process calls AND MCP tool
@@ -264,6 +267,7 @@ export class Verbs {
   status(opts?: { dirty?: boolean }): Record<string, unknown> {
     const m = this.deps.soul.getManifest();
     const hasLlmGraph = this.llm.hasAnyFresh();
+    const composite = this.graph.composite();
     const result: Record<string, unknown> = {
       indexed: m.stats.nodes > 0,
       schemaVersion: m.schemaVersion,
@@ -271,6 +275,11 @@ export class Verbs {
       ...(m.repo.vcsHead ? { vcsHead: m.repo.vcsHead } : {}),
       ...(m.stats.incrementalSince ? { incrementalSince: m.stats.incrementalSince } : {}),
       capabilities: { ...m.capabilities, ...this.deps.index.capabilities(), llmGraph: hasLlmGraph },
+      graph: {
+        extracted: { nodes: m.stats.nodes, edges: m.stats.edges },
+        semantic: composite.diagnostics,
+        composite: { nodes: composite.nodes.length, edges: composite.edges.length },
+      },
     };
     if (this.deps.vcs) {
       try {
@@ -279,8 +288,11 @@ export class Verbs {
         result.currentHead = head;
         result.dirty = {
           isDirty: dirtyFiles.length > 0,
-          uncommitted: dirtyFiles,
+          uncommittedCount: dirtyFiles.length,
           aheadOfVcsHead: Boolean(m.repo.vcsHead && m.repo.vcsHead !== head),
+          // Default status must stay safely serializable even when a graph rebuild changes thousands
+          // of committed soul artifacts. `--dirty` is the explicit detail request.
+          ...(opts?.dirty ? { uncommitted: dirtyFiles } : {}),
         };
         if (opts?.dirty) {
           const since = m.stats.incrementalSince ?? m.repo.vcsHead;
@@ -708,6 +720,7 @@ export class Verbs {
     docLimit?: number;
     limit?: number;
     extractedOnly?: boolean;
+    includeLlm?: boolean;
   }): Record<string, unknown> {
     const id = this.resolveNodeId(args.id);
     if (!id || !this.deps.soul.getNode(id)) return notFound(args.id);
@@ -724,7 +737,7 @@ export class Verbs {
     for (let d = 1; d <= depth && frontier.length > 0; d++) {
       const next: string[] = [];
       for (const cur of frontier) {
-        for (const e of this.adjacency(cur, args.dir, args.extractedOnly)) {
+        for (const e of this.traversalAdjacency(cur, args.dir, args)) {
           const nb = args.dir === 'up' ? e.src : e.dst;
           if (visited.has(nb)) continue;
           visited.add(nb);
@@ -1169,7 +1182,7 @@ export class Verbs {
     }>;
   }): Record<string, unknown> {
     // Serializes writers: an enrich_save landing while `crib index`/`update` runs would race the
-    // .crib/llm files against the soul rebuild. Hold the cross-process crib lock around the save.
+    // semantic artifacts against soul rebuild. Hold cross-process graph lock around save.
     // On a busy crib, return a structured busy result (deterministic verbs never throw).
     const cribDir = this.deps.soul.cribDir;
     try {
@@ -1221,13 +1234,18 @@ export class Verbs {
     dir?: ApiDir;
     limit?: number;
     extractedOnly?: boolean;
+    includeLlm?: boolean;
   }): Record<string, unknown> {
-    const id = this.resolveNodeId(args.id);
-    if (!id || !this.deps.soul.getNode(id)) return notFound(args.id);
-    const edges = this.adjacency(id, apiDir(args.dir), args.extractedOnly).filter(
+    const includeLlm = args.includeLlm === true && args.extractedOnly !== true;
+    const composite = includeLlm ? this.graph.composite() : undefined;
+    const id =
+      this.resolveNodeId(args.id) ??
+      (composite?.nodes.some((node) => node.id === args.id) ? args.id : undefined);
+    if (!id) return notFound(args.id);
+    const edges = this.traversalAdjacency(id, apiDir(args.dir), args).filter(
       (e) => !args.rel || e.rel === args.rel,
     );
-    const page = bound(edges.map(publicEdge), capInt(args.limit, 50, MAX_LIMIT));
+    const page = bound(edges.map(publicAnyEdge), capInt(args.limit, 50, MAX_LIMIT));
     return {
       edges: page.items,
       truncated: page.truncated,
@@ -1260,12 +1278,23 @@ export class Verbs {
     return { node: id, owners };
   }
 
-  shortestPath(args: { from: string; to: string; maxHops?: number }): Record<string, unknown> {
+  shortestPath(args: {
+    from: string;
+    to: string;
+    maxHops?: number;
+    includeLlm?: boolean;
+    extractedOnly?: boolean;
+  }): Record<string, unknown> {
     // resolve qualified/simple names on both endpoints (parity with the other node verbs); fall
     // back to the raw input so index.shortestPath reports a clean not-found instead of throwing.
     const from = this.resolveNodeId(args.from) ?? args.from;
     const to = this.resolveNodeId(args.to) ?? args.to;
-    const r = this.deps.index.shortestPath(from, to, capInt(args.maxHops, 6, MAX_HOPS));
+    const maxHops = capInt(args.maxHops, 6, MAX_HOPS);
+    if (args.includeLlm === true && args.extractedOnly !== true) {
+      const r = this.graph.shortestPath(from, to, maxHops);
+      return { path: r.path, edges: r.edges.map(publicAnyEdge), found: r.path.length > 0 };
+    }
+    const r = this.deps.index.shortestPath(from, to, maxHops);
     return { path: r.path, edges: r.edges.map(publicEdge), found: r.found };
   }
 
@@ -1603,6 +1632,21 @@ export class Verbs {
     return extractedOnly ? edges.filter((e) => e.provenance === 'EXTRACTED') : edges;
   }
 
+  private traversalAdjacency(
+    id: string,
+    dir: Dir | 'both',
+    opts: { extractedOnly?: boolean; includeLlm?: boolean },
+  ): Array<Edge | CompositeEdge> {
+    if (opts.includeLlm !== true || opts.extractedOnly === true) {
+      return this.adjacency(id, dir, opts.extractedOnly);
+    }
+    return this.graph.composite().edges.filter((edge) => {
+      if (dir === 'up') return edge.dst === id;
+      if (dir === 'down') return edge.src === id;
+      return edge.src === id || edge.dst === id;
+    });
+  }
+
   private callEdges(id: string, dir: Dir, extractedOnly?: boolean): Edge[] {
     return this.deps.index
       .neighbors(id, 'calls', dir)
@@ -1814,6 +1858,16 @@ function publicEdge(e: Edge): Record<string, unknown> {
     provenance: e.provenance,
     confidence: e.confidence,
     ...(e.evidence ? { evidence: e.evidence } : {}),
+  };
+}
+
+function publicAnyEdge(e: Edge | CompositeEdge): Record<string, unknown> {
+  return {
+    ...publicEdge(e as Edge),
+    ...('origin' in e ? { origin: e.origin } : { origin: 'extracted' }),
+    ...('targetId' in e && e.targetId ? { targetId: e.targetId } : {}),
+    ...('model' in e && e.model ? { model: e.model } : {}),
+    ...('rationale' in e && e.rationale ? { rationale: e.rationale } : {}),
   };
 }
 

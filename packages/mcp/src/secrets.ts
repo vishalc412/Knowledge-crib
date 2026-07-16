@@ -1,7 +1,7 @@
 /**
  * Secret-pattern scanner (M1.4 — the persist-time guard).
  *
- * The LLM layer (`.crib/llm/`) is a *committed* artifact, and an LLM-authored evidence `quote` lifts
+ * Semantic layer (`.crib/graph/semantic/`) is committed, and LLM-authored evidence `quote` lifts
  * verbatim source text. If a secret lives in the indexed source, a model could copy it into a quote
  * or an analysis field — and the artifact would be committed to git. This scanner runs at
  * `enrich_save` time over every string the model authored and rejects the whole item on any hit, so

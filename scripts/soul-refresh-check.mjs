@@ -18,8 +18,8 @@
  * same code path the action runs, not a hand-wired in-process call):
  *   (1) temp repo, `git init`, deterministic author + commit dates, commit one TypeScript file;
  *   (2) `crib index .` → exit 0, ≥1 node — the committed soul exists;
- *   (3) snapshot a content hash over the real committed-soul file set (`.crib/nodes/**`,
- *       `.crib/edges/**`, `.crib/dossiers/**`, `.crib/schema/**`, `.crib/clusters/**`,
+ *   (3) snapshot a content hash over the real committed-soul file set (`.crib/graph/**`,
+ *       `.crib/dossiers/**`, `.crib/schema/**`,
  *       `.crib/crib.json`) — NOT the gitignored derived `.crib/index` or `.crib/embeddings`
  *       (rebuildable, not committed);
  *   (4) THE load-bearing assertion — `crib update .` on the unchanged tree → exit 0; re-snapshot
@@ -51,14 +51,12 @@ const fail = (msg) => {
   failed++;
 };
 
-/** Hash the committed-soul file set (the set the action commits). The real `.crib` layout is
- *  `nodes/` + `edges/` + `dossiers/` + `schema/` + `clusters/` + `crib.json` — the SECURITY.md names
- *  `.crib/soul/` and `.crib/llm/` are conceptual (soul = nodes+edges; llm = dossiers). Excludes the
- *  gitignored derived `index/` and `embeddings/` (rebuildable, not committed). */
+/** Hash the committed graph/dossier/schema set (the set the action commits). Excludes the
+ * gitignored derived `index/` and `embeddings/` (rebuildable, not committed). */
 const hashCommittedSoul = (repo) => {
   const cribDir = join(repo, '.crib');
   const h = createHash('sha256');
-  const dirs = ['nodes', 'edges', 'dossiers', 'schema', 'clusters'];
+  const dirs = ['graph', 'dossiers', 'schema'];
   const files = ['crib.json'];
   const visit = (abs) => {
     const st = statSync(abs);

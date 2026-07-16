@@ -62,10 +62,11 @@ Two existing tools each prove half and serve as **design inspiration only (no co
 ## The one-sentence model
 **Parse → graph → persist as a committable "soul" → build a fast index from it → serve to agents over MCP.**
 
-## Architecture (dual store)
-- **SoulStore** — chunked JSONL graph committed to git; source of truth; cross-IDE; engine-free
-  (readable by SeeroFlow with zero dependencies).
-- **IndexStore** — derived SQLite + FTS5 query layer; gitignored and rebuildable from the soul.
+## Architecture
+- **GraphStore** — `.crib/graph` is sole graph source of truth. `extracted/` holds deterministic
+  JSONL; `semantic/` holds grounded model-authored artifacts. Composite view joins both.
+- **IndexStore** — derived SQLite + FTS5 query layer; gitignored and rebuildable from GraphStore.
+- **SoulStore** — compatibility writer/view for deterministic `graph/extracted` layer.
   Vector search and alternate graph backends do not ship in `0.1.0`.
 
 The deterministic core (parse / graph / impact / search) **never needs a network**. LLM enrichment is

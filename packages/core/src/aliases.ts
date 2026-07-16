@@ -9,7 +9,7 @@
  * substituted) so a symbol that literally contains the acronym still matches on the original token.
  *
  * Where it lives:
- *   - The dictionary is a committed, per-repo, agent-authorable file at `.crib/llm/aliases.json` —
+ *   - The dictionary is committed at `.crib/graph/semantic/aliases.json` —
  *     the same layer as the rest of the LLM semantic graph, so the system-layer glossary (which the
  *     crib-enrich SKILL already produces: DTI/LTV/AML/KYC entity nodes) can author it. Absent file →
  *     empty map → rewrite is a pure no-op, so every existing query path is byte-identical when no
@@ -22,11 +22,12 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { graphPaths } from './graph-layout.js';
 
 /** A readonly alias→expansion map (e.g. "DTI" → "debt to income"). */
 export type AliasMap = ReadonlyMap<string, string>;
 
-/** On-disk schema for `.crib/llm/aliases.json`. */
+/** On-disk schema for semantic alias dictionary. */
 export interface AliasFile {
   /** schema tag; currently `aliases-1`. */
   version: 1;
@@ -38,13 +39,14 @@ const ALIAS_FILE = 'aliases.json';
 const ALIAS_SCHEMA = 'aliases-1';
 
 /**
- * Load the alias dictionary from `<cribDir>/llm/aliases.json`. Returns an empty map when the file is
+ * Load alias dictionary from canonical semantic layer (legacy `.crib/llm` remains readable).
  * absent (the common case — aliases are an opt-in, agent-authored artifact) or unreadable, so callers
  * never branch on presence. Accepts the {@link AliasFile} entry shape; a legacy `{ aliases: Record }`
  * plain map is also tolerated.
  */
 export function loadAliases(cribDir: string): AliasMap {
-  const path = join(cribDir, 'llm', ALIAS_FILE);
+  const canonical = graphPaths(cribDir).aliases;
+  const path = existsSync(canonical) ? canonical : join(cribDir, 'llm', ALIAS_FILE);
   if (!existsSync(path)) return new Map<string, string>();
   let raw: unknown;
   try {
@@ -110,7 +112,7 @@ export function rewriteQuery(text: string, aliases: AliasMap): string {
 }
 
 /**
- * Persist an alias dictionary to `<cribDir>/llm/aliases.json` in the committed {@link AliasFile}
+ * Persist alias dictionary to `.crib/graph/semantic/aliases.json` in committed {@link AliasFile}
  * shape. The authoring primitive the enrichment layer (system-layer glossary) calls to write the
  * domain acronym map. Overwrites any existing file atomically (single write).
  */
@@ -118,7 +120,7 @@ export function writeAliases(
   cribDir: string,
   aliases: Array<{ alias: string; expand: string }>,
 ): void {
-  const dir = join(cribDir, 'llm');
+  const dir = graphPaths(cribDir).semantic;
   const path = join(dir, ALIAS_FILE);
   mkdirSync(dir, { recursive: true });
   const file: AliasFile = { version: 1, aliases };

@@ -4,10 +4,9 @@ name: Crib Soul Refresh
 # re-extract the committed soul so the knowledge graph never drifts from the source it describes.
 # `crib update .` does an incremental re-extract from the committed soul's vcsHead anchor to HEAD
 # (and falls back to a full index if there is no anchor yet) — it advances vcsHead and rewrites only
-# what changed: .crib/nodes + .crib/edges + .crib/dossiers + .crib/schema + .crib/clusters + the
-# .crib/crib.json manifest. The derived .crib/index + .crib/embeddings are gitignored rebuildable
-# state and are NOT committed. .crib/llm (the LLM enrichment graph) is authored separately by the
-# IDE agent via enrich_save, not by `crib update`, so it is out of this action's scope.
+# what changed in .crib/graph/extracted plus dossiers/schema and the bootstrap crib.json. The
+# derived .crib/index + .crib/embeddings are gitignored rebuildable state and are NOT committed.
+# The semantic layer under .crib/graph is authored separately by the IDE agent via enrich_save.
 #
 # Determinism guarantee: `crib update` produces a soul byte-identical to `crib reindex` for the same
 # tree, so this is a pure refresh — re-running it on an unchanged tree yields an empty diff and no
@@ -24,7 +23,7 @@ name: Crib Soul Refresh
 #
 # This action runs on this repo's own CI (the gate in scripts/soul-refresh-check.mjs pins its
 # shape: trigger, the crib update call, the [skip ci] loop control, the bot author, and the
-# .crib/soul + .crib/llm-only commit scope).
+# canonical graph/dossier/schema-only commit scope).
 
 on:
   push:
@@ -77,9 +76,9 @@ jobs:
           set -euo pipefail
           # Stage only the committed soul artifacts — NEVER the derived .crib/index or
           # .crib/embeddings (gitignored, rebuildable, not a source of truth). The real `.crib`
-          # layout is nodes/ + edges/ + dossiers/ + schema/ + clusters/ + crib.json (the SECURITY.md
-          # names `.crib/soul/` and `.crib/llm/` are conceptual: soul = nodes+edges, llm = dossiers).
-          git add .crib/nodes .crib/edges .crib/dossiers .crib/schema .crib/clusters .crib/crib.json 2>/dev/null || true
+          # The graph directory is the sole graph source of truth. Stage it with the supporting
+          # dossiers/schema and bootstrap manifest, never the derived index or embeddings.
+          git add .crib/graph .crib/dossiers .crib/schema .crib/crib.json 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "soul unchanged — no commit"
             exit 0

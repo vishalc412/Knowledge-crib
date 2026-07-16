@@ -152,11 +152,11 @@ assert.match(
   /github-actions\[bot\]@users\.noreply\.github\.com/,
   'soul-refresh commit must be authored by github-actions[bot]',
 );
-// commit scope: the real committed-soul dirs (nodes/edges/dossiers/schema/clusters/crib.json) —
+// commit scope: the canonical graph plus dossiers/schema/bootstrap manifest —
 // NEVER the gitignored derived .crib/index or .crib/embeddings.
 assert.match(
   soulRefreshWorkflow,
-  /git add \.crib\/nodes \.crib\/edges \.crib\/dossiers \.crib\/schema \.crib\/clusters \.crib\/crib\.json/,
+  /git add \.crib\/graph \.crib\/dossiers \.crib\/schema \.crib\/crib\.json/,
   'soul-refresh must stage only the committed soul artifacts, never the derived index/embeddings',
 );
 assert.match(

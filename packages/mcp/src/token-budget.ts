@@ -35,6 +35,17 @@ export const MAX_FED_ROOTS = 64;
 export const DEFAULT_MAX_TOKENS = 32_000;
 export const MAX_MAX_TOKENS = 1_000_000;
 
+/**
+ * Default per-batch token budget for `enrich_next` (M4.x — token-packed batch selection). When a
+ * caller passes no `budgetTokens`, this is the soft ceiling the greedy packer fills against; `limit`
+ * (default 25, the hard cap) is only the item-count safety ceiling. Sized below
+ * {@link DEFAULT_MAX_TOKENS} so a packed batch leaves headroom for the response skeleton the host
+ * serializes around the items. Item cost varies ~15× (a spec-only interface vs. a fat class with
+ * body + callers + decisionTable), so a token budget packs far more cheap items per batch than a
+ * fixed item count — ~16-run queues collapse to ~3-4.
+ */
+export const DEFAULT_BATCH_TOKENS = 24_000;
+
 export interface Bounded<T> {
   items: T[];
   truncated: boolean;

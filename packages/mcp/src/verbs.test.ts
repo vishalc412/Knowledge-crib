@@ -83,6 +83,7 @@ interface ShortestPathResult {
 interface StatusResult {
   indexed: boolean;
   capabilities: Record<string, unknown>;
+  dirty?: { isDirty: boolean; uncommittedCount: number; uncommitted?: string[] };
 }
 interface ErrorResult {
   error: { code: string; message?: string };
@@ -523,6 +524,24 @@ describe('verbs', () => {
     expect(res.dirtyPreview.wouldScope).toContain('src/http.ts'); // reverse-dep closure from handle→login
   });
 
+  it('bounds default dirty status and includes paths only on explicit request', () => {
+    const v = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      vcs: {
+        currentHead: () => 'h1',
+        changedFilesSince: () => [],
+        uncommittedChanges: () => ['src/auth.ts', 'src/http.ts'],
+      },
+    });
+    const summary = v.status() as unknown as StatusResult;
+    expect(summary.dirty).toMatchObject({ isDirty: true, uncommittedCount: 2 });
+    expect(summary.dirty?.uncommitted).toBeUndefined();
+    const detail = v.status({ dirty: true }) as unknown as StatusResult;
+    expect(detail.dirty?.uncommitted).toEqual(['src/auth.ts', 'src/http.ts']);
+  });
+
   it('enrich_status / enrich_next / enrich_save drive an LLM-authored symbol graph batch', () => {
     const status = verbs.enrichStatus() as unknown as EnrichStatusResult;
     expect(status.nextLayer).toBe('symbol');
@@ -629,17 +648,23 @@ describe('verbs', () => {
     // M2.7 — every perItem carries the tier the host dispatcher routes on.
     expect(batch.costEstimate.perItem[0]!.tier).toBe('fast');
 
+    // WP1 — budgetTokens is now a PACKER, not a guard. A budget too small for even one item no
+    // longer returns an empty batch (that deadlocked the queue); the first item is returned ALONE
+    // with `oversized: true` so the queue always makes progress. Raise the budget or route to a
+    // bigger tier to clear it.
     const blocked = verbs.enrichNext({
       layer: 'symbol',
       limit: 1,
       budgetTokens: 1,
     }) as unknown as EnrichNextResult & {
       budgetExceeded: boolean;
+      oversized: boolean;
       budget: number;
     };
     expect(blocked.budgetExceeded).toBe(true);
+    expect(blocked.oversized).toBe(true);
     expect(blocked.budget).toBe(1);
-    expect(blocked.items).toHaveLength(0);
+    expect(blocked.items).toHaveLength(1); // oversized single item returned alone — queue never stalls
   });
 
   it('M2.7 — enrich_next items carry a suggestedTier mapped by layer (symbol=fast)', () => {
@@ -710,11 +735,18 @@ describe('verbs', () => {
             ],
           },
           evidence: [
-            { soulId: target.targetId, why: 'The source body calls token issue after login.' },
+            {
+              soulId: target.targetId,
+              why: 'The source body calls token issue after login.',
+              quote: 'login(user, pass)',
+              startLine: 10,
+              endLine: 10,
+            },
           ],
         },
       ],
     });
+    expect(soul.getManifest().generation?.semantic).toBe(1);
 
     // Default projection is LIGHTWEIGHT: provenance + confidence + purpose only, no full
     // analysis/graph/evidence blob (the token-cost promise). The pointer still signals LLM insight.
@@ -771,6 +803,29 @@ describe('verbs', () => {
     };
     expect(neighbors.edges[0]!.rel).toBe('enforces');
     expect(neighbors.edges[0]!.to).toContain('rule:authenticated-session');
+
+    const semanticId = neighbors.edges[0]!.to;
+    const compositeNeighbors = verbs.neighbors({
+      id: target.targetId,
+      includeLlm: true,
+    }) as unknown as { edges: Array<{ rel: string; origin: string }> };
+    expect(
+      compositeNeighbors.edges.some(
+        (edge) => edge.rel === 'enforces' && edge.origin === 'semantic',
+      ),
+    ).toBe(true);
+    const compositePath = verbs.shortestPath({
+      from: target.targetId,
+      to: semanticId,
+      includeLlm: true,
+    }) as unknown as { found: boolean; path: string[] };
+    expect(compositePath.found).toBe(true);
+    expect(compositePath.path).toEqual([target.targetId, semanticId]);
+    const deterministicPath = verbs.shortestPath({
+      from: target.targetId,
+      to: semanticId,
+    }) as unknown as { found: boolean };
+    expect(deterministicPath.found).toBe(false);
 
     const overview = verbs.overview() as unknown as { analyses: Array<{ targetId: string }> };
     expect(overview.analyses.some((a) => a.targetId === target.targetId)).toBe(true);
@@ -1291,7 +1346,7 @@ describe('overview v2 — module-segmented, importance-ranked, lean by default',
 
   it('a pre-v2 overview.json cache is auto-rebuilt to v2 (free migration)', () => {
     // Hand-write a v1-shaped cache (version absent) the way the old buildOverview wrote it.
-    const cachePath = join(repo, '.crib', 'llm', 'overview.json');
+    const cachePath = join(repo, '.crib', 'index', 'overview.json');
     mkdirSync(dirname(cachePath), { recursive: true });
     writeFileSync(
       cachePath,
@@ -1439,6 +1494,169 @@ describe('enrich queue — importance-ranked, tests last (outcome D)', () => {
       selectedTargetIds: string[];
     };
     expect(b.selectedTargetIds).toEqual(a.selectedTargetIds);
+  });
+});
+
+describe('enrich_next — token-packed batch selection (WP1)', () => {
+  // 34 structurally-identical leaf symbols (no callers, no source on disk ⇒ uniform per-item cost)
+  // prove the packer fills a batch by TOKEN BUDGET, not a hardcoded item count. Paths/lines are
+  // length-padded so every work item has the same serialized size ⇒ the per-item cost C is uniform
+  // and exact batch counts are deterministic. This is the fixture the "34 symbols ⇒ ~9 turns" bug
+  // report was about: under the old count-capped selector it took 9 batches; token-packing collapses
+  // it to ~2.
+  let rp: string;
+  let sp: SoulStore;
+  let idxp: SqliteIndexStore;
+  let vp: Verbs;
+  const N = 34;
+  const paths = Array.from({ length: N }, (_, i) => `src/s${String(i).padStart(2, '0')}.ts`);
+  const syms: Node[] = paths.map((p, i) => sym(p, 'S.run', 100 + i)); // 100+i ⇒ uniform 3-digit line
+
+  beforeEach(() => {
+    rp = mkdtempSync(join(tmpdir(), 'crib-pack-'));
+    sp = new SoulStore(join(rp, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00Z' }),
+    });
+    sp.load();
+    sp.putNodes([...paths.map((p) => fileNode(p)), ...syms]);
+    sp.commit('2026-01-01T00:00:00Z');
+    idxp = new SqliteIndexStore();
+    idxp.buildFromSoul(sp, rp);
+    vp = new Verbs({ soul: sp, index: idxp, repoRoot: rp });
+  });
+  afterEach(() => {
+    idxp.close();
+    rmSync(rp, { recursive: true, force: true });
+  });
+
+  /** Derive the uniform per-item cost C and the full importance-ordered pending list (limit-capped). */
+  function fullBatch() {
+    return vp.enrichNext({
+      layer: 'symbol',
+      limit: 25,
+      budgetTokens: N * 1_000_000,
+    }) as unknown as {
+      costEstimate: { perItem: Array<{ tokens: number }> };
+      selectedTargetIds: string[];
+    };
+  }
+
+  it('fixture is uniform-cost (per-item tokens equal) — prerequisite for the exact-count tests', () => {
+    const full = fullBatch();
+    const costs = full.costEstimate.perItem.map((p) => p.tokens);
+    const c = costs[0]!;
+    expect(c).toBeGreaterThan(0);
+    expect(costs.every((x) => x === c)).toBe(true);
+  });
+
+  it('packs many cheap items into one batch (limit-capped at 25), not the old hardcoded 4', () => {
+    const full = fullBatch();
+    const c = full.costEstimate.perItem[0]!.tokens;
+    const batch = vp.enrichNext({ layer: 'symbol', limit: 25, budgetTokens: N * c }) as unknown as {
+      items: unknown[];
+      remaining: number;
+      costEstimate: { batch: number };
+    };
+    expect(batch.items).toHaveLength(25); // limit ceiling, NOT 4
+    expect(batch.remaining).toBe(N - 25);
+    expect(batch.costEstimate.batch).toBeLessThanOrEqual(N * c);
+  });
+
+  it('default (no explicit budget) packs ≫4 items per batch — token-packed, not count-capped at 4', () => {
+    const batch = vp.enrichNext({ layer: 'symbol', limit: 25 }) as unknown as { items: unknown[] };
+    expect(batch.items.length).toBeGreaterThan(4); // the reported bug: was 4, now budget-driven
+  });
+
+  it('a tight budget packs few items and never exceeds the budget when ≥2 fit', () => {
+    const c = fullBatch().costEstimate.perItem[0]!.tokens;
+    const budget = 3 * c;
+    const batch = vp.enrichNext({
+      layer: 'symbol',
+      limit: 25,
+      budgetTokens: budget,
+    }) as unknown as {
+      items: unknown[];
+      costEstimate: { batch: number };
+      budgetExceeded?: boolean;
+      oversized?: boolean;
+    };
+    expect(batch.items).toHaveLength(3); // 3 fit; the 4th would overflow ⇒ strict prefix stops
+    expect(batch.costEstimate.batch).toBeLessThanOrEqual(budget);
+    expect(batch.budgetExceeded).not.toBe(true);
+    expect(batch.oversized).not.toBe(true);
+  });
+
+  it('batch cost never exceeds the budget whenever ≥2 items fit (sweep)', () => {
+    const c = fullBatch().costEstimate.perItem[0]!.tokens;
+    for (const k of [2, 5, 10, 25]) {
+      const batch = vp.enrichNext({
+        layer: 'symbol',
+        limit: 25,
+        budgetTokens: k * c,
+      }) as unknown as {
+        items: unknown[];
+        costEstimate: { batch: number };
+      };
+      expect(batch.items).toHaveLength(Math.min(k, 25));
+      expect(batch.costEstimate.batch).toBeLessThanOrEqual(k * c);
+    }
+  });
+
+  it('oversized single item returns alone with oversized:true — queue never stalls', () => {
+    const batch = vp.enrichNext({ layer: 'symbol', limit: 25, budgetTokens: 1 }) as unknown as {
+      items: unknown[];
+      budgetExceeded: boolean;
+      oversized: boolean;
+      budget: number;
+    };
+    expect(batch.items).toHaveLength(1); // returned alone, NOT an empty batch
+    expect(batch.budgetExceeded).toBe(true);
+    expect(batch.oversized).toBe(true);
+    expect(batch.budget).toBe(1);
+  });
+
+  it('batchId is identical across different limit/budget values for the same pending set', () => {
+    const a = vp.enrichNext({ layer: 'symbol', limit: 25 }) as unknown as { batchId: string };
+    const b = vp.enrichNext({ layer: 'symbol', limit: 5, budgetTokens: 100_000 }) as unknown as {
+      batchId: string;
+    };
+    const c = vp.enrichNext({ layer: 'symbol', limit: 25, budgetTokens: 1 }) as unknown as {
+      batchId: string;
+    };
+    expect(a.batchId).toBe(b.batchId);
+    expect(b.batchId).toBe(c.batchId);
+  });
+
+  it('selection is a strict prefix of the importance-ordered pending list (no skipping)', () => {
+    const full = fullBatch();
+    const fullOrder = full.selectedTargetIds; // 25-item prefix (limit cap)
+    const c = full.costEstimate.perItem[0]!.tokens;
+    const partial = vp.enrichNext({
+      layer: 'symbol',
+      limit: 25,
+      budgetTokens: 4 * c,
+    }) as unknown as {
+      selectedTargetIds: string[];
+    };
+    // 4 items fit ⇒ the batch is exactly the first 4 of the full order — the packer never skips a
+    // non-fitting item to grab a smaller later one (that would starve fat-but-important targets).
+    expect(partial.selectedTargetIds).toEqual(fullOrder.slice(0, 4));
+  });
+
+  it('--limit 25 --budget-tokens N makes progress (the old deadlock is gone)', () => {
+    const c = fullBatch().costEstimate.perItem[0]!.tokens;
+    // Old behavior: a budget guard returned an EMPTY batch + budgetExceeded, deadlocking the queue.
+    // Now the budget is a packer: it fills a batch that fits and makes progress.
+    const batch = vp.enrichNext({
+      layer: 'symbol',
+      limit: 25,
+      budgetTokens: 10 * c,
+    }) as unknown as {
+      items: unknown[];
+      budgetExceeded?: boolean;
+    };
+    expect(batch.items.length).toBeGreaterThan(0);
+    expect(batch.budgetExceeded).not.toBe(true);
   });
 });
 

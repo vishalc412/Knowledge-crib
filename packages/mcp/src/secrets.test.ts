@@ -280,7 +280,7 @@ describe('M1.4 crib export --redact — evidence quotes → span refs, secrets m
   it('exportLlm(redact=true) masks a secret that slipped past persist (defense-in-depth for pre-M1.4 artifacts)', () => {
     // Simulate a pre-M1.4 artifact on disk (before the persist guard existed) with a canary in its
     // analysis. allArtifacts() walks analysis/ recursively for every .json, so a plain file works.
-    const dir = join(repo, '.crib', 'llm', 'analysis', 'symbol', 'legacy');
+    const dir = join(repo, '.crib', 'graph', 'semantic', 'artifacts', 'symbol', 'legacy');
     mkdirSync(dir, { recursive: true });
     writeFileSync(
       join(dir, 'pre-m14.json'),
