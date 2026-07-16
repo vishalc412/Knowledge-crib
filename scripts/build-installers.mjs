@@ -169,7 +169,15 @@ function writeText(path, text, mode) {
 
 function run(cmd, args, opts = {}) {
   process.stdout.write(`$ ${[cmd, ...args].join(' ')}\n`);
-  execFileSync(cmd, args, { cwd: repoRoot, stdio: 'inherit', ...opts });
+  // On Windows, `corepack` is a .cmd shim; execFileSync (shell: false) cannot launch .cmd files
+  // directly (ENOENT). Use a shell there so the windows-latest installer:build cell stays green.
+  // Same convention as scripts/release-verify.mjs.
+  execFileSync(cmd, args, {
+    cwd: repoRoot,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+    ...opts,
+  });
 }
 
 export function buildInstallers({ outRoot = join(repoRoot, 'dist', 'installers') } = {}) {
