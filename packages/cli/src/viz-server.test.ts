@@ -1,6 +1,7 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { SoulStore, newManifest } from '@knowledge-crib/core';
 import { contentHash, idFor } from '@knowledge-crib/soul-schema';
 import type { Node } from '@knowledge-crib/soul-schema';
@@ -56,7 +57,12 @@ describe('viz source endpoint helpers', () => {
 
   it('rejects indexed traversal and symlink escape', async () => {
     writeFileSync(join(outside, 'secret.ts'), 'secret\n');
-    const traversal = sourceNode(`../${outside.split('/').pop()}/secret.ts`, 1, 1);
+    // Platform-correct path that ESCAPES root: path.relative gives `../<outside>/secret.ts`
+    // (posix) or `..\<outside>\secret.ts` (win32). The earlier `../${outside.split('/').pop()}`
+    // form was posix-only — on win32 `outside` has backslashes so split('/').pop() returned the
+    // whole `C:\Users\…` path, embedding a drive letter after `../` → resolve treated it as a
+    // relative segment with a literal `C:` → nonexistent path → 404 (not the expected 403).
+    const traversal = sourceNode(relative(root, join(outside, 'secret.ts')), 1, 1);
     soul.putNodes([traversal]);
     await expect(readVizNodeSource(soul, root, traversal.id)).rejects.toMatchObject({
       status: 403,
@@ -103,9 +109,15 @@ describe('viz source endpoint helpers', () => {
     mkdirSync(assets);
     writeFileSync(join(assets, 'index.html'), 'ok');
     writeFileSync(join(root, 'src', 'demo.ts'), 'outside asset root');
-    await expect(resolveVizAsset(assets, '/')).resolves.toBe(
-      realpathSync(join(assets, 'index.html')),
-    );
+    // Compare via fs.promises.realpath on BOTH sides. resolveVizAsset returns
+    // `await realpath(...)` (promise API); the earlier assertion compared it to realpathSync
+    // (sync API). On win32 the two APIs canonicalize 8.3 short names differently (the GH Actions
+    // `runneradmin` profile is registered as `RUNNER~1`): promises.realpath returns the long form
+    // (`runneradmin`), realpathSync returns the short form (`RUNNER~1`) → Object.is mismatch even
+    // though both resolve the SAME file. Funneling both through the promise API makes the
+    // canonical form identical on every platform.
+    const expectedAsset = await realpath(join(assets, 'index.html'));
+    await expect(resolveVizAsset(assets, '/')).resolves.toBe(expectedAsset);
     await expect(resolveVizAsset(assets, '/../src/demo.ts')).rejects.toBeInstanceOf(VizHttpError);
     await expect(resolveVizAsset(assets, '/%2e%2e/src/demo.ts')).rejects.toMatchObject({
       status: 403,

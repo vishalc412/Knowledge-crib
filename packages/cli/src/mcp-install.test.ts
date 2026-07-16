@@ -2,9 +2,21 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { type McpInstallResult, installMcp, listMcp, removeMcp } from './mcp-install.js';
+import {
+  type McpInstallResult,
+  installMcp,
+  listMcp,
+  removeMcp,
+  resolveBin,
+  tomlString,
+} from './mcp-install.js';
 
 const BIN = '/usr/local/bin/crib';
+// resolveBin applies path.resolve — a no-op on posix (`/usr/local/bin/crib` is already absolute)
+// but on win32 a leading `/` means "root of the current drive" → `D:\usr\local\bin\crib`. The
+// earlier assertions compared entry.command to the RAW BIN, which only round-trips on posix.
+// Asserting RESOLVED_BIN matches the code's actual (correct, PATH-independent) behavior on both.
+const RESOLVED_BIN = resolveBin(BIN);
 const NAME = 'knowledge-crib';
 
 let repo: string;
@@ -39,7 +51,7 @@ describe('installMcp — claude (project-scope .mcp.json)', () => {
     expect(r.configPath).toBe(join(repo, '.mcp.json'));
     const cfg = parse(r.configPath);
     const entry = (cfg.mcpServers as Record<string, { command: string; args: string[] }>)[NAME]!;
-    expect(entry.command).toBe(BIN);
+    expect(entry.command).toBe(RESOLVED_BIN);
     expect(entry.args).toEqual(['serve', '.']); // portable: project-scope spawns with CWD=root
   });
 
@@ -106,8 +118,12 @@ describe('installMcp — codex (TOML, snake_case, absolute path, project + globa
     expect(r.args).toEqual(['serve', repo]); // codex has no interpolation → absolute path
     const toml = readFileSync(join(repo, '.codex', 'config.toml'), 'utf8');
     expect(toml).toContain('[mcp_servers.knowledge-crib]');
-    expect(toml).toContain(`command = "${BIN}"`);
-    expect(toml).toContain(`args = ["serve", "${repo}"]`);
+    // tomlString applies backslash- + quote-escaping + wraps in quotes. On win32 RESOLVED_BIN is
+    // `D:\usr\local\bin\crib` → serialized `command = "D:\\usr\\local\\bin\\crib"` (valid TOML).
+    // The earlier `command = "${BIN}"` asserted the raw posix path → mismatch on win32.
+    expect(toml).toContain(`command = ${tomlString(RESOLVED_BIN)}`);
+    // Args go through the same tomlString escaping now (win32 repo path backslashes escaped).
+    expect(toml).toContain(`args = ["serve", ${tomlString(repo)}]`);
     expect(toml).toContain('startup_timeout_sec = 20');
   });
 

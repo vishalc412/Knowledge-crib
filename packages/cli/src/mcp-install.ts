@@ -70,8 +70,9 @@ export function resolveBin(bin?: string): string {
   }
 }
 
-/** Quote a path for embedding in a TOML string value (Codex `command = "…"`). */
-function tomlString(s: string): string {
+/** Quote a string for embedding in a TOML basic string value (`"…"`, backslash- + quote-escaped).
+ *  Exported so tests can assert the exact serialized form without duplicating the escape rules. */
+export function tomlString(s: string): string {
   return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
@@ -218,7 +219,12 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
         TOML_BEGIN,
         `[mcp_servers.${SERVER_NAME}]`,
         `command = ${tomlString(bin)}`,
-        `args = ["${args.map((a) => a.replace(/"/g, '\\"')).join('", "')}"]`,
+        // Each arg is a TOML basic string → backslash- AND quote-escaped via tomlString. The earlier
+        // form only quote-escaped (`a.replace(/"/g, '\\"')`), so a win32 absolute repo path like
+        // `C:\Users\runneradmin\repo` serialized as `args = ["serve", "C:\Users\…\repo"]` with RAW
+        // backslashes — invalid TOML (`\U`/`\C` are undefined escapes a parser rejects). Routing
+        // args through tomlString matches the command-line escaping and yields valid TOML on win32.
+        `args = [${args.map((a) => tomlString(a)).join(', ')}]`,
         'startup_timeout_sec = 20',
         'tool_timeout_sec = 60',
         TOML_END,
