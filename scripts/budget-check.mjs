@@ -119,6 +119,10 @@ await check('mcp+cli package size', () => {
       execFileSync('corepack', ['pnpm@9.15.0', 'pack', '--pack-destination', stagingDir], {
         cwd: `packages/${pkg}`,
         stdio: ['ignore', 'pipe', 'pipe'],
+        // Windows ships corepack as a .cmd shim; shell:false (execFileSync default) cannot launch
+        // it (spawnSync ENOENT). shell:true on win32 routes through cmd.exe. No-op on posix.
+        // Same fix as release-verify.mjs / build-installers.mjs / pack-check.mjs.
+        shell: process.platform === 'win32',
       });
     }
     for (const name of readdirSync(stagingDir)) {
@@ -142,6 +146,7 @@ await check('parsers package size (vendored grammars)', () => {
     execFileSync('corepack', ['pnpm@9.15.0', 'pack', '--pack-destination', stagingDir], {
       cwd: 'packages/parsers',
       stdio: ['ignore', 'pipe', 'pipe'],
+      shell: process.platform === 'win32', // corepack is a .cmd on win32; shell:true to launch it
     });
     let total = 0;
     for (const name of readdirSync(stagingDir)) {
