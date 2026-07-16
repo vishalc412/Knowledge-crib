@@ -1,0 +1,787 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.test.ts#calls@L33",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:04301797036f87f69ff79985aa9748e24032d5cb177046573de4ffc956216aee",
+  "builtAt": "2026-06-30T15:54:03.404Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.test.ts#calls@L33",
+    "kind": "symbol",
+    "type": "function",
+    "name": "calls",
+    "qualifiedName": "calls",
+    "signature": "calls(src: Node, dst: Node): Edge",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.test.ts",
+    "span": {
+      "start": 33,
+      "end": 43
+    },
+    "callSites": [
+      {
+        "callee": "edgeId",
+        "line": 35
+      }
+    ]
+  },
+  "source": {
+    "text": "function calls(src: Node, dst: Node): Edge {\n  return {\n    id: edgeId(src.id, dst.id, 'calls'),\n    src: src.id,\n    dst: dst.id,\n    rel: 'calls',\n    method: 'static',\n    provenance: 'EXTRACTED',\n    confidence: 1,\n  };\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 33
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 122
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#1-why-this-is-its-own-capability",
+      "heading": "1. Why this is its own capability",
+      "anchor": "1-why-this-is-its-own-capability",
+      "snippet": "1. Why this is its own capability",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#1-contract",
+      "heading": "1. Contract",
+      "anchor": "1-contract",
+      "snippet": "1. Contract",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-3-resolve-the-deep-part",
+      "heading": "Phase 3 — Resolve (the deep part)",
+      "anchor": "phase-3-resolve-the-deep-part",
+      "snippet": "Phase 3 — Resolve (the deep part)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#what-gets-indexed",
+      "heading": "What gets indexed",
+      "anchor": "what-gets-indexed",
+      "snippet": "What gets indexed",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "heading": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "anchor": "3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "snippet": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B.md#ws-a2-body-present-data-flow-verification-finish-ws-7",
+      "heading": "WS-A2 — Body-present data-flow verification (finish WS-7)",
+      "anchor": "ws-a2-body-present-data-flow-verification-finish-ws-7",
+      "snippet": "WS-A2 — Body-present data-flow verification (finish WS-7)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#1-why-plan-a-still-loses-to-plan-b-today-universal-gaps",
+      "heading": "1. Why Plan A still loses to Plan B today (universal gaps)",
+      "anchor": "1-why-plan-a-still-loses-to-plan-b-today-universal-gaps",
+      "snippet": "1. Why Plan A still loses to Plan B today (universal gaps)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-0-universal-cfg-parity-finish-s65-6-days",
+      "heading": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "anchor": "phase-0-universal-cfg-parity-finish-s65-6-days",
+      "snippet": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-1-language-agnostic-migration-core-8-days",
+      "heading": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "anchor": "phase-1-language-agnostic-migration-core-8-days",
+      "snippet": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-5-data-model-ontology-summary-full-grammar-in-data-model-4-merge-11-ids-here",
+      "heading": "2.5 Data model (ontology) — summary; full grammar in data-model §4 (merge 11 ids here)",
+      "anchor": "2-5-data-model-ontology-summary-full-grammar-in-data-model-4-merge-11-ids-here",
+      "snippet": "2.5 Data model (ontology) — summary; full grammar in data-model §4 (merge 11 ids here)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#10-2-pipeline-phases-3c-3d-the-migration-wedge",
+      "heading": "10.2 Pipeline (Phases 3c + 3d, the migration wedge)",
+      "anchor": "10-2-pipeline-phases-3c-3d-the-migration-wedge",
+      "snippet": "10.2 Pipeline (Phases 3c + 3d, the migration wedge)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#the-problem-3",
+      "heading": "The problem",
+      "anchor": "the-problem-3",
+      "snippet": "The problem",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-edge-relations-rel",
+      "heading": "2. Edge relations (`rel`)",
+      "anchor": "2-edge-relations-rel",
+      "snippet": "2. Edge relations (`rel`)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#new-metadata-on-calls-and-executes-writes-edges",
+      "heading": "New metadata on `calls` (and `executes`/`writes`) edges",
+      "anchor": "new-metadata-on-calls-and-executes-writes-edges",
+      "snippet": "New metadata on `calls` (and `executes`/`writes`) edges",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "heading": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "anchor": "4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "snippet": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#5-the-example-fully-represented",
+      "heading": "5. The example, fully represented",
+      "anchor": "5-the-example-fully-represented",
+      "snippet": "5. The example, fully represented",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m11-cfg-pass-guard-chain-condition-nodes",
+      "heading": "M11 — CFG pass + guard chain + condition nodes",
+      "anchor": "m11-cfg-pass-guard-chain-condition-nodes",
+      "snippet": "M11 — CFG pass + guard chain + condition nodes",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#impact-symbol-dir",
+      "heading": "`impact(symbol, dir)`",
+      "anchor": "impact-symbol-dir",
+      "snippet": "`impact(symbol, dir)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#neighbors-id-rel",
+      "heading": "`neighbors(id, rel?)`",
+      "anchor": "neighbors-id-rel",
+      "snippet": "`neighbors(id, rel?)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#cypher-optional-index-backend-dependent",
+      "heading": "`cypher` *(optional, index-backend-dependent)*",
+      "anchor": "cypher-optional-index-backend-dependent",
+      "snippet": "`cypher` *(optional, index-backend-dependent)*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-2-parse-tree-sitter-wasm",
+      "heading": "Phase 2 — Parse (tree-sitter, WASM)",
+      "anchor": "phase-2-parse-tree-sitter-wasm",
+      "snippet": "Phase 2 — Parse (tree-sitter, WASM)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#5-architecture",
+      "heading": "5. Architecture",
+      "anchor": "5-architecture",
+      "snippet": "5. Architecture",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-1-what-each-model-can-answer-about-one-procedure",
+      "heading": "1.1 What each model can answer about ONE procedure",
+      "anchor": "1-1-what-each-model-can-answer-about-one-procedure",
+      "snippet": "1.1 What each model can answer about ONE procedure",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-2-concrete-before-after-the-loan-rule-engine-procedure",
+      "heading": "1.2 Concrete before/after — the loan-rule-engine procedure",
+      "anchor": "1-2-concrete-before-after-the-loan-rule-engine-procedure",
+      "snippet": "1.2 Concrete before/after — the loan-rule-engine procedure",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-3-what-changed-in-the-contract-deterministic-forward-compatible",
+      "heading": "1.3 What changed in the contract (deterministic, forward-compatible)",
+      "anchor": "1-3-what-changed-in-the-contract-deterministic-forward-compatible",
+      "snippet": "1.3 What changed in the contract (deterministic, forward-compatible)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#edge",
+      "heading": "Edge",
+      "anchor": "edge",
+      "snippet": "Edge",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#track-3-statement-condition-cfg-extraction-for-all-parsers-design-spec",
+      "heading": "Track 3 — Statement/Condition/CFG extraction for all parsers (design spec)",
+      "anchor": "track-3-statement-condition-cfg-extraction-for-all-parsers-design-spec",
+      "snippet": "Track 3 — Statement/Condition/CFG extraction for all parsers (design spec)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "heading": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "anchor": "4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "snippet": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#impact-blast-radius-the-wedge-verb",
+      "heading": "`impact` — blast radius (the wedge verb)",
+      "anchor": "impact-blast-radius-the-wedge-verb",
+      "snippet": "`impact` — blast radius (the wedge verb)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#neighbors-raw-adjacency-graph-walking-primitive",
+      "heading": "`neighbors` — raw adjacency (graph-walking primitive)",
+      "anchor": "neighbors-raw-adjacency-graph-walking-primitive",
+      "snippet": "`neighbors` — raw adjacency (graph-walking primitive)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-5-successful-index-the-demo-graph",
+      "heading": "5.5 Successful index (the demo graph)",
+      "anchor": "5-5-successful-index-the-demo-graph",
+      "snippet": "5.5 Successful index (the demo graph)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#10-the-llm-semantic-graph-layer-the-grove-plan",
+      "heading": "10. The LLM semantic-graph layer (the grove plan)",
+      "anchor": "10-the-llm-semantic-graph-layer-the-grove-plan",
+      "snippet": "10. The LLM semantic-graph layer (the grove plan)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-3-ascii-flow-diagram-command-paths",
+      "heading": "2.3 ASCII Flow Diagram: Command Paths",
+      "anchor": "2-3-ascii-flow-diagram-command-paths",
+      "snippet": "2.3 ASCII Flow Diagram: Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-1-adding-a-new-language-parser-8th-language",
+      "heading": "4.1 Adding a New Language Parser (8th Language)",
+      "anchor": "4-1-adding-a-new-language-parser-8th-language",
+      "snippet": "4.1 Adding a New Language Parser (8th Language)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-4-adding-a-new-pipeline-phase",
+      "heading": "4.4 Adding a New Pipeline Phase",
+      "anchor": "4-4-adding-a-new-pipeline-phase",
+      "snippet": "4.4 Adding a New Pipeline Phase",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
+      "heading": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
+      "anchor": "c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
+      "snippet": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "heading": "1.3 The gaps that make Plan A < Plan B today",
+      "anchor": "1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "snippet": "1.3 The gaps that make Plan A < Plan B today",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m2-parse-pipeline-1-lang-typescript-symbols-intra-file-edges",
+      "heading": "M2 — parse pipeline, 1 lang (TypeScript) → symbols + intra-file edges",
+      "anchor": "m2-parse-pipeline-1-lang-typescript-symbols-intra-file-edges",
+      "snippet": "M2 — parse pipeline, 1 lang (TypeScript) → symbols + intra-file edges",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#11-verification-strategy-end-to-end",
+      "heading": "11. Verification strategy (end-to-end)",
+      "anchor": "11-verification-strategy-end-to-end",
+      "snippet": "11. Verification strategy (end-to-end)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "heading": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
+      "anchor": "2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "snippet": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#supported-languages-extractors-shipped-by-default",
+      "heading": "Supported languages (extractors shipped by default)",
+      "anchor": "supported-languages-extractors-shipped-by-default",
+      "snippet": "Supported languages (extractors shipped by default)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m8-tree-sitter-wasm-plugin-languages-python-first",
+      "heading": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "anchor": "m8-tree-sitter-wasm-plugin-languages-python-first",
+      "snippet": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m10-pl-sql-extractor-sql-data-flow-phase-3c",
+      "heading": "M10 — PL/SQL extractor + SQL data-flow (Phase 3c)",
+      "anchor": "m10-pl-sql-extractor-sql-data-flow-phase-3c",
+      "snippet": "M10 — PL/SQL extractor + SQL data-flow (Phase 3c)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-overview",
+      "heading": "Phase overview",
+      "anchor": "phase-overview",
+      "snippet": "Phase overview",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#knowledge-crib-refined-vs-existing-detailed-level-analysis-assessment",
+      "heading": "Knowledge-crib — Refined vs Existing: Detailed-Level Analysis Assessment",
+      "anchor": "knowledge-crib-refined-vs-existing-detailed-level-analysis-assessment",
+      "snippet": "Knowledge-crib — Refined vs Existing: Detailed-Level Analysis Assessment",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#tests-each-language-add-to-the-existing-extractor-test-ts",
+      "heading": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "anchor": "tests-each-language-add-to-the-existing-extractor-test-ts",
+      "snippet": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CONTRIBUTING.md#contribution-guidelines",
+      "heading": "Contribution Guidelines",
+      "anchor": "contribution-guidelines",
+      "snippet": "Contribution Guidelines",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "heading": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "anchor": "phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "snippet": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-5-expose-rich-verbs-on-the-cli-closes-g5",
+      "heading": "WS-5 — Expose rich verbs on the CLI (closes G5)",
+      "anchor": "ws-5-expose-rich-verbs-on-the-cli-closes-g5",
+      "snippet": "WS-5 — Expose rich verbs on the CLI (closes G5)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#locked-decisions-from-clarifying-questions-spec-research",
+      "heading": "Locked decisions (from clarifying questions + spec + research)",
+      "anchor": "locked-decisions-from-clarifying-questions-spec-research",
+      "snippet": "Locked decisions (from clarifying questions + spec + research)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-7-deployment-lifecycle",
+      "heading": "2.7 Deployment & lifecycle",
+      "anchor": "2-7-deployment-lifecycle",
+      "snippet": "2.7 Deployment & lifecycle",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#4-1-major-mcp-sampling-is-deprecated-enrichment-moves-to-direct-provider-api",
+      "heading": "4.1 ⚠ MAJOR — MCP sampling is deprecated; enrichment moves to direct provider API",
+      "anchor": "4-1-major-mcp-sampling-is-deprecated-enrichment-moves-to-direct-provider-api",
+      "snippet": "4.1 ⚠ MAJOR — MCP sampling is deprecated; enrichment moves to direct provider API",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m3-resolve-pass-cross-file-imports-calls-inheritance-receiver-types-migration-fork-point",
+      "heading": "M3 — resolve pass (cross-file imports/calls/inheritance/receiver-types) ← MIGRATION FORK POINT",
+      "anchor": "m3-resolve-pass-cross-file-imports-calls-inheritance-receiver-types-migration-fork-point",
+      "snippet": "M3 — resolve pass (cross-file imports/calls/inheritance/receiver-types) ← MIGRATION FORK POINT",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#8-verify-it-works-any-client",
+      "heading": "8. Verify it works (any client)",
+      "anchor": "8-verify-it-works-any-client",
+      "snippet": "8. Verify it works (any client)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-the-llm-semantic-graph-layer-optional-build-the-bible",
+      "heading": "10. The LLM semantic-graph layer (optional — \"build the bible\")",
+      "anchor": "10-the-llm-semantic-graph-layer-optional-build-the-bible",
+      "snippet": "10. The LLM semantic-graph layer (optional — \"build the bible\")",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-2-run-the-loop-from-claude-code",
+      "heading": "10.2 Run the loop from Claude Code",
+      "anchor": "10-2-run-the-loop-from-claude-code",
+      "snippet": "10.2 Run the loop from Claude Code",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4-pl-sql-extractor-first-migration-target",
+      "heading": "4. PL/SQL extractor (first migration target)",
+      "anchor": "4-pl-sql-extractor-first-migration-target",
+      "snippet": "4. PL/SQL extractor (first migration target)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#8-build-track-first-class-alongside-the-doc-link-mvp-depends-on-m0-m3",
+      "heading": "8. Build track (first-class, alongside the doc-link MVP) — depends on M0–M3",
+      "anchor": "8-build-track-first-class-alongside-the-doc-link-mvp-depends-on-m0-m3",
+      "snippet": "8. Build track (first-class, alongside the doc-link MVP) — depends on M0–M3",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#fixed-for-release",
+      "heading": "Fixed For Release",
+      "anchor": "fixed-for-release",
+      "snippet": "Fixed For Release",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#7-seeroflow-read-contract-q38-and-any-external-consumer",
+      "heading": "7. SeeroFlow read contract [Q38] (and any external consumer)",
+      "anchor": "7-seeroflow-read-contract-q38-and-any-external-consumer",
+      "snippet": "7. SeeroFlow read contract [Q38] (and any external consumer)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "heading": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "anchor": "2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "snippet": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#crib-enrich-author-knowledge-crib-s-llm-semantic-graph",
+      "heading": "crib-enrich — author knowledge-crib's LLM semantic graph",
+      "anchor": "crib-enrich-author-knowledge-crib-s-llm-semantic-graph",
+      "snippet": "crib-enrich — author knowledge-crib's LLM semantic graph",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/pipeline/fixtures/docs-linked/docs/auth.md#authentication",
+      "heading": "Authentication",
+      "anchor": "authentication",
+      "snippet": "Authentication",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.test.ts#calls@L33",
+    "procedureName": "calls",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.test.ts#calls@L33",
+        "procedureName": "calls",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3260471399fe1aa161e71420aa41bd02945860bdf5588e405c825adaf193cfbd",
+          "target": "stmt:packages/core/src/index/sqlite-index.test.ts@L34",
+          "line": 34,
+          "expr": "return {\n    id: edgeId(src.id, dst.id, 'calls'),\n    src: src.id,\n    dst: dst.id,\n    rel: 'calls',\n    method: 'static',\n    provenance: 'EXTRACTED',\n    confidence: 1,\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.test.ts#calls@L33",
+        "procedureName": "calls",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6e6408e1cbd1051c87f0a7d69a4a304dc941880738331bf886f4d606966e693e",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L122",
+          "expr": "edgeId",
+          "line": 35
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

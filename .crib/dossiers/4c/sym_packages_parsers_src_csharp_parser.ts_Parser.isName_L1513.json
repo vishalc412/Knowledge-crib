@@ -1,0 +1,203 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isName@L1513",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:2a31c93f4365904a100c6eaced137c5cb5e3f8fd9986bad532dc23c04bd4590e",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isName@L1513",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isName",
+    "qualifiedName": "Parser.isName",
+    "signature": "isName(v: string): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 1513,
+      "end": 1515
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 1514
+      },
+      {
+        "callee": "peek",
+        "line": 1514
+      }
+    ]
+  },
+  "source": {
+    "text": "  private isName(v: string): boolean {\n    return this.peek().type === 'NAME' && this.peek().value === v;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1513
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseBaseClause@L473",
+      "confidence": 1,
+      "name": "parseBaseClause",
+      "qualifiedName": "Parser.parseBaseClause",
+      "signature": "parseBaseClause(): { bases: string[]; impls: string[] }",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 473
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecl@L253",
+      "confidence": 1,
+      "name": "parseDecl",
+      "qualifiedName": "Parser.parseDecl",
+      "signature": "parseDecl(): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 253
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDo@L1128",
+      "confidence": 1,
+      "name": "parseDo",
+      "qualifiedName": "Parser.parseDo",
+      "signature": "parseDo(startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1128
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseIf@L1083",
+      "confidence": 1,
+      "name": "parseIf",
+      "qualifiedName": "Parser.parseIf",
+      "signature": "parseIf(startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1083
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseRecord@L325",
+      "confidence": 1,
+      "name": "parseRecord",
+      "qualifiedName": "Parser.parseRecord",
+      "signature": "parseRecord(startLine: number, attributes: string[], modifiers: string[]): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 325
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseStmtListUntilCase@L1178",
+      "confidence": 1,
+      "name": "parseStmtListUntilCase",
+      "qualifiedName": "Parser.parseStmtListUntilCase",
+      "signature": "parseStmtListUntilCase(): CsharpStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1178
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitch@L1141",
+      "confidence": 1,
+      "name": "parseSwitch",
+      "qualifiedName": "Parser.parseSwitch",
+      "signature": "parseSwitch(startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1141
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseTry@L1191",
+      "confidence": 1,
+      "name": "parseTry",
+      "qualifiedName": "Parser.parseTry",
+      "signature": "parseTry(startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1191
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipWhereClauses@L498",
+      "confidence": 1,
+      "name": "skipWhereClauses",
+      "qualifiedName": "Parser.skipWhereClauses",
+      "signature": "skipWhereClauses(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 498
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1528",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(offset = 0): Token",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1528
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.isName@L1513",
+    "procedureName": "Parser.isName",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.isName@L1513",
+        "procedureName": "Parser.isName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:82d370efd2898b2e1fef57e195433882624e8dd2e8aa544eee9dfa6f6885cf0b",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1528",
+          "expr": "peek",
+          "line": 1514
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.isName@L1513",
+        "procedureName": "Parser.isName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a13108159a551aee6523addbc920961cb608698499f38c09bdc2fe5a8c6b84c0",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1514",
+          "line": 1514,
+          "expr": "return this.peek().type === 'NAME' && this.peek().value === v;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

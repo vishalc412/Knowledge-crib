@@ -1,0 +1,321 @@
+{
+  "id": "sym:packages/cli/src/hooks.ts#spliceManaged@L92",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:b1138b5214ea02cb3151c13b4faa6c75029bff34687a4cc07a485ff54979a98b",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/hooks.ts#spliceManaged@L92",
+    "kind": "symbol",
+    "type": "function",
+    "name": "spliceManaged",
+    "qualifiedName": "spliceManaged",
+    "signature": "spliceManaged(content: string, block: string, beginMarker: string, endMarker: string, fresh: boolean): string",
+    "lang": "typescript",
+    "file": "packages/cli/src/hooks.ts",
+    "span": {
+      "start": 92,
+      "end": 110
+    },
+    "callSites": [
+      {
+        "callee": "indexOf",
+        "line": 99
+      },
+      {
+        "callee": "startsWith",
+        "line": 101
+      },
+      {
+        "callee": "endsWith",
+        "line": 102
+      },
+      {
+        "callee": "indexOf",
+        "line": 105
+      },
+      {
+        "callee": "slice",
+        "line": 106
+      },
+      {
+        "callee": "slice",
+        "line": 107
+      },
+      {
+        "callee": "endsWith",
+        "line": 108
+      },
+      {
+        "callee": "ensuredNl",
+        "line": 109
+      },
+      {
+        "callee": "replace",
+        "line": 109
+      }
+    ]
+  },
+  "source": {
+    "text": "export function spliceManaged(\n  content: string,\n  block: string,\n  beginMarker: string,\n  endMarker: string,\n  fresh: boolean,\n): string {\n  const beginIdx = content.indexOf(beginMarker);\n  if (beginIdx === -1) {\n    const prefix = fresh && !content.startsWith('#!') ? '#!/bin/sh\\n' : '';\n    const tail = content.length > 0 && !content.endsWith('\\n') ? '\\n' : '';\n    return `${prefix}${content}${tail}${block}\\n`;\n  }\n  const endIdx = content.indexOf(endMarker, beginIdx);\n  const before = content.slice(0, beginIdx);\n  const after = endIdx === -1 ? '' : content.slice(endIdx + endMarker.length);\n  const ensuredNl = (s: string) => (s.length > 0 && !s.endsWith('\\n') ? `${s}\\n` : s);\n  return `${ensuredNl(before)}${block}\\n${after.replace(/^\\n/, '')}`;\n}",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 92
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/hooks.ts#installHooks@L50",
+      "confidence": 1,
+      "name": "installHooks",
+      "qualifiedName": "installHooks",
+      "signature": "installHooks(root: string, opts: HookInstallOptions = {}): HookInstallResult",
+      "type": "function",
+      "file": "packages/cli/src/hooks.ts",
+      "line": 50
+    },
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#installMcp@L171",
+      "confidence": 1,
+      "name": "installMcp",
+      "qualifiedName": "installMcp",
+      "signature": "installMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 171
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/hooks.ts#spliceManaged.ensuredNl@L108",
+      "confidence": 1,
+      "name": "ensuredNl",
+      "qualifiedName": "spliceManaged.ensuredNl",
+      "signature": "ensuredNl(…)",
+      "type": "function",
+      "file": "packages/cli/src/hooks.ts",
+      "line": 108
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/hooks.ts@L86",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
+      "heading": "What was built",
+      "anchor": "what-was-built-2",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/hooks.ts#spliceManaged@L92",
+    "procedureName": "spliceManaged",
+    "conditions": [
+      "cond:packages/cli/src/hooks.ts@L100"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#spliceManaged@L92",
+        "procedureName": "spliceManaged",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1015dc9552fd5fdb9018de94375e48e07932983a2937d9445a07be2af95b044b",
+          "target": "stmt:packages/cli/src/hooks.ts@L99",
+          "line": 99,
+          "expr": "const beginIdx = content.indexOf(beginMarker);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#spliceManaged@L92",
+        "procedureName": "spliceManaged",
+        "guard": "cond:packages/cli/src/hooks.ts@L100",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/hooks.ts@L100",
+            "expr": "beginIdx === -1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:248a05ce198bae6b22cc91a86655e36126774ef4459800175a63232ad40fcedd",
+          "target": "stmt:packages/cli/src/hooks.ts@L101",
+          "line": 101,
+          "expr": "const prefix = fresh && !content.startsWith('#!') ? '#!/bin/sh\\n' : '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#spliceManaged@L92",
+        "procedureName": "spliceManaged",
+        "guard": "cond:packages/cli/src/hooks.ts@L100",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/hooks.ts@L100",
+            "expr": "beginIdx === -1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:07139f021481d8bec585b7559c6e47487c8f23d346ec2b8abd81c2951c9e6760",
+          "target": "stmt:packages/cli/src/hooks.ts@L102",
+          "line": 102,
+          "expr": "const tail = content.length > 0 && !content.endsWith('\\n') ? '\\n' : '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#spliceManaged@L92",
+        "procedureName": "spliceManaged",
+        "guard": "cond:packages/cli/src/hooks.ts@L100",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/hooks.ts@L100",
+            "expr": "beginIdx === -1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e4c5a3fc5ccf92a2d51b9ce87a86140dd26a5806b5372935d08e2a86406f6b13",
+          "target": "stmt:packages/cli/src/hooks.ts@L103",
+          "line": 103,
+          "expr": "return `${prefix}${content}${tail}${block}\\n`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#spliceManaged@L92",
+        "procedureName": "spliceManaged",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f6146d993440ecf199d4c3b01abcb2ab6847c9d2434877a32679670f61cbeac",
+          "target": "stmt:packages/cli/src/hooks.ts@L105",
+          "line": 105,
+          "expr": "const endIdx = content.indexOf(endMarker, beginIdx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#spliceManaged@L92",
+        "procedureName": "spliceManaged",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d0019d0a39bd03f0447cba6d4d285ff6620d4440899065218721e45471e145aa",
+          "target": "stmt:packages/cli/src/hooks.ts@L106",
+          "line": 106,
+          "expr": "const before = content.slice(0, beginIdx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#spliceManaged@L92",
+        "procedureName": "spliceManaged",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f1e977f6c1ee46727506d54fd7d87c93713e719b117a604ca9ee8fd1c002530f",
+          "target": "stmt:packages/cli/src/hooks.ts@L107",
+          "line": 107,
+          "expr": "const after = endIdx === -1 ? '' : content.slice(endIdx + endMarker.length);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#spliceManaged@L92",
+        "procedureName": "spliceManaged",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:87b29c406962417d6539a6049d897824f8d593735dd7e28c6b8b735d2a5dee19",
+          "target": "stmt:packages/cli/src/hooks.ts@L108",
+          "line": 108,
+          "expr": "const ensuredNl = (s: string) => (s.length > 0 && !s.endsWith('\\n') ? `${s}\\n` : s);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#spliceManaged@L92",
+        "procedureName": "spliceManaged",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:39495b4b3417d4359f8a701f66ed307b20418a5471e9bbb6dc75f58368282f06",
+          "target": "sym:packages/cli/src/hooks.ts#spliceManaged.ensuredNl@L108",
+          "expr": "ensuredNl",
+          "line": 109
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#spliceManaged@L92",
+        "procedureName": "spliceManaged",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3b0ffd68abf8a19fe65ef102ec10c3cf43a2543dc4149b095c6af4457de5e076",
+          "target": "stmt:packages/cli/src/hooks.ts@L109",
+          "line": 109,
+          "expr": "return `${ensuredNl(before)}${block}\\n${after.replace(/^\\n/, '')}`;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/cli/src/hooks.ts",
+      "packages/cli/src/mcp-install.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 9,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

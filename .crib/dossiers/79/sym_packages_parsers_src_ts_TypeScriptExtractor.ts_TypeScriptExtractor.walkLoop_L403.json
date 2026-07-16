@@ -1,0 +1,277 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L403",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:97a82c336a17605e83c01dcf11b2f0e1f6ce7d34dc86ef4f501992f1efef08ca",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L403",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkLoop",
+    "qualifiedName": "TypeScriptExtractor.walkLoop",
+    "signature": "walkLoop(stmt: ts.Statement, env: BodyEnv, predicate: ts.Expression | undefined): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 403,
+      "end": 416
+    },
+    "callSites": [
+      {
+        "callee": "lineOf",
+        "line": 404
+      },
+      {
+        "callee": "getStart",
+        "line": 404
+      },
+      {
+        "callee": "condition",
+        "line": 405
+      },
+      {
+        "callee": "getText",
+        "line": 405
+      },
+      {
+        "callee": "pushGuard",
+        "line": 408
+      },
+      {
+        "callee": "walkBody",
+        "line": 414
+      },
+      {
+        "callee": "isBlock",
+        "line": 414
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkLoop(stmt: ts.Statement, env: BodyEnv, predicate: ts.Expression | undefined): void {\n    const line = env.lineOf(stmt.getStart());\n    const condId = predicate ? this.condition(predicate.getText(), line, 'LOOP', env) : undefined;\n    const loopEnv: BodyEnv = {\n      ...env,\n      ...(condId ? this.pushGuard(env, condId, 'LOOP') : {}),\n      inLoop: true,\n    };\n    // IterationStatement stores its body as `.statement` (not `.body`) in the TS compiler AST.\n    const body = (stmt as ts.IterationStatement).statement;\n    if (body) {\n      this.walkBody(ts.isBlock(body) ? [...body.statements] : [body], loopEnv);\n    }\n  }",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 403
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L353",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "TypeScriptExtractor.walkStmt",
+      "signature": "walkStmt(stmt: ts.Statement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 353
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.condition@L705",
+      "confidence": 1,
+      "name": "condition",
+      "qualifiedName": "TypeScriptExtractor.condition",
+      "signature": "condition(expr: string, line: number, branch: string, env: BodyEnv): string",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 705
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.lineOf@L63",
+      "confidence": 1,
+      "name": "lineOf",
+      "qualifiedName": "TypeScriptExtractor.parse.lineOf",
+      "signature": "lineOf(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 63
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.pushGuard@L724",
+      "confidence": 1,
+      "name": "pushGuard",
+      "qualifiedName": "TypeScriptExtractor.pushGuard",
+      "signature": "pushGuard(env: BodyEnv, condId: string, branch: string): BodyEnv",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 724
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L349",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "TypeScriptExtractor.walkBody",
+      "signature": "walkBody(stmts: readonly ts.Statement[], env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 349
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L403",
+    "procedureName": "TypeScriptExtractor.walkLoop",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L413"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L403",
+        "procedureName": "TypeScriptExtractor.walkLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9b235fe24efa7f1f4ad9a85742269aa1b8dd81fc192a820c231f01f5a0e7e30d",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.lineOf@L63",
+          "expr": "lineOf",
+          "line": 404
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L403",
+        "procedureName": "TypeScriptExtractor.walkLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d180e9225c69a66e80caf5f9193749a75d6c6db7896298d3fb4ffd31cafea02d",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L404",
+          "line": 404,
+          "expr": "const line = env.lineOf(stmt.getStart());"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L403",
+        "procedureName": "TypeScriptExtractor.walkLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:655900990a576271e73181b01748b6933456522d3999d8d7b47047b0e345b34d",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.condition@L705",
+          "expr": "condition",
+          "line": 405
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L403",
+        "procedureName": "TypeScriptExtractor.walkLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0cb340fb38b644da6f2c2174b848143f8028f08f5a231c01e35fbbaf5d1df1b9",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L405",
+          "line": 405,
+          "expr": "const condId = predicate ? this.condition(predicate.getText(), line, 'LOOP', env) : undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L403",
+        "procedureName": "TypeScriptExtractor.walkLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d201057be7a3a6c98ca4fc85901ffaa43b813a0d094593d5e92c80439285d27d",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L406",
+          "line": 406,
+          "expr": "const loopEnv: BodyEnv = {\n      ...env,\n      ...(condId ? this.pushGuard(env, condId, 'LOOP') : {}),\n      inLoop: true,\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L403",
+        "procedureName": "TypeScriptExtractor.walkLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:93caa445b298e5291ad9dea9d9a64bdd1f010e6d87e48da245443e3b4b17b588",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.pushGuard@L724",
+          "expr": "pushGuard",
+          "line": 408
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L403",
+        "procedureName": "TypeScriptExtractor.walkLoop",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L413",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L413",
+            "expr": "body",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3f14b195ed2b91a99700e543b895bf63ba0143c80f3f394fe988335f950bb9ce",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L349",
+          "expr": "walkBody",
+          "line": 414
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L403",
+        "procedureName": "TypeScriptExtractor.walkLoop",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L413",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L413",
+            "expr": "body",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4c730311783cbf38500f4c963e40d1980bca54eae056c643760e67efb89dbfb3",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L414",
+          "line": 414,
+          "expr": "this.walkBody(ts.isBlock(body) ? [...body.statements] : [body], loopEnv);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 7,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

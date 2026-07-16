@@ -1,0 +1,418 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:0376581326c54cb0617baa8995714f6adde5bca4aa44de24904428bb8b130f62",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+    "kind": "symbol",
+    "type": "function",
+    "name": "symbolInfo",
+    "qualifiedName": "symbolInfo",
+    "signature": "symbolInfo(node: ts.Node): SymInfo | null",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 1039,
+      "end": 1072
+    },
+    "callSites": [
+      {
+        "callee": "classHeading",
+        "line": 1041
+      },
+      {
+        "callee": "funcSignature",
+        "line": 1053
+      },
+      {
+        "callee": "funcSignature",
+        "line": 1056
+      },
+      {
+        "callee": "isGetAccessor",
+        "line": 1059
+      }
+    ]
+  },
+  "source": {
+    "text": "function symbolInfo(node: ts.Node): SymInfo | null {\n  if (ts.isClassDeclaration(node) && node.name) {\n    return { name: node.name.text, type: 'class', signature: classHeading(node) };\n  }\n  if (ts.isInterfaceDeclaration(node)) {\n    return { name: node.name.text, type: 'interface' };\n  }\n  if (ts.isEnumDeclaration(node)) {\n    return { name: node.name.text, type: 'enum' };\n  }\n  if (ts.isTypeAliasDeclaration(node)) {\n    return { name: node.name.text, type: 'type' };\n  }\n  if (ts.isFunctionDeclaration(node) && node.name) {\n    return { name: node.name.text, type: 'function', signature: funcSignature(node) };\n  }\n  if (ts.isMethodDeclaration(node) && ts.isIdentifier(node.name)) {\n    return { name: node.name.text, type: 'method', signature: funcSignature(node) };\n  }\n  if ((ts.isGetAccessor(node) || ts.isSetAccessor(node)) && ts.isIdentifier(node.name)) {\n    return { name: node.name.text, type: ts.isGetAccessor(node) ? 'getter' : 'setter' };\n  }\n  if (ts.isPropertyDeclaration(node) && ts.isIdentifier(node.name)) {\n    return { name: node.name.text, type: 'property' };\n  }\n  // const foo = () => {} / const foo = function(){}\n  if (ts.isVariableStatement(node)) {\n    const d = node.declarationList.declarations[0];\n    if (d && ts.isIdentifier(d.name) && d.initializer && isFunctionLike(d.initializer)) {\n      return { name: d.name.text, type: 'function', signature: `${d.name.text}(…)` };\n    }\n  }\n  return null;\n}",
+    "truncated": false,
+    "totalLines": 34,
+    "startLine": 1039
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.declarationOf@L163",
+      "confidence": 1,
+      "name": "declarationOf",
+      "qualifiedName": "TypeScriptExtractor.declarationOf",
+      "signature": "declarationOf(node: ts.Node, qualifier: string[], path: string, _fileId: string, lineOf: (pos: number) => number, ctx: ExtractCtx): { local: LocalSymbol; childQualifier: string[] } | null",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 163
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#classHeading@L1078",
+      "confidence": 1,
+      "name": "classHeading",
+      "qualifiedName": "classHeading",
+      "signature": "classHeading(node: ts.ClassDeclaration): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 1078
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#funcSignature@L1083",
+      "confidence": 1,
+      "name": "funcSignature",
+      "qualifiedName": "funcSignature",
+      "signature": "funcSignature(node: ts.FunctionDeclaration | ts.MethodDeclaration): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 1083
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLike@L1074",
+      "confidence": 1,
+      "name": "isFunctionLike",
+      "qualifiedName": "isFunctionLike",
+      "signature": "isFunctionLike(node: ts.Node): node is ts.ArrowFunction | ts.FunctionExpression",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 1074
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L1038",
+      "snippet": "/** Map a TS AST declaration to a symbol name/type/signature, or null if not captured. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+    "procedureName": "symbolInfo",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1040",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1043",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1046",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1049",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1055",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1052",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1058",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1061",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1065",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1067"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+        "procedureName": "symbolInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1040",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1040",
+            "expr": "ts.isClassDeclaration(node) && node.name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0bd0c3c8b56395bca24ace4928aa3da772b910a60d986f42447713f7feac5b5b",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#classHeading@L1078",
+          "expr": "classHeading",
+          "line": 1041
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+        "procedureName": "symbolInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1040",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1040",
+            "expr": "ts.isClassDeclaration(node) && node.name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:77e61adb362c7ba7d31b996fae9cf06dae9bc27176e0ef928b29fd4ff2ef7fdb",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1041",
+          "line": 1041,
+          "expr": "return { name: node.name.text, type: 'class', signature: classHeading(node) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+        "procedureName": "symbolInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1043",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1043",
+            "expr": "ts.isInterfaceDeclaration(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db1e73cbe29445095597b4202042492f37ad6fd581d54884cdcdd56017c5d5bb",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1044",
+          "line": 1044,
+          "expr": "return { name: node.name.text, type: 'interface' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+        "procedureName": "symbolInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1046",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1046",
+            "expr": "ts.isEnumDeclaration(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:67c66b20e265bde8573676d9eaf293a7736350d402a6daca91c09ad86d4edbfa",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1047",
+          "line": 1047,
+          "expr": "return { name: node.name.text, type: 'enum' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+        "procedureName": "symbolInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1049",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1049",
+            "expr": "ts.isTypeAliasDeclaration(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:be6dda5476f7ff4057111bcad54cf755533228172a1444a2d8cbce383c451ba6",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1050",
+          "line": 1050,
+          "expr": "return { name: node.name.text, type: 'type' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+        "procedureName": "symbolInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1055",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1055",
+            "expr": "ts.isMethodDeclaration(node) && ts.isIdentifier(node.name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3f005e345ce608de66c0a3997f86a91f7ec03e634c6c8368ab6085a2ce31c6e3",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#funcSignature@L1083",
+          "expr": "funcSignature",
+          "line": 1053
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+        "procedureName": "symbolInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1052",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1052",
+            "expr": "ts.isFunctionDeclaration(node) && node.name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9552b5ec6ab05344b3340c5092fae28ecd083725c0b1c648a863f405ad1b3bfb",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1053",
+          "line": 1053,
+          "expr": "return { name: node.name.text, type: 'function', signature: funcSignature(node) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+        "procedureName": "symbolInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1055",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1055",
+            "expr": "ts.isMethodDeclaration(node) && ts.isIdentifier(node.name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5493c02d68a8b39da8aef86399c370e17057784cd833c622dcd3e939e694cb95",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1056",
+          "line": 1056,
+          "expr": "return { name: node.name.text, type: 'method', signature: funcSignature(node) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+        "procedureName": "symbolInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1058",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1058",
+            "expr": "(ts.isGetAccessor(node) || ts.isSetAccessor(node)) && ts.isIdentifier(node.name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd5ad5dabb861e3561dfda1f0f915642d4cc48cf4bb6fb5f2d12d13b2f44ef0c",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1059",
+          "line": 1059,
+          "expr": "return { name: node.name.text, type: ts.isGetAccessor(node) ? 'getter' : 'setter' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+        "procedureName": "symbolInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1061",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1061",
+            "expr": "ts.isPropertyDeclaration(node) && ts.isIdentifier(node.name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6b81d2de5b7411eb13bd92281ac9beac913557100cf021d68d01a3325df58fb5",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1062",
+          "line": 1062,
+          "expr": "return { name: node.name.text, type: 'property' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+        "procedureName": "symbolInfo",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1067",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1065",
+            "expr": "ts.isVariableStatement(node)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L1067",
+            "expr": "d && ts.isIdentifier(d.name) && d.initializer && isFunctionLike(d.initializer)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:017fc07259669854b98de678a253fa8a21a0af5d2cffe438bf2b6f4803fe03e9",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1068",
+          "line": 1068,
+          "expr": "return { name: d.name.text, type: 'function', signature: `${d.name.text}(…)` };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+        "procedureName": "symbolInfo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ddd667f95928ae2cdb2be1ea89233ccf1fec27ef2a83197e4629910021021660",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1071",
+          "line": 1071,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1039",
+        "procedureName": "symbolInfo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0e110a17045f01fca75f97e3537772c714795c32b6887b01d50579f97981b0d2",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isFunctionLike@L1074",
+          "expr": "isFunctionLike"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 0,
+    "conditions": 9,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 4,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

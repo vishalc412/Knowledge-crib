@@ -1,0 +1,1181 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:0fd4c90f80fc89013a99c72e646a4ae12a92ad8ab51d76b24941abd4d7124665",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+    "kind": "symbol",
+    "type": "method",
+    "name": "ask",
+    "qualifiedName": "Verbs.ask",
+    "signature": "ask(args: {\n    q: string;\n    limit?: number;\n    format?: 'json' | 'markdown';\n    withSource?: boolean;\n    withRules?: boolean;\n    withFramework?: boolean;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 682,
+      "end": 809
+    },
+    "callSites": [
+      {
+        "callee": "trim",
+        "line": 691
+      },
+      {
+        "callee": "resolveNodeId",
+        "line": 697
+      },
+      {
+        "callee": "context",
+        "line": 699
+      },
+      {
+        "callee": "askToMarkdown",
+        "line": 713
+      },
+      {
+        "callee": "overview",
+        "line": 720
+      },
+      {
+        "callee": "isArray",
+        "line": 721
+      },
+      {
+        "callee": "clusterSummary",
+        "line": 726
+      },
+      {
+        "callee": "askToMarkdown",
+        "line": 729
+      },
+      {
+        "callee": "query",
+        "line": 735
+      },
+      {
+        "callee": "get",
+        "line": 743
+      },
+      {
+        "callee": "push",
+        "line": 744
+      },
+      {
+        "callee": "set",
+        "line": 745
+      },
+      {
+        "callee": "get",
+        "line": 746
+      },
+      {
+        "callee": "push",
+        "line": 747
+      },
+      {
+        "callee": "set",
+        "line": 748
+      },
+      {
+        "callee": "map",
+        "line": 753
+      },
+      {
+        "callee": "getNode",
+        "line": 754
+      },
+      {
+        "callee": "rehydrate",
+        "line": 759
+      },
+      {
+        "callee": "bodyOf",
+        "line": 763
+      },
+      {
+        "callee": "has",
+        "line": 765
+      },
+      {
+        "callee": "decisionTable",
+        "line": 766
+      },
+      {
+        "callee": "computeCoverage",
+        "line": 767
+      },
+      {
+        "callee": "frameworkSemantics",
+        "line": 770
+      },
+      {
+        "callee": "attachLlm",
+        "line": 773
+      },
+      {
+        "callee": "map",
+        "line": 779
+      },
+      {
+        "callee": "String",
+        "line": 779
+      },
+      {
+        "callee": "matchText",
+        "line": 781
+      },
+      {
+        "callee": "getNode",
+        "line": 786
+      },
+      {
+        "callee": "llmPointer",
+        "line": 787
+      },
+      {
+        "callee": "push",
+        "line": 789
+      },
+      {
+        "callee": "rehydrate",
+        "line": 792
+      },
+      {
+        "callee": "add",
+        "line": 795
+      },
+      {
+        "callee": "askToMarkdown",
+        "line": 806
+      }
+    ]
+  },
+  "source": {
+    "text": "  ask(args: {\n    q: string;\n    limit?: number;\n    format?: 'json' | 'markdown';\n    withSource?: boolean;\n    withRules?: boolean;\n    withFramework?: boolean;\n    extractedOnly?: boolean;\n  }): Record<string, unknown> {\n    const q = args.q.trim();\n    if (!q) {\n      return { error: { code: 'BAD_ARGS', message: 'question must be non-empty' } };\n    }\n\n    // 1. Direct-node question: the query itself resolves to a known node id/name.\n    const resolvedId = this.resolveNodeId(q);\n    if (resolvedId) {\n      const ctx = this.context({\n        id: resolvedId,\n        ...(args.withSource ? { withSource: true } : {}),\n        ...(args.withRules ? { withRules: true } : {}),\n        ...(args.withFramework ? { withFramework: true } : {}),\n        ...(args.extractedOnly ? { extractedOnly: true } : {}),\n      });\n      const result = {\n        question: q,\n        interpretation: 'explain',\n        nodeId: resolvedId,\n        context: ctx,\n      };\n      if (args.format === 'markdown') {\n        return { ...result, markdown: askToMarkdown(result) };\n      }\n      return result;\n    }\n\n    // 2. Overview/architecture question: serve the system bible when enriched, else a cluster summary.\n    if (isOverviewQuestion(q)) {\n      const overview = this.overview();\n      const hasAnalyses = Array.isArray(overview.analyses) && overview.analyses.length > 0;\n      const result = {\n        question: q,\n        interpretation: 'overview',\n        overview,\n        ...(hasAnalyses ? {} : { fallback: this.clusterSummary() }),\n      };\n      if (args.format === 'markdown') {\n        return { ...result, markdown: askToMarkdown(result) };\n      }\n      return result;\n    }\n\n    // 3. Discovery question: search the index and gather deep context per hit.\n    const hits = this.deps.index.query({ text: q, limit: args.limit ?? DEFAULT_LIMIT });\n    const needEdges = args.withRules || args.withFramework;\n    let outgoing: Map<string, Edge[]> | undefined;\n    let incoming: Map<string, Edge[]> | undefined;\n    if (needEdges) {\n      outgoing = new Map<string, Edge[]>();\n      incoming = new Map<string, Edge[]>();\n      for (const e of this.deps.soul.iterateEdges()) {\n        const o = outgoing.get(e.src);\n        if (o) o.push(e);\n        else outgoing.set(e.src, [e]);\n        const i = incoming.get(e.dst);\n        if (i) i.push(e);\n        else incoming.set(e.dst, [e]);\n      }\n    }\n    const keep = (e: Edge) => !args.extractedOnly || e.provenance === 'EXTRACTED';\n\n    const enriched = hits.map((h) => {\n      const node = this.deps.soul.getNode(h.id);\n      const hit: Record<string, unknown> = {\n        id: h.id,\n        kind: h.kind,\n        score: h.score,\n        snippet: rehydrate(this.deps.repoRoot, node),\n        ...(node?.clusterId ? { clusterId: node.clusterId } : {}),\n      };\n      if (args.withSource && node) {\n        hit.source = this.bodyOf(node, {});\n      }\n      if (args.withRules && node?.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {\n        hit.rules = decisionTable(this.deps.soul, h.id, { includeTables: true, out: outgoing });\n        hit.coverage = computeCoverage(this.deps.soul, h.id, { keep, outgoing, incoming });\n      }\n      if (args.withFramework) {\n        const fw = frameworkSemantics(this.deps.soul, h.id, { keep, outgoing, incoming });\n        if (fw) hit.framework = fw;\n      }\n      this.attachLlm(hit, h.id);\n      return hit;\n    });\n\n    // Also surface saved LLM analyses whose text matches the question. Lightweight pointers only —\n    // `ask` is the deterministic discovery path and never folds the full analysis/graph blob.\n    const existing = new Set(enriched.map((h) => String(h.id)));\n    const limit = args.limit ?? DEFAULT_LIMIT;\n    const llmArtifacts = this.llm.matchText(q, limit + 1);\n    const llmTruncated = llmArtifacts.length > limit;\n    const llmHits: Array<Record<string, unknown>> = [];\n    for (const artifact of llmArtifacts.slice(0, limit)) {\n      if (existing.has(artifact.targetId)) continue;",
+    "truncated": true,
+    "totalLines": 128,
+    "startLine": 682,
+    "nextLine": 786
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+      "confidence": 1,
+      "name": "attachLlm",
+      "qualifiedName": "Verbs.attachLlm",
+      "signature": "attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.bodyOf@L484",
+      "confidence": 1,
+      "name": "bodyOf",
+      "qualifiedName": "Verbs.bodyOf",
+      "signature": "bodyOf(node: Node, args: {\n      sourceMaxChars?: number;\n      sourceMaxLines?: number;\n      sourceStartLine?: number;\n      maxChars?: number;\n      maxLines?: number;\n      startLine?: number;\n    }): RehydratedBody",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 484
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.clusterSummary@L812",
+      "confidence": 1,
+      "name": "clusterSummary",
+      "qualifiedName": "Verbs.clusterSummary",
+      "signature": "clusterSummary(): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 812
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.context@L225",
+      "confidence": 1,
+      "name": "context",
+      "qualifiedName": "Verbs.context",
+      "signature": "context(args: {\n    id: string;\n    docLimit?: number;\n    extractedOnly?: boolean;\n    /** include the full source text of the node's span (rehydrated from disk, budgeted) */\n    withSource?: boolean;\n    /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */\n    withRules?: boolean;\n    /** fold in the schema-1.3 framework-semantics relationships: routes exposed, beans produced,\n     *  DI dependencies/dependents, JPA relations, component renders. Auto-scopes by node — a class\n     *  (controller/@Configuration/@Entity) aggregates its members' route table / bean inventory /\n     *  DI graph / relation model via `member-of`; a callable/component/field returns its own direct\n     *  edges. A @Bean-supplied dependency is surfaced with `kind: 'produces'` + the producer in one\n     *  trip (no round-trip). Unresolved `meta.injects`/`meta.produces` type names surface as\n     *  `⚠ unresolved` entries (parity with `gaps`). */\n    withFramework?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */\n    sourceMaxChars?: number;\n    /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 225
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.overview@L851",
+      "confidence": 1,
+      "name": "overview",
+      "qualifiedName": "Verbs.overview",
+      "signature": "overview(args: { scope?: { pathPrefix?: string; cluster?: string } } = {}): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 851
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.query@L567",
+      "confidence": 1,
+      "name": "query",
+      "qualifiedName": "Verbs.query",
+      "signature": "query(args: {\n    q: string;\n    kinds?: NodeKind[];\n    limit?: number;\n    /** restrict rules/framework edges to EXTRACTED provenance (parity with `context`). */\n    extractedOnly?: boolean;\n    /** include the full rehydrated source body per hit (budgeted; see sourceMaxChars/Lines). */\n    withSource?: boolean;\n    /** char cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}). */\n    sourceMaxChars?: number;\n    /** line cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}). */\n    sourceMaxLines?: number;\n    /** for a callable hit, fold in its decision table + coverage readiness. */\n    withRules?: boolean;\n    /** fold in framework-semantics (routes/beans/DI/relations) per hit, when present. */\n    withFramework?: boolean;\n    /** include saved LLM semantic analysis on hits and search LLM analysis text too. */\n    withLlm?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 567
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1272",
+      "confidence": 1,
+      "name": "resolveNodeId",
+      "qualifiedName": "Verbs.resolveNodeId",
+      "signature": "resolveNodeId(idOrName: string): string | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1272
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#askToMarkdown@L1449",
+      "confidence": 1,
+      "name": "askToMarkdown",
+      "qualifiedName": "askToMarkdown",
+      "signature": "askToMarkdown(result: Record<string, unknown>): string",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1449
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#isOverviewQuestion@L1438",
+      "confidence": 1,
+      "name": "isOverviewQuestion",
+      "qualifiedName": "isOverviewQuestion",
+      "signature": "isOverviewQuestion(q: string): boolean",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1438
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#llmPointer@L1048",
+      "confidence": 1,
+      "name": "llmPointer",
+      "qualifiedName": "llmPointer",
+      "signature": "llmPointer(read: LlmRead): Record<string, unknown> | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1048
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L674",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "heading": "9. Prompt skeleton you can keep at the top of a session",
+      "anchor": "9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "snippet": "9. Prompt skeleton you can keep at the top of a session",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#8-verify-it-works-any-client",
+      "heading": "8. Verify it works (any client)",
+      "anchor": "8-verify-it-works-any-client",
+      "snippet": "8. Verify it works (any client)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-2-product-manager",
+      "heading": "2.2 Product Manager",
+      "anchor": "2-2-product-manager",
+      "snippet": "2.2 Product Manager",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#the-problem",
+      "heading": "The problem",
+      "anchor": "the-problem",
+      "snippet": "The problem",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#impact-blast-radius-the-wedge-verb",
+      "heading": "`impact` — blast radius (the wedge verb)",
+      "anchor": "impact-blast-radius-the-wedge-verb",
+      "snippet": "`impact` — blast radius (the wedge verb)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#completion-reporting",
+      "heading": "Completion reporting",
+      "anchor": "completion-reporting",
+      "snippet": "Completion reporting",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+    "procedureName": "Verbs.ask",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L692",
+      "cond:packages/mcp/src/verbs.ts@L698",
+      "cond:packages/mcp/src/verbs.ts@L805",
+      "cond:packages/mcp/src/verbs.ts@L712",
+      "cond:packages/mcp/src/verbs.ts@L719",
+      "cond:packages/mcp/src/verbs.ts@L728",
+      "cond:packages/mcp/src/verbs.ts@L739",
+      "cond:packages/mcp/src/verbs.ts@L742",
+      "cond:packages/mcp/src/verbs.ts@L744",
+      "cond:packages/mcp/src/verbs.ts@L747",
+      "cond:packages/mcp/src/verbs.ts@L784"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca8721845d0c63436cbbc79e439c1aafc1b41ae62217128d1264a9eff8ee4c8e",
+          "target": "stmt:packages/mcp/src/verbs.ts@L691",
+          "line": 691,
+          "expr": "const q = args.q.trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L692",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L692",
+            "expr": "!q",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6fb689af8914f5790c81d47763251350e96f0a49d662b673bf4291a8d5c327f4",
+          "target": "stmt:packages/mcp/src/verbs.ts@L693",
+          "line": 693,
+          "expr": "return { error: { code: 'BAD_ARGS', message: 'question must be non-empty' } };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6baaf95b9be08603ba6b9e78b0c132ca7b349dc3ef3cf92ec48013371ca28cf5",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1272",
+          "expr": "resolveNodeId",
+          "line": 697
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5a40368dcc14194b0d915949151d50519fe6c6b69dec240799d8ee57c5a5eaaf",
+          "target": "stmt:packages/mcp/src/verbs.ts@L697",
+          "line": 697,
+          "expr": "const resolvedId = this.resolveNodeId(q);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L698",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L698",
+            "expr": "resolvedId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b5d462731a0c12257a61c3e1fdd1bf48843b296fa8ac4ed517f7c488040f396e",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.context@L225",
+          "expr": "context",
+          "line": 699
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L698",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L698",
+            "expr": "resolvedId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:25a400da867fc9620bca79cd020038c3f55fe1baac515a19176c11acfdbb4d84",
+          "target": "stmt:packages/mcp/src/verbs.ts@L699",
+          "line": 699,
+          "expr": "const ctx = this.context({\n        id: resolvedId,\n        ...(args.withSource ? { withSource: true } : {}),\n        ...(args.withRules ? { withRules: true } : {}),\n        ...(args.withFramework ? { withFramework: true } : {}),\n        ...(args.extractedOnly ? { extractedOnly: true } : {}),\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L805",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L805",
+            "expr": "args.format === 'markdown'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:694aad60891b9d9ce24b80840d6cc9faa7ee03468f01e6e46d7d9ce7afc597ab",
+          "target": "sym:packages/mcp/src/verbs.ts#askToMarkdown@L1449",
+          "expr": "askToMarkdown",
+          "line": 713
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L712",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L698",
+            "expr": "resolvedId"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L712",
+            "expr": "args.format === 'markdown'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c69ad29470bb2ec51807369408c821a6d2a28d26e9a9584a86009eb7a8f2089",
+          "target": "stmt:packages/mcp/src/verbs.ts@L713",
+          "line": 713,
+          "expr": "return { ...result, markdown: askToMarkdown(result) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L698",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L698",
+            "expr": "resolvedId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dd2914cd338c4b4e3f3c9afefc93268314ff4c305efee1f9952bcd32a6369acb",
+          "target": "stmt:packages/mcp/src/verbs.ts@L715",
+          "line": 715,
+          "expr": "return result;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L719",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L719",
+            "expr": "isOverviewQuestion(q)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0be17a835261345d80c193c771f73098ae31b568d6e93fc2f053cd77c7fb1962",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.overview@L851",
+          "expr": "overview",
+          "line": 720
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L719",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L719",
+            "expr": "isOverviewQuestion(q)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e3e0d821a646a48c1da6315ec097b1524a05b26e6e579433454020537bca0cf3",
+          "target": "stmt:packages/mcp/src/verbs.ts@L720",
+          "line": 720,
+          "expr": "const overview = this.overview();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L719",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L719",
+            "expr": "isOverviewQuestion(q)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9d25d1440c02d5d5aa3065dff1b80c20314c332dbede3dc9bcbdeeb0fa14beaf",
+          "target": "stmt:packages/mcp/src/verbs.ts@L721",
+          "line": 721,
+          "expr": "const hasAnalyses = Array.isArray(overview.analyses) && overview.analyses.length > 0;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L719",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L719",
+            "expr": "isOverviewQuestion(q)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:135e61cb64bd15cab2344062cc2057081d7eed76b421daa17c87f29161223378",
+          "target": "stmt:packages/mcp/src/verbs.ts@L722",
+          "line": 722,
+          "expr": "const result = {\n        question: q,\n        interpretation: 'overview',\n        overview,\n        ...(hasAnalyses ? {} : { fallback: this.clusterSummary() }),\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L719",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L719",
+            "expr": "isOverviewQuestion(q)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8236bc5d44f0ba6778c92d3298c2303ed59bfe33ea27cd128f4ff919ed67412a",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.clusterSummary@L812",
+          "expr": "clusterSummary",
+          "line": 726
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L728",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L719",
+            "expr": "isOverviewQuestion(q)"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L728",
+            "expr": "args.format === 'markdown'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ea03ae9d312ad7164afc45ce36ce0ea574c44d99be1fd8cb2fb58c468179505e",
+          "target": "stmt:packages/mcp/src/verbs.ts@L729",
+          "line": 729,
+          "expr": "return { ...result, markdown: askToMarkdown(result) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L719",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L719",
+            "expr": "isOverviewQuestion(q)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5870b5bc50d795ab811555d59e4a1d229ea304a4d4e32b74878573a72e9a3711",
+          "target": "stmt:packages/mcp/src/verbs.ts@L731",
+          "line": 731,
+          "expr": "return result;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:06cee29b250ff84ecd159972592823ad254cbc9ce5d595f256071da3a01fe718",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.query@L567",
+          "expr": "query",
+          "line": 735
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1afbeb531e24975afcb9e3433e2236e74375d943960536ab42ac3b7adc462b8e",
+          "target": "stmt:packages/mcp/src/verbs.ts@L735",
+          "line": 735,
+          "expr": "const hits = this.deps.index.query({ text: q, limit: args.limit ?? DEFAULT_LIMIT });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L739",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L739",
+            "expr": "needEdges",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:08016ad60ee85f7ac84f3dc56ca091ce2e366ebcb2c8b6d757b143aa48451e6e",
+          "target": "assign:packages/mcp/src/verbs.ts@L740",
+          "line": 740,
+          "expr": "outgoing = new Map<string, Edge[]>();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L739",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L739",
+            "expr": "needEdges",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ad6242a1e45ca275815fb94e09f955435e31d3bfc0b66557c56fd89005f661f7",
+          "target": "assign:packages/mcp/src/verbs.ts@L741",
+          "line": 741,
+          "expr": "incoming = new Map<string, Edge[]>();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L742",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L739",
+            "expr": "needEdges"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L742",
+            "expr": "this.deps.soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7ebfce6ffed352dd3160c3da5b7c3b83eb9859553609a510792d5e09ca7f9477",
+          "target": "stmt:packages/mcp/src/verbs.ts@L743",
+          "line": 743,
+          "expr": "const o = outgoing.get(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L744",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L739",
+            "expr": "needEdges"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L742",
+            "expr": "this.deps.soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L744",
+            "expr": "o",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9afa5ccefebbfb5189686a651939277f8aba62bc1624cd73b336f7d88bd7a747",
+          "target": "stmt:packages/mcp/src/verbs.ts@L744",
+          "line": 744,
+          "expr": "o.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L744",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L739",
+            "expr": "needEdges"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L742",
+            "expr": "this.deps.soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L744",
+            "expr": "o",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4fb0a478f5815beb4b74cd9c9ecf0cd43771c78679eba04a430758b03e7cae4f",
+          "target": "stmt:packages/mcp/src/verbs.ts@L745",
+          "line": 745,
+          "expr": "outgoing.set(e.src, [e]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L742",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L739",
+            "expr": "needEdges"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L742",
+            "expr": "this.deps.soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:efd378c4e4c7a54226ba7850fed113ddee2f2cee547f817adaa1a6d21bb96f57",
+          "target": "stmt:packages/mcp/src/verbs.ts@L746",
+          "line": 746,
+          "expr": "const i = incoming.get(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L747",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L739",
+            "expr": "needEdges"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L742",
+            "expr": "this.deps.soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L747",
+            "expr": "i",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:45f108a7ddb05cf0b5d3fa002a33886c4deaf7e1cc23de9d0ab3fc1093df4e43",
+          "target": "stmt:packages/mcp/src/verbs.ts@L747",
+          "line": 747,
+          "expr": "i.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L747",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L739",
+            "expr": "needEdges"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L742",
+            "expr": "this.deps.soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L747",
+            "expr": "i",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c9389e9e505ed6644491178f512089d9c7a968aed082ffb287b655be54af97d",
+          "target": "stmt:packages/mcp/src/verbs.ts@L748",
+          "line": 748,
+          "expr": "incoming.set(e.dst, [e]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d69554dadf7acd77ed061b49e9d4e26e0704171f0af98a00fa3b02446e2a19e9",
+          "target": "stmt:packages/mcp/src/verbs.ts@L753",
+          "line": 753,
+          "expr": "const enriched = hits.map((h) => {\n      const node = this.deps.soul.getNode(h.id);\n      const hit: Record<string, unknown> = {\n        id: h.id,\n        kind: h.kind,\n        score: h.score,\n        snippet: rehydrate(this.deps.repoRoot, node),\n        ...(node?.clusterId ? { clusterId: node.clusterId } : {}),\n      };\n      if (args.withSource && node) {\n        hit.source = this.bodyOf(node, {});\n      }\n      if (args.withRules && node?.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {\n        hit.rules = decisionTable(this.deps.soul, h.id, { includeTables: true, out: outgoing });\n        hit.coverage = computeCoverage(this.deps.soul, h.id, { keep, outgoing, incoming });\n      }\n      if (args.withFramework) {\n        const fw = frameworkSemantics(this.deps.soul, h.id, { keep, outgoing, incoming });\n        if (fw) hit.framework = fw;\n      }\n      this.attachLlm(hit, h.id);\n      return hit;\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8997b76039c4b83f5581813d1c5470e7f7e551dc455ab9379212b4ec1cab5d0c",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.bodyOf@L484",
+          "expr": "bodyOf",
+          "line": 763
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e3efa86908ed7179e92c551453908ed4e65f5676e65b1e6334fe0d45c8045f41",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+          "expr": "attachLlm",
+          "line": 773
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3fde9ccc7f0841cb73e33ec1f868378338aa973c0ab55c2676e87c595bae3510",
+          "target": "stmt:packages/mcp/src/verbs.ts@L779",
+          "line": 779,
+          "expr": "const existing = new Set(enriched.map((h) => String(h.id)));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:56950e300598bf7267d4e25bbd93b88b68791c01ce09e089aa54452fbe8a90c9",
+          "target": "stmt:packages/mcp/src/verbs.ts@L781",
+          "line": 781,
+          "expr": "const llmArtifacts = this.llm.matchText(q, limit + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L784",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L784",
+            "expr": "llmArtifacts.slice(0, limit)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a9eaecfe308ecc4b80c4eb443095d10a17569b4516e10e102befcb0b39741d44",
+          "target": "stmt:packages/mcp/src/verbs.ts@L786",
+          "line": 786,
+          "expr": "const node = this.deps.soul.getNode(artifact.targetId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L784",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L784",
+            "expr": "llmArtifacts.slice(0, limit)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:418384c4917e4ebd6b5bab320436e19ffda8d2085abdf34d65576c257c523d72",
+          "target": "stmt:packages/mcp/src/verbs.ts@L787",
+          "line": 787,
+          "expr": "const proj = llmPointer({ artifact, missing: false, stale: false });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:943758161af0c8f80c1ee6f29482e64187980e70a3831e76f47a697148e7d361",
+          "target": "sym:packages/mcp/src/enrichment.ts#llmPointer@L1048",
+          "expr": "llmPointer",
+          "line": 787
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L784",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L784",
+            "expr": "llmArtifacts.slice(0, limit)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a28cc43ba089b9f5e8b428227097b71e3fb6d3885e7a0a32392055d4ee08f204",
+          "target": "stmt:packages/mcp/src/verbs.ts@L789",
+          "line": 789,
+          "expr": "llmHits.push({\n        id: artifact.targetId,\n        kind: node?.kind ?? 'symbol',\n        snippet: node ? rehydrate(this.deps.repoRoot, node) : '',\n        llm: proj,\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L784",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L784",
+            "expr": "llmArtifacts.slice(0, limit)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0b4f03270f0b1e76c2649d17b6d565f936a6fa4f7b007b2c9e491c80168a4806",
+          "target": "stmt:packages/mcp/src/verbs.ts@L795",
+          "line": 795,
+          "expr": "existing.add(artifact.targetId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "guard": "cond:packages/mcp/src/verbs.ts@L805",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L805",
+            "expr": "args.format === 'markdown'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e89d276edf2ebd19686f048ddf0972ab8af5bdc6abc44f95f8d5fcd24a5c48cc",
+          "target": "stmt:packages/mcp/src/verbs.ts@L806",
+          "line": 806,
+          "expr": "return { ...result, markdown: askToMarkdown(result) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:666ae279bbeea03133be407d50df96739f9583d8c22220eabdd306e8718f41a5",
+          "target": "stmt:packages/mcp/src/verbs.ts@L808",
+          "line": 808,
+          "expr": "return result;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+        "procedureName": "Verbs.ask",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:18c1f7e170fc69cf1ad9052bdaebb6692a328c278bb7955b2a9570ec26e3e491",
+          "target": "sym:packages/mcp/src/verbs.ts#isOverviewQuestion@L1438",
+          "expr": "isOverviewQuestion"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 29,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 29,
+    "assignments": 2,
+    "conditions": 11,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 10,
+      "recorded": 33,
+      "unresolved": 10
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "10 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

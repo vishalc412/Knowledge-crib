@@ -1,0 +1,83 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.getEdge@L186",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:0dddbabf80787c6857ff935290135e8d85ebb3da863d65a632292c7aa378ce1c",
+  "builtAt": "2026-06-27T16:07:10.655Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.getEdge@L186",
+    "kind": "symbol",
+    "type": "method",
+    "name": "getEdge",
+    "qualifiedName": "SoulStore.getEdge",
+    "signature": "getEdge(id: string): Edge | undefined",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 186,
+      "end": 188
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 187
+      }
+    ]
+  },
+  "source": {
+    "text": "  getEdge(id: string): Edge | undefined {\n    return this.edges.get(id);\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 186
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.getEdge@L186",
+    "procedureName": "SoulStore.getEdge",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.getEdge@L186",
+        "procedureName": "SoulStore.getEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d3499d3c28fb5fa62a405fcddadf260bc9b96a59840595fc1c109829bbec900f",
+          "target": "stmt:packages/core/src/soul-store.ts@L187",
+          "line": 187,
+          "expr": "return this.edges.get(id);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,411 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:3a614c01b2b63062696560aedcd7ba3b425a4833fc0f61711cfa94ceb25307ea",
+  "builtAt": "2026-06-30T22:39:43.179Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cmdNeighbors",
+    "qualifiedName": "cmdNeighbors",
+    "signature": "cmdNeighbors(args: string[], ctx?: CmdCtx): Promise<number>",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 868,
+      "end": 900
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 869
+      },
+      {
+        "callee": "startsWith",
+        "line": 869
+      },
+      {
+        "callee": "write",
+        "line": 871
+      },
+      {
+        "callee": "openVerbs",
+        "line": 876
+      },
+      {
+        "callee": "indexOf",
+        "line": 879
+      },
+      {
+        "callee": "indexOf",
+        "line": 881
+      },
+      {
+        "callee": "indexOf",
+        "line": 883
+      },
+      {
+        "callee": "parseInt",
+        "line": 884
+      },
+      {
+        "callee": "write",
+        "line": 885
+      },
+      {
+        "callee": "stringify",
+        "line": 886
+      },
+      {
+        "callee": "neighbors",
+        "line": 887
+      },
+      {
+        "callee": "isFinite",
+        "line": 891
+      },
+      {
+        "callee": "includes",
+        "line": 892
+      },
+      {
+        "callee": "close",
+        "line": 898
+      }
+    ]
+  },
+  "source": {
+    "text": "async function cmdNeighbors(args: string[], ctx?: CmdCtx): Promise<number> {\n  const id = args.find((a) => !a.startsWith('-'));\n  if (!id) {\n    process.stderr.write(\n      'usage: crib neighbors <id> [--rel reads] [--dir in|out|both] [--limit N] [--extracted-only]\\n',\n    );\n    return EXIT.BAD_ARGS;\n  }\n  const opened = openVerbs(args, ctx);\n  if (!opened) return EXIT.NOT_INDEXED;\n  const { verbs, index } = opened;\n  const relIdx = args.indexOf('--rel');\n  const rel = relIdx >= 0 ? args[relIdx + 1] : undefined;\n  const dirIdx = args.indexOf('--dir');\n  const dir = dirIdx >= 0 ? (args[dirIdx + 1] as 'in' | 'out' | 'both' | undefined) : undefined;\n  const limitIdx = args.indexOf('--limit');\n  const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;\n  process.stdout.write(\n    `${JSON.stringify(\n      verbs.neighbors({\n        id,\n        ...(rel ? { rel } : {}),\n        ...(dir ? { dir } : {}),\n        ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),\n        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),\n      }),\n      null,\n      2,\n    )}\\n`,\n  );\n  index.close();\n  return EXIT.OK;\n}",
+    "truncated": false,
+    "totalLines": 33,
+    "startLine": 868
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#main@L233",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main(argvRaw: string[]): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 233
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#openVerbs@L549",
+      "confidence": 1,
+      "name": "openVerbs",
+      "qualifiedName": "openVerbs",
+      "signature": "openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexStore } | null",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 549
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L867",
+      "snippet": "/** `crib neighbors <id> [--rel reads] [--dir in|out|both]` — direct edges of one node. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+    "procedureName": "cmdNeighbors",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L870",
+      "cond:packages/cli/src/cli.ts@L877"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0334f45f0dc864da9f34fd04de1bcd2c7f8136e7db26b3fa576de29e4778cc90",
+          "target": "stmt:packages/cli/src/cli.ts@L869",
+          "line": 869,
+          "expr": "const id = args.find((a) => !a.startsWith('-'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a2efa3a679c6eeaa61feeb7436df34e2f2294dc7a989745687601f9dcf2bae50",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 869
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "guard": "cond:packages/cli/src/cli.ts@L870",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L870",
+            "expr": "!id",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4b0a14f554ebbb209d046dee6b4aadfeb520efd641a979c0ffea1909ed0347be",
+          "target": "stmt:packages/cli/src/cli.ts@L871",
+          "line": 871,
+          "expr": "process.stderr.write(\n      'usage: crib neighbors <id> [--rel reads] [--dir in|out|both] [--limit N] [--extracted-only]\\n',\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6e8783e1131eaa1dbfd14e0b2699f0f24e16bbc3e11063d0574732939d00266a",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 871
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "guard": "cond:packages/cli/src/cli.ts@L870",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L870",
+            "expr": "!id",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c5dedb5c9d823aaf1cf17cb04b2f867cb481c6c1022cb8207590db9ae07ec988",
+          "target": "stmt:packages/cli/src/cli.ts@L874",
+          "line": 874,
+          "expr": "return EXIT.BAD_ARGS;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:98b08772f992da0517fa48f469434611c56bb229ef2d691266a2506cb7a6a527",
+          "target": "sym:packages/cli/src/cli.ts#openVerbs@L549",
+          "expr": "openVerbs",
+          "line": 876
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5c10fa9052bd93dfd0a6b27f46f8cd8abca8beae8d6b5a3f77321e964cf939bd",
+          "target": "stmt:packages/cli/src/cli.ts@L876",
+          "line": 876,
+          "expr": "const opened = openVerbs(args, ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "guard": "cond:packages/cli/src/cli.ts@L877",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L877",
+            "expr": "!opened",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2cd07987a462d39683582227a98ebabd96652025bbcae211114e758a82bdec59",
+          "target": "stmt:packages/cli/src/cli.ts@L877",
+          "line": 877,
+          "expr": "return EXIT.NOT_INDEXED;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8ccbf5f77bd7f0c03748b0d674c17faf262a193358b12fb8ac65a935e2462465",
+          "target": "stmt:packages/cli/src/cli.ts@L879",
+          "line": 879,
+          "expr": "const relIdx = args.indexOf('--rel');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e4c3afc786519998ebfbf55ef7b603e29af9b89523f33d1eed3b50f88ff213e1",
+          "target": "stmt:packages/cli/src/cli.ts@L881",
+          "line": 881,
+          "expr": "const dirIdx = args.indexOf('--dir');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd3b740b0d4fae52bb9e93c7752f5ff9f8b156aeb59dac965cd9085f3d5916ff",
+          "target": "stmt:packages/cli/src/cli.ts@L883",
+          "line": 883,
+          "expr": "const limitIdx = args.indexOf('--limit');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:459c979b03f2e6ba90300084e3965c8f3ddda7565644ed5fa0c0b0caa58263fd",
+          "target": "stmt:packages/cli/src/cli.ts@L884",
+          "line": 884,
+          "expr": "const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0523eb00188c3844ee2fb2d6cd518450f939a409ffcdb83b5de774ecd59d6b7a",
+          "target": "stmt:packages/cli/src/cli.ts@L885",
+          "line": 885,
+          "expr": "process.stdout.write(\n    `${JSON.stringify(\n      verbs.neighbors({\n        id,\n        ...(rel ? { rel } : {}),\n        ...(dir ? { dir } : {}),\n        ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),\n        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),\n      }),\n      null,\n      2,\n    )}\\n`,\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:403b3275642219a8afc4575a6fae03bdd7ea823a2a82ee346e505bc4c0076cb4",
+          "target": "stmt:packages/cli/src/cli.ts@L898",
+          "line": 898,
+          "expr": "index.close();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdNeighbors@L868",
+        "procedureName": "cmdNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ca74c89532dda8e595c0d6486dd5870b5e849bed3ca7828acb2e982b31f4796",
+          "target": "stmt:packages/cli/src/cli.ts@L899",
+          "line": 899,
+          "expr": "return EXIT.OK;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 14,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

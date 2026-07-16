@@ -1,0 +1,211 @@
+{
+  "version": 1,
+  "layer": "symbol",
+  "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850",
+  "nodeHash": "blake3:36c403a48d41c699fe10e72f26c972861a3ec11b1d77d6fd0c775cce97b829fa",
+  "schemaVersion": "1.3",
+  "builtAt": "2026-06-29T10:18:51.077Z",
+  "model": "kimi-k2.7-code:cloud",
+  "analysis": {
+    "purpose": "cmdExport implements the `crib export` CLI command. It parses --format and --procedure flags, resolves the project root, validates indexing, enforces format/procedure constraints, opens the runtime soul store, and renders the export output via renderExport.",
+    "responsibilities": [
+      "Parse --format and --procedure flags and their values",
+      "Collect remaining non-flag positionals as project root candidates",
+      "Resolve the project root from cwdOverride, first positional, or default",
+      "Validate that the requested format is one of the supported formats",
+      "Return BAD_ARGS for unsupported formats",
+      "Validate that the root is indexed",
+      "Require --procedure for rules and mermaid formats",
+      "Open the runtime soul store and render the export output",
+      "Catch render errors and return EXIT.ERROR"
+    ],
+    "businessRules": [
+      {
+        "rule": "Supported formats are rules, mermaid, graph.json, and report",
+        "rationale": "The formats array is declared and an includes check rejects anything else",
+        "sourceRef": "packages/cli/src/cli.ts@L869-L872"
+      },
+      {
+        "rule": "rules and mermaid formats require --procedure",
+        "rationale": "The condition (fmt === 'rules' || fmt === 'mermaid') && !procedure returns BAD_ARGS",
+        "sourceRef": "packages/cli/src/cli.ts@L881-L883"
+      },
+      {
+        "rule": "Project root resolution prefers cwdOverride, then first positional (unless '.'), then default",
+        "rationale": "resolveProjectRoot is called with explicitRoot set to ctx?.cwdOverride ?? (positional[0] && positional[0] !== '.' ? positional[0] : undefined)",
+        "sourceRef": "packages/cli/src/cli.ts@L864-L867"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "args",
+        "type": "string[]",
+        "description": "CLI arguments including --format, --procedure, and optional project root"
+      },
+      {
+        "name": "ctx",
+        "type": "CmdCtx (optional)",
+        "description": "Optional command context with cwdOverride"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "exitCode",
+        "type": "number",
+        "description": "EXIT.OK, EXIT.BAD_ARGS, EXIT.NOT_INDEXED, or EXIT.ERROR"
+      }
+    ],
+    "sideEffects": [
+      "Writes error messages to process.stderr for bad args, missing index, or missing procedure",
+      "Writes rendered export output to process.stdout",
+      "Opens the runtime soul store"
+    ],
+    "errorBehavior": [
+      "Unsupported format returns EXIT.BAD_ARGS",
+      "Unindexed root returns EXIT.NOT_INDEXED",
+      "Missing procedure for rules/mermaid returns EXIT.BAD_ARGS",
+      "renderExport throws are caught and returned as EXIT.ERROR"
+    ],
+    "invariants": [
+      "Format is validated before the indexed check",
+      "Index is validated before renderExport is called",
+      "renderExport errors are surfaced rather than crashing the CLI"
+    ],
+    "preconditions": [
+      "A supported format must be requested",
+      "For rules/mermaid, --procedure must be provided",
+      "The project root must be indexed"
+    ],
+    "postconditions": [
+      "Either the rendered export is printed or an appropriate exit code is returned"
+    ],
+    "risks": [
+      "2 unresolved call sites (String constructor and path.join) are not modeled",
+      "Manual flag parsing advances index with ++i; missing flag values are not explicitly validated"
+    ],
+    "whatToDistrust": [
+      "Unresolved built-in calls: String and join (path.join)",
+      "renderExport internals are not validated in this seed"
+    ],
+    "confidence": 0.8
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "feature:export-command",
+        "kind": "feature",
+        "name": "crib export command",
+        "summary": "CLI command that renders knowledge graph exports in multiple formats",
+        "id": "llm:sym:packages/cli/src/cli.ts#cmdExport@L850#feature:export-command",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      },
+      {
+        "localId": "rule:supported-formats",
+        "kind": "business-rule",
+        "name": "Supported export formats",
+        "summary": "Only rules, mermaid, graph.json, and report are allowed",
+        "id": "llm:sym:packages/cli/src/cli.ts#cmdExport@L850#rule:supported-formats",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      },
+      {
+        "localId": "rule:procedure-required",
+        "kind": "business-rule",
+        "name": "Procedure required for rules/mermaid",
+        "summary": "--procedure is mandatory for rules and mermaid exports",
+        "id": "llm:sym:packages/cli/src/cli.ts#cmdExport@L850#rule:procedure-required",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      },
+      {
+        "localId": "rule:root-resolution",
+        "kind": "business-rule",
+        "name": "Project root resolution precedence",
+        "summary": "cwdOverride > first positional (unless '.') > default",
+        "id": "llm:sym:packages/cli/src/cli.ts#cmdExport@L850#rule:root-resolution",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      },
+      {
+        "localId": "concept:export-output",
+        "kind": "concept",
+        "name": "Export output",
+        "summary": "Rendered text output produced by renderExport for the chosen format",
+        "id": "llm:sym:packages/cli/src/cli.ts#cmdExport@L850#concept:export-output",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      }
+    ],
+    "edges": [
+      {
+        "from": "sym:packages/cli/src/cli.ts#cmdExport@L850",
+        "to": "llm:sym:packages/cli/src/cli.ts#cmdExport@L850#feature:export-command",
+        "rel": "realizes",
+        "rationale": "The function implements the crib export command",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      },
+      {
+        "from": "llm:sym:packages/cli/src/cli.ts#cmdExport@L850#rule:supported-formats",
+        "to": "sym:packages/cli/src/cli.ts#cmdExport@L850",
+        "rel": "enforces",
+        "rationale": "The function validates format against the supported list",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      },
+      {
+        "from": "llm:sym:packages/cli/src/cli.ts#cmdExport@L850#rule:procedure-required",
+        "to": "sym:packages/cli/src/cli.ts#cmdExport@L850",
+        "rel": "enforces",
+        "rationale": "The function checks procedure for rules/mermaid",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      },
+      {
+        "from": "llm:sym:packages/cli/src/cli.ts#cmdExport@L850#rule:root-resolution",
+        "to": "sym:packages/cli/src/cli.ts#cmdExport@L850",
+        "rel": "governs",
+        "rationale": "The function builds explicitRoot using this precedence",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      },
+      {
+        "from": "sym:packages/cli/src/cli.ts#cmdExport@L850",
+        "to": "sym:packages/pipeline/src/rules/export.ts#renderExport@L83",
+        "rel": "triggers",
+        "rationale": "The function calls renderExport to produce output",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      },
+      {
+        "from": "sym:packages/cli/src/cli.ts#cmdExport@L850",
+        "to": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+        "rel": "depends-on-concept",
+        "rationale": "Uses resolveProjectRoot to locate the project",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      },
+      {
+        "from": "sym:packages/cli/src/cli.ts#cmdExport@L850",
+        "to": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L107",
+        "rel": "depends-on-concept",
+        "rationale": "Validates indexing before rendering",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      },
+      {
+        "from": "sym:packages/cli/src/cli.ts#cmdExport@L850",
+        "to": "sym:packages/cli/src/runtime.ts#openSoul@L100",
+        "rel": "depends-on-concept",
+        "rationale": "Opens the runtime soul store",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      },
+      {
+        "from": "sym:packages/cli/src/cli.ts#cmdExport@L850",
+        "to": "llm:sym:packages/cli/src/cli.ts#cmdExport@L850#concept:export-output",
+        "rel": "produces",
+        "rationale": "The command outputs rendered export text",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdExport@L850"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/cli.ts#cmdExport@L850",
+      "why": "Lines 850-894: flag parsing, root resolution, format/procedure validation, openSoul, renderExport call, and error handling"
+    },
+    {
+      "soulId": "sym:packages/cli/src/cli.ts#main@L100",
+      "why": "Caller: main routes to cmdExport"
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "id": "sym:packages/cli/src/hooks.ts#readFileChunk@L135",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:ad57a15b3715cac266fb510e7abd1d9a526ebda3a4d18510adfb04842ab285d5",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/hooks.ts#readFileChunk@L135",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readFileChunk",
+    "qualifiedName": "readFileChunk",
+    "signature": "readFileChunk(path: string): ChunkMap",
+    "lang": "typescript",
+    "file": "packages/cli/src/hooks.ts",
+    "span": {
+      "start": 135,
+      "end": 137
+    },
+    "callSites": [
+      {
+        "callee": "existsSync",
+        "line": 136
+      },
+      {
+        "callee": "parseChunk",
+        "line": 136
+      },
+      {
+        "callee": "readFileSync",
+        "line": 136
+      },
+      {
+        "callee": "parseChunk",
+        "line": 136
+      }
+    ]
+  },
+  "source": {
+    "text": "function readFileChunk(path: string): ChunkMap {\n  return existsSync(path) ? parseChunk(readFileSync(path, 'utf8')) : parseChunk('');\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 135
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/hooks.ts#mergeDriverFiles@L122",
+      "confidence": 1,
+      "name": "mergeDriverFiles",
+      "qualifiedName": "mergeDriverFiles",
+      "signature": "mergeDriverFiles(basePath: string, oursPath: string, theirsPath: string): MergeDriverOutcome",
+      "type": "function",
+      "file": "packages/cli/src/hooks.ts",
+      "line": 122
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/merge.ts#parseChunk@L30",
+      "confidence": 1,
+      "name": "parseChunk",
+      "qualifiedName": "parseChunk",
+      "signature": "parseChunk(text: string): Map<string, ChunkRecord>",
+      "type": "function",
+      "file": "packages/core/src/merge.ts",
+      "line": 30
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/cli/src/hooks.ts#readFileChunk@L135",
+    "procedureName": "readFileChunk",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#readFileChunk@L135",
+        "procedureName": "readFileChunk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cf2a91385b4665bf065dc8eb97202a95fbb28dff9aef62fcc00be9a2d7eeb1db",
+          "target": "stmt:packages/cli/src/hooks.ts@L136",
+          "line": 136,
+          "expr": "return existsSync(path) ? parseChunk(readFileSync(path, 'utf8')) : parseChunk('');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/hooks.ts#readFileChunk@L135",
+        "procedureName": "readFileChunk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:53dec5983188b6d0604993bea000dfbb3c7f1626ebbbc5a6607a294de0d19618",
+          "target": "sym:packages/core/src/merge.ts#parseChunk@L30",
+          "expr": "parseChunk",
+          "line": 136
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/cli/src/hooks.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 4,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

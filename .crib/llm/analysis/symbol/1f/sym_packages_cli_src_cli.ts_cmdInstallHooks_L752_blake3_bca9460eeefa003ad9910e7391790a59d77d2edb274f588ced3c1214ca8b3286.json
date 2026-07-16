@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "layer": "symbol",
+  "targetId": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L752",
+  "nodeHash": "blake3:bca9460eeefa003ad9910e7391790a59d77d2edb274f588ced3c1214ca8b3286",
+  "schemaVersion": "1.3",
+  "builtAt": "2026-06-29T10:47:55.089Z",
+  "model": "kimi-k2.7-code:cloud",
+  "analysis": {
+    "purpose": "cmdInstallHooks implements the `crib install-hooks` CLI command. It resolves the repository root, installs knowledge-crib git hooks via installHooks, and prints a summary of the installed post-commit hook, .gitattributes entry, and merge driver configuration.",
+    "responsibilities": [
+      "Resolve the repository root from cwdOverride, path argument, or current directory",
+      "Install git hooks and merge driver configuration via installHooks",
+      "Print a summary of installed hook paths and merge driver config",
+      "Return EXIT.OK on success"
+    ],
+    "businessRules": [
+      {
+        "rule": "Hook installation targets the resolved repository root",
+        "rationale": "repoRoot is resolved from ctx?.cwdOverride ?? pathArg(args) ?? '.' and passed to installHooks",
+        "sourceRef": "packages/cli/src/cli.ts@L753-L754"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "args",
+        "type": "string[]",
+        "description": "CLI arguments including optional path"
+      },
+      {
+        "name": "ctx",
+        "type": "CmdCtx (optional)",
+        "description": "Optional command context with cwdOverride"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "exitCode",
+        "type": "number",
+        "description": "EXIT.OK"
+      }
+    ],
+    "sideEffects": [
+      "Modifies the target repository's .git directory by installing hooks",
+      "May modify or create .gitattributes and git config entries",
+      "Writes installation summary to process.stdout"
+    ],
+    "errorBehavior": [
+      "No local error handling shown; failures from installHooks or path resolution would propagate"
+    ],
+    "invariants": [
+      "The printed summary references exactly the paths returned by installHooks"
+    ],
+    "preconditions": [
+      "The target path must be a git repository or installHooks must be able to initialize git hooks there"
+    ],
+    "postconditions": [
+      "Git hooks and merge driver are installed and a summary is printed"
+    ],
+    "risks": [
+      "Unresolved path.resolve call means exact resolution semantics are not modeled",
+      "No validation that the target is actually a git repository before installing hooks"
+    ],
+    "whatToDistrust": [
+      "Unresolved built-in call: path.resolve",
+      "installHooks internals are not validated in this seed"
+    ],
+    "confidence": 0.75
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "feature:install-hooks-command",
+        "kind": "feature",
+        "name": "crib install-hooks command",
+        "summary": "CLI command that installs git hooks and merge driver for knowledge-crib",
+        "id": "llm:sym:packages/cli/src/cli.ts#cmdInstallHooks@L752#feature:install-hooks-command",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L752"
+      },
+      {
+        "localId": "cap:git-hooks",
+        "kind": "capability",
+        "name": "Git hook integration",
+        "summary": "Install post-commit hooks and merge driver into a git repository",
+        "id": "llm:sym:packages/cli/src/cli.ts#cmdInstallHooks@L752#cap:git-hooks",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L752"
+      }
+    ],
+    "edges": [
+      {
+        "from": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L752",
+        "to": "llm:sym:packages/cli/src/cli.ts#cmdInstallHooks@L752#feature:install-hooks-command",
+        "rel": "realizes",
+        "rationale": "The function implements the crib install-hooks command",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L752"
+      },
+      {
+        "from": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L752",
+        "to": "llm:sym:packages/cli/src/cli.ts#cmdInstallHooks@L752#cap:git-hooks",
+        "rel": "realizes",
+        "rationale": "The command installs git hooks and merge driver",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L752"
+      },
+      {
+        "from": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L752",
+        "to": "sym:packages/cli/src/hooks.ts#installHooks@L50",
+        "rel": "triggers",
+        "rationale": "Calls installHooks to perform the installation",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L752"
+      },
+      {
+        "from": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L752",
+        "to": "sym:packages/cli/src/cli.ts#pathArg@L72",
+        "rel": "depends-on-concept",
+        "rationale": "Uses pathArg to extract optional repository path",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L752"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L752",
+      "why": "Lines 752-761: repo root resolution, installHooks call, and summary output"
+    },
+    {
+      "soulId": "sym:packages/cli/src/cli.ts#main@L100",
+      "why": "Caller: main routes to cmdInstallHooks"
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#lastSegment@L1816",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c7b99ad580c5ad640d2e78e39bd8f212670c2a64e8dfed2ad274d63b5885c9ca",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#lastSegment@L1816",
+    "kind": "symbol",
+    "type": "function",
+    "name": "lastSegment",
+    "qualifiedName": "lastSegment",
+    "signature": "lastSegment(dotted: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 1816,
+      "end": 1819
+    },
+    "callSites": [
+      {
+        "callee": "lastIndexOf",
+        "line": 1817
+      },
+      {
+        "callee": "slice",
+        "line": 1818
+      }
+    ]
+  },
+  "source": {
+    "text": "function lastSegment(dotted: string): string {\n  const i = dotted.lastIndexOf('.');\n  return i === -1 ? dotted : dotted.slice(i + 1);\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 1816
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseBaseClause@L473",
+      "confidence": 1,
+      "name": "parseBaseClause",
+      "qualifiedName": "Parser.parseBaseClause",
+      "signature": "parseBaseClause(): { bases: string[]; impls: string[] }",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 473
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#lastSegment@L1816",
+    "procedureName": "lastSegment",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#lastSegment@L1816",
+        "procedureName": "lastSegment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:475032be68803ff41522c0edd7419f002b147d39a642e5f6ff226370c0d974d8",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1817",
+          "line": 1817,
+          "expr": "const i = dotted.lastIndexOf('.');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#lastSegment@L1816",
+        "procedureName": "lastSegment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:21f40aa91b92ed0ce7621f94e4158d4c94623de237ec668896519e8558ccf952",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1818",
+          "line": 1818,
+          "expr": "return i === -1 ? dotted : dotted.slice(i + 1);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

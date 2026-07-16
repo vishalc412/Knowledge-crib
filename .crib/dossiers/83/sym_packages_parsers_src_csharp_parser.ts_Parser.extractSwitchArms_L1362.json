@@ -1,0 +1,223 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.extractSwitchArms@L1362",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:051ff6a1977b699b213b7e3d9b68637dc10a16526abbe0326d02eccb6a4c4b7c",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.extractSwitchArms@L1362",
+    "kind": "symbol",
+    "type": "method",
+    "name": "extractSwitchArms",
+    "qualifiedName": "Parser.extractSwitchArms",
+    "signature": "extractSwitchArms(from: number, to: number): CsharpSwitchCase[] | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 1362,
+      "end": 1381
+    },
+    "callSites": [
+      {
+        "callee": "parseSwitchExprArms",
+        "line": 1373
+      }
+    ]
+  },
+  "source": {
+    "text": "  private extractSwitchArms(from: number, to: number): CsharpSwitchCase[] | undefined {\n    let k = from;\n    while (k < to) {\n      const tk = this.t[k]!;\n      if (\n        tk.type === 'NAME' &&\n        tk.value === 'switch' &&\n        this.t[k + 1]?.type === 'OP' &&\n        this.t[k + 1]?.value === '{'\n      ) {\n        try {\n          return this.parseSwitchExprArms(k + 1);\n        } catch {\n          return undefined;\n        }\n      }\n      k++;\n    }\n    return undefined;\n  }",
+    "truncated": false,
+    "totalLines": 20,
+    "startLine": 1362
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafExpr@L1275",
+      "confidence": 1,
+      "name": "parseLeafExpr",
+      "qualifiedName": "Parser.parseLeafExpr",
+      "signature": "parseLeafExpr(startLine: number): CsharpStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1275
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1219",
+      "confidence": 1,
+      "name": "parseLeafReturn",
+      "qualifiedName": "Parser.parseLeafReturn",
+      "signature": "parseLeafReturn(kind: 'return' | 'throw', startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1219
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+      "confidence": 1,
+      "name": "parseSwitchExprArms",
+      "qualifiedName": "Parser.parseSwitchExprArms",
+      "signature": "parseSwitchExprArms(braceIdx: number): CsharpSwitchCase[]",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1390
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/parser.ts@L1355",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.extractSwitchArms@L1362",
+    "procedureName": "Parser.extractSwitchArms",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/parser.ts@L1364",
+      "cond:packages/parsers/src/csharp/parser.ts@L1366"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.extractSwitchArms@L1362",
+        "procedureName": "Parser.extractSwitchArms",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1366",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1364",
+            "expr": "k < to"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1366",
+            "expr": "tk.type === 'NAME' &&\n        tk.value === 'switch' &&\n        this.t[k + 1]?.type === 'OP' &&\n        this.t[k + 1]?.value === '{'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9b3449004dade17832116b96305bb6ae491ad4beb52f0689c8e8e86f3e92cb1d",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitchExprArms@L1390",
+          "expr": "parseSwitchExprArms",
+          "line": 1373
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.extractSwitchArms@L1362",
+        "procedureName": "Parser.extractSwitchArms",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1366",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1364",
+            "expr": "k < to"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1366",
+            "expr": "tk.type === 'NAME' &&\n        tk.value === 'switch' &&\n        this.t[k + 1]?.type === 'OP' &&\n        this.t[k + 1]?.value === '{'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:91206ea20dddd63a7a7287fbed08d89506d927b83b5f44cd0293d25c3e62b440",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1373",
+          "line": 1373,
+          "expr": "return this.parseSwitchExprArms(k + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.extractSwitchArms@L1362",
+        "procedureName": "Parser.extractSwitchArms",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1366",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1364",
+            "expr": "k < to"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1366",
+            "expr": "tk.type === 'NAME' &&\n        tk.value === 'switch' &&\n        this.t[k + 1]?.type === 'OP' &&\n        this.t[k + 1]?.value === '{'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e3badfbb5704c573e8d1f3c91b849901910d8a34b5c720a74b0c1c9917eeaa1d",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1375",
+          "line": 1375,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.extractSwitchArms@L1362",
+        "procedureName": "Parser.extractSwitchArms",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1d3a412a4b848e73e0b5f2ca13dcf75bfcf6e5caf42e8a9cde1b167f11ec3c43",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1380",
+          "line": 1380,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/parsers/src/csharp/parser.ts@L1374",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/parsers/src/csharp/parser.ts",
+        "span": {
+          "start": 1374,
+          "end": 1374
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

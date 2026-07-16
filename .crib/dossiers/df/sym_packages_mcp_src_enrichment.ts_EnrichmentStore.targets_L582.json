@@ -1,0 +1,510 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L582",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:2943046e09ad3bfdce2ab7b444e724e2cee59e460644e6c3153e22732fbd9e0e",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L582",
+    "kind": "symbol",
+    "type": "method",
+    "name": "targets",
+    "qualifiedName": "EnrichmentStore.targets",
+    "signature": "targets(layer: EnrichLayer, scope?: EnrichScope): Array<{ layer: EnrichLayer; id: string; hash: string; node?: Node }>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 582,
+      "end": 602
+    },
+    "callSites": [
+      {
+        "callee": "iterate",
+        "line": 589
+      },
+      {
+        "callee": "systemHash",
+        "line": 590
+      },
+      {
+        "callee": "filter",
+        "line": 593
+      },
+      {
+        "callee": "map",
+        "line": 593
+      },
+      {
+        "callee": "sort",
+        "line": 593
+      },
+      {
+        "callee": "iterate",
+        "line": 593
+      },
+      {
+        "callee": "clusterHash",
+        "line": 595
+      },
+      {
+        "callee": "matchesScope",
+        "line": 596
+      },
+      {
+        "callee": "filter",
+        "line": 598
+      },
+      {
+        "callee": "map",
+        "line": 598
+      },
+      {
+        "callee": "sort",
+        "line": 598
+      },
+      {
+        "callee": "iterate",
+        "line": 598
+      },
+      {
+        "callee": "matchesScope",
+        "line": 601
+      }
+    ]
+  },
+  "source": {
+    "text": "  private targets(\n    layer: EnrichLayer,\n    scope?: EnrichScope,\n  ): Array<{ layer: EnrichLayer; id: string; hash: string; node?: Node }> {\n    if (layer === 'system') {\n      // The system layer is whole-repo only — never scoped.\n      if (scope) return [];\n      const any = [...this.soul.iterate()].length > 0;\n      return any ? [{ layer, id: SYSTEM_TARGET, hash: this.systemHash() }] : [];\n    }\n    if (layer === 'cluster') {\n      return [...this.soul.iterate('cluster')]\n        .sort(byId)\n        .map((node) => ({ layer, id: node.id, hash: this.clusterHash(node), node }))\n        .filter((target) => this.matchesScope(target.node!, layer, scope));\n    }\n    return [...this.soul.iterate(layer)]\n      .sort(byId)\n      .map((node) => ({ layer, id: node.id, hash: node.hash, node }))\n      .filter((target) => this.matchesScope(target.node!, layer, scope));\n  }",
+    "truncated": false,
+    "totalLines": 21,
+    "startLine": 582
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.countLayer@L570",
+      "confidence": 1,
+      "name": "countLayer",
+      "qualifiedName": "EnrichmentStore.countLayer",
+      "signature": "countLayer(layer: EnrichLayer, scope?: EnrichScope): EnrichLayerCounts",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 570
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.next@L342",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "EnrichmentStore.next",
+      "signature": "next(args: EnrichNextArgs = {}): EnrichNextBatch",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 342
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L1007",
+      "confidence": 1,
+      "name": "clusterHash",
+      "qualifiedName": "EnrichmentStore.clusterHash",
+      "signature": "clusterHash(cluster: Node): string",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1007
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.matchesScope@L609",
+      "confidence": 1,
+      "name": "matchesScope",
+      "qualifiedName": "EnrichmentStore.matchesScope",
+      "signature": "matchesScope(node: Node, layer: EnrichLayer, scope?: EnrichScope): boolean",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 609
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.systemHash@L1014",
+      "confidence": 1,
+      "name": "systemHash",
+      "qualifiedName": "EnrichmentStore.systemHash",
+      "signature": "systemHash(): string",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1014
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-1-the-enrichment-work-queue-enrich-next",
+      "heading": "3.1.1 The Enrichment Work Queue (`enrich_next`)",
+      "anchor": "3-1-1-the-enrichment-work-queue-enrich-next",
+      "snippet": "3.1.1 The Enrichment Work Queue (`enrich_next`)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#phase-0-the-scope-picker-first-thing-once-per-session",
+      "heading": "Phase 0 — the scope picker (first thing, once per session)",
+      "anchor": "phase-0-the-scope-picker-first-thing-once-per-session",
+      "snippet": "Phase 0 — the scope picker (first thing, once per session)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#phase-1-one-batch-author-save-stop-the-loop-per-turn",
+      "heading": "Phase 1 — one batch, author, save, stop (the loop, per turn)",
+      "anchor": "phase-1-one-batch-author-save-stop-the-loop-per-turn",
+      "snippet": "Phase 1 — one batch, author, save, stop (the loop, per turn)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a15a51dcb8460a247.md#evidence",
+      "heading": "Evidence",
+      "anchor": "evidence",
+      "snippet": "Evidence",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-the-llm-semantic-graph-layer-optional-build-the-bible",
+      "heading": "10. The LLM semantic-graph layer (optional — \"build the bible\")",
+      "anchor": "10-the-llm-semantic-graph-layer-optional-build-the-bible",
+      "snippet": "10. The LLM semantic-graph layer (optional — \"build the bible\")",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#known-non-blockers",
+      "heading": "Known Non-Blockers",
+      "anchor": "known-non-blockers",
+      "snippet": "Known Non-Blockers",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-1-what-each-model-can-answer-about-one-procedure",
+      "heading": "1.1 What each model can answer about ONE procedure",
+      "anchor": "1-1-what-each-model-can-answer-about-one-procedure",
+      "snippet": "1.1 What each model can answer about ONE procedure",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#3-overall-verdict",
+      "heading": "3. Overall verdict",
+      "anchor": "3-overall-verdict",
+      "snippet": "3. Overall verdict",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#add-a-new-enrichment-layer",
+      "heading": "Add a New Enrichment Layer",
+      "anchor": "add-a-new-enrichment-layer",
+      "snippet": "Add a New Enrichment Layer",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#the-two-rules-that-prevent-the-infinite-loop",
+      "heading": "⚠️ The two rules that prevent the infinite loop",
+      "anchor": "the-two-rules-that-prevent-the-infinite-loop",
+      "snippet": "⚠️ The two rules that prevent the infinite loop",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#0-decisions-locked-from-grilling",
+      "heading": "0. Decisions locked (from grilling)",
+      "anchor": "0-decisions-locked-from-grilling",
+      "snippet": "0. Decisions locked (from grilling)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#3-3-the-three-things-neither-inspiration-has-that-define-knowledge-crib",
+      "heading": "3.3 The three things neither inspiration has, that define Knowledge-crib",
+      "anchor": "3-3-the-three-things-neither-inspiration-has-that-define-knowledge-crib",
+      "snippet": "3.3 The three things neither inspiration has, that define Knowledge-crib",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-2b-framework-semantics-1-3-the-above-sql-tier-for-app-frameworks",
+      "heading": "Phase 2b — Framework-semantics *(1.3, the \"above SQL\" tier for app frameworks)*",
+      "anchor": "phase-2b-framework-semantics-1-3-the-above-sql-tier-for-app-frameworks",
+      "snippet": "Phase 2b — Framework-semantics *(1.3, the \"above SQL\" tier for app frameworks)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
+      "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "anchor": "java-spring-boot-track-built-tested-schema-1-3",
+      "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#when-to-run",
+      "heading": "When to run",
+      "anchor": "when-to-run",
+      "snippet": "When to run",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L582",
+    "procedureName": "EnrichmentStore.targets",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L586",
+      "cond:packages/mcp/src/enrichment.ts@L588",
+      "cond:packages/mcp/src/enrichment.ts@L592"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L582",
+        "procedureName": "EnrichmentStore.targets",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L588",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L586",
+            "expr": "layer === 'system'"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L588",
+            "expr": "scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:88ea76da47133ba6918369e8bc0125ab2b12f8b73930bea784e59f6d601e780d",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L588",
+          "line": 588,
+          "expr": "return [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L582",
+        "procedureName": "EnrichmentStore.targets",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L586",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L586",
+            "expr": "layer === 'system'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b113bb406c05030b68f611950d71d7998191d7c5d7bc96e141d8ea4799e2e31e",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L589",
+          "line": 589,
+          "expr": "const any = [...this.soul.iterate()].length > 0;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L582",
+        "procedureName": "EnrichmentStore.targets",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L586",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L586",
+            "expr": "layer === 'system'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4d543bb25428eb929d239544cf42378e764c62f08f0816964379e4980d4c49db",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.systemHash@L1014",
+          "expr": "systemHash",
+          "line": 590
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L582",
+        "procedureName": "EnrichmentStore.targets",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L586",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L586",
+            "expr": "layer === 'system'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:28cb3c695d975a6ce5d94948c23060ac2e94c3a6aa3170d47cffee337c1cf101",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L590",
+          "line": 590,
+          "expr": "return any ? [{ layer, id: SYSTEM_TARGET, hash: this.systemHash() }] : [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L582",
+        "procedureName": "EnrichmentStore.targets",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L592",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L592",
+            "expr": "layer === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7ea27de0f86a5a9edafcfdb011d08e4d5ee20194f81ca8687d9b78546c9d73fb",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L593",
+          "line": 593,
+          "expr": "return [...this.soul.iterate('cluster')]\n        .sort(byId)\n        .map((node) => ({ layer, id: node.id, hash: this.clusterHash(node), node }))\n        .filter((target) => this.matchesScope(target.node!, layer, scope));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L582",
+        "procedureName": "EnrichmentStore.targets",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L592",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L592",
+            "expr": "layer === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c51d7afe90011272438bc78db1c6e3e41d8bef57bc4fe7f938f2c2ae214707a2",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L1007",
+          "expr": "clusterHash",
+          "line": 595
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L582",
+        "procedureName": "EnrichmentStore.targets",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:86ef6a9cab7e3a8baa0bda2b904c7cd826999cb9fe685b60007a1abd79947fbe",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.matchesScope@L609",
+          "expr": "matchesScope",
+          "line": 596
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L582",
+        "procedureName": "EnrichmentStore.targets",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:817470605a8155edb09d0d487ec9c73dca003ea6dd2e00296c5074684a544542",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L598",
+          "line": 598,
+          "expr": "return [...this.soul.iterate(layer)]\n      .sort(byId)\n      .map((node) => ({ layer, id: node.id, hash: node.hash, node }))\n      .filter((target) => this.matchesScope(target.node!, layer, scope));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 13,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

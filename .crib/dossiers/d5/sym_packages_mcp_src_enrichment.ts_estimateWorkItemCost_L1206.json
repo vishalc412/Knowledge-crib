@@ -1,0 +1,131 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#estimateWorkItemCost@L1206",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:a2af031d78e6beb8e3d8fde4910c2c40830a9bb85356fd2eaa9bd77aaa96496c",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#estimateWorkItemCost@L1206",
+    "kind": "symbol",
+    "type": "function",
+    "name": "estimateWorkItemCost",
+    "qualifiedName": "estimateWorkItemCost",
+    "signature": "estimateWorkItemCost(item: EnrichWorkItem): number",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1206,
+      "end": 1213
+    },
+    "callSites": [
+      {
+        "callee": "estimateTokens",
+        "line": 1208
+      },
+      {
+        "callee": "estimateTokens",
+        "line": 1209
+      },
+      {
+        "callee": "estimateTokens",
+        "line": 1210
+      },
+      {
+        "callee": "estimateTokens",
+        "line": 1211
+      }
+    ]
+  },
+  "source": {
+    "text": "function estimateWorkItemCost(item: EnrichWorkItem): number {\n  return (\n    estimateTokens(item.seed) +\n    estimateTokens(item.lowerLayer) +\n    estimateTokens(item.instructions) +\n    estimateTokens(item.outputSchema)\n  );\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 1206
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.next@L342",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "EnrichmentStore.next",
+      "signature": "next(args: EnrichNextArgs = {}): EnrichNextBatch",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 342
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#estimateTokens@L18",
+      "confidence": 1,
+      "name": "estimateTokens",
+      "qualifiedName": "estimateTokens",
+      "signature": "estimateTokens(value: unknown): number",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 18
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#estimateWorkItemCost@L1206",
+    "procedureName": "estimateWorkItemCost",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#estimateWorkItemCost@L1206",
+        "procedureName": "estimateWorkItemCost",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:56d26cd5225a8f9a9a2855046f30cc187bdb59287d2631603da1b695042b9bc5",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1207",
+          "line": 1207,
+          "expr": "return (\n    estimateTokens(item.seed) +\n    estimateTokens(item.lowerLayer) +\n    estimateTokens(item.instructions) +\n    estimateTokens(item.outputSchema)\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#estimateWorkItemCost@L1206",
+        "procedureName": "estimateWorkItemCost",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f0778db53e801d6257c28d10f1f0cba575b33e3273f30d5b5e9fcd3cf08697f7",
+          "target": "sym:packages/mcp/src/token-budget.ts#estimateTokens@L18",
+          "expr": "estimateTokens",
+          "line": 1208
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,371 @@
+{
+  "id": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:9c20a25d78e1ea86d29ecc882f8b5001f5b94be8ff61472773b255cf17d9151c",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runParse",
+    "qualifiedName": "runParse",
+    "signature": "runParse(soul: SoulStore, registry: ExtractorRegistry, root: string, files: FileMeta[]): Promise<ParseStats>",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/parse.ts",
+    "span": {
+      "start": 17,
+      "end": 38
+    },
+    "callSites": [
+      {
+        "callee": "resolve",
+        "line": 27
+      },
+      {
+        "callee": "makeExtractCtx",
+        "line": 29
+      },
+      {
+        "callee": "extract",
+        "line": 30
+      },
+      {
+        "callee": "putNodes",
+        "line": 31
+      },
+      {
+        "callee": "putEdges",
+        "line": 32
+      }
+    ]
+  },
+  "source": {
+    "text": "export async function runParse(\n  soul: SoulStore,\n  registry: ExtractorRegistry,\n  root: string,\n  files: FileMeta[],\n): Promise<ParseStats> {\n  let filesParsed = 0;\n  let nodes = 0;\n  let edges = 0;\n  for (const file of files) {\n    const extractor = registry.resolve(file);\n    if (!extractor) continue;\n    const ctx = makeExtractCtx(root, file.path);\n    const result = await extractor.extract(file, ctx);\n    if (result.nodes.length > 0) soul.putNodes(result.nodes);\n    if (result.edges.length > 0) soul.putEdges(result.edges);\n    filesParsed++;\n    nodes += result.nodes.length;\n    edges += result.edges.length;\n  }\n  return { filesParsed, nodes, edges };\n}",
+    "truncated": false,
+    "totalLines": 22,
+    "startLine": 17
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L108",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 108
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L94",
+      "confidence": 1,
+      "name": "updateRepo",
+      "qualifiedName": "updateRepo",
+      "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.ts",
+      "line": 94
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/extract-ctx.ts#makeExtractCtx@L11",
+      "confidence": 1,
+      "name": "makeExtractCtx",
+      "qualifiedName": "makeExtractCtx",
+      "signature": "makeExtractCtx(repoRoot: string, relPath: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/pipeline/src/extract-ctx.ts",
+      "line": 11
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/parse.ts@L16",
+      "snippet": "/** Phase 2: run the registry over every file, persisting nodes + intra-file edges to the soul. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-4-adding-a-new-pipeline-phase",
+      "heading": "4.4 Adding a New Pipeline Phase",
+      "anchor": "4-4-adding-a-new-pipeline-phase",
+      "snippet": "4.4 Adding a New Pipeline Phase",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "heading": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "anchor": "a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "snippet": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#11-architecture",
+      "heading": "11. Architecture",
+      "anchor": "11-architecture",
+      "snippet": "11. Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+    "procedureName": "runParse",
+    "conditions": [
+      "cond:packages/pipeline/src/parse.ts@L26",
+      "cond:packages/pipeline/src/parse.ts@L31",
+      "cond:packages/pipeline/src/parse.ts@L32"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+        "procedureName": "runParse",
+        "guard": "cond:packages/pipeline/src/parse.ts@L26",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse.ts@L26",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f7692ad8a434cf4234b52077bd0a576fa0d63102849aa7781f01671eb4e873d8",
+          "target": "stmt:packages/pipeline/src/parse.ts@L27",
+          "line": 27,
+          "expr": "const extractor = registry.resolve(file);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+        "procedureName": "runParse",
+        "guard": "cond:packages/pipeline/src/parse.ts@L26",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse.ts@L26",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c9e7dbc1da7c6eac939fb5da95183951fa832d346d5cb181912954b24fce5b74",
+          "target": "stmt:packages/pipeline/src/parse.ts@L29",
+          "line": 29,
+          "expr": "const ctx = makeExtractCtx(root, file.path);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+        "procedureName": "runParse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2e0e261b6aa5b89f51ed723ee679ab7304719d49bf70923bcbdda9919a7f4864",
+          "target": "sym:packages/pipeline/src/extract-ctx.ts#makeExtractCtx@L11",
+          "expr": "makeExtractCtx",
+          "line": 29
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+        "procedureName": "runParse",
+        "guard": "cond:packages/pipeline/src/parse.ts@L26",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse.ts@L26",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:61084c757c626092b00bfe636bc673dab1f430d6dba5733cb00f4e48118063bb",
+          "target": "stmt:packages/pipeline/src/parse.ts@L30",
+          "line": 30,
+          "expr": "const result = await extractor.extract(file, ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+        "procedureName": "runParse",
+        "guard": "cond:packages/pipeline/src/parse.ts@L31",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse.ts@L26",
+            "expr": "files"
+          },
+          {
+            "id": "cond:packages/pipeline/src/parse.ts@L31",
+            "expr": "result.nodes.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c1a5c6cfbc1917e2bb3fbfa9ff1cf288853806b4521be188430d30b198f640a8",
+          "target": "stmt:packages/pipeline/src/parse.ts@L31",
+          "line": 31,
+          "expr": "soul.putNodes(result.nodes);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+        "procedureName": "runParse",
+        "guard": "cond:packages/pipeline/src/parse.ts@L32",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse.ts@L26",
+            "expr": "files"
+          },
+          {
+            "id": "cond:packages/pipeline/src/parse.ts@L32",
+            "expr": "result.edges.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7ed10c3e369159f8c214bb8f57d6133276bf2427ad1ff0293a77eebed3050b3f",
+          "target": "stmt:packages/pipeline/src/parse.ts@L32",
+          "line": 32,
+          "expr": "soul.putEdges(result.edges);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+        "procedureName": "runParse",
+        "guard": "cond:packages/pipeline/src/parse.ts@L26",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse.ts@L26",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:118c8d9680014bb5ddc0a6541623ea5ed189a814e8b0440a4ecd3c942086c6f4",
+          "target": "assign:packages/pipeline/src/parse.ts@L34",
+          "line": 34,
+          "expr": "nodes += result.nodes.length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+        "procedureName": "runParse",
+        "guard": "cond:packages/pipeline/src/parse.ts@L26",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse.ts@L26",
+            "expr": "files",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8a3910261d492725051a85cdd1ca876faea6b4b887a78b644db5d9e9a816a363",
+          "target": "assign:packages/pipeline/src/parse.ts@L35",
+          "line": 35,
+          "expr": "edges += result.edges.length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse.ts#runParse@L17",
+        "procedureName": "runParse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a85361408776942976ec4fe484e21f54cfaa7a7ee88767ca7904558c2e2f13d8",
+          "target": "stmt:packages/pipeline/src/parse.ts@L37",
+          "line": 37,
+          "expr": "return { filesParsed, nodes, edges };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 8,
+    "referencedByFiles": [
+      "packages/pipeline/src/pipeline.ts",
+      "packages/pipeline/src/update.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 8,
+    "assignments": 2,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 5,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

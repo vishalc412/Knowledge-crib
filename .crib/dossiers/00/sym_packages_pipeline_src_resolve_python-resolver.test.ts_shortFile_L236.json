@@ -1,0 +1,100 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#shortFile@L236",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:a249d98ed14333e2dd46133728c10510db52466cac5e1f919192f7a3511a7418",
+  "builtAt": "2026-06-26T05:08:13.198Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#shortFile@L236",
+    "kind": "symbol",
+    "type": "function",
+    "name": "shortFile",
+    "qualifiedName": "shortFile",
+    "signature": "shortFile(p: string | undefined): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/python-resolver.test.ts",
+    "span": {
+      "start": 236,
+      "end": 238
+    },
+    "callSites": [
+      {
+        "callee": "pop",
+        "line": 237
+      },
+      {
+        "callee": "split",
+        "line": 237
+      }
+    ]
+  },
+  "source": {
+    "text": "function shortFile(p: string | undefined): string {\n  return p ? (p.split('/').pop() ?? p) : '?';\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 236
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L223",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(soul: SoulStore, id: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/python-resolver.test.ts",
+      "line": 223
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#shortFile@L236",
+    "procedureName": "shortFile",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#shortFile@L236",
+        "procedureName": "shortFile",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7ee1ce20bd409d8a100659a73782250bff290089aaa48018ddd79a9ffe93d7b6",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L237",
+          "line": 237,
+          "expr": "return p ? (p.split('/').pop() ?? p) : '?';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/python-resolver.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

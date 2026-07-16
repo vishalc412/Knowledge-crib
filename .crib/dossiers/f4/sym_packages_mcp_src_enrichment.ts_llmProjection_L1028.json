@@ -1,0 +1,143 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1028",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:45d84bd18253cabf49e5aa17f7ef64d7d874529015be16dc611f4dbe8490b8c3",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1028",
+    "kind": "symbol",
+    "type": "function",
+    "name": "llmProjection",
+    "qualifiedName": "llmProjection",
+    "signature": "llmProjection(read: LlmRead): Record<string, unknown> | undefined",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1028,
+      "end": 1039
+    }
+  },
+  "source": {
+    "text": "export function llmProjection(read: LlmRead): Record<string, unknown> | undefined {\n  if (!read.artifact) return undefined;\n  return {\n    provenance: 'LLM',\n    model: read.artifact.model,\n    stale: read.stale,\n    confidence: read.artifact.analysis.confidence,\n    analysis: read.artifact.analysis,\n    graph: read.artifact.graph,\n    evidence: read.artifact.evidence,\n  };\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 1028
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1300",
+      "confidence": 1,
+      "name": "attachLlm",
+      "qualifiedName": "Verbs.attachLlm",
+      "signature": "attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.query@L567",
+      "confidence": 1,
+      "name": "query",
+      "qualifiedName": "Verbs.query",
+      "signature": "query(args: {\n    q: string;\n    kinds?: NodeKind[];\n    limit?: number;\n    /** restrict rules/framework edges to EXTRACTED provenance (parity with `context`). */\n    extractedOnly?: boolean;\n    /** include the full rehydrated source body per hit (budgeted; see sourceMaxChars/Lines). */\n    withSource?: boolean;\n    /** char cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}). */\n    sourceMaxChars?: number;\n    /** line cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}). */\n    sourceMaxLines?: number;\n    /** for a callable hit, fold in its decision table + coverage readiness. */\n    withRules?: boolean;\n    /** fold in framework-semantics (routes/beans/DI/relations) per hit, when present. */\n    withFramework?: boolean;\n    /** include saved LLM semantic analysis on hits and search LLM analysis text too. */\n    withLlm?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 567
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1028",
+    "procedureName": "llmProjection",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1029"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1028",
+        "procedureName": "llmProjection",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1029",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1029",
+            "expr": "!read.artifact",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:790e33124d9c91642b30ef5d7af347e386c146055810974698490c32d4319025",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1029",
+          "line": 1029,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1028",
+        "procedureName": "llmProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:606ab64509122a0cbc268a450413e713f409c5adcd1dcf2a54380e2044392b59",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1030",
+          "line": 1030,
+          "expr": "return {\n    provenance: 'LLM',\n    model: read.artifact.model,\n    stale: read.stale,\n    confidence: read.artifact.analysis.confidence,\n    analysis: read.artifact.analysis,\n    graph: read.artifact.graph,\n    evidence: read.artifact.evidence,\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

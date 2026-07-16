@@ -1,0 +1,186 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#throwMessage@L965",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:32aeb120582ebf38fdfad1ad349e57cdd79a11c348d6f3dc601ed32f3a971ea3",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#throwMessage@L965",
+    "kind": "symbol",
+    "type": "function",
+    "name": "throwMessage",
+    "qualifiedName": "throwMessage",
+    "signature": "throwMessage(expr: ts.Expression): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 965,
+      "end": 972
+    },
+    "callSites": [
+      {
+        "callee": "truncate",
+        "line": 971
+      },
+      {
+        "callee": "getText",
+        "line": 971
+      }
+    ]
+  },
+  "source": {
+    "text": "function throwMessage(expr: ts.Expression): string {\n  if (ts.isStringLiteral(expr)) return expr.text;\n  if (ts.isNewExpression(expr) && expr.arguments) {\n    const first = expr.arguments[0];\n    if (first && ts.isStringLiteral(first)) return first.text;\n  }\n  return truncate(expr.getText(), EXPR_MAX_CHARS);\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 965
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addRaise@L554",
+      "confidence": 1,
+      "name": "addRaise",
+      "qualifiedName": "TypeScriptExtractor.addRaise",
+      "signature": "addRaise(stmt: ts.ThrowStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 554
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#truncate@L883",
+      "confidence": 1,
+      "name": "truncate",
+      "qualifiedName": "truncate",
+      "signature": "truncate(s: string, max: number): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 883
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L964",
+      "snippet": "/** Best-effort error message for a `throw <expr>`: `new Error(\"x\")` → \"x\"; `throw \"m\"` → \"m\"; else raw. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#throwMessage@L965",
+    "procedureName": "throwMessage",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L966",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L967",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L969"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#throwMessage@L965",
+        "procedureName": "throwMessage",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L966",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L966",
+            "expr": "ts.isStringLiteral(expr)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c0b1037f9919e1559d0d58566977173f99c8cc64fb6d0a0fada5b94c103545c4",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L966",
+          "line": 966,
+          "expr": "return expr.text;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#throwMessage@L965",
+        "procedureName": "throwMessage",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L969",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L967",
+            "expr": "ts.isNewExpression(expr) && expr.arguments"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L969",
+            "expr": "first && ts.isStringLiteral(first)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7d1b62d402deb29935dd98ee52e633c475d95e7150596f1da82266637113824e",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L969",
+          "line": 969,
+          "expr": "return first.text;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#throwMessage@L965",
+        "procedureName": "throwMessage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0bf99840b525235157441312c7deaae09f0c7997da863549651a2ef2deb66439",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#truncate@L883",
+          "expr": "truncate",
+          "line": 971
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#throwMessage@L965",
+        "procedureName": "throwMessage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4175a3dcf06d71bb8a66347a922f15c2d8b6a9b988dc38ce8987c47d45a66b4c",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L971",
+          "line": 971,
+          "expr": "return truncate(expr.getText(), EXPR_MAX_CHARS);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

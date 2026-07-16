@@ -1,0 +1,163 @@
+{
+  "id": "sym:packages/mcp/src/token-budget.ts#bound@L25",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:defc0b378da0ac11b91853428e0ace915017e672510ef1d5f9fbf47f2c177c67",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/token-budget.ts#bound@L25",
+    "kind": "symbol",
+    "type": "function",
+    "name": "bound",
+    "qualifiedName": "bound",
+    "signature": "bound(all: T[], limit: number, offset = 0): Bounded<T>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/token-budget.ts",
+    "span": {
+      "start": 25,
+      "end": 31
+    },
+    "callSites": [
+      {
+        "callee": "slice",
+        "line": 26
+      },
+      {
+        "callee": "String",
+        "line": 29
+      }
+    ]
+  },
+  "source": {
+    "text": "export function bound<T>(all: T[], limit: number, offset = 0): Bounded<T> {\n  const slice = all.slice(offset, offset + limit);\n  const truncated = offset + limit < all.length;\n  return truncated\n    ? { items: slice, truncated, cursor: String(offset + limit) }\n    : { items: slice, truncated };\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 25
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.context@L225",
+      "confidence": 1,
+      "name": "context",
+      "qualifiedName": "Verbs.context",
+      "signature": "context(args: {\n    id: string;\n    docLimit?: number;\n    extractedOnly?: boolean;\n    /** include the full source text of the node's span (rehydrated from disk, budgeted) */\n    withSource?: boolean;\n    /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */\n    withRules?: boolean;\n    /** fold in the schema-1.3 framework-semantics relationships: routes exposed, beans produced,\n     *  DI dependencies/dependents, JPA relations, component renders. Auto-scopes by node — a class\n     *  (controller/@Configuration/@Entity) aggregates its members' route table / bean inventory /\n     *  DI graph / relation model via `member-of`; a callable/component/field returns its own direct\n     *  edges. A @Bean-supplied dependency is surfaced with `kind: 'produces'` + the producer in one\n     *  trip (no round-trip). Unresolved `meta.injects`/`meta.produces` type names surface as\n     *  `⚠ unresolved` entries (parity with `gaps`). */\n    withFramework?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */\n    sourceMaxChars?: number;\n    /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 225
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L503",
+      "confidence": 1,
+      "name": "impact",
+      "qualifiedName": "Verbs.impact",
+      "signature": "impact(args: {\n    id: string;\n    dir: Dir;\n    depth?: number;\n    docLimit?: number;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 503
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L871",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "Verbs.neighbors",
+      "signature": "neighbors(args: {\n    id: string;\n    rel?: string;\n    dir?: ApiDir;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 871
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/token-budget.ts@L24",
+      "snippet": "/** Take the first `limit` items, signalling truncation + a numeric cursor for the next page. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#3-2-feature-by-feature",
+      "heading": "3.2 Feature-by-feature",
+      "anchor": "3-2-feature-by-feature",
+      "snippet": "3.2 Feature-by-feature",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#node-edge-fields-1-3",
+      "heading": "Node + edge fields (1.3)",
+      "anchor": "node-edge-fields-1-3",
+      "snippet": "Node + edge fields (1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/token-budget.ts#bound@L25",
+    "procedureName": "bound",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/token-budget.ts#bound@L25",
+        "procedureName": "bound",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f7949a6265ddbc97032669c0e2b268eac05d4150c935a70001cd52a32a7833a2",
+          "target": "stmt:packages/mcp/src/token-budget.ts@L26",
+          "line": 26,
+          "expr": "const slice = all.slice(offset, offset + limit);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/token-budget.ts#bound@L25",
+        "procedureName": "bound",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f40215086d7cd4f3234f9fea5a3444ad52cb32c33b16e75897070ac904834586",
+          "target": "stmt:packages/mcp/src/token-budget.ts@L28",
+          "line": 28,
+          "expr": "return truncated\n    ? { items: slice, truncated, cursor: String(offset + limit) }\n    : { items: slice, truncated };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

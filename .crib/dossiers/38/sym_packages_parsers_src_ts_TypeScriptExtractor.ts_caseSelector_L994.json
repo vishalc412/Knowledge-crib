@@ -1,0 +1,181 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#caseSelector@L994",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4c087d37454c8166fee9566be464a51926f770fd783bc7f5133b3b8a4179b296",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#caseSelector@L994",
+    "kind": "symbol",
+    "type": "function",
+    "name": "caseSelector",
+    "qualifiedName": "caseSelector",
+    "signature": "caseSelector(expr: ts.Expression): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 994,
+      "end": 998
+    },
+    "callSites": [
+      {
+        "callee": "truncate",
+        "line": 997
+      },
+      {
+        "callee": "getText",
+        "line": 997
+      }
+    ]
+  },
+  "source": {
+    "text": "function caseSelector(expr: ts.Expression): string {\n  if (ts.isStringLiteral(expr)) return expr.text;\n  if (ts.isNumericLiteral(expr)) return expr.text;\n  return truncate(expr.getText(), EXPR_MAX_CHARS);\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 994
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L453",
+      "confidence": 1,
+      "name": "walkSwitch",
+      "qualifiedName": "TypeScriptExtractor.walkSwitch",
+      "signature": "walkSwitch(stmt: ts.SwitchStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 453
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#truncate@L883",
+      "confidence": 1,
+      "name": "truncate",
+      "qualifiedName": "truncate",
+      "signature": "truncate(s: string, max: number): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 883
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L993",
+      "snippet": "/** A switch case's selector value: `case 'card':` → `card` (string literal unquoted); else raw text. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#caseSelector@L994",
+    "procedureName": "caseSelector",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L995",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L996"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#caseSelector@L994",
+        "procedureName": "caseSelector",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L995",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L995",
+            "expr": "ts.isStringLiteral(expr)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:48753d0b865c6278f0051318757ac5ab147daf8877fc1db0fd6dfa8c66d724d8",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L995",
+          "line": 995,
+          "expr": "return expr.text;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#caseSelector@L994",
+        "procedureName": "caseSelector",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L996",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L996",
+            "expr": "ts.isNumericLiteral(expr)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f318c1173d3006cefac8b20a2f03f0a98ed90003061c0c985cd186f961d934a8",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L996",
+          "line": 996,
+          "expr": "return expr.text;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#caseSelector@L994",
+        "procedureName": "caseSelector",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:83176489fe6011ae24cc2376e4f62fac015250ac7accb77828fa8bd544cca122",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#truncate@L883",
+          "expr": "truncate",
+          "line": 997
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#caseSelector@L994",
+        "procedureName": "caseSelector",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29ed96449c398fdf0224d5c1f0e4bf60b77af03ddece92a93fc3128425b63561",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L997",
+          "line": 997,
+          "expr": "return truncate(expr.getText(), EXPR_MAX_CHARS);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

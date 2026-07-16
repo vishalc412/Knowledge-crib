@@ -1,0 +1,165 @@
+{
+  "id": "sym:packages/mcp/src/server.ts#serveStdio@L343",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:c7f4467d4e37ddab8dbb99ca04be40cb3377d8cec5b81240a872fb1f21de2a76",
+  "builtAt": "2026-06-30T15:54:03.404Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/server.ts#serveStdio@L343",
+    "kind": "symbol",
+    "type": "function",
+    "name": "serveStdio",
+    "qualifiedName": "serveStdio",
+    "signature": "serveStdio(verbs: Verbs, version = '0.0.0'): Promise<void>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/server.ts",
+    "span": {
+      "start": 343,
+      "end": 351
+    },
+    "callSites": [
+      {
+        "callee": "buildServer",
+        "line": 344
+      }
+    ]
+  },
+  "source": {
+    "text": "export async function serveStdio(verbs: Verbs, version = '0.0.0'): Promise<void> {\n  const server = buildServer(verbs, version);\n  const transport = new StdioServerTransport();\n  await server.connect(transport);\n  await new Promise<void>((resolve) => {\n    process.stdin.on('end', resolve);\n    process.stdin.on('close', resolve);\n  });\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 343
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/server.ts#buildServer@L17",
+      "confidence": 1,
+      "name": "buildServer",
+      "qualifiedName": "buildServer",
+      "signature": "buildServer(verbs: Verbs, version = '0.1.0'): McpServer",
+      "type": "function",
+      "file": "packages/mcp/src/server.ts",
+      "line": 17
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/server.ts@L335",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "heading": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "anchor": "5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "snippet": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#8-confidence-self-assessment",
+      "heading": "8. Confidence Self-Assessment",
+      "anchor": "8-confidence-self-assessment",
+      "snippet": "8. Confidence Self-Assessment",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/server.ts#serveStdio@L343",
+    "procedureName": "serveStdio",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#serveStdio@L343",
+        "procedureName": "serveStdio",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b256ef99ed9b90e0c4f47c8275b457ae3e80bd5634dddde20b2619208a0d7a81",
+          "target": "sym:packages/mcp/src/server.ts#buildServer@L17",
+          "expr": "buildServer",
+          "line": 344
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/server.ts#serveStdio@L343",
+        "procedureName": "serveStdio",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cbf6f2fe65453f22d60d8b53dc36fd53797530f663eb7149f3af5f93d3ce59b4",
+          "target": "stmt:packages/mcp/src/server.ts@L344",
+          "line": 344,
+          "expr": "const server = buildServer(verbs, version);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

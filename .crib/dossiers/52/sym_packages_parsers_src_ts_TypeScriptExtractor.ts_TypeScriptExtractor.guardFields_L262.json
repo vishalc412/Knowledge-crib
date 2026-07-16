@@ -1,0 +1,115 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.guardFields@L262",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:14b9b982e256135c4c666b0fdffb37a6d2581d65ea6b1a61f8aff0cf90844554",
+  "builtAt": "2026-06-26T14:33:33.998Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.guardFields@L262",
+    "kind": "symbol",
+    "type": "method",
+    "name": "guardFields",
+    "qualifiedName": "TypeScriptExtractor.guardFields",
+    "signature": "guardFields(guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): { cfgPath: string[]; guard?: string; branch?: string; inLoop: boolean; inException: boolean }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 262,
+      "end": 276
+    },
+    "callSites": [
+      {
+        "callee": "slice",
+        "line": 270
+      }
+    ]
+  },
+  "source": {
+    "text": "  private static guardFields(\n    guardStack: string[],\n    branch: string | undefined,\n    inLoop: boolean,\n    inException: boolean,\n  ): { cfgPath: string[]; guard?: string; branch?: string; inLoop: boolean; inException: boolean } {\n    const guard = guardStack.length > 0 ? guardStack[guardStack.length - 1] : undefined;\n    return {\n      cfgPath: guardStack.slice(),\n      ...(guard !== undefined ? { guard } : {}),\n      ...(guard !== undefined && branch !== undefined ? { branch } : {}),\n      inLoop,\n      inException,\n    };\n  }",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 262
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addAssignment@L592",
+      "confidence": 1,
+      "name": "addAssignment",
+      "qualifiedName": "TypeScriptExtractor.addAssignment",
+      "signature": "addAssignment(stmt: ts.ExpressionStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 592
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L470",
+      "confidence": 1,
+      "name": "addStatement",
+      "qualifiedName": "TypeScriptExtractor.addStatement",
+      "signature": "addStatement(stmt: ts.Statement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 470
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L261",
+      "snippet": "/** Guard-chain fields stamped onto an executes/calls edge for one action under a path. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.guardFields@L262",
+    "procedureName": "TypeScriptExtractor.guardFields",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.guardFields@L262",
+        "procedureName": "TypeScriptExtractor.guardFields",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6a71ebe2e41386cff688d42ba49ae988dc2af8b0fec30bc97484e7fd47890180",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L269",
+          "line": 269,
+          "expr": "return {\n      cfgPath: guardStack.slice(),\n      ...(guard !== undefined ? { guard } : {}),\n      ...(guard !== undefined && branch !== undefined ? { branch } : {}),\n      inLoop,\n      inException,\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,171 @@
+{
+  "version": 1,
+  "layer": "symbol",
+  "targetId": "sym:packages/cli/src/cli.ts#cmdImpact@L554",
+  "nodeHash": "blake3:f16049bf911e61ea36250871e27706393ad5829194ab1682d5f54f53cc667668",
+  "schemaVersion": "1.3",
+  "builtAt": "2026-06-29T10:47:55.088Z",
+  "model": "kimi-k2.7-code:cloud",
+  "analysis": {
+    "purpose": "cmdImpact implements the `crib impact` CLI command for blast-radius analysis. It extracts a positional symbol id and a --dir direction (up or down), validates both, opens the verb/index store, and calls verbs.impact with optional --depth, --limit, and --extracted-only parameters.",
+    "responsibilities": [
+      "Extract a positional symbol id from the argument list",
+      "Extract the --dir flag value and validate it is 'up' or 'down'",
+      "Print usage and return BAD_ARGS when id or direction is missing/invalid",
+      "Open the verb/index store via openVerbs",
+      "Return NOT_INDEXED if the store cannot be opened",
+      "Parse optional --depth and --limit as positive integers",
+      "Call verbs.impact with id, dir, and optional parameters",
+      "Print the impact graph as formatted JSON and close the index store"
+    ],
+    "businessRules": [
+      {
+        "rule": "Impact analysis requires a symbol id and a direction",
+        "rationale": "The condition !id || (dir !== 'up' && dir !== 'down') triggers usage and BAD_ARGS",
+        "sourceRef": "packages/cli/src/cli.ts@L558-L562"
+      },
+      {
+        "rule": "Depth and limit are honored only as finite positive numbers",
+        "rationale": "Both are passed to verbs.impact only if Number.isFinite(value) && value > 0",
+        "sourceRef": "packages/cli/src/cli.ts@L573-L576"
+      },
+      {
+        "rule": "--extracted-only filters the impact graph to extracted symbols",
+        "rationale": "The flag is passed through to verbs.impact when present",
+        "sourceRef": "packages/cli/src/cli.ts@L578"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "args",
+        "type": "string[]",
+        "description": "CLI arguments including id, --dir up|down, --depth N, --limit N, --extracted-only"
+      },
+      {
+        "name": "ctx",
+        "type": "CmdCtx (optional)",
+        "description": "Optional command context"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "exitCode",
+        "type": "number",
+        "description": "EXIT.OK, EXIT.BAD_ARGS, or EXIT.NOT_INDEXED"
+      }
+    ],
+    "sideEffects": [
+      "Writes usage errors to process.stderr",
+      "Opens and closes the index store",
+      "Writes the impact graph as pretty-printed JSON to process.stdout"
+    ],
+    "errorBehavior": [
+      "Missing/invalid id or direction returns EXIT.BAD_ARGS",
+      "openVerbs failure returns EXIT.NOT_INDEXED"
+    ],
+    "invariants": [
+      "The index store is closed before the function returns",
+      "Impact direction is always either 'up' or 'down' when verbs.impact is called",
+      "Depth and limit, if passed, are finite positive integers"
+    ],
+    "preconditions": [
+      "A valid symbol id and direction must be present",
+      "The crib index must be openable"
+    ],
+    "postconditions": [
+      "Either the impact graph is printed or an error code is returned"
+    ],
+    "risks": [
+      "9 unresolved call sites (Array.find, String.startsWith, Array.indexOf, Number.parseInt, Number.isFinite, Array.includes, process.stdout.write, JSON.stringify) are not modeled",
+      "Manual flag parsing does not validate that flag values exist (e.g. --dir without value yields undefined and is rejected, which is safe)"
+    ],
+    "whatToDistrust": [
+      "Unresolved built-in/array calls and process I/O",
+      "verbs.impact contract and behavior are not validated in this seed"
+    ],
+    "confidence": 0.75
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "feature:impact-command",
+        "kind": "feature",
+        "name": "crib impact command",
+        "summary": "CLI command that computes blast-radius impact graphs",
+        "id": "llm:sym:packages/cli/src/cli.ts#cmdImpact@L554#feature:impact-command",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdImpact@L554"
+      },
+      {
+        "localId": "rule:impact-id-dir-required",
+        "kind": "business-rule",
+        "name": "Impact id and direction required",
+        "summary": "Both a symbol id and --dir up|down are mandatory",
+        "id": "llm:sym:packages/cli/src/cli.ts#cmdImpact@L554#rule:impact-id-dir-required",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdImpact@L554"
+      },
+      {
+        "localId": "rule:impact-depth-limit",
+        "kind": "business-rule",
+        "name": "Finite positive depth/limit",
+        "summary": "--depth and --limit are passed only when finite and positive",
+        "id": "llm:sym:packages/cli/src/cli.ts#cmdImpact@L554#rule:impact-depth-limit",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdImpact@L554"
+      },
+      {
+        "localId": "concept:blast-radius",
+        "kind": "concept",
+        "name": "Blast radius",
+        "summary": "Set of symbols affected by or affecting a target symbol",
+        "id": "llm:sym:packages/cli/src/cli.ts#cmdImpact@L554#concept:blast-radius",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdImpact@L554"
+      }
+    ],
+    "edges": [
+      {
+        "from": "sym:packages/cli/src/cli.ts#cmdImpact@L554",
+        "to": "llm:sym:packages/cli/src/cli.ts#cmdImpact@L554#feature:impact-command",
+        "rel": "realizes",
+        "rationale": "The function implements the crib impact command",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdImpact@L554"
+      },
+      {
+        "from": "llm:sym:packages/cli/src/cli.ts#cmdImpact@L554#rule:impact-id-dir-required",
+        "to": "sym:packages/cli/src/cli.ts#cmdImpact@L554",
+        "rel": "enforces",
+        "rationale": "The function validates id and dir before proceeding",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdImpact@L554"
+      },
+      {
+        "from": "llm:sym:packages/cli/src/cli.ts#cmdImpact@L554#rule:impact-depth-limit",
+        "to": "sym:packages/cli/src/cli.ts#cmdImpact@L554",
+        "rel": "enforces",
+        "rationale": "The function filters depth and limit with Number.isFinite and > 0",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdImpact@L554"
+      },
+      {
+        "from": "sym:packages/cli/src/cli.ts#cmdImpact@L554",
+        "to": "llm:sym:packages/cli/src/cli.ts#cmdImpact@L554#concept:blast-radius",
+        "rel": "produces",
+        "rationale": "The command produces a blast-radius impact graph",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdImpact@L554"
+      },
+      {
+        "from": "sym:packages/cli/src/cli.ts#cmdImpact@L554",
+        "to": "sym:packages/cli/src/cli.ts#openVerbs@L336",
+        "rel": "depends-on-concept",
+        "rationale": "Depends on openVerbs to load verbs/index",
+        "targetId": "sym:packages/cli/src/cli.ts#cmdImpact@L554"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/cli.ts#cmdImpact@L554",
+      "why": "Lines 554-585: id/dir validation, openVerbs, depth/limit parsing, verbs.impact call, JSON output, and index.close"
+    },
+    {
+      "soulId": "sym:packages/cli/src/cli.ts#main@L100",
+      "why": "Caller: main routes to cmdImpact"
+    }
+  ]
+}
