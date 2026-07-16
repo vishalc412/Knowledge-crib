@@ -105,6 +105,23 @@ echo "Knowledge-crib installed. Run: crib --help"
 export function installPs1(tarballNames) {
   const tarballs = Array.isArray(tarballNames) ? tarballNames : [tarballNames];
   return `$ErrorActionPreference = "Stop"
+# Compute a lowercase hex SHA-256 of a file via the .NET crypto API rather than the Get-FileHash
+# cmdlet. Get-FileHash ships in Microsoft.PowerShell.Utility on Windows PowerShell 5.1+, but some
+# stock 5.1 hosts (notably GitHub windows-latest runners invoked as \`powershell.exe -NoProfile\`)
+# fail to auto-load it — "The term 'Get-FileHash' is not recognized" — breaking the installer for
+# real users on those hosts. [System.Security.Cryptography.SHA256] is available in Windows
+# PowerShell 3.0+ and PowerShell 7, so this is strictly more portable and removes the cmdlet
+# dependency. Streaming (OpenRead + ComputeHash(stream)) keeps large tarballs off the heap.
+function Get-KcFileHash {
+  param([Parameter(Mandatory)][string]$LiteralPath)
+  $sha = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $stream = [System.IO.File]::OpenRead($LiteralPath)
+    try {
+      return [System.BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+    } finally { $stream.Dispose() }
+  } finally { $sha.Dispose() }
+}
 $CacheDir = Join-Path ([System.IO.Path]::GetTempPath()) ("knowledge-crib-npm-cache-" + [System.Guid]::NewGuid().ToString("N"))
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
@@ -135,7 +152,7 @@ foreach ($Line in Get-Content -LiteralPath $ChecksumPath) {
   if (-not (Test-Path -LiteralPath $TargetPath -PathType Leaf)) {
     throw "Installer bundle is missing $($Matches[2])."
   }
-  $Actual = (Get-FileHash -LiteralPath $TargetPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  $Actual = Get-KcFileHash -LiteralPath $TargetPath
   if ($Actual -ne $Expected) {
     throw "Checksum verification failed for $($Matches[2])."
   }

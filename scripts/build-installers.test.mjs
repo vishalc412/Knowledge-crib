@@ -23,7 +23,11 @@ assert.match(
 assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /--cache "\$CacheDir"/);
 assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /NodeMajor/);
 assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /SHA256SUMS\.txt/);
-assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /Get-FileHash/);
+// Checksum verification uses the .NET SHA256 API (Get-KcFileHash wrapper), not the Get-FileHash
+// cmdlet — Get-FileHash is not auto-loaded on some stock Windows PowerShell 5.1 hosts (e.g. GitHub
+// windows-latest runners under `powershell.exe -NoProfile`), which broke the installer there.
+assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /Get-KcFileHash/);
+assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /SHA256\]::Create/);
 assert.match(
   installPs1(['knowledge-crib-0.1.0.tgz']),
   /\$LASTEXITCODE/,
