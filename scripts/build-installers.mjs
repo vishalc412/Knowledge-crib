@@ -47,7 +47,13 @@ function shellTarballArgs(tarballNames) {
 }
 
 function powershellTarballArgs(tarballNames) {
-  return tarballNames.map((name) => `"$PSScriptRoot\\${name}"`).join(' ');
+  // Forward-slash relative specs (./<name>), NOT absolute backslash paths ("$PSScriptRoot\<name>").
+  // The installer Push-Location's into $PSScriptRoot (the bundle dir) before invoking npm, so ./<name>
+  // resolves against the bundle. Forward-slash relative specs pass through the PS 5.1 -> npm.cmd batch
+  // shim -> node argv untouched; an absolute backslash path gets mangled in that native-arg stream
+  // (middle path segments stripped -> npm sees D:\<name> -> ENOENT -4058). See installPs1() for the
+  // full note.
+  return tarballNames.map((name) => `"./${name}"`).join(' ');
 }
 
 export function installSh(tarballNames) {
@@ -164,11 +170,26 @@ if ($VerifiedFiles -eq 0) {
 
 try {
   New-Item -ItemType Directory -Force -Path $CacheDir | Out-Null
-  & npm install -g --cache "$CacheDir" --no-audit --no-fund ${powershellTarballArgs(tarballs)}
-  if ($LASTEXITCODE -ne 0) {
-    throw "npm install failed with exit code $LASTEXITCODE."
+  # Install from the bundle dir so the ./<name> tarball specs resolve as local files. Push-Location
+  # into $PSScriptRoot (the bundle dir) so npm's CWD is the bundle, then pass forward-slash relative
+  # specs. We deliberately do NOT pass "$PSScriptRoot\<name>" here: Windows PowerShell 5.1 hands
+  # native-command arguments to npm.cmd through cmd.exe's %* expansion, which mangles quoted
+  # backslash paths — the middle path segments get stripped and npm resolves the arg to the drive root
+  # (e.g. D:\knowledge-crib-parsers-0.1.0.tgz -> ENOENT -4058, "no such file or directory, open"). The
+  # checksum loop above is immune because Join-Path yields an in-process PathInfo used with -LiteralPath
+  # (never serialized to a native argv); only this native call serializes a path, so it must avoid
+  # backslashes + absolute paths. ./<name> has no backslashes and no escape semantics in any shell, so
+  # it survives PS 5.1 -> npm.cmd -> node verbatim, and npm resolves it against CWD ($PSScriptRoot).
+  Push-Location -LiteralPath $PSScriptRoot
+  try {
+    & npm install -g --cache "$CacheDir" --no-audit --no-fund ${powershellTarballArgs(tarballs)}
+    if ($LASTEXITCODE -ne 0) {
+      throw "npm install failed with exit code $LASTEXITCODE."
+    }
+    Write-Host "Knowledge-crib installed. Run: crib --help"
+  } finally {
+    Pop-Location
   }
-  Write-Host "Knowledge-crib installed. Run: crib --help"
 } finally {
   Remove-Item -Recurse -Force $CacheDir -ErrorAction SilentlyContinue
 }

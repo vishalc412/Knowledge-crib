@@ -15,11 +15,13 @@ import { execFileSync, spawnSync } from 'node:child_process';
  * ADR-002 records this method. `--repo <path>` indexes a real public repo at full size as a
  * cross-check data point alongside the curve (one measurement, no slicing).
  *
- * MEASUREMENT — each slice is indexed by the BUILT `crib` CLI under `/usr/bin/time -l`, which
- * prints both `X.XX real` (wall seconds) and `maximum resident set size` (peak RSS, bytes) for the
- * child node process. The crib CLI also prints `indexed N files → X nodes, Y edges in Zms`, parsed
- * for the throughput + graph-size columns. Setup (copying batches) is excluded from the timing —
- * only the `crib index` run is measured, so the curve reflects pure index cost.
+ * MEASUREMENT — each slice is indexed by the BUILT `crib` CLI under `/usr/bin/time`, which prints
+ * wall seconds + peak RSS for the child node process. The flag + output format differ by platform
+ * (BSD `-l` on darwin vs GNU `-v` on linux; GNU reports RSS in kbytes, BSD in bytes — normalized to
+ * bytes in benchIndex), so the harness is cross-platform. The crib CLI also prints
+ * `indexed N files → X nodes, Y edges in Zms`, parsed for the throughput + graph-size columns.
+ * Setup (copying batches) is excluded from the timing — only the `crib index` run is measured, so
+ * the curve reflects pure index cost.
  *
  * OUTPUT — a markdown table (LOC, files, nodes, edges, wall s, peak RSS MB, RSS-per-kLOC, nodes/s)
  * written to docs/bench/scale-curve.md (+ stdout). The committed artifact is the published curve;
@@ -137,10 +139,21 @@ function readTextLines(p) {
   }
 }
 
-/** Run `crib index <root>` under /usr/bin/time -l; parse wall (s), peak RSS (bytes), crib's summary. */
+// /usr/bin/time flags + output format differ by platform, and a single hardcoded `-l` breaks
+// scale:check on linux:
+//   - darwin (BSD time): `-l` prints "X.XX real" (wall s) + "N maximum resident set size" (N = BYTES)
+//   - linux  (GNU time): `-v` prints "Elapsed (wall clock) time (in seconds): M:SS.xx" +
+//                          "Maximum resident set size (kbytes): N" (N = KBYTES — ×1024 to bytes)
+// GNU time has NO `-l` (`/usr/bin/time: invalid option -- 'l'` → exit 125), which crashed the ubuntu
+// release gate at scale:check. Detect once; parse per-platform; normalize RSS to bytes so the
+// downstream RSS budget + MB/kLOC math is unit-invariant.
+const IS_DARWIN = process.platform === 'darwin';
+const TIME_FMT = IS_DARWIN ? '-l' : '-v';
+
+/** Run `crib index <root>` under /usr/bin/time; parse wall (s), peak RSS (bytes), crib's summary. */
 function benchIndex(root) {
-  // /usr/bin/time -l writes usage to stderr; crib writes its summary to stdout.
-  const res = spawnSync('/usr/bin/time', ['-l', process.execPath, CLI, 'index', root], {
+  // /usr/bin/time writes usage to stderr (BSD -l or GNU -v); crib writes its summary to stdout.
+  const res = spawnSync('/usr/bin/time', [TIME_FMT, process.execPath, CLI, 'index', root], {
     encoding: 'utf8',
     maxBuffer: 256 * 1024 * 1024,
   });
@@ -149,14 +162,29 @@ function benchIndex(root) {
   if (res.status !== 0) {
     throw new Error(`crib index exited ${res.status}\nstdout:${stdout}\nstderr:${stderr}`);
   }
-  const realMatch = /([\d.]+)\s+real/.exec(stderr);
-  const rssMatch = /(\d+)\s+maximum resident set size/.exec(stderr);
+  let wallS = Number.NaN;
+  let peakRssBytes = Number.NaN;
+  if (IS_DARWIN) {
+    const realMatch = /([\d.]+)\s+real/.exec(stderr);
+    const rssMatch = /(\d+)\s+maximum resident set size/.exec(stderr);
+    wallS = realMatch ? Number.parseFloat(realMatch[1]) : Number.NaN;
+    peakRssBytes = rssMatch ? Number.parseInt(rssMatch[1], 10) : Number.NaN;
+  } else {
+    // GNU time -v: "Elapsed (wall clock) time (in seconds): M:SS.xx" (M = minutes; H:MM:SS.xx is
+    // not expected for these slices — scale:check runs a ~20k-LOC slice that indexes in well under a
+    // minute). Parse minutes + seconds.MM → seconds.
+    const elap = /Elapsed \(wall clock\) time \(in seconds\):\s*(\d+):(\d+\.\d+)/.exec(stderr);
+    wallS = elap ? Number.parseInt(elap[1], 10) * 60 + Number.parseFloat(elap[2]) : Number.NaN;
+    // GNU time -v reports RSS in KILOBYTES (BSD -l reports bytes); ×1024 to normalize to bytes.
+    const gnuRss = /Maximum resident set size \(kbytes\):\s*(\d+)/.exec(stderr);
+    peakRssBytes = gnuRss ? Number.parseInt(gnuRss[1], 10) * 1024 : Number.NaN;
+  }
   // crib prints: "indexed N files → X nodes, Y edges (...) in Zms"
   const sumMatch =
     /indexed\s+(\d+)\s+files.*?→\s+(\d+)\s+nodes,\s+(\d+)\s+edges.*?in\s+(\d+)\s*ms/.exec(stdout);
   return {
-    wallS: realMatch ? Number.parseFloat(realMatch[1]) : Number.NaN,
-    peakRssBytes: rssMatch ? Number.parseInt(rssMatch[1], 10) : Number.NaN,
+    wallS,
+    peakRssBytes,
     files: sumMatch ? Number.parseInt(sumMatch[1], 10) : Number.NaN,
     nodes: sumMatch ? Number.parseInt(sumMatch[2], 10) : Number.NaN,
     edges: sumMatch ? Number.parseInt(sumMatch[3], 10) : Number.NaN,
@@ -270,7 +298,7 @@ const lines = [];
 lines.push('# Scale curve — `crib index` time + peak RSS vs corpus LOC');
 lines.push('');
 lines.push(
-  '> Generated by `node scripts/scale-bench.mjs`. Method: the 23-file `packages/parsers/fixtures` tree (~858 LOC) replicated into N sibling batches → N×858 LOC of real extracted code, indexed by the built `crib` CLI under `/usr/bin/time -l`. Setup is excluded; only the `crib index` run is timed. See ADR-002 for the storage decision this curve drives.',
+  '> Generated by `node scripts/scale-bench.mjs`. Method: the 23-file `packages/parsers/fixtures` tree (~858 LOC) replicated into N sibling batches → N×858 LOC of real extracted code, indexed by the built `crib` CLI under `/usr/bin/time` (BSD `-l` on darwin, GNU `-v` on linux; RSS normalized to bytes). Setup is excluded; only the `crib index` run is timed. See ADR-002 for the storage decision this curve drives.',
 );
 lines.push('');
 lines.push(`- **Fixture base:** ${baseLoc} LOC, ${countLoc(FIX).files} files`);
