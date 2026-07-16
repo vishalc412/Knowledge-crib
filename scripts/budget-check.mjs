@@ -28,6 +28,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { sessionCost } from './lib/pricing.mjs';
 
 const MAX_RUNTIME_DEPS = 6;
@@ -97,11 +98,17 @@ await check('core path is network-free', () => {
   for (const dir of CORE_PATH_DIRS) {
     for (const file of walk(dir)) {
       if (file.endsWith('.test.ts')) continue;
-      if (NETWORK_ALLOWLIST.has(file)) continue;
+      // walk() returns platform-native paths (backslashes on win32). NETWORK_ALLOWLIST is authored
+      // in posix form, so a win32 `packages\parsers\src\ts\http-client.ts` would NOT match the posix
+      // `packages/parsers/src/ts/http-client.ts` entry → the allowlisted http-call detector would be
+      // false-flagged as a network offender on windows. Normalize to posix before the allowlist check
+      // + offender reporting (no-op on posix — no backslashes present).
+      const posixFile = file.replace(/\\/g, '/');
+      if (NETWORK_ALLOWLIST.has(posixFile)) continue;
       const text = readFileSync(file, 'utf8');
       for (const line of text.split('\n')) {
         const code = line.split('//')[0];
-        if (NETWORK_PATTERN.test(code)) offenders.push(file);
+        if (NETWORK_PATTERN.test(code)) offenders.push(posixFile);
       }
     }
   }
@@ -171,8 +178,11 @@ await check('default hit size + warm query p50', async () => {
   const { repoRoot, cliPath } = buildFixture();
   try {
     runCli(cliPath, ['index', repoRoot], repoRoot);
-    const runtimeModule = resolve('packages/cli/dist/runtime.js');
-    const mcpModule = resolve('packages/mcp/dist/index.js');
+    // dynamic import() needs a file:// URL on win32: a bare `D:\...\runtime.js` is rejected with
+    // "Only URLs with a scheme in: file, data, and node ... Received protocol 'd:'". pathToFileURL
+    // produces a file:// URL on every platform (posix → `file:///...`), so import() resolves on both.
+    const runtimeModule = pathToFileURL(resolve('packages/cli/dist/runtime.js')).href;
+    const mcpModule = pathToFileURL(resolve('packages/mcp/dist/index.js')).href;
     const { resolveProjectRoot, openSoul, openIndexOnly } = await import(runtimeModule);
     const { Verbs } = await import(mcpModule);
     const resolved = resolveProjectRoot({ explicitRoot: repoRoot });
@@ -253,8 +263,11 @@ await check(`cost saving >= ${MIN_COST_SAVING}x (${COST_MODEL_TURNS}-turn task)`
     );
   }
   try {
-    const runtimeModule = resolve('packages/cli/dist/runtime.js');
-    const mcpModule = resolve('packages/mcp/dist/index.js');
+    // dynamic import() needs a file:// URL on win32: a bare `D:\...\runtime.js` is rejected with
+    // "Only URLs with a scheme in: file, data, and node ... Received protocol 'd:'". pathToFileURL
+    // produces a file:// URL on every platform (posix → `file:///...`), so import() resolves on both.
+    const runtimeModule = pathToFileURL(resolve('packages/cli/dist/runtime.js')).href;
+    const mcpModule = pathToFileURL(resolve('packages/mcp/dist/index.js')).href;
     const { resolveProjectRoot, openSoul, openIndexOnly } = await import(runtimeModule);
     const { Verbs } = await import(mcpModule);
     runCli(resolve('packages/cli/dist/cli.js'), ['index', repoRoot], repoRoot);
