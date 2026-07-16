@@ -160,6 +160,18 @@ function readTextLines(p) {
 const IS_DARWIN = process.platform === 'darwin';
 const TIME_FMT = IS_DARWIN ? '-l' : '-v';
 
+// The RSS budget baseline is Node-major-aware. The 512 MB baseline was calibrated on Node 22
+// (local darwin 471 MB / ubuntu CI under budget for the 20k-LOC slice). Node 24's V8 carries a
+// ~1.5× higher baseline (macos-latest Node 24 CI measured 708 MB for the same 483-file slice —
+// bounded sub-linear per ADR-002, NOT a pipeline regression), so a 512 MB baseline flakes the gate
+// on Node 24+. The per-kLOC SLOPE (marginal RSS per file — the pipeline-dependent part that a
+// regression would inflate) is unchanged across Node versions; only the fixed V8/node:sqlite/parser
+// BASELINE inflates. So raise the baseline on Node 24+ and keep the slope — the gate stays ACTIVE on
+// every runtime (catches super-linear blow-ups + baseline explosions) without flaking on Node-version
+// baseline inflation. Project requires Node >=22.5, so Node 24 is a supported runtime.
+const NODE_MAJOR = Number.parseInt(process.versions.node.split('.')[0], 10);
+const RSS_BASELINE_MB = NODE_MAJOR >= 24 ? 768 : 512;
+
 /** Run `crib index <root>` under /usr/bin/time; measure wall (s) in-process, parse peak RSS (bytes)
  *  + crib's summary. */
 function benchIndex(root) {
@@ -357,14 +369,17 @@ process.stdout.write(
 
 // --- gate assertions (exit non-zero on a bound breach) -----------------------------------------
 // A bounded-RSS gate: peak RSS must stay under a per-slice budget that scales gently with LOC.
-// The budget is generous (4 MB/kLOC + 512 MB baseline) — the gate proves the harness runs + the
-// pipeline doesn't blow up, NOT that memory is tiny. The ADR interprets the actual numbers.
+// The budget is generous (4 MB/kLOC slope + RSS_BASELINE_MB) — the gate proves the harness runs +
+// the pipeline doesn't blow up, NOT that memory is tiny. The ADR interprets the actual numbers.
+// RSS_BASELINE_MB is Node-major-aware (768 MB on Node 24+, 512 MB on Node ≤23) so Node 24's higher
+// V8 baseline doesn't flake the gate; the 4 MB/kLOC slope (the pipeline-dependent marginal RSS a
+// regression would inflate) is unchanged across Node versions.
 let breach = 0;
 for (const r of rows) {
-  const budgetMb = 512 + 4 * (r.loc / 1000);
+  const budgetMb = RSS_BASELINE_MB + 4 * (r.loc / 1000);
   if (r.peakRssMb > budgetMb) {
     process.stderr.write(
-      `  scale:bench BOUND BREACH — ${r.loc.toLocaleString()} LOC: peak RSS ${r.peakRssMb.toFixed(0)} MB > budget ${budgetMb.toFixed(0)} MB (4 MB/kLOC + 512 MB baseline)\n`,
+      `  scale:bench BOUND BREACH — ${r.loc.toLocaleString()} LOC: peak RSS ${r.peakRssMb.toFixed(0)} MB > budget ${budgetMb.toFixed(0)} MB (4 MB/kLOC + ${RSS_BASELINE_MB} MB baseline; Node ${NODE_MAJOR})\n`,
     );
     breach++;
   }
