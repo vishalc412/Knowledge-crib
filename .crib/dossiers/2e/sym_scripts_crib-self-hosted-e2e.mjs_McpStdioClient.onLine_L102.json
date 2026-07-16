@@ -1,0 +1,282 @@
+{
+  "id": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.onLine@L102",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:16bd66d3ffacd1336f685c1dc5c9434f51bff3d4ea11f00659f7b43800d497de",
+  "builtAt": "2026-07-13T11:14:06.943Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.onLine@L102",
+    "kind": "symbol",
+    "type": "method",
+    "name": "onLine",
+    "qualifiedName": "McpStdioClient.onLine",
+    "signature": "onLine(line)",
+    "lang": "javascript",
+    "file": "scripts/crib-self-hosted-e2e.mjs",
+    "span": {
+      "start": 102,
+      "end": 117
+    },
+    "callSites": [
+      {
+        "callee": "parse",
+        "line": 105
+      },
+      {
+        "callee": "get",
+        "line": 110
+      },
+      {
+        "callee": "delete",
+        "line": 112
+      },
+      {
+        "callee": "clearTimeout",
+        "line": 113
+      },
+      {
+        "callee": "reject",
+        "line": 115
+      },
+      {
+        "callee": "resolve",
+        "line": 116
+      }
+    ]
+  },
+  "source": {
+    "text": "  onLine(line) {\n    let message;\n    try {\n      message = JSON.parse(line);\n    } catch {\n      return;\n    }\n    if (message.id === undefined) return;\n    const pending = this.pending.get(message.id);\n    if (!pending) return;\n    this.pending.delete(message.id);\n    clearTimeout(pending.timer);\n    if (message.error)\n      pending.reject(new Error(`${message.error.message ?? 'MCP error'} (${message.error.code})`));\n    else pending.resolve(message.result);\n  }",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 102
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.start@L82",
+      "confidence": 1,
+      "name": "start",
+      "qualifiedName": "McpStdioClient.start",
+      "signature": "start()",
+      "type": "method",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 82
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.onLine@L102",
+    "procedureName": "McpStdioClient.onLine",
+    "conditions": [
+      "cond:scripts/crib-self-hosted-e2e.mjs@L109",
+      "cond:scripts/crib-self-hosted-e2e.mjs@L111",
+      "cond:scripts/crib-self-hosted-e2e.mjs@L114"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.onLine@L102",
+        "procedureName": "McpStdioClient.onLine",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:16cf00c5846735821c0a63703de66cf5abcb2bf06e1d1f1e59616123a31b244f",
+          "target": "assign:scripts/crib-self-hosted-e2e.mjs@L105",
+          "line": 105,
+          "expr": "message = JSON.parse(line);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.onLine@L102",
+        "procedureName": "McpStdioClient.onLine",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aa4161c923c82de68612a02291a0977ea9ff5d6e814f11a31410187bfa218825",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L107",
+          "line": 107,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.onLine@L102",
+        "procedureName": "McpStdioClient.onLine",
+        "guard": "cond:scripts/crib-self-hosted-e2e.mjs@L109",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/crib-self-hosted-e2e.mjs@L109",
+            "expr": "message.id === undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:245ccd1934b1a32230fc381efdede5b92cc9ccaf0d5f989ac5bb3353a8b56311",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L109",
+          "line": 109,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.onLine@L102",
+        "procedureName": "McpStdioClient.onLine",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af885a4b6b2a5f88d0b56c233992c51fd40303553daf6a296ce01adadc0340e3",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L110",
+          "line": 110,
+          "expr": "const pending = this.pending.get(message.id);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.onLine@L102",
+        "procedureName": "McpStdioClient.onLine",
+        "guard": "cond:scripts/crib-self-hosted-e2e.mjs@L111",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/crib-self-hosted-e2e.mjs@L111",
+            "expr": "!pending",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e75940c8b71685a7cc68a3fc2a757d53e9530c5afc3cd1bc06e79a1bc3f599b",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L111",
+          "line": 111,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.onLine@L102",
+        "procedureName": "McpStdioClient.onLine",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:851e550f3d4b0d80e1252856dad30e5bb022432198604b6a240aeff384bddb21",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L112",
+          "line": 112,
+          "expr": "this.pending.delete(message.id);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.onLine@L102",
+        "procedureName": "McpStdioClient.onLine",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d5bb2debddfbe7b73e51a08ea3543f0eb2335c0d8533c6e71bf96cdc92f45061",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L113",
+          "line": 113,
+          "expr": "clearTimeout(pending.timer);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.onLine@L102",
+        "procedureName": "McpStdioClient.onLine",
+        "guard": "cond:scripts/crib-self-hosted-e2e.mjs@L114",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/crib-self-hosted-e2e.mjs@L114",
+            "expr": "message.error",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:61949eb889324ae31e721b11afd628eecd32f83497ebc02bf60cc4bfe0645604",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L115",
+          "line": 115,
+          "expr": "pending.reject(new Error(`${message.error.message ?? 'MCP error'} (${message.error.code})`));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.onLine@L102",
+        "procedureName": "McpStdioClient.onLine",
+        "guard": "cond:scripts/crib-self-hosted-e2e.mjs@L114",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:scripts/crib-self-hosted-e2e.mjs@L114",
+            "expr": "message.error",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:33f0f1ff191888e838ba70298dcaaef5974934b31541830a594f9bbf3164652d",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L116",
+          "line": 116,
+          "expr": "pending.resolve(message.result);"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:scripts/crib-self-hosted-e2e.mjs@L106",
+        "kind": "exception-handler",
+        "lang": "javascript",
+        "file": "scripts/crib-self-hosted-e2e.mjs",
+        "span": {
+          "start": 106,
+          "end": 106
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "scripts/crib-self-hosted-e2e.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 1,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 6,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

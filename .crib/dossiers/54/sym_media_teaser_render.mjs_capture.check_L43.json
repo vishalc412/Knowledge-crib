@@ -1,0 +1,505 @@
+{
+  "id": "sym:media/teaser/render.mjs#capture.check@L43",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:1753abb935a6d9f7dbcf017a9f2117dcd9d2c4fc3783d6ded004ce8dd0a14523",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:media/teaser/render.mjs#capture.check@L43",
+    "kind": "symbol",
+    "type": "function",
+    "name": "check",
+    "qualifiedName": "capture.check",
+    "signature": "check(…)",
+    "lang": "javascript",
+    "file": "media/teaser/render.mjs",
+    "span": {
+      "start": 43,
+      "end": 55
+    },
+    "callSites": [
+      {
+        "callee": "stop",
+        "line": 45
+      },
+      {
+        "callee": "resolve",
+        "line": 46
+      },
+      {
+        "callee": "stop",
+        "line": 50
+      },
+      {
+        "callee": "reject",
+        "line": 51
+      },
+      {
+        "callee": "setTimeout",
+        "line": 54
+      }
+    ]
+  },
+  "source": {
+    "text": "    const check = () => {\n      if (existsSync(target) && statSync(target).size > 1_000) {\n        stop();\n        resolve();\n        return;\n      }\n      if (Date.now() - started > 20_000) {\n        stop();\n        reject(new Error(`Timed out capturing scene ${scene}`));\n        return;\n      }\n      setTimeout(check, 100);\n    };",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 43
+  },
+  "callers": [
+    {
+      "id": "sym:media/teaser/render.mjs#capture@L25",
+      "confidence": 1,
+      "name": "capture",
+      "qualifiedName": "capture",
+      "signature": "capture(scene)",
+      "type": "function",
+      "file": "media/teaser/render.mjs",
+      "line": 25
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:media/teaser/render.mjs#capture.stop@L39",
+      "confidence": 1,
+      "name": "stop",
+      "qualifiedName": "capture.stop",
+      "signature": "stop(…)",
+      "type": "function",
+      "file": "media/teaser/render.mjs",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#the-measured-curve",
+      "heading": "The measured curve",
+      "anchor": "the-measured-curve",
+      "snippet": "The measured curve",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-3-2-within-a-layer-missing-before-stale-hash-deterministic-ordering",
+      "heading": "3.3.2 Within a Layer: Missing Before Stale, Hash-Deterministic Ordering",
+      "anchor": "3-3-2-within-a-layer-missing-before-stale-hash-deterministic-ordering",
+      "snippet": "3.3.2 Within a Layer: Missing Before Stale, Hash-Deterministic Ordering",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#release-gate",
+      "heading": "Release Gate",
+      "anchor": "release-gate",
+      "snippet": "Release Gate",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
+      "heading": "What was built",
+      "anchor": "what-was-built-2",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#7-seeroflow-read-contract-q38-and-any-external-consumer",
+      "heading": "7. SeeroFlow read contract [Q38] (and any external consumer)",
+      "anchor": "7-seeroflow-read-contract-q38-and-any-external-consumer",
+      "snippet": "7. SeeroFlow read contract [Q38] (and any external consumer)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#stride-summary",
+      "heading": "STRIDE summary",
+      "anchor": "stride-summary",
+      "snippet": "STRIDE summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-1-scaffold-the-reproducible-media-workspace",
+      "heading": "Task 1: Scaffold The Reproducible Media Workspace",
+      "anchor": "task-1-scaffold-the-reproducible-media-workspace",
+      "snippet": "Task 1: Scaffold The Reproducible Media Workspace",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/linkedin-series.md#post-4-the-proof-reproducible-not-vibes",
+      "heading": "Post 4 — The proof (reproducible, not vibes)",
+      "anchor": "post-4-the-proof-reproducible-not-vibes",
+      "snippet": "Post 4 — The proof (reproducible, not vibes)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-3-staleness-detection-how-the-system-knows-llm-artifacts-are-outdated",
+      "heading": "3.2.3 Staleness Detection — How the System Knows LLM Artifacts Are Outdated",
+      "anchor": "3-2-3-staleness-detection-how-the-system-knows-llm-artifacts-are-outdated",
+      "snippet": "3.2.3 Staleness Detection — How the System Knows LLM Artifacts Are Outdated",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#grounding-contract-m1-3-the-moat",
+      "heading": "Grounding contract (M1.3 — the moat)",
+      "anchor": "grounding-contract-m1-3-the-moat",
+      "snippet": "Grounding contract (M1.3 — the moat)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#tools",
+      "heading": "Tools",
+      "anchor": "tools",
+      "snippet": "Tools",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#the-two-rules-that-prevent-the-infinite-loop",
+      "heading": "⚠️ The two rules that prevent the infinite loop",
+      "anchor": "the-two-rules-that-prevent-the-infinite-loop",
+      "snippet": "⚠️ The two rules that prevent the infinite loop",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#8-verify-it-works-any-client",
+      "heading": "8. Verify it works (any client)",
+      "anchor": "8-verify-it-works-any-client",
+      "snippet": "8. Verify it works (any client)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CLAUDE.md#never-do",
+      "heading": "Never Do",
+      "anchor": "never-do",
+      "snippet": "Never Do",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CLAUDE.md#resources",
+      "heading": "Resources",
+      "anchor": "resources",
+      "snippet": "Resources",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:AGENTS.md#never-do",
+      "heading": "Never Do",
+      "anchor": "never-do",
+      "snippet": "Never Do",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:AGENTS.md#resources",
+      "heading": "Resources",
+      "anchor": "resources",
+      "snippet": "Resources",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-3-solution-architect",
+      "heading": "2.3 Solution Architect",
+      "anchor": "2-3-solution-architect",
+      "snippet": "2.3 Solution Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
+      "heading": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
+      "anchor": "ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
+      "snippet": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:media/teaser/render.mjs#capture.check@L43",
+    "procedureName": "capture.check",
+    "conditions": [
+      "cond:media/teaser/render.mjs@L49",
+      "cond:media/teaser/render.mjs@L44"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture.check@L43",
+        "procedureName": "capture.check",
+        "guard": "cond:media/teaser/render.mjs@L49",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:media/teaser/render.mjs@L49",
+            "expr": "Date.now() - started > 20_000",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:37492a9f031c49f7efdd44d8ef6b07573fb434ea34a146bb54f40cfd888b3b8b",
+          "target": "sym:media/teaser/render.mjs#capture.stop@L39",
+          "expr": "stop",
+          "line": 45
+        }
+      },
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture.check@L43",
+        "procedureName": "capture.check",
+        "guard": "cond:media/teaser/render.mjs@L44",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:media/teaser/render.mjs@L44",
+            "expr": "existsSync(target) && statSync(target).size > 1_000",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c0fcd78ab7c70dcff6531f1c1e20e786ffa542575b9f4f9133d83b44c010d38",
+          "target": "stmt:media/teaser/render.mjs@L45",
+          "line": 45,
+          "expr": "stop();"
+        }
+      },
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture.check@L43",
+        "procedureName": "capture.check",
+        "guard": "cond:media/teaser/render.mjs@L44",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:media/teaser/render.mjs@L44",
+            "expr": "existsSync(target) && statSync(target).size > 1_000",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c29e10730eb9be84008626347dd9946e1a77094c79e8a78150ff2ac569d5676",
+          "target": "stmt:media/teaser/render.mjs@L46",
+          "line": 46,
+          "expr": "resolve();"
+        }
+      },
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture.check@L43",
+        "procedureName": "capture.check",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:927d3aeaf140be6112d4af295f6f8cc03327e5516edc1dc84883ed90b0fd6ec5",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 46
+        }
+      },
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture.check@L43",
+        "procedureName": "capture.check",
+        "guard": "cond:media/teaser/render.mjs@L44",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:media/teaser/render.mjs@L44",
+            "expr": "existsSync(target) && statSync(target).size > 1_000",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:737b6068325dc235952089936470c726e5eae385e2c8ccaafa4c60584c5db8e8",
+          "target": "stmt:media/teaser/render.mjs@L47",
+          "line": 47,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture.check@L43",
+        "procedureName": "capture.check",
+        "guard": "cond:media/teaser/render.mjs@L49",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:media/teaser/render.mjs@L49",
+            "expr": "Date.now() - started > 20_000",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8040086f33b4f5ab5116a33399a6d613f595fe5d920af17f0de2d2e010e29868",
+          "target": "stmt:media/teaser/render.mjs@L50",
+          "line": 50,
+          "expr": "stop();"
+        }
+      },
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture.check@L43",
+        "procedureName": "capture.check",
+        "guard": "cond:media/teaser/render.mjs@L49",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:media/teaser/render.mjs@L49",
+            "expr": "Date.now() - started > 20_000",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:144d164c2fe94faad183ac9ba1b594d4e521650e38873a50517c4a11dcdaacb7",
+          "target": "stmt:media/teaser/render.mjs@L51",
+          "line": 51,
+          "expr": "reject(new Error(`Timed out capturing scene ${scene}`));"
+        }
+      },
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture.check@L43",
+        "procedureName": "capture.check",
+        "guard": "cond:media/teaser/render.mjs@L49",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:media/teaser/render.mjs@L49",
+            "expr": "Date.now() - started > 20_000",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fda690c0529d255aa3b1efd6bd7e57af58a0f33f68d48b12680c4f6ee4eab231",
+          "target": "stmt:media/teaser/render.mjs@L52",
+          "line": 52,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture.check@L43",
+        "procedureName": "capture.check",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e283177439f42a73d283ddb59d6caa48fb7c98413d263990eca9f374f5257134",
+          "target": "stmt:media/teaser/render.mjs@L54",
+          "line": 54,
+          "expr": "setTimeout(check, 100);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "media/teaser/render.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 5,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

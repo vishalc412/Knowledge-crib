@@ -1,0 +1,100 @@
+{
+  "id": "sym:packages/pipeline/src/vcs.ts#toPosix@L136",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:e2d8af939329a3c3cf43b1d733e6180a57c3978f8b7892ddf7a61123c4c78573",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/vcs.ts#toPosix@L136",
+    "kind": "symbol",
+    "type": "function",
+    "name": "toPosix",
+    "qualifiedName": "toPosix",
+    "signature": "toPosix(p: string): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/vcs.ts",
+    "span": {
+      "start": 136,
+      "end": 138
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 137
+      },
+      {
+        "callee": "split",
+        "line": 137
+      }
+    ]
+  },
+  "source": {
+    "text": "function toPosix(p: string): string {\n  return sep === '/' ? p : p.split(sep).join('/');\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 136
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+      "confidence": 1,
+      "name": "uncommittedChanges",
+      "qualifiedName": "uncommittedChanges",
+      "signature": "uncommittedChanges(root: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 60
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/vcs.ts#toPosix@L136",
+    "procedureName": "toPosix",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#toPosix@L136",
+        "procedureName": "toPosix",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d05ee3e8513b629fecf628eebce65293ed4e1f5e0ea121a3dbbd5a5ffaf41cf7",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L137",
+          "line": 137,
+          "expr": "return sep === '/' ? p : p.split(sep).join('/');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/vcs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

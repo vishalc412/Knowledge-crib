@@ -6,6 +6,7 @@ import { SoulStore, newManifest } from '@knowledge-crib/core';
 import type { Edge } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { indexRepo } from '../pipeline.js';
+import { runSemanticLink } from './semantic.js';
 
 const FIXTURE = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -121,6 +122,73 @@ describe('M7 semantic linker (INFERRED TF-IDF pass)', () => {
       expect(report.semantic.added).toBe(0);
     } finally {
       rmSync(empty, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('M2.3 embedding-cosine linker (inflection recall-up vs TF-IDF)', () => {
+  /**
+   * The fixture pair: symbol `validateInput` (src/validate.ts) vs doc-section "Validation"
+   * (docs/validation.md) whose prose says "validation logic guards entry points". TF-IDF tokenizes
+   * "validation" and "validate" as distinct terms (no stemmer) → no shared term → the section never
+   * retrieves `validateInput`. char-n-gram embedding shares the "validat" n-grams across the
+   * inflection boundary → cosine above floor → `validateInput` is retrieved. This is the recall-up
+   * signal M2.3 ships, pinned under the same [0.4, 0.6] conf cap as the M7 TF-IDF pass.
+   */
+  it('TF-IDF mode does NOT link validateInput (inflection is a shared-term miss)', async () => {
+    const soul = soulFor();
+    await indexRepo(soul, FIXTURE, { now: NOW }); // deterministic only
+    const validateInput = [...soul.iterate('symbol')].find(
+      (n) => n.qualifiedName === 'validateInput',
+    )!;
+    expect(validateInput, 'fixture must surface validateInput').toBeDefined();
+
+    const { added } = runSemanticLink(soul, FIXTURE, undefined, { mode: 'tfidf' });
+    // TF-IDF sees no shared term between "validation …" and `validateInput` → no candidate → no edge.
+    const links = [...soul.iterateEdges('references')].filter((e) => e.dst === validateInput.id);
+    expect(links).toHaveLength(0);
+    // (added may be > 0 from other pairs — that's fine; the gate is per-symbol recall.)
+    expect(added).toBeGreaterThanOrEqual(0);
+  });
+
+  it('embedding mode links validateInput (inflection caught via char-n-gram overlap)', async () => {
+    const soul = soulFor();
+    await indexRepo(soul, FIXTURE, { now: NOW });
+    const validateInput = [...soul.iterate('symbol')].find(
+      (n) => n.qualifiedName === 'validateInput',
+    )!;
+
+    const { added } = runSemanticLink(soul, FIXTURE, undefined, { mode: 'embedding' });
+    expect(added).toBeGreaterThanOrEqual(1);
+
+    const links = [...soul.iterateEdges('references')].filter((e) => e.dst === validateInput.id);
+    expect(links.length).toBeGreaterThanOrEqual(1);
+    const edge = links[0]!;
+    expect(edge.method).toBe('semantic');
+    expect(edge.provenance).toBe('INFERRED');
+    expect(edge.evidence?.by).toBe('embedding');
+    // same conf cap as TF-IDF — strictly below the 0.8 describes threshold.
+    expect(edge.confidence).toBeGreaterThanOrEqual(0.4);
+    expect(edge.confidence).toBeLessThanOrEqual(0.6);
+  });
+
+  it('embedding mode does not invent edges to clearly-unrelated symbols (precision held)', async () => {
+    const soul = soulFor();
+    await indexRepo(soul, FIXTURE, { now: NOW });
+    runSemanticLink(soul, FIXTURE, undefined, { mode: 'embedding' });
+
+    // `rotate` (key rotation) is unrelated to "validation guards" — the deterministic pass already
+    // links it via the explicit code-ref, so it must NOT also carry an INFERRED references edge.
+    const rotate = [...soul.iterate('symbol')].find(
+      (n) => n.qualifiedName === 'TokenService.rotate',
+    )!;
+    const inferredToRotate = [...soul.iterateEdges('references')].filter(
+      (e) => e.dst === rotate.id && e.method === 'semantic',
+    );
+    expect(inferredToRotate).toHaveLength(0);
+    // and no INFERRED edge is ever promoted to describes.
+    for (const e of soul.iterateEdges('describes')) {
+      expect(e.provenance).toBe('EXTRACTED');
     }
   });
 });

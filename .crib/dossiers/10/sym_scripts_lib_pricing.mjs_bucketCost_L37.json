@@ -1,0 +1,118 @@
+{
+  "id": "sym:scripts/lib/pricing.mjs#bucketCost@L37",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:b418aad7c553713cc19bec1a99563d0abb694f260a57191f4cd6acc36e1c3256",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/lib/pricing.mjs#bucketCost@L37",
+    "kind": "symbol",
+    "type": "function",
+    "name": "bucketCost",
+    "qualifiedName": "bucketCost",
+    "signature": "bucketCost(tokens, rate)",
+    "lang": "javascript",
+    "file": "scripts/lib/pricing.mjs",
+    "span": {
+      "start": 37,
+      "end": 39
+    }
+  },
+  "source": {
+    "text": "export function bucketCost(tokens, rate) {\n  return (tokens / 1_000_000) * rate;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 37
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/lib/pricing.mjs#coldCost@L47",
+      "confidence": 1,
+      "name": "coldCost",
+      "qualifiedName": "coldCost",
+      "signature": "coldCost(tokens, r = rates())",
+      "type": "function",
+      "file": "scripts/lib/pricing.mjs",
+      "line": 47
+    },
+    {
+      "id": "sym:scripts/crib-cost-report.mjs#costOf@L66",
+      "confidence": 1,
+      "name": "costOf",
+      "qualifiedName": "costOf",
+      "signature": "costOf(run)",
+      "type": "function",
+      "file": "scripts/crib-cost-report.mjs",
+      "line": 66
+    },
+    {
+      "id": "sym:scripts/lib/pricing.mjs#sessionCost@L73",
+      "confidence": 1,
+      "name": "sessionCost",
+      "qualifiedName": "sessionCost",
+      "signature": "sessionCost({ contextTokens, turns, outputTokens = 0, stable = true }, r = rates())",
+      "type": "function",
+      "file": "scripts/lib/pricing.mjs",
+      "line": 73
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/lib/pricing.mjs@L36",
+      "snippet": "/** Dollar cost of `tokens` billed entirely in one bucket. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/lib/pricing.mjs#bucketCost@L37",
+    "procedureName": "bucketCost",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/lib/pricing.mjs#bucketCost@L37",
+        "procedureName": "bucketCost",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:70518832ec66d5334453d5b8559c11eaa70ad745999a36443722cf9d134125da",
+          "target": "stmt:scripts/lib/pricing.mjs@L38",
+          "line": 38,
+          "expr": "return (tokens / 1_000_000) * rate;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "scripts/crib-cost-report.mjs",
+      "scripts/lib/pricing.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

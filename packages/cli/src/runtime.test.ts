@@ -62,7 +62,7 @@ describe('CLI runtime — index → open → query', () => {
     const index = buildIndex(rt);
     index.close();
 
-    const manifestPath = join(repo, '.crib', 'crib.json');
+    const manifestPath = join(repo, '.crib', 'graph', 'manifest.json');
     writeFileSync(manifestPath, `${JSON.stringify(rt.soul.getManifest())}\n`);
     const future = new Date(Date.now() + 5000);
     utimesSync(manifestPath, future, future);

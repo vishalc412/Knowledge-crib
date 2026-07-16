@@ -1,0 +1,294 @@
+{
+  "id": "sym:packages/cli/src/viz-server.ts#resolveVizAsset@L100",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:1274f28027ca697193ab87888765fd81b6641c52da278c90fdeccfaba2dcec21",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/viz-server.ts#resolveVizAsset@L100",
+    "kind": "symbol",
+    "type": "function",
+    "name": "resolveVizAsset",
+    "qualifiedName": "resolveVizAsset",
+    "signature": "resolveVizAsset(assetsRoot: string, pathname: string): Promise<string>",
+    "lang": "typescript",
+    "file": "packages/cli/src/viz-server.ts",
+    "span": {
+      "start": 100,
+      "end": 118
+    },
+    "callSites": [
+      {
+        "callee": "decodeURIComponent",
+        "line": 103
+      },
+      {
+        "callee": "replace",
+        "line": 107
+      },
+      {
+        "callee": "realpath",
+        "line": 111
+      },
+      {
+        "callee": "realpath",
+        "line": 112
+      },
+      {
+        "callee": "resolve",
+        "line": 112
+      }
+    ]
+  },
+  "source": {
+    "text": "export async function resolveVizAsset(assetsRoot: string, pathname: string): Promise<string> {\n  let decoded: string;\n  try {\n    decoded = decodeURIComponent(pathname);\n  } catch {\n    throw new VizHttpError(400, 'malformed asset path');\n  }\n  const rel = decoded.replace(/^\\/+/, '') || 'index.html';\n  let rootReal: string;\n  let assetReal: string;\n  try {\n    rootReal = await realpath(assetsRoot);\n    assetReal = await realpath(resolve(rootReal, rel));\n  } catch {\n    throw new VizHttpError(404, 'asset not found');\n  }\n  if (!isInside(rootReal, assetReal)) throw new VizHttpError(403, 'asset path escapes viz root');\n  return assetReal;\n}",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 100
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdViz@L1574",
+      "confidence": 1,
+      "name": "cmdViz",
+      "qualifiedName": "cmdViz",
+      "signature": "cmdViz(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1574
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/viz-server.ts#isInside@L50",
+      "confidence": 1,
+      "name": "isInside",
+      "qualifiedName": "isInside",
+      "signature": "isInside(root: string, target: string): boolean",
+      "type": "function",
+      "file": "packages/cli/src/viz-server.ts",
+      "line": 50
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/viz-server.ts@L99",
+      "snippet": "/** Resolve static viz assets with traversal and symlink containment checks. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/viz-server.ts#resolveVizAsset@L100",
+    "procedureName": "resolveVizAsset",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#resolveVizAsset@L100",
+        "procedureName": "resolveVizAsset",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e6e3c83d6006871f49f5bb67f53af3606446d539206c3e9bf1f0b24c13704856",
+          "target": "sym:packages/cli/src/viz-server.ts#isInside@L50",
+          "expr": "isInside"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#resolveVizAsset@L100",
+        "procedureName": "resolveVizAsset",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:73e38a0baee6cfe6722788e200c0be82e78f6af1bff5f4589bf3e08f725a1a1a",
+          "target": "assign:packages/cli/src/viz-server.ts@L103",
+          "line": 103,
+          "expr": "decoded = decodeURIComponent(pathname);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#resolveVizAsset@L100",
+        "procedureName": "resolveVizAsset",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f989b676167512967a63bbb0d23d29133ed874ac4c464806774de51046fd7520",
+          "target": "stmt:packages/cli/src/viz-server.ts@L107",
+          "line": 107,
+          "expr": "const rel = decoded.replace(/^\\/+/, '') || 'index.html';"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#resolveVizAsset@L100",
+        "procedureName": "resolveVizAsset",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5157ce4c6903a1c713377f811e0a7f5e02c97b252c205c84e0207e76e4ab7152",
+          "target": "assign:packages/cli/src/viz-server.ts@L111",
+          "line": 111,
+          "expr": "rootReal = await realpath(assetsRoot);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#resolveVizAsset@L100",
+        "procedureName": "resolveVizAsset",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c4312b0b82af289f68de2799e8ab19a76b6044be3849cdc976f63ab81304ad9",
+          "target": "assign:packages/cli/src/viz-server.ts@L112",
+          "line": 112,
+          "expr": "assetReal = await realpath(resolve(rootReal, rel));"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#resolveVizAsset@L100",
+        "procedureName": "resolveVizAsset",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c6b25ce1b31de1541b9c783d3b94aa284d16261bd4883f02c76797a82aa1499f",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 112
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#resolveVizAsset@L100",
+        "procedureName": "resolveVizAsset",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:94d7a1f4c3ba2ce04b571cfb2557f17d203879f6bb92dc4e489ea4e2d1978b25",
+          "target": "stmt:packages/cli/src/viz-server.ts@L117",
+          "line": 117,
+          "expr": "return assetReal;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:packages/cli/src/viz-server.ts@L105",
+        "kind": "raise",
+        "lang": "typescript",
+        "file": "packages/cli/src/viz-server.ts",
+        "span": {
+          "start": 105,
+          "end": 105
+        },
+        "errorCode": "'malformed asset path'",
+        "errorMessage": "new VizHttpError(400, 'malformed asset path')",
+        "confidence": 1
+      },
+      {
+        "id": "raise:packages/cli/src/viz-server.ts@L114",
+        "kind": "raise",
+        "lang": "typescript",
+        "file": "packages/cli/src/viz-server.ts",
+        "span": {
+          "start": 114,
+          "end": 114
+        },
+        "errorCode": "'asset not found'",
+        "errorMessage": "new VizHttpError(404, 'asset not found')",
+        "confidence": 1
+      },
+      {
+        "id": "raise:packages/cli/src/viz-server.ts@L116",
+        "kind": "raise",
+        "lang": "typescript",
+        "file": "packages/cli/src/viz-server.ts",
+        "span": {
+          "start": 116,
+          "end": 116
+        },
+        "errorCode": "'asset path escapes viz root'",
+        "errorMessage": "new VizHttpError(403, 'asset path escapes viz root')",
+        "confidence": 1
+      }
+    ],
+    "handles": [
+      {
+        "id": "exc:packages/cli/src/viz-server.ts@L104",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/cli/src/viz-server.ts",
+        "span": {
+          "start": 104,
+          "end": 104
+        },
+        "confidence": 1
+      },
+      {
+        "id": "exc:packages/cli/src/viz-server.ts@L113",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/cli/src/viz-server.ts",
+        "span": {
+          "start": 113,
+          "end": 113
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 3,
+    "conditions": 1,
+    "raises": 3,
+    "handlers": 2,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 5,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

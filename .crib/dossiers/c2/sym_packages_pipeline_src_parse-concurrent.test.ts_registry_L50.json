@@ -1,0 +1,430 @@
+{
+  "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#registry@L50",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:7a72643ef75f57cd3fbb6b0da1fd828ab2135617b425b06c233d3c794666c459",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#registry@L50",
+    "kind": "symbol",
+    "type": "function",
+    "name": "registry",
+    "qualifiedName": "registry",
+    "signature": "registry(): ExtractorRegistry",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/parse-concurrent.test.ts",
+    "span": {
+      "start": 50,
+      "end": 54
+    },
+    "callSites": [
+      {
+        "callee": "register",
+        "line": 52
+      }
+    ]
+  },
+  "source": {
+    "text": "function registry(): ExtractorRegistry {\n  const r = new ExtractorRegistry();\n  for (const e of defaultExtractors()) r.register(e);\n  return r;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 50
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/extractors.ts#defaultExtractors@L26",
+      "confidence": 1,
+      "name": "defaultExtractors",
+      "qualifiedName": "defaultExtractors",
+      "signature": "defaultExtractors(): Extractor[]",
+      "type": "function",
+      "file": "packages/pipeline/src/extractors.ts",
+      "line": 26
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-1-adding-a-new-language-parser-8th-language",
+      "heading": "4.1 Adding a New Language Parser (8th Language)",
+      "anchor": "4-1-adding-a-new-language-parser-8th-language",
+      "snippet": "4.1 Adding a New Language Parser (8th Language)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-3-ascii-flow-diagram-command-paths",
+      "heading": "2.3 ASCII Flow Diagram: Command Paths",
+      "anchor": "2-3-ascii-flow-diagram-command-paths",
+      "snippet": "2.3 ASCII Flow Diagram: Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "heading": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "anchor": "a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "snippet": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#11-architecture",
+      "heading": "11. Architecture",
+      "anchor": "11-architecture",
+      "snippet": "11. Architecture",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#documents-updated",
+      "heading": "Documents updated",
+      "anchor": "documents-updated",
+      "snippet": "Documents updated",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests",
+      "heading": "Tests",
+      "anchor": "tests",
+      "snippet": "Tests",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#summary",
+      "heading": "Summary",
+      "anchor": "summary",
+      "snippet": "Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
+      "heading": "What was built",
+      "anchor": "what-was-built-2",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#root-resolution-one-entry-every-project",
+      "heading": "Root resolution — one entry, every project",
+      "anchor": "root-resolution-one-entry-every-project",
+      "snippet": "Root resolution — one entry, every project",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#one-ide-entry-for-every-project-root-resolution",
+      "heading": "One IDE entry for every project (root resolution)",
+      "anchor": "one-ide-entry-for-every-project-root-resolution",
+      "snippet": "One IDE entry for every project (root resolution)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#the-problem",
+      "heading": "The problem",
+      "anchor": "the-problem",
+      "snippet": "The problem",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#decision-item-4-committing-the-soul",
+      "heading": "Decision item 4 — committing the soul",
+      "anchor": "decision-item-4-committing-the-soul",
+      "snippet": "Decision item 4 — committing the soul",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#backward-compatibility",
+      "heading": "Backward compatibility",
+      "anchor": "backward-compatibility",
+      "snippet": "Backward compatibility",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#honest-limitation-documented",
+      "heading": "Honest limitation documented",
+      "anchor": "honest-limitation-documented",
+      "snippet": "Honest limitation documented",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests-build-lint",
+      "heading": "Tests + build + lint",
+      "anchor": "tests-build-lint",
+      "snippet": "Tests + build + lint",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#consequences",
+      "heading": "Consequences",
+      "anchor": "consequences",
+      "snippet": "Consequences",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/publish-runbook.md#publish-sequence-user-executes-in-dependency-order",
+      "heading": "Publish sequence (user executes, in dependency order)",
+      "anchor": "publish-sequence-user-executes-in-dependency-order",
+      "snippet": "Publish sequence (user executes, in dependency order)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#5-package-significance-matrix",
+      "heading": "5. Package Significance Matrix",
+      "anchor": "5-package-significance-matrix",
+      "snippet": "5. Package Significance Matrix",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#2-per-project-setup-do-this-once-per-project-you-want-indexed",
+      "heading": "2. Per-project setup (do this once per project you want indexed)",
+      "anchor": "2-per-project-setup-do-this-once-per-project-you-want-indexed",
+      "snippet": "2. Per-project setup (do this once per project you want indexed)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#supported-languages-extractors-shipped-by-default",
+      "heading": "Supported languages (extractors shipped by default)",
+      "anchor": "supported-languages-extractors-shipped-by-default",
+      "snippet": "Supported languages (extractors shipped by default)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/signing-deferral-adr.md#context",
+      "heading": "Context",
+      "anchor": "context",
+      "snippet": "Context",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#shared-file-chokepoints",
+      "heading": "Shared-file chokepoints",
+      "anchor": "shared-file-chokepoints",
+      "snippet": "Shared-file chokepoints",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#0-verified-facts-judge-conflict-reconciliations",
+      "heading": "0. Verified facts & judge-conflict reconciliations",
+      "anchor": "0-verified-facts-judge-conflict-reconciliations",
+      "snippet": "0. Verified facts & judge-conflict reconciliations",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:README.md#install",
+      "heading": "Install",
+      "anchor": "install",
+      "snippet": "Install",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#8-troubleshooting",
+      "heading": "8. Troubleshooting",
+      "anchor": "8-troubleshooting",
+      "snippet": "8. Troubleshooting",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-1-language-agnostic-migration-core-8-days",
+      "heading": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "anchor": "phase-1-language-agnostic-migration-core-8-days",
+      "snippet": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#registry@L50",
+    "procedureName": "registry",
+    "conditions": [
+      "cond:packages/pipeline/src/parse-concurrent.test.ts@L52"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#registry@L50",
+        "procedureName": "registry",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:974f3289f4cc1f2c5fa5470f343e69a3eec38a4ebda271b64dbbbd4cab0f19b7",
+          "target": "sym:packages/pipeline/src/extractors.ts#defaultExtractors@L26",
+          "expr": "defaultExtractors"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#registry@L50",
+        "procedureName": "registry",
+        "guard": "cond:packages/pipeline/src/parse-concurrent.test.ts@L52",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.test.ts@L52",
+            "expr": "defaultExtractors()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7701c9b20d5c7a03aacb6c28a709bff58bd89b9df453d471b903390eed3aa407",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L52",
+          "line": 52,
+          "expr": "r.register(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#registry@L50",
+        "procedureName": "registry",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c7bcaadb039916f7b799ed308e64b1cd837ef4e8d62f5b717a5cbc84195ada8c",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L53",
+          "line": 53,
+          "expr": "return r;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

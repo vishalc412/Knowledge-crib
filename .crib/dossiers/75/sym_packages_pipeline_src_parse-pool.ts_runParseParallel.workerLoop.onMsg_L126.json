@@ -1,0 +1,205 @@
+{
+  "id": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.workerLoop.onMsg@L126",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:d17769bdd9b1be694e7d9fee31b00adcd8b2b225af0a7eac42b0b452467d9718",
+  "builtAt": "2026-07-13T11:14:06.943Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.workerLoop.onMsg@L126",
+    "kind": "symbol",
+    "type": "function",
+    "name": "onMsg",
+    "qualifiedName": "runParseParallel.workerLoop.onMsg",
+    "signature": "onMsg(…)",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/parse-pool.ts",
+    "span": {
+      "start": 126,
+      "end": 134
+    },
+    "callSites": [
+      {
+        "callee": "off",
+        "line": 128
+      },
+      {
+        "callee": "resolve",
+        "line": 129
+      },
+      {
+        "callee": "off",
+        "line": 131
+      },
+      {
+        "callee": "reject",
+        "line": 132
+      }
+    ]
+  },
+  "source": {
+    "text": "        const onMsg = (msg: WorkerOutMsg) => {\n          if (msg.kind === 'result' && msg.idx === idx) {\n            w.off('message', onMsg);\n            resolve({ nodes: msg.nodes, edges: msg.edges, parsed: msg.parsed });\n          } else if (msg.kind === 'error' && msg.idx === idx) {\n            w.off('message', onMsg);\n            reject(new Error(`extract failed for ${file.path}: ${msg.message}`));\n          }\n        };",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 126
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.workerLoop.onMsg@L126",
+    "procedureName": "runParseParallel.workerLoop.onMsg",
+    "conditions": [
+      "cond:packages/pipeline/src/parse-pool.ts@L127",
+      "cond:packages/pipeline/src/parse-pool.ts@L130"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.workerLoop.onMsg@L126",
+        "procedureName": "runParseParallel.workerLoop.onMsg",
+        "guard": "cond:packages/pipeline/src/parse-pool.ts@L127",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-pool.ts@L127",
+            "expr": "msg.kind === 'result' && msg.idx === idx",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1a68ffa13ad8332c4abf51930ab0201136ffd2ad1ca9c8d4ce299fcd2947d6ec",
+          "target": "stmt:packages/pipeline/src/parse-pool.ts@L128",
+          "line": 128,
+          "expr": "w.off('message', onMsg);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.workerLoop.onMsg@L126",
+        "procedureName": "runParseParallel.workerLoop.onMsg",
+        "guard": "cond:packages/pipeline/src/parse-pool.ts@L127",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-pool.ts@L127",
+            "expr": "msg.kind === 'result' && msg.idx === idx",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:13ecc763014454934f5707e8abe99bd489485509c87747f876dfe56f765589d4",
+          "target": "stmt:packages/pipeline/src/parse-pool.ts@L129",
+          "line": 129,
+          "expr": "resolve({ nodes: msg.nodes, edges: msg.edges, parsed: msg.parsed });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.workerLoop.onMsg@L126",
+        "procedureName": "runParseParallel.workerLoop.onMsg",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:da7b81228c8dd6d5882e2c105a5b651f2554a3f7dfb09e3024ea872cffb43b5e",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 129
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.workerLoop.onMsg@L126",
+        "procedureName": "runParseParallel.workerLoop.onMsg",
+        "guard": "cond:packages/pipeline/src/parse-pool.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-pool.ts@L127",
+            "expr": "msg.kind === 'result' && msg.idx === idx"
+          },
+          {
+            "id": "cond:packages/pipeline/src/parse-pool.ts@L130",
+            "expr": "msg.kind === 'error' && msg.idx === idx",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:357b2844237d2071a28da3fd1af9223116089e1d9f9d0109cb9cddd4c6a5b709",
+          "target": "stmt:packages/pipeline/src/parse-pool.ts@L131",
+          "line": 131,
+          "expr": "w.off('message', onMsg);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.workerLoop.onMsg@L126",
+        "procedureName": "runParseParallel.workerLoop.onMsg",
+        "guard": "cond:packages/pipeline/src/parse-pool.ts@L130",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-pool.ts@L127",
+            "expr": "msg.kind === 'result' && msg.idx === idx"
+          },
+          {
+            "id": "cond:packages/pipeline/src/parse-pool.ts@L130",
+            "expr": "msg.kind === 'error' && msg.idx === idx",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:291a8dda2ef06b0bd3cd47ba8814c91df77135cd5dbb9467824c6faa97d04e6f",
+          "target": "stmt:packages/pipeline/src/parse-pool.ts@L132",
+          "line": 132,
+          "expr": "reject(new Error(`extract failed for ${file.path}: ${msg.message}`));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 4,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

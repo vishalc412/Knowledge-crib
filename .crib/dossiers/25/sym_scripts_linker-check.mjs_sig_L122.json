@@ -1,0 +1,71 @@
+{
+  "id": "sym:scripts/linker-check.mjs#sig@L122",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:28cf8129e64fa7c3fa18f0ac4b8baec6a40a8ae3fc8be8822f813d9fe14156ac",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/linker-check.mjs#sig@L122",
+    "kind": "symbol",
+    "type": "function",
+    "name": "sig",
+    "qualifiedName": "sig",
+    "signature": "sig(…)",
+    "lang": "javascript",
+    "file": "scripts/linker-check.mjs",
+    "span": {
+      "start": 122,
+      "end": 127
+    }
+  },
+  "source": {
+    "text": "  const sig = (run) =>\n    run.edges\n      .filter((e) => e.method === 'semantic')\n      .map((e) => `${e.src}|${e.dst}|${e.confidence}|${e.evidence?.by}|${e.evidence?.score}`)\n      .sort()\n      .join(',');",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 122
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/linker-check.mjs@L121",
+      "snippet": "// (4) Determinism — two embedding runs identical.",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/linker-check.mjs#sig@L122",
+    "procedureName": "sig",
+    "conditions": [],
+    "rules": []
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

@@ -2,7 +2,13 @@ import { execFileSync } from 'node:child_process';
 
 function run(cmd, args, opts = {}) {
   process.stdout.write(`\n$ ${[cmd, ...args].join(' ')}\n`);
-  execFileSync(cmd, args, { stdio: 'inherit', ...opts });
+  // On Windows, `corepack` is a .cmd shim; execFileSync (shell: false) cannot launch .cmd files
+  // directly (ENOENT). Use a shell there so the matrix CI cell (windows-latest) stays green.
+  execFileSync(cmd, args, {
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+    ...opts,
+  });
 }
 
 function pnpm(args) {
@@ -14,6 +20,24 @@ pnpm(['test:python']);
 pnpm(['release:metadata']);
 pnpm(['pack:check']);
 pnpm(['budget:check']);
+pnpm(['eval:check']);
+pnpm(['semantic:check']);
+pnpm(['rerank:check']);
+pnpm(['linker:check']);
+pnpm(['alias:check']);
+pnpm(['js-coverage:check']);
+pnpm(['ifhash:check']);
+pnpm(['tier:check']);
+pnpm(['ownership:check']);
+pnpm(['federation:check']);
+pnpm(['stats:check']);
+pnpm(['parallel:check']);
+pnpm(['fuzz:check']);
+pnpm(['scale:check']);
+pnpm(['security:check']);
+pnpm(['soul-refresh:check']);
+pnpm(['onboarding:check']);
+pnpm(['docs-site:check']);
 pnpm(['publish:dry-run']);
 pnpm(['installer:test']);
 pnpm(['installer:build']);

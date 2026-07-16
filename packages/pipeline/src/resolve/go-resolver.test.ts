@@ -59,7 +59,12 @@ describe('GoResolver — cross-file edges (gate)', () => {
 
   it('is capability-honest: member-of/calls/imports/inherits; ZERO implements + ZERO type edges', async () => {
     const soul = soulFor();
-    await indexRepo(soul, GO_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(soul, GO_CROSS, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+      ownership: false,
+    });
 
     const goEdges = edgesInFiles(soul, GO_EXTS);
     const rels = new Set(goEdges.map((e) => e.rel));
@@ -88,7 +93,12 @@ describe('GoResolver — cross-file edges (gate)', () => {
 
   it('never emits an edge whose endpoint node does not exist (pruneDangling-safe)', async () => {
     const soul = soulFor();
-    await indexRepo(soul, GO_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(soul, GO_CROSS, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+      ownership: false,
+    });
     const ids = new Set([...soul.iterate()].map((n) => n.id));
     for (const e of soul.iterateEdges()) {
       expect(ids.has(e.src)).toBe(true);
@@ -98,13 +108,13 @@ describe('GoResolver — cross-file edges (gate)', () => {
 
   it('is id-stable: re-indexing yields byte-identical nodes + edges', async () => {
     const a = soulFor();
-    await indexRepo(a, GO_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(a, GO_CROSS, { now: NOW, cluster: false, semantic: false, ownership: false });
     const aNodes = JSON.stringify([...a.iterate()].sort(byId));
     const aEdges = JSON.stringify([...a.iterateEdges()].sort(byEdgeId));
 
     cribDir = mkdtempSync(join(tmpdir(), 'crib-go2-'));
     const b = soulFor();
-    await indexRepo(b, GO_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(b, GO_CROSS, { now: NOW, cluster: false, semantic: false, ownership: false });
     expect(JSON.stringify([...b.iterate()].sort(byId))).toBe(aNodes);
     expect(JSON.stringify([...b.iterateEdges()].sort(byEdgeId))).toBe(aEdges);
   });

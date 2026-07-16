@@ -1,0 +1,137 @@
+{
+  "id": "sym:scripts/ownership-check.mjs#fail@L43",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:21d1f64aeab1ad9ad62b9d35fb3caf75db9a0805e64252f65e3e751f22aaa8cc",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/ownership-check.mjs#fail@L43",
+    "kind": "symbol",
+    "type": "function",
+    "name": "fail",
+    "qualifiedName": "fail",
+    "signature": "fail(…)",
+    "lang": "javascript",
+    "file": "scripts/ownership-check.mjs",
+    "span": {
+      "start": 43,
+      "end": 46
+    },
+    "callSites": [
+      {
+        "callee": "write",
+        "line": 44
+      }
+    ]
+  },
+  "source": {
+    "text": "const fail = (msg) => {\n  process.stderr.write(`  ownership:check FAIL — ${msg}\\n`);\n  failed++;\n};",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 43
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#9-risks-guardrails",
+      "heading": "9. Risks & guardrails",
+      "anchor": "9-risks-guardrails",
+      "snippet": "9. Risks & guardrails",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#production-architecture",
+      "heading": "Production Architecture",
+      "anchor": "production-architecture",
+      "snippet": "Production Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a5-automated-parity-golden-file-test-generation",
+      "heading": "WS-A5 — Automated parity / golden-file test generation",
+      "anchor": "ws-a5-automated-parity-golden-file-test-generation",
+      "snippet": "WS-A5 — Automated parity / golden-file test generation",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/ownership-check.mjs#fail@L43",
+    "procedureName": "fail",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/ownership-check.mjs#fail@L43",
+        "procedureName": "fail",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2a52f733667b7f717422bcd5c8d0fc8c02059215b06b3de25e4f5944758610dc",
+          "target": "stmt:scripts/ownership-check.mjs@L44",
+          "line": 44,
+          "expr": "process.stderr.write(`  ownership:check FAIL — ${msg}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ownership-check.mjs#fail@L43",
+        "procedureName": "fail",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d5d95fd2b6689d5db4f670f6d319be0743973ef647c7ed47ebc8fe609c18ff8c",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 44
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

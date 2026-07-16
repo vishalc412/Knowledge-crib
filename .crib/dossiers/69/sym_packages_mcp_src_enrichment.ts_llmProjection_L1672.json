@@ -1,0 +1,143 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1672",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:45d84bd18253cabf49e5aa17f7ef64d7d874529015be16dc611f4dbe8490b8c3",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1672",
+    "kind": "symbol",
+    "type": "function",
+    "name": "llmProjection",
+    "qualifiedName": "llmProjection",
+    "signature": "llmProjection(read: LlmRead): Record<string, unknown> | undefined",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1672,
+      "end": 1683
+    }
+  },
+  "source": {
+    "text": "export function llmProjection(read: LlmRead): Record<string, unknown> | undefined {\n  if (!read.artifact) return undefined;\n  return {\n    provenance: 'LLM',\n    model: read.artifact.model,\n    stale: read.stale,\n    confidence: read.artifact.analysis.confidence,\n    analysis: read.artifact.analysis,\n    graph: read.artifact.graph,\n    evidence: read.artifact.evidence,\n  };\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 1672
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1752",
+      "confidence": 1,
+      "name": "attachLlm",
+      "qualifiedName": "Verbs.attachLlm",
+      "signature": "attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1752
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+      "confidence": 1,
+      "name": "query",
+      "qualifiedName": "Verbs.query",
+      "signature": "query(args: {\n    q: string;\n    kinds?: NodeKind[];\n    limit?: number;\n    /** restrict rules/framework edges to EXTRACTED provenance (parity with `context`). */\n    extractedOnly?: boolean;\n    /** include the full rehydrated source body per hit (budgeted; see sourceMaxChars/Lines). */\n    withSource?: boolean;\n    /** char cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}). */\n    sourceMaxChars?: number;\n    /** line cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}). */\n    sourceMaxLines?: number;\n    /** for a callable hit, fold in its decision table + coverage readiness. */\n    withRules?: boolean;\n    /** fold in framework-semantics (routes/beans/DI/relations) per hit, when present. */\n    withFramework?: boolean;\n    /** include saved LLM semantic analysis on hits and search LLM analysis text too. */\n    withLlm?: boolean;\n    /** resume cursor (a prior response's `cursor`) — skip the first N BM25-ranked hits (FTS5 OFFSET).\n     *  Decoupled from `maxTokens`: paging works without a budget, but a cursor is only RETURNED when\n     *  `maxTokens` is set (the opt-in budget path). (M1.2) */\n    cursor?: string;\n    /** response-wide token budget (chars/4). When set, the hits list is trimmed to the largest\n     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.\n     *  (M1.2) */\n    maxTokens?: number;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 848
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1672",
+    "procedureName": "llmProjection",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1673"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1672",
+        "procedureName": "llmProjection",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1673",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1673",
+            "expr": "!read.artifact",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c85b956403b5a0d9562e33f882a9abd9b0caa9902b5e17e48a6cb0dd68057724",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1673",
+          "line": 1673,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#llmProjection@L1672",
+        "procedureName": "llmProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:41e1b19ea5b1087422aba27df5578b38c2673ec24322b20dd948c5f085f824fc",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1674",
+          "line": 1674,
+          "expr": "return {\n    provenance: 'LLM',\n    model: read.artifact.model,\n    stale: read.stale,\n    confidence: read.artifact.analysis.confidence,\n    analysis: read.artifact.analysis,\n    graph: read.artifact.graph,\n    evidence: read.artifact.evidence,\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

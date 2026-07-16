@@ -1,0 +1,129 @@
+{
+  "id": "sym:packages/ui/web/graph-model.js#uniquePush@L15",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:602f8856ffa7a02d5576621c8eb4294b5f4cda0f6f5bf026fda1393ec0253ae8",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/graph-model.js#uniquePush@L15",
+    "kind": "symbol",
+    "type": "function",
+    "name": "uniquePush",
+    "qualifiedName": "uniquePush",
+    "signature": "uniquePush(map, key, value)",
+    "lang": "javascript",
+    "file": "packages/ui/web/graph-model.js",
+    "span": {
+      "start": 15,
+      "end": 18
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 17
+      }
+    ]
+  },
+  "source": {
+    "text": "  function uniquePush(map, key, value) {\n    const list = map[key] || (map[key] = []);\n    if (!list.includes(value)) list.push(value);\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 15
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+      "confidence": 1,
+      "name": "buildIndexes",
+      "qualifiedName": "buildIndexes",
+      "signature": "buildIndexes(nodes, edges)",
+      "type": "function",
+      "file": "packages/ui/web/graph-model.js",
+      "line": 20
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/graph-model.js#uniquePush@L15",
+    "procedureName": "uniquePush",
+    "conditions": [
+      "cond:packages/ui/web/graph-model.js@L17"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#uniquePush@L15",
+        "procedureName": "uniquePush",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:803dd98c3dc9b13c4bd63d91f90377471548b812d1847e88e3f1885d324d63bb",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 17
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#uniquePush@L15",
+        "procedureName": "uniquePush",
+        "guard": "cond:packages/ui/web/graph-model.js@L17",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L17",
+            "expr": "!list.includes(value)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5559e3cb54d3a4903bd10db95a20942fc12b029c47c8d85110418a4d803b5b3",
+          "target": "stmt:packages/ui/web/graph-model.js@L17",
+          "line": 17,
+          "expr": "list.push(value);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/ui/web/graph-model.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

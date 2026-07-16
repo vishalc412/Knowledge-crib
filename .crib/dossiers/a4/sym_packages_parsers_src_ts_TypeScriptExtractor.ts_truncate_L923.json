@@ -1,0 +1,136 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#truncate@L923",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:bca1f4aa64262d0bab67020e1bd90ccc7f3663ddd1ce585e79600af43e9b65b9",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#truncate@L923",
+    "kind": "symbol",
+    "type": "function",
+    "name": "truncate",
+    "qualifiedName": "truncate",
+    "signature": "truncate(s: string, max: number): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 923,
+      "end": 925
+    },
+    "callSites": [
+      {
+        "callee": "slice",
+        "line": 924
+      }
+    ]
+  },
+  "source": {
+    "text": "function truncate(s: string, max: number): string {\n  return s.length > max ? `${s.slice(0, max - 1)}…` : s;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 923
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addAssignment@L630",
+      "confidence": 1,
+      "name": "addAssignment",
+      "qualifiedName": "TypeScriptExtractor.addAssignment",
+      "signature": "addAssignment(stmt: ts.ExpressionStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 630
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.caseBranch@L676",
+      "confidence": 1,
+      "name": "caseBranch",
+      "qualifiedName": "TypeScriptExtractor.caseBranch",
+      "signature": "caseBranch(line: number, selector: string, env: BodyEnv): string",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 676
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L846",
+      "confidence": 1,
+      "name": "actionInfo",
+      "qualifiedName": "actionInfo",
+      "signature": "actionInfo(stmt: ts.Statement): ActionInfo | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 846
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#caseSelector@L1034",
+      "confidence": 1,
+      "name": "caseSelector",
+      "qualifiedName": "caseSelector",
+      "signature": "caseSelector(expr: ts.Expression): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 1034
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#throwMessage@L1005",
+      "confidence": 1,
+      "name": "throwMessage",
+      "qualifiedName": "throwMessage",
+      "signature": "throwMessage(expr: ts.Expression): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 1005
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#truncate@L923",
+    "procedureName": "truncate",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#truncate@L923",
+        "procedureName": "truncate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f7294fc40095a8c99437fbf12391a9fb1e3361f20ebbb7c780d51135989a2df6",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L924",
+          "line": 924,
+          "expr": "return s.length > max ? `${s.slice(0, max - 1)}…` : s;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

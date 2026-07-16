@@ -1,0 +1,610 @@
+{
+  "id": "sym:packages/core/src/graph-store.ts#GraphStore.semantic@L86",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:a5481dea8caf7aef882de9041d6f76e0db84cd470d5db0c47372070bf65a8b54",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/graph-store.ts#GraphStore.semantic@L86",
+    "kind": "symbol",
+    "type": "method",
+    "name": "semantic",
+    "qualifiedName": "GraphStore.semantic",
+    "signature": "semantic(): GraphSnapshot",
+    "lang": "typescript",
+    "file": "packages/core/src/graph-store.ts",
+    "span": {
+      "start": 86,
+      "end": 88
+    },
+    "callSites": [
+      {
+        "callee": "readSemantic",
+        "line": 87
+      }
+    ]
+  },
+  "source": {
+    "text": "  semantic(): GraphSnapshot {\n    return readSemantic(this.soul);\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 86
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+      "confidence": 1,
+      "name": "compositeLive",
+      "qualifiedName": "GraphStore.compositeLive",
+      "signature": "compositeLive(): GraphSnapshot",
+      "type": "method",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 96
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+      "confidence": 1,
+      "name": "readSemantic",
+      "qualifiedName": "readSemantic",
+      "signature": "readSemantic(soul: SoulStore): GraphSnapshot",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 173
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#6-sizing-knobs-set-from-c4-scale-answer",
+      "heading": "6. Sizing knobs (set from C4 scale answer)",
+      "anchor": "6-sizing-knobs-set-from-c4-scale-answer",
+      "snippet": "6. Sizing knobs (set from C4 scale answer)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#2-indexstore-derived-fast-swappable",
+      "heading": "2. IndexStore (derived, fast, swappable)",
+      "anchor": "2-indexstore-derived-fast-swappable",
+      "snippet": "2. IndexStore (derived, fast, swappable)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-index-path",
+      "heading": "`crib index [path]`",
+      "anchor": "crib-index-path",
+      "snippet": "`crib index [path]`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#index",
+      "heading": "`index`",
+      "anchor": "index",
+      "snippet": "`index`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#edge",
+      "heading": "Edge",
+      "anchor": "edge",
+      "snippet": "Edge",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-4-cross-modal-linker-the-differentiator",
+      "heading": "Phase 4 — Cross-modal linker (the differentiator)",
+      "anchor": "phase-4-cross-modal-linker-the-differentiator",
+      "snippet": "Phase 4 — Cross-modal linker (the differentiator)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-2-llmartifact-interface-what-gets-persisted",
+      "heading": "3.2.2 `LlmArtifact` Interface — What Gets Persisted",
+      "anchor": "3-2-2-llmartifact-interface-what-gets-persisted",
+      "snippet": "3.2.2 `LlmArtifact` Interface — What Gets Persisted",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#3-enumerations",
+      "heading": "3. Enumerations",
+      "anchor": "3-enumerations",
+      "snippet": "3. Enumerations",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:SECURITY.md#network-surface-inventory-the-whole-product",
+      "heading": "Network surface inventory (the whole product)",
+      "anchor": "network-surface-inventory-the-whole-product",
+      "snippet": "Network surface inventory (the whole product)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/comparison.md#the-7-column-matrix",
+      "heading": "The 7-column matrix",
+      "anchor": "the-7-column-matrix",
+      "snippet": "The 7-column matrix",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#1-executive-summary",
+      "heading": "1. Executive Summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:README.md#architecture",
+      "heading": "Architecture",
+      "anchor": "architecture",
+      "snippet": "Architecture",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#table-of-contents",
+      "heading": "Table of contents",
+      "anchor": "table-of-contents",
+      "snippet": "Table of contents",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#4-the-mcp-server-the-17-deterministic-verbs-status-context-source-dossier-reconstruct-dossier-by-scope-impact-federatedimpact-query-describes-neighbors-ownership-shortest-path-detect-changes-extract-rules-gaps-stats",
+      "heading": "4. The MCP server + the 17 deterministic verbs (status, context, source, dossier, reconstruct, dossier_by_scope, impact, federatedImpact, query, describes, neighbors, ownership, shortest_path, detect_changes, extract_rules, gaps, stats)",
+      "anchor": "4-the-mcp-server-the-17-deterministic-verbs-status-context-source-dossier-reconstruct-dossier-by-scope-impact-federatedimpact-query-describes-neighbors-ownership-shortest-path-detect-changes-extract-rules-gaps-stats",
+      "snippet": "4. The MCP server + the 17 deterministic verbs (status, context, source, dossier, reconstruct, dossier_by_scope, impact, federatedImpact, query, describes, neig",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#0-the-mental-model-what-to-ask-for-when",
+      "heading": "0. The mental model — what to ask for, when",
+      "anchor": "0-the-mental-model-what-to-ask-for-when",
+      "snippet": "0. The mental model — what to ask for, when",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#query-hybrid",
+      "heading": "`query(hybrid)`",
+      "anchor": "query-hybrid",
+      "snippet": "`query(hybrid)`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#llm-neighbors-llm-semantic-graph-walk",
+      "heading": "`llm_neighbors` *(LLM semantic-graph walk)*",
+      "anchor": "llm-neighbors-llm-semantic-graph-walk",
+      "snippet": "`llm_neighbors` *(LLM semantic-graph walk)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "heading": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
+      "anchor": "2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "snippet": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#knowledge-crib-indexing-pipeline-algorithms",
+      "heading": "Knowledge-crib — Indexing Pipeline & Algorithms",
+      "anchor": "knowledge-crib-indexing-pipeline-algorithms",
+      "snippet": "Knowledge-crib — Indexing Pipeline & Algorithms",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-6-index-build",
+      "heading": "Phase 6 — Index build",
+      "anchor": "phase-6-index-build",
+      "snippet": "Phase 6 — Index build",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "heading": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "anchor": "3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "snippet": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#4-link-precision-measurement-m4-the-trust-gate",
+      "heading": "4. Link-precision measurement (M4 — the trust gate)",
+      "anchor": "4-link-precision-measurement-m4-the-trust-gate",
+      "snippet": "4. Link-precision measurement (M4 — the trust gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "heading": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "anchor": "3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "snippet": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "heading": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "anchor": "3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "snippet": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#global-flags",
+      "heading": "Global flags",
+      "anchor": "global-flags",
+      "snippet": "Global flags",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#position",
+      "heading": "Position",
+      "anchor": "position",
+      "snippet": "Position",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#agent-and-llm-design",
+      "heading": "Agent and LLM design",
+      "anchor": "agent-and-llm-design",
+      "snippet": "Agent and LLM design",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#tools",
+      "heading": "Tools",
+      "anchor": "tools",
+      "snippet": "Tools",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#alias-dictionary-crib-graph-semantic-aliases-json",
+      "heading": "Alias dictionary (`.crib/graph/semantic/aliases.json`)",
+      "anchor": "alias-dictionary-crib-graph-semantic-aliases-json",
+      "snippet": "Alias dictionary (`.crib/graph/semantic/aliases.json`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-4-capability-flags-what-flips-what-doesn-t",
+      "heading": "10.4 Capability flags — what flips, what doesn't",
+      "anchor": "10-4-capability-flags-what-flips-what-doesn-t",
+      "snippet": "10.4 Capability flags — what flips, what doesn't",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-the-llm-semantic-graph-layer-optional-build-the-bible",
+      "heading": "10. The LLM semantic-graph layer (optional — \"build the bible\")",
+      "anchor": "10-the-llm-semantic-graph-layer-optional-build-the-bible",
+      "snippet": "10. The LLM semantic-graph layer (optional — \"build the bible\")",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-2-run-the-loop-from-claude-code",
+      "heading": "10.2 Run the loop from Claude Code",
+      "anchor": "10-2-run-the-loop-from-claude-code",
+      "snippet": "10.2 Run the loop from Claude Code",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-edge-relations-rel",
+      "heading": "2. Edge relations (`rel`)",
+      "anchor": "2-edge-relations-rel",
+      "snippet": "2. Edge relations (`rel`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/show-hn.md#body",
+      "heading": "Body",
+      "anchor": "body",
+      "snippet": "Body",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#10-the-llm-semantic-graph-layer-the-grove-plan",
+      "heading": "10. The LLM semantic-graph layer (the grove plan)",
+      "anchor": "10-the-llm-semantic-graph-layer-the-grove-plan",
+      "snippet": "10. The LLM semantic-graph layer (the grove plan)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-6-llm-graph-verbs",
+      "heading": "The 6 LLM-graph verbs",
+      "anchor": "the-6-llm-graph-verbs",
+      "snippet": "The 6 LLM-graph verbs",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#query-time-merge-lightweight-by-default-full-on-withllm",
+      "heading": "Query-time merge — lightweight by default, full on `withLlm`",
+      "anchor": "query-time-merge-lightweight-by-default-full-on-withllm",
+      "snippet": "Query-time merge — lightweight by default, full on `withLlm`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-llmgraph-capability-flag",
+      "heading": "The `llmGraph` capability flag",
+      "anchor": "the-llmgraph-capability-flag",
+      "snippet": "The `llmGraph` capability flag",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#11-architecture",
+      "heading": "11. Architecture",
+      "anchor": "11-architecture",
+      "snippet": "11. Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
+      "heading": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
+      "anchor": "plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
+      "snippet": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "heading": "1.3 The gaps that make Plan A < Plan B today",
+      "anchor": "1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "snippet": "1.3 The gaps that make Plan A < Plan B today",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.semantic@L86",
+    "procedureName": "GraphStore.semantic",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.semantic@L86",
+        "procedureName": "GraphStore.semantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0d8d3c207de5ca13e601c12567209d4ace3edd16538d2f36dfd0257426db91ed",
+          "target": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+          "expr": "readSemantic",
+          "line": 87
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.semantic@L86",
+        "procedureName": "GraphStore.semantic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:723e15626b5e4b4a60dc55cf0bcffcc75c38fec76da1c3412603feb5ee5c7951",
+          "target": "stmt:packages/core/src/graph-store.ts@L87",
+          "line": 87,
+          "expr": "return readSemantic(this.soul);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/graph-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

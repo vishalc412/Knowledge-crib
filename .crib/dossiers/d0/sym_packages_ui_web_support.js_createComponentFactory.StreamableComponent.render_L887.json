@@ -1,0 +1,746 @@
+{
+  "id": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:525df87cdec1e0427dfd43266d2952cbd3a1de4b2371944458de8c3c3a20ef1d",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+    "kind": "symbol",
+    "type": "method",
+    "name": "render",
+    "qualifiedName": "createComponentFactory.StreamableComponent.render",
+    "signature": "render()",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 887,
+      "end": 964
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 888
+      },
+      {
+        "callee": "hintToMin",
+        "line": 890
+      },
+      {
+        "callee": "isArray",
+        "line": 898
+      },
+      {
+        "callee": "join",
+        "line": 900
+      },
+      {
+        "callee": "slice",
+        "line": 901
+      },
+      {
+        "callee": "indexOf",
+        "line": 901
+      },
+      {
+        "callee": "h",
+        "line": 904
+      },
+      {
+        "callee": "h",
+        "line": 907
+      },
+      {
+        "callee": "h",
+        "line": 915
+      },
+      {
+        "callee": "h",
+        "line": 918
+      },
+      {
+        "callee": "h",
+        "line": 923
+      },
+      {
+        "callee": "__reconcileLogic",
+        "line": 930
+      },
+      {
+        "callee": "h",
+        "line": 932
+      },
+      {
+        "callee": "h",
+        "line": 935
+      },
+      {
+        "callee": "__userProps",
+        "line": 938
+      },
+      {
+        "callee": "renderVals",
+        "line": 943
+      },
+      {
+        "callee": "error",
+        "line": 945
+      },
+      {
+        "callee": "String",
+        "line": 946
+      },
+      {
+        "callee": "h",
+        "line": 950
+      },
+      {
+        "callee": "h",
+        "line": 953
+      },
+      {
+        "callee": "h",
+        "line": 958
+      },
+      {
+        "callee": "tpl",
+        "line": 961
+      }
+    ]
+  },
+  "source": {
+    "text": "      render() {\n        const r = registry.get(this.__name);\n        const cls = \"sc-host\" + (r.htmlStreaming ? \" sc-streaming-html\" : \"\") + (r.jsStreaming ? \" sc-streaming-js\" : \"\");\n        const hintStyle = r.htmlStreaming ? hintToMin(this.props.__hintSize) : void 0;\n        const hostStyle = this.props.__hostStyle || hintStyle ? { ...hintStyle || {}, ...this.props.__hostStyle || {} } : void 0;\n        const hostBase = {\n          className: cls,\n          style: hostStyle,\n          \"data-sc-name\": this.__name,\n          \"data-dc-tpl\": this.props.__tplId\n        };\n        const chain = Array.isArray(this.context) ? this.context : [];\n        if (chain.includes(this.__name)) {\n          const cycle = [\n            ...chain.slice(chain.indexOf(this.__name)),\n            this.__name\n          ].join(\" \\u2192 \");\n          return h(\n            \"div\",\n            { ...hostBase, className: cls + \" sc-has-error\" },\n            h(Placeholder, {\n              name: this.__name,\n              hintSize: this.props.__hintSize,\n              error: \"circular import: \" + cycle\n            })\n          );\n        }\n        if (this.state.__err) {\n          return h(\n            \"div\",\n            { ...hostBase, className: cls + \" sc-has-error\" },\n            h(\n              \"div\",\n              { className: \"sc-logic-error\", \"data-omelette-chrome\": \"\" },\n              this.__name + \": \" + this.state.__err\n            ),\n            h(Placeholder, {\n              name: this.__name,\n              hintSize: this.props.__hintSize,\n              error: this.state.__err\n            })\n          );\n        }\n        this.__reconcileLogic();\n        if (!r.tpl) {\n          return h(\n            \"div\",\n            hostBase,\n            h(Placeholder, { name: this.__name, hintSize: this.props.__hintSize })\n          );\n        }\n        const userProps = this.__userProps();\n        this.logic.props = userProps;\n        let vals = userProps;\n        let renderErr = r.logicError || this.__ctorError;\n        try {\n          vals = { ...userProps, ...this.logic.renderVals() || {} };\n        } catch (e) {\n          console.error(e);\n          renderErr = this.__name + \".renderVals(): \" + (e instanceof Error && e.message ? e.message : String(e));\n        }\n        this.__streamingNow = !!(r.htmlStreaming || r.jsStreaming);\n        this.__htmlStreamingNow = !!r.htmlStreaming;\n        return h(\n          \"div\",\n          { ...hostBase, className: cls + (renderErr ? \" sc-has-error\" : \"\") },\n          renderErr && h(\n            \"div\",\n            { className: \"sc-logic-error\", \"data-omelette-chrome\": \"\" },\n            renderErr\n          ),\n          h(\n            AncestorContext.Provider,\n            { value: [...chain, this.__name] },\n            r.tpl(vals, this)\n          )\n        );\n      }",
+    "truncated": false,
+    "totalLines": 78,
+    "startLine": 887
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#boot@L148",
+      "confidence": 1,
+      "name": "boot",
+      "qualifiedName": "boot",
+      "signature": "boot(runtime, doc = document)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 148
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.__reconcileLogic@L834",
+      "confidence": 1,
+      "name": "__reconcileLogic",
+      "qualifiedName": "createComponentFactory.StreamableComponent.__reconcileLogic",
+      "signature": "__reconcileLogic()",
+      "type": "method",
+      "file": "packages/ui/web/support.js",
+      "line": 834
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.__userProps@L821",
+      "confidence": 1,
+      "name": "__userProps",
+      "qualifiedName": "createComponentFactory.StreamableComponent.__userProps",
+      "signature": "__userProps()",
+      "type": "method",
+      "file": "packages/ui/web/support.js",
+      "line": 821
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#hintToMin@L741",
+      "confidence": 1,
+      "name": "hintToMin",
+      "qualifiedName": "hintToMin",
+      "signature": "hintToMin(hint)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 741
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#renderVals@L696",
+      "confidence": 1,
+      "name": "renderVals",
+      "qualifiedName": "renderVals",
+      "signature": "renderVals()",
+      "type": "method",
+      "file": "packages/ui/web/support.js",
+      "line": 696
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-5-render-the-signal-grid-video",
+      "heading": "Task 5: Render The Signal Grid Video",
+      "anchor": "task-5-render-the-signal-grid-video",
+      "snippet": "Task 5: Render The Signal Grid Video",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-6-orchestrate-deliverables-and-quality-gates",
+      "heading": "Task 6: Orchestrate Deliverables And Quality Gates",
+      "anchor": "task-6-orchestrate-deliverables-and-quality-gates",
+      "snippet": "Task 6: Orchestrate Deliverables And Quality Gates",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-1-scaffold-the-reproducible-media-workspace",
+      "heading": "Task 1: Scaffold The Reproducible Media Workspace",
+      "anchor": "task-1-scaffold-the-reproducible-media-workspace",
+      "snippet": "Task 1: Scaffold The Reproducible Media Workspace",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "heading": "3.1 Framework-semantics tier (schema 1.3)",
+      "anchor": "3-1-framework-semantics-tier-schema-1-3",
+      "snippet": "3.1 Framework-semantics tier (schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#new-rels",
+      "heading": "New rels",
+      "anchor": "new-rels",
+      "snippet": "New rels",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#planned-tracks-not-yet-built",
+      "heading": "Planned tracks (not yet built)",
+      "anchor": "planned-tracks-not-yet-built",
+      "snippet": "Planned tracks (not yet built)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "heading": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "anchor": "surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "snippet": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#6-versioning-migration",
+      "heading": "6. Versioning & migration",
+      "anchor": "6-versioning-migration",
+      "snippet": "6. Versioning & migration",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#file-map",
+      "heading": "File Map",
+      "anchor": "file-map",
+      "snippet": "File Map",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "heading": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "anchor": "3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "snippet": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-2-run-the-loop-from-claude-code",
+      "heading": "10.2 Run the loop from Claude Code",
+      "anchor": "10-2-run-the-loop-from-claude-code",
+      "snippet": "10.2 Run the loop from Claude Code",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-edge-relations-rel",
+      "heading": "2. Edge relations (`rel`)",
+      "anchor": "2-edge-relations-rel",
+      "snippet": "2. Edge relations (`rel`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#capture-plan",
+      "heading": "Capture Plan",
+      "anchor": "capture-plan",
+      "snippet": "Capture Plan",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#production-architecture",
+      "heading": "Production Architecture",
+      "anchor": "production-architecture",
+      "snippet": "Production Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+    "procedureName": "createComponentFactory.StreamableComponent.render",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L899",
+      "cond:packages/ui/web/support.js@L914",
+      "cond:packages/ui/web/support.js@L931"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0c89418b4223f4de83dc5157982db0a42f5412228eabcb2eb2d7add9b8189e88",
+          "target": "stmt:packages/ui/web/support.js@L888",
+          "line": 888,
+          "expr": "const r = registry.get(this.__name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cb937e1ec8a1f2ec1bac5024e289f46e321e79f260a1f1c1142e4ea18032f905",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 888
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:777beb2ce495898993b7e32bd7278341ad2542858725b7c9fdfbbac8329cd064",
+          "target": "sym:packages/ui/web/support.js#hintToMin@L741",
+          "expr": "hintToMin",
+          "line": 890
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:92917f5bc6126b4d920b3d2eb83767bd4c7fb9e88c62441bfe127aeda49cbf92",
+          "target": "stmt:packages/ui/web/support.js@L890",
+          "line": 890,
+          "expr": "const hintStyle = r.htmlStreaming ? hintToMin(this.props.__hintSize) : void 0;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df4ecf5f0190190a27faafd5ba683422ba4885d95e51b70582e9324a5a8bef89",
+          "target": "stmt:packages/ui/web/support.js@L898",
+          "line": 898,
+          "expr": "const chain = Array.isArray(this.context) ? this.context : [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "guard": "cond:packages/ui/web/support.js@L899",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L899",
+            "expr": "chain.includes(this.__name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c611947baca67ee36ebfb4da848531077237591b85faf401f7c60d3b87b1cc1",
+          "target": "stmt:packages/ui/web/support.js@L900",
+          "line": 900,
+          "expr": "const cycle = [\n            ...chain.slice(chain.indexOf(this.__name)),\n            this.__name\n          ].join(\" \\u2192 \");"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "guard": "cond:packages/ui/web/support.js@L899",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L899",
+            "expr": "chain.includes(this.__name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4b82255705bdf7d1cfd311ef1a731e696f8266411933fcb3b649b9e87878a1ee",
+          "target": "stmt:packages/ui/web/support.js@L904",
+          "line": 904,
+          "expr": "return h(\n            \"div\",\n            { ...hostBase, className: cls + \" sc-has-error\" },\n            h(Placeholder, {\n              name: this.__name,\n              hintSize: this.props.__hintSize,\n              error: \"circular import: \" + cycle\n            })\n          );"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "guard": "cond:packages/ui/web/support.js@L914",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L914",
+            "expr": "this.state.__err",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:24bc2a14fb32da27358c11050c5f3aeee3da619f87cc940277d29e095b33fa54",
+          "target": "stmt:packages/ui/web/support.js@L915",
+          "line": 915,
+          "expr": "return h(\n            \"div\",\n            { ...hostBase, className: cls + \" sc-has-error\" },\n            h(\n              \"div\",\n              { className: \"sc-logic-error\", \"data-omelette-chrome\": \"\" },\n              this.__name + \": \" + this.state.__err\n            ),\n            h(Placeholder, {\n              name: this.__name,\n              hintSize: this.props.__hintSize,\n              error: this.state.__err\n            })\n          );"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2280a33b43be27b3e6ee72310f8a63027ccfe0383094db53d303e58b50f3505f",
+          "target": "stmt:packages/ui/web/support.js@L930",
+          "line": 930,
+          "expr": "this.__reconcileLogic();"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:87991d56bf561ddbe7de8bb91ad7274bec2049d33efb9cde2360e60a795a87df",
+          "target": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.__reconcileLogic@L834",
+          "expr": "__reconcileLogic",
+          "line": 930
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "guard": "cond:packages/ui/web/support.js@L931",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L931",
+            "expr": "!r.tpl",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:59365ede967ee3f38abbde7c7d60cbc94397508cea42a9a7d1c705b06dd2a3b2",
+          "target": "stmt:packages/ui/web/support.js@L932",
+          "line": 932,
+          "expr": "return h(\n            \"div\",\n            hostBase,\n            h(Placeholder, { name: this.__name, hintSize: this.props.__hintSize })\n          );"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:05f6eae52109b8c5834f0bbb6f8348c4c5fe4ae9b806b2b68cd1bab192b10158",
+          "target": "stmt:packages/ui/web/support.js@L938",
+          "line": 938,
+          "expr": "const userProps = this.__userProps();"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:872bbe42ff5157cd841f95f025540326024a2132ebd6b9a092ebfc660048cf0a",
+          "target": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.__userProps@L821",
+          "expr": "__userProps",
+          "line": 938
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:769bdced7fd43f2cfd5a7953ebf39fc42ddf0e9e373dc33cef6fe8a2f05adfd0",
+          "target": "assign:packages/ui/web/support.js@L939",
+          "line": 939,
+          "expr": "this.logic.props = userProps;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:46cae02d2d61d965bdfeecfebc89a82109e9df6dd6d069332c9becd5b13cd4cb",
+          "target": "assign:packages/ui/web/support.js@L943",
+          "line": 943,
+          "expr": "vals = { ...userProps, ...this.logic.renderVals() || {} };"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:65fcd7a45609724133bacbbfc0d9182bea437253ef5c002efc73557dbfd948e1",
+          "target": "sym:packages/ui/web/support.js#renderVals@L696",
+          "expr": "renderVals",
+          "line": 943
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:27dae036c1e72b47a2a3a21b90442fb6942e730c88ece242affe8952038357b7",
+          "target": "stmt:packages/ui/web/support.js@L945",
+          "line": 945,
+          "expr": "console.error(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f85adfb56367b4be92d3e7e2afc48ecee005b5b04fb637441d0fecbcd01d234",
+          "target": "assign:packages/ui/web/support.js@L946",
+          "line": 946,
+          "expr": "renderErr = this.__name + \".renderVals(): \" + (e instanceof Error && e.message ? e.message : String(e));"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:91913f27dd510444f43c0171d862e33c8f4c68dce48891daf5d5baa65de8ac73",
+          "target": "assign:packages/ui/web/support.js@L948",
+          "line": 948,
+          "expr": "this.__streamingNow = !!(r.htmlStreaming || r.jsStreaming);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6e1002832e795f4d946add7f06d2388463b1d22ab5550e06a344eb72d8d49c34",
+          "target": "assign:packages/ui/web/support.js@L949",
+          "line": 949,
+          "expr": "this.__htmlStreamingNow = !!r.htmlStreaming;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+        "procedureName": "createComponentFactory.StreamableComponent.render",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:64e8e5d6ee326531158672dab622370f0a033eb9ce53e41bfae1794e078b6bfe",
+          "target": "stmt:packages/ui/web/support.js@L950",
+          "line": 950,
+          "expr": "return h(\n          \"div\",\n          { ...hostBase, className: cls + (renderErr ? \" sc-has-error\" : \"\") },\n          renderErr && h(\n            \"div\",\n            { className: \"sc-logic-error\", \"data-omelette-chrome\": \"\" },\n            renderErr\n          ),\n          h(\n            AncestorContext.Provider,\n            { value: [...chain, this.__name] },\n            r.tpl(vals, this)\n          )\n        );"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/ui/web/support.js@L944",
+        "kind": "exception-handler",
+        "lang": "javascript",
+        "file": "packages/ui/web/support.js",
+        "span": {
+          "start": 944,
+          "end": 944
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 16,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 16,
+    "assignments": 5,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 22,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

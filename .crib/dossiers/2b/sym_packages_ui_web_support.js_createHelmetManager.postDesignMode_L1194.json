@@ -1,0 +1,130 @@
+{
+  "id": "sym:packages/ui/web/support.js#createHelmetManager.postDesignMode@L1194",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:61c107646e5242fb653456cdd9eded7646ba00ecf9b16b5ae381b107b2f1dd67",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#createHelmetManager.postDesignMode@L1194",
+    "kind": "symbol",
+    "type": "function",
+    "name": "postDesignMode",
+    "qualifiedName": "createHelmetManager.postDesignMode",
+    "signature": "postDesignMode(mode)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 1194,
+      "end": 1200
+    },
+    "callSites": [
+      {
+        "callee": "postMessage",
+        "line": 1197
+      }
+    ]
+  },
+  "source": {
+    "text": "    function postDesignMode(mode) {\n      if (window.parent === window) return;\n      try {\n        window.parent.postMessage({ type: \"__dc_design_mode\", mode }, \"*\");\n      } catch {\n      }\n    }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 1194
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#createHelmetManager@L1189",
+      "confidence": 1,
+      "name": "createHelmetManager",
+      "qualifiedName": "createHelmetManager",
+      "signature": "createHelmetManager(doc, isStreaming)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1189
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createHelmetManager.setDesignDocMode@L1201",
+      "confidence": 1,
+      "name": "setDesignDocMode",
+      "qualifiedName": "createHelmetManager.setDesignDocMode",
+      "signature": "setDesignDocMode(mode)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1201
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#createHelmetManager.postDesignMode@L1194",
+    "procedureName": "createHelmetManager.postDesignMode",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L1195"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#createHelmetManager.postDesignMode@L1194",
+        "procedureName": "createHelmetManager.postDesignMode",
+        "guard": "cond:packages/ui/web/support.js@L1195",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1195",
+            "expr": "window.parent === window",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:24a603a14bbeeec9ff73704ac588a53497bf9e4780a33bab49954042999e4ec7",
+          "target": "stmt:packages/ui/web/support.js@L1195",
+          "line": 1195,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createHelmetManager.postDesignMode@L1194",
+        "procedureName": "createHelmetManager.postDesignMode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:725bd164f4bc8c1912d9e79a2f6b63de47a3dc578b67631b28ed6c4068230c92",
+          "target": "stmt:packages/ui/web/support.js@L1197",
+          "line": 1197,
+          "expr": "window.parent.postMessage({ type: \"__dc_design_mode\", mode }, \"*\");"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

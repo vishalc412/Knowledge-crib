@@ -1,0 +1,77 @@
+{
+  "id": "sym:packages/pipeline/fixtures/plain-js/src/ui.jsx#Greeting@L4",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:ace67ed0fa9d5c9c53d83977d4d4f549127f8fb48dcd7f6ed5beb46d6d5177f7",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/fixtures/plain-js/src/ui.jsx#Greeting@L4",
+    "kind": "symbol",
+    "type": "function",
+    "name": "Greeting",
+    "qualifiedName": "Greeting",
+    "signature": "Greeting(props)",
+    "lang": "javascript",
+    "file": "packages/pipeline/fixtures/plain-js/src/ui.jsx",
+    "span": {
+      "start": 4,
+      "end": 6
+    },
+    "framework": "react",
+    "stereotype": "component"
+  },
+  "source": {
+    "text": "function Greeting(props) {\n  return <div className=\"greeting\">Hello, {props.name}</div>;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 4
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/fixtures/plain-js/src/ui.jsx#Greeting@L4",
+    "procedureName": "Greeting",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/fixtures/plain-js/src/ui.jsx#Greeting@L4",
+        "procedureName": "Greeting",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e131a143a53b266165a38a0807cdba42dafefd128337853b619a27c9bfe9e656",
+          "target": "stmt:packages/pipeline/fixtures/plain-js/src/ui.jsx@L5",
+          "line": 5,
+          "expr": "return <div className=\"greeting\">Hello, {props.name}</div>;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

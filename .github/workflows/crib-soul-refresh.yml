@@ -1,0 +1,90 @@
+name: Crib Soul Refresh
+
+# M4.3 — the "never stale" differentiator nobody else ships. On every merge to the default branch,
+# re-extract the committed soul so the knowledge graph never drifts from the source it describes.
+# `crib update .` does an incremental re-extract from the committed soul's vcsHead anchor to HEAD
+# (and falls back to a full index if there is no anchor yet) — it advances vcsHead and rewrites only
+# what changed in .crib/graph/extracted plus dossiers/schema and the bootstrap crib.json. The
+# derived .crib/index + .crib/embeddings are gitignored rebuildable state and are NOT committed.
+# The semantic layer under .crib/graph is authored separately by the IDE agent via enrich_save.
+#
+# Determinism guarantee: `crib update` produces a soul byte-identical to `crib reindex` for the same
+# tree, so this is a pure refresh — re-running it on an unchanged tree yields an empty diff and no
+# commit. That idempotence is what makes an auto-commit-on-merge loop safe.
+#
+# Loop control (three layers, any one sufficient):
+#   (1) the bot commit message carries `[skip ci]` — GitHub does not create workflow runs for a
+#       push whose HEAD commit message contains `[skip ci]`, so the soul-refresh push does not
+#       re-trigger this workflow;
+#   (2) `if: github.actor != 'github-actions[bot]'` skips a run launched by the bot's own push
+#       (belt-and-suspenders for the [skip ci] layer, and covers workflow_dispatch-as-bot);
+#   (3) the idempotence check (`git diff --staged --quiet`) makes a no-op refresh commit nothing,
+#       so even if a run did re-trigger it would exit without pushing.
+#
+# This action runs on this repo's own CI (the gate in scripts/soul-refresh-check.mjs pins its
+# shape: trigger, the crib update call, the [skip ci] loop control, the bot author, and the
+# canonical graph/dossier/schema-only commit scope).
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh committed soul (crib update)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.actor != 'github-actions[bot]'
+
+    steps:
+      - name: Checkout (full history for the vcsHead anchor diff)
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm@9.15.0 install --frozen-lockfile
+
+      - name: Build crib
+        run: corepack pnpm@9.15.0 build
+
+      - name: Refresh soul (incremental re-extract; falls back to full index if no anchor)
+        run: node packages/cli/dist/cli.js update .
+
+      - name: Commit refreshed soul if changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Stage only the committed soul artifacts — NEVER the derived .crib/index or
+          # .crib/embeddings (gitignored, rebuildable, not a source of truth). The real `.crib`
+          # The graph directory is the sole graph source of truth. Stage it with the supporting
+          # dossiers/schema and bootstrap manifest, never the derived index or embeddings.
+          git add .crib/graph .crib/dossiers .crib/schema .crib/crib.json 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "soul unchanged — no commit"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -m "chore(crib): refresh soul via crib update [skip ci]"
+          git push
+          echo "soul refreshed and pushed"

@@ -1,0 +1,145 @@
+{
+  "id": "sym:scripts/crib-cost-report.mjs#reconcile@L86",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:f604c47f008ab0f466e1bf562af2ca77586f112ce92377559340cab1278874a0",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/crib-cost-report.mjs#reconcile@L86",
+    "kind": "symbol",
+    "type": "function",
+    "name": "reconcile",
+    "qualifiedName": "reconcile",
+    "signature": "reconcile(run, computed, label)",
+    "lang": "javascript",
+    "file": "scripts/crib-cost-report.mjs",
+    "span": {
+      "start": 86,
+      "end": 97
+    },
+    "callSites": [
+      {
+        "callee": "usd",
+        "line": 94
+      },
+      {
+        "callee": "toFixed",
+        "line": 95
+      }
+    ]
+  },
+  "source": {
+    "text": "function reconcile(run, computed, label) {\n  if (run.reportedCostUsd === undefined) return null;\n  const diff = computed.totalUsd - run.reportedCostUsd;\n  const pct = run.reportedCostUsd > 0 ? (diff / run.reportedCostUsd) * 100 : null;\n  return {\n    label,\n    computedUsd: computed.totalUsd,\n    reportedUsd: run.reportedCostUsd,\n    diffUsd: usd(diff),\n    pct: pct === null ? null : +pct.toFixed(1),\n  };\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 86
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:scripts/lib/pricing.mjs#usd@L93",
+      "confidence": 1,
+      "name": "usd",
+      "qualifiedName": "usd",
+      "signature": "usd(n)",
+      "type": "function",
+      "file": "scripts/lib/pricing.mjs",
+      "line": 93
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/crib-cost-report.mjs@L84",
+      "snippet": "// Reconciliation: does the shared rate model reproduce the panel's reported cost? If it drifts hard,",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/crib-cost-report.mjs#reconcile@L86",
+    "procedureName": "reconcile",
+    "conditions": [
+      "cond:scripts/crib-cost-report.mjs@L87"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:scripts/crib-cost-report.mjs#reconcile@L86",
+        "procedureName": "reconcile",
+        "guard": "cond:scripts/crib-cost-report.mjs@L87",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/crib-cost-report.mjs@L87",
+            "expr": "run.reportedCostUsd === undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b84605e44aea386af8ab39d0e12fdecc689a0d98fc79322e0a53c11b904fa90f",
+          "target": "stmt:scripts/crib-cost-report.mjs@L87",
+          "line": 87,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-cost-report.mjs#reconcile@L86",
+        "procedureName": "reconcile",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:035dd12929ab6dfea1360689ae7307a840619deac9348cb9a9f5fd882e04ae39",
+          "target": "stmt:scripts/crib-cost-report.mjs@L90",
+          "line": 90,
+          "expr": "return {\n    label,\n    computedUsd: computed.totalUsd,\n    reportedUsd: run.reportedCostUsd,\n    diffUsd: usd(diff),\n    pct: pct === null ? null : +pct.toFixed(1),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-cost-report.mjs#reconcile@L86",
+        "procedureName": "reconcile",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0168c38415277af82a9e136aa07cc8390549634847c56cb621592ab0da5a57d8",
+          "target": "sym:scripts/lib/pricing.mjs#usd@L93",
+          "expr": "usd",
+          "line": 94
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

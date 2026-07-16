@@ -1,0 +1,418 @@
+{
+  "id": "sym:packages/core/src/federation.test.ts#route@L73",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:9be37651f57ac5f2a6b28db1a98ea290c21d8cd7e6ad725ad3ed4c99895092e1",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/federation.test.ts#route@L73",
+    "kind": "symbol",
+    "type": "function",
+    "name": "route",
+    "qualifiedName": "route",
+    "signature": "route(method: string, path: string, file: string, line: number): Node",
+    "lang": "typescript",
+    "file": "packages/core/src/federation.test.ts",
+    "span": {
+      "start": 73,
+      "end": 86
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 75
+      },
+      {
+        "callee": "contentHash",
+        "line": 84
+      }
+    ]
+  },
+  "source": {
+    "text": "function route(method: string, path: string, file: string, line: number): Node {\n  return {\n    id: idFor({ kind: 'route', httpMethod: method, routePath: path, file, line }),\n    kind: 'route',\n    name: `${method} ${path}`,\n    httpMethod: method,\n    routePath: path,\n    framework: 'express',\n    file,\n    span: { start: line, end: line },\n    lang: 'typescript',\n    hash: contentHash(`route:${method}:${path}`),\n  };\n}",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 73
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/federation.test.ts#fixture@L144",
+      "confidence": 1,
+      "name": "fixture",
+      "qualifiedName": "fixture",
+      "signature": "fixture(): {\n    rootA: string;\n    rootB: string;\n    fetchLoan: Node;\n    call: Node;\n    handler: Node;\n    rt: Node;\n  }",
+      "type": "function",
+      "file": "packages/core/src/federation.test.ts",
+      "line": 144
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 88
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "heading": "3.1 Framework-semantics tier (schema 1.3)",
+      "anchor": "3-1-framework-semantics-tier-schema-1-3",
+      "snippet": "3.1 Framework-semantics tier (schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests-3",
+      "heading": "Tests",
+      "anchor": "tests-3",
+      "snippet": "Tests",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#the-problem-3",
+      "heading": "The problem",
+      "anchor": "the-problem-3",
+      "snippet": "The problem",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
+      "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "anchor": "java-spring-boot-track-built-tested-schema-1-3",
+      "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#node-edge-fields-1-3",
+      "heading": "Node + edge fields (1.3)",
+      "anchor": "node-edge-fields-1-3",
+      "snippet": "Node + edge fields (1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:SECURITY.md#network-surface-inventory-the-whole-product",
+      "heading": "Network surface inventory (the whole product)",
+      "anchor": "network-surface-inventory-the-whole-product",
+      "snippet": "Network surface inventory (the whole product)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "heading": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "anchor": "3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "snippet": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/comparison.md#the-7-column-matrix",
+      "heading": "The 7-column matrix",
+      "anchor": "the-7-column-matrix",
+      "snippet": "The 7-column matrix",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-1-framework-semantics-edge-field-meta-1-3",
+      "heading": "2.1 Framework-semantics edge & field meta *(1.3)*",
+      "anchor": "2-1-framework-semantics-edge-field-meta-1-3",
+      "snippet": "2.1 Framework-semantics edge & field meta *(1.3)*",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-edge-relations-rel",
+      "heading": "2. Edge relations (`rel`)",
+      "anchor": "2-edge-relations-rel",
+      "snippet": "2. Edge relations (`rel`)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#4-id-grammar-stable-deterministic-critical-for-diffs-cross-tool-refs-seeroflow",
+      "heading": "4. ID grammar (stable, deterministic — critical for diffs + cross-tool refs + SeeroFlow)",
+      "anchor": "4-id-grammar-stable-deterministic-critical-for-diffs-cross-tool-refs-seeroflow",
+      "snippet": "4. ID grammar (stable, deterministic — critical for diffs + cross-tool refs + SeeroFlow)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#per-module-souls-yes-driven-by-index-time-not-memory",
+      "heading": "Per-module souls — YES, driven by INDEX TIME (not memory)",
+      "anchor": "per-module-souls-yes-driven-by-index-time-not-memory",
+      "snippet": "Per-module souls — YES, driven by INDEX TIME (not memory)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/demo-recipe.md#shot-2-impact-blast-radius-the-enterprise-pull-25s",
+      "heading": "Shot 2 — impact blast-radius (the enterprise pull)  · ~25s",
+      "anchor": "shot-2-impact-blast-radius-the-enterprise-pull-25s",
+      "snippet": "Shot 2 — impact blast-radius (the enterprise pull)  · ~25s",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#node",
+      "heading": "Node",
+      "anchor": "node",
+      "snippet": "Node",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#7-integration",
+      "heading": "7. Integration",
+      "anchor": "7-integration",
+      "snippet": "7. Integration",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-2b-framework-semantics-1-3-the-above-sql-tier-for-app-frameworks",
+      "heading": "Phase 2b — Framework-semantics *(1.3, the \"above SQL\" tier for app frameworks)*",
+      "anchor": "phase-2b-framework-semantics-1-3-the-above-sql-tier-for-app-frameworks",
+      "snippet": "Phase 2b — Framework-semantics *(1.3, the \"above SQL\" tier for app frameworks)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#technical-depth",
+      "heading": "Technical depth",
+      "anchor": "technical-depth",
+      "snippet": "Technical depth",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#why-it-matters",
+      "heading": "Why it matters",
+      "anchor": "why-it-matters",
+      "snippet": "Why it matters",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#model-tier-hints-cost-model-m2-7",
+      "heading": "Model-tier hints + cost model (M2.7)",
+      "anchor": "model-tier-hints-cost-model-m2-7",
+      "snippet": "Model-tier hints + cost model (M2.7)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#tools",
+      "heading": "Tools",
+      "anchor": "tools",
+      "snippet": "Tools",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#the-author-contract-what-you-write-per-item",
+      "heading": "The author contract — what you write per item",
+      "anchor": "the-author-contract-what-you-write-per-item",
+      "snippet": "The author contract — what you write per item",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-remaining-deterministic-verbs-compact",
+      "heading": "The remaining deterministic verbs (compact)",
+      "anchor": "the-remaining-deterministic-verbs-compact",
+      "snippet": "The remaining deterministic verbs (compact)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/federation.test.ts#route@L73",
+    "procedureName": "route",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#route@L73",
+        "procedureName": "route",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dffec60c51f94ebf5f7b8e89b79c9a5929760b0ee465be118e5de81c8a87b48b",
+          "target": "stmt:packages/core/src/federation.test.ts@L74",
+          "line": 74,
+          "expr": "return {\n    id: idFor({ kind: 'route', httpMethod: method, routePath: path, file, line }),\n    kind: 'route',\n    name: `${method} ${path}`,\n    httpMethod: method,\n    routePath: path,\n    framework: 'express',\n    file,\n    span: { start: line, end: line },\n    lang: 'typescript',\n    hash: contentHash(`route:${method}:${path}`),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#route@L73",
+        "procedureName": "route",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d8392d92eee84fa12a20a9804b8215fd0f1d0c0d15a14a32ba85afded49fe7d2",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 75
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#route@L73",
+        "procedureName": "route",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6053b9f0693be128784a14e6573a1d2a20db93a502d80325282969e3443ce052",
+          "target": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+          "expr": "contentHash",
+          "line": 84
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/federation.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

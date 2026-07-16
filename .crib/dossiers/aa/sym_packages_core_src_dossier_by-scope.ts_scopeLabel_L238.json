@@ -1,0 +1,144 @@
+{
+  "id": "sym:packages/core/src/dossier/by-scope.ts#scopeLabel@L238",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:087f91d8abb683060709189ef3115e005400101bbe661b27055215830253fb08",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/by-scope.ts#scopeLabel@L238",
+    "kind": "symbol",
+    "type": "function",
+    "name": "scopeLabel",
+    "qualifiedName": "scopeLabel",
+    "signature": "scopeLabel(n: Node): string",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/by-scope.ts",
+    "span": {
+      "start": 238,
+      "end": 242
+    }
+  },
+  "source": {
+    "text": "function scopeLabel(n: Node): string {\n  if (n.kind === 'file') return n.file ?? n.id;\n  if (n.kind === 'cluster') return n.label ?? n.id;\n  return n.qualifiedName ?? n.name ?? n.id;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 238
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.ts#buildDossiersByScope@L86",
+      "confidence": 1,
+      "name": "buildDossiersByScope",
+      "qualifiedName": "buildDossiersByScope",
+      "signature": "buildDossiersByScope(soul: SoulStore, repoRoot: string, scope: DossierScope, id: string, now: string, opts: DossiersByScopeOpts = {}): DossiersByScope | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.ts",
+      "line": 86
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/by-scope.ts@L237",
+      "snippet": "/** Human label for a scope node (package qualifiedName / file path / cluster slug). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/by-scope.ts#scopeLabel@L238",
+    "procedureName": "scopeLabel",
+    "conditions": [
+      "cond:packages/core/src/dossier/by-scope.ts@L239",
+      "cond:packages/core/src/dossier/by-scope.ts@L240"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#scopeLabel@L238",
+        "procedureName": "scopeLabel",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L239",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L239",
+            "expr": "n.kind === 'file'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7891b24b0b42e218d4a9d1c799cc933fee6d1308c0e04e652d1f14f08e679de9",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L239",
+          "line": 239,
+          "expr": "return n.file ?? n.id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#scopeLabel@L238",
+        "procedureName": "scopeLabel",
+        "guard": "cond:packages/core/src/dossier/by-scope.ts@L240",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/by-scope.ts@L240",
+            "expr": "n.kind === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:15776699b88bc6c8b13d2dce09914123c05e83481913501c67a18903f021c601",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L240",
+          "line": 240,
+          "expr": "return n.label ?? n.id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#scopeLabel@L238",
+        "procedureName": "scopeLabel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ffa58da0b606797dd3d74ec88781f33ffa6939b71a5b98fd0bd689224b1d30ec",
+          "target": "stmt:packages/core/src/dossier/by-scope.ts@L241",
+          "line": 241,
+          "expr": "return n.qualifiedName ?? n.name ?? n.id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/dossier/by-scope.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

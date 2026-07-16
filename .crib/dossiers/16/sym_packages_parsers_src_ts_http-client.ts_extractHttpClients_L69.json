@@ -1,0 +1,337 @@
+{
+  "id": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:8458769d2aa7eb508ed1fc186091ed745c6a740ff3a4e3c91586650f48acba13",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+    "kind": "symbol",
+    "type": "function",
+    "name": "extractHttpClients",
+    "qualifiedName": "extractHttpClients",
+    "signature": "extractHttpClients(input: HttpClientPassInput): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/http-client.ts",
+    "span": {
+      "start": 69,
+      "end": 115
+    },
+    "callSites": [
+      {
+        "callee": "collectShadowedCallNames",
+        "line": 78
+      },
+      {
+        "callee": "isCallExpression",
+        "line": 81
+      },
+      {
+        "callee": "matchHttpCall",
+        "line": 82
+      },
+      {
+        "callee": "idFor",
+        "line": 85
+      },
+      {
+        "callee": "some",
+        "line": 92
+      },
+      {
+        "callee": "push",
+        "line": 93
+      },
+      {
+        "callee": "hash",
+        "line": 103
+      },
+      {
+        "callee": "enclosingCallableId",
+        "line": 106
+      },
+      {
+        "callee": "push",
+        "line": 108
+      },
+      {
+        "callee": "edge",
+        "line": 108
+      },
+      {
+        "callee": "forEachChild",
+        "line": 112
+      },
+      {
+        "callee": "visit",
+        "line": 114
+      }
+    ]
+  },
+  "source": {
+    "text": "export function extractHttpClients(input: HttpClientPassInput): void {\n  const { sf, symbolByNode, nodes, edges, ctx, path, lineOf, lang } = input;\n  // A bare `fetch(`/`axios(` callee is only the global HTTP client if no LOCAL definition shadows it\n  // in this file. Without this, `function fetch(url) { return 'mock' }` + `fetch('/z')` emits a\n  // phantom http-call (a false positive — the worst class under the honest-over-noise invariant,\n  // since it would mint a phantom cross-repo link). File-scoped + deterministic: a shadow ANYWHERE\n  // in the file suppresses global detection (a false negative we accept over a phantom link).\n  // Imports are deliberately NOT collected — `import fetch from 'node-fetch'` is plausibly an HTTP\n  // client, so we keep emitting there.\n  const shadowed = collectShadowedCallNames(sf);\n\n  const visit = (node: ts.Node): void => {\n    if (ts.isCallExpression(node)) {\n      const match = matchHttpCall(node, lineOf, shadowed);\n      if (match) {\n        const { method, routePath, framework, callLine, callEnd } = match;\n        const callId = ctx.idFor('http-call', {\n          httpMethod: method,\n          routePath,\n          file: path,\n          line: callLine,\n        });\n        // De-dupe by id: an identical `fetch('/x')` emitted twice on the same line keeps one node.\n        if (!nodes.some((n) => n.id === callId)) {\n          nodes.push({\n            id: callId,\n            kind: 'http-call',\n            name: `${method} ${routePath}`,\n            httpMethod: method,\n            routePath,\n            framework,\n            file: path,\n            span: { start: callLine, end: callEnd },\n            lang,\n            hash: ctx.hash(`${path}:http-call:${method}:${routePath}:${callLine}`),\n          });\n        }\n        const callerId = enclosingCallableId(node, symbolByNode);\n        if (callerId) {\n          edges.push(edge(callerId, callId, 'calls', `${method} ${routePath}`));\n        }\n      }\n    }\n    ts.forEachChild(node, visit);\n  };\n  visit(sf);\n}",
+    "truncated": false,
+    "totalLines": 47,
+    "startLine": 69
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L69",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "TypeScriptExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 69
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.ts#collectShadowedCallNames@L306",
+      "confidence": 1,
+      "name": "collectShadowedCallNames",
+      "qualifiedName": "collectShadowedCallNames",
+      "signature": "collectShadowedCallNames(sf: ts.SourceFile): Set<string>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.ts",
+      "line": 306
+    },
+    {
+      "id": "sym:packages/ui/src/viz.test.ts#edge@L27",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel']): Edge",
+      "type": "function",
+      "file": "packages/ui/src/viz.test.ts",
+      "line": 27
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.ts#enclosingCallableId@L250",
+      "confidence": 1,
+      "name": "enclosingCallableId",
+      "qualifiedName": "enclosingCallableId",
+      "signature": "enclosingCallableId(call: ts.CallExpression, symbolByNode: ReadonlyMap<ts.Node, string>): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.ts",
+      "line": 250
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients.visit@L80",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "extractHttpClients.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.ts",
+      "line": 80
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 88
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.ts#matchHttpCall@L118",
+      "confidence": 1,
+      "name": "matchHttpCall",
+      "qualifiedName": "matchHttpCall",
+      "signature": "matchHttpCall(call: ts.CallExpression, lineOf: (pos: number) => number, shadowed: ReadonlySet<string>): | {\n      method: string;\n      routePath: string;\n      framework: string;\n      callLine: number;\n      callEnd: number;\n    }\n  | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.ts",
+      "line": 118
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+    "procedureName": "extractHttpClients",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+        "procedureName": "extractHttpClients",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a18cf5904e455d751f0e37a9d9060af8da2ca185769d41c3ffd99b30b9ff6b56",
+          "target": "sym:packages/parsers/src/ts/http-client.ts#collectShadowedCallNames@L306",
+          "expr": "collectShadowedCallNames",
+          "line": 78
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+        "procedureName": "extractHttpClients",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a4865aa3bdc2dc7dfde81416b8fd39ab54dd493a27ec0836a8b9e68bae1e3a80",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L78",
+          "line": 78,
+          "expr": "const shadowed = collectShadowedCallNames(sf);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+        "procedureName": "extractHttpClients",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:377ac54ed64430dd7d7ca2bf89f8c1b0df31cc5af48d82905686badb48428deb",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L80",
+          "line": 80,
+          "expr": "const visit = (node: ts.Node): void => {\n    if (ts.isCallExpression(node)) {\n      const match = matchHttpCall(node, lineOf, shadowed);\n      if (match) {\n        const { method, routePath, framework, callLine, callEnd } = match;\n        const callId = ctx.idFor('http-call', {\n          httpMethod: method,\n          routePath,\n          file: path,\n          line: callLine,\n        });\n        // De-dupe by id: an identical `fetch('/x')` emitted twice on the same line keeps one node.\n        if (!nodes.some((n) => n.id === callId)) {\n          nodes.push({\n            id: callId,\n            kind: 'http-call',\n            name: `${method} ${routePath}`,\n            httpMethod: method,\n            routePath,\n            framework,\n            file: path,\n            span: { start: callLine, end: callEnd },\n            lang,\n            hash: ctx.hash(`${path}:http-call:${method}:${routePath}:${callLine}`),\n          });\n        }\n        const callerId = enclosingCallableId(node, symbolByNode);\n        if (callerId) {\n          edges.push(edge(callerId, callId, 'calls', `${method} ${routePath}`));\n        }\n      }\n    }\n    ts.forEachChild(node, visit);\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+        "procedureName": "extractHttpClients",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:23864d191ffe43fb4a649d757ea52982e445edae886999a389fc979d883f78f3",
+          "target": "sym:packages/parsers/src/ts/http-client.ts#matchHttpCall@L118",
+          "expr": "matchHttpCall",
+          "line": 82
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+        "procedureName": "extractHttpClients",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f5ca5b43aa48f786fb0722db958180044b1f4773f70bb074ea3cf3b7f75bdbcf",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 85
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+        "procedureName": "extractHttpClients",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8297ff664549f8366ad10dd6c9fc721738cf9cbea0feb1719ed9cfc0c77e0ad5",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 93
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+        "procedureName": "extractHttpClients",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a61868bb25590321eb8a88275019d2028455219dc947c35028341030ffac371d",
+          "target": "sym:packages/parsers/src/ts/http-client.ts#enclosingCallableId@L250",
+          "expr": "enclosingCallableId",
+          "line": 106
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+        "procedureName": "extractHttpClients",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8e7558276a49e44153fea58afaddd69920598b12fb38c0e47226ff7eeb376686",
+          "target": "sym:packages/ui/src/viz.test.ts#edge@L27",
+          "expr": "edge",
+          "line": 108
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+        "procedureName": "extractHttpClients",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:030ae2be882995027dc19744dfbc918c319b04fe4d4573cc6bba1f914a28db7f",
+          "target": "stmt:packages/parsers/src/ts/http-client.ts@L114",
+          "line": 114,
+          "expr": "visit(sf);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients@L69",
+        "procedureName": "extractHttpClients",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b945393bc35084c18463320d0ae18df4f7bceab1d6acb339c52d9972917f4b58",
+          "target": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients.visit@L80",
+          "expr": "visit",
+          "line": 114
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 7,
+      "recorded": 12,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

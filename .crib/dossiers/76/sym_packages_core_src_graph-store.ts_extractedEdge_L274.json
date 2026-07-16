@@ -1,0 +1,88 @@
+{
+  "id": "sym:packages/core/src/graph-store.ts#extractedEdge@L274",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:88fa3c8f3e80bc88142d2ef665e570d2b3101da0052ebae354895df3998befbf",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/graph-store.ts#extractedEdge@L274",
+    "kind": "symbol",
+    "type": "function",
+    "name": "extractedEdge",
+    "qualifiedName": "extractedEdge",
+    "signature": "extractedEdge(edge: Edge): CompositeEdge",
+    "lang": "typescript",
+    "file": "packages/core/src/graph-store.ts",
+    "span": {
+      "start": 274,
+      "end": 276
+    }
+  },
+  "source": {
+    "text": "function extractedEdge(edge: Edge): CompositeEdge {\n  return { ...edge, origin: 'extracted' };\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 274
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/graph-store.ts#GraphStore.extracted@L77",
+      "confidence": 1,
+      "name": "extracted",
+      "qualifiedName": "GraphStore.extracted",
+      "signature": "extracted(): GraphSnapshot",
+      "type": "method",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 77
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/graph-store.ts#extractedEdge@L274",
+    "procedureName": "extractedEdge",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#extractedEdge@L274",
+        "procedureName": "extractedEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1cc988d57016923f926141ee06ff5a42c30586ea741a1620dcf7aeb85bcc8d0f",
+          "target": "stmt:packages/core/src/graph-store.ts@L275",
+          "line": 275,
+          "expr": "return { ...edge, origin: 'extracted' };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/graph-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

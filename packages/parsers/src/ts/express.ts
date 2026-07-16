@@ -55,10 +55,12 @@ export interface ExpressPassInput {
   ctx: ExtractCtx;
   path: string;
   lineOf: (pos: number) => number;
+  /** M2.5 — `lang` tag for emitted route/framework nodes ('typescript' | 'javascript'). */
+  lang: 'typescript' | 'javascript';
 }
 
 export function extractExpressRoutes(input: ExpressPassInput): void {
-  const { sf, byKey, nodes, edges, ctx, path, lineOf } = input;
+  const { sf, byKey, nodes, edges, ctx, path, lineOf, lang } = input;
 
   const visit = (node: ts.Node): void => {
     if (ts.isCallExpression(node)) {
@@ -85,7 +87,7 @@ export function extractExpressRoutes(input: ExpressPassInput): void {
               framework: 'express',
               file: path,
               span: { start: callLine, end: callEnd },
-              lang: 'typescript',
+              lang,
               hash: ctx.hash(`${path}:route:${verb}:${p}:${callLine}`),
             });
           }

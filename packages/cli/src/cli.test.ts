@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SoulStore, newManifest, openIndex } from '@knowledge-crib/core';
@@ -275,6 +275,51 @@ describe('crib enrich --scope / --scope-cluster / --save flag guards (scope-pick
   });
 });
 
+describe('crib enrich --auto — bounded autonomous loop (WP2b)', () => {
+  // --auto stub-authors + saves each batch headlessly (no model). Three independent stop conditions
+  // (token ceiling, max-batches, layer boundary) plus the zero-progress churn-trap break. Each test
+  // drives the BUILT dist/cli.js against a freshly-indexed temp repo so the enrich queue is non-empty.
+
+  it('stops at the layer boundary (default budget packs the symbol layer in one batch, next batch is file)', () => {
+    const r = runCliResult(['enrich', '--auto']);
+    expect(r.status).toBe(0);
+    // First batch drains the symbol layer; the second batch is the file layer → stop for review.
+    expect(r.stdout).toContain('auto batch 1');
+    expect(r.stdout).toContain('layer boundary');
+    expect(r.stdout).toContain('stopping for review');
+  });
+
+  it('stops at --max-batches (caps the batch count before the layer boundary would fire)', () => {
+    const r = runCliResult(['enrich', '--auto', '--max-batches', '1']);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('auto batch 1');
+    expect(r.stdout).toContain('max-batches reached (1)');
+    // The max-batches check ends the loop at the bottom of iteration 1, so the layer-boundary branch
+    // (top of iteration 2) never runs.
+    expect(r.stdout).not.toContain('layer boundary');
+  });
+
+  it('stops at the --max-tokens turn ceiling (first batch always runs, subsequent batches stop before overshooting)', () => {
+    // --budget-tokens 1 splits the symbol layer into one-item batches so iteration 2 stays in the
+    // symbol layer (no layer-boundary interference); --max-tokens 1 then trips the turn ceiling after
+    // the first batch. Robust to exact per-item costs: any C>0 gives spent+C > 1 on iteration 2.
+    const r = runCliResult(['enrich', '--auto', '--budget-tokens', '1', '--max-tokens', '1']);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('auto batch 1');
+    expect(r.stdout).toContain('token ceiling');
+  });
+
+  it('breaks on zeroProgress rather than spinning (exit non-zero when a primed batch re-issues with no save)', () => {
+    // Prime: `--next` issues a batch and persists lastIssued to disk WITHOUT saving. The next process
+    // sees the same batchId re-issued → zero-progress → the churn trap. --auto MUST break non-zero
+    // instead of looping forever on a batch it cannot advance.
+    runCliResult(['enrich', '--next']);
+    const r = runCliResult(['enrich', '--auto']);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('zero-progress');
+  });
+});
+
 describe('crib index --package (workspace-aware indexing) — CLI dispatch', () => {
   let wsRepo: string;
   const wsPkg = (name: string, rel: string): void => {
@@ -363,7 +408,9 @@ describe('crib index --package (workspace-aware indexing) — CLI dispatch', () 
     const r = runWs(['index', '.', '--package', 'ftc-cloud']);
     expect(r.status).toBe(0);
     const manifest = JSON.parse(
-      execFileSync('cat', [join(wsRepo, '.crib', 'crib.json')], { encoding: 'utf8' }),
+      execFileSync('cat', [join(wsRepo, '.crib', 'graph', 'manifest.json')], {
+        encoding: 'utf8',
+      }),
     ) as { meta?: { workspace?: { tool: string }; indexedPackages?: string[] } };
     expect(manifest.meta?.workspace?.tool).toBe('pnpm');
     expect(manifest.meta?.indexedPackages).toEqual(['packages/FTCCloud']);
@@ -434,6 +481,26 @@ describe('crib index — token-savings hero output (P1 instant value)', () => {
   });
 });
 
+describe('crib skill install --dest — cross-client skill installation', () => {
+  it('does not mistake the destination value for a skill name', () => {
+    const dest = join(repo, 'codex-skills');
+    const first = runCliResult(['skill', 'install', '--dest', dest]);
+    expect(first.status).toBe(0);
+    expect(first.stdout).toContain(`crib-enrich: installed → ${join(dest, 'crib-enrich')}`);
+    expect(readFileSync(join(dest, 'crib-enrich', 'SKILL.md'), 'utf8')).toContain('# crib-enrich');
+
+    const second = runCliResult(['skill', 'install', '--dest', dest]);
+    expect(second.status).toBe(0);
+    expect(second.stdout).toContain('crib-enrich: already up to date');
+  });
+
+  it('rejects a missing --dest value', () => {
+    const result = runCliResult(['skill', 'install', '--dest']);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('usage: crib skill install [name] [--dest <dir>]');
+  });
+});
+
 describe('crib update --package (P4 multi-package federation) — CLI dispatch', () => {
   let fedRepo: string;
   const runFed = (args: string[]): { status: number; stdout: string; stderr: string } => {
@@ -498,9 +565,114 @@ describe('crib update --package (P4 multi-package federation) — CLI dispatch',
     expect(scoped.stdout).toContain('outside scope');
     expect(scoped.stdout).toContain('anchor not advanced');
 
-    const manifest = JSON.parse(readFileSync(join(fedRepo, '.crib', 'crib.json'), 'utf8')) as {
+    const manifest = JSON.parse(
+      readFileSync(join(fedRepo, '.crib', 'graph', 'manifest.json'), 'utf8'),
+    ) as {
       repo: { vcsHead: string };
     };
     expect(manifest.repo.vcsHead).toBe(h1);
+  });
+});
+
+describe('crib index — cross-process writer lock (M0.6)', () => {
+  let lockRepo: string;
+  const runLock = (args: string[]): { status: number; stdout: string; stderr: string } => {
+    const r = spawnSync(process.execPath, [CLI, ...args], {
+      cwd: lockRepo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    const stripNoise = (str: string): string =>
+      str
+        .split('\n')
+        .filter((l) => !/ExperimentalWarning|trace-warnings/.test(l))
+        .join('\n')
+        .trim();
+    return {
+      status: r.status ?? 1,
+      stdout: stripNoise(r.stdout ?? ''),
+      stderr: stripNoise(r.stderr ?? ''),
+    };
+  };
+  beforeEach(() => {
+    lockRepo = mkdtempSync(join(tmpdir(), 'crib-cli-lock-'));
+    writeFileSync(join(lockRepo, 'README.md'), '# locked\n');
+    mkdirSync(join(lockRepo, 'src'), { recursive: true });
+    writeFileSync(join(lockRepo, 'src', 'a.ts'), 'export const a = 1;\n');
+  });
+  afterEach(() => rmSync(lockRepo, { recursive: true, force: true }));
+
+  it('leaves no .lock behind after a clean index', () => {
+    const r = runLock(['index', '.']);
+    expect(r.status).toBe(0);
+    expect(existsSync(join(lockRepo, '.crib', '.lock'))).toBe(false);
+  });
+
+  it('refuses to index when a live-pid lock already holds (exit 4 LOCKED)', () => {
+    mkdirSync(join(lockRepo, '.crib'), { recursive: true });
+    // the test process is alive and is NOT the child crib will spawn → foreign live holder
+    writeFileSync(join(lockRepo, '.crib', '.lock'), `${process.pid}\n`);
+    const r = runLock(['index', '.']);
+    expect(r.status).toBe(4);
+    expect(r.stderr).toContain('crib is busy');
+  });
+
+  it('self-heals a stale (dead-pid) lock and indexes successfully', () => {
+    mkdirSync(join(lockRepo, '.crib'), { recursive: true });
+    // a pid nothing owns → dead → stale → stolen on acquire
+    writeFileSync(join(lockRepo, '.crib', '.lock'), '4194304\n');
+    const r = runLock(['index', '.']);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/indexed \d+ files/);
+    expect(existsSync(join(lockRepo, '.crib', '.lock'))).toBe(false);
+  });
+});
+
+describe('crib federated-impact (M3.2) — CLI dispatch + id-parse regression', () => {
+  it('parses the id as the positional AFTER flag values, not the --dir value', () => {
+    // Regression: `args.find(!startsWith('-'))` resolved id to 'down' (the --dir VALUE) when --dir
+    // preceded the id. positionalsOf strips VALUE_FLAGS values so the id is the real positional.
+    // With the bug, the verb got id='down' → NOT_FOUND; with the fix, id='loan_pkg.process_one'
+    // resolves and the result has a `root` (no error). The PL/SQL fixture has no http-call, so the
+    // down traversal is empty — this still proves dispatch + id resolution + the verb shape.
+    const out = runCli(['federated-impact', '--dir', 'down', 'loan_pkg.process_one']);
+    const r = JSON.parse(out) as {
+      root?: string;
+      dir?: string;
+      federatedRoots?: string[];
+      affected?: unknown[];
+      crossRepoHops?: number;
+      error?: { code: string };
+    };
+    expect(r.error).toBeUndefined();
+    expect(r.dir).toBe('down');
+    expect(typeof r.root).toBe('string');
+    expect(Array.isArray(r.affected)).toBe(true);
+    expect(r.crossRepoHops).toBe(0);
+  });
+
+  it('accepts the `federated` alias', () => {
+    const out = runCli(['federated', '--dir', 'down', 'loan_pkg.process_one']);
+    const r = JSON.parse(out) as { dir?: string; error?: { code: string } };
+    expect(r.error).toBeUndefined();
+    expect(r.dir).toBe('down');
+  });
+
+  it('exits BAD_ARGS when --dir is missing', () => {
+    const r = runCliResult(['federated-impact', 'loan_pkg.process_one']);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toMatch(/usage:/);
+  });
+
+  it('exits BAD_ARGS when --dir is not up|down', () => {
+    const r = runCliResult(['federated-impact', '--dir', 'sideways', 'loan_pkg.process_one']);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toMatch(/usage:/);
+  });
+
+  it('exits BAD_ARGS when the id is missing', () => {
+    const r = runCliResult(['federated-impact', '--dir', 'down']);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toMatch(/usage:/);
   });
 });

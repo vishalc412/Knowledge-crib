@@ -1,0 +1,125 @@
+{
+  "id": "sym:packages/parsers/src/ts/react.ts#isHookName@L220",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:c8b0d56228fa3204f36cbcb2ade6a6ca6f56f0a3fb85c543d0bafc45da6bf263",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/react.ts#isHookName@L220",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isHookName",
+    "qualifiedName": "isHookName",
+    "signature": "isHookName(name: string): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/react.ts",
+    "span": {
+      "start": 220,
+      "end": 222
+    },
+    "callSites": [
+      {
+        "callee": "test",
+        "line": 221
+      }
+    ]
+  },
+  "source": {
+    "text": "function isHookName(name: string): boolean {\n  return name === 'use' || /^use[A-Z]/.test(name);\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 220
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#bodyContainsHookCall@L283",
+      "confidence": 1,
+      "name": "bodyContainsHookCall",
+      "qualifiedName": "bodyContainsHookCall",
+      "signature": "bodyContainsHookCall(node: ts.Node | undefined): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 283
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#classify@L102",
+      "confidence": 1,
+      "name": "classify",
+      "qualifiedName": "classify",
+      "signature": "classify(s: ReactSymbolLike): {\n  kind: 'class' | 'function' | 'hook';\n  body?: ts.Node;\n  propsType?: string;\n  stateType?: string;\n} | null",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 102
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#hookCallName@L244",
+      "confidence": 1,
+      "name": "hookCallName",
+      "qualifiedName": "hookCallName",
+      "signature": "hookCallName(call: ts.CallExpression): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 244
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/react.ts@L219",
+      "snippet": "/** `useX` hook name: `use` + an uppercase next char, or exactly `use` (the React 19 hook). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/react.ts#isHookName@L220",
+    "procedureName": "isHookName",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#isHookName@L220",
+        "procedureName": "isHookName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:50ec0b649fa19335af758dadc8f044660779811dd2c6e50952528a905baf88df",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L221",
+          "line": 221,
+          "expr": "return name === 'use' || /^use[A-Z]/.test(name);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/react.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

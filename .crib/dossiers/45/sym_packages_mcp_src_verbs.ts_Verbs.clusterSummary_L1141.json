@@ -1,0 +1,224 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.clusterSummary@L1141",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:c9bcdc34461f26bf9a772327535605df78eb5aebe2327fb8882c73ba8e978a9b",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.clusterSummary@L1141",
+    "kind": "symbol",
+    "type": "method",
+    "name": "clusterSummary",
+    "qualifiedName": "Verbs.clusterSummary",
+    "signature": "clusterSummary(): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1141,
+      "end": 1161
+    },
+    "callSites": [
+      {
+        "callee": "buildFunctionalMap",
+        "line": 1143
+      },
+      {
+        "callee": "readLlmOverlay",
+        "line": 1144
+      },
+      {
+        "callee": "map",
+        "line": 1145
+      },
+      {
+        "callee": "sort",
+        "line": 1145
+      },
+      {
+        "callee": "iterate",
+        "line": 1145
+      },
+      {
+        "callee": "localeCompare",
+        "line": 1146
+      },
+      {
+        "callee": "get",
+        "line": 1149
+      },
+      {
+        "callee": "map",
+        "line": 1152
+      }
+    ]
+  },
+  "source": {
+    "text": "  private clusterSummary(): Record<string, unknown> {\n    const soul = this.deps.soul;\n    const map = buildFunctionalMap(soul);\n    const overlay = readLlmOverlay(soul);\n    const clusters = [...soul.iterate('cluster')]\n      .sort((a, b) => a.id.localeCompare(b.id))\n      .map((c) => ({\n        id: c.id,\n        label: overlay.entries.get(c.id)?.name ?? c.label ?? c.id,\n        memberCount: c.members?.length ?? 0,\n      }));\n    const modules = map.modules.map((m) => ({\n      id: m.id,\n      name: m.name,\n      pathPrefix: m.pathPrefix,\n      ...(m.purpose ? { purpose: m.purpose.text } : {}),\n      counts: m.counts,\n      coverage: m.coverage,\n    }));\n    return { clusters, modules };\n  }",
+    "truncated": false,
+    "totalLines": 21,
+    "startLine": 1141
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L1003",
+      "confidence": 1,
+      "name": "ask",
+      "qualifiedName": "Verbs.ask",
+      "signature": "ask(args: {\n    q: string;\n    limit?: number;\n    format?: 'json' | 'markdown';\n    withSource?: boolean;\n    withRules?: boolean;\n    withFramework?: boolean;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1003
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.get@L252",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "Verbs.get",
+      "signature": "get(target, prop, receiver)",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 252
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L1137",
+      "snippet": "/** Summarize the soul for overview questions when no LLM system bible exists — a thin wrapper",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#fixed",
+      "heading": "Fixed",
+      "anchor": "fixed",
+      "snippet": "Fixed",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.clusterSummary@L1141",
+    "procedureName": "Verbs.clusterSummary",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.clusterSummary@L1141",
+        "procedureName": "Verbs.clusterSummary",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:70a4273532e6c000443e25692ebf39c6fe70631577b6978445ae97b4a07b3e0a",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1143",
+          "line": 1143,
+          "expr": "const map = buildFunctionalMap(soul);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.clusterSummary@L1141",
+        "procedureName": "Verbs.clusterSummary",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fde458dec4c93a9dfabbfbaff21fbcac6a79acebe19d8b3c82512f6d0a817be5",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1144",
+          "line": 1144,
+          "expr": "const overlay = readLlmOverlay(soul);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.clusterSummary@L1141",
+        "procedureName": "Verbs.clusterSummary",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e44e114591ba978285a09545d835afc55f7714c733532fa99d5c79921812ad15",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1145",
+          "line": 1145,
+          "expr": "const clusters = [...soul.iterate('cluster')]\n      .sort((a, b) => a.id.localeCompare(b.id))\n      .map((c) => ({\n        id: c.id,\n        label: overlay.entries.get(c.id)?.name ?? c.label ?? c.id,\n        memberCount: c.members?.length ?? 0,\n      }));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.clusterSummary@L1141",
+        "procedureName": "Verbs.clusterSummary",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4945b994d11af65bee78fd676041898b1b0277d4715db8da98b19e4bb66998aa",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.get@L252",
+          "expr": "get",
+          "line": 1149
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.clusterSummary@L1141",
+        "procedureName": "Verbs.clusterSummary",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6446b3680ca0b9dc0165d6c3a7768da60c5b4a76c88fa67c9b2c7144dd4f73da",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1152",
+          "line": 1152,
+          "expr": "const modules = map.modules.map((m) => ({\n      id: m.id,\n      name: m.name,\n      pathPrefix: m.pathPrefix,\n      ...(m.purpose ? { purpose: m.purpose.text } : {}),\n      counts: m.counts,\n      coverage: m.coverage,\n    }));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.clusterSummary@L1141",
+        "procedureName": "Verbs.clusterSummary",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:90258f7c391782e956d092a8a8843acca185a90202287fdea6d986cac6debc9d",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1160",
+          "line": 1160,
+          "expr": "return { clusters, modules };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 8,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

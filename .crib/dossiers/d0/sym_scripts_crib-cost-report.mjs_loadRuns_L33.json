@@ -1,0 +1,232 @@
+{
+  "id": "sym:scripts/crib-cost-report.mjs#loadRuns@L33",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:a72b19f8ff1422c769caaadfc737c8d55a8e6bd157b406dc8f5faa9bca74ed29",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/crib-cost-report.mjs#loadRuns@L33",
+    "kind": "symbol",
+    "type": "function",
+    "name": "loadRuns",
+    "qualifiedName": "loadRuns",
+    "signature": "loadRuns(argv)",
+    "lang": "javascript",
+    "file": "scripts/crib-cost-report.mjs",
+    "span": {
+      "start": 33,
+      "end": 49
+    },
+    "callSites": [
+      {
+        "callee": "slice",
+        "line": 34
+      },
+      {
+        "callee": "parse",
+        "line": 36
+      },
+      {
+        "callee": "readFileSync",
+        "line": 36
+      },
+      {
+        "callee": "parse",
+        "line": 44
+      },
+      {
+        "callee": "readFileSync",
+        "line": 44
+      },
+      {
+        "callee": "parse",
+        "line": 45
+      },
+      {
+        "callee": "readFileSync",
+        "line": 45
+      }
+    ]
+  },
+  "source": {
+    "text": "function loadRuns(argv) {\n  const files = argv.slice(2);\n  if (files.length === 1) {\n    const doc = JSON.parse(readFileSync(files[0], 'utf8'));\n    if (!doc.withCrib || !doc.withoutCrib) {\n      throw new Error('single-file input must have both \"withCrib\" and \"withoutCrib\" keys');\n    }\n    return { withCrib: doc.withCrib, withoutCrib: doc.withoutCrib };\n  }\n  if (files.length === 2) {\n    return {\n      withCrib: JSON.parse(readFileSync(files[0], 'utf8')),\n      withoutCrib: JSON.parse(readFileSync(files[1], 'utf8')),\n    };\n  }\n  throw new Error('provide one combined JSON file, or two files (with-crib then without-crib)');\n}",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 33
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(input)",
+      "type": "function",
+      "file": "packages/pipeline/fixtures/plain-js/src/legacy.cjs",
+      "line": 4
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/crib-cost-report.mjs#loadRuns@L33",
+    "procedureName": "loadRuns",
+    "conditions": [
+      "cond:scripts/crib-cost-report.mjs@L35",
+      "cond:scripts/crib-cost-report.mjs@L42"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:scripts/crib-cost-report.mjs#loadRuns@L33",
+        "procedureName": "loadRuns",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29f5fb775418707b84a3f101a0788b531c6e6dc98f7b466e647e2487dff5b70f",
+          "target": "stmt:scripts/crib-cost-report.mjs@L34",
+          "line": 34,
+          "expr": "const files = argv.slice(2);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-cost-report.mjs#loadRuns@L33",
+        "procedureName": "loadRuns",
+        "guard": "cond:scripts/crib-cost-report.mjs@L35",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/crib-cost-report.mjs@L35",
+            "expr": "files.length === 1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1abbf891e72586dcca8e424b01087c06b0e1d4379ea37cf783a15282e7996873",
+          "target": "stmt:scripts/crib-cost-report.mjs@L36",
+          "line": 36,
+          "expr": "const doc = JSON.parse(readFileSync(files[0], 'utf8'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-cost-report.mjs#loadRuns@L33",
+        "procedureName": "loadRuns",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2160d223dd40529360a1adecdf42c6beac6ed8659e1c21645d5e884758710048",
+          "target": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+          "expr": "parse",
+          "line": 36
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-cost-report.mjs#loadRuns@L33",
+        "procedureName": "loadRuns",
+        "guard": "cond:scripts/crib-cost-report.mjs@L35",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/crib-cost-report.mjs@L35",
+            "expr": "files.length === 1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fcf13444514ee9413d281aef1943eed7b2259f34eb7aa33fa3d78c502f74ee94",
+          "target": "stmt:scripts/crib-cost-report.mjs@L40",
+          "line": 40,
+          "expr": "return { withCrib: doc.withCrib, withoutCrib: doc.withoutCrib };"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-cost-report.mjs#loadRuns@L33",
+        "procedureName": "loadRuns",
+        "guard": "cond:scripts/crib-cost-report.mjs@L42",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/crib-cost-report.mjs@L42",
+            "expr": "files.length === 2",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8bf283ba9e8e65e978327eb28bbcbf31c4999cf85d0a0169a60f316aa5fbb201",
+          "target": "stmt:scripts/crib-cost-report.mjs@L43",
+          "line": 43,
+          "expr": "return {\n      withCrib: JSON.parse(readFileSync(files[0], 'utf8')),\n      withoutCrib: JSON.parse(readFileSync(files[1], 'utf8')),\n    };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:scripts/crib-cost-report.mjs@L38",
+        "kind": "raise",
+        "lang": "javascript",
+        "file": "scripts/crib-cost-report.mjs",
+        "span": {
+          "start": 38,
+          "end": 38
+        },
+        "errorMessage": "single-file input must have both \"withCrib\" and \"withoutCrib\" keys",
+        "confidence": 1
+      },
+      {
+        "id": "raise:scripts/crib-cost-report.mjs@L48",
+        "kind": "raise",
+        "lang": "javascript",
+        "file": "scripts/crib-cost-report.mjs",
+        "span": {
+          "start": 48,
+          "end": 48
+        },
+        "errorMessage": "provide one combined JSON file, or two files (with-crib then without-crib)",
+        "confidence": 1
+      }
+    ],
+    "handles": [],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 2,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 7,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

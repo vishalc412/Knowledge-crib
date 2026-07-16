@@ -1,0 +1,650 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:824d708d4ed68fb311de8859b801048bcab775b50f14e9e86a81ec4eb4fef28a",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseLeafReturn",
+    "qualifiedName": "Parser.parseLeafReturn",
+    "signature": "parseLeafReturn(kind: 'return' | 'throw', startLine: number): CsharpStmt",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 1225,
+      "end": 1271
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 1226
+      },
+      {
+        "callee": "offset",
+        "line": 1227
+      },
+      {
+        "callee": "next",
+        "line": 1228
+      },
+      {
+        "callee": "peek",
+        "line": 1236
+      },
+      {
+        "callee": "next",
+        "line": 1238
+      },
+      {
+        "callee": "max",
+        "line": 1244
+      },
+      {
+        "callee": "max",
+        "line": 1246
+      },
+      {
+        "callee": "offsetAfter",
+        "line": 1253
+      },
+      {
+        "callee": "next",
+        "line": 1255
+      },
+      {
+        "callee": "trim",
+        "line": 1257
+      },
+      {
+        "callee": "slice",
+        "line": 1257
+      },
+      {
+        "callee": "firstCallSiteFrom",
+        "line": 1259
+      },
+      {
+        "callee": "extractSwitchArms",
+        "line": 1261
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseLeafReturn(kind: 'return' | 'throw', startLine: number): CsharpStmt {\n    const startTok = this.peek(); // 'return'/'throw'\n    const startOff = this.offset(startTok);\n    this.next(); // consume keyword\n    const scanStart = this.i; // token index after the keyword (for call-site detection)\n    let endOff = startOff;\n    let pdepth = 0;\n    let bdepth = 0;\n    let brace = 0;\n    let lastLine = startLine;\n    while (!this.atEnd()) {\n      const tk = this.peek();\n      if (pdepth === 0 && bdepth === 0 && brace === 0 && this.isOp(';')) {\n        this.next();\n        break;\n      }\n      if (pdepth === 0 && bdepth === 0 && brace === 0 && this.isOp('}')) break; // malformed\n      if (tk.type === 'OP') {\n        if (tk.value === '(') pdepth++;\n        else if (tk.value === ')') pdepth = Math.max(0, pdepth - 1);\n        else if (tk.value === '[') bdepth++;\n        else if (tk.value === ']') bdepth = Math.max(0, bdepth - 1);\n        else if (tk.value === '{') brace++;\n        else if (tk.value === '}') {\n          if (brace > 0) brace--;\n          else break;\n        }\n      }\n      endOff = this.offsetAfter(tk);\n      lastLine = tk.line;\n      this.next();\n    }\n    const expr = this.src.slice(startOff, endOff).trim();\n    // call sites in the RHS (after the keyword) — for intra-file `calls` edge annotation.\n    const callSite = this.firstCallSiteFrom(scanStart);\n    // 1.2: switch-expression arms in the returned expression (`return e switch { … };`).\n    const switchArms = this.extractSwitchArms(scanStart, this.i);\n    return {\n      kind,\n      startLine,\n      endLine: lastLine,\n      expr,\n      head: kind,\n      ...(callSite ? { callSite } : {}),\n      ...(switchArms ? { switchArms } : {}),\n    };\n  }",
+    "truncated": false,
+    "totalLines": 47,
+    "startLine": 1225
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseStmt@L1040",
+      "confidence": 1,
+      "name": "parseStmt",
+      "qualifiedName": "Parser.parseStmt",
+      "signature": "parseStmt(): CsharpStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1040
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.atEnd@L1537",
+      "confidence": 1,
+      "name": "atEnd",
+      "qualifiedName": "Parser.atEnd",
+      "signature": "atEnd(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1537
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.extractSwitchArms@L1368",
+      "confidence": 1,
+      "name": "extractSwitchArms",
+      "qualifiedName": "Parser.extractSwitchArms",
+      "signature": "extractSwitchArms(from: number, to: number): CsharpSwitchCase[] | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1368
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.firstCallSiteFrom@L1354",
+      "confidence": 1,
+      "name": "firstCallSiteFrom",
+      "qualifiedName": "Parser.firstCallSiteFrom",
+      "signature": "firstCallSiteFrom(from: number): CsharpCallSite | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1354
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1516",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1516
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1529",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1529
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.offset@L1505",
+      "confidence": 1,
+      "name": "offset",
+      "qualifiedName": "Parser.offset",
+      "signature": "offset(tk: Token): number",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1505
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.offsetAfter@L1510",
+      "confidence": 1,
+      "name": "offsetAfter",
+      "qualifiedName": "Parser.offsetAfter",
+      "signature": "offsetAfter(tk: Token): number",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1510
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1534",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(offset = 0): Token",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1534
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/parser.ts@L1224",
+      "snippet": "/** `return expr;` / `throw expr;` — always an action line. Records nested call sites too. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+    "procedureName": "Parser.parseLeafReturn",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/parser.ts@L1235",
+      "cond:packages/parsers/src/csharp/parser.ts@L1237",
+      "cond:packages/parsers/src/csharp/parser.ts@L1242",
+      "cond:packages/parsers/src/csharp/parser.ts@L1243",
+      "cond:packages/parsers/src/csharp/parser.ts@L1244",
+      "cond:packages/parsers/src/csharp/parser.ts@L1245",
+      "cond:packages/parsers/src/csharp/parser.ts@L1246"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:991c4767f29356f0a3a2b693a0878b9528186d2458328e3448b8e7077c1401c1",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1226",
+          "line": 1226,
+          "expr": "const startTok = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:beb1e6c1c9521dee88ef9a10ca07acc99f1975d107b7a64cd481a25a38f14847",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1534",
+          "expr": "peek",
+          "line": 1226
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:35c305442e655153aaf73024cebeff1d94011ff11b7a349c07efde68d3de17be",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.offset@L1505",
+          "expr": "offset",
+          "line": 1227
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:de40b506d40dc2832b82cb9ca5143036fa5d5f0bae901c38e096652663a22c00",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1227",
+          "line": 1227,
+          "expr": "const startOff = this.offset(startTok);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:04e43672e0508299abb5387ed1219d4a16b2475a60711e8136903a2288b2c6b3",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1228",
+          "line": 1228,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:463d0996b84512576c344a19531e5320066ece382a62cc5af443693f92c2afec",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1529",
+          "expr": "next",
+          "line": 1228
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0fa17c58f57675d5ecc27720eac54d66cb897ecf2c9bb4baa479deacc058a26d",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1236",
+          "line": 1236,
+          "expr": "const tk = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1237",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1237",
+            "expr": "pdepth === 0 && bdepth === 0 && brace === 0 && this.isOp(';')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a07864e3c46d0873046fef55cd0cede65a71be09932951c99f97d915654ecef4",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1238",
+          "line": 1238,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1244",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1242",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1243",
+            "expr": "tk.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1244",
+            "expr": "tk.value === ')'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0a53f698d6ab59627a28dc448a187c26f01f18045c732004c13b08c6cf4d79e0",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1244",
+          "line": 1244,
+          "expr": "pdepth = Math.max(0, pdepth - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1246",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1242",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1243",
+            "expr": "tk.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1244",
+            "expr": "tk.value === ')'"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1245",
+            "expr": "tk.value === '['"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1246",
+            "expr": "tk.value === ']'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7ef1ab094f0bd1c3cabb0ca439ee11de26136d1d0f05fa7b43e2451fa234909c",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1246",
+          "line": 1246,
+          "expr": "bdepth = Math.max(0, bdepth - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8659d4ae7c47d8286e8cd51a5e3ec4c2a0ec9962210b17d5a0373d086b9cf0f0",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1253",
+          "line": 1253,
+          "expr": "endOff = this.offsetAfter(tk);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f028e35258def66af635456a03ea8659c25d181e2e63fbed4222004b3d040305",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.offsetAfter@L1510",
+          "expr": "offsetAfter",
+          "line": 1253
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:09dddfbbcb2e9fa78969b7451b1024ffeb557dfb5dd3a6c7b4f56f976a9c25ef",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L1254",
+          "line": 1254,
+          "expr": "lastLine = tk.line;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L1235",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b2312e64c3c78a956159b376cf0f5e45afa06b30ae645bab0fd5b70d9d6e4a77",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1255",
+          "line": 1255,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1b7db9397c78f17173ea15d7d30839d973bf18d2541601d0dad211e861d30cb4",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1257",
+          "line": 1257,
+          "expr": "const expr = this.src.slice(startOff, endOff).trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:152026b989af8b3c4d035616dff60a03e194efc0098ed0492962f58cdaadb32a",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.firstCallSiteFrom@L1354",
+          "expr": "firstCallSiteFrom",
+          "line": 1259
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:81fe48913316ab1fbb47080200ab9af1252fbe61f06633f870e7a836d349c0ba",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1259",
+          "line": 1259,
+          "expr": "const callSite = this.firstCallSiteFrom(scanStart);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2b18daf92ebb8c7ceab42cb6d810219c41065f9c270f387afe7ff4cd1f2e9d43",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1261",
+          "line": 1261,
+          "expr": "const switchArms = this.extractSwitchArms(scanStart, this.i);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ce892aa6243f25887a0dbe396df3ed28e8eafd0d92714e8c9313b45371ebfb79",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.extractSwitchArms@L1368",
+          "expr": "extractSwitchArms",
+          "line": 1261
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3ae176d68fd36256d883102eaf3ca5487d1704925d3b253c8b57510e560c2088",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1262",
+          "line": 1262,
+          "expr": "return {\n      kind,\n      startLine,\n      endLine: lastLine,\n      expr,\n      head: kind,\n      ...(callSite ? { callSite } : {}),\n      ...(switchArms ? { switchArms } : {}),\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3ab684f069cd0d82faa2ed908f69a4137d2963a4470d8f21f4b2552e43e052b5",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1516",
+          "expr": "isOp"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+        "procedureName": "Parser.parseLeafReturn",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:318b5cf6d3761f8a2d89c3bd147545bfe24256f7ad9ac06968a5ebc17c9bb4a6",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.atEnd@L1537",
+          "expr": "atEnd"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 14,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 14,
+    "assignments": 4,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 8,
+      "recorded": 13,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

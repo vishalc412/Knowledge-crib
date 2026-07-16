@@ -1,0 +1,157 @@
+{
+  "id": "sym:packages/ui/web/support.js#walkXImport.evalName@L599",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:af14bdb8a53e7ba2182461022c6e6ec4660ff6ca7fbe6c8f9c30b5ec3c2d1524",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#walkXImport.evalName@L599",
+    "kind": "symbol",
+    "type": "function",
+    "name": "evalName",
+    "qualifiedName": "walkXImport.evalName",
+    "signature": "evalName(…)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 599,
+      "end": 603
+    },
+    "callSites": [
+      {
+        "callee": "g",
+        "line": 600
+      },
+      {
+        "callee": "String",
+        "line": 601
+      },
+      {
+        "callee": "includes",
+        "line": 602
+      }
+    ]
+  },
+  "source": {
+    "text": "    const evalName = (g, vals) => {\n      const v = g(vals);\n      const s = v == null ? \"\" : String(v);\n      return s.includes(\"{{\") ? \"\" : s;\n    };",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 599
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#walkXImport@L580",
+      "confidence": 1,
+      "name": "walkXImport",
+      "qualifiedName": "walkXImport",
+      "signature": "walkXImport(el, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 580
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#G@L201",
+      "confidence": 1,
+      "name": "G",
+      "qualifiedName": "G",
+      "signature": "G(a, b, c)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react-dom.production.min.js",
+      "line": 201
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#walkXImport.evalName@L599",
+    "procedureName": "walkXImport.evalName",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkXImport.evalName@L599",
+        "procedureName": "walkXImport.evalName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1444ca10ba340de0ae64e8750b098e19954b0778c79225e654cf8719fcd0245e",
+          "target": "sym:packages/ui/web/vendor/react-dom.production.min.js#G@L201",
+          "expr": "G",
+          "line": 600
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkXImport.evalName@L599",
+        "procedureName": "walkXImport.evalName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6b040fc02261eb1d6dfed442422aae84a3ccd7770aca01adf48c38f1761a16c8",
+          "target": "stmt:packages/ui/web/support.js@L600",
+          "line": 600,
+          "expr": "const v = g(vals);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkXImport.evalName@L599",
+        "procedureName": "walkXImport.evalName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1cfa5584b01f9ba0ce616a9529091f7d959b7a86ef7c9cac8028895b7aecbfb6",
+          "target": "stmt:packages/ui/web/support.js@L601",
+          "line": 601,
+          "expr": "const s = v == null ? \"\" : String(v);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkXImport.evalName@L599",
+        "procedureName": "walkXImport.evalName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:112c4f3cd42387cd672ba63e7073cdd5f3cbd0d652192f91042c9e32921ef93e",
+          "target": "stmt:packages/ui/web/support.js@L602",
+          "line": 602,
+          "expr": "return s.includes(\"{{\") ? \"\" : s;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

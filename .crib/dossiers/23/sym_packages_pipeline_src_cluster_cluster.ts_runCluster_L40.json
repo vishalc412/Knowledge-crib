@@ -1,0 +1,1026 @@
+{
+  "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:b1a6fd181bb39331c7bf698de344c3ab3bc7e85fa2c3827ec9192b7b21a197bf",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runCluster",
+    "qualifiedName": "runCluster",
+    "signature": "runCluster(soul: SoulStore): ClusterStats",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/cluster/cluster.ts",
+    "span": {
+      "start": 40,
+      "end": 129
+    },
+    "callSites": [
+      {
+        "callee": "sort",
+        "line": 42
+      },
+      {
+        "callee": "iterate",
+        "line": 42
+      },
+      {
+        "callee": "replaceClusters",
+        "line": 46
+      },
+      {
+        "callee": "set",
+        "line": 50
+      },
+      {
+        "callee": "get",
+        "line": 56
+      },
+      {
+        "callee": "get",
+        "line": 57
+      },
+      {
+        "callee": "set",
+        "line": 60
+      },
+      {
+        "callee": "get",
+        "line": 60
+      },
+      {
+        "callee": "map",
+        "line": 64
+      },
+      {
+        "callee": "split",
+        "line": 64
+      },
+      {
+        "callee": "push",
+        "line": 65
+      },
+      {
+        "callee": "buildGraph",
+        "line": 69
+      },
+      {
+        "callee": "louvain",
+        "line": 70
+      },
+      {
+        "callee": "get",
+        "line": 80
+      },
+      {
+        "callee": "push",
+        "line": 81
+      },
+      {
+        "callee": "set",
+        "line": 82
+      },
+      {
+        "callee": "sort",
+        "line": 90
+      },
+      {
+        "callee": "slice",
+        "line": 91
+      },
+      {
+        "callee": "contentHash",
+        "line": 91
+      },
+      {
+        "callee": "join",
+        "line": 91
+      },
+      {
+        "callee": "idFor",
+        "line": 92
+      },
+      {
+        "callee": "filter",
+        "line": 100
+      },
+      {
+        "callee": "map",
+        "line": 100
+      },
+      {
+        "callee": "getNode",
+        "line": 100
+      },
+      {
+        "callee": "heuristicClusterLabel",
+        "line": 102
+      },
+      {
+        "callee": "fallbackQualifiedName",
+        "line": 103
+      },
+      {
+        "callee": "push",
+        "line": 105
+      },
+      {
+        "callee": "contentHash",
+        "line": 110
+      },
+      {
+        "callee": "join",
+        "line": 110
+      },
+      {
+        "callee": "push",
+        "line": 113
+      },
+      {
+        "callee": "edgeId",
+        "line": 114
+      },
+      {
+        "callee": "replaceClusters",
+        "line": 127
+      }
+    ]
+  },
+  "source": {
+    "text": "export function runCluster(soul: SoulStore): ClusterStats {\n  // 1. assign deterministic indices to every symbol, sorted by id.\n  const symbols = [...soul.iterate('symbol')].sort((a, b) =>\n    a.id < b.id ? -1 : a.id > b.id ? 1 : 0,\n  );\n  if (symbols.length === 0) {\n    soul.replaceClusters([], []);\n    return { communities: 0, members: 0 };\n  }\n  const idxOf = new Map<string, number>();\n  for (let i = 0; i < symbols.length; i++) idxOf.set(symbols[i]!.id, i);\n\n  // 2. collect weighted undirected edges between symbols (multiplicity → weight).\n  const edgeMap = new Map<string, number>();\n  for (const e of soul.iterateEdges()) {\n    if (!STRUCTURAL_RELS.has(e.rel)) continue;\n    const a = idxOf.get(e.src);\n    const b = idxOf.get(e.dst);\n    if (a === undefined || b === undefined) continue; // edge touches a non-symbol node\n    const key = a <= b ? `${a}:${b}` : `${b}:${a}`;\n    edgeMap.set(key, (edgeMap.get(key) ?? 0) + 1);\n  }\n  const edges: Array<[number, number, number]> = [];\n  for (const [key, w] of edgeMap) {\n    const [a, b] = key.split(':').map(Number) as [number, number];\n    edges.push([a, b, w]);\n  }\n\n  // 3. run Louvain (no structural edges ⇒ every node its own community ⇒ nothing to emit).\n  const graph = buildGraph(symbols.length, edges);\n  const labels = louvain(graph);\n\n  // 4. group members by community label.\n  const byCom = new Map<number, string[]>();\n  const degreeByNode = new Float64Array(symbols.length);\n  for (let i = 0; i < symbols.length; i++) {\n    for (const w of graph.adj[i]!.values()) degreeByNode[i] = degreeByNode[i]! + w;\n  }\n  for (let i = 0; i < symbols.length; i++) {\n    const c = labels[i]!;\n    const list = byCom.get(c) ?? [];\n    list.push(symbols[i]!.id);\n    byCom.set(c, list);\n  }\n\n  const clusterNodes: Node[] = [];\n  const memberEdges: Edge[] = [];\n  let communities = 0;\n  for (const members of byCom.values()) {\n    if (members.length < 2) continue; // singleton → unclustered\n    members.sort(); // deterministic membership order\n    const slug = `auto-${contentHash(members.join('\\n')).slice(7, 19)}`;\n    const clusterId = idFor({ kind: 'cluster', slug });\n\n    // Heuristic label (outcome E): \"<longestCommonDirPrefix(memberFiles)> · <dominantStereotypeOrType>\".\n    // Falls back to the highest-degree member's qualified name when members span roots (no common\n    // directory prefix). Deterministic — alphabetical tie-breaks throughout. The cluster `id` and\n    // `hash` are untouched, so this never cascades artifact staleness. An LLM cluster name surfaces\n    // later via the read-time overlay (consumers prefer `overlay.name`); this heuristic is the\n    // pre-enrichment default.\n    const memberNodes = members.map((id) => soul.getNode(id)).filter((n): n is Node => !!n);\n    const label =\n      heuristicClusterLabel(memberNodes) ??\n      fallbackQualifiedName(members, idxOf, degreeByNode, soul, slug);\n\n    clusterNodes.push({\n      id: clusterId,\n      kind: 'cluster',\n      label,\n      members,\n      hash: contentHash(`${slug}|${members.join(',')}`),\n    });\n    for (const memberId of members) {\n      memberEdges.push({\n        id: edgeId(memberId, clusterId, 'member-of'),\n        src: memberId,\n        dst: clusterId,\n        rel: 'member-of',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: 'louvain', community: members.length },\n      });\n    }\n    communities++;\n  }\n\n  soul.replaceClusters(clusterNodes, memberEdges);\n  return { communities, members: memberEdges.length };\n}",
+    "truncated": false,
+    "totalLines": 90,
+    "startLine": 40
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdViz@L1574",
+      "confidence": 1,
+      "name": "cmdViz",
+      "qualifiedName": "cmdViz",
+      "signature": "cmdViz(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1574
+    },
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 94
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
+      "confidence": 1,
+      "name": "updateRepo",
+      "qualifiedName": "updateRepo",
+      "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.ts",
+      "line": 112
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+      "confidence": 1,
+      "name": "buildGraph",
+      "qualifiedName": "buildGraph",
+      "signature": "buildGraph(n: number, edges: ReadonlyArray<[number, number, number]>): LouvainGraph",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/louvain.ts",
+      "line": 25
+    },
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 141
+    },
+    {
+      "id": "sym:packages/pipeline/src/cluster/cluster.ts#fallbackQualifiedName@L185",
+      "confidence": 1,
+      "name": "fallbackQualifiedName",
+      "qualifiedName": "fallbackQualifiedName",
+      "signature": "fallbackQualifiedName(members: string[], idxOf: Map<string, number>, degreeByNode: Float64Array, soul: SoulStore, slug: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/cluster.ts",
+      "line": 185
+    },
+    {
+      "id": "sym:packages/pipeline/src/cluster/cluster.ts#heuristicClusterLabel@L137",
+      "confidence": 1,
+      "name": "heuristicClusterLabel",
+      "qualifiedName": "heuristicClusterLabel",
+      "signature": "heuristicClusterLabel(members: Node[]): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/cluster.ts",
+      "line": 137
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 88
+    },
+    {
+      "id": "sym:packages/pipeline/src/cluster/louvain.ts#louvain@L52",
+      "confidence": 1,
+      "name": "louvain",
+      "qualifiedName": "louvain",
+      "signature": "louvain(graph: LouvainGraph): Int32Array",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/louvain.ts",
+      "line": 52
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/cluster/cluster.ts@L36",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "heading": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "anchor": "a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
+      "snippet": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-4-adding-a-new-pipeline-phase",
+      "heading": "4.4 Adding a New Pipeline Phase",
+      "anchor": "4-4-adding-a-new-pipeline-phase",
+      "snippet": "4.4 Adding a New Pipeline Phase",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#11-architecture",
+      "heading": "11. Architecture",
+      "anchor": "11-architecture",
+      "snippet": "11. Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+    "procedureName": "runCluster",
+    "conditions": [
+      "cond:packages/pipeline/src/cluster/cluster.ts@L45",
+      "cond:packages/pipeline/src/cluster/cluster.ts@L50",
+      "cond:packages/pipeline/src/cluster/cluster.ts@L54",
+      "cond:packages/pipeline/src/cluster/cluster.ts@L63",
+      "cond:packages/pipeline/src/cluster/cluster.ts@L75",
+      "cond:packages/pipeline/src/cluster/cluster.ts@L76",
+      "cond:packages/pipeline/src/cluster/cluster.ts@L78",
+      "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+      "cond:packages/pipeline/src/cluster/cluster.ts@L112"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c03dc078d8477f5174a6c14050e6000823fcc20ceed4c02d9d61d98661ea4ed7",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L42",
+          "line": 42,
+          "expr": "const symbols = [...soul.iterate('symbol')].sort((a, b) =>\n    a.id < b.id ? -1 : a.id > b.id ? 1 : 0,\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L45",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L45",
+            "expr": "symbols.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9364351a9c3d37ac3eec1ae7a278df24f84c47bb504136b15d9aae0b8f7f610b",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L46",
+          "line": 46,
+          "expr": "soul.replaceClusters([], []);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L45",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L45",
+            "expr": "symbols.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bb8cb908aa4cb1ef3a915210d50b5f2e158ae6bd433d68dd17b934a0d27f9b9f",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L47",
+          "line": 47,
+          "expr": "return { communities: 0, members: 0 };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L50",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L50",
+            "expr": "i < symbols.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa645b8a3de5bf31b9fa45e8e408f0905c0a117a54eea7de4abfb9fa7ec16b2a",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L50",
+          "line": 50,
+          "expr": "idxOf.set(symbols[i]!.id, i);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:90ee7d733c004c954499077591d566a6b613e341544dd7570bd6e01875d00932",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 56
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L54",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L54",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d8b3322b1be1d38f2a0f3b5cd1739c115a7326b02c7f1542ac2b74278af55c08",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L56",
+          "line": 56,
+          "expr": "const a = idxOf.get(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L54",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L54",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2d2e5bb809e42283a35ee5ffb2a2cc7a1f5dd33cdaab4a50910695a9b3ecfaee",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L57",
+          "line": 57,
+          "expr": "const b = idxOf.get(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L54",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L54",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6f40f57338c0c8cd867820f8c1e4c30b4028236ba6d581899989d15bf0303701",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L60",
+          "line": 60,
+          "expr": "edgeMap.set(key, (edgeMap.get(key) ?? 0) + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L63",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L63",
+            "expr": "edgeMap",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1685ced443fd30cb3f95f640d51ee7c41d5036f710fd294e097545c51b6b0644",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L64",
+          "line": 64,
+          "expr": "const [a, b] = key.split(':').map(Number) as [number, number];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L63",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L63",
+            "expr": "edgeMap",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8445a91dd437c74b793f42ffc6bdb4d5ea23cb605285d08e6222dd545f6c5a99",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L65",
+          "line": 65,
+          "expr": "edges.push([a, b, w]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bc22ce9ee98b7570f13565e164b14c44ae19105e493fe5364036f65f68b67a48",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 65
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7bb72a4f64dbeefb44c0ed3fca738c3874eeac55c2652875167384df8aa4db02",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L69",
+          "line": 69,
+          "expr": "const graph = buildGraph(symbols.length, edges);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:82d7cc158230e81e24a12c48741a5217ce63bc95255bf0f39124d4d3e23d2acc",
+          "target": "sym:packages/pipeline/src/cluster/louvain.ts#buildGraph@L25",
+          "expr": "buildGraph",
+          "line": 69
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:096b56127a11e8b5224c5a44c291ad4a0027e5a5267b46932a720591f825a1e4",
+          "target": "sym:packages/pipeline/src/cluster/louvain.ts#louvain@L52",
+          "expr": "louvain",
+          "line": 70
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:86a01dd912aabdb8ca58422a5dcfdc87aa69e6d6d26d5753129282d08d2ee748",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L70",
+          "line": 70,
+          "expr": "const labels = louvain(graph);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L76",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L75",
+            "expr": "i < symbols.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L76",
+            "expr": "graph.adj[i]!.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a81f1e4be732f47a1f17ad65a5991dec516abf9e0ed0cd173b82f799d503c88b",
+          "target": "assign:packages/pipeline/src/cluster/cluster.ts@L76",
+          "line": 76,
+          "expr": "degreeByNode[i] = degreeByNode[i]! + w;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L78",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L78",
+            "expr": "i < symbols.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e73226553465ecebd91ddea52a2774c6453e6c6b22f58b1bc89bee819043b3c6",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L80",
+          "line": 80,
+          "expr": "const list = byCom.get(c) ?? [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L78",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L78",
+            "expr": "i < symbols.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7018beb412d89a168ae9f0766a779c49abc360673fed2e1c48976e9bd642a5a6",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L81",
+          "line": 81,
+          "expr": "list.push(symbols[i]!.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L78",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L78",
+            "expr": "i < symbols.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f7ea32442e83c29e396bbe54260222a6f14778942e5dddafe374558908dbb04e",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L82",
+          "line": 82,
+          "expr": "byCom.set(c, list);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+            "expr": "byCom.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:68642deb5e2951c213962c4d88146fb3e478e5c5abd0e2fe17e1af218399c151",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L90",
+          "line": 90,
+          "expr": "members.sort();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+            "expr": "byCom.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:517347bed1d496471f6d67ed169bceb44970f32d6347579673d5fd25ea50737d",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L91",
+          "line": 91,
+          "expr": "const slug = `auto-${contentHash(members.join('\\n')).slice(7, 19)}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9f94269c077244a0cc61d29c8106d3253e72b74c712b1f457d457243cf45e80f",
+          "target": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+          "expr": "contentHash",
+          "line": 91
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+            "expr": "byCom.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2a5e7006d5480bcca388daf07e9ba3f24f1803d3365e67840d13a1ea6ded2c61",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L92",
+          "line": 92,
+          "expr": "const clusterId = idFor({ kind: 'cluster', slug });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:89190f61d22ac830c52c3897ca24a270d8ac678af2ae9f4c85ce76830fee1552",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 92
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+            "expr": "byCom.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e5df93b1fbb75c8f466b0dcc12030d104a10267c37affb9356e22bca77fdc654",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L100",
+          "line": 100,
+          "expr": "const memberNodes = members.map((id) => soul.getNode(id)).filter((n): n is Node => !!n);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+            "expr": "byCom.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:770abfa4127882fd2ca95c1a06519d62950702d4b4c5964fd3d0ed2be802ce3d",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L101",
+          "line": 101,
+          "expr": "const label =\n      heuristicClusterLabel(memberNodes) ??\n      fallbackQualifiedName(members, idxOf, degreeByNode, soul, slug);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+            "expr": "byCom.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:09d08ed955b7ce36940a20fe169a763df02e841fa9c5282ae303140be4d3d9eb",
+          "target": "sym:packages/pipeline/src/cluster/cluster.ts#heuristicClusterLabel@L137",
+          "expr": "heuristicClusterLabel",
+          "line": 102
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+            "expr": "byCom.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9d52b268dbe45fd39410f13f8ae0c0db9bd9dcce979896aa09ba86c0ef8c9615",
+          "target": "sym:packages/pipeline/src/cluster/cluster.ts#fallbackQualifiedName@L185",
+          "expr": "fallbackQualifiedName",
+          "line": 103
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+            "expr": "byCom.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1bc2d5c9113afa2ec8460036faaff4d64d7dddf4c7e2838bd4516488aac5480a",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L105",
+          "line": 105,
+          "expr": "clusterNodes.push({\n      id: clusterId,\n      kind: 'cluster',\n      label,\n      members,\n      hash: contentHash(`${slug}|${members.join(',')}`),\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L112",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L88",
+            "expr": "byCom.values()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cluster/cluster.ts@L112",
+            "expr": "members",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2da0338aa77747e95bb03d8f92adbe8f43616c0bfebbc6940545a0418e9b2d0d",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L113",
+          "line": 113,
+          "expr": "memberEdges.push({\n        id: edgeId(memberId, clusterId, 'member-of'),\n        src: memberId,\n        dst: clusterId,\n        rel: 'member-of',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: 'louvain', community: members.length },\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:476600f49a27b410e32d40fc469a912351dc442602a177e2fe66a529d885981d",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+          "expr": "edgeId",
+          "line": 114
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f4d03bad4c6789e4a2d6f5771679af6342e19f6e6bb8cbfc8b823b8f95827e9",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L127",
+          "line": 127,
+          "expr": "soul.replaceClusters(clusterNodes, memberEdges);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:60e5d3c865b2eba8405422bba84bfcecc86303e3010ac73c618f91119c538253",
+          "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L128",
+          "line": 128,
+          "expr": "return { communities, members: memberEdges.length };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 24,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts",
+      "packages/pipeline/src/pipeline.ts",
+      "packages/pipeline/src/update.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 24,
+    "assignments": 1,
+    "conditions": 8,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 9,
+      "recorded": 32,
+      "unresolved": 12
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "12 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -30,11 +30,13 @@ export function newManifest(opts: NewManifestOpts = {}): Manifest {
   return {
     cribFormatVersion: CRIB_FORMAT_VERSION,
     schemaVersion: SCHEMA_VERSION,
+    generation: { extracted: 0, semantic: 0 },
     repo: { id: opts.repoId ?? randomUUID(), root: opts.root ?? '.' },
     generator: { tool: TOOL_NAME, version: opts.toolVersion ?? '0.0.0' },
     chunking: opts.chunking ?? { ...DEFAULT_CHUNKING },
     stores: {
       soul: 'jsonl-chunked',
+      graph: { path: '.crib/graph', format: 'layered-jsonl' },
       index: { backend, path: `.crib/index/crib.${backend === 'sqlite' ? 'sqlite' : 'kuzu'}` },
     },
     stats: {

@@ -1,0 +1,248 @@
+{
+  "id": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2a0525ffe03e815dae1d2933f64f44b2d27aff3dbb1e694a3210343210590f5e",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readAllArtifacts",
+    "qualifiedName": "readAllArtifacts",
+    "signature": "readAllArtifacts(analysisDir: string): ReadArtifact[]",
+    "lang": "typescript",
+    "file": "packages/core/src/llm-overlay.ts",
+    "span": {
+      "start": 141,
+      "end": 159
+    },
+    "callSites": [
+      {
+        "callee": "readJson",
+        "line": 144
+      },
+      {
+        "callee": "push",
+        "line": 147
+      }
+    ]
+  },
+  "source": {
+    "text": "function readAllArtifacts(analysisDir: string): ReadArtifact[] {\n  const out: ReadArtifact[] = [];\n  for (const file of walkJson(analysisDir)) {\n    const json = readJson<Record<string, unknown>>(file);\n    if (!json || typeof json.layer !== 'string' || typeof json.targetId !== 'string') continue;\n    const analysis = (json.analysis as Record<string, unknown> | undefined) ?? {};\n    out.push({\n      layer: json.layer as LlmLayer,\n      targetId: json.targetId as string,\n      nodeHash: typeof json.nodeHash === 'string' ? json.nodeHash : '',\n      schemaVersion: typeof json.schemaVersion === 'string' ? json.schemaVersion : '',\n      ...(typeof analysis.purpose === 'string' ? { purpose: analysis.purpose } : {}),\n      ...(typeof analysis.name === 'string' ? { name: analysis.name } : {}),\n      ...(typeof analysis.confidence === 'number' ? { confidence: analysis.confidence } : {}),\n      ...(json.mode === 'skeleton' || json.mode === 'full' ? { mode: json.mode } : {}),\n    });\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 141
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+      "confidence": 1,
+      "name": "readLlmOverlay",
+      "qualifiedName": "readLlmOverlay",
+      "signature": "readLlmOverlay(soul: SoulStore, opts: { includeStale?: boolean } = {}): LlmOverlay",
+      "type": "function",
+      "file": "packages/core/src/llm-overlay.ts",
+      "line": 63
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+      "confidence": 1,
+      "name": "readJson",
+      "qualifiedName": "readJson",
+      "signature": "readJson(path: string): T | undefined",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1824
+    },
+    {
+      "id": "sym:packages/core/src/llm-overlay.ts#readJson@L172",
+      "confidence": 1,
+      "name": "readJson",
+      "qualifiedName": "readJson",
+      "signature": "readJson(path: string): T | undefined",
+      "type": "function",
+      "file": "packages/core/src/llm-overlay.ts",
+      "line": 172
+    },
+    {
+      "id": "sym:packages/core/src/llm-overlay.ts#walkJson@L161",
+      "confidence": 1,
+      "name": "walkJson",
+      "qualifiedName": "walkJson",
+      "signature": "walkJson(root: string): string[]",
+      "type": "function",
+      "file": "packages/core/src/llm-overlay.ts",
+      "line": 161
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+    "procedureName": "readAllArtifacts",
+    "conditions": [
+      "cond:packages/core/src/llm-overlay.ts@L143"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+        "procedureName": "readAllArtifacts",
+        "guard": "cond:packages/core/src/llm-overlay.ts@L143",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L143",
+            "expr": "walkJson(analysisDir)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:02ba8e0aa2b4057beb909be5242fec15e14453bd835ae1099bdb48dd1676b1b2",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L144",
+          "line": 144,
+          "expr": "const json = readJson<Record<string, unknown>>(file);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+        "procedureName": "readAllArtifacts",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:945cf546f10658809775ff64c2b0c15fb3a687447e12d8041b802cfbc86bf4d0",
+          "target": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+          "expr": "readJson",
+          "line": 144
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+        "procedureName": "readAllArtifacts",
+        "guard": "cond:packages/core/src/llm-overlay.ts@L143",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L143",
+            "expr": "walkJson(analysisDir)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fd1a0425d23fa171ae57f92761d661a7889a70b262b4ee21af98d34744a1e87b",
+          "target": "sym:packages/core/src/llm-overlay.ts#readJson@L172",
+          "expr": "readJson",
+          "line": 144
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+        "procedureName": "readAllArtifacts",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3f2e61db140b7bb877fc8cb9503442fb0cc6f2fc601ffd450fe25b29b212bb7c",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 147
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+        "procedureName": "readAllArtifacts",
+        "guard": "cond:packages/core/src/llm-overlay.ts@L143",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/llm-overlay.ts@L143",
+            "expr": "walkJson(analysisDir)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd816842ca14091fe424e316907abc389c7a538924c02633a7cc8592ce9f3fb9",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L147",
+          "line": 147,
+          "expr": "out.push({\n      layer: json.layer as LlmLayer,\n      targetId: json.targetId as string,\n      nodeHash: typeof json.nodeHash === 'string' ? json.nodeHash : '',\n      schemaVersion: typeof json.schemaVersion === 'string' ? json.schemaVersion : '',\n      ...(typeof analysis.purpose === 'string' ? { purpose: analysis.purpose } : {}),\n      ...(typeof analysis.name === 'string' ? { name: analysis.name } : {}),\n      ...(typeof analysis.confidence === 'number' ? { confidence: analysis.confidence } : {}),\n      ...(json.mode === 'skeleton' || json.mode === 'full' ? { mode: json.mode } : {}),\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+        "procedureName": "readAllArtifacts",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:64da1245d00084aee254f3e7f575ee8534bc168382c5d048b29f523c84d28cfd",
+          "target": "stmt:packages/core/src/llm-overlay.ts@L158",
+          "line": 158,
+          "expr": "return out;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+        "procedureName": "readAllArtifacts",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f9035c0f0ee4b346bec4592e44689840993f076e4b670dc11e0b59d1286d9567",
+          "target": "sym:packages/core/src/llm-overlay.ts#walkJson@L161",
+          "expr": "walkJson"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/llm-overlay.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

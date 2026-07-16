@@ -1,0 +1,113 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L1641",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:3d0f3c9b42b5f22fcf67ce01c858f803bdd23058b2464729614cbd7d9642f0ee",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L1641",
+    "kind": "symbol",
+    "type": "method",
+    "name": "clusterHash",
+    "qualifiedName": "EnrichmentStore.clusterHash",
+    "signature": "clusterHash(cluster: Node): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1641,
+      "end": 1643
+    },
+    "callSites": [
+      {
+        "callee": "clusterContentHash",
+        "line": 1642
+      }
+    ]
+  },
+  "source": {
+    "text": "  private clusterHash(cluster: Node): string {\n    return clusterContentHash(this.soul, cluster);\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1641
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+      "confidence": 1,
+      "name": "targetFor",
+      "qualifiedName": "EnrichmentStore.targetFor",
+      "signature": "targetFor(targetId: string): { layer: EnrichLayer; id: string; hash: string; node?: Node } | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1229
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L1005",
+      "confidence": 1,
+      "name": "targets",
+      "qualifiedName": "EnrichmentStore.targets",
+      "signature": "targets(layer: EnrichLayer, scope?: EnrichScope): Array<{ layer: EnrichLayer; id: string; hash: string; node?: Node }>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1005
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L1639",
+      "snippet": "/** Cluster content hash — delegates to core `clusterContentHash` (byte-identical to the old",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L1641",
+    "procedureName": "EnrichmentStore.clusterHash",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L1641",
+        "procedureName": "EnrichmentStore.clusterHash",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:671005dc79e3251c8d70e98a129829ea2cb16da6d50fb8dbd6c113f526b465c8",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1642",
+          "line": 1642,
+          "expr": "return clusterContentHash(this.soul, cluster);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,244 @@
+{
+  "id": "sym:scripts/budget-check.mjs#buildFixture@L341",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:10072472a7f35d8b45322ef97edc076ec34cb37cbd5fe689d10632254ca881a9",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/budget-check.mjs#buildFixture@L341",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildFixture",
+    "qualifiedName": "buildFixture",
+    "signature": "buildFixture()",
+    "lang": "javascript",
+    "file": "scripts/budget-check.mjs",
+    "span": {
+      "start": 341,
+      "end": 358
+    },
+    "callSites": [
+      {
+        "callee": "mkdtempSync",
+        "line": 342
+      },
+      {
+        "callee": "join",
+        "line": 342
+      },
+      {
+        "callee": "tmpdir",
+        "line": 342
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 343
+      },
+      {
+        "callee": "join",
+        "line": 344
+      },
+      {
+        "callee": "stringify",
+        "line": 345
+      },
+      {
+        "callee": "join",
+        "line": 348
+      },
+      {
+        "callee": "mkdirSync",
+        "line": 349
+      },
+      {
+        "callee": "dirname",
+        "line": 349
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 350
+      },
+      {
+        "callee": "resolve",
+        "line": 357
+      }
+    ]
+  },
+  "source": {
+    "text": "function buildFixture() {\n  const repoRoot = mkdtempSync(join(tmpdir(), 'knowledge-crib-budget-fixture-'));\n  writeFileSync(\n    join(repoRoot, 'package.json'),\n    `${JSON.stringify({ name: 'crib-budget-fixture', private: true, type: 'module' }, null, 2)}\\n`,\n  );\n  for (let i = 0; i < FIXTURE_FILE_COUNT; i++) {\n    const filePath = join(repoRoot, 'src', `widget${i}.ts`);\n    mkdirSync(dirname(filePath), { recursive: true });\n    writeFileSync(\n      filePath,\n      `export interface Widget${i} {\\n  id: string;\\n}\\n\\n` +\n        `export function buildWidget${i}(id: string): Widget${i} {\\n  return { id };\\n}\\n\\n` +\n        `export function renderWidget${i}(widget: Widget${i}): string {\\n  return \\`widget:\\${widget.id}\\`;\\n}\\n`,\n    );\n  }\n  return { repoRoot, cliPath: resolve('packages/cli/dist/cli.js') };\n}",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 341
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/budget-check.mjs#buildFixture@L341",
+    "procedureName": "buildFixture",
+    "conditions": [
+      "cond:scripts/budget-check.mjs@L347"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:scripts/budget-check.mjs#buildFixture@L341",
+        "procedureName": "buildFixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:42017c51dc6202bc24d828f88880c7672c1d49d2d1b61e0263bcc68f225a3cfe",
+          "target": "stmt:scripts/budget-check.mjs@L342",
+          "line": 342,
+          "expr": "const repoRoot = mkdtempSync(join(tmpdir(), 'knowledge-crib-budget-fixture-'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/budget-check.mjs#buildFixture@L341",
+        "procedureName": "buildFixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3d65060559da040171ca4a2d54a5cdf076cb26bec0fb3af3ec0e6bd4216facc9",
+          "target": "stmt:scripts/budget-check.mjs@L343",
+          "line": 343,
+          "expr": "writeFileSync(\n    join(repoRoot, 'package.json'),\n    `${JSON.stringify({ name: 'crib-budget-fixture', private: true, type: 'module' }, null, 2)}\\n`,\n  );"
+        }
+      },
+      {
+        "procedure": "sym:scripts/budget-check.mjs#buildFixture@L341",
+        "procedureName": "buildFixture",
+        "guard": "cond:scripts/budget-check.mjs@L347",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:scripts/budget-check.mjs@L347",
+            "expr": "i < FIXTURE_FILE_COUNT",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a80ef6ff4e8f7791b0b5dc6186a8b95793fd49b5d135d1a5258a258b7d6c3e89",
+          "target": "stmt:scripts/budget-check.mjs@L348",
+          "line": 348,
+          "expr": "const filePath = join(repoRoot, 'src', `widget${i}.ts`);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/budget-check.mjs#buildFixture@L341",
+        "procedureName": "buildFixture",
+        "guard": "cond:scripts/budget-check.mjs@L347",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:scripts/budget-check.mjs@L347",
+            "expr": "i < FIXTURE_FILE_COUNT",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9deb27c759cd2d0f4a3d93bfa73be8ca27924b576473f14c45638673c3b60cc6",
+          "target": "stmt:scripts/budget-check.mjs@L349",
+          "line": 349,
+          "expr": "mkdirSync(dirname(filePath), { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/budget-check.mjs#buildFixture@L341",
+        "procedureName": "buildFixture",
+        "guard": "cond:scripts/budget-check.mjs@L347",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:scripts/budget-check.mjs@L347",
+            "expr": "i < FIXTURE_FILE_COUNT",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3225142b2d8670ccaa0354059d4760cd5c3efa6d09d54cc1fe650fdba98111cf",
+          "target": "stmt:scripts/budget-check.mjs@L350",
+          "line": 350,
+          "expr": "writeFileSync(\n      filePath,\n      `export interface Widget${i} {\\n  id: string;\\n}\\n\\n` +\n        `export function buildWidget${i}(id: string): Widget${i} {\\n  return { id };\\n}\\n\\n` +\n        `export function renderWidget${i}(widget: Widget${i}): string {\\n  return \\`widget:\\${widget.id}\\`;\\n}\\n`,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:scripts/budget-check.mjs#buildFixture@L341",
+        "procedureName": "buildFixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:505da14ee3975c85c60a4f6e1eac6ee3546529958af9bda9c5efdbd55362c444",
+          "target": "stmt:scripts/budget-check.mjs@L357",
+          "line": 357,
+          "expr": "return { repoRoot, cliPath: resolve('packages/cli/dist/cli.js') };"
+        }
+      },
+      {
+        "procedure": "sym:scripts/budget-check.mjs#buildFixture@L341",
+        "procedureName": "buildFixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d0917e9018a823207b98f74e196e2de668de7f4c1201822d5ee809b9d99b620f",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 357
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 11,
+      "unresolved": 10
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "10 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

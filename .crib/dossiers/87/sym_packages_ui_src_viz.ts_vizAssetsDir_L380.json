@@ -1,0 +1,136 @@
+{
+  "id": "sym:packages/ui/src/viz.ts#vizAssetsDir@L380",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:bc510db9dea0f6c81230277c685af36fa4cbc06a436d4fc9da402b9bcc9854e1",
+  "builtAt": "2026-07-16T14:53:52.220Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/src/viz.ts#vizAssetsDir@L380",
+    "kind": "symbol",
+    "type": "function",
+    "name": "vizAssetsDir",
+    "qualifiedName": "vizAssetsDir",
+    "signature": "vizAssetsDir(): string",
+    "lang": "typescript",
+    "file": "packages/ui/src/viz.ts",
+    "span": {
+      "start": 380,
+      "end": 383
+    },
+    "callSites": [
+      {
+        "callee": "dirname",
+        "line": 382
+      }
+    ]
+  },
+  "source": {
+    "text": "export function vizAssetsDir(): string {\n  // src/viz.ts → ../web  (works against source at dev time; the CLI resolves via the built dist too)\n  return `${dirname(__dirname)}/web`;\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 380
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdViz@L1574",
+      "confidence": 1,
+      "name": "cmdViz",
+      "qualifiedName": "cmdViz",
+      "signature": "cmdViz(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1574
+    },
+    {
+      "id": "sym:packages/ui/src/graph-model.test.ts#loadModel@L54",
+      "confidence": 1,
+      "name": "loadModel",
+      "qualifiedName": "loadModel",
+      "signature": "loadModel(): Model",
+      "type": "function",
+      "file": "packages/ui/src/graph-model.test.ts",
+      "line": 54
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/ui/src/viz.ts@L379",
+      "snippet": "/** Absolute path to the static web assets dir (index.html, main.js, vendor/). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/ui/src/viz.ts#vizAssetsDir@L380",
+    "procedureName": "vizAssetsDir",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#vizAssetsDir@L380",
+        "procedureName": "vizAssetsDir",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9679233389f0784b61e7835144ab9fea577b123a81cfbbc7c11c85f481e0dd88",
+          "target": "stmt:packages/ui/src/viz.ts@L382",
+          "line": 382,
+          "expr": "return `${dirname(__dirname)}/web`;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts",
+      "packages/ui/src/graph-model.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

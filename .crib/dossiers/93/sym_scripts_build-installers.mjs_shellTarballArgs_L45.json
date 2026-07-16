@@ -1,0 +1,100 @@
+{
+  "id": "sym:scripts/build-installers.mjs#shellTarballArgs@L45",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:3038f1da6680fe04d48e6b4d33580a7e03d07876323869e6f98af82c61f61753",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/build-installers.mjs#shellTarballArgs@L45",
+    "kind": "symbol",
+    "type": "function",
+    "name": "shellTarballArgs",
+    "qualifiedName": "shellTarballArgs",
+    "signature": "shellTarballArgs(tarballNames)",
+    "lang": "javascript",
+    "file": "scripts/build-installers.mjs",
+    "span": {
+      "start": 45,
+      "end": 47
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 46
+      },
+      {
+        "callee": "map",
+        "line": 46
+      }
+    ]
+  },
+  "source": {
+    "text": "function shellTarballArgs(tarballNames) {\n  return tarballNames.map((name) => `\"$SCRIPT_DIR/${name}\"`).join(' ');\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 45
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/build-installers.mjs#installSh@L53",
+      "confidence": 1,
+      "name": "installSh",
+      "qualifiedName": "installSh",
+      "signature": "installSh(tarballNames)",
+      "type": "function",
+      "file": "scripts/build-installers.mjs",
+      "line": 53
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/build-installers.mjs#shellTarballArgs@L45",
+    "procedureName": "shellTarballArgs",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/build-installers.mjs#shellTarballArgs@L45",
+        "procedureName": "shellTarballArgs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e3ac47d73c40c5adb68323743416d35e9788620496b87e0e2589653b6e527fcc",
+          "target": "stmt:scripts/build-installers.mjs@L46",
+          "line": 46,
+          "expr": "return tarballNames.map((name) => `\"$SCRIPT_DIR/${name}\"`).join(' ');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "scripts/build-installers.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

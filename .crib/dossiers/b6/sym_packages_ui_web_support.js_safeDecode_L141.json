@@ -1,0 +1,128 @@
+{
+  "id": "sym:packages/ui/web/support.js#safeDecode@L141",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:214c2bcc7b899b516de5323dd40b80a795ca253c47935f20e69ed7ab8a5eec0f",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#safeDecode@L141",
+    "kind": "symbol",
+    "type": "function",
+    "name": "safeDecode",
+    "qualifiedName": "safeDecode",
+    "signature": "safeDecode(s)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 141,
+      "end": 147
+    },
+    "callSites": [
+      {
+        "callee": "decodeURIComponent",
+        "line": 143
+      }
+    ]
+  },
+  "source": {
+    "text": "  function safeDecode(s) {\n    try {\n      return decodeURIComponent(s);\n    } catch {\n      return s;\n    }\n  }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 141
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#rootNameForDocument@L131",
+      "confidence": 1,
+      "name": "rootNameForDocument",
+      "qualifiedName": "rootNameForDocument",
+      "signature": "rootNameForDocument(doc, loc)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 131
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#safeDecode@L141",
+    "procedureName": "safeDecode",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#safeDecode@L141",
+        "procedureName": "safeDecode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:15e6a0a40c60bfa7749f8ee183622131fd2a8b1a0d2aff3be343473b31db5157",
+          "target": "stmt:packages/ui/web/support.js@L143",
+          "line": 143,
+          "expr": "return decodeURIComponent(s);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#safeDecode@L141",
+        "procedureName": "safeDecode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6e1f0893ec9d353885477f6a4cd9eb63b72c851aabf9de3886a5ef4eb12f5bf2",
+          "target": "stmt:packages/ui/web/support.js@L145",
+          "line": 145,
+          "expr": "return s;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/ui/web/support.js@L144",
+        "kind": "exception-handler",
+        "lang": "javascript",
+        "file": "packages/ui/web/support.js",
+        "span": {
+          "start": 144,
+          "end": 144
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,1051 @@
+{
+  "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:a55571faa9ab6333e7a5fd69b606febea2871e59f91be37e0038a7ddeb1a9c3e",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+    "kind": "symbol",
+    "type": "function",
+    "name": "indexRepo",
+    "qualifiedName": "indexRepo",
+    "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/pipeline.ts",
+    "span": {
+      "start": 94,
+      "end": 166
+    },
+    "callSites": [
+      {
+        "callee": "register",
+        "line": 101
+      },
+      {
+        "callee": "discoverFiles",
+        "line": 108
+      },
+      {
+        "callee": "runStructure",
+        "line": 109
+      },
+      {
+        "callee": "runParse",
+        "line": 112
+      },
+      {
+        "callee": "runResolve",
+        "line": 116
+      },
+      {
+        "callee": "runCfg",
+        "line": 117
+      },
+      {
+        "callee": "map",
+        "line": 120
+      },
+      {
+        "callee": "filter",
+        "line": 120
+      },
+      {
+        "callee": "isMediaPath",
+        "line": 120
+      },
+      {
+        "callee": "runMultimodal",
+        "line": 122
+      },
+      {
+        "callee": "runLink",
+        "line": 124
+      },
+      {
+        "callee": "runCluster",
+        "line": 125
+      },
+      {
+        "callee": "runSemanticLink",
+        "line": 126
+      },
+      {
+        "callee": "runOwnership",
+        "line": 133
+      },
+      {
+        "callee": "currentHead",
+        "line": 137
+      },
+      {
+        "callee": "setVcsHead",
+        "line": 138
+      },
+      {
+        "callee": "commit",
+        "line": 142
+      },
+      {
+        "callee": "getManifest",
+        "line": 146
+      },
+      {
+        "callee": "runDossiers",
+        "line": 150
+      },
+      {
+        "callee": "buildFromSoul",
+        "line": 152
+      }
+    ]
+  },
+  "source": {
+    "text": "export async function indexRepo(\n  soul: SoulStore,\n  root: string,\n  opts: IndexOpts = {},\n): Promise<IndexReport> {\n  const registry = new ExtractorRegistry();\n  for (const e of opts.extractors ?? defaultExtractors()) {\n    registry.register(e);\n  }\n\n  const discoverOpts: { ignores?: Set<string>; packageRoots?: string[] } = {};\n  if (opts.ignores) discoverOpts.ignores = opts.ignores;\n  if (opts.packageRoots && opts.packageRoots.length > 0)\n    discoverOpts.packageRoots = opts.packageRoots;\n  const files = discoverFiles(root, discoverOpts);\n  runStructure(soul, root, files); // Phase 1\n  // defaultRegistry = the fleet came from defaultExtractors() (no custom opts.extractors) → the\n  // parallel pool can ship it. Custom extractors force the serial path (workers can't receive them).\n  const parse = await runParse(soul, registry, root, files, {\n    parallel: opts.parallel,\n    defaultRegistry: !opts.extractors,\n  }); // Phase 2 + 3b (Markdown extractor)\n  const resolve = runResolve(soul, root, files, opts.resolvers); // Phase 3 (TS + PL/SQL + Python)\n  const cfg = runCfg(soul, root, files, opts.cfgPasses); // Phase 3d (M11 guard-chain annotation)\n  // Phase 3e (M13, OFF by default): ingest media segments via the offline worker + link them to\n  // symbols. Slots before the doc linker; both write disjoint edge src-kinds (media-seg vs doc-section).\n  const mediaPaths = files.filter((f) => isMediaPath(f.path)).map((f) => f.path);\n  const multimodal = opts.multimodal\n    ? await runMultimodal(soul, root, opts.multimodal, mediaPaths)\n    : { ingest: { files: 0, segments: 0, dropped: 0 }, link: { describes: 0, references: 0 } };\n  const link = runLink(soul, root, opts.linkThreshold); // Phase 4\n  const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul); // Phase 4b (M7)\n  const semantic = opts.semantic ? runSemanticLink(soul, root) : { added: 0 }; // Phase 4c (M7, INFERRED)\n  // Phase 4d (M3.1): `git blame` → symbol→owner `owned-by` EXTRACTED edges. Clean no-op in a non-git\n  // repo, so the deterministic path (and the mkdtemp-based tests/gates) is unchanged. Runs before the\n  // VCS anchor stamp + commit so owners land in the committed soul.\n  const ownership =\n    opts.ownership === false\n      ? { files: 0, symbols: 0, owners: 0, edges: 0, skipped: 0 }\n      : runOwnership(soul, root);\n  // Best-effort VCS anchor (M6): stamp the current HEAD so `crib update` / `detect_changes` can diff\n  // against it. Non-git repos silently skip (the stamp stays absent → update degrades to full index).\n  try {\n    const head = currentHead(root);\n    if (head) soul.setVcsHead(head);\n  } catch {\n    // not a git repo — leave the anchor unset\n  }\n  soul.commit(opts.now);\n\n  // Phase 5 (Workstream E): build + persist reusable deep dossiers for every callable symbol. Runs\n  // after commit so the manifest (schemaVersion + lastUpdated) is final; true no-ops are skipped.\n  const committedAt = opts.now ?? soul.getManifest().stats.lastUpdated;\n  const dossiers =\n    opts.dossiers === false\n      ? { candidates: 0, written: 0, fresh: 0, skipped: 0, pruned: 0 }\n      : runDossiers(soul, root, committedAt);\n\n  if (opts.index) opts.index.buildFromSoul(soul, root);\n\n  return {\n    files: files.length,\n    parse,\n    resolve,\n    cfg,\n    dossiers,\n    multimodal,\n    link,\n    cluster,\n    semantic,\n    ownership,\n  };\n}",
+    "truncated": false,
+    "totalLines": 73,
+    "startLine": 94
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdIndex@L500",
+      "confidence": 1,
+      "name": "cmdIndex",
+      "qualifiedName": "cmdIndex",
+      "signature": "cmdIndex(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 500
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdReindex@L1160",
+      "confidence": 1,
+      "name": "cmdReindex",
+      "qualifiedName": "cmdReindex",
+      "signature": "cmdReindex(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1160
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L72",
+      "confidence": 1,
+      "name": "indexAndCommit",
+      "qualifiedName": "indexAndCommit",
+      "signature": "indexAndCommit(): Promise<void>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.test.ts",
+      "line": 72
+    },
+    {
+      "id": "sym:packages/pipeline/src/parity/parity.ts#indexRoot@L174",
+      "confidence": 1,
+      "name": "indexRoot",
+      "qualifiedName": "indexRoot",
+      "signature": "indexRoot(root: string, now: string): Promise<{ soul: SoulStore; cribDir: string }>",
+      "type": "function",
+      "file": "packages/pipeline/src/parity/parity.ts",
+      "line": 174
+    },
+    {
+      "id": "sym:packages/pipeline/src/multimodal.test.ts#indexedSoul@L49",
+      "confidence": 1,
+      "name": "indexedSoul",
+      "qualifiedName": "indexedSoul",
+      "signature": "indexedSoul(): Promise<SoulStore>",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal.test.ts",
+      "line": 49
+    },
+    {
+      "id": "sym:scripts/linker-check.mjs#runMode@L62",
+      "confidence": 1,
+      "name": "runMode",
+      "qualifiedName": "runMode",
+      "signature": "runMode(…)",
+      "type": "function",
+      "file": "scripts/linker-check.mjs",
+      "line": 62
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:scripts/stats-check.mjs#commit@L58",
+      "confidence": 1,
+      "name": "commit",
+      "qualifiedName": "commit",
+      "signature": "commit(…)",
+      "type": "function",
+      "file": "scripts/stats-check.mjs",
+      "line": 58
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#currentHead@L33",
+      "confidence": 1,
+      "name": "currentHead",
+      "qualifiedName": "currentHead",
+      "signature": "currentHead(root: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 33
+    },
+    {
+      "id": "sym:packages/pipeline/src/extractors.ts#defaultExtractors@L26",
+      "confidence": 1,
+      "name": "defaultExtractors",
+      "qualifiedName": "defaultExtractors",
+      "signature": "defaultExtractors(): Extractor[]",
+      "type": "function",
+      "file": "packages/pipeline/src/extractors.ts",
+      "line": 26
+    },
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles@L98",
+      "confidence": 1,
+      "name": "discoverFiles",
+      "qualifiedName": "discoverFiles",
+      "signature": "discoverFiles(root: string, opts: DiscoverOpts = {}): FileMeta[]",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 98
+    },
+    {
+      "id": "sym:packages/pipeline/src/multimodal/ingest.ts#isMediaPath@L48",
+      "confidence": 1,
+      "name": "isMediaPath",
+      "qualifiedName": "isMediaPath",
+      "signature": "isMediaPath(p: string): boolean",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal/ingest.ts",
+      "line": 48
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/index.ts#runCfg@L176",
+      "confidence": 1,
+      "name": "runCfg",
+      "qualifiedName": "runCfg",
+      "signature": "runCfg(soul: SoulStore, root: string, files: FileMeta[], passes?: CfgPass[]): { annotated: number; skipped: number }",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/index.ts",
+      "line": 176
+    },
+    {
+      "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+      "confidence": 1,
+      "name": "runCluster",
+      "qualifiedName": "runCluster",
+      "signature": "runCluster(soul: SoulStore): ClusterStats",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/cluster.ts",
+      "line": 40
+    },
+    {
+      "id": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
+      "confidence": 1,
+      "name": "runDossiers",
+      "qualifiedName": "runDossiers",
+      "signature": "runDossiers(soul: SoulStore, repoRoot: string, now: string): DossierStats",
+      "type": "function",
+      "file": "packages/pipeline/src/dossiers.ts",
+      "line": 43
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/index.ts#runLink@L44",
+      "confidence": 1,
+      "name": "runLink",
+      "qualifiedName": "runLink",
+      "signature": "runLink(soul: SoulStore, root: string, threshold?: number, docFiles?: string[]): LinkStats",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/index.ts",
+      "line": 44
+    },
+    {
+      "id": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+      "confidence": 1,
+      "name": "runMultimodal",
+      "qualifiedName": "runMultimodal",
+      "signature": "runMultimodal(soul: SoulStore, root: string, opts: MultimodalPhaseOpts = {}, mediaPaths?: string[]): Promise<MultimodalReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal/index.ts",
+      "line": 36
+    },
+    {
+      "id": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+      "confidence": 1,
+      "name": "runOwnership",
+      "qualifiedName": "runOwnership",
+      "signature": "runOwnership(soul: SoulStore, root: string, onlyFiles?: Set<string>): OwnershipStats",
+      "type": "function",
+      "file": "packages/pipeline/src/ownership.ts",
+      "line": 77
+    },
+    {
+      "id": "sym:packages/pipeline/src/parse.ts#runParse@L41",
+      "confidence": 1,
+      "name": "runParse",
+      "qualifiedName": "runParse",
+      "signature": "runParse(soul: SoulStore, registry: ExtractorRegistry, root: string, files: FileMeta[], opts: { parallel?: boolean; defaultRegistry?: boolean; concurrency?: number } = {}): Promise<ParseStats>",
+      "type": "function",
+      "file": "packages/pipeline/src/parse.ts",
+      "line": 41
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
+      "confidence": 1,
+      "name": "runResolve",
+      "qualifiedName": "runResolve",
+      "signature": "runResolve(soul: SoulStore, root: string, files: FileMeta[], resolvers?: Resolver[]): ResolveStats",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/index.ts",
+      "line": 71
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+      "confidence": 1,
+      "name": "runSemanticLink",
+      "qualifiedName": "runSemanticLink",
+      "signature": "runSemanticLink(soul: SoulStore, root: string, docFiles?: string[], opts: SemanticLinkOpts = {}): SemanticStats",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/semantic.ts",
+      "line": 69
+    },
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#runStructure@L154",
+      "confidence": 1,
+      "name": "runStructure",
+      "qualifiedName": "runStructure",
+      "signature": "runStructure(soul: SoulStore, root: string, files: FileMeta[]): void",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 154
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/pipeline.ts@L93",
+      "snippet": "/** Full index of a repo through the deterministic linker, then (optional) index build. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-1-adding-a-new-language-parser-8th-language",
+      "heading": "4.1 Adding a New Language Parser (8th Language)",
+      "anchor": "4-1-adding-a-new-language-parser-8th-language",
+      "snippet": "4.1 Adding a New Language Parser (8th Language)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#determinism-trick-load-bearing",
+      "heading": "Determinism trick (load-bearing)",
+      "anchor": "determinism-trick-load-bearing",
+      "snippet": "Determinism trick (load-bearing)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#0-verified-facts-judge-conflict-reconciliations",
+      "heading": "0. Verified facts & judge-conflict reconciliations",
+      "anchor": "0-verified-facts-judge-conflict-reconciliations",
+      "snippet": "0. Verified facts & judge-conflict reconciliations",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m8-tree-sitter-wasm-plugin-languages-python-first",
+      "heading": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "anchor": "m8-tree-sitter-wasm-plugin-languages-python-first",
+      "snippet": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m10-pl-sql-extractor-sql-data-flow-phase-3c",
+      "heading": "M10 — PL/SQL extractor + SQL data-flow (Phase 3c)",
+      "anchor": "m10-pl-sql-extractor-sql-data-flow-phase-3c",
+      "snippet": "M10 — PL/SQL extractor + SQL data-flow (Phase 3c)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-4-adding-a-new-pipeline-phase",
+      "heading": "4.4 Adding a New Pipeline Phase",
+      "anchor": "4-4-adding-a-new-pipeline-phase",
+      "snippet": "4.4 Adding a New Pipeline Phase",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#8-confidence-self-assessment",
+      "heading": "8. Confidence Self-Assessment",
+      "anchor": "8-confidence-self-assessment",
+      "snippet": "8. Confidence Self-Assessment",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+    "procedureName": "indexRepo",
+    "conditions": [
+      "cond:packages/pipeline/src/pipeline.ts@L100",
+      "cond:packages/pipeline/src/pipeline.ts@L105",
+      "cond:packages/pipeline/src/pipeline.ts@L106",
+      "cond:packages/pipeline/src/pipeline.ts@L138",
+      "cond:packages/pipeline/src/pipeline.ts@L152"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ca85cbf643a209f0f6f133cedd33c3f525aabc374032499b8ea751c6db696176",
+          "target": "sym:packages/pipeline/src/extractors.ts#defaultExtractors@L26",
+          "expr": "defaultExtractors"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "guard": "cond:packages/pipeline/src/pipeline.ts@L100",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/pipeline.ts@L100",
+            "expr": "opts.extractors ?? defaultExtractors()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8b3f494ab1f883aa1833c0a9d72f4064e33f133cc8b35887aa5c9e4e3b9527ac",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L101",
+          "line": 101,
+          "expr": "registry.register(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "guard": "cond:packages/pipeline/src/pipeline.ts@L105",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/pipeline.ts@L105",
+            "expr": "opts.ignores",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7207459ef51c050044f7c684a8db96485dd234a136b2faa6c1fd4e414448514b",
+          "target": "assign:packages/pipeline/src/pipeline.ts@L105",
+          "line": 105,
+          "expr": "discoverOpts.ignores = opts.ignores;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "guard": "cond:packages/pipeline/src/pipeline.ts@L106",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/pipeline.ts@L106",
+            "expr": "opts.packageRoots && opts.packageRoots.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb58434c1f33a3be1e4b925da63f909720cee6aee57b8db59263455b3ce914bd",
+          "target": "assign:packages/pipeline/src/pipeline.ts@L107",
+          "line": 107,
+          "expr": "discoverOpts.packageRoots = opts.packageRoots;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:32d76b4d8ff29032cdddd1b29af544a98aa4974a95140161fe2683e8357ae943",
+          "target": "sym:packages/pipeline/src/structure.ts#discoverFiles@L98",
+          "expr": "discoverFiles",
+          "line": 108
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:527eedf34235ef5cbb257435e174a025ccaf3d11242f1539f0ab1c05236cf7b8",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L108",
+          "line": 108,
+          "expr": "const files = discoverFiles(root, discoverOpts);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3e0ea91a4d62c6ee3dad0195132ebe8883f61eac3e026753a60db74cfb26bf4a",
+          "target": "sym:packages/pipeline/src/structure.ts#runStructure@L154",
+          "expr": "runStructure",
+          "line": 109
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f6b7f29b912aae4cd609ca7c03e095be8a0721097a61fc77d07e1080b8061131",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L109",
+          "line": 109,
+          "expr": "runStructure(soul, root, files);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:284c875e770cc0eac90e00960af6fa0dc96e3984f48406793a527d89a91ce5f5",
+          "target": "sym:packages/pipeline/src/parse.ts#runParse@L41",
+          "expr": "runParse",
+          "line": 112
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c58af0ed1de7fa16026a1f65f979fd86a01e59625ee64241e9495187dc87f79",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L112",
+          "line": 112,
+          "expr": "const parse = await runParse(soul, registry, root, files, {\n    parallel: opts.parallel,\n    defaultRegistry: !opts.extractors,\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b30480b97b3a2ccb4857b2aad648029fa9195ff3bbb02e4574a23e30fbe4ede0",
+          "target": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
+          "expr": "runResolve",
+          "line": 116
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dea15f735a092eea30c586a5896002484661ecf1702f1f6671eb4b438c84921d",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L116",
+          "line": 116,
+          "expr": "const resolve = runResolve(soul, root, files, opts.resolvers);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8a2230ff8e7ad9044659e103825f1afabc3ce913feb4c3c53ce028ecc5682a75",
+          "target": "sym:packages/pipeline/src/resolve/index.ts#runCfg@L176",
+          "expr": "runCfg",
+          "line": 117
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:97272c9fb7eb0da4ba586a39c979832612cc766e2a948ef7ccde76c9c1deae09",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L117",
+          "line": 117,
+          "expr": "const cfg = runCfg(soul, root, files, opts.cfgPasses);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:45f26bccb51eea415a02791453f7fd9a2bc5a9f73f4b288402f4e5335f33ce16",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L120",
+          "line": 120,
+          "expr": "const mediaPaths = files.filter((f) => isMediaPath(f.path)).map((f) => f.path);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5d925f200482ca909670d687b1d5747352eb6bed0af267bf4063b47054234239",
+          "target": "sym:packages/pipeline/src/multimodal/ingest.ts#isMediaPath@L48",
+          "expr": "isMediaPath",
+          "line": 120
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75fb6aac079bb875c59180e54fc514a18245d54bebd2e1a3e824d053a39bffa5",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L121",
+          "line": 121,
+          "expr": "const multimodal = opts.multimodal\n    ? await runMultimodal(soul, root, opts.multimodal, mediaPaths)\n    : { ingest: { files: 0, segments: 0, dropped: 0 }, link: { describes: 0, references: 0 } };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3950a4331292e16af0b1d748a092845ec5ac19f55bdcf3274a262c4764b442f8",
+          "target": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+          "expr": "runMultimodal",
+          "line": 122
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:11b153a64bdb1876821febcda6ac222e9752aea86a27eba18189ac0206acd654",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L124",
+          "line": 124,
+          "expr": "const link = runLink(soul, root, opts.linkThreshold);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d80d764a78269b7fa7fad491c2ae92072d684e8c14162e3b47b265af0988c6ef",
+          "target": "sym:packages/pipeline/src/linker/index.ts#runLink@L44",
+          "expr": "runLink",
+          "line": 124
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75a48e052e839bbc323bd414c55ce439fc4d82d0fde5c70d38a1217fb461ffb0",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L125",
+          "line": 125,
+          "expr": "const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f78c1fdf62ceff20e9737dba19b0e1e6d1bbcf0248282cd18eb4866211d0a8d6",
+          "target": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+          "expr": "runCluster",
+          "line": 125
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:39cf7ebfcd1bc82ecc35dd2f9af018693874e70bff038826d7f215af765eab30",
+          "target": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+          "expr": "runSemanticLink",
+          "line": 126
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75c8d16013132adb47a5fd6dbc5992b64107fc12a2f24ee5380faf6af08e6f2b",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L126",
+          "line": 126,
+          "expr": "const semantic = opts.semantic ? runSemanticLink(soul, root) : { added: 0 };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fffafd714f625960925db078b1ae3f627afa0356bf34b990ca049dedf3237882",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L130",
+          "line": 130,
+          "expr": "const ownership =\n    opts.ownership === false\n      ? { files: 0, symbols: 0, owners: 0, edges: 0, skipped: 0 }\n      : runOwnership(soul, root);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2f405c5be88269e199839f41da88cd1b275a6d91b68bd2d3b961d1c4b1e43381",
+          "target": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+          "expr": "runOwnership",
+          "line": 133
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7cc1469e27f41f9b29ccff601ca90008a7c45182cfad06e5b34867664d810a94",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L137",
+          "line": 137,
+          "expr": "const head = currentHead(root);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a33a01fc7fc0bb6f5ea2e2a81cbdccb5f2ccaad532d8c421460264b314be383c",
+          "target": "sym:packages/pipeline/src/vcs.ts#currentHead@L33",
+          "expr": "currentHead",
+          "line": 137
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "guard": "cond:packages/pipeline/src/pipeline.ts@L138",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/pipeline.ts@L138",
+            "expr": "head",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b59c2a21ba0a7bbdf0ee516aa2b0e8171385c9b783eca714c4d123d68889e84b",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L138",
+          "line": 138,
+          "expr": "soul.setVcsHead(head);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2597a0962823c7bb3631c4aaf8309c37b4ad37b813b53cfc59a226d3e36df722",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L142",
+          "line": 142,
+          "expr": "soul.commit(opts.now);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8823c9b1e3980878a8e19daf691818faabb78c7867cc9d8467241c29097fc5a9",
+          "target": "sym:scripts/stats-check.mjs#commit@L58",
+          "expr": "commit",
+          "line": 142
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dc6b97c6765c34495cb0bb0f9b3689c07395cf20e93d49115ac4b769ed355b80",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L146",
+          "line": 146,
+          "expr": "const committedAt = opts.now ?? soul.getManifest().stats.lastUpdated;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c6cfbaebe0b56daabfde7cda2ee72a6e2d1cf433fc4cd0f3f012bbf6e9905a68",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L147",
+          "line": 147,
+          "expr": "const dossiers =\n    opts.dossiers === false\n      ? { candidates: 0, written: 0, fresh: 0, skipped: 0, pruned: 0 }\n      : runDossiers(soul, root, committedAt);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:847994f658bfe9eaa3986a72ad125c4201c56e6f3d4f3dc83793fbe8709ba11e",
+          "target": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
+          "expr": "runDossiers",
+          "line": 150
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "guard": "cond:packages/pipeline/src/pipeline.ts@L152",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/pipeline.ts@L152",
+            "expr": "opts.index",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:07309ff24aef5d63b79ede4f72e2997be34b93a3c6b25619fcec772583f0b07c",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L152",
+          "line": 152,
+          "expr": "opts.index.buildFromSoul(soul, root);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+        "procedureName": "indexRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:89c9aa992d10a5cfa4a48a9d6a24c8ac1d56fd5a9a141da22b79aa21410cc874",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L154",
+          "line": 154,
+          "expr": "return {\n    files: files.length,\n    parse,\n    resolve,\n    cfg,\n    dossiers,\n    multimodal,\n    link,\n    cluster,\n    semantic,\n    ownership,\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 21,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts",
+      "packages/pipeline/src/multimodal.test.ts",
+      "packages/pipeline/src/parity/parity.ts",
+      "packages/pipeline/src/update.test.ts",
+      "scripts/linker-check.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 21,
+    "assignments": 2,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 15,
+      "recorded": 20,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

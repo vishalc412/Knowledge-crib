@@ -1,0 +1,96 @@
+{
+  "id": "sym:packages/pipeline/src/linker/semantic.ts#round2@L127",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:570c6e60494604a1dbbc9302d67b585c8a1eaf06ec11ca493c3888928d4ea62d",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/linker/semantic.ts#round2@L127",
+    "kind": "symbol",
+    "type": "function",
+    "name": "round2",
+    "qualifiedName": "round2",
+    "signature": "round2(n: number): number",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/linker/semantic.ts",
+    "span": {
+      "start": 127,
+      "end": 129
+    },
+    "callSites": [
+      {
+        "callee": "round",
+        "line": 128
+      }
+    ]
+  },
+  "source": {
+    "text": "function round2(n: number): number {\n  return Math.round(n * 100) / 100;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 127
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+      "confidence": 1,
+      "name": "runSemanticLink",
+      "qualifiedName": "runSemanticLink",
+      "signature": "runSemanticLink(soul: SoulStore, root: string, docFiles?: string[], opts: SemanticLinkOpts = {}): SemanticStats",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/semantic.ts",
+      "line": 69
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/linker/semantic.ts#round2@L127",
+    "procedureName": "round2",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#round2@L127",
+        "procedureName": "round2",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd1c4e56120640f636a770912dc57638cf3227c1848a31d8f91c9a35ac1ce258",
+          "target": "stmt:packages/pipeline/src/linker/semantic.ts@L128",
+          "line": 128,
+          "expr": "return Math.round(n * 100) / 100;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/linker/semantic.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

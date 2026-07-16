@@ -1,0 +1,283 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#runLocked@L407",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:b67c1ab9df55591bc8de254e98f12b0f722c89752508a618f3d44c1e8dcdafee",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#runLocked@L407",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runLocked",
+    "qualifiedName": "runLocked",
+    "signature": "runLocked(cribDir: string, fn: () => number | Promise<number>): Promise<number>",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 407,
+      "end": 417
+    },
+    "callSites": [
+      {
+        "callee": "withCribLockAsync",
+        "line": 409
+      },
+      {
+        "callee": "write",
+        "line": 412
+      }
+    ]
+  },
+  "source": {
+    "text": "async function runLocked(cribDir: string, fn: () => number | Promise<number>): Promise<number> {\n  try {\n    return await withCribLockAsync({ cribDir }, fn);\n  } catch (error) {\n    if (error instanceof LockBusyError) {\n      process.stderr.write(`${error.message}\\n`);\n      return EXIT.LOCKED;\n    }\n    throw error;\n  }\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 407
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdEnrich@L1712",
+      "confidence": 1,
+      "name": "cmdEnrich",
+      "qualifiedName": "cmdEnrich",
+      "signature": "cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1712
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdIndex@L500",
+      "confidence": 1,
+      "name": "cmdIndex",
+      "qualifiedName": "cmdIndex",
+      "signature": "cmdIndex(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 500
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdMaterialize@L364",
+      "confidence": 1,
+      "name": "cmdMaterialize",
+      "qualifiedName": "cmdMaterialize",
+      "signature": "cmdMaterialize(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 364
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+      "confidence": 1,
+      "name": "cmdMigrateGraph",
+      "qualifiedName": "cmdMigrateGraph",
+      "signature": "cmdMigrateGraph(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 344
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdReindex@L1160",
+      "confidence": 1,
+      "name": "cmdReindex",
+      "qualifiedName": "cmdReindex",
+      "signature": "cmdReindex(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1160
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdUpdate@L1096",
+      "confidence": 1,
+      "name": "cmdUpdate",
+      "qualifiedName": "cmdUpdate",
+      "signature": "cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1096
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/lock.ts#withCribLockAsync@L196",
+      "confidence": 1,
+      "name": "withCribLockAsync",
+      "qualifiedName": "withCribLockAsync",
+      "signature": "withCribLockAsync(opts: CribLockOptions, fn: () => T | Promise<T>): Promise<T>",
+      "type": "function",
+      "file": "packages/core/src/lock.ts",
+      "line": 196
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L401",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#runLocked@L407",
+    "procedureName": "runLocked",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L411"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#runLocked@L407",
+        "procedureName": "runLocked",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:175591a52b33c1e026f66c56e5c8d56667f115d51aa8333b294c222290f17370",
+          "target": "sym:packages/core/src/lock.ts#withCribLockAsync@L196",
+          "expr": "withCribLockAsync",
+          "line": 409
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#runLocked@L407",
+        "procedureName": "runLocked",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:228f960699ddf910bbb39d96925593ef8ca9cad71035fde9eab04ac8967af1eb",
+          "target": "stmt:packages/cli/src/cli.ts@L409",
+          "line": 409,
+          "expr": "return await withCribLockAsync({ cribDir }, fn);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#runLocked@L407",
+        "procedureName": "runLocked",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:125d5e6f36582602c4b3d759de0f909e254e8f7ec2cf6cf7a24134ea989d37c4",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 412
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#runLocked@L407",
+        "procedureName": "runLocked",
+        "guard": "cond:packages/cli/src/cli.ts@L411",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L411",
+            "expr": "error instanceof LockBusyError",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ee7010f6481b04af5299b8e1d078cfdfb04095a0a2d37667b8649b361b335eac",
+          "target": "stmt:packages/cli/src/cli.ts@L412",
+          "line": 412,
+          "expr": "process.stderr.write(`${error.message}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#runLocked@L407",
+        "procedureName": "runLocked",
+        "guard": "cond:packages/cli/src/cli.ts@L411",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L411",
+            "expr": "error instanceof LockBusyError",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:22391194f64c2012a74a5f7a17e4e201b7bea880777c666e0547a9b751e6e5be",
+          "target": "stmt:packages/cli/src/cli.ts@L413",
+          "line": 413,
+          "expr": "return EXIT.LOCKED;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:packages/cli/src/cli.ts@L415",
+        "kind": "raise",
+        "lang": "typescript",
+        "file": "packages/cli/src/cli.ts",
+        "span": {
+          "start": 415,
+          "end": 415
+        },
+        "errorMessage": "error",
+        "confidence": 1
+      }
+    ],
+    "handles": [
+      {
+        "id": "exc:packages/cli/src/cli.ts@L410",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/cli/src/cli.ts",
+        "span": {
+          "start": 410,
+          "end": 410
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 1,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

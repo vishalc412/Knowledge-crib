@@ -1,0 +1,158 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#safeName@L1795",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:d744a6c3b7da5aeab0b060475887e781333097c290bbd786dc1d22018fc04934",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#safeName@L1795",
+    "kind": "symbol",
+    "type": "function",
+    "name": "safeName",
+    "qualifiedName": "safeName",
+    "signature": "safeName(id: string): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1795,
+      "end": 1797
+    },
+    "callSites": [
+      {
+        "callee": "replace",
+        "line": 1796
+      }
+    ]
+  },
+  "source": {
+    "text": "function safeName(id: string): string {\n  return id.replace(/[^A-Za-z0-9._-]+/g, '_');\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1795
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.pruneSuperseded@L1411",
+      "confidence": 1,
+      "name": "pruneSuperseded",
+      "qualifiedName": "EnrichmentStore.pruneSuperseded",
+      "signature": "pruneSuperseded(artifact: LlmArtifact, keepPath: string): void",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1411
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.read@L1368",
+      "confidence": 1,
+      "name": "read",
+      "qualifiedName": "EnrichmentStore.read",
+      "signature": "read(layer: EnrichLayer, targetId: string, liveHash: string): LlmRead",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1368
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#artifactPath@L1773",
+      "confidence": 1,
+      "name": "artifactPath",
+      "qualifiedName": "artifactPath",
+      "signature": "artifactPath(artifactsRoot: string, layer: EnrichLayer, targetId: string, hash: string): string",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1773
+    },
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#dossierPath@L34",
+      "confidence": 1,
+      "name": "dossierPath",
+      "qualifiedName": "dossierPath",
+      "signature": "dossierPath(cribDir: string, nodeId: string): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 34
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "heading": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "anchor": "3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "snippet": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
+      "heading": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
+      "anchor": "c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
+      "snippet": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-1-the-enrich-save-validation-pipeline",
+      "heading": "3.2.1 The `enrich_save` Validation Pipeline",
+      "anchor": "3-2-1-the-enrich-save-validation-pipeline",
+      "snippet": "3.2.1 The `enrich_save` Validation Pipeline",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#safeName@L1795",
+    "procedureName": "safeName",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#safeName@L1795",
+        "procedureName": "safeName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5c1a551e53394f0244bd15413a17cf6e9f31691444a602e5f63728bb0d4af7f4",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1796",
+          "line": 1796,
+          "expr": "return id.replace(/[^A-Za-z0-9._-]+/g, '_');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/dossier/persist.ts",
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

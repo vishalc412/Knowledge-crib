@@ -1,0 +1,161 @@
+{
+  "id": "sym:packages/ui/web/support.js#createExternalModules.getError@L1165",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:39d6718e0a6f6f6f395a6424e877b7c24fb8085cef97d3566b300232fcaecb1a",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#createExternalModules.getError@L1165",
+    "kind": "symbol",
+    "type": "function",
+    "name": "getError",
+    "qualifiedName": "createExternalModules.getError",
+    "signature": "getError(url, name)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 1165,
+      "end": 1169
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 1166
+      },
+      {
+        "callee": "get",
+        "line": 1168
+      }
+    ]
+  },
+  "source": {
+    "text": "    function getError(url, name) {\n      const entry = cache.get(url);\n      if (entry?.error) return entry.error;\n      return reportedMissing.get(url + \"\\0\" + name) || null;\n    }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 1165
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRuntime@L1329",
+      "confidence": 1,
+      "name": "createRuntime",
+      "qualifiedName": "createRuntime",
+      "signature": "createRuntime(doc = document)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1329
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#createExternalModules.getError@L1165",
+    "procedureName": "createExternalModules.getError",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L1167"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.getError@L1165",
+        "procedureName": "createExternalModules.getError",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2a56eade28ec60db75f4ca77a6e099c537c978ab75e42ce959eaec7ca5178774",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 1166
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.getError@L1165",
+        "procedureName": "createExternalModules.getError",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75185b9db8b0f9e1cae68980f77e944c6c8ac0fac811c1b2a04e400264452276",
+          "target": "stmt:packages/ui/web/support.js@L1166",
+          "line": 1166,
+          "expr": "const entry = cache.get(url);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.getError@L1165",
+        "procedureName": "createExternalModules.getError",
+        "guard": "cond:packages/ui/web/support.js@L1167",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1167",
+            "expr": "entry?.error",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c99301ae75480579da195a19b56e6ca6296743b0bc426d9df4d3597cfda8c11a",
+          "target": "stmt:packages/ui/web/support.js@L1167",
+          "line": 1167,
+          "expr": "return entry.error;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.getError@L1165",
+        "procedureName": "createExternalModules.getError",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4c85c7974f73401a437dccd80a221966eb2233c6b8b2ef1b85d91df349e95fa7",
+          "target": "stmt:packages/ui/web/support.js@L1168",
+          "line": 1168,
+          "expr": "return reportedMissing.get(url + \"\\0\" + name) || null;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

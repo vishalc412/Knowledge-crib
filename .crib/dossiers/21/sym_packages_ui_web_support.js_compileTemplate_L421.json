@@ -1,0 +1,281 @@
+{
+  "id": "sym:packages/ui/web/support.js#compileTemplate@L421",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:b58590730ffd1f36e7f4c6d8657b1fc01e113d15865e432a40d6ad54539f65a2",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#compileTemplate@L421",
+    "kind": "symbol",
+    "type": "function",
+    "name": "compileTemplate",
+    "qualifiedName": "compileTemplate",
+    "signature": "compileTemplate(html, host)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 421,
+      "end": 436
+    },
+    "callSites": [
+      {
+        "callee": "createElement",
+        "line": 422
+      },
+      {
+        "callee": "encodeCase",
+        "line": 424
+      },
+      {
+        "callee": "setAttribute",
+        "line": 428
+      },
+      {
+        "callee": "String",
+        "line": 428
+      },
+      {
+        "callee": "stamp",
+        "line": 430
+      },
+      {
+        "callee": "walkChildren",
+        "line": 432
+      },
+      {
+        "callee": "map",
+        "line": 433
+      },
+      {
+        "callee": "b",
+        "line": 433
+      }
+    ]
+  },
+  "source": {
+    "text": "  function compileTemplate(html, host) {\n    const tpl = document.createElement(\"template\");\n    //! nosemgrep: direct-inner-html-assignment\n    tpl.innerHTML = encodeCase(html);\n    let tplN = 0;\n    (function stamp(node) {\n      if (node.nodeType === Node.ELEMENT_NODE) {\n        node.setAttribute(\"data-dc-tpl\", String(tplN++));\n      }\n      for (const c of node.childNodes) stamp(c);\n    })(tpl.content);\n    const builders = walkChildren(tpl.content, host);\n    const render = ((vals, ctx) => builders.map((b, i) => b(vals || {}, ctx, i)));\n    render.__annotated = tpl.innerHTML;\n    return render;\n  }",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 421
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRuntime.updateHtml@L1389",
+      "confidence": 1,
+      "name": "updateHtml",
+      "qualifiedName": "createRuntime.updateHtml",
+      "signature": "updateHtml(name, html)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1389
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/vendor/react.production.min.js#B@L12",
+      "confidence": 1,
+      "name": "B",
+      "qualifiedName": "B",
+      "signature": "B(a, b, e, m, d)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react.production.min.js",
+      "line": 12
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#encodeCase@L323",
+      "confidence": 1,
+      "name": "encodeCase",
+      "qualifiedName": "encodeCase",
+      "signature": "encodeCase(html)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 323
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#walkChildren@L437",
+      "confidence": 1,
+      "name": "walkChildren",
+      "qualifiedName": "walkChildren",
+      "signature": "walkChildren(node, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 437
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#compileTemplate@L421",
+    "procedureName": "compileTemplate",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#compileTemplate@L421",
+        "procedureName": "compileTemplate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4aa0f807234ee5285d995026b1ed7781bd359492b2e4e0e1aa0eb668eda6c67c",
+          "target": "stmt:packages/ui/web/support.js@L422",
+          "line": 422,
+          "expr": "const tpl = document.createElement(\"template\");"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#compileTemplate@L421",
+        "procedureName": "compileTemplate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8100b59cab5c5511371ff0b46012f82d62dd15a59843c5f64d46542d14cafb7b",
+          "target": "sym:packages/ui/web/support.js#encodeCase@L323",
+          "expr": "encodeCase",
+          "line": 424
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#compileTemplate@L421",
+        "procedureName": "compileTemplate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb73b5613b31fd37301cb97a716d0f520719b81dc7e0df5f7262ea1f4b25c594",
+          "target": "assign:packages/ui/web/support.js@L424",
+          "line": 424,
+          "expr": "tpl.innerHTML = encodeCase(html);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#compileTemplate@L421",
+        "procedureName": "compileTemplate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fbc3f6cc4bf3267d548a74654701327a8eec273e2503b52d8200c35781073227",
+          "target": "stmt:packages/ui/web/support.js@L426",
+          "line": 426,
+          "expr": "(function stamp(node) {\n      if (node.nodeType === Node.ELEMENT_NODE) {\n        node.setAttribute(\"data-dc-tpl\", String(tplN++));\n      }\n      for (const c of node.childNodes) stamp(c);\n    })(tpl.content);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#compileTemplate@L421",
+        "procedureName": "compileTemplate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5bdf9263d87ab3d6987d6e98662596cdf1f76af4ca7d9d4d5bc5e8cd2b58e5c9",
+          "target": "sym:packages/ui/web/support.js#walkChildren@L437",
+          "expr": "walkChildren",
+          "line": 432
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#compileTemplate@L421",
+        "procedureName": "compileTemplate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:65dc335b72fade0693640402674b15557eda19bc20819c246a8a766fb13b5ef2",
+          "target": "stmt:packages/ui/web/support.js@L432",
+          "line": 432,
+          "expr": "const builders = walkChildren(tpl.content, host);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#compileTemplate@L421",
+        "procedureName": "compileTemplate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:129abd4b5c099d73a22a4452b13c18ddf92cfa3cbde34c142adf1164eff0f214",
+          "target": "stmt:packages/ui/web/support.js@L433",
+          "line": 433,
+          "expr": "const render = ((vals, ctx) => builders.map((b, i) => b(vals || {}, ctx, i)));"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#compileTemplate@L421",
+        "procedureName": "compileTemplate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5b66db884fabb848d5e93cefa93b2a2b7acfb71bced9f14e9520732a8de5dca2",
+          "target": "sym:packages/ui/web/vendor/react.production.min.js#B@L12",
+          "expr": "B",
+          "line": 433
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#compileTemplate@L421",
+        "procedureName": "compileTemplate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:95e58aff1b01504e3aa4f051ca7b049aef3270e3d14cdc16a4b4e9e506a7054c",
+          "target": "assign:packages/ui/web/support.js@L434",
+          "line": 434,
+          "expr": "render.__annotated = tpl.innerHTML;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#compileTemplate@L421",
+        "procedureName": "compileTemplate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c53b1d6af0b4026b88ecf0191a63de026412643ca5d85f88b8e7116bc854e85b",
+          "target": "stmt:packages/ui/web/support.js@L435",
+          "line": 435,
+          "expr": "return render;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 2,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 8,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

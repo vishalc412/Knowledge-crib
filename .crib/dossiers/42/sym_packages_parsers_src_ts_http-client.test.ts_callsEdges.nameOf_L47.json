@@ -1,0 +1,133 @@
+{
+  "id": "sym:packages/parsers/src/ts/http-client.test.ts#callsEdges.nameOf@L47",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:ad802467e277e1e13427ae6b46fb051d0d624900141e1e72fc6ba8d7d7619863",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/http-client.test.ts#callsEdges.nameOf@L47",
+    "kind": "symbol",
+    "type": "function",
+    "name": "nameOf",
+    "qualifiedName": "callsEdges.nameOf",
+    "signature": "nameOf(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/http-client.test.ts",
+    "span": {
+      "start": 47,
+      "end": 50
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 48
+      }
+    ]
+  },
+  "source": {
+    "text": "  const nameOf = (id: string): string => {\n    const n = r.nodes.find((x) => x.id === id);\n    return n?.name ?? n?.qualifiedName ?? id;\n  };",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 47
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.test.ts#callsEdges@L45",
+      "confidence": 1,
+      "name": "callsEdges",
+      "qualifiedName": "callsEdges",
+      "signature": "callsEdges(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.test.ts",
+      "line": 45
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/http-client.test.ts#callsEdges.nameOf@L47",
+    "procedureName": "callsEdges.nameOf",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.test.ts#callsEdges.nameOf@L47",
+        "procedureName": "callsEdges.nameOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6f1e6119c677d49eb8c4b9639dcbaeb446a791ef6dfe6c1b03a992e367484a5f",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 48
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.test.ts#callsEdges.nameOf@L47",
+        "procedureName": "callsEdges.nameOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9d36b66a35d96082040a6a0418c459d64a30a79ea4c99c010cf5dfc34ea785d0",
+          "target": "stmt:packages/parsers/src/ts/http-client.test.ts@L48",
+          "line": 48,
+          "expr": "const n = r.nodes.find((x) => x.id === id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.test.ts#callsEdges.nameOf@L47",
+        "procedureName": "callsEdges.nameOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:93a4da4f38002e7f2df03656e1d74d90f7596e0dc0f2272be15f97acb3583dc6",
+          "target": "stmt:packages/parsers/src/ts/http-client.test.ts@L49",
+          "line": 49,
+          "expr": "return n?.name ?? n?.qualifiedName ?? id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/http-client.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

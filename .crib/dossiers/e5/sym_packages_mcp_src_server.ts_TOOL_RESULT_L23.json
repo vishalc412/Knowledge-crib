@@ -1,0 +1,86 @@
+{
+  "id": "sym:packages/mcp/src/server.ts#TOOL_RESULT@L23",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:216144ee7a444eb77433cdad4f9a4d9452917e0b3e61e21368aea7a5c0f1df5d",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/server.ts#TOOL_RESULT@L23",
+    "kind": "symbol",
+    "type": "function",
+    "name": "TOOL_RESULT",
+    "qualifiedName": "TOOL_RESULT",
+    "signature": "TOOL_RESULT(…)",
+    "lang": "typescript",
+    "file": "packages/mcp/src/server.ts",
+    "span": {
+      "start": 23,
+      "end": 25
+    }
+  },
+  "source": {
+    "text": "const TOOL_RESULT = (obj: unknown) => ({\n  content: [{ type: 'text' as const, text: JSON.stringify(obj) }],\n});",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 23
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/server.ts#buildServer@L28",
+      "confidence": 1,
+      "name": "buildServer",
+      "qualifiedName": "buildServer",
+      "signature": "buildServer(verbs: Verbs, version = '0.1.0'): McpServer",
+      "type": "function",
+      "file": "packages/mcp/src/server.ts",
+      "line": 28
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-2-adding-a-new-mcp-verb",
+      "heading": "4.2 Adding a New MCP Verb",
+      "anchor": "4-2-adding-a-new-mcp-verb",
+      "snippet": "4.2 Adding a New MCP Verb",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/server.ts#TOOL_RESULT@L23",
+    "procedureName": "TOOL_RESULT",
+    "conditions": [],
+    "rules": []
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": [
+      "packages/mcp/src/server.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

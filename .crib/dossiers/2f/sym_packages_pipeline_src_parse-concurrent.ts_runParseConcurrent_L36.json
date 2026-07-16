@@ -1,0 +1,422 @@
+{
+  "id": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:5e3b3ad5665f2327c2b7f5d6d22d2d648cbf721ccb3e3f4069963860618d358c",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runParseConcurrent",
+    "qualifiedName": "runParseConcurrent",
+    "signature": "runParseConcurrent(soul: SoulStore, registry: ExtractorRegistry, root: string, files: FileMeta[], concurrency = DEFAULT_CONCURRENCY): Promise<ParseStats>",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/parse-concurrent.ts",
+    "span": {
+      "start": 36,
+      "end": 91
+    },
+    "callSites": [
+      {
+        "callee": "fill",
+        "line": 53
+      },
+      {
+        "callee": "nextIdx",
+        "line": 61
+      },
+      {
+        "callee": "nextIdx",
+        "line": 61
+      },
+      {
+        "callee": "resolve",
+        "line": 63
+      },
+      {
+        "callee": "makeExtractCtx",
+        "line": 68
+      },
+      {
+        "callee": "extract",
+        "line": 69
+      },
+      {
+        "callee": "min",
+        "line": 74
+      },
+      {
+        "callee": "max",
+        "line": 74
+      },
+      {
+        "callee": "putNodes",
+        "line": 84
+      },
+      {
+        "callee": "putEdges",
+        "line": 85
+      }
+    ]
+  },
+  "source": {
+    "text": "export async function runParseConcurrent(\n  soul: SoulStore,\n  registry: ExtractorRegistry,\n  root: string,\n  files: FileMeta[],\n  concurrency = DEFAULT_CONCURRENCY,\n): Promise<ParseStats> {\n  if (files.length === 0) return { filesParsed: 0, nodes: 0, edges: 0 };\n  // Preload tree-sitter grammars on the main thread (the pool shares this one loaded language across\n  // all concurrent extractors — `createParserHandle` is cheap per call; the Language is shared).\n  await preloadGrammars(grammarsNeededFor(files));\n\n  type Slot = {\n    nodes: import('@knowledge-crib/soul-schema').Node[];\n    edges: import('@knowledge-crib/soul-schema').Edge[];\n    parsed: boolean;\n  } | null;\n  const results: Slot[] = new Array(files.length).fill(null);\n  let cursor = 0;\n  const nextIdx = (): number => (cursor < files.length ? cursor++ : -1);\n\n  // K runners pull from the shared cursor; each awaits readText + sync parse for its file. The\n  // `await` is the overlap seam — while one runner is inside sync regex parse, another's readFile\n  // I/O is pending on the event loop.\n  const runner = async (): Promise<void> => {\n    for (let idx = nextIdx(); idx >= 0; idx = nextIdx()) {\n      const file = files[idx]!;\n      const extractor = registry.resolve(file);\n      if (!extractor) {\n        results[idx] = { nodes: [], edges: [], parsed: false };\n        continue;\n      }\n      const ctx = makeExtractCtx(root, file.path);\n      const result = await extractor.extract(file, ctx);\n      results[idx] = { nodes: result.nodes, edges: result.edges, parsed: true };\n    }\n  };\n\n  const K = Math.min(Math.max(1, concurrency), files.length);\n  await Promise.all(Array.from({ length: K }, () => runner()));\n\n  // SERIAL PERSIST in discovery order — determinism-critical (see header).\n  let filesParsed = 0;\n  let nodes = 0;\n  let edges = 0;\n  for (let i = 0; i < files.length; i++) {\n    const r = results[i];\n    if (!r) continue; // defensive — every index should have been filled\n    if (r.nodes.length > 0) soul.putNodes(r.nodes);\n    if (r.edges.length > 0) soul.putEdges(r.edges);\n    if (r.parsed) filesParsed++; // mirrors serial `filesParsed` semantics\n    nodes += r.nodes.length;\n    edges += r.edges.length;\n  }\n  return { filesParsed, nodes, edges };\n}",
+    "truncated": false,
+    "totalLines": 56,
+    "startLine": 36
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/parse.ts#runParse@L41",
+      "confidence": 1,
+      "name": "runParse",
+      "qualifiedName": "runParse",
+      "signature": "runParse(soul: SoulStore, registry: ExtractorRegistry, root: string, files: FileMeta[], opts: { parallel?: boolean; defaultRegistry?: boolean; concurrency?: number } = {}): Promise<ParseStats>",
+      "type": "function",
+      "file": "packages/pipeline/src/parse.ts",
+      "line": 41
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/extract-ctx.ts#makeExtractCtx@L12",
+      "confidence": 1,
+      "name": "makeExtractCtx",
+      "qualifiedName": "makeExtractCtx",
+      "signature": "makeExtractCtx(repoRoot: string, relPath: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/pipeline/src/extract-ctx.ts",
+      "line": 12
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    },
+    {
+      "id": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent.nextIdx@L55",
+      "confidence": 1,
+      "name": "nextIdx",
+      "qualifiedName": "runParseConcurrent.nextIdx",
+      "signature": "nextIdx(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/parse-concurrent.ts",
+      "line": 55
+    },
+    {
+      "id": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent.runner@L60",
+      "confidence": 1,
+      "name": "runner",
+      "qualifiedName": "runParseConcurrent.runner",
+      "signature": "runner(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/parse-concurrent.ts",
+      "line": 60
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/parse-concurrent.ts@L35",
+      "snippet": "/** Run Phase 2 extraction with a bounded-concurrency async pool, persisting in discovery order. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#decision",
+      "heading": "Decision",
+      "anchor": "decision",
+      "snippet": "Decision",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#determinism-trick-load-bearing",
+      "heading": "Determinism trick (load-bearing)",
+      "anchor": "determinism-trick-load-bearing",
+      "snippet": "Determinism trick (load-bearing)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+    "procedureName": "runParseConcurrent",
+    "conditions": [
+      "cond:packages/pipeline/src/parse-concurrent.ts@L43",
+      "cond:packages/pipeline/src/parse-concurrent.ts@L81",
+      "cond:packages/pipeline/src/parse-concurrent.ts@L84",
+      "cond:packages/pipeline/src/parse-concurrent.ts@L85"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+        "procedureName": "runParseConcurrent",
+        "guard": "cond:packages/pipeline/src/parse-concurrent.ts@L43",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.ts@L43",
+            "expr": "files.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7ad735479a6ea823fe4538e2d23335e14452933d15886478d49a69b1eabd0e75",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.ts@L43",
+          "line": 43,
+          "expr": "return { filesParsed: 0, nodes: 0, edges: 0 };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+        "procedureName": "runParseConcurrent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:69afc5112f1d64f01244d3000e621a5c7fc567b979dc67c84404929152db3648",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.ts@L53",
+          "line": 53,
+          "expr": "const results: Slot[] = new Array(files.length).fill(null);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+        "procedureName": "runParseConcurrent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:86fbca1f928b3f6f05677997cff15cbdc0afd4538c5f8be89dd1d061b42b9c4f",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.ts@L60",
+          "line": 60,
+          "expr": "const runner = async (): Promise<void> => {\n    for (let idx = nextIdx(); idx >= 0; idx = nextIdx()) {\n      const file = files[idx]!;\n      const extractor = registry.resolve(file);\n      if (!extractor) {\n        results[idx] = { nodes: [], edges: [], parsed: false };\n        continue;\n      }\n      const ctx = makeExtractCtx(root, file.path);\n      const result = await extractor.extract(file, ctx);\n      results[idx] = { nodes: result.nodes, edges: result.edges, parsed: true };\n    }\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+        "procedureName": "runParseConcurrent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a4583b5684c2c446ceab77e0a464886d0cd8d3a0895b5798b4a371e6a92947d0",
+          "target": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent.runner@L60",
+          "expr": "runner"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+        "procedureName": "runParseConcurrent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:725dff4826c4590e6cbcfbb626f0dbd4dc12a3302045b39a91b05d91299a8579",
+          "target": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent.nextIdx@L55",
+          "expr": "nextIdx",
+          "line": 61
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+        "procedureName": "runParseConcurrent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f5eaaef1711b030c041e346a7cc6c3eaf5e55a8f650a558a5eab10f2813046ea",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 63
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+        "procedureName": "runParseConcurrent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d63a59289a07f082fa5a1214c8aa82fb91357edc7a41a32cd9deab3d238c53da",
+          "target": "sym:packages/pipeline/src/extract-ctx.ts#makeExtractCtx@L12",
+          "expr": "makeExtractCtx",
+          "line": 68
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+        "procedureName": "runParseConcurrent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd44fd76b17cb52a86c2d630526c2c0911886561e4cb118c6ba0435f92f24bf7",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.ts@L74",
+          "line": 74,
+          "expr": "const K = Math.min(Math.max(1, concurrency), files.length);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+        "procedureName": "runParseConcurrent",
+        "guard": "cond:packages/pipeline/src/parse-concurrent.ts@L84",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.ts@L81",
+            "expr": "i < files.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.ts@L84",
+            "expr": "r.nodes.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6db243be55e2d87f441aecd6056d9e812908e7568f7809538db0fc2252b08bb3",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.ts@L84",
+          "line": 84,
+          "expr": "soul.putNodes(r.nodes);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+        "procedureName": "runParseConcurrent",
+        "guard": "cond:packages/pipeline/src/parse-concurrent.ts@L85",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.ts@L81",
+            "expr": "i < files.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.ts@L85",
+            "expr": "r.edges.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a2f9f7a186988841662d2ecb57f13ca5a5900d6f2d575849ece5bde763e4c86a",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.ts@L85",
+          "line": 85,
+          "expr": "soul.putEdges(r.edges);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+        "procedureName": "runParseConcurrent",
+        "guard": "cond:packages/pipeline/src/parse-concurrent.ts@L81",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.ts@L81",
+            "expr": "i < files.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f340b6ecf2d790df91963b6fb62a983be902056f2c53eb96fb3f4286b8b861b1",
+          "target": "assign:packages/pipeline/src/parse-concurrent.ts@L87",
+          "line": 87,
+          "expr": "nodes += r.nodes.length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+        "procedureName": "runParseConcurrent",
+        "guard": "cond:packages/pipeline/src/parse-concurrent.ts@L81",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.ts@L81",
+            "expr": "i < files.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ba0cc3ba31fe31805fc257372185de88c83308cdb7f05a064bbe69f72e2d6915",
+          "target": "assign:packages/pipeline/src/parse-concurrent.ts@L88",
+          "line": 88,
+          "expr": "edges += r.edges.length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+        "procedureName": "runParseConcurrent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:02b26e8edad7b65d2b922ab130e4fdfb97d582ec1443abb8f3d814a844c0746e",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.ts@L90",
+          "line": 90,
+          "expr": "return { filesParsed, nodes, edges };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/pipeline/src/parse.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 2,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 10,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

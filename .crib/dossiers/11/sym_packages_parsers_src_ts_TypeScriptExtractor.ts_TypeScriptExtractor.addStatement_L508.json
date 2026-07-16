@@ -1,0 +1,457 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:343df64ebdf36e0c394d9d2cddd5245042a015466a933872a0d24a762b1fc109",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+    "kind": "symbol",
+    "type": "method",
+    "name": "addStatement",
+    "qualifiedName": "TypeScriptExtractor.addStatement",
+    "signature": "addStatement(stmt: ts.Statement, env: BodyEnv): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 508,
+      "end": 570
+    },
+    "callSites": [
+      {
+        "callee": "lineOf",
+        "line": 509
+      },
+      {
+        "callee": "getStart",
+        "line": 509
+      },
+      {
+        "callee": "actionInfo",
+        "line": 510
+      },
+      {
+        "callee": "idFor",
+        "line": 512
+      },
+      {
+        "callee": "add",
+        "line": 514
+      },
+      {
+        "callee": "push",
+        "line": 515
+      },
+      {
+        "callee": "hash",
+        "line": 523
+      },
+      {
+        "callee": "guardFields",
+        "line": 533
+      },
+      {
+        "callee": "push",
+        "line": 539
+      },
+      {
+        "callee": "edgeId",
+        "line": 540
+      },
+      {
+        "callee": "recordCall",
+        "line": 552
+      },
+      {
+        "callee": "push",
+        "line": 558
+      },
+      {
+        "callee": "edgeId",
+        "line": 559
+      }
+    ]
+  },
+  "source": {
+    "text": "  private addStatement(stmt: ts.Statement, env: BodyEnv): void {\n    const line = env.lineOf(stmt.getStart());\n    const info = actionInfo(stmt);\n    if (!info) return; // not an action line — keep the graph lean (no node for plain declarations)\n    const id = env.ctx.idFor('statement', { file: env.path, line });\n    if (!env.stmtSeen.has(id)) {\n      env.stmtSeen.add(id);\n      env.nodes.push({\n        id,\n        kind: 'statement',\n        type: info.type,\n        expr: info.expr,\n        file: env.path,\n        span: { start: line, end: line },\n        lang: env.lang,\n        hash: env.ctx.hash(`${env.path}:${line}:${info.type}`),\n        meta: {\n          head: info.head,\n          inLoop: env.inLoop,\n          inException: env.inException,\n          branch: env.guardStack.length > 0 ? 'GUARDED' : undefined,\n        },\n      });\n    }\n    // executes: proc → statement, carrying the full guard chain.\n    const gf = TypeScriptExtractor.guardFields(\n      env.guardStack,\n      env.branch,\n      env.inLoop,\n      env.inException,\n    );\n    env.edges.push({\n      id: edgeId(env.procId, id, 'executes'),\n      src: env.procId,\n      dst: id,\n      rel: 'executes',\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: this.name, snippet: info.head },\n      ...gf,\n    });\n    // record + annotate every call expression within this action (best-effort, last-wins per callee).\n    for (const call of callsWithin(stmt)) {\n      this.recordCall(call, env, gf);\n    }\n    // guarded-by: statement → innermost enclosing condition.\n    if (env.guardStack.length > 0) {\n      const guard = env.guardStack[env.guardStack.length - 1];\n      if (guard !== undefined) {\n        env.edges.push({\n          id: edgeId(id, guard, 'guarded-by'),\n          src: id,\n          dst: guard,\n          rel: 'guarded-by',\n          method: 'static',\n          provenance: 'EXTRACTED',\n          confidence: 1,\n          evidence: { by: this.name, snippet: info.head },\n        });\n      }\n    }\n  }",
+    "truncated": false,
+    "totalLines": 63,
+    "startLine": 508
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L391",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "TypeScriptExtractor.walkStmt",
+      "signature": "walkStmt(stmt: ts.Statement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 391
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.guardFields@L298",
+      "confidence": 1,
+      "name": "guardFields",
+      "qualifiedName": "TypeScriptExtractor.guardFields",
+      "signature": "guardFields(guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): { cfgPath: string[]; guard?: string; branch?: string; inLoop: boolean; inException: boolean }",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 298
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.lineOf@L83",
+      "confidence": 1,
+      "name": "lineOf",
+      "qualifiedName": "TypeScriptExtractor.parse.lineOf",
+      "signature": "lineOf(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 83
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.recordCall@L573",
+      "confidence": 1,
+      "name": "recordCall",
+      "qualifiedName": "TypeScriptExtractor.recordCall",
+      "signature": "recordCall(call: ts.CallExpression, env: BodyEnv, gf: GuardFields): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 573
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L846",
+      "confidence": 1,
+      "name": "actionInfo",
+      "qualifiedName": "actionInfo",
+      "signature": "actionInfo(stmt: ts.Statement): ActionInfo | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 846
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#callsWithin@L913",
+      "confidence": 1,
+      "name": "callsWithin",
+      "qualifiedName": "callsWithin",
+      "signature": "callsWithin(stmt: ts.Statement): ts.CallExpression[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 913
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L507",
+      "snippet": "/** Emit a statement node for an action line (call/return/throw/assign-with-call) + executes edge. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+    "procedureName": "TypeScriptExtractor.addStatement",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L511",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L513",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L551",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L555",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L557"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3d233029edfbf13f18018ad6b1c47cf126239f360452a550ae95ce26ffa44435",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L509",
+          "line": 509,
+          "expr": "const line = env.lineOf(stmt.getStart());"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9884028aabdfe8bb7fc4095769816ed201f80f0a729606c8a6040a11f93b5d56",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.lineOf@L83",
+          "expr": "lineOf",
+          "line": 509
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:948786cb790fa7669f288b3f3bc6ff2a2cb2fd3ebf18a408b8373235acadec48",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L846",
+          "expr": "actionInfo",
+          "line": 510
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9b55bb95c7879ba243d1d272303f038e09ffb559c8631cda725959cf051aed0e",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L510",
+          "line": 510,
+          "expr": "const info = actionInfo(stmt);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L511",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L511",
+            "expr": "!info",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c7d9e70e46e7a963ee5aef6444957f43ce5bdd6551158a8a22da5edb0f0e802f",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L511",
+          "line": 511,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c3a713cb338e78999600736175ef8cfe393f8ffacda492b435b5d1b337a421d",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L512",
+          "line": 512,
+          "expr": "const id = env.ctx.idFor('statement', { file: env.path, line });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L513",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L513",
+            "expr": "!env.stmtSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8d3051e501dbe980749374c23eb7e36afc9b94249033ddd6bcf39b44b1b887b",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L514",
+          "line": 514,
+          "expr": "env.stmtSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L513",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L513",
+            "expr": "!env.stmtSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f5ed195643f716af46102a83241cd35aa290d364a5df032d458ba74d24b2d12",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L515",
+          "line": 515,
+          "expr": "env.nodes.push({\n        id,\n        kind: 'statement',\n        type: info.type,\n        expr: info.expr,\n        file: env.path,\n        span: { start: line, end: line },\n        lang: env.lang,\n        hash: env.ctx.hash(`${env.path}:${line}:${info.type}`),\n        meta: {\n          head: info.head,\n          inLoop: env.inLoop,\n          inException: env.inException,\n          branch: env.guardStack.length > 0 ? 'GUARDED' : undefined,\n        },\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eed2d5446672019381282f8766ffb0483a7b1cb779040e7418cfc9032bed1724",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L533",
+          "line": 533,
+          "expr": "const gf = TypeScriptExtractor.guardFields(\n      env.guardStack,\n      env.branch,\n      env.inLoop,\n      env.inException,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fa5d274016fe1ef45ce99199623f44eba165531ef8f5516299cd61fd944303bb",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.guardFields@L298",
+          "expr": "guardFields",
+          "line": 533
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fde4e9824318a7d5f4c70c42eaf84c1b929fef5e9771d5dc105fc18413319c2f",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L539",
+          "line": 539,
+          "expr": "env.edges.push({\n      id: edgeId(env.procId, id, 'executes'),\n      src: env.procId,\n      dst: id,\n      rel: 'executes',\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: this.name, snippet: info.head },\n      ...gf,\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L551",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L551",
+            "expr": "callsWithin(stmt)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:62017b2d872cb7cf21c6c1ca6284b65618f719945e6acfeb1dc217557ef04ec0",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L552",
+          "line": 552,
+          "expr": "this.recordCall(call, env, gf);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L551",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L551",
+            "expr": "callsWithin(stmt)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:63e4237aabb45524811abe60398cce3da51b3b33c66bb2d4b79899ca286ee23c",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.recordCall@L573",
+          "expr": "recordCall",
+          "line": 552
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L557",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L555",
+            "expr": "env.guardStack.length > 0"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L557",
+            "expr": "guard !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7f3535ae4d7cc7aa3ec2182625f9f85577d86f01081a5439c3eaffd67b94da46",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L558",
+          "line": 558,
+          "expr": "env.edges.push({\n          id: edgeId(id, guard, 'guarded-by'),\n          src: id,\n          dst: guard,\n          rel: 'guarded-by',\n          method: 'static',\n          provenance: 'EXTRACTED',\n          confidence: 1,\n          evidence: { by: this.name, snippet: info.head },\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.addStatement@L508",
+        "procedureName": "TypeScriptExtractor.addStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4292b18f603e13597a02a3f7287d4aa69e043f5b9f05edba0006892e851113bf",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#callsWithin@L913",
+          "expr": "callsWithin"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 13,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

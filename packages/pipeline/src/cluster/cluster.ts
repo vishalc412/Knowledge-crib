@@ -1,3 +1,4 @@
+import { dirname } from 'node:path';
 /**
  * M7 structural clustering — builds an undirected weighted graph over symbol↔symbol structural
  * edges (calls / imports / inherits / implements), runs {@link louvain}, and emits `cluster` nodes
@@ -41,7 +42,10 @@ export function runCluster(soul: SoulStore): ClusterStats {
   const symbols = [...soul.iterate('symbol')].sort((a, b) =>
     a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
   );
-  if (symbols.length === 0) return { communities: 0, members: 0 };
+  if (symbols.length === 0) {
+    soul.replaceClusters([], []);
+    return { communities: 0, members: 0 };
+  }
   const idxOf = new Map<string, number>();
   for (let i = 0; i < symbols.length; i++) idxOf.set(symbols[i]!.id, i);
 
@@ -87,12 +91,16 @@ export function runCluster(soul: SoulStore): ClusterStats {
     const slug = `auto-${contentHash(members.join('\n')).slice(7, 19)}`;
     const clusterId = idFor({ kind: 'cluster', slug });
 
-    // graceful label fallback: the highest-degree member (tie-break by id, already sorted).
-    const topId = members
-      .map((id) => idxOf.get(id)!)
-      .reduce((best, idx) => (degreeByNode[idx]! > degreeByNode[best]! ? idx : best));
-    const topNode = soul.getNode(members.find((id) => idxOf.get(id) === topId)!)!;
-    const label = topNode?.qualifiedName ?? topNode?.name ?? slug;
+    // Heuristic label (outcome E): "<longestCommonDirPrefix(memberFiles)> · <dominantStereotypeOrType>".
+    // Falls back to the highest-degree member's qualified name when members span roots (no common
+    // directory prefix). Deterministic — alphabetical tie-breaks throughout. The cluster `id` and
+    // `hash` are untouched, so this never cascades artifact staleness. An LLM cluster name surfaces
+    // later via the read-time overlay (consumers prefer `overlay.name`); this heuristic is the
+    // pre-enrichment default.
+    const memberNodes = members.map((id) => soul.getNode(id)).filter((n): n is Node => !!n);
+    const label =
+      heuristicClusterLabel(memberNodes) ??
+      fallbackQualifiedName(members, idxOf, degreeByNode, soul, slug);
 
     clusterNodes.push({
       id: clusterId,
@@ -116,7 +124,74 @@ export function runCluster(soul: SoulStore): ClusterStats {
     communities++;
   }
 
-  if (clusterNodes.length > 0) soul.putNodes(clusterNodes);
-  if (memberEdges.length > 0) soul.putEdges(memberEdges);
+  soul.replaceClusters(clusterNodes, memberEdges);
   return { communities, members: memberEdges.length };
+}
+
+/**
+ * Heuristic cluster label: `"<longestCommonDirPrefix(memberFiles)> · <dominantStereotypeOrType>"`.
+ * Returns `undefined` when the members span roots (no shared directory prefix), so the caller falls
+ * back to the highest-degree member's qualified name. Deterministic: stereotype/type tallies use
+ * alphabetical tie-breaks; the directory prefix is mechanical.
+ */
+function heuristicClusterLabel(members: Node[]): string | undefined {
+  const files = members.map((m) => m.file).filter((f): f is string => !!f);
+  const prefix = longestCommonDirPrefix(files);
+  if (prefix === undefined) return undefined; // members span roots → caller falls back
+  const dominant = dominantStereotypeOrType(members);
+  return `${prefix} · ${dominant}`;
+}
+
+/** Longest common leading directory prefix across a set of file paths. Returns `undefined` when
+ *  there is no shared first segment (members live under different roots). */
+function longestCommonDirPrefix(files: string[]): string | undefined {
+  const dirs = files.map((f) => dirname(f)).filter((d) => d !== '.' && d !== '');
+  if (dirs.length === 0) return undefined;
+  const split = dirs.map((d) => d.split('/'));
+  const common: string[] = [];
+  const first = split[0]!;
+  for (let i = 0; i < first.length; i++) {
+    const seg = first[i]!;
+    if (split.every((parts) => parts[i] === seg)) common.push(seg);
+    else break;
+  }
+  return common.length > 0 ? common.join('/') : undefined;
+}
+
+/** The most common stereotype among the members, else the most common `type`, else `'symbol'`.
+ *  Alphabetical tie-breaks so the label is deterministic run-to-run. */
+function dominantStereotypeOrType(members: Node[]): string {
+  const stereotypes = new Map<string, number>();
+  const types = new Map<string, number>();
+  for (const m of members) {
+    if (m.stereotype) stereotypes.set(m.stereotype, (stereotypes.get(m.stereotype) ?? 0) + 1);
+    if (m.type) types.set(m.type, (types.get(m.type) ?? 0) + 1);
+  }
+  const best = (counts: Map<string, number>): string | undefined => {
+    let bestKey: string | undefined;
+    let bestN = 0;
+    for (const [k, n] of counts) {
+      if (n > bestN || (n === bestN && (bestKey === undefined || k < bestKey))) {
+        bestKey = k;
+        bestN = n;
+      }
+    }
+    return bestKey;
+  };
+  return best(stereotypes) ?? best(types) ?? 'symbol';
+}
+
+/** Fallback label: the highest-degree member's qualified name (the pre-E behavior). */
+function fallbackQualifiedName(
+  members: string[],
+  idxOf: Map<string, number>,
+  degreeByNode: Float64Array,
+  soul: SoulStore,
+  slug: string,
+): string {
+  const topId = members
+    .map((id) => idxOf.get(id)!)
+    .reduce((best, idx) => (degreeByNode[idx]! > degreeByNode[best]! ? idx : best));
+  const topNode = soul.getNode(members.find((id) => idxOf.get(id) === topId)!)!;
+  return topNode?.qualifiedName ?? topNode?.name ?? slug;
 }

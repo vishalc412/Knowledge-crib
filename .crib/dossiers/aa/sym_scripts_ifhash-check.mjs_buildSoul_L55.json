@@ -1,0 +1,493 @@
+{
+  "id": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:1d1304ee224cb81a6f494a6a69ed52a31f5fc8f24f2ae07e19b615d99c80c3f9",
+  "builtAt": "2026-07-16T14:53:52.220Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildSoul",
+    "qualifiedName": "buildSoul",
+    "signature": "buildSoul(…)",
+    "lang": "javascript",
+    "file": "scripts/ifhash-check.mjs",
+    "span": {
+      "start": 55,
+      "end": 146
+    },
+    "callSites": [
+      {
+        "callee": "mkdtempSync",
+        "line": 56
+      },
+      {
+        "callee": "join",
+        "line": 56
+      },
+      {
+        "callee": "tmpdir",
+        "line": 56
+      },
+      {
+        "callee": "mkdirSync",
+        "line": 57
+      },
+      {
+        "callee": "join",
+        "line": 57
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 84
+      },
+      {
+        "callee": "join",
+        "line": 84
+      },
+      {
+        "callee": "join",
+        "line": 84
+      },
+      {
+        "callee": "join",
+        "line": 85
+      },
+      {
+        "callee": "newManifest",
+        "line": 85
+      },
+      {
+        "callee": "load",
+        "line": 86
+      },
+      {
+        "callee": "idFor",
+        "line": 89
+      },
+      {
+        "callee": "contentHash",
+        "line": 97
+      },
+      {
+        "callee": "idFor",
+        "line": 100
+      },
+      {
+        "callee": "contentHash",
+        "line": 108
+      },
+      {
+        "callee": "idFor",
+        "line": 111
+      },
+      {
+        "callee": "contentHash",
+        "line": 119
+      },
+      {
+        "callee": "putNodes",
+        "line": 121
+      },
+      {
+        "callee": "putEdges",
+        "line": 122
+      },
+      {
+        "callee": "edgeId",
+        "line": 124
+      },
+      {
+        "callee": "edgeId",
+        "line": 133
+      },
+      {
+        "callee": "commit",
+        "line": 142
+      },
+      {
+        "callee": "buildFromSoul",
+        "line": 144
+      }
+    ]
+  },
+  "source": {
+    "text": "const buildSoul = () => {\n  const repo = mkdtempSync(join(tmpdir(), 'crib-ifhash-'));\n  mkdirSync(join(repo, 'src'), { recursive: true });\n  const assessLines = [\n    'function assess(amount: number, score: number): string {',\n    '  // Compute a weighted risk score from the loan amount and the applicant credit score.',\n    '  const base = amount * 0.4 + score * 0.6;',\n    '  let adjustment = 0;',\n    '  if (amount > 50000) adjustment += (amount - 50000) * 0.0001;',\n    '  if (score < 700) adjustment += (700 - score) * 0.05;',\n    '  if (score < 580) adjustment += (580 - score) * 0.12;',\n    '  const risk = base + adjustment;',\n    '  const tier = risk > 700 ? \"decline\" : risk > 500 ? \"review\" : \"approve\";',\n    '  const stamped = helper(risk);',\n    '  const note = [tier, \"score=\" + stamped, \"amount=\" + amount, \"credit=\" + score].join(\"; \");',\n    '  // Persist the decision trail for audit; the regulator wants every factor on the record.',\n    '  const trail = { base, adjustment, risk, tier, stamped, note };',\n    '  if (tier === \"decline\") return \"DECLINED: \" + note;',\n    '  if (tier === \"review\") return \"REVIEW: \" + note;',\n    '  return \"APPROVED: \" + note;',\n    '}',\n    'function helper(n: number): number {',\n    '  return Math.round(n * 100) / 100;',\n    '}',\n    'function handle(req: unknown): string {',\n    '  return assess(50000, 600);',\n    '}',\n    '',\n  ];\n  writeFileSync(join(repo, 'src', 'loan.ts'), assessLines.join('\\n'));\n  const soul = new SoulStore(join(repo, '.crib'), { manifest: newManifest({ now: NOW }) });\n  soul.load();\n\n  const assess = {\n    id: idFor({ kind: 'symbol', path: 'src/loan.ts', qualifiedName: 'assess', startLine: 1 }),\n    kind: 'symbol',\n    type: 'function',\n    name: 'assess',\n    qualifiedName: 'assess',\n    file: 'src/loan.ts',\n    span: { start: 1, end: 16 },\n    lang: 'typescript',\n    hash: contentHash('assess'),\n  };\n  const helper = {\n    id: idFor({ kind: 'symbol', path: 'src/loan.ts', qualifiedName: 'helper', startLine: 17 }),\n    kind: 'symbol',\n    type: 'function',\n    name: 'helper',\n    qualifiedName: 'helper',\n    file: 'src/loan.ts',\n    span: { start: 17, end: 18 },\n    lang: 'typescript',\n    hash: contentHash('helper'),\n  };\n  const handle = {\n    id: idFor({ kind: 'symbol', path: 'src/loan.ts', qualifiedName: 'handle', startLine: 19 }),\n    kind: 'symbol',\n    type: 'function',\n    name: 'handle',\n    qualifiedName: 'handle',\n    file: 'src/loan.ts',\n    span: { start: 19, end: 21 },\n    lang: 'typescript',\n    hash: contentHash('handle'),\n  };\n  soul.putNodes([assess, helper, handle]);\n  soul.putEdges([\n    {\n      id: edgeId({ src: assess.id, dst: helper.id, rel: 'calls' }),\n      src: assess.id,\n      dst: helper.id,\n      rel: 'calls',\n      method: 'static',\n      confidence: 1,\n      provenance: 'EXTRACTED',\n    },\n    {\n      id: edgeId({ src: handle.id, dst: assess.id, rel: 'calls' }),\n      src: handle.id,\n      dst: assess.id,\n      rel: 'calls',\n      method: 'static',\n      confidence: 1,\n      provenance: 'EXTRACTED',\n    },\n  ]);\n  soul.commit(NOW);\n  const index = new SqliteIndexStore();\n  index.buildFromSoul(soul, repo);\n  return { repo, soul, index, assessId: assess.id };\n};",
+    "truncated": false,
+    "totalLines": 92,
+    "startLine": 55
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:scripts/stats-check.mjs#commit@L58",
+      "confidence": 1,
+      "name": "commit",
+      "qualifiedName": "commit",
+      "signature": "commit(…)",
+      "type": "function",
+      "file": "scripts/stats-check.mjs",
+      "line": 58
+    },
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 141
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 88
+    },
+    {
+      "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+      "confidence": 1,
+      "name": "newManifest",
+      "qualifiedName": "newManifest",
+      "signature": "newManifest(opts: NewManifestOpts = {}): Manifest",
+      "type": "function",
+      "file": "packages/core/src/manifest.ts",
+      "line": 28
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/ifhash-check.mjs@L50",
+      "snippet": "/** Build a soul with a real source file + caller/callee edges so context/source carry a non-trivial",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+    "procedureName": "buildSoul",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:364e514e631c0fd07d0a365751da265e07f753fb89baa91fded5d2339306de9e",
+          "target": "stmt:scripts/ifhash-check.mjs@L56",
+          "line": 56,
+          "expr": "const repo = mkdtempSync(join(tmpdir(), 'crib-ifhash-'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a262c8d090c849573887f2fa49828dfe5df4dfb4b10be954867e103059a59029",
+          "target": "stmt:scripts/ifhash-check.mjs@L57",
+          "line": 57,
+          "expr": "mkdirSync(join(repo, 'src'), { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb74ad1408eba5d07ed275381441a2d4f245bb4a3d34686de3d7699b64f25cf0",
+          "target": "stmt:scripts/ifhash-check.mjs@L84",
+          "line": 84,
+          "expr": "writeFileSync(join(repo, 'src', 'loan.ts'), assessLines.join('\\n'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9d29e21ed42cf32553d08ad5b002cb0df0a0296238b983f65201ad883232a17d",
+          "target": "stmt:scripts/ifhash-check.mjs@L85",
+          "line": 85,
+          "expr": "const soul = new SoulStore(join(repo, '.crib'), { manifest: newManifest({ now: NOW }) });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9e56631c96d100223e9b35354f5d257d30ba960e2ea10987e8b682d6a216f935",
+          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
+          "expr": "newManifest",
+          "line": 85
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1ad2f7d89d0f3693eda4e44cfcafbf425d745f1107367d1b96e5864549159265",
+          "target": "stmt:scripts/ifhash-check.mjs@L86",
+          "line": 86,
+          "expr": "soul.load();"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:405343db062934730333a42f2e9dd1ecbaf3446d1810d5c00a9adee8f4a339e8",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 86
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:678e9f841003954167c4bcd52fe0a2e711763123427e929637f96ad91b621be0",
+          "target": "stmt:scripts/ifhash-check.mjs@L88",
+          "line": 88,
+          "expr": "const assess = {\n    id: idFor({ kind: 'symbol', path: 'src/loan.ts', qualifiedName: 'assess', startLine: 1 }),\n    kind: 'symbol',\n    type: 'function',\n    name: 'assess',\n    qualifiedName: 'assess',\n    file: 'src/loan.ts',\n    span: { start: 1, end: 16 },\n    lang: 'typescript',\n    hash: contentHash('assess'),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:49df01999344d2135aced86c36bad1b91c1fe64afffea52a3483be0189762493",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 89
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:94f1af0aa246e36d5defd6d67eea87edc32edad8c4fb9cb69832e72798765b21",
+          "target": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+          "expr": "contentHash",
+          "line": 97
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2aac4a470d997b7737f44aa9839bc70d1bdcb1e1c15f7a92f5d61a5d3c99f5d0",
+          "target": "stmt:scripts/ifhash-check.mjs@L99",
+          "line": 99,
+          "expr": "const helper = {\n    id: idFor({ kind: 'symbol', path: 'src/loan.ts', qualifiedName: 'helper', startLine: 17 }),\n    kind: 'symbol',\n    type: 'function',\n    name: 'helper',\n    qualifiedName: 'helper',\n    file: 'src/loan.ts',\n    span: { start: 17, end: 18 },\n    lang: 'typescript',\n    hash: contentHash('helper'),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:116084d553b443a693a09b9d011237e022f60b9d15fade5d0449789fc7102fe7",
+          "target": "stmt:scripts/ifhash-check.mjs@L110",
+          "line": 110,
+          "expr": "const handle = {\n    id: idFor({ kind: 'symbol', path: 'src/loan.ts', qualifiedName: 'handle', startLine: 19 }),\n    kind: 'symbol',\n    type: 'function',\n    name: 'handle',\n    qualifiedName: 'handle',\n    file: 'src/loan.ts',\n    span: { start: 19, end: 21 },\n    lang: 'typescript',\n    hash: contentHash('handle'),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:724a77a9b9fc1b05f6760532633827b3e354c056b769a5f0279ecae5bc2d75f6",
+          "target": "stmt:scripts/ifhash-check.mjs@L121",
+          "line": 121,
+          "expr": "soul.putNodes([assess, helper, handle]);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5bd99ce60098f72ece2b887ad3e3020e2f3ab6cee88e71179dcb533eab3e202",
+          "target": "stmt:scripts/ifhash-check.mjs@L122",
+          "line": 122,
+          "expr": "soul.putEdges([\n    {\n      id: edgeId({ src: assess.id, dst: helper.id, rel: 'calls' }),\n      src: assess.id,\n      dst: helper.id,\n      rel: 'calls',\n      method: 'static',\n      confidence: 1,\n      provenance: 'EXTRACTED',\n    },\n    {\n      id: edgeId({ src: handle.id, dst: assess.id, rel: 'calls' }),\n      src: handle.id,\n      dst: assess.id,\n      rel: 'calls',\n      method: 'static',\n      confidence: 1,\n      provenance: 'EXTRACTED',\n    },\n  ]);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:16e4ba5fd7aa0fd4e55dd7dd889feb4336d8c9730183320797b1051adcb29d8c",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+          "expr": "edgeId",
+          "line": 124
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f48af1131d4b85a453776bb6a33953ab0b13096438d3c257d84743fbafd815f",
+          "target": "stmt:scripts/ifhash-check.mjs@L142",
+          "line": 142,
+          "expr": "soul.commit(NOW);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:63655e0ac0b84d17e0b6dcfe84d995b0f801258662cf2ba3436d15acfbe81c04",
+          "target": "sym:scripts/stats-check.mjs#commit@L58",
+          "expr": "commit",
+          "line": 142
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c192c2d6323cda60d3ee28b9224f68078f1afe1e467e81cdf2ad6120074e14e",
+          "target": "stmt:scripts/ifhash-check.mjs@L144",
+          "line": 144,
+          "expr": "index.buildFromSoul(soul, repo);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/ifhash-check.mjs#buildSoul@L55",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:237cd34477861eed4a724f96c84a7c10b4ddf3cc6809dabda260a6bacdc43e42",
+          "target": "stmt:scripts/ifhash-check.mjs@L145",
+          "line": 145,
+          "expr": "return { repo, soul, index, assessId: assess.id };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 13,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 13,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 23,
+      "unresolved": 9
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "9 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

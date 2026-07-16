@@ -1,0 +1,657 @@
+{
+  "id": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:9a25031465f256d558febfac22a87cf12639b6c1b3ab43ba58b670489a67c016",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+    "kind": "symbol",
+    "type": "function",
+    "name": "renderReport",
+    "qualifiedName": "renderReport",
+    "signature": "renderReport(soul: SoulStore, procedure?: string): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/rules/export.ts",
+    "span": {
+      "start": 102,
+      "end": 158
+    },
+    "callSites": [
+      {
+        "callee": "getManifest",
+        "line": 103
+      },
+      {
+        "callee": "push",
+        "line": 110
+      },
+      {
+        "callee": "set",
+        "line": 113
+      },
+      {
+        "callee": "get",
+        "line": 113
+      },
+      {
+        "callee": "push",
+        "line": 114
+      },
+      {
+        "callee": "push",
+        "line": 116
+      },
+      {
+        "callee": "padEnd",
+        "line": 116
+      },
+      {
+        "callee": "set",
+        "line": 119
+      },
+      {
+        "callee": "get",
+        "line": 119
+      },
+      {
+        "callee": "push",
+        "line": 121
+      },
+      {
+        "callee": "push",
+        "line": 123
+      },
+      {
+        "callee": "padEnd",
+        "line": 123
+      },
+      {
+        "callee": "surprisingConnections",
+        "line": 126
+      },
+      {
+        "callee": "push",
+        "line": 128
+      },
+      {
+        "callee": "push",
+        "line": 130
+      },
+      {
+        "callee": "padEnd",
+        "line": 130
+      },
+      {
+        "callee": "decisionTable",
+        "line": 135
+      },
+      {
+        "callee": "push",
+        "line": 136
+      },
+      {
+        "callee": "join",
+        "line": 139
+      },
+      {
+        "callee": "join",
+        "line": 143
+      },
+      {
+        "callee": "map",
+        "line": 143
+      },
+      {
+        "callee": "join",
+        "line": 151
+      },
+      {
+        "callee": "filter",
+        "line": 151
+      },
+      {
+        "callee": "push",
+        "line": 152
+      },
+      {
+        "callee": "join",
+        "line": 157
+      }
+    ]
+  },
+  "source": {
+    "text": "export function renderReport(soul: SoulStore, procedure?: string): string {\n  const m = soul.getManifest();\n  const lines: string[] = [\n    'knowledge-crib report',\n    '======================',\n    `schema: ${m.schemaVersion}`,\n    `nodes: ${m.stats.nodes}  edges: ${m.stats.edges}  clusters: ${m.stats.clusters}`,\n  ];\n  if (m.repo.vcsHead) lines.push(`vcsHead: ${m.repo.vcsHead}`);\n\n  const byKind = new Map<string, number>();\n  for (const n of soul.iterate()) byKind.set(n.kind, (byKind.get(n.kind) ?? 0) + 1);\n  lines.push('', 'nodes by kind:');\n  for (const [k, v] of [...byKind.entries()].sort((a, b) => b[1] - a[1]))\n    lines.push(`  ${k.padEnd(14)} ${v}`);\n\n  const byRel = new Map<string, number>();\n  for (const e of soul.iterateEdges()) byRel.set(e.rel, (byRel.get(e.rel) ?? 0) + 1);\n  if (byRel.size > 0) {\n    lines.push('', 'edges by relation:');\n    for (const [k, v] of [...byRel.entries()].sort((a, b) => b[1] - a[1]))\n      lines.push(`  ${k.padEnd(14)} ${v}`);\n  }\n\n  const surprises = surprisingConnections(soul, 20);\n  if (surprises.length > 0) {\n    lines.push('', 'surprising connections:');\n    for (const s of surprises) {\n      lines.push(`  ${s.edge.rel.padEnd(10)} ${s.edge.src} -> ${s.edge.dst}  (${s.reason})`);\n    }\n  }\n\n  if (procedure) {\n    const table = decisionTable(soul, procedure, { includeTables: true });\n    lines.push(\n      '',\n      `rules for ${table.procedureName ?? table.procedure}:`,\n      `  conditions: ${table.conditions.length > 0 ? table.conditions.join(', ') : '(none)'}`,\n      `  rules: ${table.rules.length}`,\n    );\n    for (const r of table.rules) {\n      const cond = r.conditions\n        .map((c) => `${c.id}${c.polarity ? `=${c.polarity}` : ''}`)\n        .join(' ∧ ');\n      const guard = cond || '⊤';\n      const act =\n        r.action.kind === 'calls'\n          ? `call ${r.action.expr ?? r.action.target}`\n          : `${r.action.sqlKind ?? 'stmt'}${r.action.expr ? ` ${r.action.expr}` : ''}`;\n      const loops = [r.inLoop ? 'loop' : '', r.inException ? 'exc' : ''].filter(Boolean).join(',');\n      lines.push(\n        `    [${guard}]${loops ? ` <${loops}>` : ''} → ${act}${r.action.line ? ` @L${r.action.line}` : ''}`,\n      );\n    }\n  }\n  return lines.join('\\n');\n}",
+    "truncated": false,
+    "totalLines": 57,
+    "startLine": 102
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/rules/export.ts#renderExport@L161",
+      "confidence": 1,
+      "name": "renderExport",
+      "qualifiedName": "renderExport",
+      "signature": "renderExport(soul: SoulStore, format: 'rules' | 'mermaid' | 'graph.json' | 'report', procedure?: string, opts: { extractedOnly?: boolean } = {}): string",
+      "type": "function",
+      "file": "packages/pipeline/src/rules/export.ts",
+      "line": 161
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#decisionTable@L197",
+      "confidence": 1,
+      "name": "decisionTable",
+      "qualifiedName": "decisionTable",
+      "signature": "decisionTable(soul: SoulStore, procedure: string, opts: ExtractRulesOpts = {}): DecisionTable",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 197
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L54",
+      "confidence": 1,
+      "name": "surprisingConnections",
+      "qualifiedName": "surprisingConnections",
+      "signature": "surprisingConnections(soul: SoulStore, limit = 20): SurprisingConnection[]",
+      "type": "function",
+      "file": "packages/pipeline/src/rules/export.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/rules/export.ts@L101",
+      "snippet": "/** A human-readable report: header stats, kind breakdown, and (if given) one procedure's rules. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+    "procedureName": "renderReport",
+    "conditions": [
+      "cond:packages/pipeline/src/rules/export.ts@L110",
+      "cond:packages/pipeline/src/rules/export.ts@L113",
+      "cond:packages/pipeline/src/rules/export.ts@L115",
+      "cond:packages/pipeline/src/rules/export.ts@L119",
+      "cond:packages/pipeline/src/rules/export.ts@L120",
+      "cond:packages/pipeline/src/rules/export.ts@L122",
+      "cond:packages/pipeline/src/rules/export.ts@L127",
+      "cond:packages/pipeline/src/rules/export.ts@L129",
+      "cond:packages/pipeline/src/rules/export.ts@L134",
+      "cond:packages/pipeline/src/rules/export.ts@L142"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9f58698857e02c185422cb87431c147eaadd71d361c559f713f2612e8fc85405",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L103",
+          "line": 103,
+          "expr": "const m = soul.getManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L110",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L110",
+            "expr": "m.repo.vcsHead",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:662d3c9950b23e3303b7dd4f054f75c409ed554274e46a1482e083dfa70ef88f",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L110",
+          "line": 110,
+          "expr": "lines.push(`vcsHead: ${m.repo.vcsHead}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f3e9498e1d8ad16ef897545427eee4b7e1306da1da339329620ccd49d843a197",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 110
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:31fd302cd0727e0a52fdc404448ef2074e9611f673d63e21a1f97ff09846f1b8",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 113
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L113",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L113",
+            "expr": "soul.iterate()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d91c45dd9a1a9b7834504962ff3c80ca9bdeeac6662fab0d39e1844bf2aa2d01",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L113",
+          "line": 113,
+          "expr": "byKind.set(n.kind, (byKind.get(n.kind) ?? 0) + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9a8debff118373eef90594e7e07274ca634d954a20933634b597d5d624e7e81d",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L114",
+          "line": 114,
+          "expr": "lines.push('', 'nodes by kind:');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L115",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L115",
+            "expr": "[...byKind.entries()].sort((a, b) => b[1] - a[1])",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3ff2ed1992d54c11218e592e1841ea400222d6c94fc3689fe22f9c919967516d",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L116",
+          "line": 116,
+          "expr": "lines.push(`  ${k.padEnd(14)} ${v}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L119",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L119",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f0dc4b76a5f83c13c8a152e77293f5a7ae70e33f9bb3296d9e293a9feac9980f",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L119",
+          "line": 119,
+          "expr": "byRel.set(e.rel, (byRel.get(e.rel) ?? 0) + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L120",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L120",
+            "expr": "byRel.size > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5da3753c44eae11977d9e6bc1faad4cd0efe427af82b30583ca8c9799f5b3f5a",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L121",
+          "line": 121,
+          "expr": "lines.push('', 'edges by relation:');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L122",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L120",
+            "expr": "byRel.size > 0"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L122",
+            "expr": "[...byRel.entries()].sort((a, b) => b[1] - a[1])",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bc749e1789aafa356a76f735b8fca64fcc0ddc5093e81b7c29483e63dd174a60",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L123",
+          "line": 123,
+          "expr": "lines.push(`  ${k.padEnd(14)} ${v}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a2b52d00645517146588e40b528e328dfb77dac52a6490d0cf07853a788f2bcf",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L126",
+          "line": 126,
+          "expr": "const surprises = surprisingConnections(soul, 20);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b80b127e1ce4a714edb0e737e21f7668a2a2dcbc3288ec67c7b926f887f300aa",
+          "target": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L54",
+          "expr": "surprisingConnections",
+          "line": 126
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L127",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L127",
+            "expr": "surprises.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ece5bc6f29502e0705d6332eccc59948c7399341d9da2cf98b166ba9ce9ae61",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L128",
+          "line": 128,
+          "expr": "lines.push('', 'surprising connections:');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L129",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L127",
+            "expr": "surprises.length > 0"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L129",
+            "expr": "surprises",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:34eeaa96313bcf1542e5e2d30fc44c4861ef5ab6913e57b58066f493a7b90982",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L130",
+          "line": 130,
+          "expr": "lines.push(`  ${s.edge.rel.padEnd(10)} ${s.edge.src} -> ${s.edge.dst}  (${s.reason})`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1e8dd890360fcffb35d0efa769bd51f2d0cda6762143893f4f5512a857e67183",
+          "target": "sym:packages/core/src/rules/extract.ts#decisionTable@L197",
+          "expr": "decisionTable",
+          "line": 135
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L134",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L134",
+            "expr": "procedure",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:802f65eb51200cca68133149265e321da141d514d099c553a028b934e79419fb",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L135",
+          "line": 135,
+          "expr": "const table = decisionTable(soul, procedure, { includeTables: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L134",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L134",
+            "expr": "procedure",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:64cd3530c04bda2c29b54317a20cf20c4f6d0ab8171c6afc8b2dc5d94eee9973",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L136",
+          "line": 136,
+          "expr": "lines.push(\n      '',\n      `rules for ${table.procedureName ?? table.procedure}:`,\n      `  conditions: ${table.conditions.length > 0 ? table.conditions.join(', ') : '(none)'}`,\n      `  rules: ${table.rules.length}`,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L142",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L134",
+            "expr": "procedure"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L142",
+            "expr": "table.rules",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0fec82d72cb64eb23b9279634981c865bf09686f6677b9bb79da83b02bdeedee",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L143",
+          "line": 143,
+          "expr": "const cond = r.conditions\n        .map((c) => `${c.id}${c.polarity ? `=${c.polarity}` : ''}`)\n        .join(' ∧ ');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L142",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L134",
+            "expr": "procedure"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L142",
+            "expr": "table.rules",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1aef5adedbab490a45b7617eaae1ef43de097aa511012d647e653b64840b4dd2",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L151",
+          "line": 151,
+          "expr": "const loops = [r.inLoop ? 'loop' : '', r.inException ? 'exc' : ''].filter(Boolean).join(',');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L142",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L134",
+            "expr": "procedure"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L142",
+            "expr": "table.rules",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c2c4a960b8e6cb0b8e8b8a2ffd220cdfc7d07d2011a714215ae2a2aae6245ebb",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L152",
+          "line": 152,
+          "expr": "lines.push(\n        `    [${guard}]${loops ? ` <${loops}>` : ''} → ${act}${r.action.line ? ` @L${r.action.line}` : ''}`,\n      );"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bb752042a7019c63841c47a27a87fb2d8c794aa0616aa9ea42af950bf0a67db4",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L157",
+          "line": 157,
+          "expr": "return lines.join('\\n');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 17,
+    "referencedByFiles": [
+      "packages/pipeline/src/rules/export.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 17,
+    "assignments": 0,
+    "conditions": 10,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 25,
+      "unresolved": 11
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "11 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

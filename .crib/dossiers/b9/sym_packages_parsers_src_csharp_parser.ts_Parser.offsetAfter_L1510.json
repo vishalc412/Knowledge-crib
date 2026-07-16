@@ -1,0 +1,158 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.offsetAfter@L1510",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:cc851e8eeb49fd17f23fcb72b31bd9b0452359fd9bef7a449de4e447e1d41889",
+  "builtAt": "2026-07-13T14:47:57.424Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.offsetAfter@L1510",
+    "kind": "symbol",
+    "type": "method",
+    "name": "offsetAfter",
+    "qualifiedName": "Parser.offsetAfter",
+    "signature": "offsetAfter(tk: Token): number",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 1510,
+      "end": 1512
+    },
+    "callSites": [
+      {
+        "callee": "offset",
+        "line": 1511
+      }
+    ]
+  },
+  "source": {
+    "text": "  private offsetAfter(tk: Token): number {\n    return this.offset(tk) + tk.value.length;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1510
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafExpr@L1281",
+      "confidence": 1,
+      "name": "parseLeafExpr",
+      "qualifiedName": "Parser.parseLeafExpr",
+      "signature": "parseLeafExpr(startLine: number): CsharpStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1281
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseLeafReturn@L1225",
+      "confidence": 1,
+      "name": "parseLeafReturn",
+      "qualifiedName": "Parser.parseLeafReturn",
+      "signature": "parseLeafReturn(kind: 'return' | 'throw', startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1225
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseSwitch@L1147",
+      "confidence": 1,
+      "name": "parseSwitch",
+      "qualifiedName": "Parser.parseSwitch",
+      "signature": "parseSwitch(startLine: number): CsharpStmt",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1147
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.readParenText@L1471",
+      "confidence": 1,
+      "name": "readParenText",
+      "qualifiedName": "Parser.readParenText",
+      "signature": "readParenText(): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1471
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.offset@L1505",
+      "confidence": 1,
+      "name": "offset",
+      "qualifiedName": "Parser.offset",
+      "signature": "offset(tk: Token): number",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1505
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/parser.ts@L1509",
+      "snippet": "/** char offset just past a token's last character. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.offsetAfter@L1510",
+    "procedureName": "Parser.offsetAfter",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.offsetAfter@L1510",
+        "procedureName": "Parser.offsetAfter",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:23212f5f83adcbdd7f831e3dbe580129cb48a2cd0ed9df7f17f64615c65670ea",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.offset@L1505",
+          "expr": "offset",
+          "line": 1511
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.offsetAfter@L1510",
+        "procedureName": "Parser.offsetAfter",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:be780cc4cc2b6781162ef685bbc5089a3bf3ec0e94a4cf4595dd99a2b1a295bd",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1511",
+          "line": 1511,
+          "expr": "return this.offset(tk) + tk.value.length;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

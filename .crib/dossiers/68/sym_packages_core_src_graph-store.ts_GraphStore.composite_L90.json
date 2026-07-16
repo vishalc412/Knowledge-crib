@@ -1,0 +1,216 @@
+{
+  "id": "sym:packages/core/src/graph-store.ts#GraphStore.composite@L90",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:461dcfbd6f74f8e32f887244f7ca8ef0b8a18da05ae639b41a8e5f91db6b9109",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/graph-store.ts#GraphStore.composite@L90",
+    "kind": "symbol",
+    "type": "method",
+    "name": "composite",
+    "qualifiedName": "GraphStore.composite",
+    "signature": "composite(): GraphSnapshot",
+    "lang": "typescript",
+    "file": "packages/core/src/graph-store.ts",
+    "span": {
+      "start": 90,
+      "end": 94
+    },
+    "callSites": [
+      {
+        "callee": "readMaterialized",
+        "line": 91
+      },
+      {
+        "callee": "compositeLive",
+        "line": 93
+      }
+    ]
+  },
+  "source": {
+    "text": "  composite(): GraphSnapshot {\n    const materialized = readMaterialized(this.soul);\n    if (materialized) return materialized;\n    return this.compositeLive();\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 90
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/graph-store.ts#GraphStore.neighbors@L109",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "GraphStore.neighbors",
+      "signature": "neighbors(id: string, includeSemantic = false): CompositeEdge[]",
+      "type": "method",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 109
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#GraphStore.shortestPath@L114",
+      "confidence": 1,
+      "name": "shortestPath",
+      "qualifiedName": "GraphStore.shortestPath",
+      "signature": "shortestPath(from: string, to: string, maxHops = 6): { path: string[]; edges: CompositeEdge[] }",
+      "type": "method",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 114
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+      "confidence": 1,
+      "name": "compositeLive",
+      "qualifiedName": "GraphStore.compositeLive",
+      "signature": "compositeLive(): GraphSnapshot",
+      "type": "method",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 96
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#readMaterialized@L166",
+      "confidence": 1,
+      "name": "readMaterialized",
+      "qualifiedName": "readMaterialized",
+      "signature": "readMaterialized(soul: SoulStore): GraphSnapshot | undefined",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 166
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#6-keeping-the-soul-fresh",
+      "heading": "6. Keeping the soul fresh",
+      "anchor": "6-keeping-the-soul-fresh",
+      "snippet": "6. Keeping the soul fresh",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.composite@L90",
+    "procedureName": "GraphStore.composite",
+    "conditions": [
+      "cond:packages/core/src/graph-store.ts@L92"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.composite@L90",
+        "procedureName": "GraphStore.composite",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:267591cd13d4ecd2db797fcd9d50af838f2210a0e20a89bb33871d4883ac62d4",
+          "target": "sym:packages/core/src/graph-store.ts#readMaterialized@L166",
+          "expr": "readMaterialized",
+          "line": 91
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.composite@L90",
+        "procedureName": "GraphStore.composite",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:510a5050dda5494dcf9142e914f5e48b4855b8cd8770d72bfa431338d6623981",
+          "target": "stmt:packages/core/src/graph-store.ts@L91",
+          "line": 91,
+          "expr": "const materialized = readMaterialized(this.soul);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.composite@L90",
+        "procedureName": "GraphStore.composite",
+        "guard": "cond:packages/core/src/graph-store.ts@L92",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L92",
+            "expr": "materialized",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1422ca4a584bae5448e9a89fb92a5f9593b2053bdb23e3f13c5a608f8fd575c4",
+          "target": "stmt:packages/core/src/graph-store.ts@L92",
+          "line": 92,
+          "expr": "return materialized;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.composite@L90",
+        "procedureName": "GraphStore.composite",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:44cc4b68253f17b4c49d5ab9799d8dbfef6930fd1355aa628222ff64dd0395b4",
+          "target": "sym:packages/core/src/graph-store.ts#GraphStore.compositeLive@L96",
+          "expr": "compositeLive",
+          "line": 93
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#GraphStore.composite@L90",
+        "procedureName": "GraphStore.composite",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d3ee9fb266ae0c7efd6e891b3ec4d669ddcaa11d8eb88f87d8250f3f233ce8b3",
+          "target": "stmt:packages/core/src/graph-store.ts@L93",
+          "line": 93,
+          "expr": "return this.compositeLive();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/graph-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

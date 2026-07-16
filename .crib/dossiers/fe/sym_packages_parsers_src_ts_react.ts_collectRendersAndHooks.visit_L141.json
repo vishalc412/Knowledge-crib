@@ -1,0 +1,509 @@
+{
+  "id": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2b7c9f97450bae59e943400f8227017364e4fc28123ad2c4d3472ca485994c86",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+    "kind": "symbol",
+    "type": "function",
+    "name": "visit",
+    "qualifiedName": "collectRendersAndHooks.visit",
+    "signature": "visit(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/react.ts",
+    "span": {
+      "start": 141,
+      "end": 166
+    },
+    "recursive": true,
+    "callSites": [
+      {
+        "callee": "isJsxSelfClosingElement",
+        "line": 144
+      },
+      {
+        "callee": "jsxComponentName",
+        "line": 145
+      },
+      {
+        "callee": "emitRender",
+        "line": 146
+      },
+      {
+        "callee": "identifierText",
+        "line": 151
+      },
+      {
+        "callee": "emitRender",
+        "line": 155
+      },
+      {
+        "callee": "hookCallName",
+        "line": 158
+      },
+      {
+        "callee": "push",
+        "line": 159
+      },
+      {
+        "callee": "forEachChild",
+        "line": 161
+      },
+      {
+        "callee": "isFunctionDeclaration",
+        "line": 163
+      },
+      {
+        "callee": "isComponentName",
+        "line": 163
+      },
+      {
+        "callee": "visit",
+        "line": 164
+      }
+    ]
+  },
+  "source": {
+    "text": "  const visit = (node: ts.Node): void => {\n    // JSX element → a child component render (uppercase tag) or a DOM tag (lowercase → skip).\n    if (ts.isJsxSelfClosingElement(node) || ts.isJsxElement(node)) {\n      const tag = ts.isJsxSelfClosingElement(node) ? node.tagName : node.openingElement.tagName;\n      const child = jsxComponentName(tag);\n      if (child) emitRender(srcId, child, byKey, edges, recorded);\n    }\n    // React.createElement(Foo, …) / createElement(Foo, …) → a child render.\n    if (ts.isCallExpression(node)) {\n      const callee = node.expression;\n      const calleeText = identifierText(callee);\n      if (calleeText === 'createElement' || calleeText === 'React.createElement') {\n        const first = node.arguments[0];\n        if (first && ts.isIdentifier(first) && isComponentName(first.text)) {\n          emitRender(srcId, first.text, byKey, edges, recorded);\n        }\n      }\n      const hook = hookCallName(node);\n      if (hook) hooks.push(hook);\n    }\n    ts.forEachChild(node, (c) => {\n      // skip a nested named PascalCase function declaration (a nested component — its renders are its own).\n      if (ts.isFunctionDeclaration(c) && c.name && isComponentName(c.name.text)) return;\n      visit(c);\n    });\n  };",
+    "truncated": false,
+    "totalLines": 26,
+    "startLine": 141
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#collectHooks@L171",
+      "confidence": 1,
+      "name": "collectHooks",
+      "qualifiedName": "collectHooks",
+      "signature": "collectHooks(body: ts.Node | undefined): string[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 171
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks@L132",
+      "confidence": 1,
+      "name": "collectRendersAndHooks",
+      "qualifiedName": "collectRendersAndHooks",
+      "signature": "collectRendersAndHooks(body: ts.Node | undefined, byKey: Map<string, string>, srcId: string, edges: Edge[], recorded: string[], hooks: string[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 132
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#emitRender@L187",
+      "confidence": 1,
+      "name": "emitRender",
+      "qualifiedName": "emitRender",
+      "signature": "emitRender(srcId: string, childName: string, byKey: Map<string, string>, edges: Edge[], recorded: string[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 187
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#hookCallName@L244",
+      "confidence": 1,
+      "name": "hookCallName",
+      "qualifiedName": "hookCallName",
+      "signature": "hookCallName(call: ts.CallExpression): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 244
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#identifierText@L226",
+      "confidence": 1,
+      "name": "identifierText",
+      "qualifiedName": "identifierText",
+      "signature": "identifierText(e: ts.Expression): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 226
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#isComponentName@L215",
+      "confidence": 1,
+      "name": "isComponentName",
+      "qualifiedName": "isComponentName",
+      "signature": "isComponentName(name: string): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 215
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#jsxComponentName@L238",
+      "confidence": 1,
+      "name": "jsxComponentName",
+      "qualifiedName": "jsxComponentName",
+      "signature": "jsxComponentName(tag: ts.JsxTagNameExpression): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 238
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+    "procedureName": "collectRendersAndHooks.visit",
+    "conditions": [
+      "cond:packages/parsers/src/ts/react.ts@L143",
+      "cond:packages/parsers/src/ts/react.ts@L149",
+      "cond:packages/parsers/src/ts/react.ts@L152",
+      "cond:packages/parsers/src/ts/react.ts@L154",
+      "cond:packages/parsers/src/ts/react.ts@L146",
+      "cond:packages/parsers/src/ts/react.ts@L159"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L143",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L143",
+            "expr": "ts.isJsxSelfClosingElement(node) || ts.isJsxElement(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e46d807e194bed1f6b341c01c4f76242d821cf647242add58a06e87f9b7a2c2f",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L144",
+          "line": 144,
+          "expr": "const tag = ts.isJsxSelfClosingElement(node) ? node.tagName : node.openingElement.tagName;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L143",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L143",
+            "expr": "ts.isJsxSelfClosingElement(node) || ts.isJsxElement(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:827a50f026e986f439c236273343c15e5355283a2084507f9c7309cab6c437ed",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L145",
+          "line": 145,
+          "expr": "const child = jsxComponentName(tag);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L143",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L143",
+            "expr": "ts.isJsxSelfClosingElement(node) || ts.isJsxElement(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ec9941a55f32bc527be9bfee787b0069c7f7263354e17740ff40d7ed93ed55ff",
+          "target": "sym:packages/parsers/src/ts/react.ts#jsxComponentName@L238",
+          "expr": "jsxComponentName",
+          "line": 145
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L154",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L149",
+            "expr": "ts.isCallExpression(node)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L152",
+            "expr": "calleeText === 'createElement' || calleeText === 'React.createElement'"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L154",
+            "expr": "first && ts.isIdentifier(first) && isComponentName(first.text)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9fd7b4dc173b7135f10fbdeb0331fce213ce4f3039fc06aee61b9c312e5e21ce",
+          "target": "sym:packages/parsers/src/ts/react.ts#emitRender@L187",
+          "expr": "emitRender",
+          "line": 146
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L146",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L143",
+            "expr": "ts.isJsxSelfClosingElement(node) || ts.isJsxElement(node)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L146",
+            "expr": "child",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aaf0e453e43cae53a00e0ff925e2bfee97091d4ee0059649f13e13e41f551fa6",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L146",
+          "line": 146,
+          "expr": "emitRender(srcId, child, byKey, edges, recorded);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L149",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L149",
+            "expr": "ts.isCallExpression(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3dd64a06e08e712b90c2ae93ca3e9a29de9b61023e0f777ae7d18b457e4a32d0",
+          "target": "sym:packages/parsers/src/ts/react.ts#identifierText@L226",
+          "expr": "identifierText",
+          "line": 151
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L149",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L149",
+            "expr": "ts.isCallExpression(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b88a62734e137335e982e2f4e7fdbc2e2c65e9c6fbffe2b75dcaec5a93721eb6",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L151",
+          "line": 151,
+          "expr": "const calleeText = identifierText(callee);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L154",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L149",
+            "expr": "ts.isCallExpression(node)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L152",
+            "expr": "calleeText === 'createElement' || calleeText === 'React.createElement'"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L154",
+            "expr": "first && ts.isIdentifier(first) && isComponentName(first.text)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb639e0b1413ce5e0dedd0f062f1de093176dd32512184e14a70b204eeb9fab5",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L155",
+          "line": 155,
+          "expr": "emitRender(srcId, first.text, byKey, edges, recorded);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L149",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L149",
+            "expr": "ts.isCallExpression(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2b9fc2bce2bfde30bee7a72d667e9d756765f03b6198d6f23769f063c7106a8f",
+          "target": "sym:packages/parsers/src/ts/react.ts#hookCallName@L244",
+          "expr": "hookCallName",
+          "line": 158
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L149",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L149",
+            "expr": "ts.isCallExpression(node)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e2b67fb38244787f7c705188817b0c7f62a508854658d67c984ad65d67ffe66",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L158",
+          "line": 158,
+          "expr": "const hook = hookCallName(node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b87204d171a4dd41f1fb8eb58886c75f22b5294013dcab3592b29dcea3b3982c",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 159
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L159",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L149",
+            "expr": "ts.isCallExpression(node)"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L159",
+            "expr": "hook",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c8caa3b451c579568eff987db5e360ef8e67bb9b74a28e3de39242a7661fbd0b",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L159",
+          "line": 159,
+          "expr": "hooks.push(hook);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce1809b4b7b39719d1057079738c00ae7f6b94701d71b315031f4f0d61830875",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L161",
+          "line": 161,
+          "expr": "ts.forEachChild(node, (c) => {\n      // skip a nested named PascalCase function declaration (a nested component — its renders are its own).\n      if (ts.isFunctionDeclaration(c) && c.name && isComponentName(c.name.text)) return;\n      visit(c);\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+        "procedureName": "collectRendersAndHooks.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:25d2d383504fb883c7c21d1960b63ac29cd75575b7f2eaf25b424f622e9636e7",
+          "target": "sym:packages/parsers/src/ts/react.ts#isComponentName@L215",
+          "expr": "isComponentName",
+          "line": 163
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 8,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/react.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 8,
+    "assignments": 0,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 11,
+      "unresolved": 3
+    },
+    "recursive": true,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

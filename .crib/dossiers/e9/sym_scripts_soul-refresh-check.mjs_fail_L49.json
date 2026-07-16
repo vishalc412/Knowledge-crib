@@ -1,0 +1,137 @@
+{
+  "id": "sym:scripts/soul-refresh-check.mjs#fail@L49",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:7bc2c53e2f309b98dfa978eba87d6c801ce47c6df032e46b5930761e9e334f75",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/soul-refresh-check.mjs#fail@L49",
+    "kind": "symbol",
+    "type": "function",
+    "name": "fail",
+    "qualifiedName": "fail",
+    "signature": "fail(…)",
+    "lang": "javascript",
+    "file": "scripts/soul-refresh-check.mjs",
+    "span": {
+      "start": 49,
+      "end": 52
+    },
+    "callSites": [
+      {
+        "callee": "write",
+        "line": 50
+      }
+    ]
+  },
+  "source": {
+    "text": "const fail = (msg) => {\n  process.stderr.write(`  soul-refresh:check FAIL — ${msg}\\n`);\n  failed++;\n};",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 49
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#9-risks-guardrails",
+      "heading": "9. Risks & guardrails",
+      "anchor": "9-risks-guardrails",
+      "snippet": "9. Risks & guardrails",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#production-architecture",
+      "heading": "Production Architecture",
+      "anchor": "production-architecture",
+      "snippet": "Production Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a5-automated-parity-golden-file-test-generation",
+      "heading": "WS-A5 — Automated parity / golden-file test generation",
+      "anchor": "ws-a5-automated-parity-golden-file-test-generation",
+      "snippet": "WS-A5 — Automated parity / golden-file test generation",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/soul-refresh-check.mjs#fail@L49",
+    "procedureName": "fail",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/soul-refresh-check.mjs#fail@L49",
+        "procedureName": "fail",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:baac2ce38f34fe7550119efc20f16f9fbe93f04c6546a992c49b90922c8ac9c8",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 50
+        }
+      },
+      {
+        "procedure": "sym:scripts/soul-refresh-check.mjs#fail@L49",
+        "procedureName": "fail",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dc150ab1bda5b0560fcbf2eaea66a50352046fc0bc8765699488edc55a49dcdd",
+          "target": "stmt:scripts/soul-refresh-check.mjs@L50",
+          "line": 50,
+          "expr": "process.stderr.write(`  soul-refresh:check FAIL — ${msg}\\n`);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

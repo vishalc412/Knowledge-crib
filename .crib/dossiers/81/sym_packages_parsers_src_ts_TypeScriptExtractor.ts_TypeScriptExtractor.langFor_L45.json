@@ -1,0 +1,105 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.langFor@L45",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:699dd3ee824629c3853fcd42d81a826296d631dffa159ac0fefe67751e934cfb",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.langFor@L45",
+    "kind": "symbol",
+    "type": "method",
+    "name": "langFor",
+    "qualifiedName": "TypeScriptExtractor.langFor",
+    "signature": "langFor(path: string): 'typescript' | 'javascript'",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 45,
+      "end": 47
+    },
+    "callSites": [
+      {
+        "callee": "test",
+        "line": 46
+      }
+    ]
+  },
+  "source": {
+    "text": "  private static langFor(path: string): 'typescript' | 'javascript' {\n    return /\\.(mjs|cjs|js|jsx)$/.test(path) ? 'javascript' : 'typescript';\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 45
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L69",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "TypeScriptExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 69
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L44",
+      "snippet": "/** TS-family exts tag `lang: 'typescript'`; JS-family exts tag `lang: 'javascript'`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.langFor@L45",
+    "procedureName": "TypeScriptExtractor.langFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.langFor@L45",
+        "procedureName": "TypeScriptExtractor.langFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4b80de70c4301a63699fe71945f66c965243edb6fa6827b150454a050e6867d0",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L46",
+          "line": 46,
+          "expr": "return /\\.(mjs|cjs|js|jsx)$/.test(path) ? 'javascript' : 'typescript';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

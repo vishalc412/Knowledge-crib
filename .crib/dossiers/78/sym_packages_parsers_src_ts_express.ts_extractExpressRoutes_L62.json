@@ -1,0 +1,267 @@
+{
+  "id": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L62",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:ed75b54cdf0316a1aefe9b5a2b972402463fb6d0cb35c72b4d2d6e9beb64da3f",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L62",
+    "kind": "symbol",
+    "type": "function",
+    "name": "extractExpressRoutes",
+    "qualifiedName": "extractExpressRoutes",
+    "signature": "extractExpressRoutes(input: ExpressPassInput): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/express.ts",
+    "span": {
+      "start": 62,
+      "end": 103
+    },
+    "callSites": [
+      {
+        "callee": "isCallExpression",
+        "line": 66
+      },
+      {
+        "callee": "matchRouteCall",
+        "line": 67
+      },
+      {
+        "callee": "idFor",
+        "line": 71
+      },
+      {
+        "callee": "some",
+        "line": 80
+      },
+      {
+        "callee": "push",
+        "line": 81
+      },
+      {
+        "callee": "hash",
+        "line": 91
+      },
+      {
+        "callee": "push",
+        "line": 95
+      },
+      {
+        "callee": "edge",
+        "line": 95
+      },
+      {
+        "callee": "forEachChild",
+        "line": 100
+      },
+      {
+        "callee": "visit",
+        "line": 102
+      }
+    ]
+  },
+  "source": {
+    "text": "export function extractExpressRoutes(input: ExpressPassInput): void {\n  const { sf, byKey, nodes, edges, ctx, path, lineOf, lang } = input;\n\n  const visit = (node: ts.Node): void => {\n    if (ts.isCallExpression(node)) {\n      const match = matchRouteCall(node, byKey, lineOf);\n      if (match) {\n        const { verb, paths, handlerId, callLine, callEnd } = match;\n        for (const p of paths) {\n          const routeId = ctx.idFor('route', {\n            httpMethod: verb,\n            routePath: p,\n            file: path,\n            line: callLine,\n          });\n          // De-dupe by id: an identical `app.get('/x', h)` emitted twice on the same line keeps one\n          // node. The route id is content-addressed on (verb, path, file, line), so a second call on\n          // a different line gets its own route — correct, two registrations are two routes.\n          if (!nodes.some((n) => n.id === routeId)) {\n            nodes.push({\n              id: routeId,\n              kind: 'route',\n              name: `${verb} ${p}`,\n              httpMethod: verb,\n              routePath: p,\n              framework: 'express',\n              file: path,\n              span: { start: callLine, end: callEnd },\n              lang,\n              hash: ctx.hash(`${path}:route:${verb}:${p}:${callLine}`),\n            });\n          }\n          if (handlerId) {\n            edges.push(edge(handlerId, routeId, 'exposes', `${verb} ${p}`));\n          }\n        }\n      }\n    }\n    ts.forEachChild(node, visit);\n  };\n  visit(sf);\n}",
+    "truncated": false,
+    "totalLines": 42,
+    "startLine": 62
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L69",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "TypeScriptExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 69
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/src/viz.test.ts#edge@L27",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel']): Edge",
+      "type": "function",
+      "file": "packages/ui/src/viz.test.ts",
+      "line": 27
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes.visit@L65",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "extractExpressRoutes.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/express.ts",
+      "line": 65
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 88
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L107",
+      "confidence": 1,
+      "name": "matchRouteCall",
+      "qualifiedName": "matchRouteCall",
+      "signature": "matchRouteCall(call: ts.CallExpression, byKey: Map<string, string>, lineOf: (pos: number) => number): | {\n      verb: string;\n      paths: string[];\n      handlerId: string | undefined;\n      callLine: number;\n      callEnd: number;\n    }\n  | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/express.ts",
+      "line": 107
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L62",
+    "procedureName": "extractExpressRoutes",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L62",
+        "procedureName": "extractExpressRoutes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eccd86d4a610826687e7b14b60ef486b870549999d5533a8784efa9709ef4473",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L65",
+          "line": 65,
+          "expr": "const visit = (node: ts.Node): void => {\n    if (ts.isCallExpression(node)) {\n      const match = matchRouteCall(node, byKey, lineOf);\n      if (match) {\n        const { verb, paths, handlerId, callLine, callEnd } = match;\n        for (const p of paths) {\n          const routeId = ctx.idFor('route', {\n            httpMethod: verb,\n            routePath: p,\n            file: path,\n            line: callLine,\n          });\n          // De-dupe by id: an identical `app.get('/x', h)` emitted twice on the same line keeps one\n          // node. The route id is content-addressed on (verb, path, file, line), so a second call on\n          // a different line gets its own route — correct, two registrations are two routes.\n          if (!nodes.some((n) => n.id === routeId)) {\n            nodes.push({\n              id: routeId,\n              kind: 'route',\n              name: `${verb} ${p}`,\n              httpMethod: verb,\n              routePath: p,\n              framework: 'express',\n              file: path,\n              span: { start: callLine, end: callEnd },\n              lang,\n              hash: ctx.hash(`${path}:route:${verb}:${p}:${callLine}`),\n            });\n          }\n          if (handlerId) {\n            edges.push(edge(handlerId, routeId, 'exposes', `${verb} ${p}`));\n          }\n        }\n      }\n    }\n    ts.forEachChild(node, visit);\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L62",
+        "procedureName": "extractExpressRoutes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4c32870bc374e70ba07d01684771222c619ef58d903db2d5c4606a54c0d419be",
+          "target": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L107",
+          "expr": "matchRouteCall",
+          "line": 67
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L62",
+        "procedureName": "extractExpressRoutes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d77e4dd0c4e35f897fcf86792a1d615a90fef8f76be56ac7470fe268335e60bd",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 71
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L62",
+        "procedureName": "extractExpressRoutes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:57cb6cbe6ed310ce93d2723ae998229effe229f013bb5137043da5c4512b7dc7",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 81
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L62",
+        "procedureName": "extractExpressRoutes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:174e8ea71973b06c7f5fe7cb92308ba640c05c0827b4064a52304c8ffe937a1f",
+          "target": "sym:packages/ui/src/viz.test.ts#edge@L27",
+          "expr": "edge",
+          "line": 95
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L62",
+        "procedureName": "extractExpressRoutes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ef7d390dee1f8e3c9056a78487deb1167d01be76a662d2265d12ab446b33ece",
+          "target": "stmt:packages/parsers/src/ts/express.ts@L102",
+          "line": 102,
+          "expr": "visit(sf);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes@L62",
+        "procedureName": "extractExpressRoutes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2a5b64af9efa508da6fdf7f417f7ea445b46a7fa3725dc2aa0e0851b7e54ef02",
+          "target": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes.visit@L65",
+          "expr": "visit",
+          "line": 102
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 10,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

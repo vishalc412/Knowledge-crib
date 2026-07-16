@@ -1,0 +1,383 @@
+{
+  "id": "sym:packages/ui/web/support.js#walkFor@L501",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:0d559bef16356f33e97ee28d3e2cf94f0b708d1be4a73f4c0068068a59f3a297",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#walkFor@L501",
+    "kind": "symbol",
+    "type": "function",
+    "name": "walkFor",
+    "qualifiedName": "walkFor",
+    "signature": "walkFor(el, host)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 501,
+      "end": 535
+    },
+    "callSites": [
+      {
+        "callee": "compileAttr",
+        "line": 502
+      },
+      {
+        "callee": "getAttribute",
+        "line": 502
+      },
+      {
+        "callee": "getAttribute",
+        "line": 503
+      },
+      {
+        "callee": "parseInt",
+        "line": 504
+      },
+      {
+        "callee": "getAttribute",
+        "line": 504
+      },
+      {
+        "callee": "walkChildren",
+        "line": 505
+      },
+      {
+        "callee": "getAttribute",
+        "line": 506
+      },
+      {
+        "callee": "listGet",
+        "line": 508
+      },
+      {
+        "callee": "isArray",
+        "line": 509
+      },
+      {
+        "callee": "warnUnresolved",
+        "line": 512
+      },
+      {
+        "callee": "fill",
+        "line": 519
+      },
+      {
+        "callee": "Array",
+        "line": 519
+      },
+      {
+        "callee": "h",
+        "line": 522
+      },
+      {
+        "callee": "getReact",
+        "line": 523
+      },
+      {
+        "callee": "map",
+        "line": 525
+      },
+      {
+        "callee": "h",
+        "line": 527
+      },
+      {
+        "callee": "getReact",
+        "line": 528
+      },
+      {
+        "callee": "map",
+        "line": 530
+      },
+      {
+        "callee": "b",
+        "line": 530
+      }
+    ]
+  },
+  "source": {
+    "text": "  function walkFor(el, host) {\n    const listGet = compileAttr(el.getAttribute(\"list\") || \"\");\n    const asName = el.getAttribute(\"as\") || \"item\";\n    const hintN = parseInt(el.getAttribute(\"hint-placeholder-count\") || \"0\", 10);\n    const kids = walkChildren(el, host);\n    const listSrc = el.getAttribute(\"list\") || \"\";\n    return (vals, ctx, key) => {\n      let list = listGet(vals);\n      if (!Array.isArray(list)) {\n        if (!ctx?.__streamingNow) {\n          if (list !== void 0 && list !== null) {\n            warnUnresolved(\n              ctx,\n              'sc-for list=\"' + listSrc + '\" is not an array (' + typeof list + \")\"\n            );\n          }\n          list = [];\n        } else {\n          list = hintN > 0 ? Array(hintN).fill(void 0) : [];\n        }\n      }\n      return h(\n        getReact().Fragment,\n        { key },\n        list.map((item, i) => {\n          const sub = { ...vals, [asName]: item, $index: i };\n          return h(\n            getReact().Fragment,\n            { key: i },\n            kids.map((b, j) => b(sub, ctx, j))\n          );\n        })\n      );\n    };\n  }",
+    "truncated": false,
+    "totalLines": 35,
+    "startLine": 501
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#walk@L440",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "walk",
+      "signature": "walk(node, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 440
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/vendor/react.production.min.js#B@L12",
+      "confidence": 1,
+      "name": "B",
+      "qualifiedName": "B",
+      "signature": "B(a, b, e, m, d)",
+      "type": "function",
+      "file": "packages/ui/web/vendor/react.production.min.js",
+      "line": 12
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#compileAttr@L355",
+      "confidence": 1,
+      "name": "compileAttr",
+      "qualifiedName": "compileAttr",
+      "signature": "compileAttr(raw)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 355
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#getReact@L9",
+      "confidence": 1,
+      "name": "getReact",
+      "qualifiedName": "getReact",
+      "signature": "getReact()",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 9
+    },
+    {
+      "id": "sym:packages/core/src/dossier/reconstruct.ts#reconstructionToMarkdown.h@L359",
+      "confidence": 1,
+      "name": "h",
+      "qualifiedName": "reconstructionToMarkdown.h",
+      "signature": "h(…)",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.ts",
+      "line": 359
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#walkChildren@L437",
+      "confidence": 1,
+      "name": "walkChildren",
+      "qualifiedName": "walkChildren",
+      "signature": "walkChildren(node, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 437
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#warnUnresolved@L453",
+      "confidence": 1,
+      "name": "warnUnresolved",
+      "qualifiedName": "warnUnresolved",
+      "signature": "warnUnresolved(ctx, what)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 453
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
+    "procedureName": "walkFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
+        "procedureName": "walkFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3d64cb00d1de3d486bde251ae70b85cdbc15760ab59be9512e8f7eb5b712cdfd",
+          "target": "stmt:packages/ui/web/support.js@L502",
+          "line": 502,
+          "expr": "const listGet = compileAttr(el.getAttribute(\"list\") || \"\");"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
+        "procedureName": "walkFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a76f3ab01911a71e63766f59e458f25464082a83d0fe220275bf0a104c7df626",
+          "target": "sym:packages/ui/web/support.js#compileAttr@L355",
+          "expr": "compileAttr",
+          "line": 502
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
+        "procedureName": "walkFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db4c48d7a3dec6489f68aae7df9ef0bf54e9d0a2d7ef75fa4265ab148de8ee5a",
+          "target": "stmt:packages/ui/web/support.js@L503",
+          "line": 503,
+          "expr": "const asName = el.getAttribute(\"as\") || \"item\";"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
+        "procedureName": "walkFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1e3497a0adaf31f160a3fc1cebfbccc8aa741da1da27940de4a3c2ca447ae26",
+          "target": "stmt:packages/ui/web/support.js@L504",
+          "line": 504,
+          "expr": "const hintN = parseInt(el.getAttribute(\"hint-placeholder-count\") || \"0\", 10);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
+        "procedureName": "walkFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:62d3b64993453ea414bb08733acba8b08aada6260cca2f23bb5cc22403c65e82",
+          "target": "stmt:packages/ui/web/support.js@L505",
+          "line": 505,
+          "expr": "const kids = walkChildren(el, host);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
+        "procedureName": "walkFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f13e219025ba2c5f3e0f504bab39dcb2730c7f6b4705e829bd7834d5e9192303",
+          "target": "sym:packages/ui/web/support.js#walkChildren@L437",
+          "expr": "walkChildren",
+          "line": 505
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
+        "procedureName": "walkFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c03d4a4edff179b26b60af14c0fa8acd2cd1c46c80bd350d77da211c50c00c8",
+          "target": "stmt:packages/ui/web/support.js@L506",
+          "line": 506,
+          "expr": "const listSrc = el.getAttribute(\"list\") || \"\";"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
+        "procedureName": "walkFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:978a71c92ddedc808bb3979f22f5cc3d72b81e1e5ef3c336071559fd82298c73",
+          "target": "stmt:packages/ui/web/support.js@L507",
+          "line": 507,
+          "expr": "return (vals, ctx, key) => {\n      let list = listGet(vals);\n      if (!Array.isArray(list)) {\n        if (!ctx?.__streamingNow) {\n          if (list !== void 0 && list !== null) {\n            warnUnresolved(\n              ctx,\n              'sc-for list=\"' + listSrc + '\" is not an array (' + typeof list + \")\"\n            );\n          }\n          list = [];\n        } else {\n          list = hintN > 0 ? Array(hintN).fill(void 0) : [];\n        }\n      }\n      return h(\n        getReact().Fragment,\n        { key },\n        list.map((item, i) => {\n          const sub = { ...vals, [asName]: item, $index: i };\n          return h(\n            getReact().Fragment,\n            { key: i },\n            kids.map((b, j) => b(sub, ctx, j))\n          );\n        })\n      );\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
+        "procedureName": "walkFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2ebf15854390bb20f678cff8e2e3c9ab9dd70e899c377ab69fbd0a32379bbe3c",
+          "target": "sym:packages/ui/web/support.js#warnUnresolved@L453",
+          "expr": "warnUnresolved",
+          "line": 512
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
+        "procedureName": "walkFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:699781eed3e0f8bde5d133e1546a1b1d217aac4ce99f65358517493026d236a1",
+          "target": "sym:packages/core/src/dossier/reconstruct.ts#reconstructionToMarkdown.h@L359",
+          "expr": "h",
+          "line": 522
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
+        "procedureName": "walkFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8c47f724d95391316aecc658c20143d0fb8c0eb253f0f74b1c41713e8c3f652f",
+          "target": "sym:packages/ui/web/support.js#getReact@L9",
+          "expr": "getReact",
+          "line": 523
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
+        "procedureName": "walkFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c7459bc1b20e4d50dbb064904b4a9ae4483d122baccb926d44b9373301a69818",
+          "target": "sym:packages/ui/web/vendor/react.production.min.js#B@L12",
+          "expr": "B",
+          "line": 530
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 19,
+      "unresolved": 11
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "11 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

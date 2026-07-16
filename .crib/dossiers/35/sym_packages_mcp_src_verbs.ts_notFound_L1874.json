@@ -1,0 +1,188 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#notFound@L1874",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:71219664828282e9a0c61ca93c8ebe4a1a2fc48eb78888a6c9430a9e543f362a",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#notFound@L1874",
+    "kind": "symbol",
+    "type": "function",
+    "name": "notFound",
+    "qualifiedName": "notFound",
+    "signature": "notFound(id: string): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1874,
+      "end": 1876
+    }
+  },
+  "source": {
+    "text": "function notFound(id: string): Record<string, unknown> {\n  return { error: { code: 'NOT_FOUND', message: `no node with id ${id}` } };\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1874
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+      "confidence": 1,
+      "name": "context",
+      "qualifiedName": "Verbs.context",
+      "signature": "context(args: {\n    id: string;\n    docLimit?: number;\n    extractedOnly?: boolean;\n    /** include the full source text of the node's span (rehydrated from disk, budgeted) */\n    withSource?: boolean;\n    /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */\n    withRules?: boolean;\n    /** fold in the schema-1.3 framework-semantics relationships: routes exposed, beans produced,\n     *  DI dependencies/dependents, JPA relations, component renders. Auto-scopes by node — a class\n     *  (controller/@Configuration/@Entity) aggregates its members' route table / bean inventory /\n     *  DI graph / relation model via `member-of`; a callable/component/field returns its own direct\n     *  edges. A @Bean-supplied dependency is surfaced with `kind: 'produces'` + the producer in one\n     *  trip (no round-trip). Unresolved `meta.injects`/`meta.produces` type names surface as\n     *  `⚠ unresolved` entries (parity with `gaps`). */\n    withFramework?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */\n    sourceMaxChars?: number;\n    /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n    /** response-wide token budget (chars/4). When set with `withSource`, the source body is shrunk\n     *  to fit the remaining budget and `budgetExhausted:true` is set; page via `source.nextLine`.\n     *  (M1.2) */\n    maxTokens?: number;\n    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged\n     *  response: when the rebuilt response is byte-identical, the body collapses to\n     *  `{ unchanged: true, hash }`. Stateless (deterministic BLAKE3 of the response). */\n    ifHash?: string;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 326
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.describes@L1222",
+      "confidence": 1,
+      "name": "describes",
+      "qualifiedName": "Verbs.describes",
+      "signature": "describes(args: { id: string; minConfidence?: number; extractedOnly?: boolean }): Record<\n    string,\n    unknown\n  >",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1222
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L487",
+      "confidence": 1,
+      "name": "dossier",
+      "qualifiedName": "Verbs.dossier",
+      "signature": "dossier(args: {\n    id: string;\n    includeTables?: boolean;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n    extractedOnly?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    format?: 'json' | 'markdown';\n    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged\n     *  response (works for both `json` and `markdown` formats). Stateless (deterministic BLAKE3). */\n    ifHash?: string;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 487
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+      "confidence": 1,
+      "name": "dossierByScope",
+      "qualifiedName": "Verbs.dossierByScope",
+      "signature": "dossierByScope(args: {\n    /** the scope kind: 'package' (the package's member symbols), 'file' (a file's symbols), or\n     *  'cluster' (a cluster's symbols). */\n    scope: 'package' | 'file' | 'cluster';\n    /** the scope node id, OR — for a package — the qualified/simple name (parity with the other node\n     *  verbs); for a file, the path (with or without the `file:` prefix); for a cluster, the slug. */\n    id: string;\n    extractedOnly?: boolean;\n    /** resolve reads/writes table names in each callable's decision table (extra lookups). */\n    includeTables?: boolean;\n    /** cap on the number of per-symbol dossiers returned (default 1000; `truncated` flags a cap). */\n    maxSymbols?: number;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    format?: 'json' | 'markdown';\n    /** resume cursor (a prior response's `cursor`) — skip the first N resolved symbols. Decoupled\n     *  from `maxTokens` (paging works without a budget), but a cursor is only RETURNED when `maxTokens`\n     *  is set (the opt-in budget path). (M1.2) */\n    cursor?: string;\n    /** response-wide token budget (chars/4). When set, the dossiers list is trimmed to the largest\n     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.\n     *  (M1.2) */\n    maxTokens?: number;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 608
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.extractRules@L1368",
+      "confidence": 1,
+      "name": "extractRules",
+      "qualifiedName": "Verbs.extractRules",
+      "signature": "extractRules(args: {\n    procedure: string;\n    includeTables?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1368
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.federatedImpact@L780",
+      "confidence": 1,
+      "name": "federatedImpact",
+      "qualifiedName": "Verbs.federatedImpact",
+      "signature": "federatedImpact(args: {\n    id: string;\n    dir: Dir;\n    /** extra repo roots to federate with the primary (`this.deps.repoRoot`). */\n    roots?: string[];\n    depth?: number;\n    limit?: number;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 780
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L716",
+      "confidence": 1,
+      "name": "impact",
+      "qualifiedName": "Verbs.impact",
+      "signature": "impact(args: {\n    id: string;\n    dir: Dir;\n    depth?: number;\n    docLimit?: number;\n    limit?: number;\n    extractedOnly?: boolean;\n    includeLlm?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 716
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L1231",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "Verbs.neighbors",
+      "signature": "neighbors(args: {\n    id: string;\n    rel?: string;\n    dir?: ApiDir;\n    limit?: number;\n    extractedOnly?: boolean;\n    includeLlm?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1231
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+      "confidence": 1,
+      "name": "ownership",
+      "qualifiedName": "Verbs.ownership",
+      "signature": "ownership(args: { id: string }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1261
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+      "confidence": 1,
+      "name": "reconstruct",
+      "qualifiedName": "Verbs.reconstruct",
+      "signature": "reconstruct(args: {\n    id: string;\n    extractedOnly?: boolean;\n    /** include the referenced-tables section (default true) */\n    includeTables?: boolean;\n    /** cap on the number of member entries (default 1000; `truncated` flags a cap) */\n    maxSymbols?: number;\n    format?: 'json' | 'markdown';\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 562
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.source@L454",
+      "confidence": 1,
+      "name": "source",
+      "qualifiedName": "Verbs.source",
+      "signature": "source(args: {\n    id: string;\n    maxChars?: number;\n    maxLines?: number;\n    /** absolute file line to start the page at (paging cursor; default = span start) */\n    startLine?: number;\n    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged\n     *  response. Stateless (deterministic BLAKE3 of the response). */\n    ifHash?: string;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 454
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#notFound@L1874",
+    "procedureName": "notFound",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#notFound@L1874",
+        "procedureName": "notFound",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c53ba1257d734270fb220de3fd2007f799402931398150ad4c0383fc277e0ec1",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1875",
+          "line": 1875,
+          "expr": "return { error: { code: 'NOT_FOUND', message: `no node with id ${id}` } };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

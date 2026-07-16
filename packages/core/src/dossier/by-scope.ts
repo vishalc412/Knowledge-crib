@@ -33,6 +33,8 @@ export interface DossiersByScopeOpts {
   sourceMaxLines?: number;
   /** cap on the number of per-symbol dossiers returned (default 1000; `truncated` flags a cap). */
   maxSymbols?: number;
+  /** skip the first `offset` resolved symbols (resume cursor for token-budget paging; M1.2). */
+  offset?: number;
 }
 
 /** The bulk result: per-symbol dossiers + scope metadata + honesty flags. */
@@ -134,8 +136,10 @@ export function buildDossiersByScope(
       : scopeMembers.sort(byNodeLine(soul));
   const symbolCount = symbolIds.length;
   const maxSymbols = opts.maxSymbols ?? DEFAULT_MAX_SYMBOLS;
-  const capped = symbolIds.slice(0, maxSymbols);
-  const truncated = capped.length < symbolCount;
+  const offset = Math.max(0, opts.offset ?? 0);
+  const capped = symbolIds.slice(offset, offset + maxSymbols);
+  // truncated when symbols remain beyond this page (past the cap OR past a non-zero offset).
+  const truncated = offset + capped.length < symbolCount;
 
   const buildOpts: DossierOpts = {
     ...(opts.extractedOnly ? { extractedOnly: true } : {}),

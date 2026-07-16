@@ -1,9 +1,19 @@
 import { pathFromId } from '@knowledge-crib/core';
-import type { Dir, Dossier, IndexStore, SoulStore } from '@knowledge-crib/core';
+import { LockBusyError, withCribLock } from '@knowledge-crib/core';
+import {
+  type AliasMap,
+  type Federation,
+  federatedImpact,
+  loadFederation,
+} from '@knowledge-crib/core';
+import { ifHash, loadAliases, rewriteQuery } from '@knowledge-crib/core';
+import { GraphStore } from '@knowledge-crib/core';
+import type { CompositeEdge, Dir, Dossier, IndexStore, SoulStore } from '@knowledge-crib/core';
 import {
   CALLABLE_SYMBOL_TYPES,
   buildDossier,
   buildDossiersByScope,
+  buildFunctionalMap,
   buildReconstruction,
   computeCoverage,
   decisionTable,
@@ -11,6 +21,7 @@ import {
   expectedBodyFile,
   frameworkSemantics,
   readDossier,
+  readLlmOverlay,
   reconstructionToMarkdown,
   writeDossier,
 } from '@knowledge-crib/core';
@@ -36,7 +47,25 @@ import {
   rehydrate,
   rehydrateBody,
 } from './snippet.js';
-import { DEFAULT_DOC_LIMIT, DEFAULT_LIMIT, bound } from './token-budget.js';
+import { Stats, trackCall } from './stats.js';
+import {
+  DEFAULT_DOC_LIMIT,
+  DEFAULT_LIMIT,
+  MAX_DEPTH,
+  MAX_DOC_LIMIT,
+  MAX_FED_ROOTS,
+  MAX_HOPS,
+  MAX_LIMIT,
+  MAX_SCOPE_SYMBOLS,
+  MAX_SOURCE_CHARS,
+  MAX_SOURCE_LINES,
+  bound,
+  capInt,
+  capMaxTokens,
+  clampMax,
+  estimateTokens,
+  fitTokenBudget,
+} from './token-budget.js';
 
 /**
  * Infer the body file a package spec SHOULD live next to, from the spec file path. Covers the common
@@ -165,16 +194,80 @@ function sumGapCategories(parts: GapCategoryCounts[]): GapCategoryCounts {
   return out;
 }
 
+/**
+ * M3.3 — the public verb methods the Proxy interceptor wraps for per-verb stats. This is the
+ * exhaustive set of `verbs.X(...)` entry points registered as MCP tools in server.ts; private
+ * helpers (`applyIfHash`, `attachLlm`, …) are deliberately absent so internal calls bypass the trap
+ * and aren't double-counted. Keep in sync with server.ts tool registrations.
+ */
+const PUBLIC_VERBS = new Set<string>([
+  'status',
+  'context',
+  'source',
+  'dossier',
+  'reconstruct',
+  'dossierByScope',
+  'impact',
+  'federatedImpact',
+  'query',
+  'enrichStatus',
+  'enrichNext',
+  'enrichSave',
+  'auditLlm',
+  'overview',
+  'llmNeighbors',
+  'describes',
+  'neighbors',
+  'ownership',
+  'shortestPath',
+  'detectChanges',
+  'extractRules',
+  'gaps',
+]);
+
 export class Verbs {
   private readonly llm: EnrichmentStore;
+  private readonly graph: GraphStore;
+  /** M2.4 — per-repo alias dictionary loaded once at construction; empty when no file is committed. */
+  private readonly aliases: AliasMap;
+  /** M3.3 — runtime observability counters (per-verb count/latency + ifHash cache hit rate). */
+  private readonly stats = new Stats();
 
   constructor(private readonly deps: VerbDeps) {
     this.llm = new EnrichmentStore(deps.soul, deps.repoRoot);
+    this.graph = new GraphStore(deps.soul);
+    this.aliases = loadAliases(deps.soul.cribDir);
+    // M3.3 — Proxy interceptor: wrap every PUBLIC verb method with `trackCall` so per-verb
+    // count + latency is recorded for BOTH entry paths (direct in-process calls AND MCP tool
+    // calls, since the MCP handler is `verbs.X(a)`). Internal helper calls (`this.applyIfHash`,
+    // `this.attachLlm`) resolve on the real `target` and bypass the trap — only the names in
+    // PUBLIC_VERBS get wrapped, so private helpers are NOT double-counted. The interceptor times
+    // the call and passes the result through verbatim; deterministic verb outputs are byte-identical
+    // with or without it (stats are in-memory side-channel, never persisted — see stats.ts).
+    // Returning a Proxy wrapping `this` is the canonical single-point instrumentation pattern:
+    // external `verbs.X(a)` hits the trap (timed), internal `this.foo()` resolves on the real
+    // `target` and bypasses it. The constructor still fully initializes `this` before returning.
+    // biome-ignore lint/correctness/noConstructorReturn: intentional Proxy interceptor — see above.
+    return new Proxy(this, {
+      get(target, prop, receiver) {
+        const value = Reflect.get(target, prop, receiver);
+        if (typeof value !== 'function') return value;
+        if (typeof prop !== 'string' || !PUBLIC_VERBS.has(prop)) return value;
+        return (...args: unknown[]) =>
+          trackCall(target.stats, prop, () => value.apply(target, args));
+      },
+    }) as unknown as this;
+  }
+
+  /** M3.3 — accessor for the live stats counters (used by the `stats` MCP tool / CLI). NOT wrapped. */
+  getStats(): Stats {
+    return this.stats;
   }
 
   status(opts?: { dirty?: boolean }): Record<string, unknown> {
     const m = this.deps.soul.getManifest();
     const hasLlmGraph = this.llm.hasAnyFresh();
+    const composite = this.graph.composite();
     const result: Record<string, unknown> = {
       indexed: m.stats.nodes > 0,
       schemaVersion: m.schemaVersion,
@@ -182,6 +275,11 @@ export class Verbs {
       ...(m.repo.vcsHead ? { vcsHead: m.repo.vcsHead } : {}),
       ...(m.stats.incrementalSince ? { incrementalSince: m.stats.incrementalSince } : {}),
       capabilities: { ...m.capabilities, ...this.deps.index.capabilities(), llmGraph: hasLlmGraph },
+      graph: {
+        extracted: { nodes: m.stats.nodes, edges: m.stats.edges },
+        semantic: composite.diagnostics,
+        composite: { nodes: composite.nodes.length, edges: composite.edges.length },
+      },
     };
     if (this.deps.vcs) {
       try {
@@ -190,8 +288,11 @@ export class Verbs {
         result.currentHead = head;
         result.dirty = {
           isDirty: dirtyFiles.length > 0,
-          uncommitted: dirtyFiles,
+          uncommittedCount: dirtyFiles.length,
           aheadOfVcsHead: Boolean(m.repo.vcsHead && m.repo.vcsHead !== head),
+          // Default status must stay safely serializable even when a graph rebuild changes thousands
+          // of committed soul artifacts. `--dirty` is the explicit detail request.
+          ...(opts?.dirty ? { uncommitted: dirtyFiles } : {}),
         };
         if (opts?.dirty) {
           const since = m.stats.incrementalSince ?? m.repo.vcsHead;
@@ -246,6 +347,14 @@ export class Verbs {
     sourceMaxLines?: number;
     /** absolute file line to start the source page at (paging cursor; default = span start) */
     sourceStartLine?: number;
+    /** response-wide token budget (chars/4). When set with `withSource`, the source body is shrunk
+     *  to fit the remaining budget and `budgetExhausted:true` is set; page via `source.nextLine`.
+     *  (M1.2) */
+    maxTokens?: number;
+    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged
+     *  response: when the rebuilt response is byte-identical, the body collapses to
+     *  `{ unchanged: true, hash }`. Stateless (deterministic BLAKE3 of the response). */
+    ifHash?: string;
   }): Record<string, unknown> {
     const soul = this.deps.soul;
     const id = this.resolveNodeId(args.id);
@@ -258,7 +367,10 @@ export class Verbs {
     const callees = this.callEdges(id, 'down', args.extractedOnly).map((e) =>
       this.brief(e.dst, e.confidence),
     );
-    const docs = bound(this.docsFor(id, 0, args.extractedOnly), args.docLimit ?? DEFAULT_DOC_LIMIT);
+    const docs = bound(
+      this.docsFor(id, 0, args.extractedOnly),
+      capInt(args.docLimit, DEFAULT_DOC_LIMIT, MAX_DOC_LIMIT),
+    );
     const result: Record<string, unknown> = {
       node: this.publicNode(node),
       callers,
@@ -284,7 +396,50 @@ export class Verbs {
       if (fw) result.framework = fw;
     }
     this.attachLlm(result, id, args.withLlm);
-    return result;
+    // M1.2 response-wide token budget (opt-in). When set with `withSource`, guarantee the serialized
+    // response fits `maxTokens` (chars/4). The source body is the variable part; the node + callers +
+    // callees + docs + llm skeleton is counted once and the source is shrunk to the remaining budget.
+    // `budgetExhausted` signals the body was cut; the body's existing `nextLine` cursor pages it.
+    if (args.maxTokens !== undefined && args.withSource && result.source !== undefined) {
+      const maxTokens = capMaxTokens(args.maxTokens);
+      const { source: _drop, ...withoutSource } = result;
+      const tokensWithout = estimateTokens(withoutSource);
+      const remaining = maxTokens - tokensWithout;
+      result.budgetExhausted = false;
+      if (remaining < 1) {
+        // skeleton alone overflows: drop the body, keep the budgetExhausted signal so a tighter-
+        // budgeted retry can page it via the body's own span-start cursor.
+        result.source = undefined;
+        result.budgetExhausted = true;
+      } else {
+        // The char budget bounds `source.text`, but the source OBJECT carries JSON overhead
+        // (totalLines/startLine/nextLine/truncated) the char budget does not count. Re-estimate the
+        // full response after the first shrink and halve the char budget until it fits (bounded loop
+        // — chars/4 is monotonic, so this converges in a few steps).
+        let charBudget = Math.max(1, remaining * 4);
+        let shrunk = this.bodyOf(node, { ...args, sourceMaxChars: charBudget });
+        let guard = 0;
+        while (
+          estimateTokens({ ...result, source: shrunk }) > maxTokens &&
+          charBudget > 1 &&
+          guard++ < 8
+        ) {
+          charBudget = Math.max(1, Math.floor(charBudget / 2));
+          shrunk = this.bodyOf(node, { ...args, sourceMaxChars: charBudget });
+        }
+        if (estimateTokens({ ...result, source: shrunk }) > maxTokens) {
+          // even a 1-char body overflows (budget sits below skeleton + the source-object's irreducible
+          // JSON wrapper) — drop the body so the response still honors the budget; budgetExhausted
+          // signals a tighter-budgeted retry can page it via the body's span-start cursor.
+          result.source = undefined;
+          result.budgetExhausted = true;
+        } else {
+          result.source = shrunk;
+          result.budgetExhausted = guard > 0 || shrunk.truncated;
+        }
+      }
+    }
+    return this.applyIfHash(args, result);
   }
 
   /**
@@ -302,12 +457,15 @@ export class Verbs {
     maxLines?: number;
     /** absolute file line to start the page at (paging cursor; default = span start) */
     startLine?: number;
+    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged
+     *  response. Stateless (deterministic BLAKE3 of the response). */
+    ifHash?: string;
   }): Record<string, unknown> {
     const id = this.resolveNodeId(args.id);
     if (!id) return notFound(args.id);
     const node = this.deps.soul.getNode(id);
     if (!node) return notFound(args.id);
-    return { node: this.publicNode(node), source: this.bodyOf(node, args) };
+    return this.applyIfHash(args, { node: this.publicNode(node), source: this.bodyOf(node, args) });
   }
 
   /**
@@ -337,6 +495,9 @@ export class Verbs {
     /** fold in saved LLM-authored semantic graph analysis; default-on when present. */
     withLlm?: boolean;
     format?: 'json' | 'markdown';
+    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged
+     *  response (works for both `json` and `markdown` formats). Stateless (deterministic BLAKE3). */
+    ifHash?: string;
   }): Record<string, unknown> {
     const soul = this.deps.soul;
     const id = this.resolveNodeId(args.id);
@@ -351,8 +512,12 @@ export class Verbs {
     const buildOpts = {
       ...(args.includeTables ? { includeTables: true } : {}),
       ...(args.extractedOnly ? { extractedOnly: true } : {}),
-      ...(args.sourceMaxChars !== undefined ? { sourceMaxChars: args.sourceMaxChars } : {}),
-      ...(args.sourceMaxLines !== undefined ? { sourceMaxLines: args.sourceMaxLines } : {}),
+      ...(args.sourceMaxChars !== undefined
+        ? { sourceMaxChars: clampMax(args.sourceMaxChars, MAX_SOURCE_CHARS) }
+        : {}),
+      ...(args.sourceMaxLines !== undefined
+        ? { sourceMaxLines: clampMax(args.sourceMaxLines, MAX_SOURCE_LINES) }
+        : {}),
       ...(args.sourceStartLine !== undefined ? { sourceStartLine: args.sourceStartLine } : {}),
     };
 
@@ -377,11 +542,11 @@ export class Verbs {
     }
     if (!dossier) return notFound(args.id);
     if (args.format === 'markdown') {
-      return { id, markdown: dossierToMarkdown(dossier) };
+      return this.applyIfHash(args, { id, markdown: dossierToMarkdown(dossier) });
     }
     const result = dossier as unknown as Record<string, unknown>;
     this.attachLlm(result, id, args.withLlm);
-    return result;
+    return this.applyIfHash(args, result);
   }
 
   /**
@@ -415,7 +580,9 @@ export class Verbs {
       {
         ...(args.extractedOnly ? { extractedOnly: true } : {}),
         ...(args.includeTables !== undefined ? { includeTables: args.includeTables } : {}),
-        ...(args.maxSymbols !== undefined ? { maxSymbols: args.maxSymbols } : {}),
+        ...(args.maxSymbols !== undefined
+          ? { maxSymbols: clampMax(args.maxSymbols, MAX_SCOPE_SYMBOLS) }
+          : {}),
       },
     );
     if (!reconstruction) return notFound(args.id);
@@ -453,12 +620,21 @@ export class Verbs {
     sourceMaxChars?: number;
     sourceMaxLines?: number;
     format?: 'json' | 'markdown';
+    /** resume cursor (a prior response's `cursor`) — skip the first N resolved symbols. Decoupled
+     *  from `maxTokens` (paging works without a budget), but a cursor is only RETURNED when `maxTokens`
+     *  is set (the opt-in budget path). (M1.2) */
+    cursor?: string;
+    /** response-wide token budget (chars/4). When set, the dossiers list is trimmed to the largest
+     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.
+     *  (M1.2) */
+    maxTokens?: number;
   }): Record<string, unknown> {
     const soul = this.deps.soul;
     // package: use the standard qname resolver for parity with `dossier`/`context`; file/cluster: pass
     // the raw id (buildDossiersByScope handles the file:/c: prefix + path/slug resolution itself).
     const resolved = args.scope === 'package' ? (this.resolveNodeId(args.id) ?? args.id) : args.id;
     const manifest = soul.getManifest();
+    const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);
     const result = buildDossiersByScope(
       soul,
       this.deps.repoRoot,
@@ -468,16 +644,45 @@ export class Verbs {
       {
         ...(args.extractedOnly ? { extractedOnly: true } : {}),
         ...(args.includeTables ? { includeTables: true } : {}),
-        ...(args.maxSymbols !== undefined ? { maxSymbols: args.maxSymbols } : {}),
-        ...(args.sourceMaxChars !== undefined ? { sourceMaxChars: args.sourceMaxChars } : {}),
-        ...(args.sourceMaxLines !== undefined ? { sourceMaxLines: args.sourceMaxLines } : {}),
+        ...(args.maxSymbols !== undefined
+          ? { maxSymbols: clampMax(args.maxSymbols, MAX_SCOPE_SYMBOLS) }
+          : {}),
+        ...(args.sourceMaxChars !== undefined
+          ? { sourceMaxChars: clampMax(args.sourceMaxChars, MAX_SOURCE_CHARS) }
+          : {}),
+        ...(args.sourceMaxLines !== undefined
+          ? { sourceMaxLines: clampMax(args.sourceMaxLines, MAX_SOURCE_LINES) }
+          : {}),
+        offset,
       },
     );
     if (!result) return notFound(args.id);
     if (args.format === 'markdown') {
       return { id: result.id, markdown: dossiersByScopeToMarkdown(result) };
     }
-    return result as unknown as Record<string, unknown>;
+    // M1.2 response-wide token budget (opt-in). Fit the per-symbol dossiers to the largest leading
+    // prefix whose serialized response fits (chars/4). The scope metadata + symbolCount + truncated
+    // + skipped are fixed; symbols is the variable. `truncated` (core cap/offset) is unchanged;
+    // `budgetExhausted` is the new token-cut signal; `cursor` resumes at the next dossier.
+    if (args.maxTokens === undefined) {
+      return result as unknown as Record<string, unknown>;
+    }
+    const maxTokens = capMaxTokens(args.maxTokens);
+    const symbols = result.symbols;
+    const fitted = fitTokenBudget(symbols, maxTokens, (prefix) =>
+      JSON.stringify({
+        ...result,
+        symbols: prefix,
+        budgetExhausted: true,
+        cursor: String(offset + prefix.length),
+      }),
+    );
+    const out = { ...result, symbols: fitted.items } as unknown as Record<string, unknown>;
+    const more = fitted.budgetExhausted || result.truncated;
+    // when maxTokens is opted in, always report budgetExhausted (true/false); cursor only when more.
+    out.budgetExhausted = fitted.budgetExhausted;
+    if (more) out.cursor = String(offset + fitted.items.length);
+    return out;
   }
 
   /** Rehydrate a node's full span, mapping the budget + paging args onto the snippet defaults. */
@@ -493,8 +698,16 @@ export class Verbs {
     },
   ): RehydratedBody {
     return rehydrateBody(this.deps.repoRoot, node, {
-      maxChars: args.sourceMaxChars ?? args.maxChars ?? DEFAULT_BODY_MAX_CHARS,
-      maxLines: args.sourceMaxLines ?? args.maxLines ?? DEFAULT_BODY_MAX_LINES,
+      maxChars: capInt(
+        args.sourceMaxChars ?? args.maxChars,
+        DEFAULT_BODY_MAX_CHARS,
+        MAX_SOURCE_CHARS,
+      ),
+      maxLines: capInt(
+        args.sourceMaxLines ?? args.maxLines,
+        DEFAULT_BODY_MAX_LINES,
+        MAX_SOURCE_LINES,
+      ),
       ...(args.sourceStartLine !== undefined ? { startLine: args.sourceStartLine } : {}),
       ...(args.startLine !== undefined ? { startLine: args.startLine } : {}),
     });
@@ -507,10 +720,11 @@ export class Verbs {
     docLimit?: number;
     limit?: number;
     extractedOnly?: boolean;
+    includeLlm?: boolean;
   }): Record<string, unknown> {
     const id = this.resolveNodeId(args.id);
     if (!id || !this.deps.soul.getNode(id)) return notFound(args.id);
-    const depth = args.depth ?? 2;
+    const depth = capInt(args.depth, 2, MAX_DEPTH);
     const visited = new Set<string>([id]);
     const affected: Array<{
       id: string;
@@ -523,7 +737,7 @@ export class Verbs {
     for (let d = 1; d <= depth && frontier.length > 0; d++) {
       const next: string[] = [];
       for (const cur of frontier) {
-        for (const e of this.adjacency(cur, args.dir, args.extractedOnly)) {
+        for (const e of this.traversalAdjacency(cur, args.dir, args)) {
           const nb = args.dir === 'up' ? e.src : e.dst;
           if (visited.has(nb)) continue;
           visited.add(nb);
@@ -533,14 +747,16 @@ export class Verbs {
             rel: e.rel,
             distance: d,
             risk: d === 1 ? 'high' : d === 2 ? 'medium' : 'low',
-            docs: bound(this.docsFor(nb, 0, args.extractedOnly), args.docLimit ?? DEFAULT_DOC_LIMIT)
-              .items,
+            docs: bound(
+              this.docsFor(nb, 0, args.extractedOnly),
+              capInt(args.docLimit, DEFAULT_DOC_LIMIT, MAX_DOC_LIMIT),
+            ).items,
           });
         }
       }
       frontier = next;
     }
-    const page = bound(affected, args.limit ?? DEFAULT_LIMIT);
+    const page = bound(affected, capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT));
     return {
       root: id,
       dir: args.dir,
@@ -548,6 +764,71 @@ export class Verbs {
       relatedDocs: this.docsFor(id, 0, args.extractedOnly),
       truncated: page.truncated,
       ...(page.cursor ? { cursor: page.cursor } : {}),
+    };
+  }
+
+  /**
+   * `federatedImpact` (M3.2) — cross-repo blast radius. Like `impact` but loads extra repo souls
+   * (`roots`) and crosses the route-layer bridge: a repo-A `http-call` (outbound HTTP client call)
+   * resolves to the repo-B `route` it serves, matched by {httpMethod, routePath}. The bridge is a
+   * runtime computation over the loaded souls — no cross-repo edge is committed, so each soul stays
+   * independent + deterministic. The primary soul (`this.deps.repoRoot`) is always federated; extra
+   * `roots` add the repos to traverse into. The start `id` is resolved in the primary soul first,
+   * then across the extra roots. Each affected node carries `soul` (its repo root) + `crossRepo`
+   * (true iff the hop crossed repos via the bridge).
+   */
+  federatedImpact(args: {
+    id: string;
+    dir: Dir;
+    /** extra repo roots to federate with the primary (`this.deps.repoRoot`). */
+    roots?: string[];
+    depth?: number;
+    limit?: number;
+    extractedOnly?: boolean;
+  }): Record<string, unknown> {
+    const primaryRoot = this.deps.repoRoot;
+    // Clamp extra roots to MAX_FED_ROOTS — the CLI path (collectRepeated) has no zod bound, so a
+    // runaway `--repo` list is defended here too, not only at the MCP zod layer (server.ts).
+    const extraRoots = (args.roots ?? []).slice(0, MAX_FED_ROOTS);
+    const roots = uniqueRoots([primaryRoot, ...extraRoots]);
+    let fed: Federation;
+    try {
+      fed = loadFederation(roots);
+    } catch (err) {
+      // Same {code, message} shape as notFound — a consumer branching on `result.error?.code`
+      // (the pattern verbs.test.ts uses) sees a stable code, not a bare string.
+      return {
+        error: { code: 'FEDERATION_LOAD_FAILED', message: (err as Error).message },
+        roots,
+      };
+    }
+    // Resolve the start id: primary soul first (the common case), then across the extra roots.
+    let startRoot = primaryRoot;
+    let startId = this.resolveNodeIdAcross(fed, args.id, primaryRoot);
+    if (!startId) {
+      for (const s of fed.souls) {
+        if (s.root === primaryRoot) continue;
+        const id = resolveIdInSoul(s.soul, args.id);
+        if (id) {
+          startId = id;
+          startRoot = s.root;
+          break;
+        }
+      }
+    }
+    if (!startId) return notFound(args.id);
+    const result = federatedImpact(fed, startRoot, startId, args.dir, {
+      depth: args.depth,
+      limit: args.limit,
+      extractedOnly: args.extractedOnly,
+    });
+    return {
+      root: startRoot,
+      dir: args.dir,
+      federatedRoots: roots,
+      affected: result.affected,
+      crossRepoHops: result.crossRepoHops,
+      truncated: result.truncated,
     };
   }
 
@@ -582,15 +863,29 @@ export class Verbs {
     withFramework?: boolean;
     /** include saved LLM semantic analysis on hits and search LLM analysis text too. */
     withLlm?: boolean;
+    /** resume cursor (a prior response's `cursor`) — skip the first N BM25-ranked hits (FTS5 OFFSET).
+     *  Decoupled from `maxTokens`: paging works without a budget, but a cursor is only RETURNED when
+     *  `maxTokens` is set (the opt-in budget path). (M1.2) */
+    cursor?: string;
+    /** response-wide token budget (chars/4). When set, the hits list is trimmed to the largest
+     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.
+     *  (M1.2) */
+    maxTokens?: number;
   }): Record<string, unknown> {
     const soul = this.deps.soul;
-    const limit = args.limit ?? DEFAULT_LIMIT;
+    const limit = capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT);
+    // cursor → offset into the BM25-ranked set (FTS5 OFFSET). Floor at 0; non-numeric → 0.
+    const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);
+    // M2.4 — rewrite the query with the per-repo alias dictionary before it reaches the index.
+    // Empty dict (the common case) is a pure no-op, so queries without aliases are byte-identical.
+    const q = rewriteQuery(args.q, this.aliases);
     // Over-fetch by one to detect whether the BM25 result set was capped (honest `truncated` flag)
     // without an extra count query; we slice back to `limit` after the overflow check.
     const rawHits = this.deps.index.query({
-      text: args.q,
+      text: q,
       ...(args.kinds ? { kinds: args.kinds } : {}),
       limit: limit + 1,
+      offset,
     });
     const bm25Truncated = rawHits.length > limit;
     const hits0 = bm25Truncated ? rawHits.slice(0, limit) : rawHits;
@@ -668,7 +963,33 @@ export class Verbs {
       });
     }
 
-    return { hits, llmHits, truncated: bm25Truncated || llmTruncated };
+    const baseTruncated = bm25Truncated || llmTruncated;
+    // M1.2 response-wide token budget (opt-in). When maxTokens is set, fit the hits list to the
+    // largest leading prefix whose serialized response fits (chars/4); llmHits + the fixed
+    // `truncated` flag are counted in the estimate. The non-maxTokens path is byte-identical to
+    // before (no cursor / no budgetExhausted) so existing callers + tests are unchanged.
+    if (args.maxTokens === undefined) {
+      return { hits, llmHits, truncated: baseTruncated };
+    }
+    const maxTokens = capMaxTokens(args.maxTokens);
+    const fitted = fitTokenBudget(hits, maxTokens, (prefix) =>
+      JSON.stringify({
+        hits: prefix,
+        llmHits,
+        truncated: baseTruncated,
+        budgetExhausted: true,
+        cursor: String(offset + prefix.length),
+      }),
+    );
+    const more = fitted.budgetExhausted || bm25Truncated;
+    return {
+      hits: fitted.items,
+      llmHits,
+      truncated: baseTruncated,
+      // when maxTokens is opted in, always report budgetExhausted (true/false); cursor only when more.
+      budgetExhausted: fitted.budgetExhausted,
+      ...(more ? { cursor: String(offset + fitted.items.length) } : {}),
+    };
   }
 
   /**
@@ -732,7 +1053,12 @@ export class Verbs {
     }
 
     // 3. Discovery question: search the index and gather deep context per hit.
-    const hits = this.deps.index.query({ text: q, limit: args.limit ?? DEFAULT_LIMIT });
+    // M2.4 — rewrite the discovery query with the alias dict (no-op when empty); `q` (original) is
+    // still used above for node-id resolution + overview detection and echoed as the question.
+    const hits = this.deps.index.query({
+      text: rewriteQuery(q, this.aliases),
+      limit: capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT),
+    });
     const needEdges = args.withRules || args.withFramework;
     let outgoing: Map<string, Edge[]> | undefined;
     let incoming: Map<string, Edge[]> | undefined;
@@ -777,7 +1103,7 @@ export class Verbs {
     // Also surface saved LLM analyses whose text matches the question. Lightweight pointers only —
     // `ask` is the deterministic discovery path and never folds the full analysis/graph blob.
     const existing = new Set(enriched.map((h) => String(h.id)));
-    const limit = args.limit ?? DEFAULT_LIMIT;
+    const limit = capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT);
     const llmArtifacts = this.llm.matchText(q, limit + 1);
     const llmTruncated = llmArtifacts.length > limit;
     const llmHits: Array<Record<string, unknown>> = [];
@@ -808,20 +1134,30 @@ export class Verbs {
     return result;
   }
 
-  /** Summarize clusters/files for overview questions when no LLM system bible exists. */
+  /** Summarize the soul for overview questions when no LLM system bible exists — a thin wrapper
+   *  over `buildFunctionalMap` (the same module-segmented view the overview verb serves). Keeps a
+   *  `clusters` list (label-fixed, LLM name preferred) for back-compat with callers that read
+   *  `fallback.clusters`, plus the `modules` array that is the real functional segregation. */
   private clusterSummary(): Record<string, unknown> {
-    const clusters = [...this.deps.soul.iterate('cluster')]
+    const soul = this.deps.soul;
+    const map = buildFunctionalMap(soul);
+    const overlay = readLlmOverlay(soul);
+    const clusters = [...soul.iterate('cluster')]
       .sort((a, b) => a.id.localeCompare(b.id))
       .map((c) => ({
         id: c.id,
-        name: c.name,
+        label: overlay.entries.get(c.id)?.name ?? c.label ?? c.id,
         memberCount: c.members?.length ?? 0,
       }));
-    const files = [...this.deps.soul.iterate('file')]
-      .sort((a, b) => (a.file ?? '').localeCompare(b.file ?? ''))
-      .slice(0, 50)
-      .map((f) => ({ id: f.id, path: f.file }));
-    return { clusters, files };
+    const modules = map.modules.map((m) => ({
+      id: m.id,
+      name: m.name,
+      pathPrefix: m.pathPrefix,
+      ...(m.purpose ? { purpose: m.purpose.text } : {}),
+      counts: m.counts,
+      coverage: m.coverage,
+    }));
+    return { clusters, modules };
   }
 
   enrichStatus(args: EnrichStatusArgs = {}): Record<string, unknown> {
@@ -845,11 +1181,35 @@ export class Verbs {
       evidence: Array<Record<string, unknown>>;
     }>;
   }): Record<string, unknown> {
-    return this.llm.save(args as never) as unknown as Record<string, unknown>;
+    // Serializes writers: an enrich_save landing while `crib index`/`update` runs would race the
+    // semantic artifacts against soul rebuild. Hold cross-process graph lock around save.
+    // On a busy crib, return a structured busy result (deterministic verbs never throw).
+    const cribDir = this.deps.soul.cribDir;
+    try {
+      return withCribLock(
+        { cribDir },
+        () => this.llm.save(args as never) as unknown as Record<string, unknown>,
+      );
+    } catch (error) {
+      if (error instanceof LockBusyError) {
+        return { error: 'crib_busy', message: error.message, holderPid: error.holderPid };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * `audit_llm` (M1.3 — the moat): re-verify every persisted LLM artifact on disk against the current
+   * soul. Re-runs the grounding check (rehydrate each evidence quote's anchor span, require overlap)
+   * so a post-refactor re-verify is identical to the original save-time verdict. PURE — never calls a
+   * model, never mutates artifacts. Returns per-target verdicts + drift + staleness.
+   */
+  auditLlm(): Record<string, unknown> {
+    return this.llm.auditLlm() as unknown as Record<string, unknown>;
   }
 
   overview(
-    args: { scope?: { pathPrefix?: string; cluster?: string } } = {},
+    args: { scope?: { pathPrefix?: string; cluster?: string }; withLlm?: boolean } = {},
   ): Record<string, unknown> {
     return this.llm.overview(args) as unknown as Record<string, unknown>;
   }
@@ -874,13 +1234,18 @@ export class Verbs {
     dir?: ApiDir;
     limit?: number;
     extractedOnly?: boolean;
+    includeLlm?: boolean;
   }): Record<string, unknown> {
-    const id = this.resolveNodeId(args.id);
-    if (!id || !this.deps.soul.getNode(id)) return notFound(args.id);
-    const edges = this.adjacency(id, apiDir(args.dir), args.extractedOnly).filter(
+    const includeLlm = args.includeLlm === true && args.extractedOnly !== true;
+    const composite = includeLlm ? this.graph.composite() : undefined;
+    const id =
+      this.resolveNodeId(args.id) ??
+      (composite?.nodes.some((node) => node.id === args.id) ? args.id : undefined);
+    if (!id) return notFound(args.id);
+    const edges = this.traversalAdjacency(id, apiDir(args.dir), args).filter(
       (e) => !args.rel || e.rel === args.rel,
     );
-    const page = bound(edges.map(publicEdge), args.limit ?? 50);
+    const page = bound(edges.map(publicAnyEdge), capInt(args.limit, 50, MAX_LIMIT));
     return {
       edges: page.items,
       truncated: page.truncated,
@@ -888,12 +1253,48 @@ export class Verbs {
     };
   }
 
-  shortestPath(args: { from: string; to: string; maxHops?: number }): Record<string, unknown> {
+  /** M3.1 ownership: the git-blame owners of a node — "who do I ask about this code". Walks outgoing
+   *  `owned-by` EXTRACTED edges (symbol → owner) and returns the owner node + the blame commit + the
+   *  HEAD the index ran against. A node with no `owned-by` edge (untracked file, non-git repo, owner
+   *  unresolved) returns an empty owners list rather than not-found — the node exists, it just has no
+   *  owner attribution. Accepts the same id-or-name resolution as the other node verbs. */
+  ownership(args: { id: string }): Record<string, unknown> {
+    const id = this.resolveNodeId(args.id);
+    if (!id || !this.deps.soul.getNode(id)) return notFound(args.id);
+    const owners: Array<Record<string, unknown>> = [];
+    for (const e of this.adjacency(id, 'down', true)) {
+      if (e.rel !== 'owned-by') continue;
+      const owner = this.deps.soul.getNode(e.dst);
+      if (!owner) continue;
+      const ev = (e.evidence ?? {}) as Record<string, unknown>;
+      owners.push({
+        owner: this.publicNode(owner),
+        commit: ev.commit ?? null,
+        head: ev.head ?? null,
+        confidence: e.confidence,
+        provenance: e.provenance,
+      });
+    }
+    return { node: id, owners };
+  }
+
+  shortestPath(args: {
+    from: string;
+    to: string;
+    maxHops?: number;
+    includeLlm?: boolean;
+    extractedOnly?: boolean;
+  }): Record<string, unknown> {
     // resolve qualified/simple names on both endpoints (parity with the other node verbs); fall
     // back to the raw input so index.shortestPath reports a clean not-found instead of throwing.
     const from = this.resolveNodeId(args.from) ?? args.from;
     const to = this.resolveNodeId(args.to) ?? args.to;
-    const r = this.deps.index.shortestPath(from, to, args.maxHops ?? 6);
+    const maxHops = capInt(args.maxHops, 6, MAX_HOPS);
+    if (args.includeLlm === true && args.extractedOnly !== true) {
+      const r = this.graph.shortestPath(from, to, maxHops);
+      return { path: r.path, edges: r.edges.map(publicAnyEdge), found: r.path.length > 0 };
+    }
+    const r = this.deps.index.shortestPath(from, to, maxHops);
     return { path: r.path, edges: r.edges.map(publicEdge), found: r.found };
   }
 
@@ -1231,6 +1632,21 @@ export class Verbs {
     return extractedOnly ? edges.filter((e) => e.provenance === 'EXTRACTED') : edges;
   }
 
+  private traversalAdjacency(
+    id: string,
+    dir: Dir | 'both',
+    opts: { extractedOnly?: boolean; includeLlm?: boolean },
+  ): Array<Edge | CompositeEdge> {
+    if (opts.includeLlm !== true || opts.extractedOnly === true) {
+      return this.adjacency(id, dir, opts.extractedOnly);
+    }
+    return this.graph.composite().edges.filter((edge) => {
+      if (dir === 'up') return edge.dst === id;
+      if (dir === 'down') return edge.src === id;
+      return edge.src === id || edge.dst === id;
+    });
+  }
+
   private callEdges(id: string, dir: Dir, extractedOnly?: boolean): Edge[] {
     return this.deps.index
       .neighbors(id, 'calls', dir)
@@ -1282,6 +1698,18 @@ export class Verbs {
     return undefined;
   }
 
+  /** M3.2 — resolve an id-or-name against a specific federated soul (the primary), used by
+   *  `federatedImpact` before it falls back to scanning the extra roots. */
+  private resolveNodeIdAcross(
+    fed: Federation,
+    idOrName: string,
+    primaryRoot: string,
+  ): string | undefined {
+    const primary = fed.souls.find((s) => s.root === primaryRoot);
+    if (!primary) return undefined;
+    return resolveIdInSoul(primary.soul, idOrName);
+  }
+
   private brief(id: string, confidence: number): Record<string, unknown> {
     const n = this.deps.soul.getNode(id);
     if (!n) return { id, confidence };
@@ -1295,6 +1723,30 @@ export class Verbs {
       ...(n.span ? { line: n.span.start } : {}),
       confidence,
     };
+  }
+
+  /**
+   * M2.6 — stateless change-aware response cache. Fingerprints `result` with {@link ifHash} (BLAKE3
+   * of its key-sorted serialization). When the caller echoes the same `hash` back as `ifHash` (the
+   * value the previous call returned in its `hash` field), the whole body collapses to
+   * `{ unchanged: true, hash }` — a ~30-byte stand-in for an unchanged 50 KB dossier, so a repeat
+   * `context`/`dossier`/`source` call in the same agent session stops re-filling the input window.
+   * Stateless: no session store, no cross-process state — the fingerprint is deterministic BLAKE3.
+   */
+  private applyIfHash(
+    args: { ifHash?: string },
+    result: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const hash = ifHash(result);
+    if (args.ifHash !== undefined && args.ifHash === hash) {
+      // M3.3 — a cache probe that HIT: caller echoed the prior hash → collapsed body. Only count
+      // when `ifHash` was provided (a first fetch with no `ifHash` is not a cache probe, so it is
+      // excluded from the hit-rate denominator).
+      this.stats.recordCacheHit(true);
+      return { unchanged: true, hash };
+    }
+    if (args.ifHash !== undefined) this.stats.recordCacheHit(false);
+    return { ...result, hash };
   }
 
   private attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void {
@@ -1346,6 +1798,9 @@ export class Verbs {
     if (n.exprTruncated) out.exprTruncated = n.exprTruncated;
     if (Array.isArray(n.constraints)) out.constraints = n.constraints;
     if (n.commentRef) out.commentRef = n.commentRef;
+    // M3.1 ownership — an `owner` node carries the git-blame author identity (email when blame
+    // exposed one, else name-only). Surfaced so the `ownership` verb's owner records carry email.
+    if (n.email) out.email = n.email;
     // doc-section
     if (n.heading) out.heading = n.heading;
     if (n.level !== undefined) out.level = n.level;
@@ -1406,8 +1861,44 @@ function publicEdge(e: Edge): Record<string, unknown> {
   };
 }
 
+function publicAnyEdge(e: Edge | CompositeEdge): Record<string, unknown> {
+  return {
+    ...publicEdge(e as Edge),
+    ...('origin' in e ? { origin: e.origin } : { origin: 'extracted' }),
+    ...('targetId' in e && e.targetId ? { targetId: e.targetId } : {}),
+    ...('model' in e && e.model ? { model: e.model } : {}),
+    ...('rationale' in e && e.rationale ? { rationale: e.rationale } : {}),
+  };
+}
+
 function notFound(id: string): Record<string, unknown> {
   return { error: { code: 'NOT_FOUND', message: `no node with id ${id}` } };
+}
+
+/** M3.2 — resolve an id-or-name against an arbitrary soul (exact id, then qualified, then simple). */
+function resolveIdInSoul(soul: SoulStore, idOrName: string): string | undefined {
+  if (soul.getNode(idOrName)) return idOrName;
+  const needle = idOrName.toLowerCase();
+  for (const n of soul.iterate()) {
+    if (n.qualifiedName?.toLowerCase() === needle) return n.id;
+  }
+  for (const n of soul.iterate()) {
+    if (n.name?.toLowerCase() === needle) return n.id;
+  }
+  return undefined;
+}
+
+/** M3.2 — de-duplicate + resolve repo roots, preserving order (primary first). */
+function uniqueRoots(roots: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of roots) {
+    if (!r) continue;
+    if (seen.has(r)) continue;
+    seen.add(r);
+    out.push(r);
+  }
+  return out;
 }
 
 /**
@@ -1521,12 +2012,26 @@ function askToMarkdown(result: Record<string, unknown>): string {
       parts.push(String(system.purpose));
       parts.push('');
     }
+    const modules = (overview.modules ?? []) as Array<Record<string, unknown>>;
+    if (modules.length > 0) {
+      parts.push(`## modules (${modules.length})`);
+      for (const m of modules) {
+        const purpose = (m.purpose as { text?: string } | undefined)?.text ?? '';
+        const counts = m.counts as { symbols?: number } | undefined;
+        const coverage = m.coverage as { pct?: number } | undefined;
+        parts.push(
+          `- **${m.name}** (${counts?.symbols ?? 0} symbols${
+            coverage?.pct !== undefined ? `, ${coverage.pct}% enriched` : ''
+          })${purpose ? ` — ${purpose}` : ''}`,
+        );
+      }
+      parts.push('');
+    }
     const analyses = (overview.analyses ?? []) as Array<Record<string, unknown>>;
     if (analyses.length > 0) {
       parts.push('## analyses');
       for (const a of analyses.slice(0, 10)) {
-        const analysis = (a.analysis as Record<string, unknown>) ?? {};
-        parts.push(`- **${a.targetId}** — ${analysis.purpose ?? 'no summary'}`);
+        parts.push(`- **${a.targetId}** — ${a.purpose ?? 'no summary'}`);
       }
       parts.push('');
     }

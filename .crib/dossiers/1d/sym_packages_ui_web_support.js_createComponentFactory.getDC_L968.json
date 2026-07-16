@@ -1,0 +1,211 @@
+{
+  "id": "sym:packages/ui/web/support.js#createComponentFactory.getDC@L968",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:8bca7a1ff4869e8d15313e16b5bd30e6b5deff12c8fa72a34a372527c8944d71",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#createComponentFactory.getDC@L968",
+    "kind": "symbol",
+    "type": "function",
+    "name": "getDC",
+    "qualifiedName": "createComponentFactory.getDC",
+    "signature": "getDC(name)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 968,
+      "end": 986
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 969
+      },
+      {
+        "callee": "set",
+        "line": 984
+      }
+    ]
+  },
+  "source": {
+    "text": "    function getDC(name) {\n      const hit = named.get(name);\n      if (hit) return hit;\n      function Dispatcher(p) {\n        const [, setTick] = React.useState(0);\n        React.useEffect(() => {\n          const sub = () => setTick((n) => n + 1);\n          registry.get(name).subs.add(sub);\n          return () => {\n            registry.get(name).subs.delete(sub);\n          };\n        }, []);\n        ensureFetched(name);\n        return h(StreamableComponent, { ...p, __name: name });\n      }\n      Dispatcher.displayName = name;\n      named.set(name, Dispatcher);\n      return Dispatcher;\n    }",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 968
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#boot@L148",
+      "confidence": 1,
+      "name": "boot",
+      "qualifiedName": "boot",
+      "signature": "boot(runtime, doc = document)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 148
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRuntime@L1329",
+      "confidence": 1,
+      "name": "createRuntime",
+      "qualifiedName": "createRuntime",
+      "signature": "createRuntime(doc = document)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1329
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#init@L1524",
+      "confidence": 1,
+      "name": "init",
+      "qualifiedName": "init",
+      "signature": "init()",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1524
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#createComponentFactory.getDC@L968",
+    "procedureName": "createComponentFactory.getDC",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L970"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.getDC@L968",
+        "procedureName": "createComponentFactory.getDC",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:815c86a611f446f6c0de40a726111a9b681d5b08d497ed92d178d1c7f321bfcc",
+          "target": "stmt:packages/ui/web/support.js@L969",
+          "line": 969,
+          "expr": "const hit = named.get(name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.getDC@L968",
+        "procedureName": "createComponentFactory.getDC",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f132bdd7b7b96259c24e5577d397aafbe647199ce670d4ae3a238393af564cae",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 969
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.getDC@L968",
+        "procedureName": "createComponentFactory.getDC",
+        "guard": "cond:packages/ui/web/support.js@L970",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L970",
+            "expr": "hit",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e4be01e0c5549e1f4b4d1e2f8297617b677b8e12a54a83f50263077d431a362",
+          "target": "stmt:packages/ui/web/support.js@L970",
+          "line": 970,
+          "expr": "return hit;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.getDC@L968",
+        "procedureName": "createComponentFactory.getDC",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:453b4f2abb02837c780a0e7d8bc38c7d439d8b30485bd6750e7a09e0f76c68bd",
+          "target": "assign:packages/ui/web/support.js@L983",
+          "line": 983,
+          "expr": "Dispatcher.displayName = name;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.getDC@L968",
+        "procedureName": "createComponentFactory.getDC",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a67ab28ec0a5b39dc36b80856bda4d247da24ce45ab5c4d2ad4ff4ad8f41b2f",
+          "target": "stmt:packages/ui/web/support.js@L984",
+          "line": 984,
+          "expr": "named.set(name, Dispatcher);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createComponentFactory.getDC@L968",
+        "procedureName": "createComponentFactory.getDC",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e9b7a25c6dddaa8f4faa8efefc47af5ccc89437fad5a411de47436c4a0d92b98",
+          "target": "stmt:packages/ui/web/support.js@L985",
+          "line": 985,
+          "expr": "return Dispatcher;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

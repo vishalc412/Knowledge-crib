@@ -1,0 +1,166 @@
+{
+  "id": "sym:packages/ui/src/viz.ts#buildVizOverview@L392",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:5f44777436b9795bd609664b4db19e8c2042b64421a6deea39b3589801729f65",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/src/viz.ts#buildVizOverview@L392",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildVizOverview",
+    "qualifiedName": "buildVizOverview",
+    "signature": "buildVizOverview(soul: SoulStore): VizOverview",
+    "lang": "typescript",
+    "file": "packages/ui/src/viz.ts",
+    "span": {
+      "start": 392,
+      "end": 409
+    },
+    "callSites": [
+      {
+        "callee": "buildFunctionalMap",
+        "line": 393
+      },
+      {
+        "callee": "map",
+        "line": 394
+      },
+      {
+        "callee": "getManifest",
+        "line": 405
+      }
+    ]
+  },
+  "source": {
+    "text": "export function buildVizOverview(soul: SoulStore): VizOverview {\n  const map = buildFunctionalMap(soul);\n  const modules: VizModule[] = map.modules.map((m, i) => ({\n    id: m.id,\n    name: m.name,\n    pathPrefix: m.pathPrefix,\n    ...(m.purpose ? { purpose: m.purpose.text } : {}),\n    counts: m.counts,\n    topSymbols: m.topSymbols,\n    clusterIds: m.clusterIds,\n    color: CLUSTER_PALETTE[i % CLUSTER_PALETTE.length] ?? '#64748b',\n  }));\n  return {\n    schemaVersion: soul.getManifest().schemaVersion,\n    source: map.source,\n    modules,\n  };\n}",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 392
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdViz@L1574",
+      "confidence": 1,
+      "name": "cmdViz",
+      "qualifiedName": "cmdViz",
+      "signature": "cmdViz(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1574
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
+      "confidence": 1,
+      "name": "buildFunctionalMap",
+      "qualifiedName": "buildFunctionalMap",
+      "signature": "buildFunctionalMap(soul: SoulStore, opts: BuildFunctionalMapOpts = {}): FunctionalMap",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 74
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/ui/src/viz.ts@L385",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/ui/src/viz.ts#buildVizOverview@L392",
+    "procedureName": "buildVizOverview",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#buildVizOverview@L392",
+        "procedureName": "buildVizOverview",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:05bb1e6e24e2526fa591d14af5e3659689fe316bc5f6beeed0ac34e770e3a02e",
+          "target": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
+          "expr": "buildFunctionalMap",
+          "line": 393
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#buildVizOverview@L392",
+        "procedureName": "buildVizOverview",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3db21a3d4d8b1dd7c9dffee6fd686638f15aca4ba1bae17f3c49d44f44aded2f",
+          "target": "stmt:packages/ui/src/viz.ts@L393",
+          "line": 393,
+          "expr": "const map = buildFunctionalMap(soul);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#buildVizOverview@L392",
+        "procedureName": "buildVizOverview",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dfd889c9af7226e46695e547b86785264f35b2b7a9355b08e19982b882e56a38",
+          "target": "stmt:packages/ui/src/viz.ts@L394",
+          "line": 394,
+          "expr": "const modules: VizModule[] = map.modules.map((m, i) => ({\n    id: m.id,\n    name: m.name,\n    pathPrefix: m.pathPrefix,\n    ...(m.purpose ? { purpose: m.purpose.text } : {}),\n    counts: m.counts,\n    topSymbols: m.topSymbols,\n    clusterIds: m.clusterIds,\n    color: CLUSTER_PALETTE[i % CLUSTER_PALETTE.length] ?? '#64748b',\n  }));"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/src/viz.ts#buildVizOverview@L392",
+        "procedureName": "buildVizOverview",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7149a8019e9641927539553db24435717bab914edd90c5722d96a162216a5374",
+          "target": "stmt:packages/ui/src/viz.ts@L404",
+          "line": 404,
+          "expr": "return {\n    schemaVersion: soul.getManifest().schemaVersion,\n    source: map.source,\n    modules,\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

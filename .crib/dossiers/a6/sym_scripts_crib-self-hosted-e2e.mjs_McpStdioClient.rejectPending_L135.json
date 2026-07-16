@@ -1,0 +1,150 @@
+{
+  "id": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.rejectPending@L135",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:90af2e7f5edb977a95c5b1376d9c2d269cf6b15925cbe9eeaeadef3438ab50f1",
+  "builtAt": "2026-07-13T11:14:06.943Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.rejectPending@L135",
+    "kind": "symbol",
+    "type": "method",
+    "name": "rejectPending",
+    "qualifiedName": "McpStdioClient.rejectPending",
+    "signature": "rejectPending(error)",
+    "lang": "javascript",
+    "file": "scripts/crib-self-hosted-e2e.mjs",
+    "span": {
+      "start": 135,
+      "end": 141
+    },
+    "callSites": [
+      {
+        "callee": "clearTimeout",
+        "line": 137
+      },
+      {
+        "callee": "reject",
+        "line": 138
+      },
+      {
+        "callee": "clear",
+        "line": 140
+      }
+    ]
+  },
+  "source": {
+    "text": "  rejectPending(error) {\n    for (const pending of this.pending.values()) {\n      clearTimeout(pending.timer);\n      pending.reject(error);\n    }\n    this.pending.clear();\n  }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 135
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.start@L82",
+      "confidence": 1,
+      "name": "start",
+      "qualifiedName": "McpStdioClient.start",
+      "signature": "start()",
+      "type": "method",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 82
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.rejectPending@L135",
+    "procedureName": "McpStdioClient.rejectPending",
+    "conditions": [
+      "cond:scripts/crib-self-hosted-e2e.mjs@L136"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.rejectPending@L135",
+        "procedureName": "McpStdioClient.rejectPending",
+        "guard": "cond:scripts/crib-self-hosted-e2e.mjs@L136",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:scripts/crib-self-hosted-e2e.mjs@L136",
+            "expr": "this.pending.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:25b0a3148b995e50073bf9da7882cd6d45db1496168715af7ddf5e5e90299992",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L137",
+          "line": 137,
+          "expr": "clearTimeout(pending.timer);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.rejectPending@L135",
+        "procedureName": "McpStdioClient.rejectPending",
+        "guard": "cond:scripts/crib-self-hosted-e2e.mjs@L136",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:scripts/crib-self-hosted-e2e.mjs@L136",
+            "expr": "this.pending.values()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:70000e62425b086db39aef845471a51148a80240ba34e03e0a32bff63af6ba1f",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L138",
+          "line": 138,
+          "expr": "pending.reject(error);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.rejectPending@L135",
+        "procedureName": "McpStdioClient.rejectPending",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5413a6e710c82af80680010703028df94c32178b874e5a48e276ed01dfb54ce5",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L140",
+          "line": 140,
+          "expr": "this.pending.clear();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "scripts/crib-self-hosted-e2e.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

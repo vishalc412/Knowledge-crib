@@ -7,6 +7,17 @@ import type { NodeKind } from '@knowledge-crib/soul-schema';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
+import {
+  MAX_DEPTH,
+  MAX_DOC_LIMIT,
+  MAX_FED_ROOTS,
+  MAX_HOPS,
+  MAX_LIMIT,
+  MAX_MAX_TOKENS,
+  MAX_SCOPE_SYMBOLS,
+  MAX_SOURCE_CHARS,
+  MAX_SOURCE_LINES,
+} from './token-budget.js';
 import type { Verbs } from './verbs.js';
 
 const TOOL_RESULT = (obj: unknown) => ({
@@ -30,14 +41,16 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         '360° context for one symbol: deep fields, callers, callees, and linked docs. Set withSource to include the full source body (rehydrated from disk, budgeted) and withRules to fold in a procedure decision table (conditions/actions/reads/writes).',
       inputSchema: {
         id: z.string(),
-        docLimit: z.number().int().positive().optional(),
+        docLimit: z.number().int().positive().max(MAX_DOC_LIMIT).optional(),
         extractedOnly: z.boolean().optional(),
         withSource: z.boolean().optional(),
         withRules: z.boolean().optional(),
         withLlm: z.boolean().optional(),
-        sourceMaxChars: z.number().int().positive().optional(),
-        sourceMaxLines: z.number().int().positive().optional(),
+        sourceMaxChars: z.number().int().positive().max(MAX_SOURCE_CHARS).optional(),
+        sourceMaxLines: z.number().int().positive().max(MAX_SOURCE_LINES).optional(),
         sourceStartLine: z.number().int().positive().optional(),
+        maxTokens: z.number().int().positive().max(MAX_MAX_TOKENS).optional(),
+        ifHash: z.string().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.context(a)),
@@ -50,9 +63,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         'Full source text of one node span, rehydrated from disk and char/line-budgeted. Use this to read the actual code body / DDL / statement / doc-section that the lean soul references but never copies. truncated=true means the on-disk span exceeded the budget.',
       inputSchema: {
         id: z.string(),
-        maxChars: z.number().int().positive().optional(),
-        maxLines: z.number().int().positive().optional(),
+        maxChars: z.number().int().positive().max(MAX_SOURCE_CHARS).optional(),
+        maxLines: z.number().int().positive().max(MAX_SOURCE_LINES).optional(),
         startLine: z.number().int().positive().optional(),
+        ifHash: z.string().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.source(a)),
@@ -66,12 +80,13 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       inputSchema: {
         id: z.string(),
         includeTables: z.boolean().optional(),
-        sourceMaxChars: z.number().int().positive().optional(),
-        sourceMaxLines: z.number().int().positive().optional(),
+        sourceMaxChars: z.number().int().positive().max(MAX_SOURCE_CHARS).optional(),
+        sourceMaxLines: z.number().int().positive().max(MAX_SOURCE_LINES).optional(),
         sourceStartLine: z.number().int().positive().optional(),
         extractedOnly: z.boolean().optional(),
         withLlm: z.boolean().optional(),
         format: z.enum(['json', 'markdown']).optional(),
+        ifHash: z.string().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.dossier(a)),
@@ -86,7 +101,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         id: z.string(),
         extractedOnly: z.boolean().optional(),
         includeTables: z.boolean().optional(),
-        maxSymbols: z.number().int().positive().optional(),
+        maxSymbols: z.number().int().positive().max(MAX_SCOPE_SYMBOLS).optional(),
         format: z.enum(['json', 'markdown']).optional(),
       },
     },
@@ -103,10 +118,12 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         id: z.string(),
         extractedOnly: z.boolean().optional(),
         includeTables: z.boolean().optional(),
-        maxSymbols: z.number().int().positive().optional(),
-        sourceMaxChars: z.number().int().positive().optional(),
-        sourceMaxLines: z.number().int().positive().optional(),
+        maxSymbols: z.number().int().positive().max(MAX_SCOPE_SYMBOLS).optional(),
+        sourceMaxChars: z.number().int().positive().max(MAX_SOURCE_CHARS).optional(),
+        sourceMaxLines: z.number().int().positive().max(MAX_SOURCE_LINES).optional(),
         format: z.enum(['json', 'markdown']).optional(),
+        cursor: z.string().optional(),
+        maxTokens: z.number().int().positive().max(MAX_MAX_TOKENS).optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.dossierByScope(a)),
@@ -120,13 +137,31 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       inputSchema: {
         id: z.string(),
         dir: z.enum(['up', 'down']),
-        depth: z.number().int().positive().optional(),
-        docLimit: z.number().int().positive().optional(),
-        limit: z.number().int().positive().optional(),
+        depth: z.number().int().positive().max(MAX_DEPTH).optional(),
+        docLimit: z.number().int().positive().max(MAX_DOC_LIMIT).optional(),
+        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
         extractedOnly: z.boolean().optional(),
+        includeLlm: z.boolean().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.impact(a)),
+  );
+
+  server.registerTool(
+    'federatedImpact',
+    {
+      description:
+        'M3.2 cross-repo blast radius. Like `impact` but federates extra repo souls (`roots`) and crosses the route-layer bridge: a repo-A outbound HTTP client call (`http-call` node) resolves to the repo-B `route` it serves, matched by {httpMethod, routePath}. No cross-repo edge is committed — the bridge is a runtime computation over the loaded souls. Each affected node carries `soul` (its repo root) + `crossRepo` (true iff the hop crossed repos). The primary repo (the server cwd) is always federated.',
+      inputSchema: {
+        id: z.string(),
+        dir: z.enum(['up', 'down']),
+        roots: z.array(z.string()).max(MAX_FED_ROOTS).optional(),
+        depth: z.number().int().positive().max(MAX_DEPTH).optional(),
+        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
+        extractedOnly: z.boolean().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.federatedImpact(a)),
   );
 
   server.registerTool(
@@ -137,14 +172,16 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       inputSchema: {
         q: z.string(),
         kinds: z.array(z.string()).optional(),
-        limit: z.number().int().positive().optional(),
+        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
         extractedOnly: z.boolean().optional(),
         withSource: z.boolean().optional(),
-        sourceMaxChars: z.number().int().positive().optional(),
-        sourceMaxLines: z.number().int().positive().optional(),
+        sourceMaxChars: z.number().int().positive().max(MAX_SOURCE_CHARS).optional(),
+        sourceMaxLines: z.number().int().positive().max(MAX_SOURCE_LINES).optional(),
         withRules: z.boolean().optional(),
         withFramework: z.boolean().optional(),
         withLlm: z.boolean().optional(),
+        cursor: z.string().optional(),
+        maxTokens: z.number().int().positive().max(MAX_MAX_TOKENS).optional(),
       },
     },
     async (a) =>
@@ -160,6 +197,8 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
           ...(a.withRules !== undefined ? { withRules: a.withRules } : {}),
           ...(a.withFramework !== undefined ? { withFramework: a.withFramework } : {}),
           ...(a.withLlm !== undefined ? { withLlm: a.withLlm } : {}),
+          ...(a.cursor !== undefined ? { cursor: a.cursor } : {}),
+          ...(a.maxTokens !== undefined ? { maxTokens: a.maxTokens } : {}),
         }),
       ),
   );
@@ -168,7 +207,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'enrich_status',
     {
       description:
-        'Coverage/progress for the agent-driven LLM semantic graph layer under .crib/llm. Pass scopes:true (with no scope) to get ranked path-prefix scopes + totalPending + threshold for the graphify-style scope picker. Pass scope:{pathPrefix} to restrict counts/nextLayer/done to in-scope targets (system layer is whole-repo only and reported via wholeRepoPending). The server never calls a model.',
+        'Coverage/progress for agent-driven semantic layer under .crib/graph/semantic. Pass scopes:true (with no scope) to get ranked path-prefix scopes + totalPending + threshold. Pass scope:{pathPrefix} to restrict counts/nextLayer/done. Server never calls a model.',
       inputSchema: {
         layer: z.enum(['symbol', 'file', 'cluster', 'system']).optional(),
         scope: z
@@ -187,16 +226,17 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'enrich_next',
     {
       description:
-        'Return the next missing/stale grounded work batch for the IDE agent model to author. Includes seed facts, lower-layer analyses, schema, and instructions. Pass scope:{pathPrefix} to restrict the batch to in-scope targets. batchId is deterministic (same pending set => same id) so a zero-progress re-issue is detectable by id equality. The system layer is never offered under a scope.',
+        'Return the next missing/stale grounded work batch for the IDE agent model to author. Includes seed facts, lower-layer analyses, schema, and instructions. Pass scope:{pathPrefix} to restrict the batch to in-scope targets. batchId is deterministic (same pending set => same id) so a zero-progress re-issue is detectable by id equality. The system layer is never offered under a scope. Pass skeleton:true with layer:"system" for the Phase-0.5 draft skeleton bible (a single work item seeded from the functional map + top READMEs + top symbols; a skeleton never satisfies the system layer — the full pass is still offered).',
       inputSchema: {
         layer: z.enum(['symbol', 'file', 'cluster', 'system']).optional(),
-        limit: z.number().int().positive().optional(),
+        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
         scope: z
           .object({
             pathPrefix: z.string().optional(),
             cluster: z.string().optional(),
           })
           .optional(),
+        skeleton: z.boolean().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.enrichNext(a)),
@@ -206,7 +246,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'enrich_save',
     {
       description:
-        'Validate and persist an IDE-agent-authored LLM semantic graph batch under .crib/llm.',
+        'Validate and persist an IDE-agent-authored semantic graph batch under .crib/graph/semantic.',
       inputSchema: {
         batchId: z.string(),
         items: z.array(
@@ -227,10 +267,20 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
   );
 
   server.registerTool(
+    'audit_llm',
+    {
+      description:
+        "Re-verify every persisted LLM artifact on disk against the current soul (M1.3 — the grounding moat). Re-runs the save-time grounding check: rehydrates each evidence quote's anchor span and requires overlap. A post-refactor re-verify is identical to the original verdict. PURE — never calls a model, never mutates artifacts. Returns per-target verdicts (grounded/ungrounded/unsupported), drift (save-time stamp vs recomputed), and staleness. Use after a refactor or index rebuild to confirm the LLM graph is still traceable to disk.",
+      inputSchema: {},
+    },
+    async () => TOOL_RESULT(verbs.auditLlm()),
+  );
+
+  server.registerTool(
     'overview',
     {
       description:
-        'Return the LLM-authored codebase bible / overview generated from the semantic graph layer. Pass scope:{pathPrefix} for a module-scoped bible (excludes the whole-repo system layer); omit scope for the cached whole-repo overview.json.',
+        'Return the LLM-authored codebase bible / overview generated from the semantic graph layer. v2: module-segmented, importance-ranked, LEAN by default — `modules` (always present, works at 0% enrichment), `analyses` (lean pointers, production symbols first / test helpers last), and `system` (the freshest bible, full preferred over a draft skeleton). Pass withLlm:true to fold the full analysis+graph+evidence blobs into a `full` array (computed live, never cached). Pass scope:{pathPrefix} for a module-scoped bible (excludes the whole-repo system layer); omit scope for the cached whole-repo overview.json.',
       inputSchema: {
         scope: z
           .object({
@@ -238,6 +288,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
             cluster: z.string().optional(),
           })
           .optional(),
+        withLlm: z.boolean().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.overview(a)),
@@ -274,11 +325,24 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         id: z.string(),
         rel: z.string().optional(),
         dir: z.enum(['in', 'out', 'both']).optional(),
-        limit: z.number().int().positive().optional(),
+        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
         extractedOnly: z.boolean().optional(),
+        includeLlm: z.boolean().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.neighbors(a)),
+  );
+
+  server.registerTool(
+    'ownership',
+    {
+      description:
+        'M3.1 ownership: the git-blame owners of a node (symbol → owner), answering "who do I ask about this code". Returns owner nodes + the blame commit + the HEAD the index ran against.',
+      inputSchema: {
+        id: z.string(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.ownership(a)),
   );
 
   server.registerTool(
@@ -288,7 +352,9 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       inputSchema: {
         from: z.string(),
         to: z.string(),
-        maxHops: z.number().int().positive().optional(),
+        maxHops: z.number().int().positive().max(MAX_HOPS).optional(),
+        includeLlm: z.boolean().optional(),
+        extractedOnly: z.boolean().optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.shortestPath(a)),
@@ -327,6 +393,16 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       },
     },
     async (a) => TOOL_RESULT(verbs.gaps(a)),
+  );
+
+  server.registerTool(
+    'stats',
+    {
+      description:
+        'M3.3 server observability — live per-verb call counts + latency (min/mean/max) and the ifHash change-aware cache hit rate for this running process. Pure runtime counters; not persisted, not part of the deterministic soul. Useful for capacity tuning and cache-effectiveness checks.',
+      inputSchema: {},
+    },
+    async () => TOOL_RESULT(verbs.getStats().snapshot()),
   );
 
   return server;

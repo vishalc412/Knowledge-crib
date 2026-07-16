@@ -1,0 +1,180 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#joinPath@L551",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:c1287fb8f40fe5554279ab98f0a6c4b644e8a7406ab2300296524dbe0bc9a058",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#joinPath@L551",
+    "kind": "symbol",
+    "type": "function",
+    "name": "joinPath",
+    "qualifiedName": "joinPath",
+    "signature": "joinPath(base: string, sub: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 551,
+      "end": 557
+    },
+    "callSites": [
+      {
+        "callee": "replace",
+        "line": 552
+      },
+      {
+        "callee": "replace",
+        "line": 553
+      },
+      {
+        "callee": "startsWith",
+        "line": 555
+      },
+      {
+        "callee": "replace",
+        "line": 556
+      }
+    ]
+  },
+  "source": {
+    "text": "function joinPath(base: string, sub: string): string {\n  const a = base.replace(/\\/+$/, '');\n  const b = sub.replace(/^\\/+/, '');\n  const joined = b ? `${a}/${b}` : a;\n  const out = joined.startsWith('/') ? joined : `/${joined}`;\n  return out.replace(/\\/{2,}/g, '/') || '/';\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 551
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 104
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 100
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L550",
+      "snippet": "/** Join a controller base path with a method sub-path into one normalized `/a/b` route path. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#joinPath@L551",
+    "procedureName": "joinPath",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#joinPath@L551",
+        "procedureName": "joinPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:715c2fbd0d93ff8e75060d85462f5ebc3b92e8aa628aa223ba5f49d812dc884a",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L552",
+          "line": 552,
+          "expr": "const a = base.replace(/\\/+$/, '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#joinPath@L551",
+        "procedureName": "joinPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9e1d650a6d569ff9cf9e668f56b084a7a2d1975ca46bea4e0acbc796540709e0",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L553",
+          "line": 553,
+          "expr": "const b = sub.replace(/^\\/+/, '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#joinPath@L551",
+        "procedureName": "joinPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3598237db7e76fd4e61423a1c3a6716a6700a4d630a984ae187ebe2ba54d4d11",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L555",
+          "line": 555,
+          "expr": "const out = joined.startsWith('/') ? joined : `/${joined}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#joinPath@L551",
+        "procedureName": "joinPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ebb0ef411a8940d26538795a48097687c1e5972bd07b1b87b5ed9213d3a9bf9c",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L556",
+          "line": 556,
+          "expr": "return out.replace(/\\/{2,}/g, '/') || '/';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts",
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

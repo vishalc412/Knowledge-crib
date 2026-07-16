@@ -12,7 +12,15 @@ export {
   type RehydratedBody,
 } from './snippet.js';
 export { buildServer, serveStdio } from './server.js';
+export { Stats, trackCall, type StatsSnapshot, type VerbStat } from './stats.js';
 export { EnrichmentStore, llmProjection, ENRICH_SCOPE_THRESHOLD } from './enrichment.js';
+export {
+  collectStrings,
+  redactSecrets,
+  scanSecrets,
+  type SecretHit,
+  type StringField,
+} from './secrets.js';
 export type {
   EnrichAccepted,
   EnrichLayer,

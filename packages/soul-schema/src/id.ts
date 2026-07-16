@@ -49,7 +49,16 @@ export type IdSpec =
   // 1.3 framework-semantics
   | { kind: 'field'; path: string; qualifiedName: string; startLine: number }
   | { kind: 'route'; httpMethod: string; routePath: string; file: string; line: number }
-  | { kind: 'component'; path: string; qualifiedName: string; startLine: number };
+  | { kind: 'component'; path: string; qualifiedName: string; startLine: number }
+  // 1.4 ownership: a git author. Canonical identity is the email (stable across name changes); a
+  // name-only fallback is used when blame exposed no email (encoded separately so it never collides
+  // with an email-derived id).
+  | { kind: 'owner'; email: string }
+  | { kind: 'owner-name'; name: string }
+  // 1.5 cross-repo federation: an outbound HTTP client call site. Mirrors the `route` id grammar
+  // (`route:<method> <path>@<file>#L<line>`) so a runtime federation layer matches repo-A calls to
+  // repo-B routes by method+path without a committed cross-repo edge.
+  | { kind: 'http-call'; httpMethod: string; routePath: string; file: string; line: number };
 
 /** ID prefix per node kind. `column` deliberately uses `col:` (data-model reconciliation #6). */
 export const ID_PREFIX = {
@@ -71,6 +80,8 @@ export const ID_PREFIX = {
   field: 'field',
   route: 'route',
   component: 'comp',
+  owner: 'owner',
+  'http-call': 'http-call',
 } as const;
 
 /** Build the deterministic id for a node from its identifying parts. */
@@ -112,6 +123,14 @@ export function idFor(spec: IdSpec): string {
       return `route:${spec.httpMethod} ${spec.routePath}@${spec.file}#L${spec.line}`;
     case 'component':
       return `comp:${spec.path}#${spec.qualifiedName}@L${spec.startLine}`;
+    case 'owner':
+      return `owner:${spec.email}`;
+    case 'owner-name':
+      // name-only fallback (blame exposed no email): `owner:name:<slug>` keeps the `owner:` prefix
+      // so it still resolves to an `owner` node, never colliding with an email-derived id.
+      return `owner:name:${slugify(spec.name)}`;
+    case 'http-call':
+      return `http-call:${spec.httpMethod} ${spec.routePath}@${spec.file}#L${spec.line}`;
   }
 }
 

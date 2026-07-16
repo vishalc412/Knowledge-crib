@@ -1,0 +1,721 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:7800545e2427fb2288a4622cbcffe93af4922a7fffb5707aec762076eb6c61eb",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cmdInit",
+    "qualifiedName": "cmdInit",
+    "signature": "cmdInit(args: string[], ctx?: CmdCtx): Promise<number>",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 1200,
+      "end": 1245
+    },
+    "callSites": [
+      {
+        "callee": "resolve",
+        "line": 1201
+      },
+      {
+        "callee": "positionalsOf",
+        "line": 1201
+      },
+      {
+        "callee": "indexOf",
+        "line": 1202
+      },
+      {
+        "callee": "write",
+        "line": 1206
+      },
+      {
+        "callee": "join",
+        "line": 1206
+      },
+      {
+        "callee": "write",
+        "line": 1210
+      },
+      {
+        "callee": "write",
+        "line": 1211
+      },
+      {
+        "callee": "cmdIndex",
+        "line": 1212
+      },
+      {
+        "callee": "write",
+        "line": 1214
+      },
+      {
+        "callee": "write",
+        "line": 1218
+      },
+      {
+        "callee": "cmdInstallHooks",
+        "line": 1221
+      },
+      {
+        "callee": "write",
+        "line": 1223
+      },
+      {
+        "callee": "write",
+        "line": 1227
+      },
+      {
+        "callee": "cmdMcp",
+        "line": 1228
+      },
+      {
+        "callee": "write",
+        "line": 1230
+      },
+      {
+        "callee": "write",
+        "line": 1234
+      },
+      {
+        "callee": "write",
+        "line": 1235
+      },
+      {
+        "callee": "write",
+        "line": 1236
+      },
+      {
+        "callee": "write",
+        "line": 1239
+      },
+      {
+        "callee": "write",
+        "line": 1242
+      },
+      {
+        "callee": "write",
+        "line": 1243
+      }
+    ]
+  },
+  "source": {
+    "text": "async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {\n  const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');\n  const ideIdx = args.indexOf('--ide');\n  const ide: McpIde | 'all' = ideIdx >= 0 ? ((args[ideIdx + 1] as McpIde | 'all') ?? 'all') : 'all';\n  const validIdes: Array<McpIde | 'all'> = ['all', 'claude', 'cursor', 'vscode', 'codex'];\n  if (!validIdes.includes(ide)) {\n    process.stderr.write(`unknown --ide: ${ide}\\nvalid: ${validIdes.join(', ')}\\n`);\n    return EXIT.BAD_ARGS;\n  }\n\n  process.stdout.write('crib init — 5-minute onboarding\\n');\n  process.stdout.write('  step 1/3: indexing the repo (deterministic, LLM-free)…\\n');\n  const indexCode = await cmdIndex([repoRoot], ctx);\n  if (indexCode !== EXIT.OK) {\n    process.stderr.write(`  index failed (exit ${indexCode}) — aborting init\\n`);\n    return indexCode;\n  }\n\n  process.stdout.write(\n    '  step 2/3: wiring git hooks (post-commit `crib update` + .crib merge driver)…\\n',\n  );\n  const hooksCode = cmdInstallHooks([repoRoot], ctx);\n  if (hooksCode !== EXIT.OK) {\n    process.stderr.write(`  install-hooks failed (exit ${hooksCode}) — aborting init\\n`);\n    return hooksCode;\n  }\n\n  process.stdout.write(`  step 3/3: wiring the MCP server into IDE config (--ide ${ide})…\\n`);\n  const mcpCode = cmdMcp(['install', '--ide', ide, repoRoot], ctx);\n  if (mcpCode !== EXIT.OK) {\n    process.stderr.write(`  mcp install failed (exit ${mcpCode}) — aborting init\\n`);\n    return mcpCode;\n  }\n\n  process.stdout.write('\\n✓ crib init complete. Next steps:\\n');\n  process.stdout.write('  1. Restart your IDE so it picks up the MCP server config.\\n');\n  process.stdout.write(\n    '  2. Ask your agent \"query the crib for <symbol>\", or run `crib query <text>`.\\n',\n  );\n  process.stdout.write(\n    '  3. (optional) `crib index --semantic` — add INFERRED embedding-cosine links.\\n',\n  );\n  process.stdout.write('  4. (optional) `crib enrich --next` — drive the LLM-graph layer.\\n');\n  process.stdout.write('  Run `crib doctor` any time to re-check setup health.\\n');\n  return EXIT.OK;\n}",
+    "truncated": false,
+    "totalLines": 46,
+    "startLine": 1200
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#main@L268",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main(argvRaw: string[]): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 268
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdIndex@L500",
+      "confidence": 1,
+      "name": "cmdIndex",
+      "qualifiedName": "cmdIndex",
+      "signature": "cmdIndex(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 500
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L1405",
+      "confidence": 1,
+      "name": "cmdInstallHooks",
+      "qualifiedName": "cmdInstallHooks",
+      "signature": "cmdInstallHooks(args: string[], ctx?: CmdCtx): number",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1405
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdMcp@L1421",
+      "confidence": 1,
+      "name": "cmdMcp",
+      "qualifiedName": "cmdMcp",
+      "signature": "cmdMcp(args: string[], ctx?: CmdCtx): number",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1421
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#positionalsOf@L100",
+      "confidence": 1,
+      "name": "positionalsOf",
+      "qualifiedName": "positionalsOf",
+      "signature": "positionalsOf(args: string[]): string[]",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L1191",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+    "procedureName": "cmdInit",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L1205",
+      "cond:packages/cli/src/cli.ts@L1213",
+      "cond:packages/cli/src/cli.ts@L1222",
+      "cond:packages/cli/src/cli.ts@L1229"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:447cdf88a4b3bd37f97ca7f2dd2ca0bc7ecf7002ab9f6a71982e67e713424e39",
+          "target": "sym:packages/cli/src/cli.ts#positionalsOf@L100",
+          "expr": "positionalsOf",
+          "line": 1201
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:83293219043077e3b5361a7cd4f03e90e234ccf59e73e17a95389b8e000f95a2",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 1201
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f9ee56899e933dfb24f1c3264b22700c23487764b10489cbc5ee37b9543e2ac9",
+          "target": "stmt:packages/cli/src/cli.ts@L1201",
+          "line": 1201,
+          "expr": "const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9708651524b644863dfa8cfd8066891bd8d0e2859aef6092bcab54723d1afc6c",
+          "target": "stmt:packages/cli/src/cli.ts@L1202",
+          "line": 1202,
+          "expr": "const ideIdx = args.indexOf('--ide');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:846f44cd8551fbfbb2e9e057e9f93cd5a86560c790880cc26801441e7dfa8534",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 1206
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "guard": "cond:packages/cli/src/cli.ts@L1205",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1205",
+            "expr": "!validIdes.includes(ide)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d9a28b6ae3d0295fca04a8365bdc99affba8aa857d8cf0fbc46d80f2a27ab179",
+          "target": "stmt:packages/cli/src/cli.ts@L1206",
+          "line": 1206,
+          "expr": "process.stderr.write(`unknown --ide: ${ide}\\nvalid: ${validIdes.join(', ')}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "guard": "cond:packages/cli/src/cli.ts@L1205",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1205",
+            "expr": "!validIdes.includes(ide)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:850e538f65fda975fafbdd278b0c0f9341093c1ae3932fb6e7c7e1a20db6a64d",
+          "target": "stmt:packages/cli/src/cli.ts@L1207",
+          "line": 1207,
+          "expr": "return EXIT.BAD_ARGS;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:39a945f10e40af45ed8035520c2ecb45a32e68c78b96132e73b7191da5748872",
+          "target": "stmt:packages/cli/src/cli.ts@L1210",
+          "line": 1210,
+          "expr": "process.stdout.write('crib init — 5-minute onboarding\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e1a8e865ca212948a843bdb31c9f1a2e17ccaabd6b6877da25e0fa868a27205b",
+          "target": "stmt:packages/cli/src/cli.ts@L1211",
+          "line": 1211,
+          "expr": "process.stdout.write('  step 1/3: indexing the repo (deterministic, LLM-free)…\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7d1dd35a0374dd6337a9642c688de98536e0fa8a6551dc838af356ecb67d0e80",
+          "target": "sym:packages/cli/src/cli.ts#cmdIndex@L500",
+          "expr": "cmdIndex",
+          "line": 1212
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f61302ab70fb0dc0bd7be9fa791464b11262152add262e67a88bf762f822252e",
+          "target": "stmt:packages/cli/src/cli.ts@L1212",
+          "line": 1212,
+          "expr": "const indexCode = await cmdIndex([repoRoot], ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "guard": "cond:packages/cli/src/cli.ts@L1213",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1213",
+            "expr": "indexCode !== EXIT.OK",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:79e43052da4ee378529458a75f4421db44bae54c5d7aae0869e817237bc8849c",
+          "target": "stmt:packages/cli/src/cli.ts@L1214",
+          "line": 1214,
+          "expr": "process.stderr.write(`  index failed (exit ${indexCode}) — aborting init\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "guard": "cond:packages/cli/src/cli.ts@L1213",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1213",
+            "expr": "indexCode !== EXIT.OK",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:50707d48da343254820d1a23801a2d159b4f747577c0af0e602afc4757f68294",
+          "target": "stmt:packages/cli/src/cli.ts@L1215",
+          "line": 1215,
+          "expr": "return indexCode;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c14a34e3118fecb8072de47c40af804bec4325ae1b5dabc99a76a993eff7472f",
+          "target": "stmt:packages/cli/src/cli.ts@L1218",
+          "line": 1218,
+          "expr": "process.stdout.write(\n    '  step 2/3: wiring git hooks (post-commit `crib update` + .crib merge driver)…\\n',\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6c2e3b7bbb71e50c3b193757f9de07ba348826d7ad06fd4d38ddf9be7eb35022",
+          "target": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L1405",
+          "expr": "cmdInstallHooks",
+          "line": 1221
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e0223766419b2d4a5cad6d21ae7b6268f19241a4f6e88b79cfc387aa500946c5",
+          "target": "stmt:packages/cli/src/cli.ts@L1221",
+          "line": 1221,
+          "expr": "const hooksCode = cmdInstallHooks([repoRoot], ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "guard": "cond:packages/cli/src/cli.ts@L1222",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1222",
+            "expr": "hooksCode !== EXIT.OK",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e12ae3a1f47f0c1544d29862a5aa16a52cdd7d7d4b2d8d0e077c2bfb571e53d",
+          "target": "stmt:packages/cli/src/cli.ts@L1223",
+          "line": 1223,
+          "expr": "process.stderr.write(`  install-hooks failed (exit ${hooksCode}) — aborting init\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "guard": "cond:packages/cli/src/cli.ts@L1222",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1222",
+            "expr": "hooksCode !== EXIT.OK",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce3903095549cee2c074bec3ffd4ced41e3f41ecec4ff9378ca9f3de5ac7e6ec",
+          "target": "stmt:packages/cli/src/cli.ts@L1224",
+          "line": 1224,
+          "expr": "return hooksCode;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:619a281e73239f6c23e5ed68530fe0d8cf83122a302a3700cb59a097e55fb009",
+          "target": "stmt:packages/cli/src/cli.ts@L1227",
+          "line": 1227,
+          "expr": "process.stdout.write(`  step 3/3: wiring the MCP server into IDE config (--ide ${ide})…\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:21cd81a25180cf2f3e4ed1c554f63ff9836cb1ffb94ec05822dfabcdcf76a9ff",
+          "target": "stmt:packages/cli/src/cli.ts@L1228",
+          "line": 1228,
+          "expr": "const mcpCode = cmdMcp(['install', '--ide', ide, repoRoot], ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fe16decdb6c40516e1a65213de0af7ba44a06da26a8f519c78175677f9ce0b7f",
+          "target": "sym:packages/cli/src/cli.ts#cmdMcp@L1421",
+          "expr": "cmdMcp",
+          "line": 1228
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "guard": "cond:packages/cli/src/cli.ts@L1229",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1229",
+            "expr": "mcpCode !== EXIT.OK",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fbc1ae4b293dec5d12768b2f846163779dae7588ba0199b6e49b3682381915dc",
+          "target": "stmt:packages/cli/src/cli.ts@L1230",
+          "line": 1230,
+          "expr": "process.stderr.write(`  mcp install failed (exit ${mcpCode}) — aborting init\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "guard": "cond:packages/cli/src/cli.ts@L1229",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1229",
+            "expr": "mcpCode !== EXIT.OK",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:52bcee58ab1d5b44f2533c7fd75e1c4c2b450eb21c705a2e95341c849ead07d9",
+          "target": "stmt:packages/cli/src/cli.ts@L1231",
+          "line": 1231,
+          "expr": "return mcpCode;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b3a63db2dcb9ffeb6ccb32ebd1e396402aa022ec099dd42b46be92408f2a287b",
+          "target": "stmt:packages/cli/src/cli.ts@L1234",
+          "line": 1234,
+          "expr": "process.stdout.write('\\n✓ crib init complete. Next steps:\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ed489ce40200f82dab2d880705091001a30378c3ad8e7a24b2b1bfe7df72c21",
+          "target": "stmt:packages/cli/src/cli.ts@L1235",
+          "line": 1235,
+          "expr": "process.stdout.write('  1. Restart your IDE so it picks up the MCP server config.\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2380ba5d87068b54aa926453fe02c77293f0e122e2629e3962a22a4422016be3",
+          "target": "stmt:packages/cli/src/cli.ts@L1236",
+          "line": 1236,
+          "expr": "process.stdout.write(\n    '  2. Ask your agent \"query the crib for <symbol>\", or run `crib query <text>`.\\n',\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8219a7619257f3af19bdf4a451e05687152dac2e7f3ab87143861a16cdc01a6",
+          "target": "stmt:packages/cli/src/cli.ts@L1239",
+          "line": 1239,
+          "expr": "process.stdout.write(\n    '  3. (optional) `crib index --semantic` — add INFERRED embedding-cosine links.\\n',\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d45cd159e508dc0c70d11241e80e33f9489834329a443bf2b4057c2ebf943777",
+          "target": "stmt:packages/cli/src/cli.ts@L1242",
+          "line": 1242,
+          "expr": "process.stdout.write('  4. (optional) `crib enrich --next` — drive the LLM-graph layer.\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa4e5260e5f4ae14ab496e405b3ffc805c2799f454148c36e13b99ebfe86d9c7",
+          "target": "stmt:packages/cli/src/cli.ts@L1243",
+          "line": 1243,
+          "expr": "process.stdout.write('  Run `crib doctor` any time to re-check setup health.\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
+        "procedureName": "cmdInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:61ee0a46e327c3acd623ef6b63e4deae1e516e32cccc657cd66f3564e067c567",
+          "target": "stmt:packages/cli/src/cli.ts@L1244",
+          "line": 1244,
+          "expr": "return EXIT.OK;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 24,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 24,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 21,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

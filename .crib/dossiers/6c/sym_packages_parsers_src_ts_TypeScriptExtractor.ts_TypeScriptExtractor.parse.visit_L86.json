@@ -1,0 +1,269 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2b29b359d30a9768d0c6407a257418b4782978bb0680dbbb8190994465e6317e",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
+    "kind": "symbol",
+    "type": "function",
+    "name": "visit",
+    "qualifiedName": "TypeScriptExtractor.parse.visit",
+    "signature": "visit(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 86,
+      "end": 95
+    },
+    "recursive": true,
+    "callSites": [
+      {
+        "callee": "declarationOf",
+        "line": 87
+      },
+      {
+        "callee": "push",
+        "line": 89
+      },
+      {
+        "callee": "set",
+        "line": 90
+      },
+      {
+        "callee": "forEachChild",
+        "line": 91
+      },
+      {
+        "callee": "visit",
+        "line": 91
+      },
+      {
+        "callee": "forEachChild",
+        "line": 93
+      },
+      {
+        "callee": "visit",
+        "line": 93
+      }
+    ]
+  },
+  "source": {
+    "text": "    const visit = (node: ts.Node, qualifier: string[], parentId: string): void => {\n      const decl = this.declarationOf(node, qualifier, path, fileId, lineOf, ctx, lang);\n      if (decl) {\n        symbols.push(decl.local);\n        for (const k of decl.local.keys) if (!byKey.has(k)) byKey.set(k, decl.local.node.id);\n        ts.forEachChild(node, (c) => visit(c, decl.childQualifier, decl.local.node.id));\n      } else {\n        ts.forEachChild(node, (c) => visit(c, qualifier, parentId));\n      }\n    };",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 86
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse@L69",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "TypeScriptExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 69
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.declarationOf@L198",
+      "confidence": 1,
+      "name": "declarationOf",
+      "qualifiedName": "TypeScriptExtractor.declarationOf",
+      "signature": "declarationOf(node: ts.Node, qualifier: string[], path: string, _fileId: string, lineOf: (pos: number) => number, ctx: ExtractCtx, lang: 'typescript' | 'javascript'): { local: LocalSymbol; childQualifier: string[] } | null",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 198
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
+    "procedureName": "TypeScriptExtractor.parse.visit",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L88",
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L90"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
+        "procedureName": "TypeScriptExtractor.parse.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3fc5db41a2dbd4608ce3c112effc8f38c37677f854e5afc248a5e4c19e852bc7",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L87",
+          "line": 87,
+          "expr": "const decl = this.declarationOf(node, qualifier, path, fileId, lineOf, ctx, lang);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
+        "procedureName": "TypeScriptExtractor.parse.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:abb3e992b4c9401a9e29f90426cb782aa01d46aba88da75a59a5b2a623737345",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.declarationOf@L198",
+          "expr": "declarationOf",
+          "line": 87
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
+        "procedureName": "TypeScriptExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L88",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L88",
+            "expr": "decl",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3fa655d39c7c191ac1b5bc58b1bbdfb538aca55519c1c3a93258c4fa96de68b3",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L89",
+          "line": 89,
+          "expr": "symbols.push(decl.local);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
+        "procedureName": "TypeScriptExtractor.parse.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cb97a292208dd0f7a66587d44f458f603cf4da7920abbf17e6bcd5fbeda1383e",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 89
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
+        "procedureName": "TypeScriptExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L90",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L88",
+            "expr": "decl"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L90",
+            "expr": "decl.local.keys"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L90",
+            "expr": "decl.local.keys",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f2e703d7bca9243c6487181a8d34f5bea956a2ada14630daa9adf7227ea4dd1e",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L90",
+          "line": 90,
+          "expr": "byKey.set(k, decl.local.node.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
+        "procedureName": "TypeScriptExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L88",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L88",
+            "expr": "decl",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:35083f71c0b468fbfa3f6fbf4aa11feabb1a66469f1ac26ec8317949556c46b7",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L91",
+          "line": 91,
+          "expr": "ts.forEachChild(node, (c) => visit(c, decl.childQualifier, decl.local.node.id));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
+        "procedureName": "TypeScriptExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L88",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L88",
+            "expr": "decl",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e5a7b908b2b7d04f2e6846ed3bf2502211582de1c1b9d64cb3bc1710db69cdc9",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L93",
+          "line": 93,
+          "expr": "ts.forEachChild(node, (c) => visit(c, qualifier, parentId));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 7,
+      "unresolved": 3
+    },
+    "recursive": true,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -269,12 +269,14 @@ describe('schema validation — "crib migrate" is additive (no rewrite)', () => 
     expect(migrated.hash).toBe(service.hash);
   });
 
-  it('SUPPORTED_SCHEMA_VERSIONS includes 1.0→1.3 (every old soul is loadable)', () => {
+  it('SUPPORTED_SCHEMA_VERSIONS includes 1.0→1.5 (every old soul is loadable)', () => {
     expect(SUPPORTED_SCHEMA_VERSIONS).toContain('1.0');
     expect(SUPPORTED_SCHEMA_VERSIONS).toContain('1.1');
     expect(SUPPORTED_SCHEMA_VERSIONS).toContain('1.2');
     expect(SUPPORTED_SCHEMA_VERSIONS).toContain('1.3');
-    expect(SCHEMA_VERSION).toBe('1.3');
+    expect(SUPPORTED_SCHEMA_VERSIONS).toContain('1.4');
+    expect(SUPPORTED_SCHEMA_VERSIONS).toContain('1.5');
+    expect(SCHEMA_VERSION).toBe('1.5');
   });
 });
 

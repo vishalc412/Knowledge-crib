@@ -26,6 +26,8 @@ import { runLink } from './linker/index.js';
 import type { LinkStats } from './linker/index.js';
 import type { SemanticStats } from './linker/index.js';
 import { runSemanticLink } from './linker/index.js';
+import { runOwnership } from './ownership.js';
+import type { OwnershipStats } from './ownership.js';
 import { runParse } from './parse.js';
 import type { ParseStats } from './parse.js';
 import { defaultExtractors } from './pipeline.js';
@@ -51,6 +53,10 @@ export interface UpdateOpts {
   cluster?: boolean;
   /** run the INFERRED TF-IDF semantic linker pass over scoped docs; default false (M7). */
   semantic?: boolean;
+  /** run the M3.1 ownership phase over changed files: re-blame + re-attribute `owned-by` EXTRACTED edges
+   *  for symbols in changed files (their old owned-by edges were dropped by `removeByFile`). Default ON
+   *  inside a git work tree (clean no-op otherwise); false skips blame (benches / reproducibility). */
+  ownership?: boolean;
   /** Include staged and unstaged working-tree changes in the delta without advancing `repo.vcsHead`.
    * The derived index/soul is refreshed, `stats.incrementalSince` is set to current HEAD so subsequent
    * normal updates see no committed diff, but `repo.vcsHead` stays pinned to the last real commit so
@@ -79,6 +85,7 @@ export interface UpdateReport {
   cluster: ClusterStats;
   semantic: SemanticStats;
   dossiers: DossierStats;
+  ownership: OwnershipStats;
 }
 
 export interface UpdateNoopReport {
@@ -149,7 +156,10 @@ export async function updateRepo(
       } else {
         soul.setVcsHead(head);
       }
-      soul.commit(opts.now);
+      // No content changed — only the vcsHead anchor advances. Preserve the existing lastUpdated so
+      // crib.json stays byte-identical apart from the anchor field (idempotent re-runs don't churn
+      // the timestamp, and the M4.3 soul-refresh action's empty-diff check works on a no-op merge).
+      soul.commit(opts.now, true);
     }
     return { changedPaths, excludedPaths, scopeFiles: [], head, noop: true };
   }
@@ -181,7 +191,9 @@ export async function updateRepo(
   }
   const changedMetas = metaForPaths(root, changedPaths);
   runStructure(soul, root, changedMetas);
-  const parse = await runParse(soul, registry, root, changedMetas);
+  // Incremental: the changed set is small (often 1-3 files). Worker-boot cost would dominate, and
+  // the pool is torn down per call, so force the serial path here — parallel is for full-index only.
+  const parse = await runParse(soul, registry, root, changedMetas, { parallel: false });
 
   // Re-resolve the whole closure (changed + reverse deps): re-emits incoming B→A edges. The resolver
   // only processes files in the passed set; the SymbolTable spans the whole soul (B's symbols remain).
@@ -199,6 +211,14 @@ export async function updateRepo(
 
   // Semantic pass (M7, INFERRED): scoped to the docs in scope, like the deterministic re-link.
   const semantic = opts.semantic ? runSemanticLink(soul, root, scopeDocFiles) : { added: 0 };
+
+  // Ownership (M3.1): re-blame only the CHANGED files — their old `owned-by` edges were dropped by
+  // `removeByFile`, so a body edit re-attributes ownership instead of leaving symbols ownerless. The
+  // full-index path (`indexRepo`) blames every file; this is the scoped mirror.
+  const ownership =
+    opts.ownership === false
+      ? { files: 0, symbols: 0, owners: 0, edges: 0, skipped: 0 }
+      : runOwnership(soul, root, new Set(changedPaths));
 
   // Advance the shared incremental anchor only if this run left nothing pending — a package-scoped
   // update that excluded other packages' changes must NOT advance it (see UpdateOpts.packageRoots).
@@ -228,5 +248,6 @@ export async function updateRepo(
     cluster,
     semantic,
     dossiers,
+    ownership,
   };
 }

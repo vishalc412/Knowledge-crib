@@ -59,6 +59,9 @@ export interface ReactPassInput {
   ctx: ExtractCtx;
   path: string;
   lineOf: (pos: number) => number;
+  /** M2.5 — `lang` tag for emitted framework nodes ('typescript' | 'javascript'); accepted for
+   * parity with the express/nest passes even though the React pass currently emits no lang field. */
+  lang: 'typescript' | 'javascript';
 }
 
 export function extractReactSemantics(input: ReactPassInput): void {

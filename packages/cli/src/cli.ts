@@ -3,7 +3,7 @@
  * `crib` — the Knowledge-crib CLI. Wraps the pipeline + MCP server.
  *
  * Commands: index | status | query | gaps | rules | context | ask | dossier | impact | path | neighbors |
- *           serve | update | reindex | merge-driver | install-hooks | export | viz | mcp.
+ *           serve | update | reindex | merge-driver | install-hooks | export | viz | mcp | init | doctor.
  *
  * Root resolution (REQ-1): `crib serve`/`status`/`update`/`export`/`viz`/`query` resolve the project
  * root via a priority chain — explicit positional arg or `--cwd` → `KCRIB_ROOT` → `CLAUDE_PROJECT_DIR`
@@ -13,12 +13,25 @@
  *
  * Exit codes (cli spec): 0 ok · 1 error · 2 bad args · 3 not indexed.
  */
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { CALLABLE_SYMBOL_TYPES, MANIFEST_FILE, SoulStore, newManifest } from '@knowledge-crib/core';
+import {
+  CALLABLE_SYMBOL_TYPES,
+  LockBusyError,
+  MANIFEST_FILE,
+  SoulStore,
+  graphPaths,
+  hasLegacyGraph,
+  materializeComposite,
+  migrateLegacyGraph,
+  newManifest,
+  validateClusterIntegrity,
+  withCribLockAsync,
+} from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
 import { EnrichmentStore, Verbs, estimateTokens, serveStdio } from '@knowledge-crib/mcp';
-import type { EnrichLayer, EnrichScope, VcsAdapter } from '@knowledge-crib/mcp';
+import type { EnrichLayer, EnrichSaveItem, EnrichScope, VcsAdapter } from '@knowledge-crib/mcp';
 import {
   changedFilesSince,
   currentHead,
@@ -26,13 +39,14 @@ import {
   indexRepo,
   renderExport,
   resolvePackageArg,
+  runCluster,
   uncommittedChanges,
   updateRepo,
 } from '@knowledge-crib/pipeline';
 import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
 import type { WorkspaceLayout } from '@knowledge-crib/pipeline';
-import { buildVizGraph, vizAssetsDir } from '@knowledge-crib/ui';
-import { installHooks, mergeDriverFiles } from './hooks.js';
+import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/ui';
+import { hooksInstalled, installHooks, mergeDriverFiles } from './hooks.js';
 import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
 import { registerProject } from './registry.js';
 import {
@@ -44,8 +58,9 @@ import {
   resolveProjectRoot,
 } from './runtime.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
+import { VizHttpError, isAllowedHost, readVizNodeSource, resolveVizAsset } from './viz-server.js';
 
-const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3 } as const;
+const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3, LOCKED: 4 } as const;
 
 /** Per-invocation context threaded from `main` (currently just the `--cwd` global flag). */
 interface CmdCtx {
@@ -77,6 +92,8 @@ const VALUE_FLAGS = new Set([
   '--min-confidence',
   '--max-hops',
   '--package',
+  '--repo',
+  '--dir',
 ]);
 
 /** Collect positional argv tokens, skipping boolean flags AND value-taking flags + their values. */
@@ -90,6 +107,18 @@ function positionalsOf(args: string[]): string[] {
     }
     if (a.startsWith('-')) continue;
     out.push(a);
+  }
+  return out;
+}
+
+/** Collect every value following a repeatable `--flag` (e.g. `--repo a --repo b` → ['a','b']). */
+function collectRepeated(args: string[], flag: string): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === flag) {
+      const v = args[i + 1];
+      if (v && !v.startsWith('-')) out.push(v);
+    }
   }
   return out;
 }
@@ -261,16 +290,25 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdReconstruct(rest, ctx);
     case 'impact':
       return cmdImpact(rest, ctx);
+    case 'federated-impact':
+    case 'federated':
+      return cmdFederatedImpact(rest, ctx);
     case 'path':
       return cmdPath(rest, ctx);
     case 'neighbors':
       return cmdNeighbors(rest, ctx);
+    case 'ownership':
+      return cmdOwnership(rest, ctx);
     case 'serve':
       return cmdServe(rest, ctx);
     case 'update':
       return cmdUpdate(rest, ctx);
     case 'reindex':
       return cmdReindex(rest, ctx);
+    case 'migrate-graph':
+      return cmdMigrateGraph(rest, ctx);
+    case 'materialize':
+      return cmdMaterialize(rest, ctx);
     case 'merge-driver':
       return cmdMergeDriver(rest);
     case 'install-hooks':
@@ -281,10 +319,16 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdViz(rest, ctx);
     case 'enrich':
       return cmdEnrich(rest, ctx);
+    case 'audit-llm':
+      return cmdAuditLlm(rest, ctx);
     case 'mcp':
       return cmdMcp(rest, ctx);
     case 'skill':
       return cmdSkill(rest);
+    case 'init':
+      return cmdInit(rest, ctx);
+    case 'doctor':
+      return cmdDoctor(rest, ctx);
     case undefined:
     case '-h':
     case '--help':
@@ -295,6 +339,40 @@ async function main(argvRaw: string[]): Promise<number> {
       printHelp();
       return EXIT.BAD_ARGS;
   }
+}
+
+async function cmdMigrateGraph(args: string[], ctx?: CmdCtx): Promise<number> {
+  const resolved = resolveRoot(args, ctx);
+  if (!existsSync(join(resolved.cribDir, MANIFEST_FILE))) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const dryRun = args.includes('--dry-run');
+  if (dryRun) {
+    process.stdout.write(
+      `${JSON.stringify(migrateLegacyGraph(resolved.cribDir, true), null, 2)}\n`,
+    );
+    return EXIT.OK;
+  }
+  return runLocked(resolved.cribDir, () => {
+    const report = migrateLegacyGraph(resolved.cribDir, false);
+    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+    return EXIT.OK;
+  });
+}
+
+async function cmdMaterialize(args: string[], ctx?: CmdCtx): Promise<number> {
+  const resolved = resolveRoot(args, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  return runLocked(resolved.cribDir, () => {
+    const rt = openSoul(resolved);
+    const result = materializeComposite(rt.soul);
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return EXIT.OK;
+  });
 }
 
 /** Real VCS adapter backed by the pipeline's git helpers; injected into the MCP verbs for serve. */
@@ -318,6 +396,24 @@ function registerIndexed(repoRoot: string, cribDir: string, soul: SoulStore): vo
     cribDir,
     ...(m.repo.vcsHead !== undefined ? { vcsHead: m.repo.vcsHead } : {}),
   });
+}
+
+/**
+ * Run `fn` while holding the `.crib` writer lock; on a busy crib, print a friendly message and
+ * return the LOCKED exit code instead of throwing. Mutating commands (index/update/reindex) must
+ * serialize so two writers never stomp the derived sqlite index. Stale locks (dead holder pid, or
+ * older than 10 min) self-heal inside {@link withCribLockAsync} — no manual cleanup needed.
+ */
+async function runLocked(cribDir: string, fn: () => number | Promise<number>): Promise<number> {
+  try {
+    return await withCribLockAsync({ cribDir }, fn);
+  } catch (error) {
+    if (error instanceof LockBusyError) {
+      process.stderr.write(`${error.message}\n`);
+      return EXIT.LOCKED;
+    }
+    throw error;
+  }
 }
 
 /**
@@ -409,30 +505,32 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
   const cribDir = join(repoRoot, '.crib');
-  // Full rebuild: fresh manifest stamped with the current SCHEMA_VERSION (never inherit a stale
-  // one), repo.id preserved across rebuilds (stable committed soul + ~/.crib/registry mapping),
-  // resetForRebuild() so every on-disk shard is pruned-on-commit instead of layering new nodes over
-  // a stale older-schema soul. Do NOT load() — that hydrates stale nodes and overwrites the manifest.
-  const soul = freshSoulForRebuild(cribDir);
-  stampPackageMeta(soul, scope);
-  const started = Date.now();
-  const report = await indexRepo(soul, repoRoot, {
-    semantic,
-    ignores,
-    packageRoots: scope.packageRoots,
+  return runLocked(cribDir, async () => {
+    // Full rebuild: fresh manifest stamped with the current SCHEMA_VERSION (never inherit a stale
+    // one), repo.id preserved across rebuilds (stable committed soul + ~/.crib/registry mapping),
+    // resetForRebuild() so every on-disk shard is pruned-on-commit instead of layering new nodes over
+    // a stale older-schema soul. Do NOT load() — that hydrates stale nodes and overwrites the manifest.
+    const soul = freshSoulForRebuild(cribDir);
+    stampPackageMeta(soul, scope);
+    const started = Date.now();
+    const report = await indexRepo(soul, repoRoot, {
+      semantic,
+      ignores,
+      packageRoots: scope.packageRoots,
+    });
+    const index = buildIndex({ repoRoot, cribDir, soul });
+    registerIndexed(repoRoot, cribDir, soul);
+    const stats = soul.getManifest().stats;
+    const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
+    process.stdout.write(
+      `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
+        `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
+    );
+    printTokenSavingsHero(new Verbs({ soul, index, repoRoot }), soul, repoRoot);
+    index.close();
+    printLlmPending(soul, repoRoot);
+    return EXIT.OK;
   });
-  const index = buildIndex({ repoRoot, cribDir, soul });
-  registerIndexed(repoRoot, cribDir, soul);
-  const stats = soul.getManifest().stats;
-  const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
-  process.stdout.write(
-    `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
-      `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
-  );
-  printTokenSavingsHero(new Verbs({ soul, index, repoRoot }), soul, repoRoot);
-  index.close();
-  printLlmPending(soul, repoRoot);
-  return EXIT.OK;
 }
 
 /**
@@ -444,7 +542,11 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
  * overwrite the fresh manifest (the root cause of the additive-corrupt re-index bug).
  */
 function freshSoulForRebuild(cribDir: string): SoulStore {
-  const manifestPath = join(cribDir, MANIFEST_FILE);
+  if (hasLegacyGraph(cribDir)) migrateLegacyGraph(cribDir);
+  const canonicalManifest = graphPaths(cribDir).manifest;
+  const manifestPath = existsSync(canonicalManifest)
+    ? canonicalManifest
+    : join(cribDir, MANIFEST_FILE);
   let repoId: string | undefined;
   if (existsSync(manifestPath)) {
     try {
@@ -807,12 +909,12 @@ async function cmdReconstruct(args: string[], ctx?: CmdCtx): Promise<number> {
 
 /** `crib impact <id> --dir up|down [--depth N]` — blast radius. */
 async function cmdImpact(args: string[], ctx?: CmdCtx): Promise<number> {
-  const id = args.find((a) => !a.startsWith('-'));
+  const id = positionalsOf(args)[0];
   const dirIdx = args.indexOf('--dir');
   const dir = dirIdx >= 0 ? (args[dirIdx + 1] as 'up' | 'down' | undefined) : undefined;
   if (!id || (dir !== 'up' && dir !== 'down')) {
     process.stderr.write(
-      'usage: crib impact <id> --dir up|down [--depth N] [--limit N] [--extracted-only]\n',
+      'usage: crib impact <id> --dir up|down [--depth N] [--limit N] [--include-llm] [--extracted-only]\n',
     );
     return EXIT.BAD_ARGS;
   }
@@ -831,6 +933,7 @@ async function cmdImpact(args: string[], ctx?: CmdCtx): Promise<number> {
         ...(Number.isFinite(depth) && depth! > 0 ? { depth } : {}),
         ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
         ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+        ...(args.includes('--include-llm') ? { includeLlm: true } : {}),
       }),
       null,
       2,
@@ -840,12 +943,58 @@ async function cmdImpact(args: string[], ctx?: CmdCtx): Promise<number> {
   return EXIT.OK;
 }
 
-/** `crib path <from> <to>` — shortest dependency path between two nodes. */
+/**
+ * `crib federated-impact <id> --dir up|down [--repo <root>]... [--depth N] [--limit N]
+ * [--extracted-only]` — M3.2 cross-repo blast radius. The primary repo (cwd / resolved root) is
+ * always federated; each extra `--repo <root>` adds a repo to traverse into. The route-layer bridge
+ * crosses a repo-A outbound HTTP call to the repo-B route it serves.
+ */
+async function cmdFederatedImpact(args: string[], ctx?: CmdCtx): Promise<number> {
+  // `args.find(!startsWith('-'))` is wrong here: with `--dir down fetchLoan --repo /B` the first
+  // non-dash token is `down` (the --dir VALUE), so id would resolve to 'down' and the real id is
+  // captured as a flag value. positionalsOf strips every VALUE_FLAGS value (--dir/--repo/--depth/
+  // --limit are all in VALUE_FLAGS), leaving only the genuine positional — the id.
+  const id = positionalsOf(args)[0];
+  const dirIdx = args.indexOf('--dir');
+  const dir = dirIdx >= 0 ? (args[dirIdx + 1] as 'up' | 'down' | undefined) : undefined;
+  if (!id || (dir !== 'up' && dir !== 'down')) {
+    process.stderr.write(
+      'usage: crib federated-impact <id> --dir up|down [--repo <root>]... [--depth N] [--limit N] [--extracted-only]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const roots = collectRepeated(args, '--repo');
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  const depthIdx = args.indexOf('--depth');
+  const depth = depthIdx >= 0 ? Number.parseInt(args[depthIdx + 1] ?? '', 10) : undefined;
+  const limitIdx = args.indexOf('--limit');
+  const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;
+  process.stdout.write(
+    `${JSON.stringify(
+      verbs.federatedImpact({
+        id,
+        dir,
+        ...(roots.length ? { roots } : {}),
+        ...(Number.isFinite(depth) && depth! > 0 ? { depth } : {}),
+        ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
+        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+      }),
+      null,
+      2,
+    )}\n`,
+  );
+  index.close();
+  return EXIT.OK;
+}
 async function cmdPath(args: string[], ctx?: CmdCtx): Promise<number> {
   const positional = positionalsOf(args);
   const [from, to] = positional;
   if (!from || !to) {
-    process.stderr.write('usage: crib path <from> <to> [--max-hops N]\n');
+    process.stderr.write(
+      'usage: crib path <from> <to> [--max-hops N] [--include-llm] [--extracted-only]\n',
+    );
     return EXIT.BAD_ARGS;
   }
   const opened = openVerbs(args, ctx);
@@ -859,6 +1008,8 @@ async function cmdPath(args: string[], ctx?: CmdCtx): Promise<number> {
         from,
         to,
         ...(Number.isFinite(maxHops) && maxHops! > 0 ? { maxHops } : {}),
+        ...(args.includes('--include-llm') ? { includeLlm: true } : {}),
+        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
       }),
       null,
       2,
@@ -870,10 +1021,10 @@ async function cmdPath(args: string[], ctx?: CmdCtx): Promise<number> {
 
 /** `crib neighbors <id> [--rel reads] [--dir in|out|both]` — direct edges of one node. */
 async function cmdNeighbors(args: string[], ctx?: CmdCtx): Promise<number> {
-  const id = args.find((a) => !a.startsWith('-'));
+  const id = positionalsOf(args)[0];
   if (!id) {
     process.stderr.write(
-      'usage: crib neighbors <id> [--rel reads] [--dir in|out|both] [--limit N] [--extracted-only]\n',
+      'usage: crib neighbors <id> [--rel reads] [--dir in|out|both] [--limit N] [--include-llm] [--extracted-only]\n',
     );
     return EXIT.BAD_ARGS;
   }
@@ -894,11 +1045,26 @@ async function cmdNeighbors(args: string[], ctx?: CmdCtx): Promise<number> {
         ...(dir ? { dir } : {}),
         ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
         ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+        ...(args.includes('--include-llm') ? { includeLlm: true } : {}),
       }),
       null,
       2,
     )}\n`,
   );
+  index.close();
+  return EXIT.OK;
+}
+
+async function cmdOwnership(args: string[], ctx?: CmdCtx): Promise<number> {
+  const id = args.find((a) => !a.startsWith('-'));
+  if (!id) {
+    process.stderr.write('usage: crib ownership <id>\n');
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  process.stdout.write(`${JSON.stringify(verbs.ownership({ id }), null, 2)}\n`);
   index.close();
   return EXIT.OK;
 }
@@ -941,46 +1107,54 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
   const scope = resolvePackageScope(resolved.repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
   const rt = openSoul(resolved);
-  const started = Date.now();
   const updateOpts: Parameters<typeof updateRepo>[2] = {
     ...(since ? { since } : {}),
     ...(dirty ? { dirty: true } : {}),
     ...(scope.packageRoots ? { packageRoots: scope.packageRoots } : {}),
   };
-  const result = await updateRepo(rt.soul, resolved.repoRoot, updateOpts);
-  if (result === null) {
-    // No anchor / non-git → degrade to a full index.
+  // Sentinel returned from inside the lock when there is no incremental anchor: we must NOT call
+  // `cmdIndex` while still holding the lock (it acquires its own → nested LockBusyError), so the
+  // fallback is deferred until after runLocked releases.
+  const UPDATE_FALLBACK = -2;
+  const r = await runLocked(resolved.cribDir, async () => {
+    const started = Date.now();
+    const result = await updateRepo(rt.soul, resolved.repoRoot, updateOpts);
+    if (result === null) return UPDATE_FALLBACK;
+    const excludedSuffix =
+      result.excludedPaths.length > 0
+        ? ` [${result.excludedPaths.length} file(s) outside scope left pending — anchor not advanced]`
+        : '';
+    if ('noop' in result) {
+      process.stdout.write(
+        `up to date (head ${result.head.slice(0, 12)}) in ${Date.now() - started}ms${excludedSuffix}\n`,
+      );
+      return EXIT.OK;
+    }
+    // Apply the delta to the existing derived index; if none exists yet, build it fresh from the
+    // (already-committed) updated soul — a delta applied to an empty index would be meaningless.
+    let index: IndexStore;
+    try {
+      index = openIndexOnly(rt);
+      index.applyDelta(result.delta, resolved.repoRoot);
+    } catch {
+      index = buildIndex(rt); // full buildFromSoul from the just-updated soul
+    }
+    index.close();
+    registerIndexed(resolved.repoRoot, resolved.cribDir, rt.soul);
+    const d = result.delta;
+    process.stdout.write(
+      `updated ${result.changedPaths.length} file(s) [scope ${result.scopeFiles.length}] → ` +
+        `+${d.nodes.length} nodes +${d.edges.length} edges −${d.removed.length} in ${Date.now() - started}ms${excludedSuffix}\n` +
+        `changed: ${result.changedPaths.join(', ')}\n`,
+    );
+    return EXIT.OK;
+  });
+  if (r === UPDATE_FALLBACK) {
+    // No anchor / non-git → degrade to a full index (lock now released; cmdIndex acquires its own).
     process.stderr.write('no incremental anchor — falling back to full index\n');
     return cmdIndex(args, ctx);
   }
-  const excludedSuffix =
-    result.excludedPaths.length > 0
-      ? ` [${result.excludedPaths.length} file(s) outside scope left pending — anchor not advanced]`
-      : '';
-  if ('noop' in result) {
-    process.stdout.write(
-      `up to date (head ${result.head.slice(0, 12)}) in ${Date.now() - started}ms${excludedSuffix}\n`,
-    );
-    return EXIT.OK;
-  }
-  // Apply the delta to the existing derived index; if none exists yet, build it fresh from the
-  // (already-committed) updated soul — a delta applied to an empty index would be meaningless.
-  let index: IndexStore;
-  try {
-    index = openIndexOnly(rt);
-    index.applyDelta(result.delta, resolved.repoRoot);
-  } catch {
-    index = buildIndex(rt); // full buildFromSoul from the just-updated soul
-  }
-  index.close();
-  registerIndexed(resolved.repoRoot, resolved.cribDir, rt.soul);
-  const d = result.delta;
-  process.stdout.write(
-    `updated ${result.changedPaths.length} file(s) [scope ${result.scopeFiles.length}] → ` +
-      `+${d.nodes.length} nodes +${d.edges.length} edges −${d.removed.length} in ${Date.now() - started}ms${excludedSuffix}\n` +
-      `changed: ${result.changedPaths.join(', ')}\n`,
-  );
-  return EXIT.OK;
+  return r;
 }
 
 async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
@@ -991,25 +1165,227 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
   const cribDir = join(repoRoot, '.crib');
-  const soul = freshSoulForRebuild(cribDir);
-  stampPackageMeta(soul, scope);
-  const started = Date.now();
-  const report = await indexRepo(soul, repoRoot, {
-    semantic,
-    ignores,
-    packageRoots: scope.packageRoots,
+  return runLocked(cribDir, async () => {
+    const soul = freshSoulForRebuild(cribDir);
+    stampPackageMeta(soul, scope);
+    const started = Date.now();
+    const report = await indexRepo(soul, repoRoot, {
+      semantic,
+      ignores,
+      packageRoots: scope.packageRoots,
+    });
+    const index = buildIndex({ repoRoot, cribDir, soul });
+    index.close();
+    registerIndexed(repoRoot, cribDir, soul);
+    const stats = soul.getManifest().stats;
+    const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
+    process.stdout.write(
+      `reindexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
+        `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
+    );
+    printLlmPending(soul, repoRoot);
+    return EXIT.OK;
   });
-  const index = buildIndex({ repoRoot, cribDir, soul });
-  index.close();
-  registerIndexed(repoRoot, cribDir, soul);
-  const stats = soul.getManifest().stats;
-  const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
+}
+
+/**
+ * `crib init [path] [--ide <name|all>]` — the 5-minute onboarding (M4.2). Orchestrates the three
+ * setup steps a new user would otherwise run by hand — index, install-hooks, mcp install — then
+ * prints the hero "next steps" so the value is visible immediately and the path to the first MCP
+ * query is one copy-paste. Idempotent: re-running refreshes the index, re-wires hooks (managed
+ * blocks replace in place), and re-wires MCP (already-present configs report "up to date"). Does
+ * NOT take `--semantic` (deterministic-first onboarding; opt into INFERRED links with a later
+ * `crib index --semantic`).
+ */
+async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
+  const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
+  const ideIdx = args.indexOf('--ide');
+  const ide: McpIde | 'all' = ideIdx >= 0 ? ((args[ideIdx + 1] as McpIde | 'all') ?? 'all') : 'all';
+  const validIdes: Array<McpIde | 'all'> = ['all', 'claude', 'cursor', 'vscode', 'codex'];
+  if (!validIdes.includes(ide)) {
+    process.stderr.write(`unknown --ide: ${ide}\nvalid: ${validIdes.join(', ')}\n`);
+    return EXIT.BAD_ARGS;
+  }
+
+  process.stdout.write('crib init — 5-minute onboarding\n');
+  process.stdout.write('  step 1/3: indexing the repo (deterministic, LLM-free)…\n');
+  const indexCode = await cmdIndex([repoRoot], ctx);
+  if (indexCode !== EXIT.OK) {
+    process.stderr.write(`  index failed (exit ${indexCode}) — aborting init\n`);
+    return indexCode;
+  }
+
   process.stdout.write(
-    `reindexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
-      `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
+    '  step 2/3: wiring git hooks (post-commit `crib update` + .crib merge driver)…\n',
   );
-  printLlmPending(soul, repoRoot);
+  const hooksCode = cmdInstallHooks([repoRoot], ctx);
+  if (hooksCode !== EXIT.OK) {
+    process.stderr.write(`  install-hooks failed (exit ${hooksCode}) — aborting init\n`);
+    return hooksCode;
+  }
+
+  process.stdout.write(`  step 3/3: wiring the MCP server into IDE config (--ide ${ide})…\n`);
+  const mcpCode = cmdMcp(['install', '--ide', ide, repoRoot], ctx);
+  if (mcpCode !== EXIT.OK) {
+    process.stderr.write(`  mcp install failed (exit ${mcpCode}) — aborting init\n`);
+    return mcpCode;
+  }
+
+  process.stdout.write('\n✓ crib init complete. Next steps:\n');
+  process.stdout.write('  1. Restart your IDE so it picks up the MCP server config.\n');
+  process.stdout.write(
+    '  2. Ask your agent "query the crib for <symbol>", or run `crib query <text>`.\n',
+  );
+  process.stdout.write(
+    '  3. (optional) `crib index --semantic` — add INFERRED embedding-cosine links.\n',
+  );
+  process.stdout.write('  4. (optional) `crib enrich --next` — drive the LLM-graph layer.\n');
+  process.stdout.write('  Run `crib doctor` any time to re-check setup health.\n');
   return EXIT.OK;
+}
+
+/**
+ * `crib doctor [path]` — setup health check (M4.2). Runs the six onboarding-critical checks and
+ * prints ✓/✗ + a fix hint for each. A failing check never skips the rest — the point is a full
+ * diagnostic in one pass. Exits 0 when every check passes, 1 when any fails, so scripts/CI can
+ * detect a broken setup. The Node-version check mirrors bin.ts's launcher guard (the canonical
+ * gate, REQUIRED_NODE = 22.5.0 — the node:sqlite requirement); doctor re-runs it so a user on a
+ * too-old Node learns it here, not from an opaque `node:sqlite` crash.
+ */
+function cmdDoctor(args: string[], ctx?: CmdCtx): number {
+  const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
+  const checks: Array<{ name: string; ok: boolean; detail: string; fix?: string }> = [];
+
+  // 1. Node ≥ 22.5.0 — mirrors bin.ts REQUIRED_NODE (the node:sqlite requirement).
+  const REQUIRED_NODE = '22.5.0';
+  const parts = process.versions.node.split('.').map((n) => Number.parseInt(n, 10));
+  const reqParts = REQUIRED_NODE.split('.').map((n) => Number.parseInt(n, 10));
+  const major = parts[0] ?? 0;
+  const minor = parts[1] ?? 0;
+  const reqMajor = reqParts[0] ?? 0;
+  const reqMinor = reqParts[1] ?? 0;
+  const nodeOk = major > reqMajor || (major === reqMajor && minor >= reqMinor);
+  checks.push({
+    name: 'Node ≥ 22.5.0',
+    ok: nodeOk,
+    detail: `found ${process.versions.node}`,
+    fix: 'upgrade Node, then re-run `crib`',
+  });
+
+  // 2. corepack available (the documented pnpm path — `corepack pnpm@9.15.0`).
+  let corepackOk = false;
+  let corepackDetail = 'not found';
+  try {
+    const v = execFileSync('corepack', ['--version'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    corepackOk = true;
+    corepackDetail = `corepack ${v}`;
+  } catch {
+    /* corepack absent — best-effort check, not a hard failure of crib itself */
+  }
+  checks.push({
+    name: 'corepack available',
+    ok: corepackOk,
+    detail: corepackDetail,
+    fix: '`corepack enable` (or install Node ≥ 16.17, which bundles corepack)',
+  });
+
+  // 3. .crib indexed (committed soul present).
+  const resolved = resolveProjectRoot({ explicitRoot: repoRoot });
+  const indexed = isIndexedRoot(resolved);
+  checks.push({
+    name: 'repo indexed (.crib soul present)',
+    ok: indexed,
+    detail: indexed ? 'yes' : 'no .crib/crib.json at repo root',
+    fix: 'run `crib init` (or `crib index .`)',
+  });
+
+  // 4. index freshness — soul vcsHead == current HEAD (only meaningful when indexed).
+  if (indexed) {
+    const rt = openSoul(resolved);
+    const index = openIndexForRead(rt);
+    if (index) {
+      const verbs = new Verbs({
+        soul: rt.soul,
+        index,
+        repoRoot: resolved.repoRoot,
+        vcs: new CliVcsAdapter(),
+      });
+      const st = verbs.status() as {
+        vcsHead?: string;
+        currentHead?: string;
+        dirty?: { aheadOfVcsHead?: boolean };
+      };
+      index.close();
+      const stale = st.dirty?.aheadOfVcsHead === true;
+      checks.push({
+        name: 'index fresh (soul vcsHead == HEAD)',
+        ok: !stale,
+        detail: stale
+          ? `soul at ${st.vcsHead ?? '(none)'}, HEAD at ${st.currentHead ?? '(none)'}`
+          : 'up to date',
+        fix: 'run `crib update .`',
+      });
+    } else {
+      checks.push({
+        name: 'index fresh (soul vcsHead == HEAD)',
+        ok: false,
+        detail: 'derived index missing',
+        fix: 'run `crib index .`',
+      });
+    }
+  } else {
+    checks.push({
+      name: 'index fresh (soul vcsHead == HEAD)',
+      ok: false,
+      detail: 'skipped — repo not indexed',
+      fix: 'run `crib init` first',
+    });
+  }
+
+  // 5. git hooks installed (post-commit `crib update` + .crib merge driver).
+  const hooks = hooksInstalled(repoRoot);
+  const hooksOk = hooks.postCommit && hooks.gitattributes && hooks.driverConfig;
+  checks.push({
+    name: 'git hooks installed',
+    ok: hooksOk,
+    detail: `post-commit ${hooks.postCommit ? '✓' : '✗'}, .gitattributes ${hooks.gitattributes ? '✓' : '✗'}, merge driver ${hooks.driverConfig ? '✓' : '✗'}`,
+    fix: 'run `crib install-hooks`',
+  });
+
+  // 6. IDE MCP wiring present (any IDE in project scope).
+  let wired = false;
+  let wiredDetail = 'no IDE config found';
+  try {
+    const entries = listMcp(repoRoot, { ide: 'all', scope: 'project' });
+    const present = entries.filter((e) => e.present);
+    wired = present.length > 0;
+    wiredDetail = present.length > 0 ? present.map((e) => e.ide).join(', ') : 'none present';
+  } catch {
+    /* best-effort — listMcp should not throw, but never let a diagnostic crash */
+  }
+  checks.push({
+    name: 'IDE MCP wiring present',
+    ok: wired,
+    detail: wiredDetail,
+    fix: 'run `crib mcp install` (or `crib init`)',
+  });
+
+  let failures = 0;
+  for (const c of checks) {
+    const mark = c.ok ? '✓' : '✗';
+    process.stdout.write(`  ${mark} ${c.name} — ${c.detail}\n`);
+    if (!c.ok) {
+      failures++;
+      if (c.fix) process.stdout.write(`      fix: ${c.fix}\n`);
+    }
+  }
+  process.stdout.write(
+    `\ncrib doctor: ${checks.length - failures}/${checks.length} checks passed\n`,
+  );
+  return failures > 0 ? EXIT.ERROR : EXIT.OK;
 }
 
 /** `crib merge-driver %O %A %B %P` — git custom merge driver for one `.crib` JSONL chunk. */
@@ -1120,18 +1496,24 @@ function cmdMcp(args: string[], ctx?: CmdCtx): number {
 }
 
 /**
- * `crib export [--format rules|mermaid|graph.json|report] [--procedure <id|name>]` — render the
+ * `crib export [--format rules|mermaid|graph.json|report|llm] [--procedure <id|name>]` — render the
  * soul. `rules`/`mermaid` need `--procedure` (a node id or a procedure/function name); `graph.json`
- * and `report` dump the whole soul (report optionally scoped to one procedure via --procedure).
+ * and `report` dump the whole soul (report optionally scoped to one procedure via --procedure);
+ * `llm` dumps the committed LLM layer (redacted by default — M1.4).
  */
 async function cmdExport(args: string[], ctx?: CmdCtx): Promise<number> {
   // Parse flags + their values out so flag values aren't mistaken for a positional path.
   let format = 'report';
   let procedure: string | undefined;
+  let redact = true; // M1.4: the LLM export redacts by default; --no-redact opts out (local debugging only)
   const positional: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
-    if (a === '--format') {
+    if (a === '--no-redact') {
+      redact = false;
+    } else if (a === '--redact') {
+      redact = true;
+    } else if (a === '--format') {
       format = args[++i] ?? '';
     } else if (a === '--procedure') {
       procedure = args[++i];
@@ -1144,7 +1526,7 @@ async function cmdExport(args: string[], ctx?: CmdCtx): Promise<number> {
       ctx?.cwdOverride ?? (positional[0] && positional[0] !== '.' ? positional[0] : undefined),
   });
 
-  const formats = ['rules', 'mermaid', 'graph.json', 'report'] as const;
+  const formats = ['rules', 'mermaid', 'graph.json', 'report', 'llm'] as const;
   type ExportFormat = (typeof formats)[number];
   if (!(formats as readonly string[]).includes(format)) {
     process.stderr.write(`unknown format: ${format || '(none)'}\nvalid: ${formats.join(', ')}\n`);
@@ -1162,7 +1544,25 @@ async function cmdExport(args: string[], ctx?: CmdCtx): Promise<number> {
 
   const rt = openSoul(resolved);
   try {
-    process.stdout.write(renderExport(rt.soul, fmt, procedure));
+    if (fmt === 'llm') {
+      // M1.4: `llm` dumps committed semantic layer (`.crib/graph/semantic/`). `--redact` (default)
+      // strips every evidence `quote` to a span ref `{soulId, file, startLine, endLine}` and masks
+      // any secret-pattern substring in analysis/graph strings, so the exported bundle never
+      // carries verbatim source snippets or secrets even if the on-disk artifacts do.
+      const enrich = new EnrichmentStore(rt.soul, resolved.repoRoot);
+      process.stdout.write(enrich.exportLlm(redact));
+      if (!redact) {
+        process.stderr.write(
+          'warning: --no-redact emits verbatim evidence quotes — do not share the output externally.\n',
+        );
+      }
+    } else {
+      process.stdout.write(
+        renderExport(rt.soul, fmt, procedure, {
+          extractedOnly: args.includes('--extracted-only'),
+        }),
+      );
+    }
   } catch (err) {
     process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
     return EXIT.ERROR;
@@ -1188,11 +1588,18 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
     return EXIT.NOT_INDEXED;
   }
   const rt = openSoul(resolved);
+  const persistedIntegrity = validateClusterIntegrity(rt.soul);
+  let repairedClusters = false;
+  if (!persistedIntegrity.valid) {
+    runCluster(rt.soul);
+    repairedClusters = true;
+  }
   const graph = buildVizGraph(rt.soul);
+  const overview = buildVizOverview(rt.soul);
   const assets = vizAssetsDir();
   const { createServer } = await import('node:http');
   const { readFile } = await import('node:fs/promises');
-  const { join, extname } = await import('node:path');
+  const { extname } = await import('node:path');
 
   const MIME: Record<string, string> = {
     '.html': 'text/html; charset=utf-8',
@@ -1203,18 +1610,39 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
 
   const server = createServer(async (req, res) => {
     try {
-      if (req.url === '/graph.json') {
+      // DNS-rebinding guard: reject any non-loopback Host before touching a file.
+      if (!isAllowedHost(req.headers.host)) {
+        throw new VizHttpError(403, 'host not allowed');
+      }
+      const requestUrl = new URL(req.url ?? '/', 'http://127.0.0.1');
+      if (requestUrl.pathname === '/graph.json') {
         res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(graph));
         return;
       }
-      const rel = (req.url ?? '/').split('?')[0]!.replace(/^\//, '');
-      const path = join(assets, rel === '' ? 'index.html' : rel);
+      if (requestUrl.pathname === '/overview.json') {
+        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(overview));
+        return;
+      }
+      if (requestUrl.pathname === '/source') {
+        const nodeId = requestUrl.searchParams.get('nodeId');
+        if (!nodeId) throw new VizHttpError(400, 'missing nodeId');
+        const source = await readVizNodeSource(rt.soul, rt.repoRoot, nodeId);
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(source));
+        return;
+      }
+      const path = await resolveVizAsset(assets, requestUrl.pathname);
       const body = await readFile(path);
       res.writeHead(200, { 'content-type': MIME[extname(path)] ?? 'application/octet-stream' });
       res.end(body);
     } catch (err) {
-      res.writeHead(404, { 'content-type': 'text/plain' });
+      const status = err instanceof VizHttpError ? err.status : 500;
+      res.writeHead(status, { 'content-type': 'text/plain; charset=utf-8' });
       res.end(`not found: ${err instanceof Error ? err.message : String(err)}`);
     }
   });
@@ -1226,6 +1654,11 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
   process.stderr.write(
     `viz → ${url}  (${graph.stats.nodes} nodes · ${graph.stats.edges} edges · ${graph.stats.clusters} clusters)\nCtrl-C to stop.\n`,
   );
+  if (repairedClusters) {
+    process.stderr.write(
+      'warning: stale cluster topology repaired in memory for this session; run `crib reindex` to persist it.\n',
+    );
+  }
   // best-effort browser open (macOS/linux/windows); never fatal.
   const { spawn } = await import('node:child_process');
   let opener: string;
@@ -1261,9 +1694,17 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
  * Usage:
  *   crib enrich [path] [--budget-tokens N]            coverage + pending count + follow-up hint
  *   crib enrich --next [path] [--layer L] [--limit N] [--scope PFX] [--budget-tokens N]  print the next grounded batch
+ *   crib enrich --auto [path] [--max-tokens N] [--max-batches N] [--layer L] [--scope PFX] [--budget-tokens N]
+ *                                                       bounded autonomous loop (stub-authors + saves per batch)
  *   crib enrich --save <file> [path] [--scope PFX]   persist a {batchId, items[]} JSON batch
  *   crib enrich --overview [path] [--scope PFX]     print the bible (scoped to PFX if given)
  *   crib enrich --scopes [path] [--budget-tokens N] ranked path-prefix scopes for the picker
+ *
+ * `--budget-tokens N` is a per-batch PACKER (not a guard): `--next` fills a batch whose estimated
+ * cost fits N, capped at `--limit` (default 25). If the first item alone exceeds N it is returned
+ * alone with `oversized:true` (the queue never stalls). `--auto --max-tokens N` bounds the whole
+ * turn (sum of batch costs); `--auto --max-batches N` caps the batch count; the loop also stops at
+ * a layer boundary and breaks on zero-progress or rejects (exit non-zero).
  *
  * `--scope <prefix>` restricts status/next to in-scope targets (system layer is whole-repo only).
  * `--scope-cluster <cluster>` optionally refines inside the prefix. `--scopes` is a discovery view.
@@ -1296,6 +1737,14 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
   const budgetTokens = budgetIdx >= 0 ? Number.parseInt(args[budgetIdx + 1] ?? '', 10) : undefined;
   const budget = Number.isFinite(budgetTokens) && budgetTokens! > 0 ? budgetTokens : undefined;
 
+  if (args.includes('--prune-stale')) {
+    return runLocked(resolved.cribDir, () => {
+      const result = enrich.pruneStale(args.includes('--apply'));
+      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+      return EXIT.OK;
+    });
+  }
+
   // --scopes: discovery view — ranked path-prefix scopes for a headless/CI agent to pick from.
   if (args.includes('--scopes')) {
     const st = enrich.status({ scopes: true, ...(budget ? { budgetTokens: budget } : {}) });
@@ -1310,8 +1759,13 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
   }
 
   if (args.includes('--overview')) {
+    const withLlm = args.includes('--full');
     process.stdout.write(
-      `${JSON.stringify(enrich.overview({ ...(scope ? { scope } : {}) }), null, 2)}\n`,
+      `${JSON.stringify(
+        enrich.overview({ ...(scope ? { scope } : {}), ...(withLlm ? { withLlm: true } : {}) }),
+        null,
+        2,
+      )}\n`,
     );
     return EXIT.OK;
   }
@@ -1345,23 +1799,134 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
     return EXIT.OK;
   }
 
+  if (args.includes('--auto')) {
+    const layerIdx = args.indexOf('--layer');
+    const layer = layerIdx >= 0 ? (args[layerIdx + 1] as EnrichLayer | undefined) : undefined;
+    const maxTokensIdx = args.indexOf('--max-tokens');
+    const maxTokensRaw =
+      maxTokensIdx >= 0 ? Number.parseInt(args[maxTokensIdx + 1] ?? '', 10) : undefined;
+    const maxBatchesIdx = args.indexOf('--max-batches');
+    const maxBatchesRaw =
+      maxBatchesIdx >= 0 ? Number.parseInt(args[maxBatchesIdx + 1] ?? '', 10) : undefined;
+    // Turn-level bounds (distinct from --budget-tokens, the per-batch packer ceiling). Defaults match
+    // the /crib-enrich skill's Phase 1-auto loop so a bare `crib enrich --auto` behaves identically to
+    // the interactive autonomous mode: ~100k tokens, ≤5 batches, stop at a layer boundary for review.
+    const maxTokens = Number.isFinite(maxTokensRaw) && maxTokensRaw! > 0 ? maxTokensRaw! : 100_000;
+    const maxBatches = Number.isFinite(maxBatchesRaw) && maxBatchesRaw! > 0 ? maxBatchesRaw! : 5;
+    return runLocked(resolved.cribDir, () => {
+      let spent = 0;
+      let batches = 0;
+      let startLayer: EnrichLayer | undefined;
+      let lastBatchId: string | undefined;
+      const nextArgs = {
+        ...(layer ? { layer } : {}),
+        ...(scope ? { scope } : {}),
+        ...(budget ? { budgetTokens: budget } : {}),
+      };
+      while (true) {
+        const batch = enrich.next(nextArgs);
+        // Nothing left for this layer/scope (pending drained) — done, not an error.
+        if (batch.items.length === 0) {
+          process.stdout.write(`auto: nothing pending for layer ${batch.layer} — done.\n`);
+          break;
+        }
+        // Zero-progress: the same batchId was already issued with no save landing. A headless driver
+        // hitting this is the churn trap — break non-zero so CI/loops notice instead of spinning.
+        if (batch.zeroProgress || batch.batchId === lastBatchId) {
+          process.stderr.write(
+            `zero-progress: batchId ${batch.batchId} re-issued for layer ${batch.layer} with no save landing — stopping (run \`crib enrich --next\` + \`--save\` to advance).\n`,
+          );
+          return EXIT.ERROR;
+        }
+        // Layer boundary: the queue advanced to a new layer since the first batch. Stop for human
+        // review rather than silently grinding through every layer in one turn.
+        if (startLayer === undefined) startLayer = batch.layer;
+        else if (batch.layer !== startLayer) {
+          process.stdout.write(
+            `auto: layer boundary ${startLayer} → ${batch.layer} — stopping for review.\n`,
+          );
+          break;
+        }
+        const batchCost = batch.costEstimate?.batch ?? 0;
+        // Token ceiling bounds the TURN, not the batch: the first batch always runs (batches===0 guard)
+        // so a single fat batch still makes progress; subsequent batches stop before overshooting.
+        if (batches > 0 && spent + batchCost > maxTokens) {
+          process.stdout.write(
+            `auto: token ceiling reached (~${spent} spent + ~${batchCost} next > ${maxTokens}) — stopping.\n`,
+          );
+          break;
+        }
+        lastBatchId = batch.batchId;
+        // Stub-author each item: the CLI has no model, so --auto cannot produce real analyses. A stub
+        // (model 'crib-auto-stub', confidence 0.1, empty graph/evidence) passes validation and marks
+        // its target fresh for queue purposes (read() checks nodeHash+schemaVersion, NOT grounded) — so
+        // the queue advances and a later /crib-enrich pass refines the stubs. Grounding/audit-llm will
+        // flag stubs as ungrounded in diagnostics, which is the correct signal: they are placeholders.
+        const items: EnrichSaveItem[] = batch.items.map((item) => ({
+          targetId: item.targetId,
+          model: 'crib-auto-stub',
+          analysis: {
+            purpose: 'Auto-stub placeholder — refine via /crib-enrich.',
+            responsibilities: [],
+            confidence: 0.1,
+          },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        }));
+        const result = enrich.save({ batchId: batch.batchId, items }) as {
+          accepted: unknown[];
+          rejected: Array<{ targetId: string; reason: string }>;
+        };
+        if (result.rejected.length > 0) {
+          process.stderr.write(
+            `auto: ${result.rejected.length} item(s) rejected — stopping for review:\n${result.rejected.map((r) => `  ${r.targetId}: ${r.reason}`).join('\n')}\n`,
+          );
+          return EXIT.ERROR;
+        }
+        spent += batchCost;
+        batches += 1;
+        process.stdout.write(
+          `auto batch ${batches}: layer=${batch.layer} accepted=${result.accepted.length}` +
+            ` remaining=${batch.remaining} cost=${batchCost} spent=${spent}/${maxTokens}\n`,
+        );
+        if (batches >= maxBatches) {
+          process.stdout.write(
+            `auto: max-batches reached (${maxBatches}) — stopping for review.\n`,
+          );
+          break;
+        }
+      }
+      process.stdout.write(
+        `auto: ${batches} batch(es), ~${spent} tokens spent${
+          startLayer ? `, layer ${startLayer}` : ''
+        }. Refine stubs via /crib-enrich.\n`,
+      );
+      return EXIT.OK;
+    });
+  }
+
   if (args.includes('--next')) {
     const layerIdx = args.indexOf('--layer');
     const layer = layerIdx >= 0 ? (args[layerIdx + 1] as EnrichLayer | undefined) : undefined;
     const limitIdx = args.indexOf('--limit');
     const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;
+    const skeleton = args.includes('--skeleton');
     const batch = enrich.next({
       ...(layer ? { layer } : {}),
       ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
       ...(scope ? { scope } : {}),
       ...(budget ? { budgetTokens: budget } : {}),
+      ...(skeleton ? { skeleton: true } : {}),
     });
     process.stdout.write(`${JSON.stringify(batch, null, 2)}\n`);
+    // Under token-packed selection, budgetExceeded only fires when a single item alone exceeds the
+    // budget — and that item is STILL returned (oversized:true) so the queue never stalls. It is
+    // workable, not an error: warn and let the host author it (or raise --budget-tokens / route to a
+    // bigger tier). The old "reduce --limit" advice was for the pre-WP1 count-sliced semantics.
     if (batch.budgetExceeded) {
       process.stderr.write(
-        `budget guard: batch cost ~${batch.costEstimate?.batch} tokens exceeds --budget-tokens ${budget} — reduce --limit or raise the budget.\n`,
+        `warning: batch cost ~${batch.costEstimate?.batch} tokens exceeds --budget-tokens ${budget} — the single oversized item is returned alone (oversized). Author it, raise --budget-tokens, or route to a bigger model tier.\n`,
       );
-      return EXIT.ERROR;
     }
     if (batch.zeroProgress) {
       process.stderr.write(
@@ -1453,15 +2018,71 @@ function pathInPrefix(path: string, scope: EnrichScope): boolean {
 }
 
 /**
+ * `crib audit-llm` (M1.3 — the moat): re-verify every persisted LLM artifact on disk against the
+ * current soul. Re-runs the save-time grounding check (rehydrate each evidence quote's anchor span,
+ * require overlap), so a post-refactor re-verify is identical to the original verdict. PURE — the
+ * CLI never calls a model and never mutates the on-disk artifacts. Prints a per-target table + the
+ * aggregate verdict; exits non-zero when any artifact is ungrounded or drifted so CI can gate on it.
+ *
+ *   crib audit-llm [path]
+ */
+async function cmdAuditLlm(args: string[], ctx?: CmdCtx): Promise<number> {
+  const resolved = resolveRoot(args, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const enrich = new EnrichmentStore(rt.soul, resolved.repoRoot);
+  const result = enrich.auditLlm();
+  if (result.checked === 0) {
+    process.stdout.write(
+      'no LLM artifacts on disk — run `crib enrich --next` then `--save` first.\n',
+    );
+    return EXIT.OK;
+  }
+  const rows = result.targets.map((t) => {
+    const stamp = t.stampedGrounded === undefined ? '-' : t.stampedGrounded ? 'g' : 'u';
+    const verdict = t.grounded ? 'g' : 'u';
+    const drift =
+      t.stampedGrounded !== undefined && t.stampedGrounded !== t.grounded ? ' DRIFT' : '';
+    const stale = t.stale ? ' stale' : '';
+    return `${verdict}/${stamp}  g=${t.groundedCount} u=${t.ungroundedCount} unsup=${t.unsupportedCount}  ${t.layer}  ${t.targetId}${drift}${stale}`;
+  });
+  process.stdout.write(
+    `audited ${result.checked} artifact(s): ${result.grounded} grounded, ${result.ungrounded} ungrounded, ${result.drifted} drifted, ${result.stale} stale\n`,
+  );
+  for (const row of rows) process.stdout.write(`  ${row}\n`);
+  if (result.ungrounded > 0 || result.drifted > 0) return EXIT.ERROR;
+  return EXIT.OK;
+}
+
+/**
  * `crib skill <install|list> [name] [--dest <dir>]` — install the bundled `/crib-enrich` skill into
- * `~/.claude/skills/` (or `--dest`) so the LLM-graph loop is drivable from any Claude Code session.
+ * `~/.claude/skills/` by default, or another client's skill root via `--dest`.
  * Mirrors `crib mcp install` (idempotent, non-clobbering). `list` prints the bundled skills.
  */
 function cmdSkill(args: string[]): number {
   const [sub, ...rest] = args;
-  const destIdx = rest.indexOf('--dest');
-  const destRoot = destIdx >= 0 ? rest[destIdx + 1] : undefined;
-  const name = rest.find((a) => !a.startsWith('-'));
+  let destRoot: string | undefined;
+  let name: string | undefined;
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i]!;
+    if (arg === '--dest') {
+      const value = rest[++i];
+      if (looksLikeFlag(value)) {
+        process.stderr.write('usage: crib skill install [name] [--dest <dir>]\n');
+        return EXIT.BAD_ARGS;
+      }
+      destRoot = value;
+      continue;
+    }
+    if (arg.startsWith('-')) {
+      process.stderr.write(`unknown skill option: ${arg}\n`);
+      return EXIT.BAD_ARGS;
+    }
+    if (!name) name = arg;
+  }
 
   switch (sub) {
     case 'install': {
@@ -1506,7 +2127,7 @@ function printHelp(): void {
       'crib — Knowledge-crib CLI',
       '',
       'Usage:',
-      '  crib index [path] [--semantic] [--exclude a,b,...] [--package <name|all>...]     full index → .crib soul + derived index (+ INFERRED TF-IDF semantic links); --package scopes to one monorepo package (list detected with no --package)',
+      '  crib index [path] [--semantic] [--exclude a,b,...] [--package <name|all>...]     full index → .crib soul + derived index (+ INFERRED embedding-cosine semantic links); --package scopes to one monorepo package (list detected with no --package)',
       '  crib status [path] [--dirty]             health + stats; --dirty previews files that would be re-indexed',
       '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',
       '  crib gaps [path] [--extracted-only] [--include-builtins]   analysis readiness + missing bodies + unresolved call sites',
@@ -1516,20 +2137,25 @@ function printHelp(): void {
       '  crib ask "<question>" [--format markdown] [--limit N] [--with-source] [--with-rules] [--with-framework]   natural-language answer from the crib (deterministic)',
       '  crib dossier <id> [--format markdown]    persisted deep artifact (body + callers/callees + rules + CFG constructs)',
       '  crib reconstruct <pkg> [--format markdown]   package reconstruction: CONSTANT values + members + referenced tables + docs + expectedBodyFile',
-      '  crib impact <id> --dir up|down [--depth N]   blast radius (dependents / dependencies)',
-      '  crib path <from> <to> [--max-hops N]     shortest dependency path between two nodes',
-      '  crib neighbors <id> [--rel reads] [--dir in|out|both]   direct edges of one node',
+      '  crib impact <id> --dir up|down [--depth N] [--include-llm]   blast radius',
+      '  crib path <from> <to> [--max-hops N] [--include-llm]   shortest path',
+      '  crib neighbors <id> [--rel reads] [--dir in|out|both] [--include-llm]   adjacency',
       '  crib serve [path]                        run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd)',
       '  crib update [path] [--since <sha>] [--dirty] [--package <name>]  incremental re-extract since the VCS anchor; --dirty includes working-tree changes without advancing vcsHead; --package scopes to one package of a monorepo without advancing the shared anchor if other packages changed too',
       '  crib reindex [path] [--package <name|all>...]     full re-index (alias for `crib index`; --package scopes to one monorepo package)',
+      '  crib migrate-graph [path] [--dry-run]     move legacy nodes/edges/llm into canonical .crib/graph',
+      '  crib materialize [path]                   build derived composite graph.json + sqlite',
       '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',
       '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',
-      '  crib export [--format F] [--procedure P] render soul: rules|mermaid|graph.json|report',
+      '  crib export [--format F] [--procedure P] [--extracted-only] [--redact|--no-redact] render graph: rules|mermaid|graph.json|report|llm',
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
-      '  crib enrich [path] [--budget-tokens N]    LLM-graph work queue + driver: coverage, --next (grounded batch), --save <file>, --overview, --scope PFX, --scopes',
+      '  crib enrich [path] [--budget-tokens N]    semantic work queue; --next (token-packed batch) | --auto [--max-tokens N --max-batches N] | --save <file> | --overview | --scopes | --prune-stale [--apply]',
+      '  crib audit-llm [path]                    re-verify every LLM artifact against the soul (grounding moat); exits non-zero on ungrounded/drift',
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]',
       '                                          auto-wire the MCP server into each IDE config (REQ-2)',
-      '  crib skill <install|list> [name] [--dest <dir>]   install bundled skills (e.g. crib-enrich) into ~/.claude/skills',
+      '  crib skill <install|list> [name] [--dest <dir>]   install bundled skills (default ~/.claude/skills; Codex: --dest ~/.codex/skills)',
+      '  crib init [path] [--ide <name|all>]      5-minute onboarding: index + install-hooks + mcp install + next-steps hero',
+      '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring (✓/✗ + fix hints)',
       '',
       'Global: --cwd <path>   override the project root for any command',
       '',
@@ -1538,8 +2164,13 @@ function printHelp(): void {
 }
 
 main(process.argv.slice(2))
-  .then((code) => process.exit(code))
+  // Do not force process.exit here. Large graph/report exports write through a pipe; forcing exit
+  // discards buffered stdout (commonly at 64 KiB) before Node drains it. exitCode preserves the
+  // command result while letting stdio flush naturally.
+  .then((code) => {
+    process.exitCode = code;
+  })
   .catch((err) => {
     process.stderr.write(`${err instanceof Error ? err.stack : String(err)}\n`);
-    process.exit(EXIT.ERROR);
+    process.exitCode = EXIT.ERROR;
   });

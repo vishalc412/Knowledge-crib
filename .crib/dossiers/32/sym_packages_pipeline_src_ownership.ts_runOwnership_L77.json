@@ -1,0 +1,829 @@
+{
+  "id": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:9f784704e70b84c03725026e8d46bb6df6a6dbae5abbde924389e951effbe175",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runOwnership",
+    "qualifiedName": "runOwnership",
+    "signature": "runOwnership(soul: SoulStore, root: string, onlyFiles?: Set<string>): OwnershipStats",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/ownership.ts",
+    "span": {
+      "start": 77,
+      "end": 146
+    },
+    "callSites": [
+      {
+        "callee": "currentHead",
+        "line": 86
+      },
+      {
+        "callee": "get",
+        "line": 96
+      },
+      {
+        "callee": "push",
+        "line": 97
+      },
+      {
+        "callee": "set",
+        "line": 98
+      },
+      {
+        "callee": "blameLines",
+        "line": 106
+      },
+      {
+        "callee": "set",
+        "line": 113
+      },
+      {
+        "callee": "majorityAuthor",
+        "line": 116
+      },
+      {
+        "callee": "get",
+        "line": 122
+      },
+      {
+        "callee": "ownerNode",
+        "line": 124
+      },
+      {
+        "callee": "set",
+        "line": 125
+      },
+      {
+        "callee": "push",
+        "line": 127
+      },
+      {
+        "callee": "edgeId",
+        "line": 128
+      },
+      {
+        "callee": "putNodes",
+        "line": 141
+      },
+      {
+        "callee": "values",
+        "line": 141
+      },
+      {
+        "callee": "putEdges",
+        "line": 142
+      }
+    ]
+  },
+  "source": {
+    "text": "export function runOwnership(\n  soul: SoulStore,\n  root: string,\n  onlyFiles?: Set<string>,\n): OwnershipStats {\n  const stats: OwnershipStats = { files: 0, symbols: 0, owners: 0, edges: 0, skipped: 0 };\n  if (!isGitRepo(root)) return stats;\n  let head = '';\n  try {\n    head = currentHead(root);\n  } catch {\n    return stats;\n  }\n\n  // Group symbol nodes by file (blame is per-file; one git call amortises a file's whole symbol set).\n  const byFile = new Map<string, Node[]>();\n  for (const node of soul.iterate('symbol')) {\n    if (!node.file || !node.span) continue;\n    if (onlyFiles && !onlyFiles.has(node.file)) continue;\n    const list = byFile.get(node.file);\n    if (list) list.push(node);\n    else byFile.set(node.file, [node]);\n  }\n\n  const owners = new Map<string, Node>();\n  const edges: Edge[] = [];\n  const REL: Rel = 'owned-by';\n\n  for (const [file, symbols] of byFile) {\n    const blame = blameLines(root, file);\n    if (blame.length === 0) {\n      stats.skipped += symbols.length;\n      continue;\n    }\n    stats.files++;\n    const lineMap = new Map<number, { name: string; email?: string; commit: string }>();\n    for (const b of blame) lineMap.set(b.line, { name: b.name, email: b.email, commit: b.commit });\n    for (const sym of symbols) {\n      const span = sym.span!;\n      const owner = majorityAuthor(lineMap, span.start, span.end);\n      if (!owner) {\n        stats.skipped++;\n        continue;\n      }\n      const key = owner.email ?? owner.name;\n      let on = owners.get(key);\n      if (!on) {\n        on = ownerNode(owner.name, owner.email);\n        owners.set(key, on);\n      }\n      edges.push({\n        id: edgeId(sym.id, on.id, REL),\n        src: sym.id,\n        dst: on.id,\n        rel: REL,\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: 'git-blame', commit: owner.commit, head },\n      });\n      stats.symbols++;\n    }\n  }\n\n  if (owners.size > 0) soul.putNodes([...owners.values()]);\n  if (edges.length > 0) soul.putEdges(edges);\n  stats.owners = owners.size;\n  stats.edges = edges.length;\n  return stats;\n}",
+    "truncated": false,
+    "totalLines": 70,
+    "startLine": 77
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 94
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
+      "confidence": 1,
+      "name": "updateRepo",
+      "qualifiedName": "updateRepo",
+      "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.ts",
+      "line": 112
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+      "confidence": 1,
+      "name": "blameLines",
+      "qualifiedName": "blameLines",
+      "signature": "blameLines(root: string, path: string): BlameLine[]",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 94
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#currentHead@L33",
+      "confidence": 1,
+      "name": "currentHead",
+      "qualifiedName": "currentHead",
+      "signature": "currentHead(root: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 33
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 141
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#isGitRepo@L19",
+      "confidence": 1,
+      "name": "isGitRepo",
+      "qualifiedName": "isGitRepo",
+      "signature": "isGitRepo(root: string): boolean",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 19
+    },
+    {
+      "id": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+      "confidence": 1,
+      "name": "majorityAuthor",
+      "qualifiedName": "majorityAuthor",
+      "signature": "majorityAuthor(blame: Map<number, { name: string; email?: string; commit: string }>, start: number, end: number): { name: string; email?: string; commit: string } | null",
+      "type": "function",
+      "file": "packages/pipeline/src/ownership.ts",
+      "line": 46
+    },
+    {
+      "id": "sym:packages/pipeline/src/ownership.ts#ownerNode@L33",
+      "confidence": 1,
+      "name": "ownerNode",
+      "qualifiedName": "ownerNode",
+      "signature": "ownerNode(name: string, email?: string): Node",
+      "type": "function",
+      "file": "packages/pipeline/src/ownership.ts",
+      "line": 33
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/ownership.ts@L73",
+      "snippet": "/** Run the ownership phase: emit `owner` nodes + symbol→owner `owned-by` edges from `git blame`.",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+    "procedureName": "runOwnership",
+    "conditions": [
+      "cond:packages/pipeline/src/ownership.ts@L83",
+      "cond:packages/pipeline/src/ownership.ts@L93",
+      "cond:packages/pipeline/src/ownership.ts@L97",
+      "cond:packages/pipeline/src/ownership.ts@L105",
+      "cond:packages/pipeline/src/ownership.ts@L107",
+      "cond:packages/pipeline/src/ownership.ts@L113",
+      "cond:packages/pipeline/src/ownership.ts@L114",
+      "cond:packages/pipeline/src/ownership.ts@L123",
+      "cond:packages/pipeline/src/ownership.ts@L141",
+      "cond:packages/pipeline/src/ownership.ts@L142"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:031aba55261db93a903090065d1a99a37904442e8b18bbc22fda13ba630f7833",
+          "target": "sym:packages/pipeline/src/vcs.ts#isGitRepo@L19",
+          "expr": "isGitRepo"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L83",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L83",
+            "expr": "!isGitRepo(root)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ef08013aa865f2c231742421dc73b91c905c27b53f7fd9a11df8dd63115c5ddf",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L83",
+          "line": 83,
+          "expr": "return stats;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0eb89e4b47521894d144a5b00bf3110256a20ff881be0a3aa07d406ff1a5ebf2",
+          "target": "sym:packages/pipeline/src/vcs.ts#currentHead@L33",
+          "expr": "currentHead",
+          "line": 86
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f29479519d34ce5d6adb8f5a16e363cc52a35160781fe966ef9992edf9c53653",
+          "target": "assign:packages/pipeline/src/ownership.ts@L86",
+          "line": 86,
+          "expr": "head = currentHead(root);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:315571f3afc7affefba780ab1ad8c06d1c4fd87a23fd1b62f571eefe31f8a7f8",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L88",
+          "line": 88,
+          "expr": "return stats;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L93",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L93",
+            "expr": "soul.iterate('symbol')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:85075ac32d161f39f10411f36dc26784d28c2f8acb2317df2dc2cfca1ad315b2",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L96",
+          "line": 96,
+          "expr": "const list = byFile.get(node.file);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ce607d81f66b8f147177bbab40690c91b20a8b69d7e76f18170a1a90b31eab44",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 96
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L97",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L93",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L97",
+            "expr": "list",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d846c522ac7343851762350d67f60bb1d4fd6e244cdd64a06011f56754564c92",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L97",
+          "line": 97,
+          "expr": "list.push(node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e3efa46077f20749565171e33248d5e5c0c4cc12b8769b2bdc129632dbd0ada6",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 97
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L97",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L93",
+            "expr": "soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L97",
+            "expr": "list",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d5c2ada3eb67ca7ca56e856132010955959544f1a99967b516c51d0391e9a200",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L98",
+          "line": 98,
+          "expr": "byFile.set(node.file, [node]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L105",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L105",
+            "expr": "byFile",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8260878c91513eeac2d69c5a9781d71df2d0fd2eeaf6b134261c6030f9db4d9c",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L106",
+          "line": 106,
+          "expr": "const blame = blameLines(root, file);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cd9c20381ff12dc3e6a7ff92717959809f53abf7dbc2bc62dc39a1de4f23deda",
+          "target": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+          "expr": "blameLines",
+          "line": 106
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L107",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L105",
+            "expr": "byFile"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L107",
+            "expr": "blame.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:27be19d81b46203cb7cb89ce628490a3cf98bf6f8f36fb180c76554b72566cf6",
+          "target": "assign:packages/pipeline/src/ownership.ts@L108",
+          "line": 108,
+          "expr": "stats.skipped += symbols.length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L113",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L105",
+            "expr": "byFile"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L113",
+            "expr": "blame",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dd2bc97d9cbbb3ee78c5395b3cdee46939f3e6a077df778ccc5aa1b99acde3fd",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L113",
+          "line": 113,
+          "expr": "lineMap.set(b.line, { name: b.name, email: b.email, commit: b.commit });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L114",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L105",
+            "expr": "byFile"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L114",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:83687f0e7d2021929ffb8824732290f2f6c044a4aef09f08705a7671bde7710b",
+          "target": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+          "expr": "majorityAuthor",
+          "line": 116
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L114",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L105",
+            "expr": "byFile"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L114",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c85c7df80616e5c73456b332ee58ddfdf0c6ece19ee8e4fe7784711715c03704",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L116",
+          "line": 116,
+          "expr": "const owner = majorityAuthor(lineMap, span.start, span.end);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L114",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L105",
+            "expr": "byFile"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L114",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5535f841f0ebd4fdd6d39ac3e9ba911a549e2ecdc53f0fb4f3646b17d5ee5d27",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L122",
+          "line": 122,
+          "expr": "let on = owners.get(key);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L123",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L105",
+            "expr": "byFile"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L114",
+            "expr": "symbols"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L123",
+            "expr": "!on",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:13f8159a561873cf3fdfa63ebd600c3f5558360bec3003ef8c0b5b3560ce7415",
+          "target": "assign:packages/pipeline/src/ownership.ts@L124",
+          "line": 124,
+          "expr": "on = ownerNode(owner.name, owner.email);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L123",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L105",
+            "expr": "byFile"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L114",
+            "expr": "symbols"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L123",
+            "expr": "!on",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9abc13beebbcc02afaaa57b5d0119b189bb556e21211acccfec65d794e6d6d40",
+          "target": "sym:packages/pipeline/src/ownership.ts#ownerNode@L33",
+          "expr": "ownerNode",
+          "line": 124
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L123",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L105",
+            "expr": "byFile"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L114",
+            "expr": "symbols"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L123",
+            "expr": "!on",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:85d6a299325169a01add52e836772f800457a65dd5dbdff57002706f1132f17b",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L125",
+          "line": 125,
+          "expr": "owners.set(key, on);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L114",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L105",
+            "expr": "byFile"
+          },
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L114",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c539d3a646995b2828a6f4857de3a586254a823445580642c4155cca46e871ec",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L127",
+          "line": 127,
+          "expr": "edges.push({\n        id: edgeId(sym.id, on.id, REL),\n        src: sym.id,\n        dst: on.id,\n        rel: REL,\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: 'git-blame', commit: owner.commit, head },\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:82e497f7b73312df3d48a7ea97232f6c547c73306f4a36783ffc7894be893f06",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+          "expr": "edgeId",
+          "line": 128
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L141",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L141",
+            "expr": "owners.size > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:53a5636cb641bb5303a7ee1091e6c409754c00c10925c540896ea2e354f2643d",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L141",
+          "line": 141,
+          "expr": "soul.putNodes([...owners.values()]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "guard": "cond:packages/pipeline/src/ownership.ts@L142",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/ownership.ts@L142",
+            "expr": "edges.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:687c0f51e39065fc3ad54feac705ace635962335b4bf50b72a89ab19485a7b0d",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L142",
+          "line": 142,
+          "expr": "soul.putEdges(edges);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:43a28c7583ddde2f69129742529479fc1f3940b1ad15874fb7d5c0083e50a2ed",
+          "target": "assign:packages/pipeline/src/ownership.ts@L143",
+          "line": 143,
+          "expr": "stats.owners = owners.size;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:16e8e805381356d330cbfc6e7994d7681bb445e7587af4a6bdf8d28561382d78",
+          "target": "assign:packages/pipeline/src/ownership.ts@L144",
+          "line": 144,
+          "expr": "stats.edges = edges.length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:899b22040eab527e29436bca9ab7d744ae15b7fca79c4a83dec3976cbaa28bbd",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L145",
+          "line": 145,
+          "expr": "return stats;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/pipeline/src/ownership.ts@L87",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/pipeline/src/ownership.ts",
+        "span": {
+          "start": 87,
+          "end": 87
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 19,
+    "referencedByFiles": [
+      "packages/pipeline/src/pipeline.ts",
+      "packages/pipeline/src/update.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 19,
+    "assignments": 5,
+    "conditions": 10,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 8,
+      "recorded": 15,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

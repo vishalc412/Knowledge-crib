@@ -1,0 +1,311 @@
+{
+  "id": "sym:packages/core/src/graph-store.ts#freshness@L247",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2ea3d4efe6c3e95174d899432775b8a03e5722f397340312429638046b3af2eb",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/graph-store.ts#freshness@L247",
+    "kind": "symbol",
+    "type": "function",
+    "name": "freshness",
+    "qualifiedName": "freshness",
+    "signature": "freshness(soul: SoulStore, artifact: SemanticArtifact, builtAgainstHead: string | null): 'fresh' | 'stale' | 'orphaned' | 'ungrounded'",
+    "lang": "typescript",
+    "file": "packages/core/src/graph-store.ts",
+    "span": {
+      "start": 247,
+      "end": 262
+    },
+    "callSites": [
+      {
+        "callee": "getManifest",
+        "line": 255
+      },
+      {
+        "callee": "getNode",
+        "line": 258
+      },
+      {
+        "callee": "clusterContentHash",
+        "line": 260
+      }
+    ]
+  },
+  "source": {
+    "text": "function freshness(\n  soul: SoulStore,\n  artifact: SemanticArtifact,\n  builtAgainstHead: string | null,\n): 'fresh' | 'stale' | 'orphaned' | 'ungrounded' {\n  if (artifact.grounded !== true) return 'ungrounded';\n  if (artifact.schemaVersion !== soul.getManifest().schemaVersion) return 'stale';\n  if (artifact.layer === 'system') {\n    const head = soul.getManifest().repo.vcsHead ?? null;\n    return head === builtAgainstHead ? 'fresh' : 'stale';\n  }\n  const target = soul.getNode(artifact.targetId);\n  if (!target) return 'orphaned';\n  const liveHash = artifact.layer === 'cluster' ? clusterContentHash(soul, target) : target.hash;\n  return liveHash === artifact.nodeHash ? 'fresh' : 'stale';\n}",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 247
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+      "confidence": 1,
+      "name": "readSemantic",
+      "qualifiedName": "readSemantic",
+      "signature": "readSemantic(soul: SoulStore): GraphSnapshot",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 173
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/cluster-hash.ts#clusterContentHash@L25",
+      "confidence": 1,
+      "name": "clusterContentHash",
+      "qualifiedName": "clusterContentHash",
+      "signature": "clusterContentHash(soul: SoulStore, cluster: Node): string",
+      "type": "function",
+      "file": "packages/core/src/cluster-hash.ts",
+      "line": 25
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#9-risks-guardrails",
+      "heading": "9. Risks & guardrails",
+      "anchor": "9-risks-guardrails",
+      "snippet": "9. Risks & guardrails",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CLAUDE.md#resources",
+      "heading": "Resources",
+      "anchor": "resources",
+      "snippet": "Resources",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:AGENTS.md#resources",
+      "heading": "Resources",
+      "anchor": "resources",
+      "snippet": "Resources",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/graph-store.ts#freshness@L247",
+    "procedureName": "freshness",
+    "conditions": [
+      "cond:packages/core/src/graph-store.ts@L252",
+      "cond:packages/core/src/graph-store.ts@L253",
+      "cond:packages/core/src/graph-store.ts@L254",
+      "cond:packages/core/src/graph-store.ts@L259"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#freshness@L247",
+        "procedureName": "freshness",
+        "guard": "cond:packages/core/src/graph-store.ts@L252",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L252",
+            "expr": "artifact.grounded !== true",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:97cd6cbeccc60be83e92dd7be57ff022e22e54f542bc1d4091f8f504b91195f8",
+          "target": "stmt:packages/core/src/graph-store.ts@L252",
+          "line": 252,
+          "expr": "return 'ungrounded';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#freshness@L247",
+        "procedureName": "freshness",
+        "guard": "cond:packages/core/src/graph-store.ts@L253",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L253",
+            "expr": "artifact.schemaVersion !== soul.getManifest().schemaVersion",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8c21b57755faf83970d7ef2cc7d24a99634b91ba7fd9341f8f8414ca75070e81",
+          "target": "stmt:packages/core/src/graph-store.ts@L253",
+          "line": 253,
+          "expr": "return 'stale';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#freshness@L247",
+        "procedureName": "freshness",
+        "guard": "cond:packages/core/src/graph-store.ts@L254",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L254",
+            "expr": "artifact.layer === 'system'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:367ab332122eb0f8ef1798b1ee3eb137395c956bda6d0e601b6db0b7bcee3ff9",
+          "target": "stmt:packages/core/src/graph-store.ts@L255",
+          "line": 255,
+          "expr": "const head = soul.getManifest().repo.vcsHead ?? null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#freshness@L247",
+        "procedureName": "freshness",
+        "guard": "cond:packages/core/src/graph-store.ts@L254",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L254",
+            "expr": "artifact.layer === 'system'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e0f08486c0bb30ea7c1f97bc3007ff72a36ef3e326272dfa685b7a45a2e5d469",
+          "target": "stmt:packages/core/src/graph-store.ts@L256",
+          "line": 256,
+          "expr": "return head === builtAgainstHead ? 'fresh' : 'stale';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#freshness@L247",
+        "procedureName": "freshness",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d5e55cfdc4eda5b1e4b447552d63d4fef8aac44c632ee8f1c09d7794d6feeaac",
+          "target": "stmt:packages/core/src/graph-store.ts@L258",
+          "line": 258,
+          "expr": "const target = soul.getNode(artifact.targetId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#freshness@L247",
+        "procedureName": "freshness",
+        "guard": "cond:packages/core/src/graph-store.ts@L259",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/graph-store.ts@L259",
+            "expr": "!target",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8e8382118d18b545cdcd268a7f2c5b32904ffae2517499fec8d0064a363a4aef",
+          "target": "stmt:packages/core/src/graph-store.ts@L259",
+          "line": 259,
+          "expr": "return 'orphaned';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#freshness@L247",
+        "procedureName": "freshness",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:011930166af91abac342d352acb4b3aa31409193aea85596c042e600f1f5aab7",
+          "target": "sym:packages/core/src/cluster-hash.ts#clusterContentHash@L25",
+          "expr": "clusterContentHash",
+          "line": 260
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#freshness@L247",
+        "procedureName": "freshness",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5fa2c8eaffcc44f6fe364af8a2d4df68243d9641f419c8ca96be3c09e4410884",
+          "target": "stmt:packages/core/src/graph-store.ts@L260",
+          "line": 260,
+          "expr": "const liveHash = artifact.layer === 'cluster' ? clusterContentHash(soul, target) : target.hash;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#freshness@L247",
+        "procedureName": "freshness",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f2fbd61f0428dc42736d745f8b6116a4c10604da9a69bcd8566d29fb8fdeeb65",
+          "target": "stmt:packages/core/src/graph-store.ts@L261",
+          "line": 261,
+          "expr": "return liveHash === artifact.nodeHash ? 'fresh' : 'stale';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 8,
+    "referencedByFiles": [
+      "packages/core/src/graph-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 8,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,199 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.exportLlm@L911",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:c7c1c32a3f71df7be1f55319c5fdcda06e035273f2c2fd41b839847a57f889dd",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.exportLlm@L911",
+    "kind": "symbol",
+    "type": "method",
+    "name": "exportLlm",
+    "qualifiedName": "EnrichmentStore.exportLlm",
+    "signature": "exportLlm(redact: boolean): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 911,
+      "end": 934
+    },
+    "callSites": [
+      {
+        "callee": "map",
+        "line": 912
+      },
+      {
+        "callee": "allArtifacts",
+        "line": 912
+      },
+      {
+        "callee": "map",
+        "line": 914
+      },
+      {
+        "callee": "getNode",
+        "line": 915
+      },
+      {
+        "callee": "redactSecrets",
+        "line": 920
+      },
+      {
+        "callee": "parse",
+        "line": 928
+      },
+      {
+        "callee": "redactSecrets",
+        "line": 928
+      },
+      {
+        "callee": "stringify",
+        "line": 928
+      },
+      {
+        "callee": "parse",
+        "line": 929
+      },
+      {
+        "callee": "redactSecrets",
+        "line": 929
+      },
+      {
+        "callee": "stringify",
+        "line": 929
+      },
+      {
+        "callee": "stringify",
+        "line": 933
+      }
+    ]
+  },
+  "source": {
+    "text": "  exportLlm(redact: boolean): string {\n    const artifacts = this.allArtifacts().map((a) => {\n      if (!redact) return a;\n      const evidence = (a.evidence ?? []).map((e) => {\n        const node = this.soul.getNode(e.soulId);\n        const startLine = e.startLine ?? node?.span?.start;\n        const endLine = e.endLine ?? node?.span?.end;\n        return {\n          soulId: e.soulId,\n          ...(e.why ? { why: redactSecrets(e.why) } : {}),\n          ...(startLine !== undefined ? { startLine } : {}),\n          ...(endLine !== undefined ? { endLine } : {}),\n          ...(node?.file ? { file: node.file } : {}),\n        };\n      });\n      return {\n        ...a,\n        analysis: JSON.parse(redactSecrets(JSON.stringify(a.analysis))) as LlmAnalysis,\n        graph: JSON.parse(redactSecrets(JSON.stringify(a.graph))) as LlmArtifact['graph'],\n        evidence,\n      };\n    });\n    return `${JSON.stringify({ schemaVersion: 'llm-1', redacted: redact, artifacts }, null, 2)}\\n`;\n  }",
+    "truncated": false,
+    "totalLines": 24,
+    "startLine": 911
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+      "confidence": 1,
+      "name": "allArtifacts",
+      "qualifiedName": "EnrichmentStore.allArtifacts",
+      "signature": "allArtifacts(): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 825
+    },
+    {
+      "id": "sym:packages/mcp/src/secrets.ts#redactSecrets@L140",
+      "confidence": 1,
+      "name": "redactSecrets",
+      "qualifiedName": "redactSecrets",
+      "signature": "redactSecrets(text: string): string",
+      "type": "function",
+      "file": "packages/mcp/src/secrets.ts",
+      "line": 140
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L905",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.exportLlm@L911",
+    "procedureName": "EnrichmentStore.exportLlm",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.exportLlm@L911",
+        "procedureName": "EnrichmentStore.exportLlm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a6d1ba1b60c6763a893cef617721f1268302a1bc22e8a7c96cf7620f2bd7823d",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L912",
+          "line": 912,
+          "expr": "const artifacts = this.allArtifacts().map((a) => {\n      if (!redact) return a;\n      const evidence = (a.evidence ?? []).map((e) => {\n        const node = this.soul.getNode(e.soulId);\n        const startLine = e.startLine ?? node?.span?.start;\n        const endLine = e.endLine ?? node?.span?.end;\n        return {\n          soulId: e.soulId,\n          ...(e.why ? { why: redactSecrets(e.why) } : {}),\n          ...(startLine !== undefined ? { startLine } : {}),\n          ...(endLine !== undefined ? { endLine } : {}),\n          ...(node?.file ? { file: node.file } : {}),\n        };\n      });\n      return {\n        ...a,\n        analysis: JSON.parse(redactSecrets(JSON.stringify(a.analysis))) as LlmAnalysis,\n        graph: JSON.parse(redactSecrets(JSON.stringify(a.graph))) as LlmArtifact['graph'],\n        evidence,\n      };\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.exportLlm@L911",
+        "procedureName": "EnrichmentStore.exportLlm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bdad3a7ed40f0349a7583b74601c19a52e11f5d7efd0c1fff6c52bdad4e8ca4d",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+          "expr": "allArtifacts",
+          "line": 912
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.exportLlm@L911",
+        "procedureName": "EnrichmentStore.exportLlm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:edeb27eb5e6b7eec9bcb855638980620b876802a300a657807788578677d87bd",
+          "target": "sym:packages/mcp/src/secrets.ts#redactSecrets@L140",
+          "expr": "redactSecrets",
+          "line": 920
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.exportLlm@L911",
+        "procedureName": "EnrichmentStore.exportLlm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f77b71e26802e0d72b261d6188c45008d2992214db4c637d73ae61b01bcc0c07",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L933",
+          "line": 933,
+          "expr": "return `${JSON.stringify({ schemaVersion: 'llm-1', redacted: redact, artifacts }, null, 2)}\\n`;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 12,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

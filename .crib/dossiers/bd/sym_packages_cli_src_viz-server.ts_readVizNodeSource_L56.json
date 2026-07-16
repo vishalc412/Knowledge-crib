@@ -1,0 +1,467 @@
+{
+  "id": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:a448d6c4387ffbb2524054cac45e8f63a2ca76679f244e5247c816fb069dd5f8",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readVizNodeSource",
+    "qualifiedName": "readVizNodeSource",
+    "signature": "readVizNodeSource(soul: SoulStore, repoRoot: string, nodeId: string): Promise<VizSourceResponse>",
+    "lang": "typescript",
+    "file": "packages/cli/src/viz-server.ts",
+    "span": {
+      "start": 56,
+      "end": 97
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 61
+      },
+      {
+        "callee": "realpath",
+        "line": 69
+      },
+      {
+        "callee": "realpath",
+        "line": 70
+      },
+      {
+        "callee": "resolve",
+        "line": 70
+      },
+      {
+        "callee": "readFile",
+        "line": 78
+      },
+      {
+        "callee": "split",
+        "line": 79
+      },
+      {
+        "callee": "max",
+        "line": 80
+      },
+      {
+        "callee": "trunc",
+        "line": 80
+      },
+      {
+        "callee": "max",
+        "line": 81
+      },
+      {
+        "callee": "trunc",
+        "line": 81
+      },
+      {
+        "callee": "min",
+        "line": 82
+      },
+      {
+        "callee": "max",
+        "line": 82
+      },
+      {
+        "callee": "min",
+        "line": 83
+      },
+      {
+        "callee": "join",
+        "line": 84
+      },
+      {
+        "callee": "slice",
+        "line": 84
+      },
+      {
+        "callee": "slice",
+        "line": 87
+      }
+    ]
+  },
+  "source": {
+    "text": "export async function readVizNodeSource(\n  soul: SoulStore,\n  repoRoot: string,\n  nodeId: string,\n): Promise<VizSourceResponse> {\n  const node = soul.getNode(nodeId);\n  if (!node) throw new VizHttpError(404, `unknown node: ${nodeId}`);\n  if (!node.file || !node.span)\n    throw new VizHttpError(422, `source location unavailable: ${nodeId}`);\n\n  let rootReal: string;\n  let sourceReal: string;\n  try {\n    rootReal = await realpath(repoRoot);\n    sourceReal = await realpath(resolve(rootReal, node.file));\n  } catch {\n    throw new VizHttpError(404, `source file not found: ${node.file}`);\n  }\n  if (!isInside(rootReal, sourceReal)) {\n    throw new VizHttpError(403, 'source path escapes repository root');\n  }\n\n  const source = await readFile(sourceReal, 'utf8');\n  const lines = source.split(/\\r?\\n/);\n  const requestedStart = Math.max(1, Math.trunc(node.span.start));\n  const requestedEnd = Math.max(requestedStart, Math.trunc(node.span.end));\n  const start = Math.min(requestedStart, Math.max(1, lines.length));\n  const lineCappedEnd = Math.min(requestedEnd, start + MAX_SOURCE_LINES - 1, lines.length);\n  let text = lines.slice(start - 1, lineCappedEnd).join('\\n');\n  let truncated = lineCappedEnd < requestedEnd;\n  if (text.length > MAX_SOURCE_CHARS) {\n    text = text.slice(0, MAX_SOURCE_CHARS);\n    truncated = true;\n  }\n\n  return {\n    nodeId,\n    file: node.file,\n    span: { ...node.span },\n    excerpt: { start, end: lineCappedEnd, text, truncated },\n  };\n}",
+    "truncated": false,
+    "totalLines": 42,
+    "startLine": 56
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdViz@L1574",
+      "confidence": 1,
+      "name": "cmdViz",
+      "qualifiedName": "cmdViz",
+      "signature": "cmdViz(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1574
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/viz-server.ts#isInside@L50",
+      "confidence": 1,
+      "name": "isInside",
+      "qualifiedName": "isInside",
+      "signature": "isInside(root: string, target: string): boolean",
+      "type": "function",
+      "file": "packages/cli/src/viz-server.ts",
+      "line": 50
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/viz-server.ts@L55",
+      "snippet": "/** Read source only through an indexed node id. Raw client paths are never accepted. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+    "procedureName": "readVizNodeSource",
+    "conditions": [
+      "cond:packages/cli/src/viz-server.ts@L86"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f85aa39f0509ed0c63ea139f2843a0a743b0b9a62ee2e88d3f6b40e985c95bcb",
+          "target": "sym:packages/cli/src/viz-server.ts#isInside@L50",
+          "expr": "isInside"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2c491b8c83a429162b558dcfe7cbd988ad88232fc3157c9107d633b0f86bef62",
+          "target": "stmt:packages/cli/src/viz-server.ts@L61",
+          "line": 61,
+          "expr": "const node = soul.getNode(nodeId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:abad66c725edb11d6cd98a4fe1552abd825ede2267365ee69736de8a48155c48",
+          "target": "assign:packages/cli/src/viz-server.ts@L69",
+          "line": 69,
+          "expr": "rootReal = await realpath(repoRoot);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:65f8fbe17118cd06e1193b911f4884f683fc63f537b0e2860cda8a1be08d6eb9",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 70
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8bfc917852b87aa21764b8ee0d0888e0721a28ed7809590bfcefcf0c3f0c9540",
+          "target": "assign:packages/cli/src/viz-server.ts@L70",
+          "line": 70,
+          "expr": "sourceReal = await realpath(resolve(rootReal, node.file));"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7e3db16154af31582b5465b67c3d82b00a70904922b284d350b7d11ca09d1b16",
+          "target": "stmt:packages/cli/src/viz-server.ts@L78",
+          "line": 78,
+          "expr": "const source = await readFile(sourceReal, 'utf8');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4ebccc4d5a0cde4f8c2d4717c36f03842aec2d9901da008e967ea6fc19d661c0",
+          "target": "stmt:packages/cli/src/viz-server.ts@L79",
+          "line": 79,
+          "expr": "const lines = source.split(/\\r?\\n/);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0bcf08ca96f7beee4c9a1a30dc489d06db6049f656bae0fe4f78e6f80b82b769",
+          "target": "stmt:packages/cli/src/viz-server.ts@L80",
+          "line": 80,
+          "expr": "const requestedStart = Math.max(1, Math.trunc(node.span.start));"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:99a7af6f8d859c0b60a84474e4ecba6503037b1fee118e86eed2a7917e2155d3",
+          "target": "stmt:packages/cli/src/viz-server.ts@L81",
+          "line": 81,
+          "expr": "const requestedEnd = Math.max(requestedStart, Math.trunc(node.span.end));"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:029960b479b28267372ec94805715d01205fa4103034013d4a95358d1f0a7fc4",
+          "target": "stmt:packages/cli/src/viz-server.ts@L82",
+          "line": 82,
+          "expr": "const start = Math.min(requestedStart, Math.max(1, lines.length));"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c98202fcb62c3720e584118fe329961a7ea56d0d80bdb38b3d1a3f086e723be",
+          "target": "stmt:packages/cli/src/viz-server.ts@L83",
+          "line": 83,
+          "expr": "const lineCappedEnd = Math.min(requestedEnd, start + MAX_SOURCE_LINES - 1, lines.length);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b19f6874b0364cef4ff4919a68a43b17e063c18f0f3a0df80e73b3f68e559b1e",
+          "target": "stmt:packages/cli/src/viz-server.ts@L84",
+          "line": 84,
+          "expr": "let text = lines.slice(start - 1, lineCappedEnd).join('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "guard": "cond:packages/cli/src/viz-server.ts@L86",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/viz-server.ts@L86",
+            "expr": "text.length > MAX_SOURCE_CHARS",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ea0a344f6420455b858aa2c88da63d6b09c505cc1f2eb1044df6362a5ba57d99",
+          "target": "assign:packages/cli/src/viz-server.ts@L87",
+          "line": 87,
+          "expr": "text = text.slice(0, MAX_SOURCE_CHARS);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "guard": "cond:packages/cli/src/viz-server.ts@L86",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/viz-server.ts@L86",
+            "expr": "text.length > MAX_SOURCE_CHARS",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:51583fefef278802d150920ef582c1bb5b5428b1379666f9095e6d51f0b9cd47",
+          "target": "assign:packages/cli/src/viz-server.ts@L88",
+          "line": 88,
+          "expr": "truncated = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/viz-server.ts#readVizNodeSource@L56",
+        "procedureName": "readVizNodeSource",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b50eb573b76c262b745e35ccd85f4e1573f20b2c73a54c1f434c72159530cef7",
+          "target": "stmt:packages/cli/src/viz-server.ts@L91",
+          "line": 91,
+          "expr": "return {\n    nodeId,\n    file: node.file,\n    span: { ...node.span },\n    excerpt: { start, end: lineCappedEnd, text, truncated },\n  };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:packages/cli/src/viz-server.ts@L62",
+        "kind": "raise",
+        "lang": "typescript",
+        "file": "packages/cli/src/viz-server.ts",
+        "span": {
+          "start": 62,
+          "end": 62
+        },
+        "errorMessage": "new VizHttpError(404, `unknown node: ${nodeId}`)",
+        "confidence": 1
+      },
+      {
+        "id": "raise:packages/cli/src/viz-server.ts@L64",
+        "kind": "raise",
+        "lang": "typescript",
+        "file": "packages/cli/src/viz-server.ts",
+        "span": {
+          "start": 64,
+          "end": 64
+        },
+        "errorMessage": "new VizHttpError(422, `source location unavailable: ${nodeId}`)",
+        "confidence": 1
+      },
+      {
+        "id": "raise:packages/cli/src/viz-server.ts@L72",
+        "kind": "raise",
+        "lang": "typescript",
+        "file": "packages/cli/src/viz-server.ts",
+        "span": {
+          "start": 72,
+          "end": 72
+        },
+        "errorMessage": "new VizHttpError(404, `source file not found: ${node.file}`)",
+        "confidence": 1
+      },
+      {
+        "id": "raise:packages/cli/src/viz-server.ts@L75",
+        "kind": "raise",
+        "lang": "typescript",
+        "file": "packages/cli/src/viz-server.ts",
+        "span": {
+          "start": 75,
+          "end": 75
+        },
+        "errorCode": "'source path escapes repository root'",
+        "errorMessage": "new VizHttpError(403, 'source path escapes repository root')",
+        "confidence": 1
+      }
+    ],
+    "handles": [
+      {
+        "id": "exc:packages/cli/src/viz-server.ts@L71",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/cli/src/viz-server.ts",
+        "span": {
+          "start": 71,
+          "end": 71
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 13,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 13,
+    "assignments": 4,
+    "conditions": 4,
+    "raises": 4,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 16,
+      "unresolved": 14
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "14 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

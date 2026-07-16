@@ -1,0 +1,75 @@
+{
+  "id": "sym:packages/core/src/functional-map.ts#byIdString@L434",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:42cd71f60d8736f916f451e0aecad4b38a94e7da2c4984631c40f3787d7429c1",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/functional-map.ts#byIdString@L434",
+    "kind": "symbol",
+    "type": "function",
+    "name": "byIdString",
+    "qualifiedName": "byIdString",
+    "signature": "byIdString(a: string, b: string): number",
+    "lang": "typescript",
+    "file": "packages/core/src/functional-map.ts",
+    "span": {
+      "start": 434,
+      "end": 436
+    }
+  },
+  "source": {
+    "text": "function byIdString(a: string, b: string): number {\n  return a < b ? -1 : a > b ? 1 : 0;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 434
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/functional-map.ts#byIdString@L434",
+    "procedureName": "byIdString",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#byIdString@L434",
+        "procedureName": "byIdString",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cfcce67ae25f324cdec599f692e89258f41750faa123054235869d43d74cc684",
+          "target": "stmt:packages/core/src/functional-map.ts@L435",
+          "line": 435,
+          "expr": "return a < b ? -1 : a > b ? 1 : 0;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

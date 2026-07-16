@@ -1,0 +1,364 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.putEdges@L139",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:854dbb96b2229b9a6a87a5bbf4db3cf000439e8926f4e696695809439714fe44",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.putEdges@L139",
+    "kind": "symbol",
+    "type": "method",
+    "name": "putEdges",
+    "qualifiedName": "SoulStore.putEdges",
+    "signature": "putEdges(es: Edge[]): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 139,
+      "end": 147
+    },
+    "callSites": [
+      {
+        "callee": "assertValidEdge",
+        "line": 141
+      },
+      {
+        "callee": "get",
+        "line": 142
+      },
+      {
+        "callee": "resolveEdgeConflict",
+        "line": 143
+      },
+      {
+        "callee": "set",
+        "line": 144
+      },
+      {
+        "callee": "add",
+        "line": 145
+      },
+      {
+        "callee": "shardOf",
+        "line": 145
+      },
+      {
+        "callee": "shardKeyForEdge",
+        "line": 145
+      }
+    ]
+  },
+  "source": {
+    "text": "  putEdges(es: Edge[]): void {\n    for (const edge of es) {\n      assertValidEdge(edge);\n      const existing = this.edges.get(edge.id);\n      const winner = existing ? resolveEdgeConflict(existing, edge) : edge;\n      this.edges.set(edge.id, winner);\n      this.dirtyEdgeShards.add(shardOf(shardKeyForEdge(winner), this.shardDigits));\n    }\n  }",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 139
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.replaceClusters@L157",
+      "confidence": 1,
+      "name": "replaceClusters",
+      "qualifiedName": "SoulStore.replaceClusters",
+      "signature": "replaceClusters(clusters: Node[], memberships: Edge[]): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 157
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/validate.ts#assertValidEdge@L34",
+      "confidence": 1,
+      "name": "assertValidEdge",
+      "qualifiedName": "assertValidEdge",
+      "signature": "assertValidEdge(edge: Edge): void",
+      "type": "function",
+      "file": "packages/core/src/validate.ts",
+      "line": 34
+    },
+    {
+      "id": "sym:packages/core/src/conflict-rule.ts#resolveEdgeConflict@L22",
+      "confidence": 1,
+      "name": "resolveEdgeConflict",
+      "qualifiedName": "resolveEdgeConflict",
+      "signature": "resolveEdgeConflict(a: Edge, b: Edge): Edge",
+      "type": "function",
+      "file": "packages/core/src/conflict-rule.ts",
+      "line": 22
+    },
+    {
+      "id": "sym:packages/core/src/shard.ts#shardKeyForEdge@L55",
+      "confidence": 1,
+      "name": "shardKeyForEdge",
+      "qualifiedName": "shardKeyForEdge",
+      "signature": "shardKeyForEdge(edge: Edge): string",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 55
+    },
+    {
+      "id": "sym:packages/core/src/shard.ts#shardOf@L60",
+      "confidence": 1,
+      "name": "shardOf",
+      "qualifiedName": "shardOf",
+      "signature": "shardOf(key: string, shardHexDigits: number): string",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 60
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/soul-store.ts@L138",
+      "snippet": "/** Upsert edges by id, collapsing `(src,dst,rel)` collisions via the conflict rule. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#1-soulstore-source-of-truth",
+      "heading": "1. SoulStore (source of truth)",
+      "anchor": "1-soulstore-source-of-truth",
+      "snippet": "1. SoulStore (source of truth)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#determinism-trick-load-bearing",
+      "heading": "Determinism trick (load-bearing)",
+      "anchor": "determinism-trick-load-bearing",
+      "snippet": "Determinism trick (load-bearing)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#1-core-seams-interfaces-first-tdd-around-these",
+      "heading": "1. Core seams (interfaces first — TDD around these)",
+      "anchor": "1-core-seams-interfaces-first-tdd-around-these",
+      "snippet": "1. Core seams (interfaces first — TDD around these)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-4-adding-a-new-pipeline-phase",
+      "heading": "4.4 Adding a New Pipeline Phase",
+      "anchor": "4-4-adding-a-new-pipeline-phase",
+      "snippet": "4.4 Adding a New Pipeline Phase",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.putEdges@L139",
+    "procedureName": "SoulStore.putEdges",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L140"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.putEdges@L139",
+        "procedureName": "SoulStore.putEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L140",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L140",
+            "expr": "es",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:13408667425fc6ee6dd1087df1f43fff64893daad2467ac4b148cc4d672233c9",
+          "target": "stmt:packages/core/src/soul-store.ts@L141",
+          "line": 141,
+          "expr": "assertValidEdge(edge);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.putEdges@L139",
+        "procedureName": "SoulStore.putEdges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e4f3d56543bc879451a23815bfd792fe059231e428c5f46de5cc05a8d60b5c0e",
+          "target": "sym:packages/core/src/validate.ts#assertValidEdge@L34",
+          "expr": "assertValidEdge",
+          "line": 141
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.putEdges@L139",
+        "procedureName": "SoulStore.putEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L140",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L140",
+            "expr": "es",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9fecd3f6e35f45429f67efa3c074e849cbf39b66421a8ba64ef9725677f4c900",
+          "target": "stmt:packages/core/src/soul-store.ts@L142",
+          "line": 142,
+          "expr": "const existing = this.edges.get(edge.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.putEdges@L139",
+        "procedureName": "SoulStore.putEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L140",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L140",
+            "expr": "es",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1db9bdfa234c2feeebce20329a495f402fed27adcdf82e5f180836487cdeb88e",
+          "target": "stmt:packages/core/src/soul-store.ts@L143",
+          "line": 143,
+          "expr": "const winner = existing ? resolveEdgeConflict(existing, edge) : edge;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.putEdges@L139",
+        "procedureName": "SoulStore.putEdges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8851daa32386861d397da139fd0310a3d2e9dc1be9012fd176096d551c75e1a5",
+          "target": "sym:packages/core/src/conflict-rule.ts#resolveEdgeConflict@L22",
+          "expr": "resolveEdgeConflict",
+          "line": 143
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.putEdges@L139",
+        "procedureName": "SoulStore.putEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L140",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L140",
+            "expr": "es",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cee41d1bf9bc8fbd16026c6b2d0b8fd734854cb7366031cc3be681975c9f5703",
+          "target": "stmt:packages/core/src/soul-store.ts@L144",
+          "line": 144,
+          "expr": "this.edges.set(edge.id, winner);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.putEdges@L139",
+        "procedureName": "SoulStore.putEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L140",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L140",
+            "expr": "es",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:234bb8ea4e77b09511133396b71e8984abbc18167ecb411c31b0a4c7baaffbf5",
+          "target": "stmt:packages/core/src/soul-store.ts@L145",
+          "line": 145,
+          "expr": "this.dirtyEdgeShards.add(shardOf(shardKeyForEdge(winner), this.shardDigits));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.putEdges@L139",
+        "procedureName": "SoulStore.putEdges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:53487fdd986113af3daa9ebb5b534c0ddeb5c7b1624390f2ba09e7000ba0abfc",
+          "target": "sym:packages/core/src/shard.ts#shardKeyForEdge@L55",
+          "expr": "shardKeyForEdge",
+          "line": 145
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.putEdges@L139",
+        "procedureName": "SoulStore.putEdges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7c6be8c5e4ba370059faea0d2b9e42caa4f7f9f35c6f776838c94fc33d6fb3c7",
+          "target": "sym:packages/core/src/shard.ts#shardOf@L60",
+          "expr": "shardOf",
+          "line": 145
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 7,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

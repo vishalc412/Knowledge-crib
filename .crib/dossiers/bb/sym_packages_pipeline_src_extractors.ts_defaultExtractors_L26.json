@@ -1,0 +1,110 @@
+{
+  "id": "sym:packages/pipeline/src/extractors.ts#defaultExtractors@L26",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2a7321cd76bc01be55d7955603d6c1b61a9c7dc1708a19d7b28e40fe46727c3b",
+  "builtAt": "2026-07-13T11:14:06.943Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/extractors.ts#defaultExtractors@L26",
+    "kind": "symbol",
+    "type": "function",
+    "name": "defaultExtractors",
+    "qualifiedName": "defaultExtractors",
+    "signature": "defaultExtractors(): Extractor[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/extractors.ts",
+    "span": {
+      "start": 26,
+      "end": 38
+    }
+  },
+  "source": {
+    "text": "export function defaultExtractors(): Extractor[] {\n  return [\n    new MarkdownExtractor(),\n    new TypeScriptExtractor(),\n    new PlSqlExtractor(),\n    new PythonExtractor(),\n    new JavaExtractor(),\n    new CsharpExtractor(),\n    new GoExtractor(),\n    new RustExtractor(),\n    new PhpExtractor(),\n  ];\n}",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 26
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 94
+    },
+    {
+      "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#registry@L50",
+      "confidence": 1,
+      "name": "registry",
+      "qualifiedName": "registry",
+      "signature": "registry(): ExtractorRegistry",
+      "type": "function",
+      "file": "packages/pipeline/src/parse-concurrent.test.ts",
+      "line": 50
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-1-adding-a-new-language-parser-8th-language",
+      "heading": "4.1 Adding a New Language Parser (8th Language)",
+      "anchor": "4-1-adding-a-new-language-parser-8th-language",
+      "snippet": "4.1 Adding a New Language Parser (8th Language)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/extractors.ts#defaultExtractors@L26",
+    "procedureName": "defaultExtractors",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/extractors.ts#defaultExtractors@L26",
+        "procedureName": "defaultExtractors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7c91ea349d97a9d0d0d47eee43b3728af2836a2d7844c086db4357532aa5185b",
+          "target": "stmt:packages/pipeline/src/extractors.ts@L27",
+          "line": 27,
+          "expr": "return [\n    new MarkdownExtractor(),\n    new TypeScriptExtractor(),\n    new PlSqlExtractor(),\n    new PythonExtractor(),\n    new JavaExtractor(),\n    new CsharpExtractor(),\n    new GoExtractor(),\n    new RustExtractor(),\n    new PhpExtractor(),\n  ];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/parse-concurrent.test.ts",
+      "packages/pipeline/src/pipeline.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

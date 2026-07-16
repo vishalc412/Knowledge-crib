@@ -1,0 +1,91 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.auditLlm@L1207",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:591e3e06354d7fa893d424cc9100345a4669ce7e8b9b9e7b93e227fdcac1fc70",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.auditLlm@L1207",
+    "kind": "symbol",
+    "type": "method",
+    "name": "auditLlm",
+    "qualifiedName": "Verbs.auditLlm",
+    "signature": "auditLlm(): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1207,
+      "end": 1209
+    },
+    "recursive": true,
+    "callSites": [
+      {
+        "callee": "auditLlm",
+        "line": 1208
+      }
+    ]
+  },
+  "source": {
+    "text": "  auditLlm(): Record<string, unknown> {\n    return this.llm.auditLlm() as unknown as Record<string, unknown>;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1207
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L1201",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.auditLlm@L1207",
+    "procedureName": "Verbs.auditLlm",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.auditLlm@L1207",
+        "procedureName": "Verbs.auditLlm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bbc275414edb5ae2412049a89d821dc53d11b200031bf0a854dc531a6ceeecaf",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1208",
+          "line": 1208,
+          "expr": "return this.llm.auditLlm() as unknown as Record<string, unknown>;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": true,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

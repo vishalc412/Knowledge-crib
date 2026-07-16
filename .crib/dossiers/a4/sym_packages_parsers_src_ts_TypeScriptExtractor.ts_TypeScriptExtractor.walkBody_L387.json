@@ -1,0 +1,187 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L387",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:80314bfeab70678be203f4dec08cd759e5e3a4c2503648a4ee249201e33a9f31",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L387",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkBody",
+    "qualifiedName": "TypeScriptExtractor.walkBody",
+    "signature": "walkBody(stmts: readonly ts.Statement[], env: BodyEnv): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 387,
+      "end": 389
+    },
+    "callSites": [
+      {
+        "callee": "walkStmt",
+        "line": 388
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkBody(stmts: readonly ts.Statement[], env: BodyEnv): void {\n    for (const stmt of stmts) this.walkStmt(stmt, env);\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 387
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBodies@L314",
+      "confidence": 1,
+      "name": "walkBodies",
+      "qualifiedName": "TypeScriptExtractor.walkBodies",
+      "signature": "walkBodies(path: string, ctx: ExtractCtx, symbols: LocalSymbol[], byKey: Map<string, string>, lineOf: (pos: number) => number, nodes: Node[], edges: Edge[], lang: 'typescript' | 'javascript'): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 314
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkIf@L424",
+      "confidence": 1,
+      "name": "walkIf",
+      "qualifiedName": "TypeScriptExtractor.walkIf",
+      "signature": "walkIf(stmt: ts.IfStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 424
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkLoop@L441",
+      "confidence": 1,
+      "name": "walkLoop",
+      "qualifiedName": "TypeScriptExtractor.walkLoop",
+      "signature": "walkLoop(stmt: ts.Statement, env: BodyEnv, predicate: ts.Expression | undefined): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 441
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L391",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "TypeScriptExtractor.walkStmt",
+      "signature": "walkStmt(stmt: ts.Statement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 391
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L491",
+      "confidence": 1,
+      "name": "walkSwitch",
+      "qualifiedName": "TypeScriptExtractor.walkSwitch",
+      "signature": "walkSwitch(stmt: ts.SwitchStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 491
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L456",
+      "confidence": 1,
+      "name": "walkTry",
+      "qualifiedName": "TypeScriptExtractor.walkTry",
+      "signature": "walkTry(stmt: ts.TryStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 456
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L391",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "TypeScriptExtractor.walkStmt",
+      "signature": "walkStmt(stmt: ts.Statement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 391
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L387",
+    "procedureName": "TypeScriptExtractor.walkBody",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L388"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L387",
+        "procedureName": "TypeScriptExtractor.walkBody",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L388",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L388",
+            "expr": "stmts",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:00597c73e0e4b70709fa00ce690e3c450424665c95a91ecd5c2509f8e85ee752",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L388",
+          "line": 388,
+          "expr": "this.walkStmt(stmt, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkBody@L387",
+        "procedureName": "TypeScriptExtractor.walkBody",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L388",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L388",
+            "expr": "stmts",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4409183cb72df2fd2d021e8895bd70f41676689edec53bbc59e78fab60c273fd",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkStmt@L391",
+          "expr": "walkStmt",
+          "line": 388
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

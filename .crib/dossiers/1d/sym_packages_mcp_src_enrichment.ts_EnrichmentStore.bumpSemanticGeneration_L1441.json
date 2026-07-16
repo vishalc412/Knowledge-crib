@@ -1,0 +1,200 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.bumpSemanticGeneration@L1441",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:443f84fa0f15a3700bbaed8d2a318544000d4e6177aad5c78735fcdb09d51829",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.bumpSemanticGeneration@L1441",
+    "kind": "symbol",
+    "type": "method",
+    "name": "bumpSemanticGeneration",
+    "qualifiedName": "EnrichmentStore.bumpSemanticGeneration",
+    "signature": "bumpSemanticGeneration(): void",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1441,
+      "end": 1447
+    },
+    "callSites": [
+      {
+        "callee": "getManifest",
+        "line": 1443
+      },
+      {
+        "callee": "writeJsonAtomic",
+        "line": 1446
+      },
+      {
+        "callee": "join",
+        "line": 1446
+      }
+    ]
+  },
+  "source": {
+    "text": "  private bumpSemanticGeneration(): void {\n    if (!existsSync(join(this.soul.cribDir, 'graph', 'manifest.json'))) return;\n    const manifest = this.soul.getManifest();\n    const generation = manifest.generation ?? { extracted: 0, semantic: 0 };\n    manifest.generation = { ...generation, semantic: generation.semantic + 1 };\n    writeJsonAtomic(join(this.soul.cribDir, 'graph', 'manifest.json'), manifest);\n  }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 1441
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.pruneStale@L837",
+      "confidence": 1,
+      "name": "pruneStale",
+      "qualifiedName": "EnrichmentStore.pruneStale",
+      "signature": "pruneStale(apply = false): {\n    apply: boolean;\n    candidates: Array<{ path: string; targetId: string; reason: 'stale' | 'orphaned' }>;\n    removed: number;\n  }",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 837
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L690",
+      "confidence": 1,
+      "name": "save",
+      "qualifiedName": "EnrichmentStore.save",
+      "signature": "save(args: EnrichSaveArgs): EnrichSaveResult",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 690
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#writeJsonAtomic@L1817",
+      "confidence": 1,
+      "name": "writeJsonAtomic",
+      "qualifiedName": "writeJsonAtomic",
+      "signature": "writeJsonAtomic(path: string, value: unknown): void",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1817
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L1440",
+      "snippet": "/** Advance the authoritative graph generation whenever canonical semantic artifacts change. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.bumpSemanticGeneration@L1441",
+    "procedureName": "EnrichmentStore.bumpSemanticGeneration",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1442"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.bumpSemanticGeneration@L1441",
+        "procedureName": "EnrichmentStore.bumpSemanticGeneration",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1442",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1442",
+            "expr": "!existsSync(join(this.soul.cribDir, 'graph', 'manifest.json'))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a6c7c14c703919a5806aab9053f9a1195396f4118752d1fc6d8887a82e915223",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1442",
+          "line": 1442,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.bumpSemanticGeneration@L1441",
+        "procedureName": "EnrichmentStore.bumpSemanticGeneration",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:da3d8821e323d2c4132a3e1d648b8abf2f978490a41a17e80ce23da98acb1f66",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1443",
+          "line": 1443,
+          "expr": "const manifest = this.soul.getManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.bumpSemanticGeneration@L1441",
+        "procedureName": "EnrichmentStore.bumpSemanticGeneration",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fced151ca80a13f73e41df4885b68789fa08579279c201a448825b2ae46f61aa",
+          "target": "assign:packages/mcp/src/enrichment.ts@L1445",
+          "line": 1445,
+          "expr": "manifest.generation = { ...generation, semantic: generation.semantic + 1 };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.bumpSemanticGeneration@L1441",
+        "procedureName": "EnrichmentStore.bumpSemanticGeneration",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:825115828e55d1fbcf7edc959d9ea6c735770c19b480891e22929149d568f20a",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1446",
+          "line": 1446,
+          "expr": "writeJsonAtomic(join(this.soul.cribDir, 'graph', 'manifest.json'), manifest);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.bumpSemanticGeneration@L1441",
+        "procedureName": "EnrichmentStore.bumpSemanticGeneration",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b44e7a19ed1e6f14c0a8d774ccbee223d516b24225f57db01c80ae23c5d95ad4",
+          "target": "sym:packages/mcp/src/enrichment.ts#writeJsonAtomic@L1817",
+          "expr": "writeJsonAtomic",
+          "line": 1446
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

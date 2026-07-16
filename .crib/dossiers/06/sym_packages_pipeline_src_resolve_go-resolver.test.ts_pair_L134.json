@@ -1,0 +1,185 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#pair@L134",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:e0ecc383f5959cbbe5cd19d344eccf18127daf04b6f48ea5c34af07a1d0f5e13",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#pair@L134",
+    "kind": "symbol",
+    "type": "function",
+    "name": "pair",
+    "qualifiedName": "pair",
+    "signature": "pair(soul: SoulStore, srcId: string, dstId: string): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/go-resolver.test.ts",
+    "span": {
+      "start": 134,
+      "end": 136
+    },
+    "callSites": [
+      {
+        "callee": "label",
+        "line": 135
+      },
+      {
+        "callee": "label",
+        "line": 135
+      }
+    ]
+  },
+  "source": {
+    "text": "function pair(soul: SoulStore, srcId: string, dstId: string): string {\n  return `${label(soul, srcId)} -> ${label(soul, dstId)}`;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 134
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L138",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(soul: SoulStore, id: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.test.ts",
+      "line": 138
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(soul: SoulStore, id: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "line": 202
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "heading": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "anchor": "4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "snippet": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#fallback-behavior",
+      "heading": "Fallback Behavior",
+      "anchor": "fallback-behavior",
+      "snippet": "Fallback Behavior",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-3-target-packs-parity-generation-skill-packs-8-days",
+      "heading": "Phase 3 — Target packs + parity generation + skill packs  ~8 days",
+      "anchor": "phase-3-target-packs-parity-generation-skill-packs-8-days",
+      "snippet": "Phase 3 — Target packs + parity generation + skill packs  ~8 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#5-phasing-effort",
+      "heading": "5. Phasing & effort",
+      "anchor": "5-phasing-effort",
+      "snippet": "5. Phasing & effort",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#pair@L134",
+    "procedureName": "pair",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#pair@L134",
+        "procedureName": "pair",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7f9e21efd27fd789d679450657e4286e2f884e95dadefbd65b29b40736f06d09",
+          "target": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L138",
+          "expr": "label",
+          "line": 135
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#pair@L134",
+        "procedureName": "pair",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cc8bd3c3f0bffacc44bc9935cd4c6d2da65ec0dac231e5d9721c74752b46bdfa",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.test.ts@L135",
+          "line": 135,
+          "expr": "return `${label(soul, srcId)} -> ${label(soul, dstId)}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#pair@L134",
+        "procedureName": "pair",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e0fc5e26e9393cdb3b25666dab458b94f3b0b798414d451c7d614185e20a7511",
+          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
+          "expr": "label",
+          "line": 135
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

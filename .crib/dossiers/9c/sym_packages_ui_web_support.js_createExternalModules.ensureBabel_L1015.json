@@ -1,0 +1,202 @@
+{
+  "id": "sym:packages/ui/web/support.js#createExternalModules.ensureBabel@L1015",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:23a3feb69d13963af93680662f90d0d78ea5dda252ec20e6313f0a4b83c4841c",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#createExternalModules.ensureBabel@L1015",
+    "kind": "symbol",
+    "type": "function",
+    "name": "ensureBabel",
+    "qualifiedName": "createExternalModules.ensureBabel",
+    "signature": "ensureBabel()",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 1015,
+      "end": 1027
+    },
+    "callSites": [
+      {
+        "callee": "resolve",
+        "line": 1016
+      },
+      {
+        "callee": "createElement",
+        "line": 1019
+      },
+      {
+        "callee": "res",
+        "line": 1022
+      },
+      {
+        "callee": "appendChild",
+        "line": 1024
+      }
+    ]
+  },
+  "source": {
+    "text": "    function ensureBabel() {\n      if (window.Babel) return Promise.resolve();\n      if (babelLoading) return babelLoading;\n      babelLoading = new Promise((res, rej) => {\n        const s = document.createElement(\"script\");\n        s.src = BABEL_URL;\n        s.crossOrigin = \"anonymous\";\n        s.onload = () => res();\n        s.onerror = rej;\n        document.head.appendChild(s);\n      });\n      return babelLoading;\n    }",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 1015
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#createExternalModules.ensureBabel@L1015",
+    "procedureName": "createExternalModules.ensureBabel",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L1016",
+      "cond:packages/ui/web/support.js@L1017"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.ensureBabel@L1015",
+        "procedureName": "createExternalModules.ensureBabel",
+        "guard": "cond:packages/ui/web/support.js@L1016",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1016",
+            "expr": "window.Babel",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:97c9ac4e0bcde161eae4a616c793f2564d1900ef50b2d4405cc0348db6ff2fbf",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 1016
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.ensureBabel@L1015",
+        "procedureName": "createExternalModules.ensureBabel",
+        "guard": "cond:packages/ui/web/support.js@L1016",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1016",
+            "expr": "window.Babel",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9dd9ca586a47f26013f719001302d3d402ce96be50cae5924e6acd97c34ceeb0",
+          "target": "stmt:packages/ui/web/support.js@L1016",
+          "line": 1016,
+          "expr": "return Promise.resolve();"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.ensureBabel@L1015",
+        "procedureName": "createExternalModules.ensureBabel",
+        "guard": "cond:packages/ui/web/support.js@L1017",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1017",
+            "expr": "babelLoading",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6d9402a6b15f711ba8d8d087e71da050a0842f58dcdbe4efcfc1589b8d3b39ad",
+          "target": "stmt:packages/ui/web/support.js@L1017",
+          "line": 1017,
+          "expr": "return babelLoading;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.ensureBabel@L1015",
+        "procedureName": "createExternalModules.ensureBabel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:10f60af37ec2187774bc15b6b2dc010ac3250247147df560cc08808dc46abe5c",
+          "target": "assign:packages/ui/web/support.js@L1018",
+          "line": 1018,
+          "expr": "babelLoading = new Promise((res, rej) => {\n        const s = document.createElement(\"script\");\n        s.src = BABEL_URL;\n        s.crossOrigin = \"anonymous\";\n        s.onload = () => res();\n        s.onerror = rej;\n        document.head.appendChild(s);\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules.ensureBabel@L1015",
+        "procedureName": "createExternalModules.ensureBabel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:646f49d559ccaa6f837a841c7d5e4666ccb69c8f824ef17962dcf21afe44abba",
+          "target": "stmt:packages/ui/web/support.js@L1026",
+          "line": 1026,
+          "expr": "return babelLoading;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 4,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

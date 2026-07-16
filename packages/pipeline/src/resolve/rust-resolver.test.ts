@@ -79,7 +79,12 @@ describe('RustResolver — cross-file edges (gate)', () => {
 
   it('is capability-honest: only member-of/calls/imports/inherits/implements; ZERO type edges', async () => {
     const soul = soulFor();
-    await indexRepo(soul, RUST_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(soul, RUST_CROSS, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+      ownership: false,
+    });
 
     const rustEdges = edgesInFiles(soul, RUST_EXTS);
     const rels = new Set(rustEdges.map((e) => e.rel));
@@ -111,7 +116,12 @@ describe('RustResolver — cross-file edges (gate)', () => {
 
   it('never emits an edge whose endpoint node does not exist (pruneDangling-safe)', async () => {
     const soul = soulFor();
-    await indexRepo(soul, RUST_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(soul, RUST_CROSS, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+      ownership: false,
+    });
     const ids = new Set([...soul.iterate()].map((n) => n.id));
     for (const e of soul.iterateEdges()) {
       expect(ids.has(e.src)).toBe(true);
@@ -121,13 +131,13 @@ describe('RustResolver — cross-file edges (gate)', () => {
 
   it('is id-stable: re-indexing yields byte-identical nodes + edges', async () => {
     const a = soulFor();
-    await indexRepo(a, RUST_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(a, RUST_CROSS, { now: NOW, cluster: false, semantic: false, ownership: false });
     const aNodes = JSON.stringify([...a.iterate()].sort(byId));
     const aEdges = JSON.stringify([...a.iterateEdges()].sort(byEdgeId));
 
     cribDir = mkdtempSync(join(tmpdir(), 'crib-rust2-'));
     const b = soulFor();
-    await indexRepo(b, RUST_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(b, RUST_CROSS, { now: NOW, cluster: false, semantic: false, ownership: false });
     expect(JSON.stringify([...b.iterate()].sort(byId))).toBe(aNodes);
     expect(JSON.stringify([...b.iterateEdges()].sort(byEdgeId))).toBe(aEdges);
   });

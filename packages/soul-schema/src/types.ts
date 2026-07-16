@@ -101,6 +101,11 @@ export interface Node {
   /** `explanation` node: the source span of the comment block this explanation was derived from. */
   commentRef?: { file: string; span: Span };
 
+  // --- ownership 1.4 (git blame → owned-by edges) ---
+  /** `owner` node: the git author's email (the canonical, stable identity for dedup). Absent for
+   *  owners extracted from a blame that exposed no email (rare; the name is the fallback identity). */
+  email?: string;
+
   /** extensible; unknown keys preserved on read→write */
   meta?: Record<string, unknown>;
 }
@@ -149,6 +154,8 @@ export interface ManifestChunking {
 
 export interface ManifestStores {
   soul: 'jsonl-chunked';
+  /** Canonical layered graph store. `soul` remains legacy format capability metadata. */
+  graph?: { path: string; format: 'layered-jsonl' };
   /** reconciliation #7: concrete backend field (was hardcoded `ladybug.db`) */
   index: { backend: IndexBackend; path: string };
 }
@@ -172,6 +179,8 @@ export interface ManifestCapabilities {
 export interface Manifest {
   cribFormatVersion: string;
   schemaVersion: string;
+  /** Monotonic source generations for derived-cache invalidation. */
+  generation?: { extracted: number; semantic: number };
   repo: ManifestRepo;
   generator: { tool: string; version: string };
   chunking: ManifestChunking;
@@ -193,16 +202,21 @@ export const CRIB_FORMAT_VERSION = '1.0';
  * absent fields stay `undefined` (no widening) and are preserved on re-write. 1.3 (framework-
  * semantics) adds NodeKinds `route`/`field`/`component`, Rels `exposes`/`injects`/`renders`, and
  * optional Node fields `httpMethod`/`routePath`/`framework`/`stereotype`/`exprTruncated` — all
- * additive + optional, so a 1.0–1.2 soul still loads verbatim.
+ * additive + optional, so a 1.0–1.2 soul still loads verbatim. 1.4 (ownership) adds NodeKind
+ * `owner`, Rel `owned-by`, and the optional Node field `email` — additive + optional, so a
+ * 1.0–1.3 soul still loads verbatim. 1.5 (cross-repo federation) adds NodeKind `http-call` (an
+ * outbound HTTP client call site; reuses the optional `httpMethod`/`routePath`/`framework` fields)
+ * — additive + optional, so a 1.0–1.4 soul still loads verbatim. No new Rel: the A→B route
+ * resolution is a runtime federation computation, not a committed edge.
  */
-export const SCHEMA_VERSION = '1.3';
+export const SCHEMA_VERSION = '1.5';
 export const TOOL_NAME = 'knowledge-crib';
 
 /**
  * Schema versions the loader will hydrate. A 1.0 soul (pre-M11) loads as-is; its edges have no
  * `cfgPath` and that is preserved on re-write (no widening). Unknown versions → load() refuses.
  */
-export const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2', '1.3'] as const;
+export const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2', '1.3', '1.4', '1.5'] as const;
 
 /** Default chunking knobs (per spec storage §6 / C4). */
 export const DEFAULT_CHUNKING: ManifestChunking = {

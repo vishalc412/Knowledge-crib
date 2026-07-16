@@ -1,0 +1,356 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lowerLayer@L1340",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:3afc588bb83bec869708a015ff5449b510bc3913ee9a00f7e29aa11c2d8c2545",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lowerLayer@L1340",
+    "kind": "symbol",
+    "type": "method",
+    "name": "lowerLayer",
+    "qualifiedName": "EnrichmentStore.lowerLayer",
+    "signature": "lowerLayer(target: { layer: EnrichLayer; node?: Node }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1340,
+      "end": 1362
+    },
+    "callSites": [
+      {
+        "callee": "filter",
+        "line": 1344
+      },
+      {
+        "callee": "freshArtifacts",
+        "line": 1344
+      },
+      {
+        "callee": "getNode",
+        "line": 1345
+      },
+      {
+        "callee": "filter",
+        "line": 1351
+      },
+      {
+        "callee": "map",
+        "line": 1351
+      },
+      {
+        "callee": "clusterMembers",
+        "line": 1351
+      },
+      {
+        "callee": "filter",
+        "line": 1356
+      },
+      {
+        "callee": "freshArtifacts",
+        "line": 1356
+      },
+      {
+        "callee": "has",
+        "line": 1357
+      },
+      {
+        "callee": "getNode",
+        "line": 1357
+      },
+      {
+        "callee": "freshArtifacts",
+        "line": 1361
+      }
+    ]
+  },
+  "source": {
+    "text": "  private lowerLayer(target: { layer: EnrichLayer; node?: Node }): Record<string, unknown> {\n    if (target.layer === 'symbol') return {};\n    if (target.layer === 'file' && target.node) {\n      return {\n        symbols: this.freshArtifacts('symbol').filter(\n          (a) => this.soul.getNode(a.targetId)?.file === target.node?.file,\n        ),\n      };\n    }\n    if (target.layer === 'cluster' && target.node) {\n      const memberFiles = new Set(\n        this.clusterMembers(target.node)\n          .map((n) => n.file)\n          .filter(Boolean),\n      );\n      return {\n        files: this.freshArtifacts('file').filter((a) =>\n          memberFiles.has(this.soul.getNode(a.targetId)?.file),\n        ),\n      };\n    }\n    return { clusters: this.freshArtifacts('cluster') };\n  }",
+    "truncated": false,
+    "totalLines": 23,
+    "startLine": 1340
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.workItem@L1248",
+      "confidence": 1,
+      "name": "workItem",
+      "qualifiedName": "EnrichmentStore.workItem",
+      "signature": "workItem(target: {\n    layer: EnrichLayer;\n    id: string;\n    hash: string;\n    node?: Node;\n  }): EnrichWorkItem",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1248
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterMembers@L1635",
+      "confidence": 1,
+      "name": "clusterMembers",
+      "qualifiedName": "EnrichmentStore.clusterMembers",
+      "signature": "clusterMembers(cluster: Node): Node[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1635
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.freshArtifacts@L1364",
+      "confidence": 1,
+      "name": "freshArtifacts",
+      "qualifiedName": "EnrichmentStore.freshArtifacts",
+      "signature": "freshArtifacts(layer: EnrichLayer): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1364
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#enrich-next-grounded-work-batch-for-the-host-agent-model",
+      "heading": "`enrich_next` *(grounded work batch for the host agent model)*",
+      "anchor": "enrich-next-grounded-work-batch-for-the-host-agent-model",
+      "snippet": "`enrich_next` *(grounded work batch for the host agent model)*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
+      "heading": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
+      "anchor": "c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
+      "snippet": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "heading": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "anchor": "3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "snippet": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#add-a-new-enrichment-layer",
+      "heading": "Add a New Enrichment Layer",
+      "anchor": "add-a-new-enrichment-layer",
+      "snippet": "Add a New Enrichment Layer",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-loop",
+      "heading": "The loop",
+      "anchor": "the-loop",
+      "snippet": "The loop",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#phase-1-auto-bounded-autonomous-loop-opt-in-only",
+      "heading": "Phase 1-auto — bounded autonomous loop (opt-in only)",
+      "anchor": "phase-1-auto-bounded-autonomous-loop-opt-in-only",
+      "snippet": "Phase 1-auto — bounded autonomous loop (opt-in only)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#phase-1-one-batch-author-save-stop-the-default-loop-per-turn",
+      "heading": "Phase 1 — one batch, author, save, stop (the default loop, per turn)",
+      "anchor": "phase-1-one-batch-author-save-stop-the-default-loop-per-turn",
+      "snippet": "Phase 1 — one batch, author, save, stop (the default loop, per turn)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lowerLayer@L1340",
+    "procedureName": "EnrichmentStore.lowerLayer",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1341",
+      "cond:packages/mcp/src/enrichment.ts@L1342",
+      "cond:packages/mcp/src/enrichment.ts@L1349"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lowerLayer@L1340",
+        "procedureName": "EnrichmentStore.lowerLayer",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1341",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1341",
+            "expr": "target.layer === 'symbol'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6f980d98d90d6898edcd0d08a0d69fb913544a6d0a43153923872f2239ba75e2",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1341",
+          "line": 1341,
+          "expr": "return {};"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lowerLayer@L1340",
+        "procedureName": "EnrichmentStore.lowerLayer",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1342",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1342",
+            "expr": "target.layer === 'file' && target.node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d7a033fd13450c2cac2c7d6f2e619178f87e19b72b8d2c5fe62e479e189f4e34",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1343",
+          "line": 1343,
+          "expr": "return {\n        symbols: this.freshArtifacts('symbol').filter(\n          (a) => this.soul.getNode(a.targetId)?.file === target.node?.file,\n        ),\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lowerLayer@L1340",
+        "procedureName": "EnrichmentStore.lowerLayer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e01996139b4c2afc16c123d7fbc4939f2d46fae9e7c0ef9641b00d60f853a3d3",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.freshArtifacts@L1364",
+          "expr": "freshArtifacts",
+          "line": 1344
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lowerLayer@L1340",
+        "procedureName": "EnrichmentStore.lowerLayer",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1349",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1349",
+            "expr": "target.layer === 'cluster' && target.node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7d47caa741bef6701233b164160c1896fe8d4162cd49145da3751ea77030df55",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1350",
+          "line": 1350,
+          "expr": "const memberFiles = new Set(\n        this.clusterMembers(target.node)\n          .map((n) => n.file)\n          .filter(Boolean),\n      );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lowerLayer@L1340",
+        "procedureName": "EnrichmentStore.lowerLayer",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1349",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1349",
+            "expr": "target.layer === 'cluster' && target.node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ebaf6ffc2900f938911ac69c8b146bd11a1746aa1b6df21c3dd98ed3ce408762",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterMembers@L1635",
+          "expr": "clusterMembers",
+          "line": 1351
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lowerLayer@L1340",
+        "procedureName": "EnrichmentStore.lowerLayer",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1349",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1349",
+            "expr": "target.layer === 'cluster' && target.node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d784029d370b1ebcec6139bd89bbb7ab09a1ba9acc5fb02b2d77b0b339001d5d",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1355",
+          "line": 1355,
+          "expr": "return {\n        files: this.freshArtifacts('file').filter((a) =>\n          memberFiles.has(this.soul.getNode(a.targetId)?.file),\n        ),\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.lowerLayer@L1340",
+        "procedureName": "EnrichmentStore.lowerLayer",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c65ced963c13b3a18ec58867258814a0301d42489dd0fc14a066ac673d2a47d",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1361",
+          "line": 1361,
+          "expr": "return { clusters: this.freshArtifacts('cluster') };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 11,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

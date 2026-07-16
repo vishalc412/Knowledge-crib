@@ -1,0 +1,147 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.symbolInCluster@L1134",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:59722e53226d9dcb53a1c1f2c9bb06bf609f9a56d91064a2a958cfdd7349d096",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.symbolInCluster@L1134",
+    "kind": "symbol",
+    "type": "method",
+    "name": "symbolInCluster",
+    "qualifiedName": "EnrichmentStore.symbolInCluster",
+    "signature": "symbolInCluster(symbol: Node, cluster: Node): boolean",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1134,
+      "end": 1139
+    },
+    "callSites": [
+      {
+        "callee": "startsWith",
+        "line": 1137
+      },
+      {
+        "callee": "slice",
+        "line": 1137
+      }
+    ]
+  },
+  "source": {
+    "text": "  private symbolInCluster(symbol: Node, cluster: Node): boolean {\n    const memberIds = new Set(cluster.members ?? []);\n    if (memberIds.has(symbol.id)) return true;\n    const slug = cluster.id.startsWith('c:') ? cluster.id.slice(2) : cluster.id;\n    return symbol.clusterId === cluster.id || symbol.clusterId === slug;\n  }",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 1134
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.matchesScope@L1084",
+      "confidence": 1,
+      "name": "matchesScope",
+      "qualifiedName": "EnrichmentStore.matchesScope",
+      "signature": "matchesScope(node: Node, layer: EnrichLayer, scope?: EnrichScope): boolean",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1084
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L1133",
+      "snippet": "/** True when the symbol node belongs to the cluster (via members array, with clusterId back-compat). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.symbolInCluster@L1134",
+    "procedureName": "EnrichmentStore.symbolInCluster",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1136"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.symbolInCluster@L1134",
+        "procedureName": "EnrichmentStore.symbolInCluster",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1136",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1136",
+            "expr": "memberIds.has(symbol.id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2d9a4883bcdbee3e8a526cf6baf1bd3b11f7c11940ebc5ec1b15e58b396559d4",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1136",
+          "line": 1136,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.symbolInCluster@L1134",
+        "procedureName": "EnrichmentStore.symbolInCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2c2314b61cc742e719c7333e3673127b35e416cc351ee6aaa6b1b6ea860a9616",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1137",
+          "line": 1137,
+          "expr": "const slug = cluster.id.startsWith('c:') ? cluster.id.slice(2) : cluster.id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.symbolInCluster@L1134",
+        "procedureName": "EnrichmentStore.symbolInCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:626c8b366ddb9fb4cea3efa6474de77d5db930a2c2e269663b3cc8d6fbdde4c2",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1138",
+          "line": 1138,
+          "expr": "return symbol.clusterId === cluster.id || symbol.clusterId === slug;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,889 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:60492705c57009c451557a90575180d6e5d5905816d7c2aab346b3cb8bd72498",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+    "kind": "symbol",
+    "type": "method",
+    "name": "commit",
+    "qualifiedName": "SoulStore.commit",
+    "signature": "commit(now = new Date().toISOString(), preserveTimestamp = false): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 312,
+      "end": 333
+    },
+    "callSites": [
+      {
+        "callee": "pruneDangling",
+        "line": 315
+      },
+      {
+        "callee": "writeVendoredSchemas",
+        "line": 316
+      },
+      {
+        "callee": "writeGitignore",
+        "line": 317
+      },
+      {
+        "callee": "writeNodeShard",
+        "line": 319
+      },
+      {
+        "callee": "writeClusters",
+        "line": 320
+      },
+      {
+        "callee": "writeEdgeShard",
+        "line": 321
+      },
+      {
+        "callee": "refreshStats",
+        "line": 323
+      },
+      {
+        "callee": "writeManifest",
+        "line": 328
+      },
+      {
+        "callee": "clear",
+        "line": 330
+      },
+      {
+        "callee": "clear",
+        "line": 331
+      }
+    ]
+  },
+  "source": {
+    "text": "  commit(now = new Date().toISOString(), preserveTimestamp = false): void {\n    const graphChanged =\n      this.dirtyNodeShards.size > 0 || this.dirtyEdgeShards.size > 0 || this.clustersDirty;\n    this.pruneDangling();\n    this.writeVendoredSchemas();\n    this.writeGitignore();\n\n    for (const shard of this.dirtyNodeShards) this.writeNodeShard(shard);\n    this.writeClusters(); // cluster nodes live in their own file\n    for (const shard of this.dirtyEdgeShards) this.writeEdgeShard(shard);\n\n    this.refreshStats(now, preserveTimestamp);\n    if (this.canonicalLayout && graphChanged) {\n      const generation = this.manifest.generation ?? { extracted: 0, semantic: 0 };\n      this.manifest.generation = { ...generation, extracted: generation.extracted + 1 };\n    }\n    this.writeManifest();\n\n    this.dirtyNodeShards.clear();\n    this.dirtyEdgeShards.clear();\n    this.clustersDirty = false;\n  }",
+    "truncated": false,
+    "totalLines": 22,
+    "startLine": 312
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.pruneDangling@L418",
+      "confidence": 1,
+      "name": "pruneDangling",
+      "qualifiedName": "SoulStore.pruneDangling",
+      "signature": "pruneDangling(): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 418
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.refreshStats@L427",
+      "confidence": 1,
+      "name": "refreshStats",
+      "qualifiedName": "SoulStore.refreshStats",
+      "signature": "refreshStats(now: string, preserveTimestamp = false): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 427
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeClusters@L508",
+      "confidence": 1,
+      "name": "writeClusters",
+      "qualifiedName": "SoulStore.writeClusters",
+      "signature": "writeClusters(): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 508
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeEdgeShard@L501",
+      "confidence": 1,
+      "name": "writeEdgeShard",
+      "qualifiedName": "SoulStore.writeEdgeShard",
+      "signature": "writeEdgeShard(shard: string): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 501
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeGitignore@L552",
+      "confidence": 1,
+      "name": "writeGitignore",
+      "qualifiedName": "SoulStore.writeGitignore",
+      "signature": "writeGitignore(): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 552
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeManifest@L559",
+      "confidence": 1,
+      "name": "writeManifest",
+      "qualifiedName": "SoulStore.writeManifest",
+      "signature": "writeManifest(): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 559
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeNodeShard@L492",
+      "confidence": 1,
+      "name": "writeNodeShard",
+      "qualifiedName": "SoulStore.writeNodeShard",
+      "signature": "writeNodeShard(shard: string): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 492
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.writeVendoredSchemas@L544",
+      "confidence": 1,
+      "name": "writeVendoredSchemas",
+      "qualifiedName": "SoulStore.writeVendoredSchemas",
+      "signature": "writeVendoredSchemas(): void",
+      "type": "method",
+      "file": "packages/core/src/soul-store.ts",
+      "line": 544
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/soul-store.ts@L311",
+      "snippet": "/** Flush dirty shards atomically, prune dangling edges, rewrite manifest + vendored schemas. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#1-soulstore-source-of-truth",
+      "heading": "1. SoulStore (source of truth)",
+      "anchor": "1-soulstore-source-of-truth",
+      "snippet": "1. SoulStore (source of truth)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-3-unified-graph-data-architecture",
+      "heading": "Branch 3 — Unified Graph & Data Architecture",
+      "anchor": "branch-3-unified-graph-data-architecture",
+      "snippet": "Branch 3 — Unified Graph & Data Architecture",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#8-anti-patterns-what-burns-tokens-misleads-a-local-model",
+      "heading": "8. Anti-patterns (what burns tokens / misleads a local model)",
+      "anchor": "8-anti-patterns-what-burns-tokens-misleads-a-local-model",
+      "snippet": "8. Anti-patterns (what burns tokens / misleads a local model)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#option-b-per-module-souls-lazy-shard-loading",
+      "heading": "Option B — Per-module souls + lazy shard loading",
+      "anchor": "option-b-per-module-souls-lazy-shard-loading",
+      "snippet": "Option B — Per-module souls + lazy shard loading",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:SECURITY.md#access-model-the-soul-inherits-the-repo-acl",
+      "heading": "Access model — the soul inherits the repo ACL",
+      "anchor": "access-model-the-soul-inherits-the-repo-acl",
+      "snippet": "Access model — the soul inherits the repo ACL",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#5-package-significance-matrix",
+      "heading": "5. Package Significance Matrix",
+      "anchor": "5-package-significance-matrix",
+      "snippet": "5. Package Significance Matrix",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#8-confidence-self-assessment",
+      "heading": "8. Confidence Self-Assessment",
+      "anchor": "8-confidence-self-assessment",
+      "snippet": "8. Confidence Self-Assessment",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#current-limits-say-before-architects-ask",
+      "heading": "Current limits — say before architects ask",
+      "anchor": "current-limits-say-before-architects-ask",
+      "snippet": "Current limits — say before architects ask",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#release-checklist",
+      "heading": "Release Checklist",
+      "anchor": "release-checklist",
+      "snippet": "Release Checklist",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#fixed-for-release",
+      "heading": "Fixed For Release",
+      "anchor": "fixed-for-release",
+      "snippet": "Fixed For Release",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-4-technical-architect",
+      "heading": "2.4 Technical Architect",
+      "anchor": "2-4-technical-architect",
+      "snippet": "2.4 Technical Architect",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-storage.md#4-incremental-path-ties-to-pipeline-incremental",
+      "heading": "4. Incremental path (ties to pipeline §incremental)",
+      "anchor": "4-incremental-path-ties-to-pipeline-incremental",
+      "snippet": "4. Incremental path (ties to pipeline §incremental)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#decision-item-4-committing-the-soul",
+      "heading": "Decision item 4 — committing the soul",
+      "anchor": "decision-item-4-committing-the-soul",
+      "snippet": "Decision item 4 — committing the soul",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
+      "heading": "What was built",
+      "anchor": "what-was-built-2",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#0-the-mental-model-what-to-ask-for-when",
+      "heading": "0. The mental model — what to ask for, when",
+      "anchor": "0-the-mental-model-what-to-ask-for-when",
+      "snippet": "0. The mental model — what to ask for, when",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#dossiers-in-git-keep-committed",
+      "heading": "Dossiers-in-git — KEEP committed",
+      "anchor": "dossiers-in-git-keep-committed",
+      "snippet": "Dossiers-in-git — KEEP committed",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#4-incremental-git",
+      "heading": "4. Incremental + git",
+      "anchor": "4-incremental-git",
+      "snippet": "4. Incremental + git",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#data-classification-the-llm-layer-m1-4",
+      "heading": "Data Classification & the LLM Layer (M1.4)",
+      "anchor": "data-classification-the-llm-layer-m1-4",
+      "snippet": "Data Classification & the LLM Layer (M1.4)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-7-inspect-the-final-video-end-to-end",
+      "heading": "Task 7: Inspect The Final Video End To End",
+      "anchor": "task-7-inspect-the-final-video-end-to-end",
+      "snippet": "Task 7: Inspect The Final Video End To End",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-beta-installers.md#cross-platform-ci",
+      "heading": "Cross-platform CI",
+      "anchor": "cross-platform-ci",
+      "snippet": "Cross-platform CI",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/repo-identity-decision.md#option-b-vishalc412-personal-account",
+      "heading": "Option B — `vishalc412` personal account",
+      "anchor": "option-b-vishalc412-personal-account",
+      "snippet": "Option B — `vishalc412` personal account",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/repo-identity-decision.md#the-current-mix-grep-2026-07-13",
+      "heading": "The current mix (grep, 2026-07-13)",
+      "anchor": "the-current-mix-grep-2026-07-13",
+      "snippet": "The current mix (grep, 2026-07-13)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CONTRIBUTING.md#reporting-issues",
+      "heading": "Reporting Issues",
+      "anchor": "reporting-issues",
+      "snippet": "Reporting Issues",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/linkedin-series.md#post-1-the-problem-why-agents-burn-tokens-break-architecture",
+      "heading": "Post 1 — The problem (why agents burn tokens + break architecture)",
+      "anchor": "post-1-the-problem-why-agents-burn-tokens-break-architecture",
+      "snippet": "Post 1 — The problem (why agents burn tokens + break architecture)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/publish-runbook.md#publish-sequence-user-executes-in-dependency-order",
+      "heading": "Publish sequence (user executes, in dependency order)",
+      "anchor": "publish-sequence-user-executes-in-dependency-order",
+      "snippet": "Publish sequence (user executes, in dependency order)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/publish-runbook.md#pre-publish-checklist-tick-before-the-first-publish",
+      "heading": "Pre-publish checklist (tick before the first `publish`)",
+      "anchor": "pre-publish-checklist-tick-before-the-first-publish",
+      "snippet": "Pre-publish checklist (tick before the first `publish`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-install-hooks-path",
+      "heading": "`crib install-hooks [path]`",
+      "anchor": "crib-install-hooks-path",
+      "snippet": "`crib install-hooks [path]`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#capture-plan",
+      "heading": "Capture Plan",
+      "anchor": "capture-plan",
+      "snippet": "Capture Plan",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CLAUDE.md#never-do",
+      "heading": "Never Do",
+      "anchor": "never-do",
+      "snippet": "Never Do",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:AGENTS.md#never-do",
+      "heading": "Never Do",
+      "anchor": "never-do",
+      "snippet": "Never Do",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#11-architecture",
+      "heading": "11. Architecture",
+      "anchor": "11-architecture",
+      "snippet": "11. Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+    "procedureName": "SoulStore.commit",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L319",
+      "cond:packages/core/src/soul-store.ts@L321",
+      "cond:packages/core/src/soul-store.ts@L324"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ed8e5aca549c579614c4483e3c4843ede45e0415c1958a8b761473791b2e7180",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.pruneDangling@L418",
+          "expr": "pruneDangling",
+          "line": 315
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ed8fa328493c71daddb8bd7284503371f52bdbaf09dff20b67d9880d9b6f178f",
+          "target": "stmt:packages/core/src/soul-store.ts@L315",
+          "line": 315,
+          "expr": "this.pruneDangling();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e472e102478807ba4501e3e466744907f197e4804c626ec9ea9cd07d97b9c8b4",
+          "target": "stmt:packages/core/src/soul-store.ts@L316",
+          "line": 316,
+          "expr": "this.writeVendoredSchemas();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fba5680ebf51a50ed1c237c1c9ac2170e92ba5e0bd63d6f2a82a9bd76f88f31e",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.writeVendoredSchemas@L544",
+          "expr": "writeVendoredSchemas",
+          "line": 316
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:78cf36aba64720e6992e1f30ecb557d9b633445da77683ede2713576e39fa821",
+          "target": "stmt:packages/core/src/soul-store.ts@L317",
+          "line": 317,
+          "expr": "this.writeGitignore();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fd12069a966c4cdd41a292d847f752ddd24e6da012a72a547f7bab8bb0b6a5ac",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.writeGitignore@L552",
+          "expr": "writeGitignore",
+          "line": 317
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "guard": "cond:packages/core/src/soul-store.ts@L319",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L319",
+            "expr": "this.dirtyNodeShards",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cfdccd9c614ef50b643ca4dabc303807d30d871c455f5e3f05138b2fb5a7c616",
+          "target": "stmt:packages/core/src/soul-store.ts@L319",
+          "line": 319,
+          "expr": "this.writeNodeShard(shard);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "guard": "cond:packages/core/src/soul-store.ts@L319",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L319",
+            "expr": "this.dirtyNodeShards",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e44bedc082aaad1fe1d1b90d8d8ce0fea70dda4df3587cea6bcac2bd32b9dbda",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.writeNodeShard@L492",
+          "expr": "writeNodeShard",
+          "line": 319
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8ca3e50248d61371799f53f7b8ee91dae2345e4ba7e57010addcc61b2ebe5391",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.writeClusters@L508",
+          "expr": "writeClusters",
+          "line": 320
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a7ccc6e04a2cae8ba015e36e0f5b8c9d76c9454da76efc3fc47fae987242a07e",
+          "target": "stmt:packages/core/src/soul-store.ts@L320",
+          "line": 320,
+          "expr": "this.writeClusters();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "guard": "cond:packages/core/src/soul-store.ts@L321",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L321",
+            "expr": "this.dirtyEdgeShards",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b9af230c134a55c2de847ae4ead9262c55c5573d6e7e88d1f329a592c48d39fd",
+          "target": "stmt:packages/core/src/soul-store.ts@L321",
+          "line": 321,
+          "expr": "this.writeEdgeShard(shard);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "guard": "cond:packages/core/src/soul-store.ts@L321",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L321",
+            "expr": "this.dirtyEdgeShards",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dc74120e5cdab8f09d252aaac67af8e03ba408eb5a924834d9123cb7feceebab",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.writeEdgeShard@L501",
+          "expr": "writeEdgeShard",
+          "line": 321
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:68da1c54eca7a37e421489b83a3ad8126177600e73cfb4d3e2397ef6850bc67f",
+          "target": "stmt:packages/core/src/soul-store.ts@L323",
+          "line": 323,
+          "expr": "this.refreshStats(now, preserveTimestamp);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7fae2d1f04c34376c8c1afb3552ce98440ad94df934bfe4c94c5e4bfc42d2469",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.refreshStats@L427",
+          "expr": "refreshStats",
+          "line": 323
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "guard": "cond:packages/core/src/soul-store.ts@L324",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L324",
+            "expr": "this.canonicalLayout && graphChanged",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:04a44a3703cb2f70f57c1d01bc5ee71797d8bc4fc85d612f921d8ae4bbe0df8a",
+          "target": "assign:packages/core/src/soul-store.ts@L326",
+          "line": 326,
+          "expr": "this.manifest.generation = { ...generation, extracted: generation.extracted + 1 };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:15a31dc99cf17cdf8fcf81c5d1b2bb3c2dbda8f25bee0b823fa2127a75db8cfd",
+          "target": "stmt:packages/core/src/soul-store.ts@L328",
+          "line": 328,
+          "expr": "this.writeManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5cd8d07fc383816f08ab8869eae26f7dd6b2b7c754bf95d23ab0f9d671541d34",
+          "target": "sym:packages/core/src/soul-store.ts#SoulStore.writeManifest@L559",
+          "expr": "writeManifest",
+          "line": 328
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f8b49ae8868742671a7fac0785429c5bafb97ec04770c6832dae7815087cc174",
+          "target": "stmt:packages/core/src/soul-store.ts@L330",
+          "line": 330,
+          "expr": "this.dirtyNodeShards.clear();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e68140e965d88d0d36c091077dad8d2c017c62513a6c24421751fb4b1be3b253",
+          "target": "stmt:packages/core/src/soul-store.ts@L331",
+          "line": 331,
+          "expr": "this.dirtyEdgeShards.clear();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.commit@L312",
+        "procedureName": "SoulStore.commit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:77fabfb5badcb66cd14d23a1e90569eeb8df3a9cc61fce75a978d8a0f64a0798",
+          "target": "assign:packages/core/src/soul-store.ts@L332",
+          "line": 332,
+          "expr": "this.clustersDirty = false;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 2,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 8,
+      "recorded": 10,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

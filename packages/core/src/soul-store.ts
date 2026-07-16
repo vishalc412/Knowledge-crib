@@ -30,6 +30,7 @@ import type {
   Rel,
 } from '@knowledge-crib/soul-schema';
 import { resolveEdgeConflict } from './conflict-rule.js';
+import { graphPaths, hasCanonicalGraph } from './graph-layout.js';
 import { newManifest } from './manifest.js';
 import { pathFromId, shardKeyForEdge, shardKeyForNode, shardOf } from './shard.js';
 import { assertValidEdge, assertValidManifest, assertValidNode } from './validate.js';
@@ -59,6 +60,7 @@ export class SoulStore {
   private readonly nodes = new Map<string, Node>();
   private readonly edges = new Map<string, Edge>();
   private manifest: Manifest;
+  private readonly canonicalLayout: boolean;
 
   /** Node shards whose chunk files must be rewritten on commit. */
   private readonly dirtyNodeShards = new Set<string>();
@@ -74,11 +76,13 @@ export class SoulStore {
     opts: SoulStoreOpts = {},
   ) {
     this.manifest = opts.manifest ?? newManifest({ root: '.' });
+    this.canonicalLayout =
+      hasCanonicalGraph(cribDirPrivate) || !existsSync(join(cribDirPrivate, MANIFEST_FILE));
   }
 
   /** Read the manifest and hydrate the graph from existing chunks. Returns the manifest. */
   load(): Manifest {
-    const manifestPath = join(this.cribDirPrivate, MANIFEST_FILE);
+    const manifestPath = this.manifestPath;
     if (existsSync(manifestPath)) {
       this.manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as Manifest;
       // Loader gate (M11): refuse a soul whose schemaVersion we don't know how to read. A 1.0 soul
@@ -112,9 +116,9 @@ export class SoulStore {
   resetForRebuild(): void {
     this.nodes.clear();
     this.edges.clear();
-    const nodesRoot = join(this.cribDirPrivate, 'nodes');
+    const nodesRoot = this.nodesRoot;
     if (existsSync(nodesRoot)) for (const s of readdirSync(nodesRoot)) this.dirtyNodeShards.add(s);
-    const edgesRoot = join(this.cribDirPrivate, 'edges');
+    const edgesRoot = this.edgesRoot;
     if (existsSync(edgesRoot)) for (const s of readdirSync(edgesRoot)) this.dirtyEdgeShards.add(s);
     this.clustersDirty = true;
     // The dossier cache stays in place here. The post-commit runDossiers phase compares rebuilt
@@ -140,6 +144,95 @@ export class SoulStore {
       this.edges.set(edge.id, winner);
       this.dirtyEdgeShards.add(shardOf(shardKeyForEdge(winner), this.shardDigits));
     }
+  }
+
+  /**
+   * Atomically replace structural functionality clusters and their membership edges.
+   *
+   * Clustering is global: a topology change can change every community id. Plain upserts therefore
+   * leave obsolete cluster nodes and `member-of` edges behind. Validate the complete replacement
+   * before touching store state, then remove every edge incident to an old cluster and install the
+   * new, internally-consistent topology.
+   */
+  replaceClusters(clusters: Node[], memberships: Edge[]): void {
+    const clusterById = new Map<string, Node>();
+    const ownerByMember = new Map<string, string>();
+    const expectedEdges = new Set<string>();
+
+    for (const cluster of clusters) {
+      assertValidNode(cluster);
+      if (cluster.kind !== 'cluster') {
+        throw new Error(`replaceClusters expected cluster node, got ${cluster.kind}:${cluster.id}`);
+      }
+      if (clusterById.has(cluster.id)) {
+        throw new Error(`replaceClusters duplicate cluster id: ${cluster.id}`);
+      }
+      clusterById.set(cluster.id, cluster);
+      const declared = new Set<string>();
+      for (const memberId of cluster.members ?? []) {
+        if (declared.has(memberId)) {
+          throw new Error(`cluster ${cluster.id} declares duplicate member ${memberId}`);
+        }
+        declared.add(memberId);
+        const member = this.nodes.get(memberId);
+        if (!member) {
+          throw new Error(`cluster ${cluster.id} references missing member ${memberId}`);
+        }
+        if (member.kind !== 'symbol') {
+          throw new Error(
+            `cluster ${cluster.id} member ${memberId} is ${member.kind}, expected symbol`,
+          );
+        }
+        const previous = ownerByMember.get(memberId);
+        if (previous && previous !== cluster.id) {
+          throw new Error(
+            `cluster member ${memberId} belongs to both ${previous} and ${cluster.id}`,
+          );
+        }
+        ownerByMember.set(memberId, cluster.id);
+        expectedEdges.add(`${memberId}\0${cluster.id}`);
+      }
+    }
+
+    const actualEdges = new Set<string>();
+    for (const membership of memberships) {
+      assertValidEdge(membership);
+      if (membership.rel !== 'member-of' || !clusterById.has(membership.dst)) {
+        throw new Error(
+          `replaceClusters expected member-of edge into replacement cluster: ${membership.id}`,
+        );
+      }
+      if (!this.nodes.has(membership.src)) {
+        throw new Error(`cluster membership ${membership.id} has missing source ${membership.src}`);
+      }
+      const key = `${membership.src}\0${membership.dst}`;
+      if (actualEdges.has(key)) {
+        throw new Error(
+          `replaceClusters duplicate membership ${membership.src} -> ${membership.dst}`,
+        );
+      }
+      actualEdges.add(key);
+    }
+    if (
+      actualEdges.size !== expectedEdges.size ||
+      [...expectedEdges].some((key) => !actualEdges.has(key))
+    ) {
+      throw new Error('replaceClusters cluster members[] and membership edges do not match');
+    }
+
+    const oldClusterIds = new Set(
+      [...this.nodes.values()].filter((node) => node.kind === 'cluster').map((node) => node.id),
+    );
+    for (const id of oldClusterIds) this.nodes.delete(id);
+    if (oldClusterIds.size > 0 || clusters.length > 0) this.clustersDirty = true;
+    for (const edge of [...this.edges.values()]) {
+      if (!oldClusterIds.has(edge.src) && !oldClusterIds.has(edge.dst)) continue;
+      this.edges.delete(edge.id);
+      this.dirtyEdgeShards.add(shardOf(shardKeyForEdge(edge), this.shardDigits));
+    }
+
+    this.putNodes(clusters);
+    this.putEdges(memberships);
   }
 
   /**
@@ -216,7 +309,9 @@ export class SoulStore {
   }
 
   /** Flush dirty shards atomically, prune dangling edges, rewrite manifest + vendored schemas. */
-  commit(now = new Date().toISOString()): void {
+  commit(now = new Date().toISOString(), preserveTimestamp = false): void {
+    const graphChanged =
+      this.dirtyNodeShards.size > 0 || this.dirtyEdgeShards.size > 0 || this.clustersDirty;
     this.pruneDangling();
     this.writeVendoredSchemas();
     this.writeGitignore();
@@ -225,7 +320,11 @@ export class SoulStore {
     this.writeClusters(); // cluster nodes live in their own file
     for (const shard of this.dirtyEdgeShards) this.writeEdgeShard(shard);
 
-    this.refreshStats(now);
+    this.refreshStats(now, preserveTimestamp);
+    if (this.canonicalLayout && graphChanged) {
+      const generation = this.manifest.generation ?? { extracted: 0, semantic: 0 };
+      this.manifest.generation = { ...generation, extracted: generation.extracted + 1 };
+    }
     this.writeManifest();
 
     this.dirtyNodeShards.clear();
@@ -284,6 +383,28 @@ export class SoulStore {
     return this.manifest.chunking.maxChunkLines;
   }
 
+  private get manifestPath(): string {
+    return this.canonicalLayout
+      ? graphPaths(this.cribDirPrivate).manifest
+      : join(this.cribDirPrivate, MANIFEST_FILE);
+  }
+
+  private get extractedRoot(): string {
+    return this.canonicalLayout ? graphPaths(this.cribDirPrivate).extracted : this.cribDirPrivate;
+  }
+
+  private get nodesRoot(): string {
+    return join(this.extractedRoot, 'nodes');
+  }
+
+  private get edgesRoot(): string {
+    return join(this.extractedRoot, 'edges');
+  }
+
+  private get clustersPath(): string {
+    return join(this.extractedRoot, CLUSTERS_FILE);
+  }
+
   /** Cluster nodes go to clusters/clusters.jsonl; all other nodes shard normally. */
   private markNodeDirty(node: Node): void {
     if (node.kind === 'cluster') {
@@ -303,33 +424,40 @@ export class SoulStore {
     }
   }
 
-  private refreshStats(now: string): void {
+  private refreshStats(now: string, preserveTimestamp = false): void {
     let clusters = 0;
     for (const n of this.nodes.values()) if (n.kind === 'cluster') clusters++;
+    // `lastUpdated` means "soul content last updated", not "manifest file last touched". A no-op
+    // update that only advances the vcsHead anchor (no nodes/edges changed) must NOT bump it —
+    // bumping it would (a) break crib.json byte-stability across idempotent re-runs (the
+    // cache:stability gate's premise, per llm-overlay.ts's deliberate avoidance of soul.commit()
+    // from the MCP server) and (b) make the M4.3 crib-soul-refresh GitHub Action emit a spurious
+    // "refresh soul" commit on every merge even when the graph didn't change. preserveTimestamp
+    // reuses the existing lastUpdated for those anchor-only catches.
     this.manifest.stats = {
       ...this.manifest.stats,
       nodes: this.nodes.size,
       edges: this.edges.size,
       clusters,
-      lastUpdated: now,
+      lastUpdated: preserveTimestamp ? this.manifest.stats.lastUpdated : now,
     };
   }
 
   // --- hydration ---
 
   private hydrateNodes(): void {
-    const nodesRoot = join(this.cribDirPrivate, 'nodes');
+    const nodesRoot = this.nodesRoot;
     for (const file of this.walkJsonl(nodesRoot)) {
       for (const node of this.readRecords<Node>(file)) this.nodes.set(node.id, node);
     }
-    const clustersPath = join(this.cribDirPrivate, CLUSTERS_FILE);
+    const clustersPath = this.clustersPath;
     if (existsSync(clustersPath)) {
       for (const node of this.readRecords<Node>(clustersPath)) this.nodes.set(node.id, node);
     }
   }
 
   private hydrateEdges(): void {
-    const edgesRoot = join(this.cribDirPrivate, 'edges');
+    const edgesRoot = this.edgesRoot;
     for (const file of this.walkJsonl(edgesRoot)) {
       for (const edge of this.readRecords<Edge>(file)) this.edges.set(edge.id, edge);
     }
@@ -367,14 +495,14 @@ export class SoulStore {
         (n) => n.kind !== 'cluster' && shardOf(shardKeyForNode(n), this.shardDigits) === shard,
       )
       .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-    this.writeShardChunks(join(this.cribDirPrivate, 'nodes', shard), records);
+    this.writeShardChunks(join(this.nodesRoot, shard), records);
   }
 
   private writeEdgeShard(shard: string): void {
     const records = [...this.edges.values()]
       .filter((e) => shardOf(shardKeyForEdge(e), this.shardDigits) === shard)
       .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-    this.writeShardChunks(join(this.cribDirPrivate, 'edges', shard), records);
+    this.writeShardChunks(join(this.edgesRoot, shard), records);
   }
 
   private writeClusters(): void {
@@ -382,7 +510,7 @@ export class SoulStore {
     const records = [...this.nodes.values()]
       .filter((n) => n.kind === 'cluster')
       .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-    const path = join(this.cribDirPrivate, CLUSTERS_FILE);
+    const path = this.clustersPath;
     if (records.length === 0) {
       if (existsSync(path)) rmSync(path);
       return;
@@ -429,11 +557,28 @@ export class SoulStore {
   }
 
   private writeManifest(): void {
+    const stores = this.manifest.stores as Manifest['stores'] & {
+      graph?: { path: string; format: string };
+    };
+    stores.graph = { path: '.crib/graph', format: 'layered-jsonl' };
     assertValidManifest(this.manifest);
-    this.atomicWrite(
-      join(this.cribDirPrivate, MANIFEST_FILE),
-      `${JSON.stringify(this.manifest, null, 2)}\n`,
-    );
+    const content = `${JSON.stringify(this.manifest, null, 2)}\n`;
+    this.atomicWrite(this.manifestPath, content);
+    // Bootstrap/registry locator only. Graph state/stats exist solely in graph/manifest.json.
+    if (this.canonicalLayout) {
+      this.atomicWrite(
+        join(this.cribDirPrivate, MANIFEST_FILE),
+        `${JSON.stringify(
+          {
+            cribFormatVersion: this.manifest.cribFormatVersion,
+            repo: { id: this.manifest.repo.id, root: this.manifest.repo.root },
+            stores: { graph: this.manifest.stores.graph },
+          },
+          null,
+          2,
+        )}\n`,
+      );
+    }
   }
 
   /** Write-temp → rename, so a reader never sees a half-written file. */

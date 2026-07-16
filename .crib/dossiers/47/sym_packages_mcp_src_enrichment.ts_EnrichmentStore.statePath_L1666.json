@@ -1,0 +1,157 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.statePath@L1666",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:8b43089900ca051a733160d9c8ed626738d31c346726c270f9901d21493217e4",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.statePath@L1666",
+    "kind": "symbol",
+    "type": "method",
+    "name": "statePath",
+    "qualifiedName": "EnrichmentStore.statePath",
+    "signature": "statePath(): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1666,
+      "end": 1669
+    },
+    "callSites": [
+      {
+        "callee": "root",
+        "line": 1667
+      },
+      {
+        "callee": "endsWith",
+        "line": 1668
+      },
+      {
+        "callee": "join",
+        "line": 1668
+      },
+      {
+        "callee": "join",
+        "line": 1668
+      }
+    ]
+  },
+  "source": {
+    "text": "  private statePath(): string {\n    const root = this.root();\n    return root.endsWith(`${sep}llm`) ? join(root, 'manifest.json') : join(root, 'state.json');\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 1666
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.readManifest@L1449",
+      "confidence": 1,
+      "name": "readManifest",
+      "qualifiedName": "EnrichmentStore.readManifest",
+      "signature": "readManifest(): | {\n        model?: string | null;\n        builtAgainstHead?: string | null;\n        lastIssued?: Record<string, { batchId: string }>;\n      }\n    | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1449
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeManifest@L1423",
+      "confidence": 1,
+      "name": "writeManifest",
+      "qualifiedName": "EnrichmentStore.writeManifest",
+      "signature": "writeManifest(model: string | null, lastIssued?: Record<string, { batchId: string }>): void",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1423
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.root@L1654",
+      "confidence": 1,
+      "name": "root",
+      "qualifiedName": "EnrichmentStore.root",
+      "signature": "root(): string",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1654
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.statePath@L1666",
+    "procedureName": "EnrichmentStore.statePath",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.statePath@L1666",
+        "procedureName": "EnrichmentStore.statePath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:49ef0788a591b45bf3f00f1b8a9367d0cf05641cf73337a77b3711de15b84a53",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.root@L1654",
+          "expr": "root",
+          "line": 1667
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.statePath@L1666",
+        "procedureName": "EnrichmentStore.statePath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce0976f061c15ef0baee2d75447c0f3f2be055571e8edae497b387dc2ad28c0c",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1667",
+          "line": 1667,
+          "expr": "const root = this.root();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.statePath@L1666",
+        "procedureName": "EnrichmentStore.statePath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a6f6ec6a33f954630afd257ff2e6f7a97121ec4f8873d6f6f212d3329749d4af",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1668",
+          "line": 1668,
+          "expr": "return root.endsWith(`${sep}llm`) ? join(root, 'manifest.json') : join(root, 'state.json');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 4,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

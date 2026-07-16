@@ -1,0 +1,119 @@
+{
+  "id": "sym:packages/core/src/embeddings/char-ngram.ts#normalize@L36",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:cf0e786d75908003cbcabd4f5e033bf4868db14f6a2d090db4b373325b8e0b2b",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/embeddings/char-ngram.ts#normalize@L36",
+    "kind": "symbol",
+    "type": "function",
+    "name": "normalize",
+    "qualifiedName": "normalize",
+    "signature": "normalize(text: string): string",
+    "lang": "typescript",
+    "file": "packages/core/src/embeddings/char-ngram.ts",
+    "span": {
+      "start": 36,
+      "end": 38
+    },
+    "callSites": [
+      {
+        "callee": "replace",
+        "line": 37
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 37
+      }
+    ]
+  },
+  "source": {
+    "text": "function normalize(text: string): string {\n  return ` ${text.toLowerCase().replace(/[^a-z0-9]+/g, ' ')} `;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 36
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+      "confidence": 1,
+      "name": "accumulate",
+      "qualifiedName": "accumulate",
+      "signature": "accumulate(text: string, dim: number, minN: number, maxN: number): Float32Array",
+      "type": "function",
+      "file": "packages/core/src/embeddings/char-ngram.ts",
+      "line": 41
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/embeddings/char-ngram.ts@L35",
+      "snippet": "/** Lowercase + pad with a delimiter so edge n-grams are anchored to token boundaries. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#p0b-edge-additive-bump-may-slide-into-m11",
+      "heading": "P0b — Edge additive bump (may slide into M11)",
+      "anchor": "p0b-edge-additive-bump-may-slide-into-m11",
+      "snippet": "P0b — Edge additive bump (may slide into M11)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#normalize@L36",
+    "procedureName": "normalize",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#normalize@L36",
+        "procedureName": "normalize",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a30365d007aa6098270a56bb2481638a801de3432b2a02bf60fd8078a8f96b6b",
+          "target": "stmt:packages/core/src/embeddings/char-ngram.ts@L37",
+          "line": 37,
+          "expr": "return ` ${text.toLowerCase().replace(/[^a-z0-9]+/g, ' ')} `;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/embeddings/char-ngram.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

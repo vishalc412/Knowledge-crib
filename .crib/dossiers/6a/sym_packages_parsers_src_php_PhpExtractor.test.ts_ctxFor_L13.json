@@ -1,0 +1,167 @@
+{
+  "id": "sym:packages/parsers/src/php/PhpExtractor.test.ts#ctxFor@L13",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:6726bec7d27e5de784a8a630e35387266ae72db2af6149f1c247c172b146bb45",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/php/PhpExtractor.test.ts#ctxFor@L13",
+    "kind": "symbol",
+    "type": "function",
+    "name": "ctxFor",
+    "qualifiedName": "ctxFor",
+    "signature": "ctxFor(): ExtractCtx",
+    "lang": "typescript",
+    "file": "packages/parsers/src/php/PhpExtractor.test.ts",
+    "span": {
+      "start": 13,
+      "end": 25
+    },
+    "callSites": [
+      {
+        "callee": "readFileSync",
+        "line": 14
+      },
+      {
+        "callee": "createParserHandle",
+        "line": 20
+      },
+      {
+        "callee": "idFor",
+        "line": 23
+      }
+    ]
+  },
+  "source": {
+    "text": "function ctxFor(): ExtractCtx {\n  const text = readFileSync(FIXTURE, 'utf8');\n  return {\n    async readText() {\n      return text;\n    },\n    treeSitter(grammar: string) {\n      return createParserHandle(grammar);\n    },\n    hash: contentHash,\n    idFor: (kind: NodeKind, parts) => idFor({ kind, ...parts } as IdSpec),\n  };\n}",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 13
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/php/PhpExtractor.test.ts#run@L27",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/php/PhpExtractor.test.ts",
+      "line": 27
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/tree-sitter-pool.ts#createParserHandle@L79",
+      "confidence": 1,
+      "name": "createParserHandle",
+      "qualifiedName": "createParserHandle",
+      "signature": "createParserHandle(grammar: string): ParserHandle",
+      "type": "function",
+      "file": "packages/parsers/src/tree-sitter-pool.ts",
+      "line": 79
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 88
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/php/PhpExtractor.test.ts#ctxFor@L13",
+    "procedureName": "ctxFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.test.ts#ctxFor@L13",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1327512494d5501f6871cdd76a7f5cacef81cef345d78ab504d60fcdf7bb268e",
+          "target": "stmt:packages/parsers/src/php/PhpExtractor.test.ts@L14",
+          "line": 14,
+          "expr": "const text = readFileSync(FIXTURE, 'utf8');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.test.ts#ctxFor@L13",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:286b510a4c8d35e8f28b57b454742d64cacb8f3c1b5d16359ff3cfb410ecc3d5",
+          "target": "stmt:packages/parsers/src/php/PhpExtractor.test.ts@L15",
+          "line": 15,
+          "expr": "return {\n    async readText() {\n      return text;\n    },\n    treeSitter(grammar: string) {\n      return createParserHandle(grammar);\n    },\n    hash: contentHash,\n    idFor: (kind: NodeKind, parts) => idFor({ kind, ...parts } as IdSpec),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.test.ts#ctxFor@L13",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:23fae1de328611918ff06a5c4ff46e489ec0d21eb45d188bf31d3c7cc11703cf",
+          "target": "sym:packages/parsers/src/tree-sitter-pool.ts#createParserHandle@L79",
+          "expr": "createParserHandle",
+          "line": 20
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.test.ts#ctxFor@L13",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a6ce9aa15da3806a1059a2919773880fce991da18478e23a0baf0d18b8da1121",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 23
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/php/PhpExtractor.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

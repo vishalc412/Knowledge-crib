@@ -1,0 +1,335 @@
+{
+  "id": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:9a3ce5df0594f7abc9897c147ba5aaadbeee642225aee0ef9425c8af7907c507",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+    "kind": "symbol",
+    "type": "function",
+    "name": "parsePnpmWorkspacePatterns",
+    "qualifiedName": "parsePnpmWorkspacePatterns",
+    "signature": "parsePnpmWorkspacePatterns(content: string): string[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/workspace.ts",
+    "span": {
+      "start": 134,
+      "end": 156
+    },
+    "callSites": [
+      {
+        "callee": "trim",
+        "line": 138
+      },
+      {
+        "callee": "match",
+        "line": 150
+      },
+      {
+        "callee": "trim",
+        "line": 152
+      },
+      {
+        "callee": "replace",
+        "line": 152
+      },
+      {
+        "callee": "push",
+        "line": 153
+      },
+      {
+        "callee": "stripQuotes",
+        "line": 153
+      }
+    ]
+  },
+  "source": {
+    "text": "function parsePnpmWorkspacePatterns(content: string): string[] {\n  const out: string[] = [];\n  let inPackages = false;\n  for (const line of content.split(/\\r?\\n/)) {\n    const trimmed = line.trim();\n    if (!trimmed || trimmed.startsWith('#')) continue;\n    if (/^packages\\s*:/.test(trimmed)) {\n      inPackages = true;\n      continue;\n    }\n    // A new top-level key ends the packages block.\n    if (inPackages && /^[a-zA-Z_-]+\\s*:/.test(trimmed)) {\n      inPackages = false;\n      continue;\n    }\n    if (!inPackages) continue;\n    const m = trimmed.match(/^[-*]\\s+(.+)$/);\n    const raw = m?.[1] ?? trimmed;\n    const val = raw.replace(/,#.*$/, '').trim();\n    if (val) out.push(stripQuotes(val));\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 23,
+    "startLine": 134
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
+      "confidence": 1,
+      "name": "detectPnpm",
+      "qualifiedName": "detectPnpm",
+      "signature": "detectPnpm(root: string): WorkspaceLayout | null",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 69
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#stripQuotes@L324",
+      "confidence": 1,
+      "name": "stripQuotes",
+      "qualifiedName": "stripQuotes",
+      "signature": "stripQuotes(s: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 324
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/workspace.ts@L133",
+      "snippet": "/** Parse `packages: [a, b]` lines from a pnpm-workspace.yaml (tolerant — no YAML dependency). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+    "procedureName": "parsePnpmWorkspacePatterns",
+    "conditions": [
+      "cond:packages/pipeline/src/workspace.ts@L137",
+      "cond:packages/pipeline/src/workspace.ts@L140",
+      "cond:packages/pipeline/src/workspace.ts@L145",
+      "cond:packages/pipeline/src/workspace.ts@L153"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+        "procedureName": "parsePnpmWorkspacePatterns",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L137",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L137",
+            "expr": "content.split(/\\r?\\n/)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5faeddad8501f5567c8c93fef119c52a5e0f457960f11d89b23071c9b1bc1ecf",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L138",
+          "line": 138,
+          "expr": "const trimmed = line.trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+        "procedureName": "parsePnpmWorkspacePatterns",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L140",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L137",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L140",
+            "expr": "/^packages\\s*:/.test(trimmed)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c58caef7302e1228402b1e597d03d4cf105c62f5a2b70dd367b81b3f1d01762",
+          "target": "assign:packages/pipeline/src/workspace.ts@L141",
+          "line": 141,
+          "expr": "inPackages = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+        "procedureName": "parsePnpmWorkspacePatterns",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L145",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L137",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L145",
+            "expr": "inPackages && /^[a-zA-Z_-]+\\s*:/.test(trimmed)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5d65c23a26a64c98ea72a15fb3c423b81f1397cbb0d5ebd58cfeac3ec6ec6f53",
+          "target": "assign:packages/pipeline/src/workspace.ts@L146",
+          "line": 146,
+          "expr": "inPackages = false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+        "procedureName": "parsePnpmWorkspacePatterns",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L137",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L137",
+            "expr": "content.split(/\\r?\\n/)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4694614cde2fba6ace72678fde0c14462fd675683979b7e340e2e7562e243e37",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L150",
+          "line": 150,
+          "expr": "const m = trimmed.match(/^[-*]\\s+(.+)$/);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+        "procedureName": "parsePnpmWorkspacePatterns",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L137",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L137",
+            "expr": "content.split(/\\r?\\n/)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:65fea2a8ae32d09d56befcb9d1ef4f492eb9ff78c7e48b96dda39fe3e7d1bd61",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L152",
+          "line": 152,
+          "expr": "const val = raw.replace(/,#.*$/, '').trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+        "procedureName": "parsePnpmWorkspacePatterns",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:95ef9f00190eb0e9fa86a2b53d410cbbd7bb7840c030d9bdece6015bec37cdc6",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 153
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+        "procedureName": "parsePnpmWorkspacePatterns",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L153",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L137",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L153",
+            "expr": "val",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c4d432c5140d093429f21f85e6fdcdb1f0d62dba2d07ddf7cc7cd8c21ae63358",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L153",
+          "line": 153,
+          "expr": "out.push(stripQuotes(val));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+        "procedureName": "parsePnpmWorkspacePatterns",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L153",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L137",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L153",
+            "expr": "val",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c8f4de0a07af6b7fcc90c204e83895ce43aba269e777912db96fdfad3181e292",
+          "target": "sym:packages/pipeline/src/workspace.ts#stripQuotes@L324",
+          "expr": "stripQuotes",
+          "line": 153
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+        "procedureName": "parsePnpmWorkspacePatterns",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b92e54d82cd45572a3a0dae2e58c17d98becb8c04509c4ad5818e9994ded5267",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L155",
+          "line": 155,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/pipeline/src/workspace.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 2,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 6,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

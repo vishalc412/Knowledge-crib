@@ -1,0 +1,238 @@
+{
+  "id": "sym:scripts/linker-check.mjs#runMode@L62",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:6c3ed3050327760624236a5034a9781043d09c45f6cfa1a3c7061bfd2164feb4",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/linker-check.mjs#runMode@L62",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runMode",
+    "qualifiedName": "runMode",
+    "signature": "runMode(…)",
+    "lang": "javascript",
+    "file": "scripts/linker-check.mjs",
+    "span": {
+      "start": 62,
+      "end": 68
+    },
+    "callSites": [
+      {
+        "callee": "fixtureSoul",
+        "line": 63
+      },
+      {
+        "callee": "then",
+        "line": 64
+      },
+      {
+        "callee": "indexRepo",
+        "line": 64
+      },
+      {
+        "callee": "runSemanticLink",
+        "line": 65
+      },
+      {
+        "callee": "referencesEdges",
+        "line": 66
+      },
+      {
+        "callee": "describesEdges",
+        "line": 66
+      }
+    ]
+  },
+  "source": {
+    "text": "  const runMode = (mode) => {\n    const { dir, soul } = fixtureSoul();\n    return indexRepo(soul, FIXTURE, { now: NOW }).then(() => {\n      const added = runSemanticLink(soul, FIXTURE, undefined, { mode }).added;\n      return { dir, soul, added, edges: referencesEdges(soul), describes: describesEdges(soul) };\n    });\n  };",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 62
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:scripts/linker-check.mjs#describesEdges@L49",
+      "confidence": 1,
+      "name": "describesEdges",
+      "qualifiedName": "describesEdges",
+      "signature": "describesEdges(…)",
+      "type": "function",
+      "file": "scripts/linker-check.mjs",
+      "line": 49
+    },
+    {
+      "id": "sym:scripts/linker-check.mjs#fixtureSoul@L41",
+      "confidence": 1,
+      "name": "fixtureSoul",
+      "qualifiedName": "fixtureSoul",
+      "signature": "fixtureSoul(…)",
+      "type": "function",
+      "file": "scripts/linker-check.mjs",
+      "line": 41
+    },
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 94
+    },
+    {
+      "id": "sym:scripts/linker-check.mjs#referencesEdges@L48",
+      "confidence": 1,
+      "name": "referencesEdges",
+      "qualifiedName": "referencesEdges",
+      "signature": "referencesEdges(…)",
+      "type": "function",
+      "file": "scripts/linker-check.mjs",
+      "line": 48
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+      "confidence": 1,
+      "name": "runSemanticLink",
+      "qualifiedName": "runSemanticLink",
+      "signature": "runSemanticLink(soul: SoulStore, root: string, docFiles?: string[], opts: SemanticLinkOpts = {}): SemanticStats",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/semantic.ts",
+      "line": 69
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/linker-check.mjs#runMode@L62",
+    "procedureName": "runMode",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/linker-check.mjs#runMode@L62",
+        "procedureName": "runMode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c4d4d2d896d408956adbdf70a953d8e29e5f9373201bd172f84eb9224d2ccd61",
+          "target": "stmt:scripts/linker-check.mjs@L63",
+          "line": 63,
+          "expr": "const { dir, soul } = fixtureSoul();"
+        }
+      },
+      {
+        "procedure": "sym:scripts/linker-check.mjs#runMode@L62",
+        "procedureName": "runMode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cf4f01c5ad9845259691c229bf641e9495f48b1ad624f92a84e3b5325aa4916f",
+          "target": "sym:scripts/linker-check.mjs#fixtureSoul@L41",
+          "expr": "fixtureSoul",
+          "line": 63
+        }
+      },
+      {
+        "procedure": "sym:scripts/linker-check.mjs#runMode@L62",
+        "procedureName": "runMode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8dbba91dd1fae92d88cacd7bb13d210805b744c01d75c1fff329b038603298ba",
+          "target": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+          "expr": "indexRepo",
+          "line": 64
+        }
+      },
+      {
+        "procedure": "sym:scripts/linker-check.mjs#runMode@L62",
+        "procedureName": "runMode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca16a3769b9dbf5085a8f1775172d96a24772fb0fa5ba3acc74e79d99e2a0d60",
+          "target": "stmt:scripts/linker-check.mjs@L64",
+          "line": 64,
+          "expr": "return indexRepo(soul, FIXTURE, { now: NOW }).then(() => {\n      const added = runSemanticLink(soul, FIXTURE, undefined, { mode }).added;\n      return { dir, soul, added, edges: referencesEdges(soul), describes: describesEdges(soul) };\n    });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/linker-check.mjs#runMode@L62",
+        "procedureName": "runMode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a95b3f1aa7825c48770541363cba6d3441d3fcfa6c5c1851413821bf4e355380",
+          "target": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+          "expr": "runSemanticLink",
+          "line": 65
+        }
+      },
+      {
+        "procedure": "sym:scripts/linker-check.mjs#runMode@L62",
+        "procedureName": "runMode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3968b86a30189af32e7f53fa2b3dc64862b49c647b2ade0fb03c87900746aff1",
+          "target": "sym:scripts/linker-check.mjs#describesEdges@L49",
+          "expr": "describesEdges",
+          "line": 66
+        }
+      },
+      {
+        "procedure": "sym:scripts/linker-check.mjs#runMode@L62",
+        "procedureName": "runMode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4997a7b2678336e23d187a7124c0be1dd36175db3d6d632a6cc55ced37d5f948",
+          "target": "sym:scripts/linker-check.mjs#referencesEdges@L48",
+          "expr": "referencesEdges",
+          "line": 66
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 6,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

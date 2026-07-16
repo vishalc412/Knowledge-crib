@@ -1,0 +1,98 @@
+{
+  "id": "sym:packages/core/src/graph-store.ts#emptyDiagnostics@L278",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:6c6a93f02a3280ce2f11573c9a3ac7e0d0e2cc92e74fb0f9a1fe59797187777a",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/graph-store.ts#emptyDiagnostics@L278",
+    "kind": "symbol",
+    "type": "function",
+    "name": "emptyDiagnostics",
+    "qualifiedName": "emptyDiagnostics",
+    "signature": "emptyDiagnostics(): SemanticDiagnostics",
+    "lang": "typescript",
+    "file": "packages/core/src/graph-store.ts",
+    "span": {
+      "start": 278,
+      "end": 280
+    }
+  },
+  "source": {
+    "text": "function emptyDiagnostics(): SemanticDiagnostics {\n  return { artifacts: 0, fresh: 0, stale: 0, orphaned: 0, ungrounded: 0 };\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 278
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/graph-store.ts#GraphStore.extracted@L77",
+      "confidence": 1,
+      "name": "extracted",
+      "qualifiedName": "GraphStore.extracted",
+      "signature": "extracted(): GraphSnapshot",
+      "type": "method",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 77
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+      "confidence": 1,
+      "name": "readSemantic",
+      "qualifiedName": "readSemantic",
+      "signature": "readSemantic(soul: SoulStore): GraphSnapshot",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 173
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/graph-store.ts#emptyDiagnostics@L278",
+    "procedureName": "emptyDiagnostics",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/graph-store.ts#emptyDiagnostics@L278",
+        "procedureName": "emptyDiagnostics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:05319d34074d75ecdf468419769f9aab62183303308ac1a85df2a11f7ea8dbda",
+          "target": "stmt:packages/core/src/graph-store.ts@L279",
+          "line": 279,
+          "expr": "return { artifacts: 0, fresh: 0, stale: 0, orphaned: 0, ungrounded: 0 };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/graph-store.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

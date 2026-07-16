@@ -1,0 +1,161 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.enrichSave@L1171",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:0c16d6921090de840e1eab4c3d1cef64ec0375a1798b3bbaf220d9ce5769ff16",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.enrichSave@L1171",
+    "kind": "symbol",
+    "type": "method",
+    "name": "enrichSave",
+    "qualifiedName": "Verbs.enrichSave",
+    "signature": "enrichSave(args: {\n    batchId: string;\n    items: Array<{\n      targetId: string;\n      model?: string;\n      analysis: Record<string, unknown>;\n      graph: {\n        nodes: Array<Record<string, unknown>>;\n        edges: Array<Record<string, unknown>>;\n      };\n      evidence: Array<Record<string, unknown>>;\n    }>;\n  }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1171,
+      "end": 1199
+    },
+    "callSites": [
+      {
+        "callee": "withCribLock",
+        "line": 1189
+      },
+      {
+        "callee": "save",
+        "line": 1191
+      }
+    ]
+  },
+  "source": {
+    "text": "  enrichSave(args: {\n    batchId: string;\n    items: Array<{\n      targetId: string;\n      model?: string;\n      analysis: Record<string, unknown>;\n      graph: {\n        nodes: Array<Record<string, unknown>>;\n        edges: Array<Record<string, unknown>>;\n      };\n      evidence: Array<Record<string, unknown>>;\n    }>;\n  }): Record<string, unknown> {\n    // Serializes writers: an enrich_save landing while `crib index`/`update` runs would race the\n    // semantic artifacts against soul rebuild. Hold cross-process graph lock around save.\n    // On a busy crib, return a structured busy result (deterministic verbs never throw).\n    const cribDir = this.deps.soul.cribDir;\n    try {\n      return withCribLock(\n        { cribDir },\n        () => this.llm.save(args as never) as unknown as Record<string, unknown>,\n      );\n    } catch (error) {\n      if (error instanceof LockBusyError) {\n        return { error: 'crib_busy', message: error.message, holderPid: error.holderPid };\n      }\n      throw error;\n    }\n  }",
+    "truncated": false,
+    "totalLines": 29,
+    "startLine": 1171
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-1-the-enrich-save-validation-pipeline",
+      "heading": "3.2.1 The `enrich_save` Validation Pipeline",
+      "anchor": "3-2-1-the-enrich-save-validation-pipeline",
+      "snippet": "3.2.1 The `enrich_save` Validation Pipeline",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#1-executive-summary",
+      "heading": "1. Executive Summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.enrichSave@L1171",
+    "procedureName": "Verbs.enrichSave",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L1194"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.enrichSave@L1171",
+        "procedureName": "Verbs.enrichSave",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f8e96e3de40f79551d1efb2591ae632fbe6d5f9488c8af30c0176f572bee6b06",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1189",
+          "line": 1189,
+          "expr": "return withCribLock(\n        { cribDir },\n        () => this.llm.save(args as never) as unknown as Record<string, unknown>,\n      );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.enrichSave@L1171",
+        "procedureName": "Verbs.enrichSave",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1194",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1194",
+            "expr": "error instanceof LockBusyError",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:46fb7dab430227202f20639e15869cb385ab383a8f26c9b94a935852c865966b",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1195",
+          "line": 1195,
+          "expr": "return { error: 'crib_busy', message: error.message, holderPid: error.holderPid };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:packages/mcp/src/verbs.ts@L1197",
+        "kind": "raise",
+        "lang": "typescript",
+        "file": "packages/mcp/src/verbs.ts",
+        "span": {
+          "start": 1197,
+          "end": 1197
+        },
+        "errorMessage": "error",
+        "confidence": 1
+      }
+    ],
+    "handles": [
+      {
+        "id": "exc:packages/mcp/src/verbs.ts@L1193",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/mcp/src/verbs.ts",
+        "span": {
+          "start": 1193,
+          "end": 1193
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 1,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

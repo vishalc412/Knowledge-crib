@@ -10,10 +10,12 @@ import {
   validateSmokeStatus,
 } from './install-smoke.mjs';
 
-assert.equal(expectedBinPaths('/tmp/kc', 'darwin').bin, join('/tmp/kc', 'bin', 'crib'));
+// Darwin bin/direct paths are always POSIX regardless of the host runner's platform — use
+// path.posix.join so the expected value does not flip to backslashes on a Windows runner.
+assert.equal(expectedBinPaths('/tmp/kc', 'darwin').bin, path.posix.join('/tmp/kc', 'bin', 'crib'));
 assert.equal(
   expectedBinPaths('/tmp/kc', 'darwin').direct,
-  join('/tmp/kc', 'lib', 'node_modules', 'knowledge-crib', 'dist', 'cli.js'),
+  path.posix.join('/tmp/kc', 'lib', 'node_modules', 'knowledge-crib', 'dist', 'cli.js'),
 );
 assert.equal(expectedBinPaths('C:\\kc', 'win32').bin, path.win32.join('C:\\kc', 'crib.cmd'));
 assert.equal(
@@ -37,7 +39,7 @@ assert.deepEqual(
 
 assert.deepEqual(installerCommand('/tmp/bundle', 'darwin'), {
   command: 'sh',
-  args: [join('/tmp/bundle', 'install-macos.sh')],
+  args: [path.posix.join('/tmp/bundle', 'install-macos.sh')],
 });
 assert.deepEqual(installerCommand('C:\\bundle', 'win32'), {
   command: 'powershell.exe',
@@ -78,8 +80,8 @@ assert.deepEqual(npmInstallArgs('/tmp/kc', ['/tmp/dep.tgz', '/tmp/pkg.tgz']), [
 ]);
 
 assert.deepEqual(
-  validateSmokeStatus({ indexed: true, schemaVersion: '1.3', stats: { nodes: 4, edges: 2 } }),
-  { indexed: true, schemaVersion: '1.3', stats: { nodes: 4, edges: 2 } },
+  validateSmokeStatus({ indexed: true, schemaVersion: '1.5', stats: { nodes: 4, edges: 2 } }),
+  { indexed: true, schemaVersion: '1.5', stats: { nodes: 4, edges: 2 } },
 );
 assert.throws(
   () => validateSmokeStatus({ indexed: false, stats: { nodes: 0 } }),

@@ -1,0 +1,137 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.transaction@L420",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:830caddd124b412d3ead9db36e5d9f28b014ec98051856e7eaa14308692abf8e",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.transaction@L420",
+    "kind": "symbol",
+    "type": "method",
+    "name": "transaction",
+    "qualifiedName": "SqliteIndexStore.transaction",
+    "signature": "transaction(fn: () => T): () => T",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 420,
+      "end": 432
+    },
+    "callSites": [
+      {
+        "callee": "exec",
+        "line": 422
+      },
+      {
+        "callee": "fn",
+        "line": 424
+      },
+      {
+        "callee": "exec",
+        "line": 425
+      },
+      {
+        "callee": "exec",
+        "line": 428
+      }
+    ]
+  },
+  "source": {
+    "text": "  private transaction<T>(fn: () => T): () => T {\n    return () => {\n      this.db.exec('BEGIN');\n      try {\n        const result = fn();\n        this.db.exec('COMMIT');\n        return result;\n      } catch (err) {\n        this.db.exec('ROLLBACK');\n        throw err;\n      }\n    };\n  }",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 420
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.applyDelta@L130",
+      "confidence": 1,
+      "name": "applyDelta",
+      "qualifiedName": "SqliteIndexStore.applyDelta",
+      "signature": "applyDelta(changed: IndexDelta, repoRoot: string): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 130
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+      "confidence": 1,
+      "name": "buildFromSoul",
+      "qualifiedName": "SqliteIndexStore.buildFromSoul",
+      "signature": "buildFromSoul(soul: SoulStore, repoRoot: string): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 119
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildVectors@L286",
+      "confidence": 1,
+      "name": "buildVectors",
+      "qualifiedName": "SqliteIndexStore.buildVectors",
+      "signature": "buildVectors(soul: SoulStore): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 286
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/index/sqlite-index.ts@L414",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.transaction@L420",
+    "procedureName": "SqliteIndexStore.transaction",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.transaction@L420",
+        "procedureName": "SqliteIndexStore.transaction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3f2ea2f06042c07f90e286616f62a83a31653ee301fa0bba5b77406f140913e3",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L421",
+          "line": 421,
+          "expr": "return () => {\n      this.db.exec('BEGIN');\n      try {\n        const result = fn();\n        this.db.exec('COMMIT');\n        return result;\n      } catch (err) {\n        this.db.exec('ROLLBACK');\n        throw err;\n      }\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

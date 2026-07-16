@@ -1,0 +1,75 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#byEdgeId@L252",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:17576d4dc044433ccd3e52261bef4a42ee7e130b2034243e0b16aa3d3c7462cf",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#byEdgeId@L252",
+    "kind": "symbol",
+    "type": "function",
+    "name": "byEdgeId",
+    "qualifiedName": "byEdgeId",
+    "signature": "byEdgeId(a: Edge, b: Edge): number",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/java-resolver.test.ts",
+    "span": {
+      "start": 252,
+      "end": 254
+    }
+  },
+  "source": {
+    "text": "function byEdgeId(a: Edge, b: Edge): number {\n  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 252
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#byEdgeId@L252",
+    "procedureName": "byEdgeId",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#byEdgeId@L252",
+        "procedureName": "byEdgeId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ae5bfe72433bff779656c6dbdcbd3755542c0f92e3c7c15b4960db941c1389bf",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.test.ts@L253",
+          "line": 253,
+          "expr": "return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

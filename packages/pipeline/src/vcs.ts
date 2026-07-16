@@ -75,6 +75,52 @@ export function hasUncommittedChanges(root: string): boolean {
   return uncommittedChanges(root).length > 0;
 }
 
+/** One `git blame` attribution record per source line (1-based `line`). `commit` is the short sha
+ *  the line was last touched by; `name`/`email` the author (email undefined when blame exposed no
+ *  email — rare, e.g. a malformed mailmap). Used by the M3.1 ownership phase to map symbols → owners. */
+export interface BlameLine {
+  line: number;
+  commit: string;
+  name: string;
+  email?: string;
+}
+
+/**
+ * Per-line `git blame` attribution for one repo-relative file, parsed from `--line-porcelain` (one
+ * header+author block per source line, so each line is self-contained). Returns [] if the file is
+ * not tracked or blame fails (untracked file, binary, no commits) — the caller skips silently.
+ * `--line-porcelain` is deterministic given HEAD + the working tree.
+ */
+export function blameLines(root: string, path: string): BlameLine[] {
+  const out = git(root, ['blame', '--line-porcelain', '--', path]);
+  if (out === undefined) return [];
+  const lines = out.split('\n');
+  const records: BlameLine[] = [];
+  let cur: { line: number; commit: string; name: string; email?: string } | null = null;
+  const header = /^([0-9a-f]{7,40})\s+(\d+)\s+(\d+)/;
+  for (const raw of lines) {
+    const h = raw.match(header);
+    if (h) {
+      if (cur) records.push(cur);
+      cur = { line: Number(h[3] ?? '0'), commit: h[1] ?? '', name: '', email: undefined };
+      continue;
+    }
+    if (!cur) continue;
+    if (raw.startsWith('author-mail ')) {
+      const m = raw.match(/<([^>]+)>/);
+      if (m) cur.email = m[1];
+    } else if (raw.startsWith('author ') && !raw.startsWith('author-mail')) {
+      cur.name = raw.slice('author '.length);
+    } else if (raw.startsWith('\t')) {
+      // the content line ends this record
+      if (cur) records.push(cur);
+      cur = null;
+    }
+  }
+  if (cur) records.push(cur);
+  return records;
+}
+
 /** Run a git subcommand; returns trimmed stdout, or undefined on git failure (missing repo/commits). */
 function git(root: string, args: string[]): string | undefined {
   try {

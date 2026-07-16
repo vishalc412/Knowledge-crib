@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Knowledge-crib — Team User Guide</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1d23; --muted: #5b6472; --line: #e3e7ee;
+    --accent: #0b6bcb; --accent-soft: #eaf3fd; --code-bg: #f4f6f9;
+    --ok: #1a7f37; --warn: #9a6700; --card: #fafbfc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10131a; --fg: #e6e9ef; --muted: #9aa4b2; --line: #262c38;
+      --accent: #5aa5e8; --accent-soft: #16283c; --code-bg: #1a2029;
+      --ok: #4cc26a; --warn: #d4a72c; --card: #151a23;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background: var(--bg); color: var(--fg); }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+  h1 { font-size: 2rem; margin: 0 0 .3rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.35rem; margin: 2.8rem 0 .8rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+  h3 { font-size: 1.05rem; margin: 1.6rem 0 .5rem; }
+  p, li { color: var(--fg); }
+  .sub { color: var(--muted); font-size: 1.05rem; margin: 0 0 1.5rem; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code { font: 13px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+         background: var(--code-bg); padding: .12em .38em; border-radius: 4px; }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px;
+        padding: .9rem 1.1rem; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  .tblwrap { overflow-x: auto; }
+  th, td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; }
+  .pill { display: inline-block; font-size: .72rem; font-weight: 600; padding: .1em .55em;
+          border-radius: 999px; background: var(--accent-soft); color: var(--accent); vertical-align: middle; }
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft);
+             padding: .8rem 1.1rem; border-radius: 0 8px 8px 0; margin: 1.2rem 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+          padding: 1rem 1.2rem; margin: 1rem 0; }
+  .toc { columns: 2; column-gap: 2rem; margin: 1.2rem 0 0; padding: 0; list-style: none; }
+  .toc li { margin: .25rem 0; break-inside: avoid; }
+  .muted { color: var(--muted); }
+  footer { margin-top: 4rem; padding-top: 1rem; border-top: 1px solid var(--line);
+           color: var(--muted); font-size: .85rem; }
+  @media (max-width: 640px) { .toc { columns: 1; } h1 { font-size: 1.6rem; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Knowledge-crib <span class="pill">Team User Guide</span></h1>
+<p class="sub">A portable <strong>"project soul"</strong> for AI coding agents — a local-first,
+git-committable knowledge graph of your codebase, served to any agent (Claude Code, Cursor,
+GitHub Copilot, Codex) over <strong>one MCP server</strong>. Full architectural context in far
+fewer tokens; no more architecture-breaking edits.</p>
+
+<ul class="toc">
+  <li><a href="#what">1. What it is</a></li>
+  <li><a href="#install">2. Install (one-time)</a></li>
+  <li><a href="#quickstart">3. Five-minute quickstart</a></li>
+  <li><a href="#daily">4. Daily workflow</a></li>
+  <li><a href="#verbs">5. The 23 MCP verbs</a></li>
+  <li><a href="#enrich">6. The LLM semantic layer</a></li>
+  <li><a href="#viz">7. Visualize &amp; export</a></li>
+  <li><a href="#troubleshoot">8. Troubleshooting</a></li>
+  <li><a href="#deeper">9. Deeper reading</a></li>
+</ul>
+
+<h2 id="what">1. What it is</h2>
+<p>AI coding agents re-read files every session to rebuild context — slow, token-hungry, and blind
+to architecture. Knowledge-crib indexes a project <strong>once</strong> into a queryable graph
+(the <em>soul</em>, stored in <code>.crib/</code> and committed with the repo), then serves it to
+any agent over MCP.</p>
+<div class="card">
+<strong>The one-sentence model:</strong> Parse → graph → persist as a committable soul → build a
+fast local index → serve to agents over MCP.
+</div>
+<ul>
+  <li><strong>Deterministic core</strong> — AST extraction across 9 languages (TypeScript/JS, Java,
+      C#, Go, Rust, PHP, Python, PL/SQL, Markdown). No model call, fully offline.</li>
+  <li><strong>Provenance-tagged</strong> — every edge carries <code>EXTRACTED</code> or
+      <code>INFERRED</code> + confidence + evidence, so agents can filter to facts.</li>
+  <li><strong>Token-bounded</strong> — every verb result respects limits with
+      <code>truncated</code>/<code>cursor</code> paging.</li>
+  <li><strong>Optional LLM layer</strong> — your IDE's model (never the server) authors a semantic
+      graph on top: purposes, invariants, business rules, flows. Grounding-validated and
+      secret-scanned before persist.</li>
+</ul>
+
+<h2 id="install">2. Install (one-time per machine)</h2>
+<p>Requirements: <strong>Node ≥ 22.5</strong>, <strong>pnpm 9.15.0 via Corepack</strong>, macOS/Linux.</p>
+<pre><code>git clone &lt;knowledge-crib repo&gt;
+cd knowledge-crib
+corepack pnpm@9.15.0 install
+corepack pnpm@9.15.0 build            # builds all 7 packages
+
+corepack pnpm@9.15.0 setup            # one-time: global bin dir on PATH (then restart terminal)
+corepack pnpm@9.15.0 --dir packages/cli link --global
+
+which crib &amp;&amp; crib --help             # verify</code></pre>
+<p class="muted">The global link points at the repo's <code>dist/</code> — upgrading is
+<code>git pull &amp;&amp; corepack pnpm@9.15.0 build</code>, no reinstall.</p>
+
+<h2 id="quickstart">3. Five-minute quickstart (per project)</h2>
+<pre><code>cd /path/to/your/project
+crib init .        # index + git hooks + IDE MCP wiring + next-steps hero
+crib doctor .      # ✓/✗ health: node / corepack / indexed / freshness / hooks / IDE wiring</code></pre>
+<p><code>crib init</code> does everything in one shot. <code>crib doctor</code> tells you exactly
+what is broken and how to fix it (exit 1 on failure — safe for CI).</p>
+<div class="callout">
+<strong>Commit the soul.</strong> <code>.crib/</code> is chunked JSONL — diff-friendly and
+engine-free — so the whole team shares one soul and every agent sees the same graph. Keep
+<code>.crib/index/</code> (derived SQLite) in <code>.gitignore</code>; commit the rest.
+</div>
+
+<h2 id="daily">4. Daily workflow</h2>
+<div class="tblwrap"><table>
+<tr><th>When</th><th>Command</th><th>What happens</th></tr>
+<tr><td>After editing code</td><td><code>crib update .</code></td><td>Incremental re-extract of changed files only</td></tr>
+<tr><td>Automatically</td><td><code>crib install-hooks .</code></td><td>Post-commit hook runs <code>crib update</code>; merge driver keeps <code>.crib</code> conflict-free across branches</td></tr>
+<tr><td>Search</td><td><code>crib query "session token"</code></td><td>BM25 over code + docs; <code>--with-source --with-rules</code> folds deep context</td></tr>
+<tr><td>Ask in English</td><td><code>crib ask "where is auth validated?"</code></td><td>Deterministic natural-language answer from the graph (no model call)</td></tr>
+<tr><td>Before a refactor</td><td><code>crib impact &lt;id&gt; --dir up</code></td><td>Blast radius: who depends on this, risk-ranked</td></tr>
+<tr><td>Deep dive one symbol</td><td><code>crib dossier &lt;id&gt; --format markdown</code></td><td>One-call behavior dossier: decision table, raises, handlers, cursors, source</td></tr>
+<tr><td>Health check</td><td><code>crib doctor .</code></td><td>Six-point setup check with fix hints</td></tr>
+<tr><td>Clean rebuild</td><td><code>crib reindex .</code></td><td>Full re-index</td></tr>
+<tr><td>After heavy churn</td><td><code>crib materialize .</code></td><td>Rebuild the derived composite graph cache</td></tr>
+</table></div>
+<p>From the IDE, agents get all of this automatically over MCP — no commands needed. The wiring is
+one line: <code>crib mcp install --ide claude --global</code> installs a single user-scope entry
+that serves <em>every</em> indexed project via root resolution.</p>
+
+<h2 id="verbs">5. The 23 MCP verbs</h2>
+<p><strong>17 deterministic</strong> (AST-extracted, no model in the loop) +
+<strong>6 LLM-graph</strong> (drive/read the semantic layer). All results token-bounded and
+provenance-tagged.</p>
+<div class="tblwrap"><table>
+<tr><th>Verb</th><th>Use it for</th></tr>
+<tr><td><code>status</code></td><td>Indexed? schema version, node/edge/cluster counts, capabilities</td></tr>
+<tr><td><code>query</code></td><td>Hybrid BM25 search over code + docs (+ LLM pointer per hit)</td></tr>
+<tr><td><code>context</code></td><td>360° for one symbol: signature, file, callers/callees, docs</td></tr>
+<tr><td><code>source</code></td><td>Paged source body for a symbol</td></tr>
+<tr><td><code>dossier</code></td><td>One-call deep behavior artifact (persisted, cache-hit on repeat)</td></tr>
+<tr><td><code>dossier_by_scope</code></td><td>Bulk dossiers per package / file / cluster</td></tr>
+<tr><td><code>reconstruct</code></td><td>Package reconstruction: constants, members, tables, docs</td></tr>
+<tr><td><code>impact</code></td><td>Blast radius up/down with risk ranking — <em>the</em> pre-refactor verb</td></tr>
+<tr><td><code>federatedImpact</code></td><td>Cross-repo blast radius over registered sibling souls</td></tr>
+<tr><td><code>describes</code></td><td>Doc-sections linked to a symbol (cheap, high value)</td></tr>
+<tr><td><code>neighbors</code></td><td>Raw graph adjacency (walking primitive)</td></tr>
+<tr><td><code>ownership</code></td><td>git-blame-derived symbol ownership</td></tr>
+<tr><td><code>shortest_path</code></td><td>Path between two symbols</td></tr>
+<tr><td><code>detect_changes</code></td><td>Dry-run delta since a git ref — PR review against base</td></tr>
+<tr><td><code>extract_rules</code></td><td>Decision table from a procedure's guarded CFG</td></tr>
+<tr><td><code>gaps</code></td><td>Analysis readiness: missing bodies, unresolved call sites</td></tr>
+<tr><td><code>stats</code></td><td>Live per-verb latency + cache hit rate (observability)</td></tr>
+<tr><td><code>enrich_status</code> <span class="pill">LLM</span></td><td>Semantic-layer coverage per layer + next layer</td></tr>
+<tr><td><code>enrich_next</code> <span class="pill">LLM</span></td><td>Token-packed grounded batch of enrichment targets</td></tr>
+<tr><td><code>enrich_save</code> <span class="pill">LLM</span></td><td>Validate (grounding + secret scan) and persist authored items</td></tr>
+<tr><td><code>audit_llm</code> <span class="pill">LLM</span></td><td>Re-verify every LLM artifact against the soul (grounding moat)</td></tr>
+<tr><td><code>overview</code> <span class="pill">LLM</span></td><td>The rendered "codebase bible" after the system layer lands</td></tr>
+<tr><td><code>llm_neighbors</code> <span class="pill">LLM</span></td><td>Walk the semantic graph: rules, features, flows, concepts</td></tr>
+</table></div>
+
+<h2 id="enrich">6. The LLM semantic layer (optional, high value)</h2>
+<p>The server <strong>never calls a model</strong>. Your IDE's LLM is the author; the server hands
+it grounded seed data and validates what comes back (grounding check + secret scan) before
+persisting. Built bottom-up: symbol → file → cluster → system.</p>
+<pre><code>crib skill install          # bundle the /crib-enrich skill into ~/.claude/skills
+# then in Claude Code:  /crib-enrich   (one token-packed batch per turn, bottom-up)</code></pre>
+<p>Headless, from the CLI:</p>
+<pre><code>crib enrich --status                              # coverage + next layer
+crib enrich --next [--budget-tokens 24000]        # one token-packed grounded batch
+crib enrich --save ./batch.json                   # validate + persist authored items
+crib enrich --auto [--max-tokens N] [--max-batches N]   # bounded autonomous loop
+crib enrich --prune-stale [--apply]               # clean artifacts whose targets left the soul
+crib audit-llm .                                  # re-verify everything; non-zero exit on drift</code></pre>
+<p>Once artifacts exist, <code>query</code>/<code>context</code>/<code>dossier</code> fold a
+lightweight LLM pointer per hit (~7.7× smaller than the full blob); pass <code>withLlm: true</code>
+to get the full analysis + semantic graph + evidence.</p>
+
+<h2 id="viz">7. Visualize &amp; export</h2>
+<pre><code>crib viz . --port 43127                         # offline web UI (compound cluster graph)
+crib export --format graph.json . &gt; graph.json  # full soul as one JSON
+crib export --format report .                   # human-readable counts summary
+crib export --format mermaid --procedure &lt;id&gt; . # CFG mermaid for one procedure
+crib export --format rules --procedure &lt;id&gt; .   # decision table</code></pre>
+
+<h2 id="troubleshoot">8. Troubleshooting</h2>
+<div class="tblwrap"><table>
+<tr><th>Symptom</th><th>Fix</th></tr>
+<tr><td><code>not indexed — run crib index first</code></td><td>Run <code>crib index &lt;path&gt;</code> (or <code>crib init</code>)</td></tr>
+<tr><td>Anything feels off</td><td><code>crib doctor .</code> — it names the broken check and the fix</td></tr>
+<tr><td><code>ERR_PNPM_NO_GLOBAL_BIN_DIR</code> on link</td><td><code>corepack pnpm@9.15.0 setup</code>, restart terminal, retry</td></tr>
+<tr><td>Index slow on a huge repo</td><td>Scope it: <code>--exclude vendor,generated</code> or <code>--package &lt;name&gt;</code> (monorepo)</td></tr>
+<tr><td>Stale results after edits</td><td><code>crib update .</code> (or install hooks for automatic refresh)</td></tr>
+<tr><td>LLM artifacts look wrong</td><td><code>crib audit-llm .</code> then <code>crib enrich --prune-stale --apply</code></td></tr>
+</table></div>
+<p class="muted">Exit codes: <code>0</code> ok · <code>1</code> error · <code>2</code> bad args ·
+<code>3</code> not indexed.</p>
+
+<h2 id="deeper">9. Deeper reading</h2>
+<ul>
+  <li><a href="knowledge-crib-user-guide.md">Full user guide</a> — every verb spec, worked example, known limits</li>
+  <li><a href="knowledge-crib-client-setup.md">Client setup</a> — IDE-by-IDE MCP wiring</li>
+  <li><a href="knowledge-crib-architecture.md">Architecture</a> — system design + diagrams</li>
+  <li><a href="knowledge-crib-mcp-api.md">MCP API spec</a> — request/response contracts</li>
+  <li><a href="STATS.md">STATS.md</a> — canonical generated counts (packages, languages, tests)</li>
+  <li><a href="site/index.html">Docs site index</a> — the full navigable doc set</li>
+</ul>
+
+<footer>
+Knowledge-crib · Apache-2.0 · This guide is self-contained — share the file directly with your team.
+Deep-links above resolve when opened from a checkout's <code>docs/</code> directory.
+</footer>
+
+</div>
+</body>
+</html>

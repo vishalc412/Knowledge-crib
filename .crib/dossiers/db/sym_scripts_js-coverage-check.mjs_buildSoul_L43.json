@@ -1,0 +1,190 @@
+{
+  "id": "sym:scripts/js-coverage-check.mjs#buildSoul@L43",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2aecb7e5f0c78cc3aaa7e9e0d38d2f2d5feece5cc39c49780574aa6b65aa989f",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/js-coverage-check.mjs#buildSoul@L43",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildSoul",
+    "qualifiedName": "buildSoul",
+    "signature": "buildSoul(…)",
+    "lang": "javascript",
+    "file": "scripts/js-coverage-check.mjs",
+    "span": {
+      "start": 43,
+      "end": 48
+    },
+    "callSites": [
+      {
+        "callee": "mkdtempSync",
+        "line": 44
+      },
+      {
+        "callee": "join",
+        "line": 44
+      },
+      {
+        "callee": "tmpdir",
+        "line": 44
+      },
+      {
+        "callee": "newManifest",
+        "line": 45
+      },
+      {
+        "callee": "load",
+        "line": 46
+      }
+    ]
+  },
+  "source": {
+    "text": "const buildSoul = () => {\n  const dir = mkdtempSync(join(tmpdir(), 'crib-jscov-'));\n  const soul = new SoulStore(dir, { manifest: newManifest({ now: NOW }) });\n  soul.load();\n  return { dir, soul };\n};",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 43
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
+    {
+      "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+      "confidence": 1,
+      "name": "newManifest",
+      "qualifiedName": "newManifest",
+      "signature": "newManifest(opts: NewManifestOpts = {}): Manifest",
+      "type": "function",
+      "file": "packages/core/src/manifest.ts",
+      "line": 28
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/js-coverage-check.mjs#buildSoul@L43",
+    "procedureName": "buildSoul",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/js-coverage-check.mjs#buildSoul@L43",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a4510b40f46ef3a279501fda35eeb36437b93fbdaaa4d8ac1e387e58f438f4b8",
+          "target": "stmt:scripts/js-coverage-check.mjs@L44",
+          "line": 44,
+          "expr": "const dir = mkdtempSync(join(tmpdir(), 'crib-jscov-'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/js-coverage-check.mjs#buildSoul@L43",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bf1f604947df09abe3e76bbf98c62bbd92b431e5c444669241e963ffb2a81bd9",
+          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
+          "expr": "newManifest",
+          "line": 45
+        }
+      },
+      {
+        "procedure": "sym:scripts/js-coverage-check.mjs#buildSoul@L43",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c67299e0944a4dffa3258c354f893f7af6355772c6c7eb2bd4a92f5d53809807",
+          "target": "stmt:scripts/js-coverage-check.mjs@L45",
+          "line": 45,
+          "expr": "const soul = new SoulStore(dir, { manifest: newManifest({ now: NOW }) });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/js-coverage-check.mjs#buildSoul@L43",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9d6f88281638aee32c0d5acf7ca6cc1fcd4c79490895d656effcc7fd12e4abf7",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 46
+        }
+      },
+      {
+        "procedure": "sym:scripts/js-coverage-check.mjs#buildSoul@L43",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9fe6ae4cf2df2e4ed930ad1aa35f47d3ce7c8fb0f9a547b81464238c0c8d9d6a",
+          "target": "stmt:scripts/js-coverage-check.mjs@L46",
+          "line": 46,
+          "expr": "soul.load();"
+        }
+      },
+      {
+        "procedure": "sym:scripts/js-coverage-check.mjs#buildSoul@L43",
+        "procedureName": "buildSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d578e2c69caedbfb3d09dfe631ed27394a472b96952b6c93812ce8b189b80a35",
+          "target": "stmt:scripts/js-coverage-check.mjs@L47",
+          "line": 47,
+          "expr": "return { dir, soul };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 5,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

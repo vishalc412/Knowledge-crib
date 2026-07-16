@@ -1,0 +1,85 @@
+{
+  "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.nextIdx@L178",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:bf1a2d8c028e777b0d875e3fb21ad100ba7a4f6641ef1a4545658432d09ca225",
+  "builtAt": "2026-07-13T14:47:57.424Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.nextIdx@L178",
+    "kind": "symbol",
+    "type": "function",
+    "name": "nextIdx",
+    "qualifiedName": "runFuzz.nextIdx",
+    "signature": "nextIdx(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+    "span": {
+      "start": 178,
+      "end": 178
+    }
+  },
+  "source": {
+    "text": "  const nextIdx = (): number => (cursor < iterations ? cursor++ : -1);",
+    "truncated": false,
+    "totalLines": 1,
+    "startLine": 178
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz@L147",
+      "confidence": 1,
+      "name": "runFuzz",
+      "qualifiedName": "runFuzz",
+      "signature": "runFuzz(extractorName: string, opts: RunFuzzOpts = {}): Promise<FuzzOutcome>",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+      "line": 147
+    },
+    {
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.slotLoop@L180",
+      "confidence": 1,
+      "name": "slotLoop",
+      "qualifiedName": "runFuzz.slotLoop",
+      "signature": "slotLoop(…)",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+      "line": 180
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz.nextIdx@L178",
+    "procedureName": "runFuzz.nextIdx",
+    "conditions": [],
+    "rules": []
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": [
+      "packages/parsers/src/fuzz/extractor-fuzz.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

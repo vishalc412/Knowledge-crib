@@ -722,3 +722,36 @@ describe('CsharpExtractor — schema 1.2 behavior nodes (raise / handler / case 
     expect(JSON.stringify(b)).toBe(JSON.stringify(a));
   });
 });
+
+describe('CsharpExtractor — M3.5 fuzz hang regression (consumeAttribute)', () => {
+  // Regression: consumeAttribute's inner loop bailed on `]` / end / `,` / name / `(` but did NOT
+  // advance on any other token (e.g. `#`, `~`). An adversarial input like `[#~D` therefore re-peeked
+  // the same `#` forever — the recover()-class sync hang the M3.5 fuzz gate (scripts/fuzz-check.mjs)
+  // surfaced. Fix: advance past the unrecognized token so progress is guaranteed every iteration.
+  // The vitest per-test timeout (2s) is the hang backstop: if the regression returns, this test
+  // hangs and vitest fails it on timeout instead of spinning forever.
+  const HANG_INPUTS = ['[#~D', '[m3?#', '[Jjq#H[&WL', '[', '[#', '[~', '[@x', '[;'];
+
+  for (const src of HANG_INPUTS) {
+    it(`terminates (no hang) on adversarial bracket input ${JSON.stringify(src)}`, async () => {
+      const r = await new CsharpExtractor().extract(
+        { path: 'fuzz.cs', lang: 'csharp', bytes: src.length, mtime: 0 },
+        ctxFor(src),
+      );
+      // Contract: extract never throws + returns a well-formed (possibly empty) node/edge set.
+      expect(r).toBeDefined();
+      expect(Array.isArray(r.nodes)).toBe(true);
+      expect(Array.isArray(r.edges)).toBe(true);
+    }, 2000);
+  }
+
+  it('terminates on a well-formed attribute followed by garbage (progress past `]` then junk)', async () => {
+    const src = '[Foo] #~ D';
+    const r = await new CsharpExtractor().extract(
+      { path: 'fuzz2.cs', lang: 'csharp', bytes: src.length, mtime: 0 },
+      ctxFor(src),
+    );
+    expect(r).toBeDefined();
+    expect(Array.isArray(r.nodes)).toBe(true);
+  }, 2000);
+});

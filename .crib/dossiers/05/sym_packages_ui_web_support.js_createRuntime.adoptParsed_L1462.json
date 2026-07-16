@@ -1,0 +1,307 @@
+{
+  "id": "sym:packages/ui/web/support.js#createRuntime.adoptParsed@L1462",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:ff45a8a066e705f3134c062d37e1111b569760894c9cd44211d74741d535f73f",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#createRuntime.adoptParsed@L1462",
+    "kind": "symbol",
+    "type": "function",
+    "name": "adoptParsed",
+    "qualifiedName": "createRuntime.adoptParsed",
+    "signature": "adoptParsed(name, parsed)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 1462,
+      "end": 1469
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 1464
+      },
+      {
+        "callee": "updateHtml",
+        "line": 1467
+      },
+      {
+        "callee": "updateJs",
+        "line": 1468
+      }
+    ]
+  },
+  "source": {
+    "text": "    function adoptParsed(name, parsed) {\n      if (!parsed) return;\n      const r = registry.get(name);\n      if (parsed.props) r.propsMeta = parsed.props;\n      if (parsed.preview) r.preview = parsed.preview;\n      if (parsed.template) updateHtml(name, parsed.template);\n      if (parsed.js) updateJs(name, parsed.js);\n    }",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 1462
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#boot@L148",
+      "confidence": 1,
+      "name": "boot",
+      "qualifiedName": "boot",
+      "signature": "boot(runtime, doc = document)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 148
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRuntime.updateHtml@L1389",
+      "confidence": 1,
+      "name": "updateHtml",
+      "qualifiedName": "createRuntime.updateHtml",
+      "signature": "updateHtml(name, html)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1389
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRuntime.updateJs@L1403",
+      "confidence": 1,
+      "name": "updateJs",
+      "qualifiedName": "createRuntime.updateJs",
+      "signature": "updateJs(name, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1403
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#createRuntime.adoptParsed@L1462",
+    "procedureName": "createRuntime.adoptParsed",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L1463",
+      "cond:packages/ui/web/support.js@L1465",
+      "cond:packages/ui/web/support.js@L1466",
+      "cond:packages/ui/web/support.js@L1467",
+      "cond:packages/ui/web/support.js@L1468"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.adoptParsed@L1462",
+        "procedureName": "createRuntime.adoptParsed",
+        "guard": "cond:packages/ui/web/support.js@L1463",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1463",
+            "expr": "!parsed",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:77e180ea889c9d1c9fd54faee5d98b63edd69346254194064a2d0d1b14adc796",
+          "target": "stmt:packages/ui/web/support.js@L1463",
+          "line": 1463,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.adoptParsed@L1462",
+        "procedureName": "createRuntime.adoptParsed",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:87dd3db3c86db4ebb9dd03f4e2f2024632999cb18bbcdcecf358f71670805adc",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 1464
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.adoptParsed@L1462",
+        "procedureName": "createRuntime.adoptParsed",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fd6837b3603378a748185ddee21745e3eebfd7fca13ab0a34d9f570591bba9b3",
+          "target": "stmt:packages/ui/web/support.js@L1464",
+          "line": 1464,
+          "expr": "const r = registry.get(name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.adoptParsed@L1462",
+        "procedureName": "createRuntime.adoptParsed",
+        "guard": "cond:packages/ui/web/support.js@L1465",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1465",
+            "expr": "parsed.props",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:78d31edd94c1ae46dbfc0127f4200a2396e6df3b6422dd8e78605a5909ad5ed5",
+          "target": "assign:packages/ui/web/support.js@L1465",
+          "line": 1465,
+          "expr": "r.propsMeta = parsed.props;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.adoptParsed@L1462",
+        "procedureName": "createRuntime.adoptParsed",
+        "guard": "cond:packages/ui/web/support.js@L1466",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1466",
+            "expr": "parsed.preview",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4b3e4ed5d8dabb0784f6c0e1d5ff046185ac263aa522a313f84023979d3f5793",
+          "target": "assign:packages/ui/web/support.js@L1466",
+          "line": 1466,
+          "expr": "r.preview = parsed.preview;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.adoptParsed@L1462",
+        "procedureName": "createRuntime.adoptParsed",
+        "guard": "cond:packages/ui/web/support.js@L1467",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1467",
+            "expr": "parsed.template",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0cdb6e193a4559199007ed8fcf8894fe76a3fb73f97f4b09815dc363e1f694a7",
+          "target": "sym:packages/ui/web/support.js#createRuntime.updateHtml@L1389",
+          "expr": "updateHtml",
+          "line": 1467
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.adoptParsed@L1462",
+        "procedureName": "createRuntime.adoptParsed",
+        "guard": "cond:packages/ui/web/support.js@L1467",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1467",
+            "expr": "parsed.template",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a149af768f064e1ed3c560a674e2fa19c38481b671f0c19863e6ac93a99c11f3",
+          "target": "stmt:packages/ui/web/support.js@L1467",
+          "line": 1467,
+          "expr": "updateHtml(name, parsed.template);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.adoptParsed@L1462",
+        "procedureName": "createRuntime.adoptParsed",
+        "guard": "cond:packages/ui/web/support.js@L1468",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1468",
+            "expr": "parsed.js",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:494bfc04e2b0b678700923b59f3f4f37503ae152829ea3ebabc8caffa656ad06",
+          "target": "stmt:packages/ui/web/support.js@L1468",
+          "line": 1468,
+          "expr": "updateJs(name, parsed.js);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#createRuntime.adoptParsed@L1462",
+        "procedureName": "createRuntime.adoptParsed",
+        "guard": "cond:packages/ui/web/support.js@L1468",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L1468",
+            "expr": "parsed.js",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c7748b839609a418e571044f525ef11b04bf37884834676968b83150951aaf75",
+          "target": "sym:packages/ui/web/support.js#createRuntime.updateJs@L1403",
+          "expr": "updateJs",
+          "line": 1468
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 2,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

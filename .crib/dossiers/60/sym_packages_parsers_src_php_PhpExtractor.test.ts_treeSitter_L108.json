@@ -1,0 +1,127 @@
+{
+  "id": "sym:packages/parsers/src/php/PhpExtractor.test.ts#treeSitter@L108",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:0b19965c8fa31f529ba2e4d190ef3a8dfd1244cb1c1063e2e72e99cdb0138f4e",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/php/PhpExtractor.test.ts#treeSitter@L108",
+    "kind": "symbol",
+    "type": "method",
+    "name": "treeSitter",
+    "qualifiedName": "treeSitter",
+    "signature": "treeSitter(grammar: string)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/php/PhpExtractor.test.ts",
+    "span": {
+      "start": 108,
+      "end": 110
+    },
+    "callSites": [
+      {
+        "callee": "createParserHandle",
+        "line": 109
+      }
+    ]
+  },
+  "source": {
+    "text": "      treeSitter(grammar: string) {\n        return createParserHandle(grammar);\n      },",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 108
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/tree-sitter-pool.ts#createParserHandle@L79",
+      "confidence": 1,
+      "name": "createParserHandle",
+      "qualifiedName": "createParserHandle",
+      "signature": "createParserHandle(grammar: string): ParserHandle",
+      "type": "function",
+      "file": "packages/parsers/src/tree-sitter-pool.ts",
+      "line": 79
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#1-contract",
+      "heading": "1. Contract",
+      "anchor": "1-contract",
+      "snippet": "1. Contract",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m8-tree-sitter-wasm-plugin-languages-python-first",
+      "heading": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "anchor": "m8-tree-sitter-wasm-plugin-languages-python-first",
+      "snippet": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/php/PhpExtractor.test.ts#treeSitter@L108",
+    "procedureName": "treeSitter",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.test.ts#treeSitter@L108",
+        "procedureName": "treeSitter",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2e0971c367a0c2ee3f7603bbecd98adc8c38fb2b43b8300c7a5becb5c8bfe238",
+          "target": "sym:packages/parsers/src/tree-sitter-pool.ts#createParserHandle@L79",
+          "expr": "createParserHandle",
+          "line": 109
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.test.ts#treeSitter@L108",
+        "procedureName": "treeSitter",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b7679fc4c83281691d8060539a835eeaa9497f83cf0e6706f61a9c0d43a70b2e",
+          "target": "stmt:packages/parsers/src/php/PhpExtractor.test.ts@L109",
+          "line": 109,
+          "expr": "return createParserHandle(grammar);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,230 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.skeletonSeed@L661",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:08c9cb2d6f36070ca40be04a09c2588933dd47612727f840aacd0534b2b1b317",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.skeletonSeed@L661",
+    "kind": "symbol",
+    "type": "method",
+    "name": "skeletonSeed",
+    "qualifiedName": "EnrichmentStore.skeletonSeed",
+    "signature": "skeletonSeed(): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 661,
+      "end": 688
+    },
+    "callSites": [
+      {
+        "callee": "getManifest",
+        "line": 662
+      },
+      {
+        "callee": "buildFunctionalMap",
+        "line": 663
+      },
+      {
+        "callee": "readLlmOverlay",
+        "line": 663
+      },
+      {
+        "callee": "map",
+        "line": 664
+      },
+      {
+        "callee": "slice",
+        "line": 664
+      },
+      {
+        "callee": "sort",
+        "line": 664
+      },
+      {
+        "callee": "filter",
+        "line": 664
+      },
+      {
+        "callee": "iterate",
+        "line": 664
+      },
+      {
+        "callee": "test",
+        "line": 665
+      },
+      {
+        "callee": "map",
+        "line": 669
+      },
+      {
+        "callee": "topSymbols",
+        "line": 669
+      },
+      {
+        "callee": "map",
+        "line": 680
+      }
+    ]
+  },
+  "source": {
+    "text": "  private skeletonSeed(): Record<string, unknown> {\n    const manifest = this.soul.getManifest();\n    const functionalMap = buildFunctionalMap(this.soul, { overlay: readLlmOverlay(this.soul) });\n    const readmes = [...this.soul.iterate('doc-section')]\n      .filter((d) => d.file && /readme(\\.|$)/i.test(d.file))\n      .sort(byId)\n      .slice(0, 10)\n      .map((d) => ({ id: d.id, heading: d.heading, file: d.file }));\n    const topSymbols = this.topSymbols(50).map((n) => ({\n      id: n.id,\n      name: n.name,\n      qualifiedName: n.qualifiedName,\n      file: n.file,\n    }));\n    return {\n      repo: manifest.repo,\n      stats: manifest.stats,\n      functionalMap: {\n        source: functionalMap.source,\n        modules: functionalMap.modules.map(overviewModule),\n      },\n      readmes,\n      topSymbols,\n      caveats: [\n        'DRAFT skeleton bible — author at confidence ≤0.6 with a draft note in whatToDistrust. The final full pass supersedes this.',\n      ],\n    };\n  }",
+    "truncated": false,
+    "totalLines": 28,
+    "startLine": 661
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+      "confidence": 1,
+      "name": "nextSkeletonSystem",
+      "qualifiedName": "EnrichmentStore.nextSkeletonSystem",
+      "signature": "nextSkeletonSystem(args: EnrichNextArgs): EnrichNextBatch",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 601
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.topSymbols@L1322",
+      "confidence": 1,
+      "name": "topSymbols",
+      "qualifiedName": "EnrichmentStore.topSymbols",
+      "signature": "topSymbols(limit: number): Node[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1322
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L659",
+      "snippet": "/** Seed for the skeleton system pass — the functional map, the top README doc-sections, and the",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.skeletonSeed@L661",
+    "procedureName": "EnrichmentStore.skeletonSeed",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.skeletonSeed@L661",
+        "procedureName": "EnrichmentStore.skeletonSeed",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:448cea3751545d7ab4eff79ed13171ea66a5351784285d16d0bbf1f10472543b",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L662",
+          "line": 662,
+          "expr": "const manifest = this.soul.getManifest();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.skeletonSeed@L661",
+        "procedureName": "EnrichmentStore.skeletonSeed",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e065b364f1b11b41b2ff93bf40a56482cdc53b108a515b755d89cce13d1c9b0a",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L663",
+          "line": 663,
+          "expr": "const functionalMap = buildFunctionalMap(this.soul, { overlay: readLlmOverlay(this.soul) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.skeletonSeed@L661",
+        "procedureName": "EnrichmentStore.skeletonSeed",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:911261067ae3b6f9c2ad1ea8239268dd1f7de34d141e68aaecad6e274dd951c9",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L664",
+          "line": 664,
+          "expr": "const readmes = [...this.soul.iterate('doc-section')]\n      .filter((d) => d.file && /readme(\\.|$)/i.test(d.file))\n      .sort(byId)\n      .slice(0, 10)\n      .map((d) => ({ id: d.id, heading: d.heading, file: d.file }));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.skeletonSeed@L661",
+        "procedureName": "EnrichmentStore.skeletonSeed",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0668d2bb7a5a9b10f19a7576089a169b95b45811fc4fc72180b1516daf4a6ea9",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.topSymbols@L1322",
+          "expr": "topSymbols",
+          "line": 669
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.skeletonSeed@L661",
+        "procedureName": "EnrichmentStore.skeletonSeed",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aa08e1f1e63e84ef5875856fae2fa4d87f0d0db0682d8fba48eac3bbda649cc4",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L669",
+          "line": 669,
+          "expr": "const topSymbols = this.topSymbols(50).map((n) => ({\n      id: n.id,\n      name: n.name,\n      qualifiedName: n.qualifiedName,\n      file: n.file,\n    }));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.skeletonSeed@L661",
+        "procedureName": "EnrichmentStore.skeletonSeed",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b94ef4cb3e0da349ee9a7eeae34ec35160b11d966538f2af1fe1fb985324ed40",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L675",
+          "line": 675,
+          "expr": "return {\n      repo: manifest.repo,\n      stats: manifest.stats,\n      functionalMap: {\n        source: functionalMap.source,\n        modules: functionalMap.modules.map(overviewModule),\n      },\n      readmes,\n      topSymbols,\n      caveats: [\n        'DRAFT skeleton bible — author at confidence ≤0.6 with a draft note in whatToDistrust. The final full pass supersedes this.',\n      ],\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 12,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

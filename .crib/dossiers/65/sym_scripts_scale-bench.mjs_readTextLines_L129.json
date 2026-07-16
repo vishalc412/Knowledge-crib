@@ -1,0 +1,152 @@
+{
+  "id": "sym:scripts/scale-bench.mjs#readTextLines@L129",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:49671de939c2539ffdeca30719e523cab79a1fd0391600572f3efbf8b381a586",
+  "builtAt": "2026-07-13T14:47:57.424Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/scale-bench.mjs#readTextLines@L129",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readTextLines",
+    "qualifiedName": "readTextLines",
+    "signature": "readTextLines(p)",
+    "lang": "javascript",
+    "file": "scripts/scale-bench.mjs",
+    "span": {
+      "start": 129,
+      "end": 138
+    },
+    "callSites": [
+      {
+        "callee": "readFileSync",
+        "line": 131
+      }
+    ]
+  },
+  "source": {
+    "text": "function readTextLines(p) {\n  try {\n    const buf = readFileSync(p);\n    let n = 0;\n    for (let i = 0; i < buf.length; i++) if (buf[i] === 0x0a) n++;\n    return buf.length > 0 && buf[buf.length - 1] !== 0x0a ? n + 1 : n; // trailing line w/o newline\n  } catch {\n    return 0;\n  }\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 129
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/scale-bench.mjs#countLoc@L109",
+      "confidence": 1,
+      "name": "countLoc",
+      "qualifiedName": "countLoc",
+      "signature": "countLoc(root)",
+      "type": "function",
+      "file": "scripts/scale-bench.mjs",
+      "line": 109
+    },
+    {
+      "id": "sym:scripts/scale-bench.mjs#countLoc.walk@L112",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "countLoc.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/scale-bench.mjs",
+      "line": 112
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/scale-bench.mjs#readTextLines@L129",
+    "procedureName": "readTextLines",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#readTextLines@L129",
+        "procedureName": "readTextLines",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b1c2e141111b8b0ec6d7ecf9ee0d76a8bceb64b0cea3eb4626e37f3f6a3b8bc3",
+          "target": "stmt:scripts/scale-bench.mjs@L131",
+          "line": 131,
+          "expr": "const buf = readFileSync(p);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#readTextLines@L129",
+        "procedureName": "readTextLines",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd61a570546d00d8977e82f5c021a408d4b32ec317bbc9780b8b9cc52ce85306",
+          "target": "stmt:scripts/scale-bench.mjs@L134",
+          "line": 134,
+          "expr": "return buf.length > 0 && buf[buf.length - 1] !== 0x0a ? n + 1 : n;"
+        }
+      },
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#readTextLines@L129",
+        "procedureName": "readTextLines",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9fecd5f463b9c8de75b03bfd3f78d238ec2cec76fe949277187f78cc2909c556",
+          "target": "stmt:scripts/scale-bench.mjs@L136",
+          "line": 136,
+          "expr": "return 0;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:scripts/scale-bench.mjs@L135",
+        "kind": "exception-handler",
+        "lang": "javascript",
+        "file": "scripts/scale-bench.mjs",
+        "span": {
+          "start": 135,
+          "end": 135
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "scripts/scale-bench.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}
