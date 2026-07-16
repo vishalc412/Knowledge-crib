@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://knowledge-crib.dev/schema/1.0/manifest.schema.json",
   "title": "Manifest",
-  "description": "The .crib/crib.json manifest: versions, repo id, chunking, stores, stats, capabilities.",
+  "description": "The .crib/graph/manifest.json authoritative graph manifest.",
   "type": "object",
   "required": [
     "cribFormatVersion",
@@ -20,6 +20,24 @@
     },
     "schemaVersion": {
       "type": "string"
+    },
+    "generation": {
+      "type": "object",
+      "required": [
+        "extracted",
+        "semantic"
+      ],
+      "properties": {
+        "extracted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "semantic": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
     },
     "repo": {
       "type": "object",
@@ -90,6 +108,23 @@
         "soul": {
           "type": "string",
           "const": "jsonl-chunked"
+        },
+        "graph": {
+          "type": "object",
+          "required": [
+            "path",
+            "format"
+          ],
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "format": {
+              "type": "string",
+              "const": "layered-jsonl"
+            }
+          },
+          "additionalProperties": true
         },
         "index": {
           "type": "object",
