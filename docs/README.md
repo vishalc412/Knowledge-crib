@@ -48,7 +48,12 @@ Two existing tools each prove half and serve as **design inspiration only (no co
 | — | [knowledge-crib-decisions.md](knowledge-crib-decisions.md) | Locked decisions (Q1–Q38) — the why |
 | — | [knowledge-crib-questionnaire.md](knowledge-crib-questionnaire.md) | The full decision questionnaire |
 | — | [knowledge-crib-changelog-req1-req2.md](knowledge-crib-changelog-req1-req2.md) | Changelog: single-entry root resolution + `crib mcp` auto-wiring (REQ-1, REQ-2) |
-| — | [knowledge-crib-user-guide.md](knowledge-crib-user-guide.md) | User guide (install, workflow, 12 verbs, worked example) |
+| — | [knowledge-crib-user-guide.md](knowledge-crib-user-guide.md) | User guide (install, workflow, the 23 MCP verbs, worked example) |
+| — | [knowledge-crib-user-guide.html](knowledge-crib-user-guide.html) | **Team user guide (HTML)** — self-contained onboarding page to circulate (install → init → daily workflow → verbs) |
+| — | [knowledge-crib-executive-brief.md](knowledge-crib-executive-brief.md) | Executive brief — the pitch for decision-makers |
+| — | [knowledge-crib-technical-pitch.md](knowledge-crib-technical-pitch.md) | Technical pitch — the mechanism for engineers |
+| — | [knowledge-crib-track3-spec.md](knowledge-crib-track3-spec.md) | Track-3 spec |
+| — | [llm-integration-deep-dive.md](llm-integration-deep-dive.md) | LLM integration deep dive — data flow to/from the model, enrichment gates |
 | — | [knowledge-crib-client-setup.md](knowledge-crib-client-setup.md) | IDE MCP wiring (Claude Code, Cursor, VS Code/Copilot, Codex) |
 | — | [knowledge-crib-prompts.md](knowledge-crib-prompts.md) | **Prompting guide** — how to drive crib from a local LLM (Claude Code / Codex) to save tokens + compute |
 | — | [knowledge-crib-refined-vs-existing-assessment.md](knowledge-crib-refined-vs-existing-assessment.md) | **Refined vs existing comparison + six-role judgment** on detailed-level analysis (plan review) |

@@ -9,6 +9,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
+- **Team user guide (HTML).** `docs/knowledge-crib-user-guide.html` — a self-contained,
+  circulate-able onboarding page (install → `crib init` → daily workflow → the 23 MCP verbs →
+  enrichment loop → troubleshooting), linked from the docs site and both READMEs. Alongside it,
+  `docs/knowledge-crib-user-guide.md` was refreshed to the current surface: all 23 MCP verbs
+  (was 12), 9 parser languages (was 4), `crib init` / `crib doctor`, token-packed `enrich_next`,
+  `crib enrich --auto` / `--prune-stale`, and `crib materialize`. Internal `PLAN_*.md` drafts moved
+  to `docs/superpowers/plans/`; local `media/` + `outputs/` are now gitignored.
+
 - **Overview v2 — module-segmented, importance-ranked, lean by default.** `overview` now returns
   `modules` (always present, works at 0% enrichment), lean `analyses` pointers (production symbols
   first, test helpers last), and the system bible in its own slot (full preferred over a draft

@@ -79,7 +79,7 @@ knowledge-crib/                 # pnpm monorepo
   packages/
     soul-schema/   # JSON Schema + TS types (the contract)
     core/          # GraphModel, SoulStore, IndexStore
-    parsers/       # offline extractors: TS, PL/SQL, Python, Java, C#, Go, Rust, Markdown
+    parsers/       # offline extractors: TS, PL/SQL, Python, Java, C#, Go, Rust, PHP, Markdown
     pipeline/      # extract → resolve → link → cluster → index
     mcp/           # MCP server (npx knowledge-crib)
     cli/           # crib index|update|export|serve|mcp|viz|install-hooks|merge-driver
@@ -106,6 +106,17 @@ crib --help
 ```
 
 Do **not** run `pnpm add -g knowledge-crib` from inside the workspace — pnpm may create broken relative symlinks in the global install because the package declares workspace dependencies.
+
+Then, in any project you want indexed:
+
+```bash
+crib init .        # index + git hooks + IDE MCP wiring (5-minute onboarding)
+crib doctor .      # ✓/✗ setup health check with fix hints
+```
+
+New team member? Start with the self-contained
+[**Team User Guide (HTML)**](docs/knowledge-crib-user-guide.html) or the full
+[user guide](docs/knowledge-crib-user-guide.md).
 
 Beta installer bundles for macOS and Windows can be built with
 `corepack pnpm@9.15.0 installer:build`; see

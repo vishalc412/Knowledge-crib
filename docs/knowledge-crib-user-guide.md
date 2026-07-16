@@ -16,7 +16,7 @@
 1. [What it is](#1-what-it-is)
 2. [Install](#2-install)
 3. [The per-project workflow](#3-the-per-project-workflow)
-4. [The MCP server + the 12 verbs](#4-the-mcp-server--the-12-verbs)
+4. [The MCP server + the 17 deterministic verbs](#4-the-mcp-server--the-17-deterministic-verbs-status-context-source-dossier-reconstruct-dossier_by_scope-impact-federatedimpact-query-describes-neighbors-ownership-shortest_path-detect_changes-extract_rules-gaps-stats)
 5. [Worked example: indexing the FTC event-management repo](#5-worked-example-indexing-the-ftc-event-management-repo)
 6. [Keeping the soul fresh](#6-keeping-the-soul-fresh)
 7. [Exporting the graph](#7-exporting-the-graph)
@@ -72,6 +72,18 @@ which crib                              # /Users/<you>/Library/pnpm/crib
 crib --help
 ```
 
+Once `crib` is on PATH, the fastest path to a working setup in any project is the one-shot
+onboarder:
+
+```bash
+cd /path/to/your/project
+crib init .                             # index + install-hooks + mcp install + next-steps hero
+crib doctor .                           # 6-point health check (node/corepack/index/freshness/hooks/IDE wiring)
+```
+
+`crib init` does everything §3 describes in one command; `crib doctor` prints ✓/✗ per check with a
+fix hint and exits non-zero when the setup is broken.
+
 If `link --global` fails with `ERR_PNPM_NO_GLOBAL_BIN_DIR`, run the `setup` step
 above, restart your terminal, and retry.
 
@@ -106,7 +118,15 @@ crib status .                           # 2. health + stats
 | `crib merge-driver %O %A %B %P` | Git custom merge driver for `.crib` chunks |
 | `crib export [--format F] [--procedure P]` | Render: `rules` \| `mermaid` \| `graph.json` \| `report` |
 | `crib viz [path] [--port N]` | Serve the offline web UI (Cytoscape canvas) + open browser |
-| `crib enrich [path] [--status\|--next\|--save <file>\|--overview] [--layer L] [--limit N]` | Drive the LLM semantic-graph loop headlessly: status / next grounded batch / persist a `{batchId, items}` JSON / render the bible (see §10) |
+| `crib enrich [path] [--status\|--next\|--auto\|--save <file>\|--overview\|--scopes\|--prune-stale [--apply]] [--layer L] [--budget-tokens N]` | Drive the LLM semantic-graph loop headlessly: status / next **token-packed** grounded batch / bounded autonomous loop (`--auto [--max-tokens N] [--max-batches N]`) / persist a `{batchId, items}` JSON / render the bible / prune stale artifacts (see §10) |
+| `crib init [path] [--ide <name\|all>]` | 5-minute onboarding: index + install-hooks + mcp install + next-steps hero |
+| `crib doctor [path]` | Setup health check: node/corepack/indexed/freshness/hooks/IDE-wiring — ✓/✗ per check + fix hint, exit 1 on failure |
+| `crib ask "<question>" [--format markdown]` | Natural-language answer from the crib (deterministic — no model call) |
+| `crib context <id>` / `crib dossier <id>` / `crib impact <id> --dir up\|down` / `crib path <from> <to>` / `crib neighbors <id>` | CLI mirrors of the MCP verbs (§4) for terminal use |
+| `crib gaps [path]` / `crib rules <proc>` / `crib reconstruct <pkg>` | Analysis readiness / decision table for a callable / package reconstruction |
+| `crib migrate-graph [path] [--dry-run]` | Move legacy `nodes/edges/llm` layout into the canonical `.crib/graph` |
+| `crib materialize [path]` | Rebuild the derived composite `graph.json` + SQLite from the soul |
+| `crib audit-llm [path]` | Re-verify every LLM artifact against the soul (grounding moat); exits non-zero on drift |
 | `crib skill <install\|list> [name] [--dest <dir>]` | Install the bundled `/crib-enrich` skill (the loop driver) into `~/.claude/skills/`, or list bundled skills. Idempotent — skips byte-identical re-installs |
 | `crib mcp <install\|list\|remove> [--ide <name\|all>] [--global]` | Auto-wire the MCP server into each IDE config (no hand-editing); `--ide claude --global` = one user-scope entry for every project |
 
@@ -116,14 +136,19 @@ Exit codes: `0` ok · `1` error · `2` bad args · `3` not indexed.
 
 | Language | Extensions | Graph produced |
 |---|---|---|
-| TypeScript | `.ts .tsx .mts .cts` | symbols, `calls`, `imports`, `member-of` |
+| TypeScript / JavaScript | `.ts .tsx .mts .cts` (+ plain-JS coverage) | symbols, `calls`, `imports`, `member-of` |
+| Java | `.java` | classes/methods, calls, Spring stereotypes/routes |
+| C# | `.cs` | classes/methods, calls, attributes |
+| Go | `.go` | funcs/methods, calls, imports |
+| Rust | `.rs` | fns/impls, calls, modules |
+| PHP | `.php` | classes/functions, calls |
 | Python | `.py .pyi` | symbols, module imports, calls, classes |
 | PL/SQL | `.sql .pkb .pks .pck .pls .pkh .typ` | procedures, tables, columns, `executes`, data-flow |
 | Markdown | `.md .markdown` | doc-sections, linked to symbols (`describes`/`references`) |
 
-Other files (`.js`, `.jsx`, `.java`, `.kt`, `.go`, `.rs`, …) are discovered as **file nodes** only —
-they participate in the structure map but produce no symbols. (`.js`/`.jsx` are intentionally not
-symbol-extracted; convert to `.ts`/`.tsx` or extend the registry.)
+Files outside these extensions are discovered as **file nodes** — they participate in the structure
+map but produce no symbols. The canonical parser-language list lives in [STATS.md](STATS.md)
+(generated; the prose here can lag).
 
 ### Excluding dirs
 
@@ -188,17 +213,17 @@ config. See [`knowledge-crib-client-setup.md`](knowledge-crib-client-setup.md) �
 
 ---
 
-## 4. The MCP server + the 12 verbs (status, context, source, dossier, impact, query, describes, neighbors, shortest_path, detect_changes, extract_rules, gaps)
+## 4. The MCP server + the 17 deterministic verbs (status, context, source, dossier, reconstruct, dossier_by_scope, impact, federatedImpact, query, describes, neighbors, ownership, shortest_path, detect_changes, extract_rules, gaps, stats)
 
 `crib serve <root>` starts one MCP server over stdio. Every verb is an MCP tool. All results are
 **token-bounded** (default `docLimit=3`, `limit=10`, with `truncated` + `cursor`) and
 **provenance-tagged** (`method`, `provenance` = `EXTRACTED` | `INFERRED`, `confidence`, `evidence`)
 so the agent can filter to deterministic-only (`extractedOnly: true`).
 
-> The 12 verbs below are the **deterministic structural** layer (AST-extracted, no model in the
-> loop). A second **LLM-authored semantic** layer adds 5 more verbs — `enrich_status`,
-> `enrich_next`, `enrich_save`, `overview`, `llm_neighbors` — described in
-> [§10](#10-the-llm-semantic-graph-layer-the-grove-plan).
+> The 17 verbs below are the **deterministic structural** layer (AST-extracted, no model in the
+> loop). A second **LLM-authored semantic** layer adds 6 more verbs — `enrich_status`,
+> `enrich_next`, `enrich_save`, `audit_llm`, `overview`, `llm_neighbors` — described in
+> [§10](#10-the-llm-semantic-graph-layer-the-grove-plan). 23 verbs total.
 
 ### `status`
 Health + whether indexed. `→ { indexed, schemaVersion, stats{nodes,edges,clusters}, vcsHead, incrementalSince, capabilities }`
@@ -303,6 +328,17 @@ Read-only. For "what's the impact of this diff?" — review a PR by running it a
 ```
 Flattens the M11 guard-annotated CFG into a decision table — the migration deliverable. Works for
 all 7 languages (PL/SQL, TypeScript, Java, C#, Go, Rust, Python), not just PL/SQL.
+
+### The remaining deterministic verbs (compact)
+
+| Verb | What it returns |
+|---|---|
+| `reconstruct` | `{ pkg }` → package reconstruction: CONSTANT values + members + referenced tables + docs + `expectedBodyFile` — enough to re-author a package from the graph |
+| `dossier_by_scope` | Bulk dossiers for every symbol in a `--package` / `--file` / `--cluster` scope (paged) |
+| `federatedImpact` | Cross-repo blast radius over registered sibling souls (route-layer `http-call` bridge) |
+| `ownership` | `{ id }` → git-blame-derived `owned-by` edges (who owns this symbol) |
+| `gaps` | Analysis readiness: missing bodies + unresolved call sites (+ `--extracted-only`) |
+| `stats` | Live per-verb call counts + latency + ifHash cache hit rate for this server process (runtime observability; not persisted) |
 
 ### Error shape
 `{ "error": { "code": "NOT_FOUND" | "NOT_INDEXED" | "AMBIGUOUS" | "BAD_ARGS" | "INTERNAL", "message" } }`
@@ -429,6 +465,7 @@ initialize  → serverInfo { name: "knowledge-crib", version: "0.1.0" }
 tools/list  → 17 tools: 12 structural (status, context, source, dossier, impact, query, describes,
                         neighbors, shortest_path, detect_changes, extract_rules, gaps) + 5 LLM-graph
                         (enrich_status, enrich_next, enrich_save, overview, llm_neighbors)
+                        # historical transcript — the server registers 23 tools today (see §4)
 status      → { nodes:1576, edges:1831, clusters:104, vcsHead:… }
 query "schedule" → ScheduleFilterBar (score -4.01), ScheduleStatsCards, ScheduleItemRequest
 context(ScheduleFilterBar) → { signature, file, span {25..95} }
@@ -468,6 +505,12 @@ crib install-hooks .                   # post-commit → crib update; .gitattrib
 
 # clean rebuild:
 crib reindex .
+
+# health check any time (✓/✗ + fix hints; exit 1 when broken):
+crib doctor .
+
+# rebuild the derived composite graph cache (after heavy soul churn or a layout migration):
+crib materialize .
 ```
 
 `crib update` uses the git HEAD stamped in the manifest as the anchor; if there's no anchor or it's
@@ -631,13 +674,14 @@ invent code facts that aren't grounded in the soul.
 `fresh` targets are skipped. `limit` (default 4, max 25) bounds tokens per turn — process one batch
 per turn.
 
-### The 5 LLM-graph verbs
+### The 6 LLM-graph verbs
 
 | Verb | Returns |
 |---|---|
 | `enrich_status` | Coverage per layer (`missing` / `stale` / `fresh`), `nextLayer`, `done: bool` |
-| `enrich_next` | `{ layer?, limit }` → a grounded batch; per item `{ targetId, seed, lowerLayer?, outputSchema, instructions, remaining }` |
-| `enrich_save` | `{ batchId, items }` → `{ accepted[], rejected[], droppedEdges }`; validates + persists to `.crib/llm/` |
+| `enrich_next` | `{ layer?, budgetTokens? }` → a **token-packed** grounded batch (greedy strict-prefix packing against the budget, default 24k tokens; a single oversized item is returned alone with `oversized: true` so the queue never stalls); per item `{ targetId, seed, lowerLayer?, outputSchema, instructions, remaining }` |
+| `enrich_save` | `{ batchId, items }` → `{ accepted[], rejected[], droppedEdges }`; validates (grounding + secret scan) + persists |
+| `audit_llm` | Re-verifies every persisted LLM artifact against the soul (grounding moat); reports ungrounded/drifted artifacts |
 | `overview` | The rendered bible (system-level synthesis); empty until the system layer lands |
 | `llm_neighbors` | `{ id }` → walk the LLM semantic graph around a soul id (rules / features / flows / concepts / capabilities) |
 
@@ -694,9 +738,11 @@ No separate skill repository is required.
 
 ```bash
 crib enrich --status                       # coverage + nextLayer + done
-crib enrich --next [--layer symbol] [--limit 4]   # prints a grounded batch (seed + schema per item)
+crib enrich --next [--layer symbol] [--budget-tokens 24000]   # prints a token-packed grounded batch (seed + schema per item)
 # author items to a JSON file shaped {batchId, items} against each item's outputSchema, then:
 crib enrich --save ./batch.json            # validates + persists → {accepted, rejected, droppedEdges}
+crib enrich --auto [--max-tokens N] [--max-batches N]   # bounded autonomous loop: pack → author stubs → save → repeat until a ceiling
+crib enrich --prune-stale [--apply]        # list (or delete with --apply) artifacts whose targets left the soul
 crib enrich --overview                     # the bible (after the system layer)
 ```
 
@@ -755,7 +801,7 @@ knowledge-crib/                 # pnpm monorepo
     core/          # SoulStore (chunked JSONL) + IndexStore (SQLite + FTS5)
     parsers/       # TypeScript / Python / PL-SQL / Markdown / Java / C# / Go / Rust extractors (registry)
     pipeline/      # extract → resolve → link → cluster → index (phased)
-    mcp/           # the one MCP server (stdio) + 12 deterministic verbs + 5 LLM-graph verbs (pure functions)
+    mcp/           # the one MCP server (stdio) + 17 deterministic verbs + 6 LLM-graph verbs (pure functions)
     cli/           # crib index|status|query|serve|update|reindex|export|viz|install-hooks|merge-driver|mcp|enrich|skill
       skills/      # bundled /crib-enrich skill (the LLM-graph loop driver) — ships in the package
     ui/            # offline React/canvas graph visualization

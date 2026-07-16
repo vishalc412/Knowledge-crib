@@ -66,7 +66,11 @@ const orphanMd = readdirSync(DOCS)
   .sort();
 
 // --- the two showcase/guide HTML docs as first-class entries --------------------------------
-const htmlDocs = ['knowledge-crib-guide.html', 'knowledge-crib-showcase.html']
+const htmlDocs = [
+  'knowledge-crib-user-guide.html',
+  'knowledge-crib-guide.html',
+  'knowledge-crib-showcase.html',
+]
   .filter((f) => {
     try {
       return statSync(join(DOCS, f)).isFile();
