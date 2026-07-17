@@ -2,11 +2,17 @@ import { execFileSync } from 'node:child_process';
 
 function run(cmd, args, opts = {}) {
   process.stdout.write(`\n$ ${[cmd, ...args].join(' ')}\n`);
-  // On Windows, `corepack` is a .cmd shim; execFileSync (shell: false) cannot launch .cmd files
-  // directly (ENOENT). Use a shell there so the matrix CI cell (windows-latest) stays green.
+  // `corepack` (and other node-distributed CLIs) ship as .cmd shims on Windows;
+  // execFileSync(shell:false) can't launch them (ENOENT), so shell them on win32.
+  // `node` is a real .exe and never needs a shell — and a shell would MANGLE inline
+  // `-e` scripts containing double-quotes: cmd.exe re-parses the arg string and
+  // truncates the script at the first ", yielding `SyntaxError: Unexpected end of
+  // input`. So shell only the .cmd-shim commands, not `node`. Posix is unaffected
+  // (the `&& win32` guard short-circuits to shell:false, byte-identical to before).
+  const needsShell = cmd !== 'node' && process.platform === 'win32';
   execFileSync(cmd, args, {
     stdio: 'inherit',
-    shell: process.platform === 'win32',
+    shell: needsShell,
     ...opts,
   });
 }
