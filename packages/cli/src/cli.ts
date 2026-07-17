@@ -1279,6 +1279,12 @@ function cmdDoctor(args: string[], ctx?: CmdCtx): number {
     const v = execFileSync('corepack', ['--version'], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
+      // Windows ships corepack as a .cmd shim; execFileSync(shell:false) cannot launch .cmd files
+      // (spawnSync ENOENT) → doctor would report "corepack available ✗ not found" on windows even
+      // when corepack IS installed. shell:true on win32 routes through cmd.exe so the .cmd resolves.
+      // No-op on posix (shell:false is the default → byte-identical). Same fix as release-verify /
+      // build-installers / pack-check / budget-check corepack spawns.
+      shell: process.platform === 'win32',
     }).trim();
     corepackOk = true;
     corepackDetail = `corepack ${v}`;
