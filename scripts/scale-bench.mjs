@@ -160,6 +160,18 @@ function readTextLines(p) {
 const IS_DARWIN = process.platform === 'darwin';
 const TIME_FMT = IS_DARWIN ? '-l' : '-v';
 
+// /usr/bin/time exists on posix (BSD `-l` on darwin, GNU `-v` on linux) but NOT on windows — the
+// windows-latest runner has no /usr/bin/time on PATH, so `spawnSync('/usr/bin/time', ...)` fails
+// with `res.status === null` + empty streams (the spawn itself errors), throwing "crib index exited
+// null" before `crib index` ever runs. Probe with existsSync (a real check, not a platform guess) so
+// any posix box missing /usr/bin/time falls back to the direct spawn too. When HAS_TIME is false,
+// benchIndex spawns `process.execPath CLI index root` directly (node.exe accepts a native path arg —
+// same pattern crib-bench/crib-ab-task use safely) and peak RSS is unmeasurable (a sync parent can't
+// read a dead child's RSS, and windows has no /usr/bin/time equivalent) → RSS reports N/A and the
+// gate skips the RSS budget on windows (see the breach loop). The RSS budget is a linux-production
+// characterization; windows CI still proves the pipeline runs at scale + wall/nodes are well-formed.
+const HAS_TIME = existsSync('/usr/bin/time');
+
 // The RSS budget baseline is Node-major-aware. The 512 MB baseline was calibrated on Node 22
 // (local darwin 471 MB / ubuntu CI under budget for the 20k-LOC slice). Node 24's V8 carries a
 // ~1.5× higher baseline (macos-latest Node 24 CI measured 708 MB for the same 483-file slice —
@@ -176,11 +188,19 @@ const RSS_BASELINE_MB = NODE_MAJOR >= 24 ? 768 : 512;
  *  + crib's summary. */
 function benchIndex(root) {
   // /usr/bin/time writes usage to stderr (BSD -l or GNU -v); crib writes its summary to stdout.
+  // On windows (HAS_TIME false) spawn crib index directly — node.exe accepts a native path arg, so
+  // `process.execPath CLI index root` runs the built CLI with no external time wrapper. Peak RSS is
+  // then unmeasurable (NaN); the gate skips the RSS budget when HAS_TIME is false.
   const t0 = performance.now();
-  const res = spawnSync('/usr/bin/time', [TIME_FMT, process.execPath, CLI, 'index', root], {
-    encoding: 'utf8',
-    maxBuffer: 256 * 1024 * 1024,
-  });
+  const res = HAS_TIME
+    ? spawnSync('/usr/bin/time', [TIME_FMT, process.execPath, CLI, 'index', root], {
+        encoding: 'utf8',
+        maxBuffer: 256 * 1024 * 1024,
+      })
+    : spawnSync(process.execPath, [CLI, 'index', root], {
+        encoding: 'utf8',
+        maxBuffer: 256 * 1024 * 1024,
+      });
   const t1 = performance.now();
   const stderr = res.stderr || '';
   const stdout = res.stdout || '';
@@ -190,14 +210,17 @@ function benchIndex(root) {
   // Wall measured in-process (portable, sub-ms) — not parsed from /usr/bin/time's elapsed string.
   const wallS = (t1 - t0) / 1000;
   // Peak RSS from /usr/bin/time (a parent can't read a child's peak RSS via spawnSync): BSD -l
-  // reports bytes; GNU -v reports kbytes (×1024 to normalize to bytes).
+  // reports bytes; GNU -v reports kbytes (×1024 to normalize to bytes). Unavailable on windows
+  // (HAS_TIME false → direct spawn, no time wrapper) → stays NaN; the gate skips the RSS budget.
   let peakRssBytes = Number.NaN;
-  if (IS_DARWIN) {
-    const rssMatch = /(\d+)\s+maximum resident set size/.exec(stderr);
-    peakRssBytes = rssMatch ? Number.parseInt(rssMatch[1], 10) : Number.NaN;
-  } else {
-    const gnuRss = /Maximum resident set size \(kbytes\):\s*(\d+)/.exec(stderr);
-    peakRssBytes = gnuRss ? Number.parseInt(gnuRss[1], 10) * 1024 : Number.NaN;
+  if (HAS_TIME) {
+    if (IS_DARWIN) {
+      const rssMatch = /(\d+)\s+maximum resident set size/.exec(stderr);
+      peakRssBytes = rssMatch ? Number.parseInt(rssMatch[1], 10) : Number.NaN;
+    } else {
+      const gnuRss = /Maximum resident set size \(kbytes\):\s*(\d+)/.exec(stderr);
+      peakRssBytes = gnuRss ? Number.parseInt(gnuRss[1], 10) * 1024 : Number.NaN;
+    }
   }
   // crib prints: "indexed N files → X nodes, Y edges (...) in Zms"
   const sumMatch =
@@ -259,7 +282,7 @@ for (const targetLoc of slices) {
       nodesPerS,
     });
     process.stdout.write(
-      `    ✓ ${loc.toLocaleString()} LOC | ${files.toLocaleString()} files | ${m.nodes.toLocaleString()} nodes | ${m.wallS.toFixed(2)}s | peak RSS ${peakRssMb.toFixed(0)} MB | ${rssPerKloc.toFixed(1)} MB/kLOC | ${nodesPerS.toFixed(0)} nodes/s\n`,
+      `    ✓ ${loc.toLocaleString()} LOC | ${files.toLocaleString()} files | ${m.nodes.toLocaleString()} nodes | ${m.wallS.toFixed(2)}s | peak RSS ${Number.isFinite(peakRssMb) ? `${peakRssMb.toFixed(0)} MB` : 'N/A'} | ${Number.isFinite(rssPerKloc) ? `${rssPerKloc.toFixed(1)} MB/kLOC` : 'N/A'} | ${nodesPerS.toFixed(0)} nodes/s\n`,
     );
   } finally {
     rmSync(staged, { recursive: true, force: true });
@@ -289,7 +312,7 @@ if (repoPoint) {
         nodesPerS: m.nodes / m.wallS,
       };
       process.stdout.write(
-        `  ✓ ${loc.toLocaleString()} LOC | ${files.toLocaleString()} files | ${m.nodes.toLocaleString()} nodes | ${m.wallS.toFixed(2)}s | peak RSS ${repoRow.peakRssMb.toFixed(0)} MB\n`,
+        `  ✓ ${loc.toLocaleString()} LOC | ${files.toLocaleString()} files | ${m.nodes.toLocaleString()} nodes | ${m.wallS.toFixed(2)}s | peak RSS ${Number.isFinite(repoRow.peakRssMb) ? `${repoRow.peakRssMb.toFixed(0)} MB` : 'N/A'}\n`,
       );
     } catch (err) {
       process.stdout.write(
@@ -301,8 +324,17 @@ if (repoPoint) {
 
 // --- emit markdown ------------------------------------------------------------------------------
 const peak1m = rows.find((r) => r.loc >= 1_000_000);
-const maxRss = rows.reduce((mx, r) => Math.max(mx, r.peakRssMb), 0);
-const rssGrowth = rows.length > 1 ? rows[rows.length - 1].peakRssMb / rows[0].peakRssMb : 1;
+// Guard NaN (windows: no /usr/bin/time → peakRssMb NaN). Math.max(NaN, x) === NaN would otherwise
+// poison maxRss; rssGrowth's divide-by-NaN likewise. Fall back to 0 / 1 so the markdown reads "N/A"
+// via the Number.isFinite guards below rather than printing "NaN".
+const maxRss = rows.reduce(
+  (mx, r) => Math.max(mx, Number.isFinite(r.peakRssMb) ? r.peakRssMb : 0),
+  0,
+);
+const rssGrowth =
+  rows.length > 1 && Number.isFinite(rows[0].peakRssMb)
+    ? rows[rows.length - 1].peakRssMb / rows[0].peakRssMb
+    : 1;
 
 function fmt(n) {
   return typeof n === 'number' && Number.isFinite(n) ? n.toLocaleString() : '—';
@@ -323,11 +355,13 @@ lines.push(
 lines.push('');
 lines.push(`- **Fixture base:** ${baseLoc} LOC, ${countLoc(FIX).files} files`);
 lines.push(`- **Slices:** ${slices.map((s) => s.toLocaleString()).join(', ')} LOC`);
-lines.push(`- **Peak RSS across curve:** ${maxRss.toFixed(0)} MB`);
-lines.push(`- **RSS growth (last/first slice):** ${rssGrowth.toFixed(2)}×`);
+lines.push(
+  `- **Peak RSS across curve:** ${HAS_TIME ? `${maxRss.toFixed(0)} MB` : 'N/A (no /usr/bin/time on this platform)'}`,
+);
+lines.push(`- **RSS growth (last/first slice):** ${HAS_TIME ? `${rssGrowth.toFixed(2)}×` : 'N/A'}`);
 lines.push(
   peak1m
-    ? `- **1M-LOC point:** ${peak1m.peakRssMb.toFixed(0)} MB peak RSS, ${peak1m.wallS.toFixed(1)}s wall, ${peak1m.nodes.toLocaleString()} nodes`
+    ? `- **1M-LOC point:** ${Number.isFinite(peak1m.peakRssMb) ? `${peak1m.peakRssMb.toFixed(0)} MB peak RSS, ` : ''}${peak1m.wallS.toFixed(1)}s wall, ${peak1m.nodes.toLocaleString()} nodes`
     : '- **1M-LOC point:** not in this run',
 );
 lines.push('');
@@ -337,7 +371,7 @@ lines.push(
 lines.push('|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|');
 for (const r of rows) {
   lines.push(
-    `| ${fmt(r.targetLoc)} | ${fmt(r.loc)} | ${fmt(r.files)} | ${fmt(r.batches)} | ${fmt(r.nodes)} | ${fmt(r.edges)} | ${fmt2(r.wallS)} | ${fmt(r.cribMs)} | ${r.peakRssMb.toFixed(0)} | ${fmt1(r.rssPerKloc)} | ${fmt(Math.round(r.nodesPerS))} |`,
+    `| ${fmt(r.targetLoc)} | ${fmt(r.loc)} | ${fmt(r.files)} | ${fmt(r.batches)} | ${fmt(r.nodes)} | ${fmt(r.edges)} | ${fmt2(r.wallS)} | ${fmt(r.cribMs)} | ${fmt(r.peakRssMb)} | ${fmt1(r.rssPerKloc)} | ${fmt(Math.round(r.nodesPerS))} |`,
   );
 }
 if (repoRow) {
@@ -347,7 +381,7 @@ if (repoRow) {
   lines.push('| Repo | LOC | Files | Nodes | Wall (s) | Peak RSS (MB) | Nodes / s |');
   lines.push('|---|---:|---:|---:|---:|---:|---:|');
   lines.push(
-    `| ${repoRow.path} | ${fmt(repoRow.loc)} | ${fmt(repoRow.files)} | ${fmt(repoRow.nodes)} | ${fmt2(repoRow.wallS)} | ${repoRow.peakRssMb.toFixed(0)} | ${fmt(Math.round(repoRow.nodesPerS))} |`,
+    `| ${repoRow.path} | ${fmt(repoRow.loc)} | ${fmt(repoRow.files)} | ${fmt(repoRow.nodes)} | ${fmt2(repoRow.wallS)} | ${fmt(repoRow.peakRssMb)} | ${fmt(Math.round(repoRow.nodesPerS))} |`,
   );
 }
 lines.push('');
@@ -376,18 +410,31 @@ process.stdout.write(
 // regression would inflate) is unchanged across Node versions.
 let breach = 0;
 for (const r of rows) {
-  const budgetMb = RSS_BASELINE_MB + 4 * (r.loc / 1000);
-  if (r.peakRssMb > budgetMb) {
-    process.stderr.write(
-      `  scale:bench BOUND BREACH — ${r.loc.toLocaleString()} LOC: peak RSS ${r.peakRssMb.toFixed(0)} MB > budget ${budgetMb.toFixed(0)} MB (4 MB/kLOC + ${RSS_BASELINE_MB} MB baseline; Node ${NODE_MAJOR})\n`,
-    );
-    breach++;
-  }
-  if (!Number.isFinite(r.wallS) || !Number.isFinite(r.peakRssMb) || !Number.isFinite(r.nodes)) {
-    process.stderr.write(
-      `  scale:bench PARSE FAIL — ${r.loc.toLocaleString()} LOC: missing wall/RSS/nodes\n`,
-    );
-    breach++;
+  if (HAS_TIME) {
+    const budgetMb = RSS_BASELINE_MB + 4 * (r.loc / 1000);
+    if (r.peakRssMb > budgetMb) {
+      process.stderr.write(
+        `  scale:bench BOUND BREACH — ${r.loc.toLocaleString()} LOC: peak RSS ${r.peakRssMb.toFixed(0)} MB > budget ${budgetMb.toFixed(0)} MB (4 MB/kLOC + ${RSS_BASELINE_MB} MB baseline; Node ${NODE_MAJOR})\n`,
+      );
+      breach++;
+    }
+    if (!Number.isFinite(r.wallS) || !Number.isFinite(r.peakRssMb) || !Number.isFinite(r.nodes)) {
+      process.stderr.write(
+        `  scale:bench PARSE FAIL — ${r.loc.toLocaleString()} LOC: missing wall/RSS/nodes\n`,
+      );
+      breach++;
+    }
+  } else {
+    // No /usr/bin/time (windows) → peak RSS unmeasurable. Still assert the pipeline ran + produced a
+    // node count + a finite wall. The RSS budget is a posix-production characterization; windows CI
+    // proves the harness runs at scale without the memory cap. Precedent: parallel:check bars its
+    // platform-irrelevant timing floor on CI (GITHUB_ACTIONS).
+    if (!Number.isFinite(r.wallS) || !Number.isFinite(r.nodes)) {
+      process.stderr.write(
+        `  scale:bench PARSE FAIL — ${r.loc.toLocaleString()} LOC: missing wall/nodes\n`,
+      );
+      breach++;
+    }
   }
 }
 if (breach > 0) {
@@ -395,5 +442,7 @@ if (breach > 0) {
   process.exit(1);
 }
 process.stdout.write(
-  '[scale:bench] PASS — all slices within RSS budget, measurements well-formed\n',
+  HAS_TIME
+    ? '[scale:bench] PASS — all slices within RSS budget, measurements well-formed\n'
+    : '[scale:bench] PASS — all slices well-formed (RSS N/A: no /usr/bin/time on this platform)\n',
 );
