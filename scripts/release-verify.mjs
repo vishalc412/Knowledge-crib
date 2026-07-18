@@ -45,6 +45,13 @@ pnpm(['soul-refresh:check']);
 pnpm(['onboarding:check']);
 pnpm(['docs-site:check']);
 pnpm(['publish:dry-run']);
+// crib-cache-stability.test.mjs (run inside installer:test) only rebuilds the gitignored derived
+// index when the file is ABSENT — it can't detect a STALE one (e.g. left over from a manual
+// `crib index .` in this working tree). Force a fresh index here so installer:test always sees a
+// derived index that matches the currently committed soul, regardless of local dev-machine state.
+run('node', ['packages/cli/dist/cli.js', 'index', '.'], {
+  timeout: 8 * 60_000, // full repo re-parse is ~2-3min locally; allow headroom on slower CI runners
+});
 pnpm(['installer:test']);
 pnpm(['installer:build']);
 pnpm(['installer:smoke']);
