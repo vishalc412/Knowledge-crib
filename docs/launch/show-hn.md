@@ -4,7 +4,7 @@
 
 **Title (HN):** `Show HN: Knowledge-crib — a git-committable code knowledge graph for AI agents` (78 chars)
 
-**URL:** (the canonical GitHub home — pending M4.5 repo-identity decision; use `github.com/vishalc412/Knowledge-crib` until the org is chosen)
+**URL:** `https://github.com/KnowledgeCrib/knowledge-crib` (canonical home — M4.5 decided Option A, 2026-07-18)
 
 ---
 

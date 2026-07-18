@@ -74,7 +74,7 @@ limits section. Counts reference [STATS.md](STATS.md) (generated, not hardcoded)
 | [launch/linkedin-series.md](launch/linkedin-series.md) | 5-post LinkedIn arc: problem → mechanism → moat → proof → ask |
 | [launch/demo-recipe.md](launch/demo-recipe.md) | Demo GIF/video shot list + exact commands (the capture itself is a user action) |
 | [launch/publish-runbook.md](launch/publish-runbook.md) | **M4.1 — USER-ONLY.** npm publish 0.1.0 runbook (prereqs, changelog cut, publish order, clean-machine verify, rollback). Prep complete; needs `npm login` + explicit go |
-| [launch/repo-identity-decision.md](launch/repo-identity-decision.md) | **M4.5 — USER-ONLY.** KnowledgeCrib org vs vishalc412 (npm scope `@knowledge-crib` is locked either way). Recommendation + alignment checklist |
+| [launch/repo-identity-decision.md](launch/repo-identity-decision.md) | **M4.5 — DECIDED (2026-07-18).** Canonical home: `KnowledgeCrib/knowledge-crib` org, aligned with npm scope `@knowledge-crib`. Decision record + zero-mixed-references gate |
 | [launch/signing-deferral-adr.md](launch/signing-deferral-adr.md) | **M4.7 — USER-ONLY approval.** ADR deferring installer signing in favor of npm-first distribution (the plan's gate is "signed OR ADR deferring") |
 
 ## Open-Source Release Files
