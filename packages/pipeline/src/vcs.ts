@@ -76,6 +76,26 @@ export function hasUncommittedChanges(root: string): boolean {
 }
 
 /**
+ * Repo-relative POSIX paths of UNtracked-but-not-gitignored files
+ * (`git ls-files --others --exclude-standard`). The W6 working overlay indexes these so a brand-new
+ * file under a package root is queryable BEFORE its first commit — but ignored build artifacts stay
+ * excluded because git already filters them via `--exclude-standard`. Returns [] for a non-git repo
+ * (the caller skips the untracked overlay there). Does NOT include tracked files.
+ *
+ * Unlike {@link uncommittedChanges}, this set is NOT zero on a clean checkout of a new branch: it
+ * captures files git doesn't yet know about, which is exactly the watch-mode "new file appeared" signal.
+ */
+export function untrackedFiles(root: string): string[] {
+  const out = git(root, ['ls-files', '--others', '--exclude-standard']);
+  if (out === undefined) return []; // non-git
+  return out
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .map(toPosix);
+}
+
+/**
  * Repo-relative POSIX paths of ALL files tracked by git (`git ls-files`). Used by the W1 committed
  * AI-artifact scanner: unlike {@link discoverFiles}, this lists tracked files EVEN WHEN they sit
  * under a `.gitignore`d tool directory (`.claude/`, `.cursor/`) — because `.gitignore` only hides

@@ -72,14 +72,37 @@ interface SemanticArtifact {
 
 /** Sole graph reader. Writers remain SoulStore (extracted) and EnrichmentStore (semantic). */
 export class GraphStore {
+  /**
+   * W6 — the optional working overlay. When set, the EXTRACTED layer is read from the overlay store
+   * (canonical + dirty swap, in memory) instead of the committed soul; the committed `.crib/graph` is
+   * never touched. The semantic layer still reads from the committed soul — semantic artifacts are a
+   * separate, independently-fresh layer, and the PRD (line 375) scopes watch to the extracted graph.
+   */
+  private overlay?: SoulStore;
+
   constructor(private readonly soul: SoulStore) {}
 
+  /**
+   * W6 — install or remove the working overlay. When set, every extracted read delegates to the
+   * overlay store so edits become queryable through query/context/dossier/neighbors/shortestPath
+   * without dirtying the committed `.crib/graph`. Pass `undefined` to return to committed-only reads.
+   */
+  setWorkingOverlay(overlay: SoulStore | undefined): void {
+    this.overlay = overlay;
+  }
+
+  /** The soul backing the EXTRACTED layer — the overlay when active, else the committed soul. */
+  private live(): SoulStore {
+    return this.overlay ?? this.soul;
+  }
+
   extracted(): GraphSnapshot {
-    const nodes = [...this.soul.iterate()].map((node) => ({
+    const live = this.live();
+    const nodes = [...live.iterate()].map((node) => ({
       ...node,
       origin: 'extracted' as const,
     }));
-    const edges = [...this.soul.iterateEdges()].map((edge) => extractedEdge(edge));
+    const edges = [...live.iterateEdges()].map((edge) => extractedEdge(edge));
     return { nodes, edges, diagnostics: emptyDiagnostics() };
   }
 
@@ -88,8 +111,13 @@ export class GraphStore {
   }
 
   composite(): GraphSnapshot {
-    const materialized = readMaterialized(this.soul);
-    if (materialized) return materialized;
+    // W6 — when an overlay is active, bypass the on-disk materialized composite cache (it reflects the
+    // committed soul, not the working overlay) and always compute compositeLive so dirty edits are
+    // visible. With no overlay, the materialized fast path is unchanged.
+    if (!this.overlay) {
+      const materialized = readMaterialized(this.soul);
+      if (materialized) return materialized;
+    }
     return this.compositeLive();
   }
 

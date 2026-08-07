@@ -139,6 +139,10 @@ export interface VerbDeps {
   vcs?: VcsAdapter;
   /** W3 — the trusted agent-memory ledger. Optional; verbs degrade gracefully when absent. */
   memory?: MemoryDeps;
+  /** W6 — the optional working-overlay store. When set, the extracted graph is read from the overlay
+   *  (canonical + dirty swap, in memory) so edits are queryable without dirtying `.crib/graph`. The
+   *  semantic layer still reads from `soul` (the committed soul). */
+  workingOverlay?: SoulStore;
 }
 
 /** Direction as the MCP api expresses it. */
@@ -298,6 +302,9 @@ export class Verbs {
   constructor(private readonly deps: VerbDeps) {
     this.llm = new EnrichmentStore(deps.soul, deps.repoRoot);
     this.graph = new GraphStore(deps.soul);
+    // W6 — install the working overlay so the extracted layer reads canonical+dirty from the overlay
+    // store. Semantic reads stay on the committed soul (GraphStore keeps `soul` for that).
+    if (deps.workingOverlay) this.graph.setWorkingOverlay(deps.workingOverlay);
     this.aliases = loadAliases(deps.soul.cribDir);
     this.memory = deps.memory;
     // M3.3 — Proxy interceptor: wrap every PUBLIC verb method with `trackCall` so per-verb

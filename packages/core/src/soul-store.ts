@@ -41,6 +41,17 @@ const CLUSTERS_FILE = join('clusters', 'clusters.jsonl');
 export interface SoulStoreOpts {
   /** Manifest to seed a fresh soul; ignored if a manifest already exists on disk. */
   manifest?: Manifest;
+  /**
+   * W6 — mark this store EPHEMERAL: an in-memory working copy that mirrors a committed soul but must
+   * never persist. `commit()` becomes a no-op (the dirty-shard flush, manifest write, and vendored
+   * schema/gitignore writes are all skipped), so the overlay can `load()` from a canonical `.crib`
+   * directory for a fast seed and then mutate freely in memory with ZERO risk of dirtying the
+   * committed `.crib/graph` shards. This is the structural guard the PRD failure-audit (line 467)
+   * demands: "Watch mode dirties committed soul → Separate working-tree overlay under ignored runtime
+   * storage." `setVcsHead`/`setIncrementalSince`/`setCapabilities` still mutate the in-memory manifest
+   * (harmless — never flushed) so readers that consult the manifest see consistent state.
+   */
+  ephemeral?: boolean;
 }
 
 /**
@@ -61,6 +72,8 @@ export class SoulStore {
   private readonly edges = new Map<string, Edge>();
   private manifest: Manifest;
   private readonly canonicalLayout: boolean;
+  /** W6 — when true, `commit()` is a no-op so an in-memory overlay can never dirty a canonical `.crib`. */
+  private readonly ephemeral: boolean;
 
   /** Node shards whose chunk files must be rewritten on commit. */
   private readonly dirtyNodeShards = new Set<string>();
@@ -78,6 +91,7 @@ export class SoulStore {
     this.manifest = opts.manifest ?? newManifest({ root: '.' });
     this.canonicalLayout =
       hasCanonicalGraph(cribDirPrivate) || !existsSync(join(cribDirPrivate, MANIFEST_FILE));
+    this.ephemeral = opts.ephemeral === true;
   }
 
   /** Read the manifest and hydrate the graph from existing chunks. Returns the manifest. */
@@ -310,6 +324,10 @@ export class SoulStore {
 
   /** Flush dirty shards atomically, prune dangling edges, rewrite manifest + vendored schemas. */
   commit(now = new Date().toISOString(), preserveTimestamp = false): void {
+    // W6 — an ephemeral (working-overlay) store is an in-memory mirror only; persisting would dirty
+    // the canonical `.crib/graph` it loaded from. The PRD failure-audit (line 467) makes this a
+    // hard structural guard, not a convention.
+    if (this.ephemeral) return;
     const graphChanged =
       this.dirtyNodeShards.size > 0 || this.dirtyEdgeShards.size > 0 || this.clustersDirty;
     this.pruneDangling();

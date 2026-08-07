@@ -21,6 +21,7 @@ import {
   LockBusyError,
   MANIFEST_FILE,
   SoulStore,
+  WorkingOverlay,
   graphPaths,
   hasLegacyGraph,
   materializeComposite,
@@ -111,6 +112,7 @@ import {
 } from './runtime.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
 import { VizHttpError, isAllowedHost, readVizNodeSource, resolveVizAsset } from './viz-server.js';
+import { WatchMode } from './watch.js';
 
 const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3, LOCKED: 4 } as const;
 
@@ -1133,19 +1135,52 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
   const index = openIndexForRead(rt);
   if (!index) return EXIT.NOT_INDEXED;
   const memory = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  // W6 — `crib serve --watch` installs an always-fresh working overlay: an ephemeral in-memory soul
+  // that mirrors the committed graph + swaps in re-parsed records for dirty/untracked files. Edits
+  // become queryable through the composite read model without dirtying `.crib/graph`. The overlay is
+  // never committed (SoulStore.commit() is a no-op when ephemeral), so the committed soul is safe.
+  let watch: WatchMode | undefined;
+  let overlay: WorkingOverlay | undefined;
+  if (args.includes('--watch')) {
+    overlay = new WorkingOverlay(rt.soul);
+    watch = new WatchMode(rt.soul, overlay, resolved.repoRoot, {
+      onRefresh: (result, reason) => {
+        if (result.dirty.length === 0) return;
+        process.stderr.write(
+          `watch [${reason}] refreshed ${result.dirty.length} file(s) [scope ${result.scope.length}] → ` +
+            `+${result.parse.nodes} nodes +${result.parse.edges} edges, +${result.resolve.calls} calls\n`,
+        );
+      },
+      onDrift: () => {
+        process.stderr.write(
+          'watch: canonical soul advanced (external crib update) — overlay resynced\n',
+        );
+      },
+      onWarn: (msg) => process.stderr.write(`watch: ${msg}\n`),
+    });
+    await watch.start();
+    process.stderr.write(
+      `watch mode active — ${overlay.dirty.length} dirty file(s) overlaid; committed .crib/graph untouched\n`,
+    );
+  }
   const verbs = new Verbs({
     soul: rt.soul,
     index,
     repoRoot: resolved.repoRoot,
     vcs: new CliVcsAdapter(),
     ...(memory ? { memory } : {}),
+    ...(overlay ? { workingOverlay: overlay.store } : {}),
   });
   // stdout is the MCP transport; logs go to stderr only.
   const stats = rt.soul.getManifest().stats;
   process.stderr.write(
     `knowledge-crib MCP server on stdio — ${stats.nodes} nodes, ${stats.edges} edges ready (default responses are tiered lean; pass withLlm:true for the full analysis blob)\n`,
   );
-  await serveStdio(verbs);
+  try {
+    await serveStdio(verbs);
+  } finally {
+    watch?.stop();
+  }
   return EXIT.OK;
 }
 
@@ -3241,7 +3276,7 @@ function printHelp(): void {
       '  crib impact <id> --dir up|down [--depth N] [--include-llm]   blast radius',
       '  crib path <from> <to> [--max-hops N] [--include-llm]   shortest path',
       '  crib neighbors <id> [--rel reads] [--dir in|out|both] [--include-llm]   adjacency',
-      '  crib serve [path]                        run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd)',
+      '  crib serve [path] [--watch]              run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd); --watch overlays dirty/untracked files in memory so edits are queryable without dirtying .crib/graph',
       '  crib update [path] [--since <sha>] [--dirty] [--package <name>]  incremental re-extract since the VCS anchor; --dirty includes working-tree changes without advancing vcsHead; --package scopes to one package of a monorepo without advancing the shared anchor if other packages changed too',
       '  crib reindex [path] [--package <name|all>...]     full re-index (alias for `crib index`; --package scopes to one monorepo package)',
       '  crib migrate-graph [path] [--dry-run]     move legacy nodes/edges/llm into canonical .crib/graph',

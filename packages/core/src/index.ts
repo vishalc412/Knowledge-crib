@@ -5,6 +5,7 @@
 export * from './soul-store.js';
 export * from './graph-layout.js';
 export * from './graph-store.js';
+export * from './working-overlay.js';
 export * from './materialize.js';
 export * from './conflict-rule.js';
 export * from './manifest.js';
