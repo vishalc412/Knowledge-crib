@@ -1351,13 +1351,14 @@ function cmdDoctor(args: string[], ctx?: CmdCtx): number {
     });
   }
 
-  // 5. git hooks installed (post-commit `crib update` + .crib merge driver).
+  // 5. git hooks installed (post-commit `crib update` + soul/memory merge drivers).
   const hooks = hooksInstalled(repoRoot);
-  const hooksOk = hooks.postCommit && hooks.gitattributes && hooks.driverConfig;
+  const hooksOk =
+    hooks.postCommit && hooks.gitattributes && hooks.driverConfig && hooks.memoryDriverConfig;
   checks.push({
     name: 'git hooks installed',
     ok: hooksOk,
-    detail: `post-commit ${hooks.postCommit ? '✓' : '✗'}, .gitattributes ${hooks.gitattributes ? '✓' : '✗'}, merge driver ${hooks.driverConfig ? '✓' : '✗'}`,
+    detail: `post-commit ${hooks.postCommit ? '✓' : '✗'}, .gitattributes ${hooks.gitattributes ? '✓' : '✗'}, soul merge driver ${hooks.driverConfig ? '✓' : '✗'}, memory merge driver ${hooks.memoryDriverConfig ? '✓' : '✗'}`,
     fix: 'run `crib install-hooks`',
   });
 
@@ -1397,14 +1398,15 @@ function cmdDoctor(args: string[], ctx?: CmdCtx): number {
 /** `crib merge-driver %O %A %B %P` — git custom merge driver for one `.crib` JSONL chunk. */
 function cmdMergeDriver(args: string[]): number {
   // git passes: %O ancestor  %A current/ours (output)  %B other/theirs  %P pathname
-  const [basePath, oursPath, theirsPath] = args;
+  const [basePath, oursPath, theirsPath, pathName] = args;
   if (!basePath || !oursPath || !theirsPath) {
     process.stderr.write('usage: crib merge-driver %O %A %B %P\n');
     return EXIT.BAD_ARGS;
   }
-  const { warnings, conflicts } = mergeDriverFiles(basePath, oursPath, theirsPath);
+  const { warnings, conflicts } = mergeDriverFiles(basePath, oursPath, theirsPath, pathName);
   for (const w of warnings) process.stderr.write(`merge warning: ${w}\n`);
-  // 0 = clean merge (incl. auto-resolved edges); 1 = unresolvable node collision needing human review.
+  // 0 = clean merge (incl. auto-resolved edges / memory union); 1 = unresolvable collision or
+  // malformed memory line needing human review.
   return conflicts ? EXIT.ERROR : EXIT.OK;
 }
 
@@ -1414,8 +1416,10 @@ function cmdInstallHooks(args: string[], ctx?: CmdCtx): number {
   process.stdout.write(
     `installed kcrib hooks at ${res.gitDir}\n` +
       `  post-commit → ${res.postCommitPath}\n` +
-      `  .gitattributes → ${res.gitattributesPath} (.crib/** merge=kcrib)\n` +
-      `  merge.kcrib.driver = ${res.driverConfig}\n`,
+      `  .gitattributes → ${res.gitattributesPath} (.crib/**/*.jsonl merge=kcrib, ` +
+      `.crib/memory/team/**/*.jsonl merge=kcrib-memory)\n` +
+      `  merge.kcrib.driver = ${res.driverConfig}\n` +
+      `  merge.kcrib-memory.driver = ${res.driverConfig}\n`,
   );
   return EXIT.OK;
 }
