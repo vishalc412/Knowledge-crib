@@ -403,7 +403,9 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
   // `memory_observe` — writes a LOCAL candidate only (never evaluates / executes / team-writes).
   // `memory_get`    — one record by id (+ optional full evidence).
   // `memory_status` — counts by trust / evidence / applicability / lifecycle / source + pending.
-  // `memory_audit`  — read-only drift / conflict / privacy / trust report.
+  // `memory_audit`  — read-only drift / conflict / privacy / trust + contradicted-for-review report.
+  // `memory_feedback` — write a LOCAL feedback signal; a `contradicted` signal quarantines locally
+  //                    only with admissible counter-evidence (one negative event never retracts team).
   // All read APIs support `ifHash` (a repeat collapses to `{ unchanged: true, hash }`). When no memory
   // ledger is configured the memory verbs degrade to `{ memory: 'not configured' }` (mirrors `vcs`).
   server.registerTool(
@@ -492,10 +494,27 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'memory_audit',
     {
       description:
-        'W3 — read-only memory audit: a validation / conflict / drift / privacy / trust report. validation.drift lists records whose fresh evidence/applicability verdict differs from the stamped one; conflicts lists the conflict groups; privacy re-runs the write-time secret scan on every record; trust is the trust distribution. Read-only: never mutates a record, decision, or store. Supports ifHash.',
+        'W3 — read-only memory audit: a validation / conflict / drift / privacy / trust report. validation.drift lists records whose fresh evidence/applicability verdict differs from the stamped one; conflicts lists the conflict groups; privacy re-runs the write-time secret scan on every record; trust is the trust distribution; feedback.quarantined counts records excluded from recall by a local quarantine, and feedback.contradictedForReview lists `contradicted` feedback whose subject was NOT suppressed (bounded penalty only — awaiting admissible counter-evidence). Read-only: never mutates a record, decision, or store. Supports ifHash.',
       inputSchema: { ifHash: z.string().optional() },
     },
     async (a) => TOOL_RESULT(verbs.memoryAudit(a)),
+  );
+
+  server.registerTool(
+    'memory_feedback',
+    {
+      description:
+        'W5 — write a LOCAL feedback signal (useful / unhelpful / contradicted) on a memory record by id (PRD line 241: "Writes a local feedback event; one negative event cannot retract team memory"). For a `contradicted` signal, the record is quarantined LOCALLY only when supported by admissible counter-evidence (a counterEvidence item whose kind is admissible for the record claim kind and whose verdict is valid — PRD W5 line 361); otherwise it keeps a bounded penalty and is surfaced for review via memory_audit. The quarantine decision is local-only — team memory is never retracted by a single local negative event. Content-addressed → idempotent. Degrades to `{ memory: \'not configured\' }` when no local store is wired.',
+      inputSchema: {
+        subject: z.string(),
+        signal: z.enum(['useful', 'unhelpful', 'contradicted']),
+        actor: z.string(),
+        context: z.string().optional(),
+        counterEvidence: z.array(z.record(z.string(), z.unknown())).optional(),
+        ifHash: z.string().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.memoryFeedback(a)),
   );
 
   server.registerTool(

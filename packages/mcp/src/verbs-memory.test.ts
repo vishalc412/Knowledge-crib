@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { SoulStore, SqliteIndexStore, newManifest } from '@knowledge-crib/core';
 import {
   type MemoryEvidence,
+  type MemoryFeedback,
   type MemoryRecord,
   type MemoryRecordKind,
   MemoryStore,
@@ -480,6 +481,294 @@ describe('memoryObserve', () => {
       };
       expect(scope.boundary).toBe('global');
       expect(scope.repoId).toBeUndefined();
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+});
+
+// ─── memory_feedback (W5 Slice 3 — local feedback event + admissible-counter-evidence quarantine) ──
+
+describe('memoryFeedback', () => {
+  function verbsWithBoth(local: MemoryStore, team: MemoryStore): Verbs {
+    const mem: MemoryDeps = { local, team };
+    return new Verbs({ soul, index, repoRoot: repo, memory: mem });
+  }
+
+  it('a contradicted signal WITH admissible+valid counter-evidence quarantines the record LOCALLY (team untouched)', () => {
+    const local = localStore();
+    const team = teamStore([]); // empty team — must stay untouched
+    const v = verbsWithBoth(local, team);
+    try {
+      const r = record({ subject: 'sym:src/a.ts#A.b', claim: 'A.b does the thing' });
+      local.upsertEntry('active', r);
+      const res = v.memoryFeedback({
+        subject: r.id,
+        signal: 'contradicted',
+        actor: 'claude-code',
+        counterEvidence: [
+          {
+            kind: 'source-quote',
+            verdict: 'valid',
+            checkedAt: NOW,
+            soulId: r.subject,
+            quote: 'actually returns 2',
+            targetHash: BLAKE_A,
+          },
+        ],
+      }) as Record<string, unknown>;
+      expect(res.ok).toBe(true);
+      expect(res.suppressed).toBe(true);
+      expect(typeof res.quarantineDecisionId).toBe('string');
+      expect(res.subject).toBe(r.id);
+      // local quarantine decision written; the active record is NOT deleted (quarantine ≠ removal)
+      const decs = local.readCollection('decisions').entries as Array<{
+        kind: string;
+        subject: string;
+      }>;
+      expect(decs.filter((d) => d.kind === 'quarantine' && d.subject === r.id)).toHaveLength(1);
+      expect((local.readCollection('active').entries as MemoryRecord[]).map((x) => x.id)).toContain(
+        r.id,
+      );
+      // team store untouched (no-poison: one negative event cannot retract team memory)
+      expect(team.readCollection('decisions').entries).toHaveLength(0);
+      expect(team.readCollection('records').entries).toHaveLength(0);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('a contradicted signal WITHOUT admissible counter-evidence surfaces for review (no quarantine)', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      const r = record({ subject: 'sym:src/a.ts#A.b', claim: 'A.b does the thing' });
+      local.upsertEntry('active', r);
+      const res = v.memoryFeedback({
+        subject: r.id,
+        signal: 'contradicted',
+        actor: 'claude-code',
+        counterEvidence: [
+          {
+            kind: 'source-quote',
+            verdict: 'degraded',
+            checkedAt: NOW,
+            soulId: r.subject,
+            quote: 'q',
+            targetHash: BLAKE_A,
+          },
+        ],
+      }) as Record<string, unknown>;
+      expect(res.ok).toBe(true);
+      expect(res.suppressed).toBe(false);
+      expect(res.surfacedForReview).toBe(true);
+      const decs = local.readCollection('decisions').entries as Array<{ kind: string }>;
+      expect(decs.filter((d) => d.kind === 'quarantine')).toHaveLength(0);
+      // the feedback event itself IS recorded (bounded penalty nudge)
+      const fbs = local.readCollection('feedback').entries as MemoryFeedback[];
+      expect(fbs.map((f) => f.subject)).toContain(r.id);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('a useful / unhelpful signal records feedback with no suppression and surfacedForReview:false', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      const r = record({ subject: 'sym:src/a.ts#A.b', claim: 'A.b does the thing' });
+      local.upsertEntry('active', r);
+      for (const signal of ['useful', 'unhelpful'] as const) {
+        const res = v.memoryFeedback({ subject: r.id, signal, actor: 'claude-code' }) as Record<
+          string,
+          unknown
+        >;
+        expect(res.ok).toBe(true);
+        expect(res.suppressed).toBe(false);
+        expect(res.surfacedForReview).toBe(false);
+      }
+      // both feedback events recorded
+      const fbs = (local.readCollection('feedback').entries as MemoryFeedback[])
+        .map((f) => f.signal)
+        .sort();
+      expect(fbs).toEqual(['unhelpful', 'useful']);
+      expect((local.readCollection('decisions').entries as unknown[]).length).toBe(0);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('is idempotent: repeating the same feedback upserts to the same fb: id', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      const r = record({ subject: 'sym:src/a.ts#A.b', claim: 'A.b does the thing' });
+      local.upsertEntry('active', r);
+      const a = v.memoryFeedback({
+        subject: r.id,
+        signal: 'contradicted',
+        actor: 'claude-code',
+        counterEvidence: [
+          {
+            kind: 'source-quote',
+            verdict: 'valid',
+            checkedAt: NOW,
+            soulId: r.subject,
+            quote: 'q',
+            targetHash: BLAKE_A,
+          },
+        ],
+      }) as Record<string, unknown>;
+      const b = v.memoryFeedback({
+        subject: r.id,
+        signal: 'contradicted',
+        actor: 'claude-code',
+        counterEvidence: [
+          {
+            kind: 'source-quote',
+            verdict: 'valid',
+            checkedAt: NOW,
+            soulId: r.subject,
+            quote: 'q',
+            targetHash: BLAKE_A,
+          },
+        ],
+      }) as Record<string, unknown>;
+      expect(b.feedbackId).toBe(a.feedbackId);
+      expect(b.quarantineDecisionId).toBe(a.quarantineDecisionId);
+      // one feedback + one quarantine decision after two calls (upsert dedupes by id)
+      expect(local.readCollection('feedback').entries).toHaveLength(1);
+      expect(
+        (local.readCollection('decisions').entries as Array<{ kind: string }>).filter(
+          (d) => d.kind === 'quarantine',
+        ),
+      ).toHaveLength(1);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('degrades to { memory: "not configured" } when no local store is wired', () => {
+    const v = new Verbs({ soul, index, repoRoot: repo });
+    const res = v.memoryFeedback({
+      subject: 'mem:whatever',
+      signal: 'useful',
+      actor: 'claude-code',
+    }) as Record<string, unknown>;
+    expect(res.memory).toBe('not configured');
+  });
+
+  it('refuses an invalid signal', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      const res = v.memoryFeedback({
+        subject: 'mem:whatever',
+        signal: 'amazing',
+        actor: 'claude-code',
+      }) as Record<string, unknown>;
+      expect(res.ok).toBe(false);
+      expect(typeof res.error).toBe('string');
+      expect(local.readCollection('feedback').entries).toHaveLength(0);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('records feedback for an unknown subject (signal stands; no suppression — claim kind unknown)', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      const res = v.memoryFeedback({
+        subject: 'mem:does-not-exist',
+        signal: 'contradicted',
+        actor: 'claude-code',
+        counterEvidence: [
+          {
+            kind: 'source-quote',
+            verdict: 'valid',
+            checkedAt: NOW,
+            soulId: 'sym:x',
+            quote: 'q',
+            targetHash: BLAKE_A,
+          },
+        ],
+      }) as Record<string, unknown>;
+      // no record found → claimKind unknown → counter-evidence ignored → surfaced for review, not suppressed
+      expect(res.ok).toBe(true);
+      expect(res.suppressed).toBe(false);
+      expect(res.surfacedForReview).toBe(true);
+      const fbs = local.readCollection('feedback').entries as MemoryFeedback[];
+      expect(fbs.map((f) => f.subject)).toContain('mem:does-not-exist');
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+});
+
+// ─── memory_audit feedback surfacing (W5 Slice 3) ────────────────────────────
+
+describe('memoryAudit feedback surfacing', () => {
+  it('lists quarantined count + contradictedForReview (un-quarantined contradicted feedback)', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      const r = record({ subject: 'sym:src/a.ts#A.b', claim: 'A.b does the thing' });
+      local.upsertEntry('active', r);
+      // one contradicted feedback WITHOUT admissible counter-evidence → surfaced for review, NOT quarantined
+      v.memoryFeedback({
+        subject: r.id,
+        signal: 'contradicted',
+        actor: 'claude-code',
+        counterEvidence: [
+          {
+            kind: 'source-quote',
+            verdict: 'degraded',
+            checkedAt: NOW,
+            soulId: r.subject,
+            quote: 'q',
+            targetHash: BLAKE_A,
+          },
+        ],
+      });
+      const res = v.memoryAudit({}) as {
+        feedback: { quarantined: number; contradictedForReview: Array<{ subject: string }> };
+      };
+      expect(res.feedback.quarantined).toBe(0); // not suppressed
+      expect(res.feedback.contradictedForReview).toHaveLength(1);
+      expect(res.feedback.contradictedForReview[0]?.subject).toBe(r.id);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('counts a locally-quarantined record under quarantined and drops it from contradictedForReview', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      const r = record({ subject: 'sym:src/a.ts#A.b', claim: 'A.b does the thing' });
+      local.upsertEntry('active', r);
+      // admissible+valid counter-evidence → local quarantine (effective verdicts fold local decisions into local records)
+      v.memoryFeedback({
+        subject: r.id,
+        signal: 'contradicted',
+        actor: 'claude-code',
+        counterEvidence: [
+          {
+            kind: 'source-quote',
+            verdict: 'valid',
+            checkedAt: NOW,
+            soulId: r.subject,
+            quote: 'q',
+            targetHash: BLAKE_A,
+          },
+        ],
+      });
+      const res = v.memoryAudit({}) as {
+        feedback: { quarantined: number; contradictedForReview: Array<{ subject: string }> };
+      };
+      expect(res.feedback.quarantined).toBe(1); // the local record is now quarantined
+      expect(res.feedback.contradictedForReview).toHaveLength(0); // already suppressed → not "for review"
     } finally {
       rmSync(home, { recursive: true, force: true });
     }

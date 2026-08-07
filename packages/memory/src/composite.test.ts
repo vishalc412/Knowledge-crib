@@ -87,7 +87,7 @@ function gathered(
   decisions: MemoryDecision[] = [],
   fb: MemoryFeedback[] = [],
 ) {
-  return { records: tagged, decisions, feedback: fb, errors: [] };
+  return { records: tagged, decisions, localDecisions: [], feedback: fb, errors: [] };
 }
 
 function compositeOf(

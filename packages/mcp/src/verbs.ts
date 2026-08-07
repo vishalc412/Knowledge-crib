@@ -31,21 +31,27 @@ import {
   type EffectiveVerdicts,
   FtsLexicalScorer,
   type MemoryCandidate,
+  type MemoryDecision,
   type MemoryEvalContext,
   type MemoryEvaluator,
   type MemoryEvidence,
+  type MemoryFeedback,
   MemoryFtsIndex,
   type MemoryRecord,
   type MemorySource,
   type MemoryStore,
   type RecallProjection,
   type ScoredRecord,
+  applyContradictedFeedback,
   assertNoMemorySecrets,
   conflictGroups,
+  contradictedForReview,
   effectiveVerdicts,
   gatherRecall,
+  isFeedbackSignal,
   isRecallEligible,
   memoryCandidateId,
+  quarantinedRecordIds,
   readRepoId,
   recallProjection,
 } from '@knowledge-crib/memory';
@@ -276,6 +282,7 @@ const PUBLIC_VERBS = new Set<string>([
   'memoryObserve',
   'memoryStatus',
   'memoryAudit',
+  'memoryFeedback',
 ]);
 
 export class Verbs {
@@ -2040,11 +2047,38 @@ export class Verbs {
     }
     const trust: Record<string, number> = {};
     for (const { verdicts } of all.entries) this.bump(trust, verdicts.trust);
+    // W5 Slice 3 — surface contradicted-for-review records (PRD W5 line 361: "surface it for review").
+    // A `contradicted` feedback whose subject is NOT quarantined took only the bounded penalty and
+    // awaits admissible counter-evidence; a `quarantined` verdict marks a record already suppressed.
+    let quarantined = 0;
+    for (const { verdicts } of all.entries) {
+      if (verdicts.quarantined) {
+        quarantined += 1;
+      }
+    }
+    const localFeedback = this.memory?.local
+      ? (this.memory.local.readCollection('feedback').entries as MemoryFeedback[])
+      : [];
+    const localQuarantineSubjects = quarantinedRecordIds(
+      this.memory?.local
+        ? (this.memory.local.readCollection('decisions').entries as MemoryDecision[])
+        : [],
+    );
+    const forReview = contradictedForReview(localFeedback, localQuarantineSubjects).map((fb) => ({
+      subject: fb.subject,
+      actor: fb.actor,
+      ts: fb.ts,
+      ...(fb.context ? { context: fb.context } : {}),
+    }));
     const result = {
       validation: { records: all.entries.length, drifted, drift },
       conflicts,
       privacy: { secretsScannedOnWrite: true, secretsFlagged },
       trust,
+      feedback: {
+        quarantined,
+        contradictedForReview: forReview,
+      },
       provenance: { fresh: all.fresh, errors: all.errors },
     };
     return this.applyIfHash(args, result);
@@ -2140,6 +2174,97 @@ export class Verbs {
     });
   }
 
+  /**
+   * W5 Slice 3 — `memory_feedback` (PRD line 241): "Writes a local feedback event; one negative event
+   * cannot retract team memory." Records a LOCAL feedback signal (`useful` / `unhelpful` /
+   * `contradicted`) on a memory record by id. The event is content-addressed → idempotent (a repeat
+   * signal upserts to the same `fb:` id).
+   *
+   * For a `contradicted` signal, PRD W5 line 361 applies: the record is suppressed (quarantined)
+   * LOCALLY only when supported by admissible counter-evidence (a `counterEvidence` item whose kind is
+   * admissible for the record's claim kind AND whose verdict is `valid`); otherwise the record keeps a
+   * bounded feedback penalty and is surfaced for review (`memory_audit` lists it under
+   * `contradictedForReview`). The quarantine decision is written to the LOCAL `decisions` collection
+   * ONLY — never team / global — so a single local negative event can never retract team memory (the
+   * no-poison rule; recall folds local decisions into local records only).
+   *
+   * The MCP server never evaluates or executes anything here: `counterEvidence` is supplied by the
+   * caller as pre-checked evidence items (kind + verdict); the suppression verdict is a pure decision
+   * over those items, not a gate run. Degrades to `{ memory: 'not configured' }` when no local store
+   * is wired.
+   */
+  memoryFeedback(args: {
+    /** the `mem:` record id the feedback is about. */
+    subject: string;
+    /** `useful` / `unhelpful` / `contradicted` (PRD §2 MemoryFeedback). */
+    signal: string;
+    actor: string;
+    context?: string;
+    /**
+     * Counter-evidence supporting a `contradicted` signal (PRD W5 line 361). Each item is a loose
+     * evidence record (kind + verdict + anchor); admissibility is checked per item. Only admissible +
+     * `valid` items trigger local quarantine. Ignored for non-`contradicted` signals.
+     */
+    counterEvidence?: ReadonlyArray<Record<string, unknown>>;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const local = this.memory?.local;
+    if (!local) return this.applyIfHash(args, { memory: 'not configured' });
+    if (typeof args.subject !== 'string' || args.subject.length === 0) {
+      return this.applyIfHash(args, { ok: false, error: 'subject is required' });
+    }
+    if (!isFeedbackSignal(args.signal)) {
+      return this.applyIfHash(args, {
+        ok: false,
+        error: `invalid signal '${args.signal}' — expected one of useful, unhelpful, contradicted`,
+      });
+    }
+    if (typeof args.actor !== 'string' || args.actor.length === 0) {
+      return this.applyIfHash(args, { ok: false, error: 'actor is required' });
+    }
+    // resolve the record (local active → team records → global records) to learn its claim kind for
+    // counter-evidence admissibility. A missing record is still recorded as feedback (the signal stands
+    // for when the record appears), but admissibility cannot be checked → no suppression.
+    const found = this.findMemoryRecord(args.subject);
+    const claimKind = found?.record.kind;
+    const counterEvidence = (args.counterEvidence ?? []) as unknown as MemoryEvidence[];
+    const result = applyContradictedFeedback(local, {
+      record: { id: args.subject, kind: claimKind ?? 'fact' },
+      feedback: {
+        id: '',
+        schemaVersion: '1',
+        signal: args.signal,
+        subject: args.subject,
+        actor: args.actor,
+        ...(args.context ? { context: args.context } : {}),
+        ts: new Date().toISOString(),
+      },
+      counterEvidence: claimKind ? counterEvidence : [],
+      now: () => new Date().toISOString(),
+    });
+    if (result.suppression.suppress) {
+      return this.applyIfHash(args, {
+        ok: true,
+        feedbackId: result.feedbackId,
+        suppressed: true,
+        quarantineDecisionId: result.suppression.decision.id,
+        subject: args.subject,
+        note: 'contradicted by admissible counter-evidence — record quarantined locally (team memory untouched)',
+      });
+    }
+    return this.applyIfHash(args, {
+      ok: true,
+      feedbackId: result.feedbackId,
+      suppressed: false,
+      surfacedForReview: args.signal === 'contradicted',
+      subject: args.subject,
+      note:
+        args.signal === 'contradicted'
+          ? 'contradicted without admissible counter-evidence — bounded penalty applied, surfaced for review'
+          : 'feedback recorded (bounded ranking adjustment only)',
+    });
+  }
+
   // ─── W3 memory helpers (private — NOT in PUBLIC_VERBS, so they bypass the Proxy trap) ────────
 
   /** The three memory stores as a RecallStores map, or undefined when memory isn't configured. */
@@ -2218,10 +2343,17 @@ export class Verbs {
         : undefined;
     for (const { record, source } of gathered.records) {
       const evaluation = evalFn ? evalFn(record) : undefined;
+      // No-poison (W5 Slice 2 + 3): local decisions overlay LOCAL records only; team/global decisions
+      // are authoritative across stores. Folding local decisions into a team/global record would let a
+      // single local negative event (quarantine / tombstone) retract team memory (PRD line 242).
+      const decs =
+        source === 'local'
+          ? [...gathered.decisions, ...gathered.localDecisions]
+          : gathered.decisions;
       entries.push({
         record,
         source,
-        verdicts: effectiveVerdicts(record, gathered.decisions, evaluation),
+        verdicts: effectiveVerdicts(record, decs, evaluation),
       });
     }
     return { entries, errors: gathered.errors, fresh: evalFn !== undefined };

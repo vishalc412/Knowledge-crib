@@ -139,8 +139,9 @@ function gathered(
   tagged: { record: MemoryRecord; source: MemorySource }[],
   decisions: MemoryDecision[] = [],
   fb: MemoryFeedback[] = [],
+  localDecisions: MemoryDecision[] = [],
 ): GatheredRecall {
-  return { records: tagged, decisions, feedback: fb, errors: [] };
+  return { records: tagged, decisions, localDecisions, feedback: fb, errors: [] };
 }
 
 function idsOf(p: RecallProjection): string[] {

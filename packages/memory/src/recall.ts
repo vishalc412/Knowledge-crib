@@ -183,7 +183,18 @@ export interface RecallStores {
 /** What {@link gatherRecall} collected from the stores, plus any per-shard read errors. */
 export interface GatheredRecall {
   records: TaggedRecord[];
+  /** team + global decisions (authoritative across stores — these apply to EVERY record). */
   decisions: MemoryDecision[];
+  /**
+   * LOCAL decisions (W5 Slice 3). These apply to LOCAL records ONLY — {@link recallProjection} folds
+   * them into a local record's effective verdicts but NEVER into a team/global record's. This is the
+   * no-poison rule: a local quarantine / tombstone decision shares its `subject` id with the team
+   * record that promoted the same content, so applying it to the team record would drop team memory
+   * on a single local negative event (PRD line 242: "one negative event cannot retract team memory").
+   * Local decisions are gathered (so a local quarantine CAN suppress its own local record — PRD W5
+   * line 361) but scoped to local-sourced records at the {@link effectiveVerdicts} call site.
+   */
+  localDecisions: MemoryDecision[];
   feedback: MemoryFeedback[];
   errors: string[];
 }
@@ -214,15 +225,19 @@ export const DEFAULT_RECALL_SOURCES: readonly MemorySource[] = ['team', 'local',
 /**
  * Gather records + decisions + feedback from the requested stores. Reads are sync + lock-free
  * (`MemoryStore.readCollection`). Records come from `team.records` + `local.active` + `global.records`;
- * decisions from `team.decisions` + `global.decisions` ONLY; feedback from `local.feedback`
- * + `global.feedback` (team has none). Each record is tagged with its source for ranking.
+ * team/global decisions go into `decisions` (authoritative across stores); LOCAL decisions go into
+ * `localDecisions` (apply to LOCAL records only — see {@link GatheredRecall.localDecisions}); feedback
+ * from `local.feedback` + `global.feedback` (team has none). Each record is tagged with its source.
  *
- * **Local decisions are deliberately NOT gathered** (W5 Slice 2 no-poison rule): a local tombstone is a
- * `supersede` decision whose `subject` is the record id — the SAME id as the team record that promoted
- * it. {@link effectiveVerdicts} matches decisions by `subject === record.id` and treats `supersede` as
- * terminal, so gathering local tombstones would mark the same-id team record `superseded` and drop it
- * from recall. Local decisions are audit-only (read by `crib memory audit`); they never enter the recall
- * decision pool. See `tombstone.ts`.
+ * **The no-poison rule (W5 Slice 2 + Slice 3).** A local tombstone (supersede) or a local
+ * contradicted-feedback quarantine is a decision whose `subject` is the record id — the SAME id as the
+ * team record that promoted the same content. {@link effectiveVerdicts} matches decisions by
+ * `subject === record.id` and treats `supersede`/`quarantine` as terminal/excluding, so applying a
+ * local decision to the same-id team record would drop team memory on a single local negative event
+ * (PRD line 242: "one negative event cannot retract team memory"). Local decisions are therefore
+ * gathered SEPARATELY and {@link recallProjection} folds them into a record's effective verdicts ONLY
+ * when that record's source is `local` — team/global records see team/global decisions alone. This
+ * lets a local quarantine suppress its own local record (PRD W5 line 361) without poisoning team trust.
  */
 export function gatherRecall(
   stores: RecallStores,
@@ -231,6 +246,7 @@ export function gatherRecall(
   const sources = opts.sources ?? DEFAULT_RECALL_SOURCES;
   const records: TaggedRecord[] = [];
   const decisions: MemoryDecision[] = [];
+  const localDecisions: MemoryDecision[] = [];
   const feedback: MemoryFeedback[] = [];
   const errors: string[] = [];
 
@@ -258,6 +274,13 @@ export function gatherRecall(
       else errors.push(`local.active: non-record entry ${String(e?.id)}`);
     }
     errors.push(...r.errors);
+    // W5 Slice 3: gather local decisions into their own pool (apply to local records only — no-poison).
+    const d = stores.local.readCollection('decisions');
+    for (const e of d.entries) {
+      if (isDecisionEntry(e)) localDecisions.push(e);
+      else errors.push(`local.decisions: non-decision entry ${String(e?.id)}`);
+    }
+    errors.push(...d.errors);
     const f = stores.local.readCollection('feedback');
     for (const e of f.entries) {
       if (isFeedbackEntry(e)) feedback.push(e);
@@ -287,7 +310,7 @@ export function gatherRecall(
     errors.push(...f.errors);
   }
 
-  return { records, decisions, feedback, errors };
+  return { records, decisions, localDecisions, feedback, errors };
 }
 
 // ─── the pure projection ─────────────────────────────────────────────────────
@@ -346,7 +369,13 @@ export function recallProjection(
       fresh && opts.evaluator && opts.evalCtx
         ? opts.evaluator.evaluate(record, opts.evalCtx)
         : undefined;
-    const verdicts = effectiveVerdicts(record, gathered.decisions, evaluation);
+    // No-poison (W5 Slice 2 + 3): local decisions overlay LOCAL records only; team/global decisions
+    // are authoritative across stores (a team supersede/quarantine of an id correctly retires the
+    // same-id local copy too). Folding local decisions into a team/global record would let a single
+    // local negative event retract team memory (PRD line 242).
+    const decs =
+      source === 'local' ? [...gathered.decisions, ...gathered.localDecisions] : gathered.decisions;
+    const verdicts = effectiveVerdicts(record, decs, evaluation);
     if (!isRecallEligible(verdicts)) continue;
     eligibleEntries.push({ record, verdicts, source });
   }

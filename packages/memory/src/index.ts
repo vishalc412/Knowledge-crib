@@ -37,3 +37,4 @@ export * from './promotion.js';
 export * from './trusted-ref.js';
 export * from './attempt.js';
 export * from './tombstone.js';
+export * from './feedback.js';

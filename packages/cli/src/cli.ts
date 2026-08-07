@@ -37,23 +37,30 @@ import {
   type AttemptPhase,
   type GateReceipt,
   type MemoryCandidate,
+  type MemoryDecision,
   MemoryEvaluator,
+  type MemoryEvidence,
+  type MemoryFeedback,
   type MemoryPolicy,
   type MemoryRecord,
+  type MemoryRecordKind,
   MemoryStore,
   SoulStoreSoulPort,
   type StructuredSummary,
   type TrustedTeamPresence,
   activateLocal,
   appendAttemptEvent,
+  applyContradictedFeedback,
   assertValidMemoryEntry,
   attemptEventId,
   attemptGroupId,
   buildAttemptEvent,
   compactAttempt,
+  contradictedForReview,
   decisionId,
   evaluateCandidate,
   gcUnpromotedAttempts,
+  isFeedbackSignal,
   isTeamTrustedRecord,
   loadPolicy,
   loadPolicyJson,
@@ -62,6 +69,7 @@ import {
   parseMemoryShard,
   policyHash,
   proposeExisting,
+  quarantinedRecordIds,
   readRepoId,
   resolveProfile,
   runGate,
@@ -2253,6 +2261,8 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryCheck(rest, ctx);
     case 'audit':
       return cmdMemoryAudit(rest, ctx);
+    case 'feedback':
+      return cmdMemoryFeedback(rest, ctx);
     case 'gc':
       return cmdMemoryGc(rest, ctx);
     case 'migrate':
@@ -2261,7 +2271,7 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | gc [--max-age-days N] [--dry-run] | migrate\n',
+        'crib memory init | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate\n',
       );
       return EXIT.OK;
     default:
@@ -2877,6 +2887,124 @@ function cmdMemoryCheck(args: string[], ctx?: CmdCtx): number {
   return report.ok ? EXIT.OK : EXIT.ERROR;
 }
 
+/**
+ * `crib memory feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>]
+ *   [--context <text>] [--counter-evidence <json-file>]` (W5 Slice 3, PRD line 241 + W5 line 361).
+ *
+ * Records a LOCAL feedback event on a memory record by id (content-addressed → idempotent). For a
+ * `contradicted` signal, the record is quarantined LOCALLY only when supported by admissible
+ * counter-evidence (a counter-evidence item whose kind is admissible for the record's claim kind AND
+ * whose verdict is `valid`); otherwise it takes a bounded penalty and is surfaced for review
+ * (`crib memory audit` lists it under `contradictedForReview`). The quarantine decision is LOCAL-ONLY
+ * (one negative event cannot retract team memory). The CLI never runs an evaluation gate here —
+ * `--counter-evidence` supplies pre-checked evidence items (kind + verdict); the suppression verdict is
+ * a pure decision over those items.
+ */
+function cmdMemoryFeedback(args: string[], ctx?: CmdCtx): number {
+  const signalIdx = args.indexOf('--signal');
+  const signal = signalIdx >= 0 ? args[signalIdx + 1] : undefined;
+  const actorIdx = args.indexOf('--actor');
+  const actor = actorIdx >= 0 ? args[actorIdx + 1] : undefined;
+  const contextIdx = args.indexOf('--context');
+  const context = contextIdx >= 0 ? args[contextIdx + 1] : undefined;
+  const ceIdx = args.indexOf('--counter-evidence');
+  const ceFile = ceIdx >= 0 ? args[ceIdx + 1] : undefined;
+  // strip value-taking flags + their values so the positional <mem-id> resolves cleanly
+  const stripped = args.filter(
+    (_, i) =>
+      i !== signalIdx &&
+      i !== signalIdx + 1 &&
+      i !== actorIdx &&
+      i !== actorIdx + 1 &&
+      i !== contextIdx &&
+      i !== contextIdx + 1 &&
+      i !== ceIdx &&
+      i !== ceIdx + 1,
+  );
+  const subject = stripped.find((a) => !a.startsWith('-'));
+  if (!subject) {
+    process.stderr.write(
+      'usage: crib memory feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  if (!signal || !isFeedbackSignal(signal)) {
+    process.stderr.write(
+      `error: --signal must be one of useful, unhelpful, contradicted (got '${signal ?? ''}')\n`,
+    );
+    return EXIT.BAD_ARGS;
+  }
+  if (!actor) {
+    process.stderr.write('error: --actor is required\n');
+    return EXIT.BAD_ARGS;
+  }
+  const resolved = resolveRoot(stripped, ctx);
+  const deps = createMemoryDeps(openSoul(resolved).soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  // resolve the record (team records → local active → global records) to learn its claim kind for
+  // counter-evidence admissibility. A missing record is still recorded as feedback (the signal stands
+  // for when the record appears), but admissibility cannot be checked → no suppression.
+  const claimKind = findRecordKind(deps, subject);
+  let counterEvidence: MemoryEvidence[] = [];
+  if (ceFile) {
+    try {
+      const parsed = JSON.parse(readFileSync(ceFile, 'utf8')) as unknown;
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
+      counterEvidence = arr as MemoryEvidence[];
+    } catch (err) {
+      process.stderr.write(
+        `error: could not read --counter-evidence file: ${(err as Error).message}\n`,
+      );
+      return EXIT.BAD_ARGS;
+    }
+  }
+  const result = applyContradictedFeedback(deps.local, {
+    record: { id: subject, kind: claimKind ?? 'fact' },
+    feedback: {
+      id: '',
+      schemaVersion: '1',
+      signal,
+      subject,
+      actor,
+      ...(context ? { context } : {}),
+      ts: new Date().toISOString(),
+    },
+    counterEvidence: claimKind ? counterEvidence : [],
+    now: () => new Date().toISOString(),
+  });
+  const summary: Record<string, unknown> = {
+    feedbackId: result.feedbackId,
+    subject,
+    signal,
+    suppressed: result.suppression.suppress,
+    ...(result.suppression.suppress
+      ? { quarantineDecisionId: result.suppression.decision.id }
+      : { surfacedForReview: result.suppression.surfacedForReview }),
+  };
+  process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+  return EXIT.OK;
+}
+
+/** Find a memory record's claim kind across the team / local / global stores (for feedback admissibility). */
+function findRecordKind(
+  deps: NonNullable<ReturnType<typeof createMemoryDeps>>,
+  id: string,
+): MemoryRecordKind | undefined {
+  for (const r of deps.team.readCollection('records').entries as MemoryRecord[]) {
+    if (r.id === id) return r.kind;
+  }
+  for (const r of deps.local.readCollection('active').entries as MemoryRecord[]) {
+    if (r.id === id) return r.kind;
+  }
+  for (const r of deps.global.readCollection('records').entries as MemoryRecord[]) {
+    if (r.id === id) return r.kind;
+  }
+  return undefined;
+}
+
 /** `crib memory audit [--repair-local]` — report validation drift, conflicts, and trust distribution. */
 function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
   const repair = args.includes('--repair-local');
@@ -2951,6 +3079,27 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
       deps.local.persistManifest();
     }
   }
+  // W5 Slice 3 — surface contradicted-for-review records (PRD W5 line 361: "surface it for review").
+  // A `contradicted` feedback whose subject is NOT quarantined took only the bounded penalty and awaits
+  // admissible counter-evidence; a quarantined subject is already suppressed. The quarantine is LOCAL-ONLY.
+  const localFeedback = deps.local.readCollection('feedback').entries as MemoryFeedback[];
+  const localQuarantineSubjects = quarantinedRecordIds(
+    deps.local.readCollection('decisions').entries as MemoryDecision[],
+  );
+  const localActiveIds = new Set(
+    (deps.local.readCollection('active').entries as MemoryRecord[]).map((r) => r.id),
+  );
+  let quarantined = 0;
+  for (const id of localQuarantineSubjects) if (localActiveIds.has(id)) quarantined += 1;
+  const contradictedForReviewList = contradictedForReview(
+    localFeedback,
+    localQuarantineSubjects,
+  ).map((fb) => ({
+    subject: fb.subject,
+    actor: fb.actor,
+    ts: fb.ts,
+    ...(fb.context ? { context: fb.context } : {}),
+  }));
   process.stdout.write(
     `${JSON.stringify(
       {
@@ -2959,6 +3108,7 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
         conflicts,
         trust,
         perStore,
+        feedback: { quarantined, contradictedForReview: contradictedForReviewList },
         ...(repair
           ? { repaired, tombstoned, tombstoneDecisions, ...(trustedRef ? { trustedRef } : {}) }
           : {}),

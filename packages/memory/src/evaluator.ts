@@ -152,6 +152,16 @@ const ADMISSIBLE: Record<MemoryRecordKind, EvidenceKind[]> = {
   pitfall: ['receipt-pair', 'source-quote', 'human-attestation'],
 };
 
+/**
+ * True iff `kind` is an admissible evidence kind for a claim of `claimKind` (PRD §2 admissibility
+ * matrix). PURE — the same matrix {@link aggregateEvidence} enforces per item. Re-exported so the
+ * W5 Slice 3 contradicted-feedback suppression (`feedback.ts`) can test whether counter-evidence is
+ * admissible WITHOUT re-duplicating the matrix (and drifting from it).
+ */
+export function admissibleFor(kind: EvidenceKind, claimKind: MemoryRecordKind): boolean {
+  return ADMISSIBLE[claimKind].includes(kind);
+}
+
 /** The default outcome-promise heuristic for procedures (PRD: "execution required if the claim
  *  promises an outcome"). Overridable via {@link MemoryEvaluatorOpts.promisesOutcome}. */
 export function defaultPromisesOutcome(claim: string): boolean {
