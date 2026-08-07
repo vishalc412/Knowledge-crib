@@ -51,10 +51,13 @@ import {
   attemptGroupId,
   buildAttemptEvent,
   compactAttempt,
+  decisionId,
   evaluateCandidate,
   gcUnpromotedAttempts,
+  isTeamTrustedRecord,
   loadPolicy,
   loadPolicyJson,
+  localRecordsToTombstone,
   memoryCandidateId,
   parseMemoryShard,
   policyHash,
@@ -63,6 +66,7 @@ import {
   resolveProfile,
   runGate,
   runMemoryCheck,
+  tombstoneLocalForTeamPromotion,
   trustedRefOf,
   verifySnapshot,
 } from '@knowledge-crib/memory';
@@ -2355,6 +2359,30 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
     );
     return EXIT.ERROR;
   }
+  // W5 Slice 2: if the candidate's content is ALREADY team-trusted (its would-be `mem:` id is in the
+  // trusted ref with an accept decision), do NOT re-run the gate or create a local active duplicate —
+  // the team record is the live memory. Tombstone any stale local active copy for the same id and stop.
+  // No git / no trusted ref ⇒ team trust is not derivable ⇒ proceed with a normal local evaluation.
+  const wouldBeRecordId = candidate.id.replace(/^cand:/, 'mem:');
+  const tp = resolveTrustedPresence(resolved.repoRoot, resolved.cribDir);
+  if (tp && isTeamTrustedRecord(wouldBeRecordId, tp.presence)) {
+    tombstoneLocalForTeamPromotion(deps.local, wouldBeRecordId, 'evaluate', () =>
+      new Date().toISOString(),
+    );
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          recordId: wouldBeRecordId,
+          trust: 'team',
+          alreadyTeamTrusted: true,
+          trustedRef: tp.ref,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return EXIT.OK;
+  }
   // W5 (PRD line 354): record the attempt lifecycle as structured events (the crash trail, PRD line
   // 348). Reuse the candidate's attemptId when memory_observe started one (origin === 'attempt');
   // otherwise mint a fresh group. On success the trail is compacted to one summary (PRD line 359);
@@ -2598,6 +2626,32 @@ function cmdMemoryPropose(args: string[], ctx?: CmdCtx): number {
     process.stderr.write(`error: gating receipt '${receiptId}' not in local receipts\n`);
     return EXIT.ERROR;
   }
+  // W5 Slice 2: if the record is ALREADY team-trusted (its id is in the trusted ref with an accept
+  // decision), re-proposing is a no-op — report idempotence and stop (PRD line 347). No git / no
+  // trusted ref ⇒ proceed with a normal team proposal (it will be `newly-proposed` until merge).
+  const tp = resolveTrustedPresence(resolved.repoRoot, resolved.cribDir);
+  if (tp && isTeamTrustedRecord(record.id, tp.presence)) {
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          recordId: record.id,
+          receiptId,
+          decisionId: decisionId({
+            kind: 'accept',
+            subject: record.id,
+            actor: 'cli',
+            reason: 'team proposal accepted (idempotent by content id)',
+          }),
+          trust: 'team',
+          alreadyTeamTrusted: true,
+          trustedRef: tp.ref,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return EXIT.OK;
+  }
   try {
     const result = proposeExisting(deps.team, record, receipt, 'cli', () =>
       new Date().toISOString(),
@@ -2728,6 +2782,24 @@ function loadPolicyAtRef(repoRoot: string, ref: string): MemoryPolicy | undefine
   }
 }
 
+/**
+ * Resolve the trusted-ref presence for the working repo (W5 Slice 2). Returns `undefined` when there is
+ * no git work tree, no trusted ref configured, or the ref does not resolve — in all those cases team
+ * trust is not derivable and tombstoning is a no-op. The trusted ref comes from the working-tree
+ * policy's `trustedRef` field, overridden by `KCRIB_TRUSTED_REF`.
+ */
+function resolveTrustedPresence(
+  repoRoot: string,
+  cribDir: string,
+): { ref: string; presence: TrustedTeamPresence | undefined } | undefined {
+  if (!isGitRepo(repoRoot)) return undefined;
+  const policy = loadPolicy(cribDir);
+  const ref = trustedRefOf(policy) ?? process.env.KCRIB_TRUSTED_REF;
+  if (!ref) return undefined;
+  const presence = buildTrustedPresence(repoRoot, ref);
+  return { ref, presence };
+}
+
 /** Gather every receipt the check might need (team + local), keyed by id. */
 function gatherReceipts(
   deps: NonNullable<ReturnType<typeof createMemoryDeps>>,
@@ -2852,10 +2924,32 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
   const trust: Record<string, number> = {};
   for (const r of teamRecords) trust[r.verdicts.trust] = (trust[r.verdicts.trust] ?? 0) + 1;
   let repaired = false;
+  const tombstoned: string[] = [];
+  const tombstoneDecisions: string[] = [];
+  let trustedRef: string | undefined;
   if (repair) {
     // recompute the local manifest counts from shards (the conservative repair — no data is deleted)
     deps.local.persistManifest();
     repaired = true;
+    // W5 Slice 2: tombstone local active records whose content is now team-trusted (PRD W5). A local
+    // copy whose exact id is in the trusted ref (record + accept decision) is redundant — recall would
+    // surface both the team and the local record for the same id. Retire the local copy: remove it from
+    // `active` + append a local `supersede` decision (audit-only; recall never gathers local decisions,
+    // so it cannot poison the same-id team record). No git / no trusted ref → nothing to tombstone.
+    const tp = resolveTrustedPresence(resolved.repoRoot, resolved.cribDir);
+    trustedRef = tp?.ref;
+    if (tp) {
+      const localActive = deps.local.readCollection('active').entries as MemoryRecord[];
+      for (const r of localRecordsToTombstone(localActive, tp.presence)) {
+        const res = tombstoneLocalForTeamPromotion(deps.local, r.id, 'audit', () =>
+          new Date().toISOString(),
+        );
+        tombstoned.push(r.id);
+        tombstoneDecisions.push(res.decisionId);
+      }
+      // counts changed (active −, decisions +) — recompute the manifest after tombstoning
+      deps.local.persistManifest();
+    }
   }
   process.stdout.write(
     `${JSON.stringify(
@@ -2865,7 +2959,9 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
         conflicts,
         trust,
         perStore,
-        ...(repair ? { repaired } : {}),
+        ...(repair
+          ? { repaired, tombstoned, tombstoneDecisions, ...(trustedRef ? { trustedRef } : {}) }
+          : {}),
       },
       null,
       2,

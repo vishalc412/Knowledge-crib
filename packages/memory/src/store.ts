@@ -9,7 +9,11 @@ import { join } from 'node:path';
  *                  the repo's `.crib/.lock` — the SAME lock the soul reindex holds — so a team memory
  *                  write never races a reindex (PRD: "repo writes serialized via `.crib/.lock`").
  *   - **local**  — per-machine, per-repo, `~/.crib/memory/repos/<repoId>/{attempts,candidates,
- *                  active,feedback,receipts}` + `manifest.json`. Own lock at `<root>/.lock`.
+ *                  active,feedback,receipts,decisions}` + `manifest.json`. Own lock at `<root>/.lock`.
+ *                  `decisions` holds tombstone events (W5 Slice 2): when a local active record's content
+ *                  becomes team-trusted, the local copy is removed + a `supersede` decision records why.
+ *                  These local decisions are AUDIT-ONLY — recall deliberately does NOT gather them (a
+ *                  local tombstone must not poison the same-id team record; see {@link tombstone}).
  *   - **global** — per-machine, cross-repo, `~/.crib/memory/global/{records,decisions,feedback}` +
  *                  `manifest.json`. Own lock at `<root>/.lock`.
  *
@@ -58,6 +62,7 @@ const LOCAL_COLLECTIONS: readonly MemoryCollection[] = [
   'active',
   'feedback',
   'receipts',
+  'decisions',
 ];
 const GLOBAL_COLLECTIONS: readonly MemoryCollection[] = ['records', 'decisions', 'feedback'];
 

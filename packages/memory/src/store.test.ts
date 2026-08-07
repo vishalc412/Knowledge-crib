@@ -207,12 +207,19 @@ describe('MemoryStore factories + shape', () => {
     expect(s.manifestPath()).toBeUndefined();
   });
 
-  it('local: home/repos/<id> root, own lock, attempts/candidates/active/feedback/receipts, manifest', () => {
+  it('local: home/repos/<id> root, own lock, attempts/candidates/active/feedback/receipts/decisions, manifest', () => {
     const s = MemoryStore.local(REPO, { env, now: () => NOW, repoRoot: '/r' });
     expect(s.role).toBe('local');
     expect(s.rootDir).toBe(join(home, 'repos', REPO));
     expect(s.lockFilePath).toBe(join(home, 'repos', REPO, '.lock'));
-    expect(s.collections).toEqual(['attempts', 'candidates', 'active', 'feedback', 'receipts']);
+    expect(s.collections).toEqual([
+      'attempts',
+      'candidates',
+      'active',
+      'feedback',
+      'receipts',
+      'decisions',
+    ]);
     expect(s.hasManifest).toBe(true);
     expect(s.manifestPath()).toBe(join(home, 'repos', REPO, 'manifest.json'));
   });

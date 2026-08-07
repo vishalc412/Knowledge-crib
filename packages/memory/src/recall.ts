@@ -214,8 +214,15 @@ export const DEFAULT_RECALL_SOURCES: readonly MemorySource[] = ['team', 'local',
 /**
  * Gather records + decisions + feedback from the requested stores. Reads are sync + lock-free
  * (`MemoryStore.readCollection`). Records come from `team.records` + `local.active` + `global.records`;
- * decisions from `team.decisions` + `global.decisions` (local has none); feedback from `local.feedback`
+ * decisions from `team.decisions` + `global.decisions` ONLY; feedback from `local.feedback`
  * + `global.feedback` (team has none). Each record is tagged with its source for ranking.
+ *
+ * **Local decisions are deliberately NOT gathered** (W5 Slice 2 no-poison rule): a local tombstone is a
+ * `supersede` decision whose `subject` is the record id — the SAME id as the team record that promoted
+ * it. {@link effectiveVerdicts} matches decisions by `subject === record.id` and treats `supersede` as
+ * terminal, so gathering local tombstones would mark the same-id team record `superseded` and drop it
+ * from recall. Local decisions are audit-only (read by `crib memory audit`); they never enter the recall
+ * decision pool. See `tombstone.ts`.
  */
 export function gatherRecall(
   stores: RecallStores,

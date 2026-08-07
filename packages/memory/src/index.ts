@@ -36,3 +36,4 @@ export * from './gate-runner.js';
 export * from './promotion.js';
 export * from './trusted-ref.js';
 export * from './attempt.js';
+export * from './tombstone.js';
