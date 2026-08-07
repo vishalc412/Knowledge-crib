@@ -512,6 +512,20 @@ describe('crib skill install --dest — cross-client skill installation', () => 
     expect(result.status).toBe(2);
     expect(result.stderr).toContain('usage: crib skill install [name] [--dest <dir>]');
   });
+
+  it('rejects --client all (skill install targets one client, not a sentinel)', () => {
+    const r = runCliResult(['skill', 'install', '--client', 'all']);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/unknown --client: all/);
+  });
+
+  it('rejects an unknown --client with a clean usage error (no stack trace)', () => {
+    const r = runCliResult(['skill', 'install', '--client', 'foo']);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/unknown --client: foo/);
+    expect(r.stderr).not.toMatch(/no adapter for client/); // no ungraceful throw
+    expect(r.stderr).not.toMatch(/at .*:\d+/); // no stack trace
+  });
 });
 
 describe('crib update --package (P4 multi-package federation) — CLI dispatch', () => {

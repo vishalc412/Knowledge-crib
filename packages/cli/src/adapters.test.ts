@@ -56,12 +56,10 @@ describe('CLIENT_ADAPTERS — registry completeness', () => {
     }
   });
 
-  it('only claude and cursor have a skill destination', () => {
+  it('only claude has a skill destination (cursor loads .mdc rules, not SKILL.md dirs)', () => {
     expect(skillDestFor('claude', '/home/u')).toBe('/home/u/.claude/skills');
-    expect(skillDestFor('cursor', '/home/u')).toBe('/home/u/.cursor/rules');
     for (const id of ALL_CLIENTS) {
-      if (id !== 'claude' && id !== 'cursor')
-        expect(skillDestFor(id, '/home/u'), `${id}`).toBeNull();
+      if (id !== 'claude') expect(skillDestFor(id, '/home/u'), `${id}`).toBeNull();
     }
   });
 });
@@ -107,6 +105,52 @@ describe('spliceAdapterBlock — managed-block discipline', () => {
     const existing = `TOP\n${ADAPTER_BEGIN}\nbody\n${ADAPTER_END}\nBOTTOM\n`;
     expect(removeAdapterBlock(existing)).toBe('TOP\nBOTTOM\n');
     expect(removeAdapterBlock('no block here')).toBe('no block here');
+  });
+
+  it('an orphan begin marker (no end marker) is non-destructive: splice + remove refuse', () => {
+    // A truncated/corrupted file with a begin marker but no end marker must NOT discard the unterminated
+    // tail — splice returns content unchanged (block not refreshed), remove returns content unchanged.
+    const orphan = `TOP\n${ADAPTER_BEGIN}\nUSER_NOTES_BELOW\n`;
+    const block = `${ADAPTER_BEGIN}\nbody\n${ADAPTER_END}`;
+    expect(spliceAdapterBlock(orphan, block)).toBe(orphan);
+    expect(removeAdapterBlock(orphan)).toBe(orphan);
+  });
+});
+
+describe('removeInstructions — frontmatter-only .md is user content (not deleted)', () => {
+  it('does NOT delete a user frontmatter-only .md instruction file on remove', () => {
+    // A user-committed CLAUDE.md holding only YAML frontmatter (no body) is sibling content, not a
+    // crib-owned file. install appends the block after the frontmatter; remove must strip the block
+    // and KEEP the user's frontmatter — never rmSync it.
+    const p = join(repo, 'CLAUDE.md');
+    writeFileSync(p, '---\ntitle: Mine\n---\n');
+    installInstructions(repo, { client: 'claude', scope: 'project' });
+    expect(readFileSync(p, 'utf8')).toContain(ADAPTER_BEGIN);
+    removeInstructions(repo, { client: 'claude', scope: 'project' });
+    expect(existsSync(p), 'user frontmatter-only .md must survive remove').toBe(true);
+    const after = readFileSync(p, 'utf8');
+    expect(after).not.toContain(ADAPTER_BEGIN);
+    expect(after).toContain('title: Mine');
+  });
+});
+
+describe('installInstructions — CRLF frontmatter', () => {
+  it('preserves a user-edited CRLF frontmatter on refresh (no stacked duplicate)', () => {
+    installInstructions(repo, { client: 'cursor', scope: 'project' });
+    const mdc = join(repo, '.cursor', 'rules', 'crib.mdc');
+    // User re-edits the rule with CRLF line endings (VS Code files.eol=\r\n, Notepad, hand-authoring).
+    writeFileSync(
+      mdc,
+      '---\r\ndescription: custom\r\nalwaysApply: false\r\n---\r\n\r\nuser body\r\n',
+    );
+    installInstructions(repo, { client: 'cursor', scope: 'project' });
+    const out = readFileSync(mdc, 'utf8');
+    // Exactly one frontmatter block (two `---` fences), not a stacked duplicate.
+    expect(out.split('\n').filter((l) => l.trim() === '---').length).toBe(2);
+    expect(out).toContain('description: custom');
+    expect(out).toContain('alwaysApply: false');
+    expect(out).toContain('user body');
+    expect(out).toContain(ADAPTER_BEGIN);
   });
 });
 

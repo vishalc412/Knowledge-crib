@@ -14,6 +14,7 @@
  * client = add a `ClientAdapter` entry here + an `McpIde` target there, not a third hardcoded switch.
  */
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 /** A supported agent client for the instruction-adapter registry. A superset of {@link McpIde}:
@@ -110,7 +111,12 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
       scope === 'project'
         ? [{ path: join(repoRoot, '.cursor', 'rules', 'crib.mdc'), format: 'mdc' }]
         : null,
-    skillDest: (home) => join(home, '.cursor', 'rules'),
+    // Cursor loads only `.mdc` rule files (not Claude-style `SKILL.md` directories), and as of mid-2026
+    // has no user-home rules location at all — user rules are plain text managed via Cursor Settings.
+    // So a bundled Claude skill copied to `~/.cursor/rules/<name>/SKILL.md` is silently ignored. Return
+    // null: `crib skill install --client cursor` reports a non-fatal note + installs nothing rather than
+    // writing a directory Cursor will never load.
+    skillDest: () => null,
   },
   {
     id: 'copilot',
@@ -164,9 +170,11 @@ export function clientAdapter(id: ClientId): ClientAdapter {
   return a;
 }
 
-/** Resolve the skill install destination for a client (or `null` if it has no skill mechanism). */
+/** Resolve the skill install destination for a client (or `null` if it has no skill mechanism). Falls
+ *  back to `os.homedir()` (getpwuid on POSIX) when no `home` is passed — never `process.env.HOME ?? ''`,
+ *  which yields a relative path (`.claude/skills`) when HOME is unset (sandboxed CI / `env -i`). */
 export function skillDestFor(client: ClientId, home?: string): string | null {
-  return clientAdapter(client).skillDest(home ?? process.env.HOME ?? '');
+  return clientAdapter(client).skillDest(home ?? homedir());
 }
 
 // ─── managed-block splice (markdown) ──────────────────────────────────────────
@@ -176,8 +184,12 @@ function readOrEmpty(path: string): string {
   return existsSync(path) ? readFileSync(path, 'utf8') : '';
 }
 
-/** Splice the managed block into `content`, replacing any existing block in place (never duplicating).
- *  Everything outside the markers is preserved byte-for-byte. */
+/** Splice the managed block into `content`, replacing any existing complete block in place (never
+ *  duplicating). Content outside a COMPLETE marker pair is preserved (a separating newline is inserted
+ *  only when sibling text directly abuts a marker, so the block stays a standalone region). When a begin
+ *  marker is present with no matching end marker (a truncated/corrupted file), the function REFUSES to
+ *  splice and returns `content` unchanged — it cannot know where the block ended, so it must not guess
+ *  (guessing would discard the unterminated tail). The caller observes `written:false` and can repair. */
 export function spliceAdapterBlock(content: string, block: string): string {
   const beginIdx = content.indexOf(ADAPTER_BEGIN);
   if (beginIdx === -1) {
@@ -185,34 +197,33 @@ export function spliceAdapterBlock(content: string, block: string): string {
     return `${content}${tail}${block}\n`;
   }
   const endIdx = content.indexOf(ADAPTER_END, beginIdx);
+  if (endIdx === -1) return content; // orphan begin marker — refuse to splice (non-destructive)
   const before = content.slice(0, beginIdx);
-  const after = endIdx === -1 ? '' : content.slice(endIdx + ADAPTER_END.length);
+  const after = content.slice(endIdx + ADAPTER_END.length);
   const ensuredNl = (s: string) => (s.length > 0 && !s.endsWith('\n') ? `${s}\n` : s);
   return `${ensuredNl(before)}${block}\n${after.replace(/^\n/, '')}`;
 }
 
-/** Remove the managed block from `content`, preserving everything outside the markers. */
+/** Remove the managed block from `content`, preserving everything outside a COMPLETE marker pair. When
+ *  a begin marker is present with no matching end marker, returns `content` unchanged (refuses to remove
+ *  — cannot find the block boundary without discarding the unterminated tail). */
 export function removeAdapterBlock(content: string): string {
   const beginIdx = content.indexOf(ADAPTER_BEGIN);
   if (beginIdx === -1) return content;
   const endIdx = content.indexOf(ADAPTER_END, beginIdx);
+  if (endIdx === -1) return content; // orphan begin marker — refuse to remove (non-destructive)
   const before = content.slice(0, beginIdx);
-  const after = endIdx === -1 ? '' : content.slice(endIdx + ADAPTER_END.length);
+  const after = content.slice(endIdx + ADAPTER_END.length);
   return `${before}${after.replace(/^\n/, '')}`;
 }
 
-/** Build the full on-disk content for an instruction target's managed block (mdc prepends
- *  frontmatter when the file is fresh; existing frontmatter is preserved on refresh). */
-function blockForTarget(target: InstructionTarget): string {
-  return neutralProtocolBlock();
-}
-
-/** True if `content` is empty or ONLY Cursor frontmatter (no user body) — i.e. a crib-owned rule file
- *  that is safe to delete on remove. */
+/** True if `content` is empty or ONLY YAML frontmatter (no user body). CRLF-tolerant (`\r?\n`) so a
+ *  Windows-edited frontmatter-only Cursor rule is still recognized. Only meaningful for `.mdc` targets
+ *  (crib owns the frontmatter it writes there); see `removeInstructions` for the format gate. */
 function isOnlyFrontmatter(content: string): boolean {
   const trimmed = content.trim();
   if (trimmed === '') return true;
-  return /^---\n[\s\S]*\n---\s*$/.test(trimmed);
+  return /^---\r?\n[\s\S]*\r?\n---\s*$/.test(trimmed);
 }
 
 // ─── install / list / remove ──────────────────────────────────────────────────
@@ -255,12 +266,13 @@ export function installInstructions(
       let next: string;
       if (target.format === 'mdc') {
         // Ensure the Cursor frontmatter is present (write it on a fresh file; preserve an existing
-        // user-edited frontmatter above the managed block).
-        const hasFrontmatter = /^---\n[\s\S]*?\n---/.test(existing);
+        // user-edited frontmatter above the managed block). CRLF-tolerant so a Windows-edited frontmatter
+        // is recognized, not stacked beneath a duplicate crib default.
+        const hasFrontmatter = /^---\r?\n[\s\S]*?\r?\n---/.test(existing);
         const withFrontmatter = hasFrontmatter ? existing : `${CURSOR_FRONTMATTER}${existing}`;
-        next = spliceAdapterBlock(withFrontmatter, blockForTarget(target));
+        next = spliceAdapterBlock(withFrontmatter, neutralProtocolBlock());
       } else {
-        next = spliceAdapterBlock(existing, blockForTarget(target));
+        next = spliceAdapterBlock(existing, neutralProtocolBlock());
       }
       const written = next !== existing;
       if (written) {
@@ -331,8 +343,14 @@ export function removeInstructions(
       const next = removeAdapterBlock(existing);
       const written = next !== existing;
       if (written) {
-        if (isOnlyFrontmatter(next)) {
-          // crib-owned rule file (empty or frontmatter-only after block removal) → delete it.
+        // Only a CRIB-OWNED file is safe to delete. For `.mdc` (Cursor) crib authors the frontmatter
+        // itself, so a frontmatter-only residual (or empty file) is crib-owned → delete. For `.md`
+        // targets (CLAUDE.md, AGENTS.md, GEMINI.md, .windsurfrules, copilot-instructions.md) crib NEVER
+        // writes frontmatter — any frontmatter present is user-authored sibling content. Deleting a
+        // frontmatter-only `.md` residual would destroy user metadata, so a `.md` file is deleted ONLY
+        // when it is empty after block removal.
+        const cribOwned = target.format === 'mdc' ? isOnlyFrontmatter(next) : next.trim() === '';
+        if (cribOwned) {
           rmSync(target.path, { force: true });
         } else {
           writeFileSync(target.path, next, 'utf8');

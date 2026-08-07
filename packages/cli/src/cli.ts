@@ -1350,8 +1350,16 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
   process.stdout.write(
     '  step 4/4: writing the vendor-neutral agent-memory protocol into instruction files…\n',
   );
-  // Non-fatal: adapter install never aborts init (a user may not want any instruction files yet).
-  cmdAdapters(['install', '--client', 'all', repoRoot], ctx);
+  // Non-fatal: adapter install must never abort init (a user may not want any instruction files yet, and
+  // index/hooks/mcp already succeeded). installInstructions can still throw on an fs error (EACCES/EROFS/
+  // ENOSPC writing CLAUDE.md/AGENTS.md), so swallow it into a warning rather than aborting with a trace.
+  try {
+    cmdAdapters(['install', '--client', 'all', repoRoot], ctx);
+  } catch (e) {
+    process.stderr.write(
+      `  warning: instruction-adapter install failed — ${(e as Error).message}\n`,
+    );
+  }
 
   process.stdout.write('\n✓ crib init complete. Next steps:\n');
   process.stdout.write('  1. Restart your IDE so it picks up the MCP server config.\n');
@@ -2378,6 +2386,13 @@ function cmdSkill(args: string[]): number {
         process.stderr.write('usage: crib skill install [name] [--client <id>]\n');
         return EXIT.BAD_ARGS;
       }
+      // Skill install targets ONE client (no 'all' sentinel — unlike `crib adapters --client all`).
+      // Validate membership so an unknown id (or 'all') yields a clean usage error, not a stack trace
+      // from clientAdapter's `no adapter for client '...'` throw.
+      if (value === 'all' || !ALL_CLIENTS.includes(value as ClientId)) {
+        process.stderr.write(`unknown --client: ${value}\nvalid: ${ALL_CLIENTS.join(', ')}\n`);
+        return EXIT.BAD_ARGS;
+      }
       client = value as ClientId;
       continue;
     }
@@ -2468,7 +2483,7 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
       return EXIT.BAD_ARGS;
     }
     // The first non-flag positional is the subcommand (consumed via `sub`); a second one is the path.
-    if (!pathArg && arg !== sub) pathArg = arg;
+    if (!pathArg) pathArg = arg;
   }
   if (client !== 'all' && !ALL_CLIENTS.includes(client)) {
     process.stderr.write(
@@ -3599,7 +3614,7 @@ function printHelp(): void {
       '                                          auto-wire the MCP server into each IDE config (REQ-2)',
       '  crib adapters <install|list|remove> [--client <id|all>] [--scope project|global]',
       '                                          write the vendor-neutral agent-memory protocol into each client instruction file (W8)',
-      '  crib skill <install|list> [name] [--dest <dir>] [--client <claude|cursor>]   install bundled skills (default ~/.claude/skills)',
+      '  crib skill <install|list> [name] [--dest <dir>] [--client <claude>]   install bundled skills (default ~/.claude/skills)',
       '  crib init [path] [--ide <name|all>]      5-minute onboarding: index + install-hooks + mcp install + adapters + next-steps hero',
       '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop (✓/✗ + fix hints)',
       '',
