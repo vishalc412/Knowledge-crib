@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/attempt.schema.json",
+  "title": "AttemptEvent",
+  "description": "A structured attempt-lifecycle event (PRD W5). Never raw prompts, transcripts, or chain-of-thought.",
+  "type": "object",
+  "required": ["id", "schemaVersion", "attemptId", "phase", "ts"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^att:[0-9a-f]+$" },
+    "schemaVersion": { "type": "string", "const": "1" },
+    "attemptId": { "type": "string", "minLength": 1 },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "start",
+        "observation",
+        "action",
+        "outcome",
+        "candidate",
+        "evaluation",
+        "promotion",
+        "compaction"
+      ]
+    },
+    "subject": { "type": "string" },
+    "observation": { "type": "object" },
+    "action": { "type": "object" },
+    "outcome": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["success", "failure", "partial"] },
+        "errorFingerprint": { "type": "string" },
+        "receiptId": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "candidateId": { "type": "string" },
+    "evaluationId": { "type": "string" },
+    "ts": { "type": "string" },
+    "meta": { "type": "object" }
+  },
+  "additionalProperties": true
+}

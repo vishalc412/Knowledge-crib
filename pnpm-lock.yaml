@@ -88,6 +88,28 @@ importers:
         specifier: ^3.2.6
         version: 3.2.7(@types/node@22.20.0)
 
+  packages/memory:
+    dependencies:
+      '@knowledge-crib/core':
+        specifier: workspace:*
+        version: link:../core
+      '@knowledge-crib/soul-schema':
+        specifier: workspace:*
+        version: link:../soul-schema
+      ajv:
+        specifier: ^8.17.1
+        version: 8.20.0
+    devDependencies:
+      fast-check:
+        specifier: ^4.9.0
+        version: 4.9.0
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@22.20.0)
+
   packages/parsers:
     dependencies:
       '@knowledge-crib/soul-schema':

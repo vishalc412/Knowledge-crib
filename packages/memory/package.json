@@ -1,0 +1,48 @@
+{
+  "name": "@knowledge-crib/memory",
+  "version": "0.1.0",
+  "description": "Trusted agent memory ledger: the memory-1 schema, content-addressed records, stores, and the freshness/admissibility engine. Deliberately outside the soul's closed NodeKind enum (PRD boundary #2).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schemas/*": "./dist/schema/*"
+  },
+  "files": ["dist", "src", "LICENSE", "NOTICE", "!dist/**/*.test.*", "!src/**/*.test.ts"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --reporter=dot"
+  },
+  "dependencies": {
+    "@knowledge-crib/core": "workspace:*",
+    "@knowledge-crib/soul-schema": "workspace:*",
+    "ajv": "^8.17.1"
+  },
+  "devDependencies": {
+    "fast-check": "^4.9.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.2.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KnowledgeCrib/knowledge-crib.git",
+    "directory": "packages/memory"
+  },
+  "bugs": {
+    "url": "https://github.com/KnowledgeCrib/knowledge-crib/issues"
+  },
+  "homepage": "https://github.com/KnowledgeCrib/knowledge-crib#readme",
+  "keywords": ["mcp", "agent-memory", "knowledge-graph", "ai-agents", "trust", "evidence"],
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
