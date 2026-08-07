@@ -30,6 +30,7 @@ import {
   buildRecord,
   evaluateCandidate,
   policyPortFromReceipt,
+  proposeExisting,
   proposeTeam,
   receiptView,
   verifySnapshot,
@@ -387,5 +388,114 @@ describe('verifySnapshot', () => {
     expect(verifySnapshot(before, { ...before, head: '1'.repeat(40) })).toBe(false);
     expect(verifySnapshot(before, { ...before, worktreeDigest: 'blake3:other' })).toBe(false);
     expect(verifySnapshot(before, { ...before, candidateId: 'cand:y' })).toBe(false);
+  });
+});
+
+// ─── activateLocal recordMeta (PRD: meta is excluded from the content id) ────
+
+describe('activateLocal recordMeta', () => {
+  it('stamps meta.receiptId onto the local record WITHOUT changing the record id', () => {
+    const { local, cleanup } = stores();
+    try {
+      const c = candidate();
+      local.upsertEntry('candidates', c);
+      const ev = evaluate(c);
+      const receipt = gateReceipt();
+      const res = activateLocal(local, c, ev, receipt, { receiptId: receipt.id });
+      expect(res.recordId).toBe(ev.record.id);
+      expect(res.record.meta?.receiptId).toBe(receipt.id);
+      // meta is mutable / excluded from the content id → the persisted record keeps the mem: id
+      expect(res.record.id.startsWith('mem:')).toBe(true);
+      const active = local.readCollection('active').entries.find((e) => e.id === res.recordId);
+      expect(active?.meta?.receiptId).toBe(receipt.id);
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+// ─── proposeExisting (the `crib memory propose <mem-id>` path) ────────────────
+
+describe('proposeExisting', () => {
+  it('writes the team record (trust team) + accept decision + receipt from an already-activated record', () => {
+    const { local, team, cleanup } = stores();
+    try {
+      const c = candidate();
+      local.upsertEntry('candidates', c);
+      const ev = evaluate(c);
+      const receipt = gateReceipt();
+      const act = activateLocal(local, c, ev, receipt, { receiptId: receipt.id });
+      const res = proposeExisting(team, act.record, receipt, 'cli', () => NOW);
+      expect(res.record.verdicts.trust).toBe('team');
+      expect(res.recordId).toBe(act.record.id);
+      expect(
+        team.readCollection('records').entries.find((e) => e.id === res.recordId),
+      ).toBeTruthy();
+      expect(
+        team.readCollection('decisions').entries.find((e) => e.id === res.decisionId),
+      ).toBeTruthy();
+      expect(team.readCollection('receipts').entries.find((e) => e.id === receipt.id)).toBeTruthy();
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('is idempotent: re-proposing the same activated record reproduces identical ids', () => {
+    const { local, team, cleanup } = stores();
+    try {
+      const c = candidate();
+      local.upsertEntry('candidates', c);
+      const ev = evaluate(c);
+      const receipt = gateReceipt();
+      const act = activateLocal(local, c, ev, receipt, { receiptId: receipt.id });
+      const a = proposeExisting(team, act.record, receipt, 'cli', () => NOW);
+      const b = proposeExisting(team, act.record, receipt, 'cli', () => NOW);
+      expect(a.recordId).toBe(b.recordId);
+      expect(a.decisionId).toBe(b.decisionId);
+      expect(
+        team.readCollection('records').entries.filter((e) => e.id === a.recordId),
+      ).toHaveLength(1);
+      expect(
+        team.readCollection('decisions').entries.filter((e) => e.id === a.decisionId),
+      ).toHaveLength(1);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('refuses an invalid-evidence activated record (PRD line 346 admissibility guard)', () => {
+    const { team, cleanup } = stores();
+    try {
+      const c = candidate();
+      const inadmissible: MemoryCandidate = {
+        ...c,
+        evidence: [
+          {
+            kind: 'human-attestation',
+            verdict: 'valid',
+            checkedAt: NOW,
+            actor: 'someone',
+            statement: 'i swear',
+          },
+        ],
+      };
+      inadmissible.id = memoryCandidateId(inadmissible);
+      const ev = evaluate(inadmissible);
+      expect(ev.evaluation.evidence).toBe('invalid');
+      // build a record carrying the invalid evidence verdict, as activation would have stamped it
+      const record = buildRecord(
+        inadmissible,
+        { trust: 'local', evidence: 'invalid', applicability: 'current', lifecycle: 'active' },
+        ev.record.evidence,
+        NOW,
+      );
+      expect(() => proposeExisting(team, record, gateReceipt(), 'cli', () => NOW)).toThrow(
+        ProposalRefusedError,
+      );
+      expect(team.readCollection('records').entries).toHaveLength(0);
+      expect(team.readCollection('decisions').entries).toHaveLength(0);
+    } finally {
+      cleanup();
+    }
   });
 });

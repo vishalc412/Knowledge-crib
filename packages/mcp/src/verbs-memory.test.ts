@@ -132,6 +132,15 @@ function verbsWithMemory(team: MemoryStore): Verbs {
   return new Verbs({ soul, index, repoRoot: repo, memory: mem });
 }
 
+function verbsWithLocal(local: MemoryStore): Verbs {
+  const mem: MemoryDeps = { local };
+  return new Verbs({ soul, index, repoRoot: repo, memory: mem });
+}
+
+function localStore(): MemoryStore {
+  return MemoryStore.local(REPO, { env, now: () => NOW, repoRoot: repo });
+}
+
 // ─── degrade-to-not-configured ───────────────────────────────────────────────
 
 describe('memory verbs without a configured ledger', () => {
@@ -343,5 +352,136 @@ describe('brief', () => {
     expect(second.hash).toBe(hash);
     // the collapsed response is tiny — well under 100 tokens (the exit-gate invariant #3)
     expect(JSON.stringify(second).length).toBeLessThan(400);
+  });
+});
+
+// ─── memory_observe (W4 Slice 2 — writes a LOCAL candidate only, never executes) ──
+
+describe('memoryObserve', () => {
+  it('writes a local candidate (status pending) and never touches team records', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      const res = v.memoryObserve({
+        kind: 'fact',
+        subject: 'sym:src/a.ts#A.b',
+        claim: 'A.b returns 1',
+        actor: 'claude-code',
+        tool: 'claude-code',
+      }) as Record<string, unknown>;
+      expect(res.status).toBe('pending');
+      expect(res.origin).toBe('observe');
+      expect(typeof res.id).toBe('string');
+      expect((res.id as string).startsWith('cand:')).toBe(true);
+      const cands = local.readCollection('candidates').entries;
+      expect(cands).toHaveLength(1);
+      expect(cands[0]?.id).toBe(res.id);
+      // a repo-scoped claim resolves a repoId from the manifest (never blank)
+      const scope = (cands[0] as { scope: { boundary: string; repoId?: string } }).scope;
+      expect(scope.boundary).toBe('repo');
+      expect(typeof scope.repoId).toBe('string');
+      expect(scope.repoId!.length).toBeGreaterThan(0);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('is idempotent by content id: repeat observation upserts to the same cand: id', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      const a = v.memoryObserve({
+        kind: 'fact',
+        subject: 'sym:src/a.ts#A.b',
+        claim: 'A.b returns 1',
+        actor: 'claude-code',
+      }) as Record<string, unknown>;
+      const b = v.memoryObserve({
+        kind: 'fact',
+        subject: 'sym:src/a.ts#A.b',
+        claim: 'A.b returns 1',
+        actor: 'claude-code',
+      }) as Record<string, unknown>;
+      expect(b.id).toBe(a.id);
+      // one candidate, not two
+      expect(local.readCollection('candidates').entries).toHaveLength(1);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('sets origin=attempt when an attemptId is supplied', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      const res = v.memoryObserve({
+        kind: 'procedure',
+        subject: 'sym:src/a.ts#A.b',
+        claim: 'run A.b then check',
+        actor: 'claude-code',
+        attemptId: 'att:abc',
+      }) as Record<string, unknown>;
+      expect(res.origin).toBe('attempt');
+      const cand = local.readCollection('candidates').entries[0] as {
+        id: string;
+        origin: string;
+        attemptId?: string;
+      };
+      expect(cand.origin).toBe('attempt');
+      expect(cand.attemptId).toBe('att:abc');
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('degrades to { memory: "not configured" } when no local store is wired', () => {
+    const v = new Verbs({ soul, index, repoRoot: repo });
+    const res = v.memoryObserve({
+      kind: 'fact',
+      subject: 'sym:src/a.ts#A.b',
+      claim: 'x',
+      actor: 'claude-code',
+    }) as Record<string, unknown>;
+    expect(res.memory).toBe('not configured');
+  });
+
+  it('refuses an invalid kind (outside the candidate kind set)', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      const res = v.memoryObserve({
+        kind: 'rumor',
+        subject: 'sym:src/a.ts#A.b',
+        claim: 'x',
+        actor: 'claude-code',
+      }) as Record<string, unknown>;
+      expect(res.ok).toBe(false);
+      expect(typeof res.error).toBe('string');
+      expect(local.readCollection('candidates').entries).toHaveLength(0);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('a global-scoped observation skips repoId resolution (no repoId field on scope)', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      const res = v.memoryObserve({
+        kind: 'convention',
+        subject: 'topic:naming',
+        claim: 'use PascalCase for components',
+        actor: 'claude-code',
+        scopeBoundary: 'global',
+      }) as Record<string, unknown>;
+      expect(res.status).toBe('pending');
+      const scope = (res.scope as { boundary: string; repoId?: string }) ?? {
+        boundary: 'global',
+      };
+      expect(scope.boundary).toBe('global');
+      expect(scope.repoId).toBeUndefined();
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
   });
 });

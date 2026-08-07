@@ -209,11 +209,17 @@ export function activateLocal(
   candidate: MemoryCandidate,
   evaluation: CandidateEvaluation,
   receipt: GateReceipt,
+  /** optional mutable meta stamped onto the local record (e.g. the gating receipt id, for `propose`
+   *  to recover). Meta is EXCLUDED from the content id, so this does not change the record id. */
+  recordMeta?: Record<string, unknown>,
 ): ActivationResult {
   // Trust `local`: a fresh copy of the evaluated record with the trust verdict promoted.
   const localRecord: MemoryRecord = {
     ...evaluation.record,
     verdicts: { ...evaluation.record.verdicts, trust: 'local' },
+    ...(recordMeta || evaluation.record.meta
+      ? { meta: { ...evaluation.record.meta, ...recordMeta } }
+      : {}),
   };
   local.upsertEntry('active', localRecord);
   local.upsertEntry('receipts', receipt);
@@ -295,4 +301,35 @@ export function proposeTeam(
     decisionId: decision.id,
     record: teamRecord,
   };
+}
+
+// ─── propose an already-activated record (the `crib memory propose <mem-id>` path) ───────────
+
+/**
+ * Propose an ALREADY-ACTIVATED local record for team trust (PRD line 257: `crib memory propose
+ * <memory-id>`). Unlike {@link proposeTeam} — which takes a freshly-evaluated {@link
+ * CandidateEvaluation} — this wraps the activated record's stamped verdicts as the evaluation so the
+ * admissibility guard runs against the verdicts the gate stamped at activation time. The receipt
+ * pinned the gate run; the record's `verdicts.evidence` is the admissibility result. Refuses an
+ * invalid-evidence record (PRD line 346) and is idempotent by content id (re-proposing reproduces
+ * identical `mem:`/`dec:`/`rcpt:` ids → no-op upserts).
+ */
+export function proposeExisting(
+  team: MemoryStore,
+  record: MemoryRecord,
+  receipt: GateReceipt,
+  actor: string,
+  now: () => string,
+): ProposalResult {
+  const evaluation: CandidateEvaluation = {
+    record,
+    evaluation: {
+      evidence: record.verdicts.evidence,
+      applicability: record.verdicts.applicability,
+      items: [],
+      reattached: false,
+      reasons: [],
+    },
+  };
+  return proposeTeam(team, evaluation, receipt, actor, now);
 }

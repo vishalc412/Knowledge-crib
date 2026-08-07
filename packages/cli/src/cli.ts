@@ -14,7 +14,7 @@
  * Exit codes (cli spec): 0 ok · 1 error · 2 bad args · 3 not indexed.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import {
   CALLABLE_SYMBOL_TYPES,
@@ -33,6 +33,25 @@ import type { IndexStore } from '@knowledge-crib/core';
 import { EnrichmentStore, Verbs, estimateTokens, serveStdio } from '@knowledge-crib/mcp';
 import type { EnrichLayer, EnrichSaveItem, EnrichScope, VcsAdapter } from '@knowledge-crib/mcp';
 import {
+  type GateReceipt,
+  type MemoryCandidate,
+  MemoryEvaluator,
+  type MemoryPolicy,
+  type MemoryRecord,
+  MemoryStore,
+  SoulStoreSoulPort,
+  activateLocal,
+  evaluateCandidate,
+  loadPolicy,
+  memoryCandidateId,
+  policyHash,
+  proposeExisting,
+  readRepoId,
+  resolveProfile,
+  runGate,
+  verifySnapshot,
+} from '@knowledge-crib/memory';
+import {
   changedFilesSince,
   currentHead,
   detectWorkspace,
@@ -45,6 +64,7 @@ import {
 } from '@knowledge-crib/pipeline';
 import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
 import type { WorkspaceLayout } from '@knowledge-crib/pipeline';
+import { blake3Hex } from '@knowledge-crib/soul-schema';
 import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/ui';
 import { hooksInstalled, installHooks, mergeDriverFiles } from './hooks.js';
 import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
@@ -319,6 +339,8 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdViz(rest, ctx);
     case 'enrich':
       return cmdEnrich(rest, ctx);
+    case 'memory':
+      return cmdMemory(rest, ctx);
     case 'audit-llm':
       return cmdAuditLlm(rest, ctx);
     case 'mcp':
@@ -1078,11 +1100,13 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
   const rt = openSoul(resolved);
   const index = openIndexForRead(rt);
   if (!index) return EXIT.NOT_INDEXED;
+  const memory = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
   const verbs = new Verbs({
     soul: rt.soul,
     index,
     repoRoot: resolved.repoRoot,
     vcs: new CliVcsAdapter(),
+    ...(memory ? { memory } : {}),
   });
   // stdout is the MCP transport; logs go to stderr only.
   const stats = rt.soul.getManifest().stats;
@@ -2126,6 +2150,436 @@ function cmdSkill(args: string[]): number {
   }
 }
 
+// ─── W4 — trusted agent-memory CLI (PRD lines 252–280) ────────────────────────
+
+/**
+ * Build the optional {@link MemoryDeps} for a serving/CLI context: the three stores (team / local /
+ * global) + the independent {@link MemoryEvaluator} wired to a {@link SoulStoreSoulPort}. Returns
+ * `undefined` when the repoId cannot be resolved (an unregistered repo — the memory verbs then
+ * degrade to `{ memory: 'not configured' }` rather than writing content-ids with a blank repoId).
+ * The stores are constructed lazily; dirs are created on first write, not here.
+ */
+function createMemoryDeps(soul: SoulStore, repoRoot: string, cribDir: string) {
+  const repoId = readRepoId(cribDir);
+  if (!repoId) return undefined;
+  const env = process.env;
+  const evaluator = new MemoryEvaluator();
+  const evalCtx = { soul: new SoulStoreSoulPort(soul, repoRoot) };
+  return {
+    team: MemoryStore.team(cribDir, { repoRoot, env }),
+    local: MemoryStore.local(repoId, { repoRoot, env }),
+    global: MemoryStore.global({ env }),
+    evaluator,
+    evalCtx,
+  };
+}
+
+/** blake3 digest of the working-tree state the gate observed (uncommitted file list — PRD line 277). */
+function worktreeDigest(root: string): string {
+  return `blake3:${blake3Hex(uncommittedChanges(root).join('\n'))}`;
+}
+
+/** Find a candidate by id in the local `candidates` collection, or undefined. */
+function findCandidate(local: MemoryStore, id: string): MemoryCandidate | undefined {
+  for (const e of local.readCollection('candidates').entries) {
+    if ((e as MemoryCandidate).id === id) return e as MemoryCandidate;
+  }
+  return undefined;
+}
+
+/** Find an activated record by id in the local `active` collection, or undefined. */
+function findActiveRecord(local: MemoryStore, id: string): MemoryRecord | undefined {
+  for (const e of local.readCollection('active').entries) {
+    if ((e as MemoryRecord).id === id) return e as MemoryRecord;
+  }
+  return undefined;
+}
+
+/** Find a gate receipt by id in the local `receipts` collection, or undefined. */
+function findReceipt(local: MemoryStore, id: string): GateReceipt | undefined {
+  for (const e of local.readCollection('receipts').entries) {
+    if ((e as GateReceipt).id === id) return e as GateReceipt;
+  }
+  return undefined;
+}
+
+/**
+ * `crib memory` — the evaluation / promotion surface (PRD lines 252–258). Subcommands:
+ *   - init                 bootstrap `.crib/memory/policy.json` + report the resolved store layout
+ *   - evaluate <id> -p X   run the gate → evaluate → activate (the happy path); crash-safe
+ *   - activate <id>        crash-recovery: re-evaluate + activate against an existing receipt
+ *   - propose <mem-id>     write a team record + accept decision (idempotent; CI derives trust)
+ *   - attest <id>          TTY-only human attestation: stamp a human-attestation evidence item
+ * The MCP server NEVER calls these — only the CLI / CI runner produce evaluation receipts (PRD 68).
+ */
+async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
+  const [sub, ...rest] = args;
+  switch (sub) {
+    case 'init':
+      return cmdMemoryInit(rest, ctx);
+    case 'evaluate':
+      return cmdMemoryEvaluate(rest, ctx);
+    case 'activate':
+      return cmdMemoryActivate(rest, ctx);
+    case 'propose':
+      return cmdMemoryPropose(rest, ctx);
+    case 'attest':
+      return cmdMemoryAttest(rest, ctx);
+    case undefined:
+    case '-h':
+    case '--help':
+      process.stderr.write(
+        'crib memory init | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate>\n',
+      );
+      return EXIT.OK;
+    default:
+      process.stderr.write(`unknown memory subcommand: ${sub}\n`);
+      return EXIT.BAD_ARGS;
+  }
+}
+
+/** `crib memory init` — write a default trusted-base policy.json if absent + report the layout. */
+function cmdMemoryInit(args: string[], ctx?: CmdCtx): number {
+  const resolved = resolveRoot(args, ctx);
+  const memoryDir = join(resolved.cribDir, 'memory');
+  const policyFile = join(memoryDir, 'policy.json');
+  const repoId = readRepoId(resolved.cribDir);
+  if (!repoId) {
+    process.stderr.write(
+      'could not resolve a stable repoId — run `crib index` to register this repo first\n',
+    );
+    return EXIT.NOT_INDEXED;
+  }
+  if (!existsSync(policyFile)) {
+    const defaultPolicy: MemoryPolicy = {
+      version: 1,
+      profiles: {
+        'self-test': {
+          name: 'self-test',
+          executable: 'node',
+          args: ['--version'],
+          timeoutMs: 5000,
+          permittedEnv: ['PATH'],
+          successExitCodes: [0],
+          assertions: [{ name: 'exit-ok', kind: 'exit-code', codes: [0] }],
+        },
+      },
+    };
+    mkdirSync(memoryDir, { recursive: true });
+    writeFileSync(policyFile, `${JSON.stringify(defaultPolicy, null, 2)}\n`);
+    process.stdout.write(
+      `wrote default policy → ${policyFile}\nedit it to add the gate profiles your memories require\n`,
+    );
+  } else {
+    process.stdout.write(`policy already present → ${policyFile}\n`);
+  }
+  process.stdout.write(
+    `repoId: ${repoId}\nteam store:  ${join(resolved.cribDir, 'memory', 'team')}\nlocal store: ~/.crib/memory/repos/${repoId}\n`,
+  );
+  return EXIT.OK;
+}
+
+/** `crib memory evaluate <candidate> --profile <name>` — gate → evaluate → activate (PRD line 255). */
+async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> {
+  const id = pathArg(args);
+  if (!id) {
+    process.stderr.write('usage: crib memory evaluate <candidate-id> --profile <name>\n');
+    return EXIT.BAD_ARGS;
+  }
+  const profileIdx = args.indexOf('--profile');
+  const profileName = profileIdx >= 0 ? args[profileIdx + 1] : undefined;
+  if (!profileName) {
+    process.stderr.write('error: --profile <name> is required (the trusted-base gate profile)\n');
+    return EXIT.BAD_ARGS;
+  }
+  const rootArgs = args.slice();
+  if (profileIdx >= 0) rootArgs.splice(profileIdx, 2);
+  const resolved = resolveRoot(rootArgs, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const policy = loadPolicy(resolved.cribDir);
+  if (!policy) {
+    process.stderr.write(
+      `no trusted-base policy at ${join(resolved.cribDir, 'memory', 'policy.json')} — run \`crib memory init\` first\n`,
+    );
+    return EXIT.ERROR;
+  }
+  const profile = resolveProfile(policy, profileName);
+  if (!profile) {
+    process.stderr.write(
+      `error: profile '${profileName}' not in trusted-base policy (have: ${Object.keys(policy.profiles).join(', ')})\n`,
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const local = deps.local;
+  const candidate = findCandidate(local, id);
+  if (!candidate) {
+    process.stderr.write(
+      `error: no local candidate '${id}' — observe one first (memory_observe)\n`,
+    );
+    return EXIT.ERROR;
+  }
+  // PRD line 277: snapshot → execute → reacquire → verify. The snapshot is taken WITHOUT a lock;
+  // the gate runs outside any lock; verification happens after.
+  const before = {
+    policyHash: policyHash(policy),
+    head: currentHead(resolved.repoRoot),
+    worktreeDigest: worktreeDigest(resolved.repoRoot),
+    candidateId: candidate.id,
+  };
+  const gate = await runGate({
+    profile,
+    policy,
+    head: before.head,
+    worktreeDigest: before.worktreeDigest,
+    runner: 'cli',
+    repoRoot: resolved.repoRoot,
+    env: process.env,
+    now: () => new Date().toISOString(),
+  });
+  if (!gate.ok) {
+    process.stderr.write(`gate failed: ${gate.error}\n`);
+    return EXIT.ERROR;
+  }
+  // Reacquire + verify the snapshot (PRD line 277): a drift means the gate ran against state that
+  // has since changed → the receipt MUST NOT be trusted.
+  const after = {
+    policyHash: policyHash(loadPolicy(resolved.cribDir) ?? policy),
+    head: currentHead(resolved.repoRoot),
+    worktreeDigest: worktreeDigest(resolved.repoRoot),
+    candidateId: findCandidate(local, id)?.id ?? '',
+  };
+  if (
+    !verifySnapshot(before, {
+      policyHash: after.policyHash,
+      head: after.head,
+      worktreeDigest: after.worktreeDigest,
+      candidateId: after.candidateId,
+    })
+  ) {
+    process.stderr.write(
+      'error: snapshot drift after gate run (policy/HEAD/worktree/candidate changed) — aborting promotion\n',
+    );
+    return EXIT.ERROR;
+  }
+  const evaluation = evaluateCandidate(candidate, {
+    evaluator: deps.evaluator,
+    soul: deps.evalCtx.soul,
+    receipt: gate.receipt,
+    now: () => new Date().toISOString(),
+  });
+  const result = activateLocal(local, candidate, evaluation, gate.receipt, {
+    receiptId: gate.receipt.id,
+  });
+  process.stdout.write(
+    `${JSON.stringify(
+      {
+        recordId: result.recordId,
+        receiptId: result.receiptId,
+        evidence: evaluation.evaluation.evidence,
+        applicability: evaluation.evaluation.applicability,
+        trust: 'local',
+        cleanedUp: result.cleanedUp,
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  return EXIT.OK;
+}
+
+/** `crib memory activate <candidate>` — crash-recovery against an existing receipt (no gate re-run). */
+async function cmdMemoryActivate(args: string[], ctx?: CmdCtx): Promise<number> {
+  const id = pathArg(args);
+  if (!id) {
+    process.stderr.write('usage: crib memory activate <candidate-id>\n');
+    return EXIT.BAD_ARGS;
+  }
+  const resolved = resolveRoot(args, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const local = deps.local;
+  const candidate = findCandidate(local, id);
+  if (!candidate) {
+    process.stderr.write(`error: no local candidate '${id}' to activate\n`);
+    return EXIT.ERROR;
+  }
+  // Find a receipt matching the current worktree state (the gate that already ran but whose
+  // activation crashed before cleanup). PRD line 348: the next run dedupes + completes cleanup.
+  const head = currentHead(resolved.repoRoot);
+  const digest = worktreeDigest(resolved.repoRoot);
+  let receipt: GateReceipt | undefined;
+  for (const e of local.readCollection('receipts').entries) {
+    const r = e as GateReceipt;
+    if (r.head === head && r.worktreeDigest === digest) {
+      receipt = r;
+      break;
+    }
+  }
+  if (!receipt) {
+    process.stderr.write(
+      `error: no local receipt matching HEAD ${head.slice(0, 12)} + worktree digest — run \`crib memory evaluate\` first\n`,
+    );
+    return EXIT.ERROR;
+  }
+  const evaluation = evaluateCandidate(candidate, {
+    evaluator: deps.evaluator,
+    soul: deps.evalCtx.soul,
+    receipt,
+    now: () => new Date().toISOString(),
+  });
+  const result = activateLocal(local, candidate, evaluation, receipt, { receiptId: receipt.id });
+  process.stdout.write(
+    `${JSON.stringify(
+      {
+        recordId: result.recordId,
+        receiptId: result.receiptId,
+        evidence: evaluation.evaluation.evidence,
+        applicability: evaluation.evaluation.applicability,
+        trust: 'local',
+        cleanedUp: result.cleanedUp,
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  return EXIT.OK;
+}
+
+/** `crib memory propose <memory-id>` — write a team record + accept decision (PRD line 257). */
+function cmdMemoryPropose(args: string[], ctx?: CmdCtx): number {
+  const id = pathArg(args);
+  if (!id) {
+    process.stderr.write('usage: crib memory propose <memory-id>\n');
+    return EXIT.BAD_ARGS;
+  }
+  const resolved = resolveRoot(args, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const record = findActiveRecord(deps.local, id);
+  if (!record) {
+    process.stderr.write(`error: no activated local record '${id}' — evaluate/activate first\n`);
+    return EXIT.ERROR;
+  }
+  const receiptId = record.meta?.receiptId;
+  if (typeof receiptId !== 'string') {
+    process.stderr.write(
+      `error: record '${id}' has no gating receipt on its meta — re-run \`crib memory evaluate\`\n`,
+    );
+    return EXIT.ERROR;
+  }
+  const receipt = findReceipt(deps.local, receiptId);
+  if (!receipt) {
+    process.stderr.write(`error: gating receipt '${receiptId}' not in local receipts\n`);
+    return EXIT.ERROR;
+  }
+  try {
+    const result = proposeExisting(deps.team, record, receipt, 'cli', () =>
+      new Date().toISOString(),
+    );
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          recordId: result.recordId,
+          receiptId: result.receiptId,
+          decisionId: result.decisionId,
+          trust: 'team',
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return EXIT.OK;
+  } catch (e) {
+    process.stderr.write(`proposal refused: ${(e as Error).message}\n`);
+    return EXIT.ERROR;
+  }
+}
+
+/** `crib memory attest <candidate>` — TTY-only human attestation (PRD line 258). */
+function cmdMemoryAttest(args: string[], ctx?: CmdCtx): number {
+  if (!process.stdin.isTTY) {
+    process.stderr.write(
+      'error: crib memory attest is TTY-only — run it in an interactive terminal\n',
+    );
+    return EXIT.ERROR;
+  }
+  const id = pathArg(args);
+  if (!id) {
+    process.stderr.write('usage: crib memory attest <candidate-id>\n');
+    return EXIT.BAD_ARGS;
+  }
+  const statementIdx = args.indexOf('--statement');
+  const statement = statementIdx >= 0 ? args[statementIdx + 1] : undefined;
+  if (typeof statement !== 'string' || statement.length === 0) {
+    process.stderr.write('error: --statement <text> is required for a human attestation\n');
+    return EXIT.BAD_ARGS;
+  }
+  const rootArgs = args.slice();
+  if (statementIdx >= 0) rootArgs.splice(statementIdx, 2);
+  const resolved = resolveRoot(rootArgs, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const deps = createMemoryDeps(openSoul(resolved).soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const candidate = findCandidate(deps.local, id);
+  if (!candidate) {
+    process.stderr.write(`error: no local candidate '${id}' to attest\n`);
+    return EXIT.ERROR;
+  }
+  // Append a human-attestation evidence item + re-stage the candidate. A human attestation alone is
+  // NOT admissible for every claim kind (the evaluator decides), but it records the human sign-off.
+  const attested: MemoryCandidate = {
+    ...candidate,
+    evidence: [
+      ...candidate.evidence,
+      {
+        kind: 'human-attestation',
+        verdict: 'valid',
+        checkedAt: new Date().toISOString(),
+        actor: process.env.USER ?? 'human',
+        tty: true,
+        statement,
+      },
+    ],
+  };
+  attested.id = memoryCandidateId(attested);
+  deps.local.upsertEntry('candidates', attested);
+  process.stdout.write(
+    `${JSON.stringify({ id: attested.id, status: 'pending', attestedBy: attested.evidence[attested.evidence.length - 1]?.actor }, null, 2)}\n`,
+  );
+  return EXIT.OK;
+}
+
 function printHelp(): void {
   process.stdout.write(
     [
@@ -2155,6 +2609,7 @@ function printHelp(): void {
       '  crib export [--format F] [--procedure P] [--extracted-only] [--redact|--no-redact] render graph: rules|mermaid|graph.json|report|llm',
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
       '  crib enrich [path] [--budget-tokens N]    semantic work queue; --next (token-packed batch) | --auto [--max-tokens N --max-batches N] | --save <file> | --overview | --scopes | --prune-stale [--apply]',
+      '  crib memory <init|evaluate|activate|propose|attest>   trusted agent-memory promotion: init policy | evaluate <cand> --profile <name> | activate <cand> | propose <mem-id> | attest <cand> (TTY)',
       '  crib audit-llm [path]                    re-verify every LLM artifact against the soul (grounding moat); exits non-zero on ungrounded/drift',
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]',
       '                                          auto-wire the MCP server into each IDE config (REQ-2)',

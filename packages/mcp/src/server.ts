@@ -400,6 +400,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
   //                   memories as SEPARATE groups (code + memory scores are never fused — PRD 333).
   // `memory_recall` — ranked eligible memories (default limit 5, max 20, default budget 1200), team +
   //                   local + applicable-global; conflicting claims appear together.
+  // `memory_observe` — writes a LOCAL candidate only (never evaluates / executes / team-writes).
   // `memory_get`    — one record by id (+ optional full evidence).
   // `memory_status` — counts by trust / evidence / applicability / lifecycle / source + pending.
   // `memory_audit`  — read-only drift / conflict / privacy / trust report.
@@ -439,6 +440,28 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       },
     },
     async (a) => TOOL_RESULT(verbs.memoryRecall(a)),
+  );
+
+  server.registerTool(
+    'memory_observe',
+    {
+      description:
+        "W4 — write a LOCAL candidate only (PRD: the MCP server never evaluates, executes a gate, or writes team memory). Stages an untrusted, content-addressed candidate in the local `candidates` collection; a repeat observation of the same claim upserts to the same id (idempotent). Promotion to a trusted record is a separate CLI/CI step (`crib memory evaluate`/`activate`/`propose`). Degrades to `{ memory: 'not configured' }` when no local store is wired. The repoId for a repo-scoped claim is resolved from the soul manifest / registry.",
+      inputSchema: {
+        kind: z.enum(['fact', 'procedure', 'decision', 'pitfall', 'convention']),
+        subject: z.string(),
+        claim: z.string(),
+        appliesTo: z.array(z.string()).optional(),
+        evidence: z.array(z.record(z.string(), z.unknown())).optional(),
+        actor: z.string(),
+        authorKind: z.enum(['agent', 'human']).optional(),
+        tool: z.string().optional(),
+        scopeBoundary: z.enum(['repo', 'global']).optional(),
+        attemptId: z.string().optional(),
+        ifHash: z.string().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.memoryObserve(a)),
   );
 
   server.registerTool(

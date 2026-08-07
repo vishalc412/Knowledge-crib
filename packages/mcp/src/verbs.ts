@@ -30,6 +30,7 @@ import {
   type ConflictGroup,
   type EffectiveVerdicts,
   FtsLexicalScorer,
+  type MemoryCandidate,
   type MemoryEvalContext,
   type MemoryEvaluator,
   type MemoryEvidence,
@@ -44,6 +45,8 @@ import {
   effectiveVerdicts,
   gatherRecall,
   isRecallEligible,
+  memoryCandidateId,
+  readRepoId,
   recallProjection,
 } from '@knowledge-crib/memory';
 /**
@@ -181,6 +184,9 @@ const EXTERNAL_CALLEE_PATTERNS: readonly RegExp[] = [
   /^(org\.springframework|org\.slf4j|com\.fasterxml|com\.google|io\.micrometer)\./i,
 ];
 
+/** The admissible claim kinds for a `memory_observe` candidate (mirrors the candidate schema enum). */
+const MEMORY_CANDIDATE_KINDS = new Set(['fact', 'procedure', 'decision', 'pitfall', 'convention']);
+
 function initGapCategories(): GapCategoryCounts {
   return { project: 0, tests: 0, fixtures: 0, builtin: 0, external: 0 };
 }
@@ -267,6 +273,7 @@ const PUBLIC_VERBS = new Set<string>([
   'brief',
   'memoryRecall',
   'memoryGet',
+  'memoryObserve',
   'memoryStatus',
   'memoryAudit',
 ]);
@@ -2041,6 +2048,96 @@ export class Verbs {
       provenance: { fresh: all.fresh, errors: all.errors },
     };
     return this.applyIfHash(args, result);
+  }
+
+  /**
+   * W4 — `memory_observe` (PRD line 239: "Writes a local candidate only"). The MCP server NEVER
+   * evaluates, NEVER executes a gate, NEVER writes team memory (PRD line 68: only the CLI + CI
+   * runner produce evaluation receipts). It stages an untrusted {@link MemoryCandidate} in the
+   * LOCAL `candidates` collection — content-addressed, so a repeat observation of the same claim
+   * upserts to the same `cand:` id (idempotent dedupe). Promotion to a trusted record is a separate
+   * CLI/CI step (`crib memory evaluate`/`activate`/`propose`).
+   *
+   * Degrades to `{ memory: 'not configured' }` when no local store is wired (mirrors the vcs / read
+   * verbs). The candidate's `scope.repoId` is resolved from the soul manifest / registry via
+   * {@link readRepoId}; a repo-scoped claim in a repo with no resolvable id is refused (the content
+   * id would be unstable across machines) rather than silently written with a blank repoId.
+   */
+  memoryObserve(args: {
+    kind: string;
+    subject: string;
+    claim: string;
+    appliesTo?: string[];
+    /** proposed evidence items (loose — the store schema-validates + secret-scans on write). */
+    evidence?: ReadonlyArray<Record<string, unknown>>;
+    actor: string;
+    authorKind?: 'agent' | 'human';
+    tool?: string;
+    scopeBoundary?: 'repo' | 'global';
+    attemptId?: string;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const local = this.memory?.local;
+    if (!local) return this.applyIfHash(args, { memory: 'not configured' });
+    const kind = args.kind;
+    if (!MEMORY_CANDIDATE_KINDS.has(kind)) {
+      return this.applyIfHash(args, {
+        ok: false,
+        error: `invalid kind '${kind}' — expected one of ${[...MEMORY_CANDIDATE_KINDS].join(', ')}`,
+      });
+    }
+    if (typeof args.subject !== 'string' || args.subject.length === 0) {
+      return this.applyIfHash(args, { ok: false, error: 'subject is required' });
+    }
+    if (typeof args.claim !== 'string' || args.claim.length === 0) {
+      return this.applyIfHash(args, { ok: false, error: 'claim is required' });
+    }
+    if (typeof args.actor !== 'string' || args.actor.length === 0) {
+      return this.applyIfHash(args, { ok: false, error: 'actor is required' });
+    }
+    const boundary = args.scopeBoundary ?? 'repo';
+    const scope: { boundary: 'repo' | 'global'; repoId?: string } = { boundary };
+    if (boundary === 'repo') {
+      const repoId = readRepoId(this.deps.soul.cribDir);
+      if (!repoId) {
+        return this.applyIfHash(args, {
+          ok: false,
+          error:
+            'could not resolve a stable repoId for this repo — run `crib index` to register it before observing repo-scoped memory',
+        });
+      }
+      scope.repoId = repoId;
+    }
+    const origin: 'observe' | 'attempt' = args.attemptId ? 'attempt' : 'observe';
+    const input = {
+      kind: kind as MemoryCandidate['kind'],
+      subject: args.subject,
+      claim: args.claim,
+      scope,
+      appliesTo: args.appliesTo ?? [],
+      evidence: (args.evidence ?? []) as MemoryEvidence[],
+      authorship: {
+        actor: args.actor,
+        kind: args.authorKind ?? 'agent',
+        ...(args.tool ? { tool: args.tool } : {}),
+      } as MemoryCandidate['authorship'],
+    };
+    const candidate: MemoryCandidate = {
+      id: memoryCandidateId(input),
+      schemaVersion: '1',
+      ...input,
+      origin,
+      ...(args.attemptId ? { attemptId: args.attemptId } : {}),
+      proposedAt: new Date().toISOString(),
+    };
+    // assertWritable (schema validate + secret scan) runs inside upsertEntry; a bad candidate throws.
+    local.upsertEntry('candidates', candidate);
+    return this.applyIfHash(args, {
+      id: candidate.id,
+      status: 'pending',
+      origin,
+      scope: candidate.scope,
+    });
   }
 
   // ─── W3 memory helpers (private — NOT in PUBLIC_VERBS, so they bypass the Proxy trap) ────────
