@@ -155,6 +155,45 @@ function git(root: string, args: string[]): string | undefined {
   }
 }
 
+// ─── W4 trusted-ref helpers (PRD lines 250–280, 340–350) ─────────────────────
+//
+// `crib memory check` derives team trust from blobs present in a trusted Git ref and loads policy
+// from the merge base (never the untrusted PR version). These are thin, deterministic wrappers over
+// git plumbing — all use execFileSync with shell:false (the PRD line-273 execution rule applies to
+// the gate runner; these read-only git calls follow the same no-shell discipline).
+
+/** True if a git ref resolves (branch/tag/HEAD/ref). `refs/remotes/origin/HEAD`, a sha, etc. */
+export function refExists(root: string, ref: string): boolean {
+  return git(root, ['rev-parse', '--verify', '--quiet', ref]) !== undefined;
+}
+
+/** The merge-base commit sha of `a` and `b`, or undefined if either ref is missing. */
+export function mergeBase(root: string, a: string, b: string): string | undefined {
+  return git(root, ['merge-base', a, b]);
+}
+
+/** The commit sha a ref resolves to, or undefined (used to pin the trusted-ref head for receipts). */
+export function revParse(root: string, ref: string): string | undefined {
+  return git(root, ['rev-parse', ref]);
+}
+
+/** Repo-relative POSIX paths of all files under `pathPrefix` as they exist in `ref`'s tree. */
+export function lsTreeFiles(root: string, ref: string, pathPrefix: string): string[] {
+  const out = git(root, ['ls-tree', '-r', '--full-tree', '--name-only', ref, '--', pathPrefix]);
+  if (out === undefined) return [];
+  return out
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .map(toPosix);
+}
+
+/** The full contents of `path` (repo-relative) as it exists in `ref`'s tree, or undefined. */
+export function showFileAtRef(root: string, ref: string, path: string): string | undefined {
+  // `git show` returns the blob contents; ref:path uses the path-in-tree syntax.
+  return git(root, ['show', `${ref}:${path}`]);
+}
+
 function toPosix(p: string): string {
   return sep === '/' ? p : p.split(sep).join('/');
 }

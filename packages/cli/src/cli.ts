@@ -40,15 +40,21 @@ import {
   type MemoryRecord,
   MemoryStore,
   SoulStoreSoulPort,
+  type TrustedTeamPresence,
   activateLocal,
+  assertValidMemoryEntry,
   evaluateCandidate,
   loadPolicy,
+  loadPolicyJson,
   memoryCandidateId,
+  parseMemoryShard,
   policyHash,
   proposeExisting,
   readRepoId,
   resolveProfile,
   runGate,
+  runMemoryCheck,
+  trustedRefOf,
   verifySnapshot,
 } from '@knowledge-crib/memory';
 import {
@@ -56,9 +62,14 @@ import {
   currentHead,
   detectWorkspace,
   indexRepo,
+  isGitRepo,
+  lsTreeFiles,
+  mergeBase,
+  refExists,
   renderExport,
   resolvePackageArg,
   runCluster,
+  showFileAtRef,
   uncommittedChanges,
   updateRepo,
 } from '@knowledge-crib/pipeline';
@@ -2225,11 +2236,19 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryPropose(rest, ctx);
     case 'attest':
       return cmdMemoryAttest(rest, ctx);
+    case 'check':
+      return cmdMemoryCheck(rest, ctx);
+    case 'audit':
+      return cmdMemoryAudit(rest, ctx);
+    case 'gc':
+      return cmdMemoryGc(rest, ctx);
+    case 'migrate':
+      return cmdMemoryMigrate(rest, ctx);
     case undefined:
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate>\n',
+        'crib memory init | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | gc [--max-age-days N] [--dry-run] | migrate\n',
       );
       return EXIT.OK;
     default:
@@ -2578,6 +2597,290 @@ function cmdMemoryAttest(args: string[], ctx?: CmdCtx): number {
     `${JSON.stringify({ id: attested.id, status: 'pending', attestedBy: attested.evidence[attested.evidence.length - 1]?.actor }, null, 2)}\n`,
   );
   return EXIT.OK;
+}
+
+// ─── W4 Slice 3 — trusted-ref derivation + CI check gate + audit/gc/migrate ──
+
+/**
+ * Build the {@link TrustedTeamPresence} for a trusted Git ref: which `mem:` record ids + which
+ * accepted record ids (an `accept` decision whose subject is the record) are present in the ref's
+ * `.crib/memory/team/**` shards (PRD line 279). Returns `undefined` when the ref does not resolve →
+ * no trusted ref configured → committed memories remain pending. PURE over git plumbing: reads via
+ * `ls-tree` + `git show <ref>:<path>` + the strict {@link parseMemoryShard} loader (no model, no shell).
+ */
+function buildTrustedPresence(repoRoot: string, ref: string): TrustedTeamPresence | undefined {
+  if (!refExists(repoRoot, ref)) return undefined;
+  const teamPrefix = '.crib/memory/team';
+  const paths = lsTreeFiles(repoRoot, ref, teamPrefix);
+  const recordIds = new Set<string>();
+  const acceptedRecordIds = new Set<string>();
+  for (const p of paths) {
+    if (!p.endsWith('.jsonl')) continue;
+    const blob = showFileAtRef(repoRoot, ref, p);
+    if (blob === undefined) continue;
+    const { entries } = parseMemoryShard(blob, `${ref}:${p}`);
+    for (const e of entries) {
+      const id = (e as { id?: string }).id;
+      if (typeof id !== 'string') continue;
+      if (id.startsWith('mem:')) recordIds.add(id);
+      else if (id.startsWith('dec:')) {
+        const kind = (e as { kind?: string }).kind;
+        const subject = (e as { subject?: string }).subject;
+        if (kind === 'accept' && typeof subject === 'string' && subject.startsWith('mem:')) {
+          acceptedRecordIds.add(subject);
+        }
+      }
+    }
+  }
+  return { recordIds, acceptedRecordIds };
+}
+
+/** Load the trusted-base policy at a git ref (merge-base or trusted ref), or undefined if absent. */
+function loadPolicyAtRef(repoRoot: string, ref: string): MemoryPolicy | undefined {
+  const blob = showFileAtRef(repoRoot, ref, '.crib/memory/policy.json');
+  if (blob === undefined) return undefined;
+  try {
+    return loadPolicyJson(blob);
+  } catch {
+    return undefined; // corrupt policy at ref — treat as absent (the gate reports no merge-base policy)
+  }
+}
+
+/** Gather every receipt the check might need (team + local), keyed by id. */
+function gatherReceipts(
+  deps: NonNullable<ReturnType<typeof createMemoryDeps>>,
+): Map<string, GateReceipt> {
+  const map = new Map<string, GateReceipt>();
+  for (const e of deps.team.readCollection('receipts').entries) {
+    const r = e as GateReceipt;
+    if (typeof r.id === 'string') map.set(r.id, r);
+  }
+  for (const e of deps.local.readCollection('receipts').entries) {
+    const r = e as GateReceipt;
+    if (typeof r.id === 'string') map.set(r.id, r);
+  }
+  return map;
+}
+
+/**
+ * `crib memory check` — the CI gate (PRD lines 275–280, 350). Loads policy from the MERGE BASE (never
+ * the untrusted PR version), derives team trust from the trusted ref, and runs the pure {@link
+ * runMemoryCheck}. Exit 0 if the gate passes, 1 on any violation (self-authoring, missing receipt,
+ * refused invalid-evidence record). `--trusted-ref <ref>` / `KCRIB_TRUSTED_REF` override the default.
+ */
+function cmdMemoryCheck(args: string[], ctx?: CmdCtx): number {
+  // `--trusted-ref <ref>` carries a value that must NOT be mistaken for a positional path by
+  // resolveRoot/pathArg — strip it (and its value) before root resolution, then re-parse the override.
+  const refIdx = args.indexOf('--trusted-ref');
+  const override = refIdx >= 0 ? args[refIdx + 1] : undefined;
+  const stripped = refIdx >= 0 ? args.filter((_, i) => i !== refIdx && i !== refIdx + 1) : args;
+  const resolved = resolveRoot(stripped, ctx);
+  if (!isGitRepo(resolved.repoRoot)) {
+    process.stderr.write('error: crib memory check requires a git work tree\n');
+    return EXIT.BAD_ARGS;
+  }
+  const prPolicy = loadPolicy(resolved.cribDir);
+  const trustedRef =
+    (typeof override === 'string' && override.length > 0 ? override : undefined) ??
+    process.env.KCRIB_TRUSTED_REF ??
+    trustedRefOf(prPolicy);
+  const mbSha = mergeBase(resolved.repoRoot, 'HEAD', trustedRef);
+  const mergeBasePolicy = mbSha ? loadPolicyAtRef(resolved.repoRoot, mbSha) : undefined;
+  const presence = buildTrustedPresence(resolved.repoRoot, trustedRef);
+  const deps = createMemoryDeps(openSoul(resolved).soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const records = deps.team.readCollection('records').entries as MemoryRecord[];
+  const receipts = gatherReceipts(deps);
+  const report = runMemoryCheck({
+    mergeBasePolicy,
+    prPolicy,
+    presence,
+    records,
+    receipts,
+  });
+  const summary = {
+    trustedRef,
+    mergeBase: mbSha ?? null,
+    mergeBasePolicyHash: report.mergeBasePolicyHash,
+    prPolicyHash: report.prPolicyHash,
+    policyChanged: report.policyChanged,
+    withoutTrustedRef: report.withoutTrustedRef,
+    checked: report.checked,
+    alreadyTrusted: report.alreadyTrusted,
+    newlyProposed: report.newlyProposed,
+    refused: report.refused,
+    selfAuthoringViolations: report.selfAuthoringViolations,
+    missingReceipts: report.missingReceipts,
+    ok: report.ok,
+  };
+  process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+  if (report.violations.length > 0) {
+    process.stderr.write(`violations:\n${report.violations.map((v) => `  - ${v}`).join('\n')}\n`);
+  }
+  return report.ok ? EXIT.OK : EXIT.ERROR;
+}
+
+/** `crib memory audit [--repair-local]` — report validation drift, conflicts, and trust distribution. */
+function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
+  const repair = args.includes('--repair-local');
+  const resolved = resolveRoot(args, ctx);
+  const deps = createMemoryDeps(openSoul(resolved).soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const stores: Array<{ name: string; store: MemoryStore }> = [
+    { name: 'team', store: deps.team },
+    { name: 'local', store: deps.local },
+    { name: 'global', store: deps.global },
+  ];
+  let totalEntries = 0;
+  let invalid = 0;
+  const perStore: Array<{ store: string; entries: number; invalid: number; errors: string[] }> = [];
+  for (const { name, store } of stores) {
+    let sEntries = 0;
+    let sInvalid = 0;
+    const errors: string[] = [];
+    for (const c of store.collections) {
+      const { entries, errors: shardErrors } = store.readCollection(c);
+      sEntries += entries.length;
+      errors.push(...shardErrors);
+      for (const e of entries) {
+        try {
+          assertValidMemoryEntry(e as unknown as { id: string } & Record<string, unknown>);
+        } catch (err) {
+          sInvalid++;
+          errors.push(`${(e as { id?: string }).id ?? '<no-id>'}: ${(err as Error).message}`);
+        }
+      }
+    }
+    totalEntries += sEntries;
+    invalid += sInvalid;
+    perStore.push({ store: name, entries: sEntries, invalid: sInvalid, errors });
+  }
+  // conflicts over team records (same subject, different claims)
+  const teamRecords = deps.team.readCollection('records').entries as MemoryRecord[];
+  const subjects = new Map<string, number>();
+  for (const r of teamRecords) subjects.set(r.subject, (subjects.get(r.subject) ?? 0) + 1);
+  const conflicts = [...subjects.entries()].filter(([, n]) => n > 1).map(([s]) => s);
+  // trust distribution
+  const trust: Record<string, number> = {};
+  for (const r of teamRecords) trust[r.verdicts.trust] = (trust[r.verdicts.trust] ?? 0) + 1;
+  let repaired = false;
+  if (repair) {
+    // recompute the local manifest counts from shards (the conservative repair — no data is deleted)
+    deps.local.persistManifest();
+    repaired = true;
+  }
+  process.stdout.write(
+    `${JSON.stringify(
+      {
+        totalEntries,
+        invalid,
+        conflicts,
+        trust,
+        perStore,
+        ...(repair ? { repaired } : {}),
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  return invalid === 0 ? EXIT.OK : EXIT.ERROR;
+}
+
+/** `crib memory gc [--max-age-days N] [--dry-run]` — drop unpromoted local candidates older than N days. */
+function cmdMemoryGc(args: string[], ctx?: CmdCtx): number {
+  const dryRun = args.includes('--dry-run');
+  const daysIdx = args.indexOf('--max-age-days');
+  const days = daysIdx >= 0 ? Number(args[daysIdx + 1]) : 30;
+  if (!Number.isFinite(days) || days <= 0) {
+    process.stderr.write('error: --max-age-days must be a positive number\n');
+    return EXIT.BAD_ARGS;
+  }
+  // strip the value-taking flag so pathArg/resolveRoot don't mistake `N` for a positional path
+  const stripped = daysIdx >= 0 ? args.filter((_, i) => i !== daysIdx && i !== daysIdx + 1) : args;
+  const resolved = resolveRoot(stripped, ctx);
+  const deps = createMemoryDeps(openSoul(resolved).soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const activeIds = new Set(
+    (deps.local.readCollection('active').entries as MemoryRecord[]).map((r) => r.id),
+  );
+  const now = Date.now();
+  const maxAgeMs = days * 24 * 60 * 60 * 1000;
+  const candidates = deps.local.readCollection('candidates').entries as MemoryCandidate[];
+  const toRemove: string[] = [];
+  for (const c of candidates) {
+    // never GC a candidate whose record was promoted to local active
+    if (activeIds.has(c.id.replace(/^cand:/, 'mem:'))) continue;
+    const proposed = Date.parse(c.proposedAt);
+    if (Number.isNaN(proposed)) continue;
+    if (now - proposed > maxAgeMs) toRemove.push(c.id);
+  }
+  if (!dryRun) {
+    for (const id of toRemove) deps.local.removeEntry('candidates', id);
+  }
+  process.stdout.write(
+    `${JSON.stringify(
+      {
+        maxAgeDays: days,
+        dryRun,
+        candidatesScanned: candidates.length,
+        removed: toRemove.length,
+        ids: toRemove,
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  // team records/decisions are NEVER garbage-collected (PRD line 358) — this command only touches local.
+  return EXIT.OK;
+}
+
+/** `crib memory migrate` — re-validate every stored entry through the migration chain + recompute manifests. */
+function cmdMemoryMigrate(args: string[], ctx?: CmdCtx): number {
+  const resolved = resolveRoot(args, ctx);
+  const deps = createMemoryDeps(openSoul(resolved).soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const stores: Array<{ name: string; store: MemoryStore }> = [
+    { name: 'team', store: deps.team },
+    { name: 'local', store: deps.local },
+    { name: 'global', store: deps.global },
+  ];
+  const perStore: Array<{ store: string; entries: number; invalid: number }> = [];
+  let totalInvalid = 0;
+  for (const { name, store } of stores) {
+    let entries = 0;
+    let invalid = 0;
+    for (const c of store.collections) {
+      const res = store.readCollection(c);
+      entries += res.entries.length;
+      for (const e of res.entries) {
+        try {
+          assertValidMemoryEntry(e as unknown as { id: string } & Record<string, unknown>); // migrate-up-then-validate
+        } catch {
+          invalid++;
+        }
+      }
+    }
+    // recompute the manifest counts from the (migrated) shards
+    store.persistManifest();
+    totalInvalid += invalid;
+    perStore.push({ store: name, entries, invalid });
+  }
+  process.stdout.write(
+    `${JSON.stringify({ perStore, totalInvalid, schemaVersion: '1' }, null, 2)}\n`,
+  );
+  return totalInvalid === 0 ? EXIT.OK : EXIT.ERROR;
 }
 
 function printHelp(): void {

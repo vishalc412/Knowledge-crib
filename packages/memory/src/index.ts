@@ -34,3 +34,4 @@ export * from './composite.js';
 export * from './policy.js';
 export * from './gate-runner.js';
 export * from './promotion.js';
+export * from './trusted-ref.js';
