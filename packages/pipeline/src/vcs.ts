@@ -75,6 +75,28 @@ export function hasUncommittedChanges(root: string): boolean {
   return uncommittedChanges(root).length > 0;
 }
 
+/**
+ * Repo-relative POSIX paths of ALL files tracked by git (`git ls-files`). Used by the W1 committed
+ * AI-artifact scanner: unlike {@link discoverFiles}, this lists tracked files EVEN WHEN they sit
+ * under a `.gitignore`d tool directory (`.claude/`, `.cursor/`) — because `.gitignore` only hides
+ * UNtracked files, and a tracked artifact stays listed. That is the PRD line-194 case: "uses
+ * tracked-file enumeration plus a safe allowlist, even when a tracked artifact resides under a
+ * normally ignored tool directory."
+ *
+ * Returns [] if `root` is not a git work tree (the caller falls back to the normal discovered file
+ * set filtered by the artifact allowlist). Does NOT include untracked files — those are not yet
+ * committed facts and indexing them could leak ignored build artifacts.
+ */
+export function trackedFiles(root: string): string[] {
+  const out = git(root, ['ls-files']);
+  if (out === undefined) return []; // non-git
+  return out
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .map(toPosix);
+}
+
 /** One `git blame` attribution record per source line (1-based `line`). `commit` is the short sha
  *  the line was last touched by; `name`/`email` the author (email undefined when blame exposed no
  *  email — rare, e.g. a malformed mailmap). Used by the M3.1 ownership phase to map symbols → owners. */

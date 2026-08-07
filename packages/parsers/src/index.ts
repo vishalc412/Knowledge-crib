@@ -23,8 +23,18 @@ export type {
   DefKind as PyDefKind,
 } from './python/parser.js';
 export { MarkdownExtractor } from './md/MarkdownExtractor.js';
-export { parseMarkdownSections } from './md/markdown.js';
+export { parseMarkdownSections, extractCodeRefs, extractLinks } from './md/markdown.js';
 export type { MdSection } from './md/markdown.js';
+// W1 — bounded frontmatter parser + per-file AI-artifact extraction (skill/agent/command/rule/
+// instruction → one `agent-artifact` node + governs/requires/invokes refs). Pure + deterministic.
+export { parseFrontmatter } from './agent/frontmatter.js';
+export type { ParsedFrontmatter } from './agent/frontmatter.js';
+export {
+  classifyArtifact,
+  artifactName,
+  extractArtifact,
+} from './agent/agent-graph.js';
+export type { ArtifactRel, ArtifactRef, ArtifactExtract } from './agent/agent-graph.js';
 export { JavaExtractor } from './java/JavaExtractor.js';
 export { tokenize as tokenizeJava } from './java/lexer.js';
 export type { Token as JavaToken } from './java/lexer.js';

@@ -91,7 +91,9 @@ export function parseMarkdownSections(text: string): MdSection[] {
   return sections;
 }
 
-function extractCodeRefs(body: string): string[] {
+/** Inline + fenced code tokens from a markdown body — the explicit-signal fuel for the doc linker
+ *  and the AI-artifact extractor (W1: an artifact's backticked symbol refs are its `governs` scope). */
+export function extractCodeRefs(body: string): string[] {
   const refs = new Set<string>();
   // inline code
   for (const m of body.matchAll(INLINE_CODE)) {
@@ -114,7 +116,9 @@ function extractCodeRefs(body: string): string[] {
   return [...refs];
 }
 
-function extractLinks(body: string): string[] {
+/** Internal markdown link targets (`[text](path)`, `#fragment` preserved, http/mailto dropped) —
+ *  shared by the doc linker's link signal and the AI-artifact extractor (W1). */
+export function extractLinks(body: string): string[] {
   const links = new Set<string>();
   for (const m of body.matchAll(MD_LINK)) {
     const target = (m[1] ?? '').trim();

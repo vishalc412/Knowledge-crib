@@ -18,6 +18,8 @@ import { buildDelta, fileScopedIds, pathFromId } from '@knowledge-crib/core';
 import type { IndexDelta, SoulStore } from '@knowledge-crib/core';
 import { ExtractorRegistry } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
+import { runArtifactGraph } from './artifacts.js';
+import type { ArtifactStats } from './artifacts.js';
 import { runCluster } from './cluster/index.js';
 import type { ClusterStats } from './cluster/index.js';
 import { runDossiers } from './dossiers.js';
@@ -86,6 +88,7 @@ export interface UpdateReport {
   semantic: SemanticStats;
   dossiers: DossierStats;
   ownership: OwnershipStats;
+  artifacts: ArtifactStats;
 }
 
 export interface UpdateNoopReport {
@@ -107,6 +110,15 @@ const EMPTY_RESOLVE: ResolveStats = {
   dropped: 0,
 };
 const EMPTY_LINK: LinkStats = { describes: 0, references: 0, diagnostics: [] };
+const EMPTY_ARTIFACTS: ArtifactStats = {
+  artifacts: 0,
+  governs: 0,
+  requires: 0,
+  invokes: 0,
+  mcpServers: 0,
+  localOverlay: 0,
+  diagnostics: [],
+};
 
 /** Scoped re-extract since the manifest's VCS anchor. `null` ⇒ caller does a full `indexRepo`. */
 export async function updateRepo(
@@ -212,6 +224,17 @@ export async function updateRepo(
   // Semantic pass (M7, INFERRED): scoped to the docs in scope, like the deterministic re-link.
   const semantic = opts.semantic ? runSemanticLink(soul, root, scopeDocFiles) : { added: 0 };
 
+  // W1 artifact graph: a changed artifact file (a tracked skill under .claude/ — gitignored, so not
+  // in `changedMetas`/`scopeMetas`) had its node + incoming edges dropped by `removeByFile`. A changed
+  // SYMBOL may also be the target of a `governs`/`requires`/`invokes` edge from an unchanged artifact
+  // (captured in the reverse-dep closure, but the artifact file itself isn't re-extracted by runParse
+  // — it isn't in the registry). A full re-scan is idempotent + cheap (artifacts are few) and re-emits
+  // every artifact node + edge, so a body-only symbol edit produces no spurious artifact-edge delta
+  // (unchanged artifacts rewrite byte-identical shards) while a changed/added/deleted artifact is
+  // correctly re-emitted or dropped. Local overlay is OFF here — incremental updates refresh the
+  // committed soul only; the working overlay (W7) re-applies on read.
+  const artifacts = runArtifactGraph(soul, root);
+
   // Ownership (M3.1): re-blame only the CHANGED files — their old `owned-by` edges were dropped by
   // `removeByFile`, so a body edit re-attributes ownership instead of leaving symbols ownerless. The
   // full-index path (`indexRepo`) blames every file; this is the scoped mirror.
@@ -249,5 +272,6 @@ export async function updateRepo(
     semantic,
     dossiers,
     ownership,
+    artifacts,
   };
 }

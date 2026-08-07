@@ -9,6 +9,8 @@ import { ExtractorRegistry } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
 import { defaultExtractors } from './extractors.js';
 export { defaultExtractors } from './extractors.js';
+import { runArtifactGraph } from './artifacts.js';
+import type { ArtifactGraphOpts, ArtifactStats } from './artifacts.js';
 import { runCluster } from './cluster/index.js';
 import type { ClusterStats } from './cluster/index.js';
 import { runDossiers } from './dossiers.js';
@@ -75,6 +77,12 @@ export interface IndexOpts {
    *  Output is byte-identical to serial (results persist in discovery order). Set false to force
    *  serial (determinism cross-check, single-file index, environments without worker_threads). */
   parallel?: boolean;
+  /** W1 (AI-artifact graph): run the committed + (opt-in) local-overlay artifact scanner after the
+   *  doc linker, emitting `agent-artifact` nodes (skills/agents/commands/rules/instructions/MCP
+   *  servers) + `governs`/`requires`/`invokes` edges. Default ON — a clean no-op on repos with no
+   *  allowlist-matching tracked artifacts (the common test-fixture case), so the deterministic path
+   *  is unchanged. `false` skips; an object passes through {@link ArtifactGraphOpts} (e.g. localRoots). */
+  artifacts?: boolean | ArtifactGraphOpts;
 }
 
 export interface IndexReport {
@@ -88,6 +96,7 @@ export interface IndexReport {
   cluster: ClusterStats;
   semantic: SemanticStats;
   ownership: OwnershipStats;
+  artifacts: ArtifactStats;
 }
 
 /** Full index of a repo through the deterministic linker, then (optional) index build. */
@@ -122,6 +131,22 @@ export async function indexRepo(
     ? await runMultimodal(soul, root, opts.multimodal, mediaPaths)
     : { ingest: { files: 0, segments: 0, dropped: 0 }, link: { describes: 0, references: 0 } };
   const link = runLink(soul, root, opts.linkThreshold); // Phase 4
+  // Phase 4a (W1): the AI-artifact graph — discovers tracked skills/agents/commands/rules/instructions
+  // + MCP-server configs that the normal walk misses (they live under gitignored tool dirs), emits
+  // `agent-artifact` nodes, and resolves `governs`/`requires`/`invokes` edges against the indexed
+  // symbol/file/doc graph. A clean no-op on repos with no allowlist-matching artifacts.
+  const artifacts =
+    opts.artifacts === false
+      ? {
+          artifacts: 0,
+          governs: 0,
+          requires: 0,
+          invokes: 0,
+          mcpServers: 0,
+          localOverlay: 0,
+          diagnostics: [],
+        }
+      : runArtifactGraph(soul, root, typeof opts.artifacts === 'object' ? opts.artifacts : {});
   const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul); // Phase 4b (M7)
   const semantic = opts.semantic ? runSemanticLink(soul, root) : { added: 0 }; // Phase 4c (M7, INFERRED)
   // Phase 4d (M3.1): `git blame` → symbol→owner `owned-by` EXTRACTED edges. Clean no-op in a non-git
@@ -162,5 +187,6 @@ export async function indexRepo(
     cluster,
     semantic,
     ownership,
+    artifacts,
   };
 }
