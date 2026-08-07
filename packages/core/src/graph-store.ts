@@ -7,7 +7,7 @@ import { clusterContentHash } from './cluster-hash.js';
 import { graphPaths } from './graph-layout.js';
 import type { SoulStore } from './soul-store.js';
 
-export type GraphOrigin = 'extracted' | 'semantic';
+export type GraphOrigin = 'extracted' | 'semantic' | 'memory';
 
 export type CompositeNode = (Node | Record<string, unknown>) & {
   id: string;
@@ -104,6 +104,30 @@ export class GraphStore {
       ...semantic.edges.filter((edge) => valid.has(edge.src) && valid.has(edge.dst)),
     ];
     return { nodes: [...nodes.values()], edges, diagnostics: semantic.diagnostics };
+  }
+
+  /**
+   * W3 — fold a VIRTUAL sub-graph (the memory composite layer, origin `'memory'`) into a base
+   * snapshot WITHOUT touching the soul. Mirrors {@link compositeLive}'s extracted+semantic merge:
+   * extra nodes are unioned by id (base wins on collision — a soul node is never overwritten by a
+   * virtual one), then extra edges are kept only where BOTH endpoints are in the merged node set
+   * (so a memory `applies-to` edge to a soul id that no longer exists is dropped, exactly like
+   * semantic edges to absent extracted nodes). Pure + standalone so the viz builder (`ui`, which
+   * depends on `core` but not `memory`) and the MCP `brief` verb can both call it with the memory
+   * composite produced by the `memory` package — `core` never takes a `memory` dependency.
+   */
+  mergeComposite(
+    base: GraphSnapshot,
+    extra: { nodes: CompositeNode[]; edges: CompositeEdge[] },
+  ): GraphSnapshot {
+    const nodes = new Map(base.nodes.map((node) => [node.id, node]));
+    for (const node of extra.nodes) if (!nodes.has(node.id)) nodes.set(node.id, node);
+    const valid = new Set(nodes.keys());
+    const edges = [
+      ...base.edges,
+      ...extra.edges.filter((edge) => valid.has(edge.src) && valid.has(edge.dst)),
+    ];
+    return { nodes: [...nodes.values()], edges, diagnostics: base.diagnostics };
   }
 
   neighbors(id: string, includeSemantic = false): CompositeEdge[] {

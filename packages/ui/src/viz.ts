@@ -10,6 +10,8 @@
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  type CompositeEdge,
+  type CompositeNode,
   type DerivedKind,
   GraphStore,
   buildFunctionalMap,
@@ -60,9 +62,13 @@ export interface VizNodeData {
    *  shipped — nothing is hidden — but the client renders/labels primary first and reveals detail
    *  on demand, e.g. on focus-expand). */
   tier: 'primary' | 'detail';
-  origin?: 'extracted' | 'semantic';
+  origin?: 'extracted' | 'semantic' | 'memory';
   targetId?: string;
   model?: string;
+  /** W3 — memory-layer only: the record's effective trust verdict (candidate|local|team). */
+  trust?: string;
+  /** W3 — memory-layer only: the store the record was gathered from (team|local|global). */
+  source?: string;
 }
 
 export interface VizEdgeData {
@@ -75,9 +81,11 @@ export interface VizEdgeData {
   provenance: Provenance;
   confidence: number;
   evidence?: { snippet?: string; by?: string };
-  origin?: 'extracted' | 'semantic';
+  origin?: 'extracted' | 'semantic' | 'memory';
   targetId?: string;
   model?: string;
+  /** W3 — memory-layer only: why an inferred `applies-to`/`supported-by`/`conflicts-with` edge exists. */
+  rationale?: string;
 }
 
 export interface VizCluster {
@@ -220,7 +228,15 @@ function clusterBlurb(cluster: Node, memberCount: number): string {
  * kinds; nodes and edges carry provenance metadata so the UI can render detail panels without
  * re-querying the soul.
  */
-export function buildVizGraph(soul: SoulStore): VizGraph {
+export function buildVizGraph(
+  soul: SoulStore,
+  /** W3 — the optional virtual memory composite layer (PRD lines 212–224): `mem:` nodes +
+   *  `applies-to`/`supported-by`/`conflicts-with` edges produced by the `memory` package's
+   *  `memoryComposite(recall)`. Passed in (not built here) so `ui` keeps no `memory` dependency —
+   *  the caller decides whether to fold memory into the viz. Memory nodes are tier:'detail' (the
+   *  architecture layer is the soul's extracted symbols); their `kind` is `'memory'`. */
+  memory?: { nodes: CompositeNode[]; edges: CompositeEdge[] },
+): VizGraph {
   const parentOf = new Map<string, string>();
   const clusterCounts = new Map<string, number>();
   const integrity = validateClusterIntegrity(soul);
@@ -365,6 +381,50 @@ export function buildVizGraph(soul: SoulStore): VizGraph {
         ...(edge.model ? { model: edge.model } : {}),
       },
     });
+  }
+
+  // W3 — append the virtual memory composite layer (origin 'memory'). Memory nodes are VIRTUAL
+  // (`mem:` ids, kind 'memory') — they are NOT soul symbols, so they skip the cluster/importance
+  // passes above and land as tier:'detail' with origin 'memory'. Their `applies-to`/
+  // `supported-by`/`conflicts-with` edges are runtime strings outside the soul's closed `Rel` enum;
+  // `mergeComposite`'s valid-endpoint filter already dropped edges to absent nodes, so every edge
+  // here points at a node present in the merged set (a soul symbol or a `mem:` node).
+  if (memory) {
+    for (const node of memory.nodes.sort(SORT_BY_ID)) {
+      const raw = node as Record<string, unknown>;
+      nodes.push({
+        data: {
+          id: node.id,
+          label: String(raw.label ?? raw.claim ?? raw.subject ?? node.id),
+          kind: node.kind,
+          summary: typeof raw.claim === 'string' ? raw.claim : undefined,
+          importance: 0,
+          degree: 0,
+          tier: 'detail',
+          origin: 'memory',
+          ...(node.targetId ? { targetId: node.targetId } : {}),
+          ...(raw.trust ? { trust: String(raw.trust) } : {}),
+          ...(raw.source ? { source: String(raw.source) } : {}),
+        },
+      });
+    }
+    for (const edge of memory.edges.sort(SORT_BY_ID)) {
+      edges.push({
+        data: {
+          id: edge.id,
+          source: edge.src,
+          target: edge.dst,
+          label: edge.rel,
+          rel: edge.rel,
+          method: edge.method,
+          provenance: edge.provenance,
+          confidence: edge.confidence,
+          origin: 'memory',
+          ...(edge.targetId ? { targetId: edge.targetId } : {}),
+          ...(edge.rationale ? { rationale: edge.rationale } : {}),
+        },
+      });
+    }
   }
 
   return {

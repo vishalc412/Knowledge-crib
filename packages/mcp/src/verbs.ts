@@ -26,6 +26,26 @@ import {
   writeDossier,
 } from '@knowledge-crib/core';
 import type { DossiersByScope as DossiersByScopeShape } from '@knowledge-crib/core';
+import {
+  type ConflictGroup,
+  type EffectiveVerdicts,
+  FtsLexicalScorer,
+  type MemoryEvalContext,
+  type MemoryEvaluator,
+  type MemoryEvidence,
+  MemoryFtsIndex,
+  type MemoryRecord,
+  type MemorySource,
+  type MemoryStore,
+  type RecallProjection,
+  type ScoredRecord,
+  assertNoMemorySecrets,
+  conflictGroups,
+  effectiveVerdicts,
+  gatherRecall,
+  isRecallEligible,
+  recallProjection,
+} from '@knowledge-crib/memory';
 /**
  * The MCP verbs as pure functions over the soul + index. These are the product surface; the stdio
  * server is thin wiring on top. Every edge-bearing result carries {method, provenance, confidence,
@@ -87,11 +107,29 @@ export interface VcsAdapter {
   uncommittedChanges(root: string): string[];
 }
 
+/**
+ * W3 — the optional memory ledger deps. Any store may be absent (a fresh repo has no local store
+ * yet; a repo may have no team store). The `evaluator` + `evalCtx` are required for FRESH
+ * revalidation (audit drift detection, recall `fresh` provenance); when absent, the verbs fall back
+ * to the records' stamped verdicts (effective verdicts with no evaluation). The `brief` /
+ * `memory_*` verbs degrade to a `memory: 'not configured'` result when the whole object is absent,
+ * mirroring the `vcs` "not configured" pattern.
+ */
+export interface MemoryDeps {
+  team?: MemoryStore;
+  local?: MemoryStore;
+  global?: MemoryStore;
+  evaluator?: MemoryEvaluator;
+  evalCtx?: MemoryEvalContext;
+}
+
 export interface VerbDeps {
   soul: SoulStore;
   index: IndexStore;
   repoRoot: string;
   vcs?: VcsAdapter;
+  /** W3 — the trusted agent-memory ledger. Optional; verbs degrade gracefully when absent. */
+  memory?: MemoryDeps;
 }
 
 /** Direction as the MCP api expresses it. */
@@ -223,6 +261,14 @@ const PUBLIC_VERBS = new Set<string>([
   'detectChanges',
   'extractRules',
   'gaps',
+  // W3 — the trusted agent-memory verbs (PRD lines 226–248). brief is the one-call typed-group
+  // retrieval; memory_* are the dedicated read/audit surface. Private memory helpers
+  // (recallProjectionOf, memoryView, …) are absent here so internal calls bypass the Proxy trap.
+  'brief',
+  'memoryRecall',
+  'memoryGet',
+  'memoryStatus',
+  'memoryAudit',
 ]);
 
 export class Verbs {
@@ -232,11 +278,14 @@ export class Verbs {
   private readonly aliases: AliasMap;
   /** M3.3 — runtime observability counters (per-verb count/latency + ifHash cache hit rate). */
   private readonly stats = new Stats();
+  /** W3 — the optional trusted agent-memory ledger (absent ⇒ memory verbs report "not configured"). */
+  private readonly memory?: MemoryDeps;
 
   constructor(private readonly deps: VerbDeps) {
     this.llm = new EnrichmentStore(deps.soul, deps.repoRoot);
     this.graph = new GraphStore(deps.soul);
     this.aliases = loadAliases(deps.soul.cribDir);
+    this.memory = deps.memory;
     // M3.3 — Proxy interceptor: wrap every PUBLIC verb method with `trackCall` so per-verb
     // count + latency is recorded for BOTH entry paths (direct in-process calls AND MCP tool
     // calls, since the MCP handler is `verbs.X(a)`). Internal helper calls (`this.applyIfHash`,
@@ -362,10 +411,10 @@ export class Verbs {
     const node = soul.getNode(id);
     if (!node) return notFound(args.id);
     const callers = this.callEdges(id, 'up', args.extractedOnly).map((e) =>
-      this.brief(e.src, e.confidence),
+      this.nodeBrief(e.src, e.confidence),
     );
     const callees = this.callEdges(id, 'down', args.extractedOnly).map((e) =>
-      this.brief(e.dst, e.confidence),
+      this.nodeBrief(e.dst, e.confidence),
     );
     const docs = bound(
       this.docsFor(id, 0, args.extractedOnly),
@@ -1710,7 +1759,7 @@ export class Verbs {
     return resolveIdInSoul(primary.soul, idOrName);
   }
 
-  private brief(id: string, confidence: number): Record<string, unknown> {
+  private nodeBrief(id: string, confidence: number): Record<string, unknown> {
     const n = this.deps.soul.getNode(id);
     if (!n) return { id, confidence };
     return {
@@ -1723,6 +1772,428 @@ export class Verbs {
       ...(n.span ? { line: n.span.start } : {}),
       confidence,
     };
+  }
+
+  /**
+   * W3 — the one-call typed-group retrieval (PRD lines 226–248). Returns code hits, doc instructions,
+   * and trusted memories as SEPARATE typed groups so the soul's code BM25 and the memory recall score
+   * are never fused (PRD line 333 — "never mix code BM25 + memory scores"). `codeHits` + `instructions`
+   * come from ONE BM25 scan over the soul index, partitioned by kind (symbols/files vs doc-sections);
+   * `memories` + `conflicts` come from the recall projection (criterion-1 lexical via the separate
+   * memory FTS, ranked by the 6-criterion comparator). `cursor` pages the code BM25 offset; the
+   * response-wide `maxTokens` budget (default 2000) trims the combined payload. `ifHash` collapses a
+   * repeat to `{ unchanged: true, hash }` (~30 bytes — PRD line 338 invariant #3).
+   */
+  brief(args: {
+    q: string;
+    paths?: string[];
+    targetIds?: string[];
+    sources?: MemorySource[];
+    maxTokens?: number;
+    cursor?: string;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const limit = DEFAULT_LIMIT;
+    const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);
+    const q = rewriteQuery(args.q, this.aliases);
+    const rawHits = this.deps.index.query({ text: q, limit: limit + 1, offset });
+    const moreCode = rawHits.length > limit;
+    const hits = moreCode ? rawHits.slice(0, limit) : rawHits;
+    const codeHits: Array<Record<string, unknown>> = [];
+    const instructions: Array<Record<string, unknown>> = [];
+    for (const h of hits) {
+      const node = this.deps.soul.getNode(h.id);
+      const view: Record<string, unknown> = {
+        id: h.id,
+        kind: h.kind,
+        score: h.score,
+        snippet: rehydrate(this.deps.repoRoot, node),
+      };
+      if (h.kind === 'doc-section') instructions.push(view);
+      else codeHits.push(view);
+    }
+    // memories + conflicts: the recall projection over the configured stores (optional — a repo with
+    // no memory ledger configured returns empty memories, not an error). targets = explicit ids + paths.
+    const targets = [...(args.targetIds ?? []), ...(args.paths ?? [])];
+    const projection = this.recallProjectionOf({
+      query: args.q,
+      ...(targets.length > 0 ? { targetIds: targets } : {}),
+      ...(args.sources ? { sources: args.sources } : {}),
+      fresh: true,
+    });
+    const memories = projection
+      ? projection.memories.slice(0, limit).map((m) => this.memoryView(m, false))
+      : [];
+    const conflicts = projection ? projection.conflicts.map((g) => this.conflictView(g)) : [];
+    const memoryProvenance = projection?.provenance;
+
+    // Fit the whole typed-group payload to the budget: one binary search over a tagged item stream
+    // (code/instr/mem) whose serialize fn rebuilds the exact response shape, so the budget guards the
+    // real on-wire size, not a proxy. The cursor resumes the CODE BM25 offset (the paged group).
+    type Tagged = { group: 'code' | 'instr' | 'mem'; view: Record<string, unknown> };
+    const items: Tagged[] = [
+      ...codeHits.map((view) => ({ group: 'code' as const, view })),
+      ...instructions.map((view) => ({ group: 'instr' as const, view })),
+      ...memories.map((view) => ({ group: 'mem' as const, view })),
+    ];
+    const maxTokens = args.maxTokens === undefined ? 2000 : capMaxTokens(args.maxTokens);
+    const fitted = fitTokenBudget(items, maxTokens, (prefix) =>
+      JSON.stringify({
+        codeHits: prefix.filter((i) => i.group === 'code').map((i) => i.view),
+        instructions: prefix.filter((i) => i.group === 'instr').map((i) => i.view),
+        memories: prefix.filter((i) => i.group === 'mem').map((i) => i.view),
+        conflicts,
+        ...(memoryProvenance ? { provenance: memoryProvenance } : {}),
+        truncated: true,
+        budgetExhausted: true,
+      }),
+    );
+    const keptCode = fitted.items.filter((i) => i.group === 'code').map((i) => i.view);
+    const keptInstr = fitted.items.filter((i) => i.group === 'instr').map((i) => i.view);
+    const keptMem = fitted.items.filter((i) => i.group === 'mem').map((i) => i.view);
+    const more = moreCode || fitted.budgetExhausted;
+    const result: Record<string, unknown> = {
+      codeHits: keptCode,
+      instructions: keptInstr,
+      memories: keptMem,
+      conflicts,
+      ...(memoryProvenance ? { provenance: memoryProvenance } : {}),
+      truncated: more,
+    };
+    if (fitted.budgetExhausted) result.budgetExhausted = true;
+    if (more) result.cursor = String(offset + keptCode.length);
+    return this.applyIfHash(args, result);
+  }
+
+  /**
+   * W3 — recall trusted memory (PRD `memory_recall`): default limit 5, max 20, default token budget
+   * 1200, team + local + applicable-global sources. Returns the ranked eligible memories (default
+   * view = evidence summaries + pointers; full evidence opt-in via `withEvidence`), the conflict
+   * groups, and deterministic provenance. Normal recall never returns invalid / orphaned /
+   * superseded / retracted / pending records (the projection's hard eligibility filter — PRD line
+   * 338 invariant #1); conflicting claims appear together (invariant #2).
+   */
+  memoryRecall(args: {
+    q?: string;
+    targetIds?: string[];
+    sources?: MemorySource[];
+    limit?: number;
+    maxTokens?: number;
+    withEvidence?: boolean;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    if (!this.memory) return this.applyIfHash(args, { memory: 'not configured' });
+    const limit = capInt(args.limit, 5, 20);
+    const projection = this.recallProjectionOf({
+      query: args.q ?? '',
+      ...(args.targetIds ? { targetIds: args.targetIds } : {}),
+      ...(args.sources ? { sources: args.sources } : {}),
+      fresh: true,
+    });
+    if (!projection) return this.applyIfHash(args, { memory: 'not configured' });
+    // limit is the hard count cap (default 5, max 20); the token budget trims within the limited set.
+    const limited = projection.memories
+      .slice(0, limit)
+      .map((m) => this.memoryView(m, args.withEvidence));
+    const conflictsView = projection.conflicts.map((g) => this.conflictView(g));
+    const maxTokens = args.maxTokens === undefined ? 1200 : capMaxTokens(args.maxTokens);
+    const fitted = fitTokenBudget(limited, maxTokens, (prefix) =>
+      JSON.stringify({
+        memories: prefix,
+        conflicts: conflictsView,
+        provenance: projection.provenance,
+        budgetExhausted: true,
+      }),
+    );
+    const more = fitted.budgetExhausted || projection.memories.length > limit;
+    const result: Record<string, unknown> = {
+      memories: fitted.items,
+      conflicts: conflictsView,
+      provenance: projection.provenance,
+      truncated: more,
+    };
+    if (fitted.budgetExhausted) result.budgetExhausted = true;
+    return this.applyIfHash(args, result);
+  }
+
+  /**
+   * W3 — fetch one memory record by id (PRD `memory_get`): the full record + its effective verdicts +
+   * store source. Evidence is returned as summaries by default (kind + verdict + soul anchor); the
+   * full evidence array is opt-in via `withEvidence`. Searches team `records`, local `active`, then
+   * global `records`.
+   */
+  memoryGet(args: { id: string; withEvidence?: boolean; ifHash?: string }): Record<
+    string,
+    unknown
+  > {
+    if (!this.memory) return this.applyIfHash(args, { memory: 'not configured' });
+    const found = this.findMemoryRecord(args.id);
+    if (!found) return this.applyIfHash(args, { found: false, id: args.id });
+    const { record, source } = found;
+    const result: Record<string, unknown> = {
+      id: record.id,
+      subject: record.subject,
+      claim: record.claim,
+      scope: record.scope,
+      appliesTo: record.appliesTo,
+      authorship: record.authorship,
+      verdicts: record.verdicts,
+      source,
+      createdAt: record.createdAt,
+      evidence:
+        args.withEvidence === true
+          ? record.evidence
+          : record.evidence.map((e) => this.evidenceSummary(e)),
+    };
+    return this.applyIfHash(args, result);
+  }
+
+  /**
+   * W3 — memory ledger status (PRD `memory_status`): counts by trust / evidence / applicability /
+   * lifecycle / source, plus `eligible` (recall-eligible), `quarantined`, and `pending` (local
+   * candidate entries not yet promoted to active records). `fresh: true` in provenance means the
+   * counts reflect a live revalidation against the soul (evaluator configured), not just stamped
+   * verdicts.
+   */
+  memoryStatus(args: { ifHash?: string }): Record<string, unknown> {
+    if (!this.memory) return this.applyIfHash(args, { memory: 'not configured' });
+    const all = this.gatherAllVerdicts(true);
+    const trust: Record<string, number> = {};
+    const evidence: Record<string, number> = {};
+    const applicability: Record<string, number> = {};
+    const lifecycle: Record<string, number> = {};
+    const source: Record<string, number> = {};
+    let eligible = 0;
+    let quarantined = 0;
+    for (const entry of all.entries) {
+      const v = entry.verdicts;
+      this.bump(trust, v.trust);
+      this.bump(evidence, v.evidence);
+      this.bump(applicability, v.applicability);
+      this.bump(lifecycle, v.lifecycle);
+      this.bump(source, entry.source);
+      if (v.quarantined) quarantined += 1;
+      if (isRecallEligible(v)) eligible += 1;
+    }
+    // pending = local candidate entries (candidate-trust, not yet promoted to active records).
+    let pending = 0;
+    const local = this.memory?.local;
+    if (local) pending = local.readCollection('candidates').entries.length;
+    const result = {
+      counts: {
+        total: all.entries.length,
+        eligible,
+        quarantined,
+        pending,
+        trust,
+        evidence,
+        applicability,
+        lifecycle,
+        source,
+      },
+      provenance: { fresh: all.fresh, errors: all.errors },
+    };
+    return this.applyIfHash(args, result);
+  }
+
+  /**
+   * W3 — read-only memory audit (PRD `memory_audit`): a validation / conflict / drift / privacy /
+   * trust report. `validation.drift` lists records whose fresh evidence/applicability verdict differs
+   * from the stamped one (content drifted since the record was saved); `conflicts` lists the
+   * conflict groups; `privacy` re-runs the write-time secret scan on every record (the store
+   * guarantees 0 on write — audit confirms no secret slipped in via a raw shard edit); `trust` is the
+   * trust distribution. Read-only: never mutates a record, a decision, or a store.
+   */
+  memoryAudit(args: { ifHash?: string }): Record<string, unknown> {
+    if (!this.memory) return this.applyIfHash(args, { memory: 'not configured' });
+    const all = this.gatherAllVerdicts(true);
+    let drifted = 0;
+    const drift: Array<Record<string, unknown>> = [];
+    for (const { record, verdicts: fresh } of all.entries) {
+      const stamped = record.verdicts;
+      if (stamped.evidence !== fresh.evidence || stamped.applicability !== fresh.applicability) {
+        drifted += 1;
+        if (drift.length < 50) {
+          drift.push({
+            id: record.id,
+            stamped: { evidence: stamped.evidence, applicability: stamped.applicability },
+            fresh: { evidence: fresh.evidence, applicability: fresh.applicability },
+          });
+        }
+      }
+    }
+    const conflicts = conflictGroups(all.entries).map((g) => this.conflictView(g));
+    let secretsFlagged = 0;
+    for (const { record } of all.entries) {
+      try {
+        assertNoMemorySecrets(record);
+      } catch {
+        secretsFlagged += 1;
+      }
+    }
+    const trust: Record<string, number> = {};
+    for (const { verdicts } of all.entries) this.bump(trust, verdicts.trust);
+    const result = {
+      validation: { records: all.entries.length, drifted, drift },
+      conflicts,
+      privacy: { secretsScannedOnWrite: true, secretsFlagged },
+      trust,
+      provenance: { fresh: all.fresh, errors: all.errors },
+    };
+    return this.applyIfHash(args, result);
+  }
+
+  // ─── W3 memory helpers (private — NOT in PUBLIC_VERBS, so they bypass the Proxy trap) ────────
+
+  /** The three memory stores as a RecallStores map, or undefined when memory isn't configured. */
+  private recallStores():
+    | { team?: MemoryStore; local?: MemoryStore; global?: MemoryStore }
+    | undefined {
+    const mem = this.memory;
+    if (!mem) return undefined;
+    return { team: mem.team, local: mem.local, global: mem.global };
+  }
+
+  /**
+   * Gather + rank a recall projection. Builds a disposable IN-MEMORY FTS5 index from the gathered
+   * records (the criterion-1 lexical signal — PRD line 333: never mixed with the soul's code BM25)
+   * and runs the pure 6-criterion rank + conflict projection. When `fresh` is set AND an evaluator +
+   * evalCtx are configured, records are revalidated against the live soul; otherwise stamped
+   * verdicts are used. The FTS handle is closed in a finally — a `:memory:` DB holds no filesystem
+   * lock, so the PRD's "never hold a FS lock across an evaluation command" rule is honoured.
+   */
+  private recallProjectionOf(opts: {
+    query?: string;
+    targetIds?: readonly string[];
+    sources?: readonly MemorySource[];
+    fresh?: boolean;
+  }): RecallProjection | undefined {
+    const mem = this.memory;
+    const stores = this.recallStores();
+    if (!mem || !stores) return undefined;
+    const gathered = gatherRecall(stores, { sources: opts.sources });
+    const fts = new MemoryFtsIndex(':memory:');
+    try {
+      fts.rebuild(gathered.records.map((r) => r.record));
+      const scorer = new FtsLexicalScorer(fts);
+      const evalOpts =
+        opts.fresh && mem.evaluator && mem.evalCtx
+          ? { evaluator: mem.evaluator, evalCtx: mem.evalCtx }
+          : {};
+      return recallProjection(gathered, {
+        query: opts.query ?? '',
+        ...(opts.targetIds ? { targetIds: opts.targetIds } : {}),
+        lexicalScorer: scorer,
+        ...evalOpts,
+      });
+    } finally {
+      fts.close();
+    }
+  }
+
+  /**
+   * Gather ALL records (team + local + global) with their effective verdicts — not just the
+   * recall-eligible subset. Used by `memory_status` (per-verdict tallies include ineligible
+   * records) and `memory_audit` (drift = stamped vs fresh, over every record). `fresh: true` runs
+   * the evaluator against the live soul; `fresh: false` uses stamped verdicts.
+   */
+  private gatherAllVerdicts(fresh: boolean): {
+    entries: Array<{
+      record: MemoryRecord;
+      source: MemorySource;
+      verdicts: EffectiveVerdicts;
+    }>;
+    errors: string[];
+    fresh: boolean;
+  } {
+    const mem = this.memory;
+    const stores = this.recallStores();
+    const entries: Array<{
+      record: MemoryRecord;
+      source: MemorySource;
+      verdicts: EffectiveVerdicts;
+    }> = [];
+    if (!mem || !stores) return { entries, errors: [], fresh: false };
+    const gathered = gatherRecall(stores);
+    const evalFn =
+      fresh && mem.evaluator && mem.evalCtx
+        ? (r: MemoryRecord) => mem.evaluator?.evaluate(r, mem.evalCtx as MemoryEvalContext)
+        : undefined;
+    for (const { record, source } of gathered.records) {
+      const evaluation = evalFn ? evalFn(record) : undefined;
+      entries.push({
+        record,
+        source,
+        verdicts: effectiveVerdicts(record, gathered.decisions, evaluation),
+      });
+    }
+    return { entries, errors: gathered.errors, fresh: evalFn !== undefined };
+  }
+
+  /** Find one record by id across team `records`, local `active`, then global `records`. */
+  private findMemoryRecord(id: string): { record: MemoryRecord; source: MemorySource } | undefined {
+    const mem = this.memory;
+    if (!mem) return undefined;
+    if (mem.team) {
+      for (const e of mem.team.readCollection('records').entries) {
+        if ((e as MemoryRecord).id === id) return { record: e as MemoryRecord, source: 'team' };
+      }
+    }
+    if (mem.local) {
+      for (const e of mem.local.readCollection('active').entries) {
+        if ((e as MemoryRecord).id === id) return { record: e as MemoryRecord, source: 'local' };
+      }
+    }
+    if (mem.global) {
+      for (const e of mem.global.readCollection('records').entries) {
+        if ((e as MemoryRecord).id === id) return { record: e as MemoryRecord, source: 'global' };
+      }
+    }
+    return undefined;
+  }
+
+  /** A lightweight evidence pointer (kind + verdict + soul anchor) — the default recall view. */
+  private evidenceSummary(ev: MemoryEvidence): Record<string, unknown> {
+    const out: Record<string, unknown> = { kind: ev.kind, verdict: ev.verdict };
+    if (ev.soulId) out.soulId = ev.soulId;
+    return out;
+  }
+
+  /** The public recall view of one scored record: verdicts + score + appliesTo + evidence (summary
+   *  by default, full when `withEvidence`). Deterministic over the same projection (ifHash-stable). */
+  private memoryView(m: ScoredRecord, withEvidence?: boolean): Record<string, unknown> {
+    const r = m.record;
+    return {
+      id: r.id,
+      subject: r.subject,
+      claim: r.claim,
+      scope: r.scope,
+      source: m.source,
+      trust: m.verdicts.trust,
+      evidence: m.verdicts.evidence,
+      applicability: m.verdicts.applicability,
+      lifecycle: m.verdicts.lifecycle,
+      appliesTo: r.appliesTo,
+      createdAt: r.createdAt,
+      score: m.score,
+      evidenceItems:
+        withEvidence === true ? r.evidence : r.evidence.map((e) => this.evidenceSummary(e)),
+    };
+  }
+
+  /** A conflict-group view: the shared key + subject + scope + the member record ids. */
+  private conflictView(g: ConflictGroup): Record<string, unknown> {
+    return {
+      key: g.key,
+      subject: g.subject,
+      scope: g.scope,
+      recordIds: g.records.map((r) => r.id),
+    };
+  }
+
+  /** Tally one into a string-keyed count map (noUncheckedIndexedAccess-safe via `?? 0`). */
+  private bump(map: Record<string, number>, key: string): void {
+    map[key] = (map[key] ?? 0) + 1;
   }
 
   /**

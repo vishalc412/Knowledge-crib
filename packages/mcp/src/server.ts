@@ -395,6 +395,86 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     async (a) => TOOL_RESULT(verbs.gaps(a)),
   );
 
+  // ─── W3 trusted-agent-memory verbs (PRD lines 226–248) ─────────────────────────────────────
+  // `brief`         — the one-call typed-group retrieval: code BM25 hits + doc instructions + trusted
+  //                   memories as SEPARATE groups (code + memory scores are never fused — PRD 333).
+  // `memory_recall` — ranked eligible memories (default limit 5, max 20, default budget 1200), team +
+  //                   local + applicable-global; conflicting claims appear together.
+  // `memory_get`    — one record by id (+ optional full evidence).
+  // `memory_status` — counts by trust / evidence / applicability / lifecycle / source + pending.
+  // `memory_audit`  — read-only drift / conflict / privacy / trust report.
+  // All read APIs support `ifHash` (a repeat collapses to `{ unchanged: true, hash }`). When no memory
+  // ledger is configured the memory verbs degrade to `{ memory: 'not configured' }` (mirrors `vcs`).
+  server.registerTool(
+    'brief',
+    {
+      description:
+        'W3 — the one-call typed-group retrieval. Returns code BM25 hits, doc-section instructions, and trusted memories as SEPARATE typed groups (code + memory scores are never fused). `codeHits`+`instructions` come from one BM25 scan over the soul index (partitioned by kind); `memories`+`conflicts` come from the memory recall projection (criterion-1 lexical via the separate memory FTS, ranked by the 6-criterion comparator). `cursor` pages the code BM25 offset; `maxTokens` (default 2000) trims the combined payload. `ifHash` collapses a repeat to ~30 bytes.',
+      inputSchema: {
+        q: z.string(),
+        paths: z.array(z.string()).optional(),
+        targetIds: z.array(z.string()).optional(),
+        sources: z.array(z.enum(['team', 'local', 'global'])).optional(),
+        maxTokens: z.number().int().positive().optional(),
+        cursor: z.string().optional(),
+        ifHash: z.string().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.brief(a)),
+  );
+
+  server.registerTool(
+    'memory_recall',
+    {
+      description:
+        'W3 — recall trusted memory. Default limit 5, max 20, default token budget 1200; team + local + applicable-global sources. Normal recall never returns invalid / orphaned / superseded / retracted / pending records; conflicting claims appear together. Default view = evidence summaries + pointers; full evidence opt-in via withEvidence. Supports ifHash.',
+      inputSchema: {
+        q: z.string().optional(),
+        targetIds: z.array(z.string()).optional(),
+        sources: z.array(z.enum(['team', 'local', 'global'])).optional(),
+        limit: z.number().int().positive().optional(),
+        maxTokens: z.number().int().positive().optional(),
+        withEvidence: z.boolean().optional(),
+        ifHash: z.string().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.memoryRecall(a)),
+  );
+
+  server.registerTool(
+    'memory_get',
+    {
+      description:
+        'W3 — fetch one memory record by id: the full record + effective verdicts + store source. Evidence is returned as summaries by default (kind + verdict + soul anchor); the full evidence array is opt-in via withEvidence. Searches team `records`, local `active`, then global `records`. Supports ifHash.',
+      inputSchema: {
+        id: z.string(),
+        withEvidence: z.boolean().optional(),
+        ifHash: z.string().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.memoryGet(a)),
+  );
+
+  server.registerTool(
+    'memory_status',
+    {
+      description:
+        'W3 — memory ledger status: counts by trust / evidence / applicability / lifecycle / source, plus eligible (recall-eligible), quarantined, and pending (local candidate entries not yet promoted to active records). provenance.fresh = true means the counts reflect a live revalidation against the soul. Supports ifHash.',
+      inputSchema: { ifHash: z.string().optional() },
+    },
+    async (a) => TOOL_RESULT(verbs.memoryStatus(a)),
+  );
+
+  server.registerTool(
+    'memory_audit',
+    {
+      description:
+        'W3 — read-only memory audit: a validation / conflict / drift / privacy / trust report. validation.drift lists records whose fresh evidence/applicability verdict differs from the stamped one; conflicts lists the conflict groups; privacy re-runs the write-time secret scan on every record; trust is the trust distribution. Read-only: never mutates a record, decision, or store. Supports ifHash.',
+      inputSchema: { ifHash: z.string().optional() },
+    },
+    async (a) => TOOL_RESULT(verbs.memoryAudit(a)),
+  );
+
   server.registerTool(
     'stats',
     {
