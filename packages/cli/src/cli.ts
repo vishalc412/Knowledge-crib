@@ -1414,12 +1414,7 @@ function cmdInstallHooks(args: string[], ctx?: CmdCtx): number {
   const repoRoot = resolve(ctx?.cwdOverride ?? pathArg(args) ?? '.');
   const res = installHooks(repoRoot);
   process.stdout.write(
-    `installed kcrib hooks at ${res.gitDir}\n` +
-      `  post-commit → ${res.postCommitPath}\n` +
-      `  .gitattributes → ${res.gitattributesPath} (.crib/**/*.jsonl merge=kcrib, ` +
-      `.crib/memory/team/**/*.jsonl merge=kcrib-memory)\n` +
-      `  merge.kcrib.driver = ${res.driverConfig}\n` +
-      `  merge.kcrib-memory.driver = ${res.driverConfig}\n`,
+    `installed kcrib hooks at ${res.gitDir}\n  post-commit → ${res.postCommitPath}\n  .gitattributes → ${res.gitattributesPath} (.crib/**/*.jsonl merge=kcrib, .crib/memory/team/**/*.jsonl merge=kcrib-memory)\n  merge.kcrib.driver = ${res.driverConfig}\n  merge.kcrib-memory.driver = ${res.driverConfig}\n`,
   );
   return EXIT.OK;
 }
