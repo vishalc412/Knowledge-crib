@@ -118,7 +118,10 @@ function extractLinks(body: string): string[] {
   const links = new Set<string>();
   for (const m of body.matchAll(MD_LINK)) {
     const target = (m[1] ?? '').trim();
-    if (target && !target.startsWith('#') && !target.startsWith('http')) links.add(target);
+    // Keep internal links WITH their `#fragment` (in-page `#anchor` and cross-file `path#anchor`)
+    // so the link signal can resolve to a doc-section / file / symbol target. External targets
+    // (http/https/mailto) are not graph edges and are dropped.
+    if (target && !target.startsWith('http') && !target.startsWith('mailto:')) links.add(target);
   }
   return [...links];
 }

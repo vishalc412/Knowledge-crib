@@ -1,10 +1,8 @@
 {
-  "description": "Hand-labeled true doc→symbol links for the M4 linker precision/recall gate.",
+  "description": "Hand-labeled true doc→symbol links for the M4 linker precision/recall gate. W1: the `../src/token.ts` link now points at the FILE node (no path fan-out to TokenService/rotate), so it is asserted in a dedicated test, not here.",
   "links": [
     { "anchor": "authentication", "symbol": "AuthService.login", "rel": "describes" },
     { "anchor": "authentication", "symbol": "AuthService.issue", "rel": "references" },
-    { "anchor": "authentication", "symbol": "TokenService", "rel": "references" },
-    { "anchor": "authentication", "symbol": "TokenService.rotate", "rel": "references" },
     { "anchor": "sessions", "symbol": "Session", "rel": "references" }
   ]
 }

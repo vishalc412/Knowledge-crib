@@ -106,7 +106,7 @@ const EMPTY_RESOLVE: ResolveStats = {
   implements: 0,
   dropped: 0,
 };
-const EMPTY_LINK: LinkStats = { describes: 0, references: 0 };
+const EMPTY_LINK: LinkStats = { describes: 0, references: 0, diagnostics: [] };
 
 /** Scoped re-extract since the manifest's VCS anchor. `null` ⇒ caller does a full `indexRepo`. */
 export async function updateRepo(
