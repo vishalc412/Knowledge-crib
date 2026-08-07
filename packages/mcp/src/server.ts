@@ -207,7 +207,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'enrich_status',
     {
       description:
-        'Coverage/progress for agent-driven semantic layer under .crib/graph/semantic. Pass scopes:true (with no scope) to get ranked path-prefix scopes + totalPending + threshold. Pass scope:{pathPrefix} to restrict counts/nextLayer/done. Server never calls a model.',
+        'Coverage/progress for agent-driven semantic layer under .crib/graph/semantic. Pass scopes:true (with no scope) to get ranked path-prefix scopes + totalPending + threshold. Pass scope:{pathPrefix} to restrict counts/nextLayer/done. Pass targets:[ids] to restrict counts to a delta re-issue set (mutually exclusive with scope/scopes). Server never calls a model.',
       inputSchema: {
         layer: z.enum(['symbol', 'file', 'cluster', 'system']).optional(),
         scope: z
@@ -217,6 +217,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
           })
           .optional(),
         scopes: z.boolean().optional(),
+        targets: z.array(z.string()).optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.enrichStatus(a)),
@@ -226,7 +227,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'enrich_next',
     {
       description:
-        'Return the next missing/stale grounded work batch for the IDE agent model to author. Includes seed facts, lower-layer analyses, schema, and instructions. Pass scope:{pathPrefix} to restrict the batch to in-scope targets. batchId is deterministic (same pending set => same id) so a zero-progress re-issue is detectable by id equality. The system layer is never offered under a scope. Pass skeleton:true with layer:"system" for the Phase-0.5 draft skeleton bible (a single work item seeded from the functional map + top READMEs + top symbols; a skeleton never satisfies the system layer — the full pass is still offered).',
+        'Return the next missing/stale grounded work batch for the IDE agent model to author. Includes seed facts, lower-layer analyses, schema, and instructions. Pass scope:{pathPrefix} to restrict the batch to in-scope targets. Pass targets:[ids] to restrict the queue to a delta re-issue set (from semantic_delta.reissueTargets); a targeted re-issue is namespaced apart from the unscoped queue for zero-progress detection. batchId is deterministic (same pending set => same id) so a zero-progress re-issue is detectable by id equality. The system layer is never offered under a scope. Pass skeleton:true with layer:"system" for the Phase-0.5 draft skeleton bible (a single work item seeded from the functional map + top READMEs + top symbols; a skeleton never satisfies the system layer — the full pass is still offered).',
       inputSchema: {
         layer: z.enum(['symbol', 'file', 'cluster', 'system']).optional(),
         limit: z.number().int().positive().max(MAX_LIMIT).optional(),
@@ -237,6 +238,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
           })
           .optional(),
         skeleton: z.boolean().optional(),
+        targets: z.array(z.string()).optional(),
       },
     },
     async (a) => TOOL_RESULT(verbs.enrichNext(a)),
@@ -264,6 +266,22 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       },
     },
     async (a) => TOOL_RESULT(verbs.enrichSave(a)),
+  );
+
+  server.registerTool(
+    'semantic_delta',
+    {
+      description:
+        "Semantic-layer delta report (+ optional prune) — the explicit companion to crib update's silent orphan auto-prune. Scans persisted LLM artifacts, classifies each as orphaned (target node gone) / stale (hash mismatch) / drifted (grounding verdict changed, only with verifyDrift), and returns `reissueTargets` to pass to enrich_next/enrich_status `targets` to re-author exactly the flagged set. Two scoping modes: `targets:[ids]` scans only those ids; `since:<ref>` computes the changed symbols/files via VCS and scopes the scan to them; neither scans the whole repo. Non-destructive by default: `prune:true` deletes orphans (safe), `pruneStale:true` also deletes stale-but-present (destructive — discards old evidence). Bumps generation.semantic only when a file was deleted. PURE over the soul — never calls a model.",
+      inputSchema: {
+        since: z.string().optional(),
+        targets: z.array(z.string()).optional(),
+        prune: z.boolean().optional(),
+        pruneStale: z.boolean().optional(),
+        verifyDrift: z.boolean().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.semanticDelta(a)),
   );
 
   server.registerTool(

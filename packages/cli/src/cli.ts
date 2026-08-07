@@ -27,6 +27,7 @@ import {
   materializeComposite,
   migrateLegacyGraph,
   newManifest,
+  pathFromId,
   validateClusterIntegrity,
   withCribLockAsync,
 } from '@knowledge-crib/core';
@@ -1255,6 +1256,11 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
         `+${d.nodes.length} nodes +${d.edges.length} edges −${d.removed.length} in ${Date.now() - started}ms${excludedSuffix}\n` +
         `changed: ${result.changedPaths.join(', ')}\n`,
     );
+    if (result.semanticPruned > 0) {
+      process.stdout.write(
+        `pruned ${result.semanticPruned} orphaned semantic artifact(s) — semantic cache invalidated (generation.semantic bumped)\n`,
+      );
+    }
     return EXIT.OK;
   });
   if (r === UPDATE_FALLBACK) {
@@ -2049,6 +2055,8 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
   }
   // Strip the `run` subcommand positional so it is not misread as a project-root path.
   if (rootArgs[0] === 'run') rootArgs.splice(0, 1);
+  // Strip the `delta` subcommand positional likewise.
+  if (rootArgs[0] === 'delta') rootArgs.splice(0, 1);
   const resolved = resolveRoot(rootArgs, ctx);
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
@@ -2069,6 +2077,91 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
   const budgetIdx = args.indexOf('--budget-tokens');
   const budgetTokens = budgetIdx >= 0 ? Number.parseInt(args[budgetIdx + 1] ?? '', 10) : undefined;
   const budget = Number.isFinite(budgetTokens) && budgetTokens! > 0 ? budgetTokens : undefined;
+
+  // `crib enrich delta` — the semantic-layer delta report (+ optional prune + optional re-issue),
+  // the explicit human-facing companion to `crib update`'s silent orphan auto-prune. Scopes:
+  //   --since <ref>     temporal (VCS diff since ref → changed symbols/files + all clusters + system)
+  //   --targets <a,b>   explicit target ids (the re-issue surface)
+  //   --scope <prefix>  spatial (resolve prefix → in-scope symbol/file ids + clusters + system)
+  //   (none)            whole-repo scan (every persisted artifact)
+  // --prune deletes orphans; --prune-stale ALSO deletes stale-but-present (destructive). Drift
+  // re-verify is ON by default (the CLI is the human surface); --no-verify-drift skips the cost.
+  // --reissue calls enrich_next with the report's reissueTargets and prints the batch.
+  if (args[0] === 'delta') {
+    const flag = (name: string): string | undefined => {
+      const i = args.indexOf(name);
+      return i >= 0 ? args[i + 1] : undefined;
+    };
+    const since = flag('--since');
+    const targetsCsv = flag('--targets');
+    const explicitTargets = targetsCsv
+      ? targetsCsv
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : undefined;
+    // Spatial scope: resolve the prefix to in-scope target ids (symbols/files under the prefix, all
+    // clusters — membership is global, and the whole-repo system target). Combined with --since by
+    // intersection: a temporal delta restricted to a spatial area.
+    let scopeTargets: string[] | undefined;
+    if (scope?.pathPrefix) {
+      const prefix = scope.pathPrefix;
+      const inPrefix = (p: string | undefined): boolean =>
+        p !== undefined && (p === prefix || p.startsWith(`${prefix}/`));
+      const ids: string[] = [];
+      for (const node of rt.soul.iterate()) {
+        if (inPrefix(node.file)) ids.push(node.id);
+      }
+      for (const node of rt.soul.iterate('cluster')) ids.push(node.id);
+      ids.push('system:repo');
+      scopeTargets = ids;
+    }
+    // Build the final targets: explicit > scope > since (resolved inline to changed symbol/file ids +
+    // all clusters + system, mirroring Verbs.affectedTargetIds — the EnrichmentStore is VCS-free, so
+    // the CLI resolves the temporal diff itself using the pipeline vcs helpers already imported).
+    let targets = explicitTargets ?? scopeTargets;
+    let vcsCtx: { since: string; head: string; changedPaths: string[] } | undefined;
+    if (!targets && since !== undefined) {
+      try {
+        const head = currentHead(resolved.repoRoot);
+        const changedPaths = changedFilesSince(resolved.repoRoot, since);
+        const changed = new Set(changedPaths);
+        const ids: string[] = [];
+        for (const node of rt.soul.iterate()) {
+          const p = node.file ?? pathFromId(node.id);
+          if (p !== undefined && changed.has(p)) ids.push(node.id);
+        }
+        for (const node of rt.soul.iterate('cluster')) ids.push(node.id);
+        ids.push('system:repo');
+        targets = ids;
+        vcsCtx = { since, head, changedPaths };
+      } catch {
+        // non-git / no anchor: fall through to an unscoped whole-repo scan (targets stays undefined).
+        vcsCtx = undefined;
+      }
+    }
+    const verifyDrift = !args.includes('--no-verify-drift');
+    const doReissue = args.includes('--reissue');
+    return runLocked(resolved.cribDir, () => {
+      const result = enrich.semanticDelta({
+        ...(targets ? { targets } : {}),
+        ...(args.includes('--prune') ? { prune: true } : {}),
+        ...(args.includes('--prune-stale') ? { pruneStale: true } : {}),
+        ...(verifyDrift ? { verifyDrift: true } : {}),
+      });
+      const out: Record<string, unknown> = { ...result };
+      if (vcsCtx) Object.assign(out, vcsCtx);
+      else if (since !== undefined) out.note = 'no vcs anchor — scanned whole repo';
+      process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
+      if (doReissue && result.reissueTargets.length > 0) {
+        const batch = enrich.next({ targets: result.reissueTargets });
+        process.stdout.write(`\n--- re-issue batch ---\n${JSON.stringify(batch, null, 2)}\n`);
+      } else if (doReissue) {
+        process.stderr.write('no stale/drifted targets to re-issue\n');
+      }
+      return EXIT.OK;
+    });
+  }
 
   if (args.includes('--prune-stale')) {
     return runLocked(resolved.cribDir, () => {

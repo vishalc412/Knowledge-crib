@@ -171,6 +171,9 @@ export interface EnrichStatus {
   /** Presence/freshness of a draft system skeleton bible (Phase 0.5). The skill authors a skeleton
    *  before Phase 1 only when `present === false`. */
   systemSkeleton?: { present: boolean; fresh: boolean };
+  /** Present when `targets` restricted counts to a delta re-issue set. Echoes the count so a driver
+   *  can distinguish a targeted status from the unscoped/scoped whole-repo status. */
+  targeted?: number;
 }
 
 export interface EnrichStatusArgs {
@@ -180,6 +183,11 @@ export interface EnrichStatusArgs {
   scopes?: boolean;
   /** Optional token budget guard. If pending cost estimate exceeds this, status returns `budgetExceeded: true`. */
   budgetTokens?: number;
+  /** Restrict counts to this exact set of target ids (a delta re-issue set from `semantic_delta`).
+   *  Incompatible with `scopes:true` (picker mode is whole-repo) and with `scope` (targets are explicit
+   *  ids — `pathPrefix`/`cluster` are redundant). When set, `layers` counts only the named targets,
+   *  `nextLayer` is the first layer with a pending in-range target, and `targeted` echoes the count. */
+  targets?: string[];
 }
 
 export interface EnrichNextArgs {
@@ -200,6 +208,13 @@ export interface EnrichNextArgs {
    *  for queue purposes; the final full pass is still offered. Explicit-only — `nextLayer` never
    *  auto-choses skeleton, preventing driver loops. */
   skeleton?: boolean;
+  /** Restrict the queue to this exact set of target ids — the `reissueTargets` from a
+   *  `semantic_delta` report. Lets `crib enrich delta --reissue` (or `enrich_next` with `targets`)
+   *  re-author ONLY the targets a delta flagged as stale, without disturbing the rest of the queue
+   *  (other pending targets stay pending, untouched). `system:repo` is honored when present. The
+   *  targeted re-issue uses a distinct `lastIssuedKey` namespace so its zero-progress marker never
+   *  collides with the unscoped queue's. */
+  targets?: string[];
 }
 
 export interface EnrichOverviewArgs {
@@ -228,6 +243,9 @@ export interface EnrichNextBatch {
   selectedTargetIds: string[];
   scopeEcho?: EnrichScope;
   scopeEmpty?: boolean;
+  /** Present when `targets` restricted this batch to a delta re-issue set. Echoes the count so a
+   *  driver can distinguish a targeted re-issue from the unscoped queue. */
+  targeted?: { count: number };
   /** The batchId previously issued for this (layer, scope), if any. Server-side source of truth so a
    * context-compacted host (or a headless driver that forgot `lastBatchId`) can still detect a
    * zero-progress re-issue without relying on its own memory. */
@@ -406,6 +424,61 @@ export interface LlmRead {
   unverified?: boolean;
 }
 
+/** A persisted semantic artifact the delta scan flagged. Carries enough to delete it (`path`) and to
+ *  re-issue it (`targetId`/`layer`). */
+export interface SemanticDeltaEntry {
+  targetId: string;
+  layer: EnrichLayer;
+  /** On-disk path of the persisted artifact file (the file that is — or would be — deleted). */
+  path: string;
+}
+
+/** `semantic_delta` args — the semantic-layer analogue of `detect_changes`'s changed-symbol set. */
+export interface SemanticDeltaArgs {
+  /** Restrict the scan to persisted artifacts whose `targetId` is in this set (the changed symbols
+   *  from `detect_changes`). When omitted, EVERY persisted artifact is scanned (the whole-repo delta).
+   *  `system:repo` is included when present. Ids not present as artifacts are simply not reported. */
+  targets?: string[];
+  /** Delete orphaned artifacts (target node gone). Default FALSE — the semantic store is non-
+   *  destructive by default; `crib update`'s auto-prune is the orphan path, and the explicit
+   *  `--prune` flag opts in here. Orphans are safe to delete (the target is gone, nothing re-offers
+   *  them) so this is the conservative prune. */
+  prune?: boolean;
+  /** ALSO delete stale-but-present artifacts (target exists, hash differs). DESTRUCTIVE: discards the
+   *  old `evidence` quotes a re-author could reuse, forcing re-authoring from scratch. Default FALSE —
+   *  the queue's normal re-offer (stale artifacts are auto-pending) is the preferred repair path; this
+   *  is the "burn the old evidence" escape hatch for artifacts that must not be served even as a
+   *  re-author seed. */
+  pruneStale?: boolean;
+  /** Re-verify grounding for in-range, present (non-orphaned, hash-matching) artifacts and report
+   *  drift (save-time `grounded` stamp disagrees with the recomputed verdict). Default FALSE — a full
+   *  re-verify is `audit-llm`; this is the targeted, cheaper variant for a delta set. When FALSE,
+   *  `drifted` is empty and drifted targets are NOT added to `reissueTargets`. */
+  verifyDrift?: boolean;
+}
+
+export interface SemanticDeltaReport {
+  /** Persisted artifacts in range that were scanned (matched `targets`, or all when unfiltered). */
+  scanned: number;
+  /** Artifacts whose target node no longer exists in the soul (the auto-prune set). */
+  orphaned: SemanticDeltaEntry[];
+  /** Artifacts whose target exists but whose `nodeHash`/`schemaVersion` no longer matches (the
+   *  re-author set — the queue re-offers these automatically). */
+  stale: SemanticDeltaEntry[];
+  /** Artifacts whose hash matches but whose grounding verdict drifted since save (only with
+   *  `verifyDrift`). These are NOT caught by `isStale` — the queue serves them as fresh — so a caller
+   *  must re-issue via `enrich_next --targets` to repair them. */
+  drifted: SemanticDeltaEntry[];
+  /** Files deleted this run (orphans when `prune`; + stale when `pruneStale`). */
+  pruned: number;
+  /** Target ids needing re-authoring: stale (always) + drifted (when `verifyDrift`). Pass to
+   *  `enrich_next`/`enrich_status` `targets` to scope the queue to exactly this delta. */
+  reissueTargets: string[];
+  /** True when `generation.semantic` was bumped (a prune deleted ≥1 artifact, invalidating the
+   *  semantic cache). */
+  bumped: boolean;
+}
+
 export class EnrichmentStore {
   constructor(
     private readonly soul: SoulStore,
@@ -417,8 +490,31 @@ export class EnrichmentStore {
     let result: EnrichStatus;
     let layers: Record<EnrichLayer, EnrichLayerCounts>;
 
-    // Picker-discovery mode: no active scope, caller wants the ranked scopes for the picker.
-    if (args.scopes && !args.scope) {
+    // Targeted mode: counts/nextLayer/done are over an explicit set of target ids (a delta re-issue
+    // set from `semantic_delta`). Mutually exclusive with `scopes` (picker is whole-repo) and
+    // `scope` (targets are explicit ids — a pathPrefix would be redundant). Branches first so the
+    // other modes' `args.scope`/`args.scopes` handling is untouched.
+    if (args.targets) {
+      const filter = new Set(args.targets);
+      layers = Object.fromEntries(
+        LAYERS.map((layer) => [layer, this.countLayer(layer, undefined, filter)]),
+      ) as Record<EnrichLayer, EnrichLayerCounts>;
+      const nextLayer = args.layer
+        ? layers[args.layer].missing + layers[args.layer].stale > 0
+          ? args.layer
+          : undefined
+        : LAYERS.find((layer) => layers[layer].missing + layers[layer].stale > 0);
+      const totalPending = Object.values(layers).reduce((n, l) => n + l.missing + l.stale, 0);
+      result = {
+        model: manifest?.model ?? null,
+        ...(manifest?.builtAgainstHead ? { builtAgainstHead: manifest.builtAgainstHead } : {}),
+        layers,
+        ...(nextLayer ? { nextLayer } : {}),
+        done: !nextLayer,
+        totalPending,
+        targeted: args.targets.length,
+      };
+    } else if (args.scopes && !args.scope) {
       layers = Object.fromEntries(LAYERS.map((layer) => [layer, this.countLayer(layer)])) as Record<
         EnrichLayer,
         EnrichLayerCounts
@@ -515,11 +611,20 @@ export class EnrichmentStore {
     // Under a scope, the system layer is never offered; default to the scoped nextLayer. If a caller
     // explicitly asks for system under a scope, fall back to the scoped nextLayer (preserving bottom-up
     // order) rather than jumping back to a hardcoded 'symbol' that may already be fresh.
-    let layer =
-      args.layer ??
-      (scope
-        ? (this.status({ scope }).nextLayer ?? 'symbol')
-        : (this.status().nextLayer ?? 'system'));
+    //
+    // Targeted re-issue (`args.targets`): the re-issue set can span layers, so pick the first layer
+    // (bottom-up LAYERS order) that has a pending target in the set — `status({targets}).nextLayer`
+    // already does exactly this. An explicit `args.layer` is honored (re-issue one layer only).
+    let layer: EnrichLayer;
+    if (args.layer) {
+      layer = args.layer;
+    } else if (args.targets) {
+      layer = this.status({ targets: args.targets }).nextLayer ?? 'symbol';
+    } else if (scope) {
+      layer = this.status({ scope }).nextLayer ?? 'symbol';
+    } else {
+      layer = this.status().nextLayer ?? 'system';
+    }
     if (scope && layer === 'system') layer = this.status({ scope }).nextLayer ?? 'symbol';
     // Skeleton system pass (Phase 0.5): a single draft-bible work item under a distinct batchId
     // prefix. Explicit-only — never auto-chosen by nextLayer. Scoped requests never hit this
@@ -527,7 +632,11 @@ export class EnrichmentStore {
     if (args.skeleton && layer === 'system' && !scope) {
       return this.nextSkeletonSystem(args);
     }
-    const all = this.targets(layer, scope);
+    const all0 = this.targets(layer, scope);
+    // Targeted re-issue: restrict the candidate set to the delta's `targets`. A target id absent from
+    // the layer's node set (wrong layer, or already-pruned orphan) is simply not in `all0` and drops
+    // out — no error, no spurious work item. `system:repo` survives when layer==='system'.
+    const all = args.targets ? all0.filter((t) => new Set(args.targets).has(t.id)) : all0;
     const pending = all.filter((target) => {
       const read = this.read(target.layer, target.id, target.hash);
       // W7: a fresh-but-unverified artifact (draft/legacy) is still pending — re-offer it for repair.
@@ -587,7 +696,8 @@ export class EnrichmentStore {
       items,
       remaining: remainingCount,
       selectedTargetIds: items.map((item) => item.targetId),
-      progress: this.status(scope ? { scope } : {}).progress,
+      progress: this.status(args.targets ? { targets: args.targets } : scope ? { scope } : {})
+        .progress,
       costEstimate: {
         currency: 'tokens',
         batch: batchCost,
@@ -597,15 +707,18 @@ export class EnrichmentStore {
       ...(hasExplicitBudget ? { budget: args.budgetTokens } : {}),
       ...(budgetExceeded ? { budgetExceeded: true, oversized: true } : {}),
       ...(scope ? { scopeEcho: scope, scopeEmpty: all.length === 0 } : {}),
+      ...(args.targets ? { targeted: { count: args.targets.length } } : {}),
     };
 
-    // Server-side zero-progress detection: persist the last-issued batchId per (layer, scope) so a
-    // context-compacted host or a headless driver can detect a re-issue without remembering anything.
-    // Persist whenever a workable batch was issued (items > 0) — including the oversized single
+    // Server-side zero-progress detection: persist the last-issued batchId per (layer, scope, targets)
+    // so a context-compacted host or a headless driver can detect a re-issue without remembering
+    // anything. A targeted re-issue gets its OWN key namespace (it carries a targets digest) so its
+    // marker never collides with — and cannot be hidden by — the unscoped queue's marker for the same
+    // layer. Persist whenever a workable batch was issued (items > 0) — including the oversized single
     // item, which the caller is expected to author + save. An empty pending set issues nothing and
     // is not persisted (no false zero-progress).
     if (items.length > 0) {
-      const key = this.lastIssuedKey(layer, scope);
+      const key = this.lastIssuedKey(layer, scope, args.targets);
       const manifest = this.readManifest();
       const previousBatchId = manifest?.lastIssued?.[key]?.batchId;
       const zeroProgress = previousBatchId !== undefined && previousBatchId === batchId;
@@ -620,9 +733,17 @@ export class EnrichmentStore {
     return baseBatch;
   }
 
-  /** Stable key under which the last-issued batchId is persisted for zero-progress detection. */
-  private lastIssuedKey(layer: EnrichLayer, scope?: EnrichScope): string {
-    return `${layer}:${scope?.pathPrefix ?? ''}|${scope?.cluster ?? ''}`;
+  /** Stable key under which the last-issued batchId is persisted for zero-progress detection. A
+   *  targeted re-issue (`targets` set) appends a deterministic digest so its marker is namespaced
+   *  apart from the unscoped queue's marker for the same layer — without this, a targeted re-issue
+   *  would overwrite (or be hidden by) the queue's lastIssued entry and break zero-progress detection
+   *  for both. Order-independent (sorted) so the caller's target order never affects the key. */
+  private lastIssuedKey(layer: EnrichLayer, scope?: EnrichScope, targets?: string[]): string {
+    const targetsKey =
+      targets && targets.length > 0
+        ? `#t:${blake3Hex([...targets].sort().join('|')).slice(0, 8)}`
+        : '';
+    return `${layer}:${scope?.pathPrefix ?? ''}|${scope?.cluster ?? ''}${targetsKey}`;
   }
 
   /**
@@ -904,6 +1025,85 @@ export class EnrichmentStore {
   }
 
   /**
+   * `semantic_delta` — the semantic-layer delta report + optional prune, the explicit-surface
+   * companion to `crib update`'s silent orphan auto-prune. Scans persisted artifacts (optionally
+   * restricted to a `targets` set from `detect_changes`), classifies each as orphaned / stale /
+   * drifted, optionally deletes orphans (+ stale when `pruneStale`), and returns the `reissueTargets`
+   * a caller passes to `enrich_next --targets` to re-author exactly the flagged set.
+   *
+   * Non-destructive by default (`prune:false`): the report only LISTS orphans + stale. This is the
+   * read-only path a driver calls after `crib update` to learn what the update invalidated, BEFORE
+   * deciding whether to prune + re-issue. The `crib update` auto-prune already removed orphans; this
+   * explicit pass catches anything it missed (e.g. a symbol whose last symbol-node vanished between
+   * updates via a path the auto-prune's `soul.iterate()` snapshot didn't cover) and is the only path
+   * that prunes STALE artifacts (the auto-prune never deletes stale-but-present, by design — the
+   * queue re-offers them).
+   */
+  semanticDelta(args: SemanticDeltaArgs = {}): SemanticDeltaReport {
+    const filter = args.targets ? new Set(args.targets) : undefined;
+    const orphaned: SemanticDeltaEntry[] = [];
+    const stale: SemanticDeltaEntry[] = [];
+    const drifted: SemanticDeltaEntry[] = [];
+    const reissueTargets: string[] = [];
+    let scanned = 0;
+    const schemaVersion = this.soul.getManifest().schemaVersion;
+    for (const path of walkFiles(this.artifactsRoot()).filter((p) => p.endsWith('.json'))) {
+      const artifact = readJson<LlmArtifact>(path);
+      if (!artifact) continue;
+      if (filter && !filter.has(artifact.targetId)) continue;
+      scanned++;
+      const entry: SemanticDeltaEntry = {
+        targetId: artifact.targetId,
+        layer: artifact.layer,
+        path,
+      };
+      const target = this.targetFor(artifact.targetId);
+      if (!target) {
+        orphaned.push(entry);
+        continue;
+      }
+      const isStale = target.hash !== artifact.nodeHash || artifact.schemaVersion !== schemaVersion;
+      if (isStale) {
+        stale.push(entry);
+        reissueTargets.push(artifact.targetId);
+        continue;
+      }
+      // Hash-matching artifact. Only verify grounding when explicitly asked — a full re-verify is
+      // `auditLlm`; this is the cheap, targeted variant. A drifted artifact (grounding verdict
+      // changed since save) is served as FRESH by the queue (isStale is false), so it would silently
+      // persist ungrounded analysis. Surface it as a re-issue target so a caller can force repair.
+      if (args.verifyDrift) {
+        const result = verifyArtifact(this.soul, this.repoRoot, artifact);
+        const stamped = artifact.grounded;
+        if (stamped !== undefined && stamped !== result.verified) {
+          drifted.push(entry);
+          reissueTargets.push(artifact.targetId);
+        }
+      }
+    }
+
+    // Prune. Orphans are safe (target gone — nothing re-offers them); stale is destructive (loses
+    // old evidence). Bump generation.semantic only when a file was actually deleted, so a read-only
+    // delta report (the common path after `crib update`) never needlessly invalidates the cache.
+    let pruned = 0;
+    if (args.prune) {
+      const toDelete: string[] = orphaned.map((e) => e.path);
+      if (args.pruneStale) toDelete.push(...stale.map((e) => e.path));
+      for (const p of toDelete) {
+        rmSync(p, { force: true });
+        pruned++;
+      }
+    }
+    let bumped = false;
+    if (pruned > 0) {
+      this.bumpSemanticGeneration();
+      this.writeManifest(this.readManifest()?.model ?? null);
+      bumped = true;
+    }
+    return { scanned, orphaned, stale, drifted, pruned, reissueTargets, bumped };
+  }
+
+  /**
    * `audit-llm` (M1.3 — the moat): re-verify every persisted artifact on disk against the CURRENT
    * soul. Re-runs the same grounding check that ran at `enrich_save` time, so a post-refactor re-verify
    * (the soul changed, the on-disk artifact is stale) is identical to the original verdict. Reports
@@ -1034,8 +1234,13 @@ export class EnrichmentStore {
     return this.allArtifacts().some((a) => !this.isStale(a));
   }
 
-  private countLayer(layer: EnrichLayer, scope?: EnrichScope): EnrichLayerCounts {
-    const targets = this.targets(layer, scope);
+  private countLayer(
+    layer: EnrichLayer,
+    scope?: EnrichScope,
+    filter?: ReadonlySet<string>,
+  ): EnrichLayerCounts {
+    let targets = this.targets(layer, scope);
+    if (filter) targets = targets.filter((t) => filter.has(t.id));
     const counts: EnrichLayerCounts = { total: targets.length, missing: 0, stale: 0, fresh: 0 };
     for (const target of targets) {
       const read = this.read(layer, target.id, target.hash);
@@ -1499,13 +1704,19 @@ export class EnrichmentStore {
     });
   }
 
-  /** Advance the authoritative graph generation whenever canonical semantic artifacts change. */
+  /** Advance the authoritative graph generation whenever canonical semantic artifacts change.
+   *  Delegates to {@link SoulStore.bumpSemanticGeneration} so there is ONE writer of
+   *  `generation.semantic`: it mutates the in-memory manifest the soul (and this store, via
+   *  `getManifest`) shares, then persists via the soul's canonical writer (which also rewrites the
+   *  `.crib/crib.json` bootstrap locator + validates the manifest). The previous disk-only write
+   *  bypassed the soul writer, leaving two divergence risks: a later `soul.commit()` would rewrite
+   *  the manifest from the same in-memory object (fine — but only because this method happened to
+   *  mutate it too), and the bootstrap locator could drift. Centralizing on the soul eliminates both.
+   *  `EnrichmentStore.soul` is the canonical (non-ephemeral) soul — the W6 working overlay is a
+   *  separate `VerbDeps.workOverlay` — so the ephemeral no-op guard in the soul method never fires
+   *  from here. */
   private bumpSemanticGeneration(): void {
-    if (!existsSync(join(this.soul.cribDir, 'graph', 'manifest.json'))) return;
-    const manifest = this.soul.getManifest();
-    const generation = manifest.generation ?? { extracted: 0, semantic: 0 };
-    manifest.generation = { ...generation, semantic: generation.semantic + 1 };
-    writeJsonAtomic(join(this.soul.cribDir, 'graph', 'manifest.json'), manifest);
+    this.soul.bumpSemanticGeneration();
   }
 
   private readManifest():

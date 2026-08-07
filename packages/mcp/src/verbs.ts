@@ -66,6 +66,7 @@ import {
   type EnrichNextArgs,
   type EnrichStatusArgs,
   EnrichmentStore,
+  type SemanticDeltaArgs,
   llmPointer,
   llmProjection,
 } from './enrichment.js';
@@ -267,6 +268,7 @@ const PUBLIC_VERBS = new Set<string>([
   'enrichStatus',
   'enrichNext',
   'enrichSave',
+  'semanticDelta',
   'auditLlm',
   'overview',
   'llmNeighbors',
@@ -1266,6 +1268,90 @@ export class Verbs {
       }
       throw error;
     }
+  }
+
+  /**
+   * `semantic_delta` — the semantic-layer delta report (+ optional prune), the explicit companion to
+   * `crib update`'s silent orphan auto-prune. Two scoping modes:
+   *   • `targets` — an explicit set of target ids (the re-issue surface; a driver passes
+   *     `enrich_next`'s `targets` here to assess exactly that set).
+   *   • `since` — a VCS ref; when `targets` is absent, the changed symbols/files since `since` are
+   *     computed (via {@link affectedTargetIds}) and used as the scan filter, so only artifacts whose
+   *     target changed are scanned (faster than a whole-repo `audit_llm` when the diff is small).
+   * When BOTH are absent, every persisted artifact is scanned (the whole-repo delta). Non-destructive
+   * by default (`prune:false`); `prune` deletes orphans, `pruneStale` also deletes stale-but-present
+   * (destructive). The returned `reissueTargets` is the set to pass to `enrich_next`/`enrich_status`
+   * `targets` to re-author exactly the flagged targets.
+   */
+  semanticDelta(args: {
+    since?: string;
+    targets?: string[];
+    prune?: boolean;
+    pruneStale?: boolean;
+    verifyDrift?: boolean;
+  }): Record<string, unknown> {
+    let targets = args.targets;
+    let vcs: { since: string; head: string; changedPaths: string[] } | undefined;
+    if (!targets && args.since !== undefined) {
+      const affected = this.affectedTargetIds(args.since);
+      if ('note' in affected) {
+        // No VCS / no anchor / non-git: fall through to an unscoped whole-repo scan so the verb still
+        // reports the delta it can compute (orphans/stale against the current soul), with the note.
+        vcs = undefined;
+      } else {
+        targets = affected.targets;
+        vcs = { since: affected.since, head: affected.head, changedPaths: affected.changedPaths };
+      }
+    }
+    const deltaArgs: SemanticDeltaArgs = {
+      ...(targets ? { targets } : {}),
+      ...(args.prune ? { prune: true } : {}),
+      ...(args.pruneStale ? { pruneStale: true } : {}),
+      ...(args.verifyDrift ? { verifyDrift: true } : {}),
+    };
+    const report = this.llm.semanticDelta(deltaArgs);
+    return {
+      ...report,
+      ...(vcs ? { since: vcs.since, head: vcs.head, changedPaths: vcs.changedPaths } : {}),
+      ...(args.since !== undefined && !vcs ? { note: 'no vcs anchor — scanned whole repo' } : {}),
+    } as unknown as Record<string, unknown>;
+  }
+
+  /**
+   * Compute the semantic target ids affected by a VCS diff since `since` — the changed symbols + the
+   * changed files + EVERY cluster (cluster membership is global; a moved symbol changes its old + new
+   * cluster's hash, and we cannot cheaply tell which clusters shifted, so all cluster targets are in
+   * scope) + the whole-repo `system:repo` target (any change can invalidate the bible). Mirrors
+   * `detectChanges`'s graceful VCS degradation (no adapter / non-git / no anchor → `{note}`).
+   */
+  private affectedTargetIds(
+    since: string,
+  ): { since: string; head: string; changedPaths: string[]; targets: string[] } | { note: string } {
+    const vcs = this.deps.vcs;
+    if (!vcs) return { note: 'vcs adapter not configured' };
+    let head: string;
+    try {
+      head = vcs.currentHead(this.deps.repoRoot);
+    } catch {
+      return { note: 'not a git work tree' };
+    }
+    let changedPaths: string[];
+    try {
+      changedPaths = vcs.changedFilesSince(this.deps.repoRoot, since);
+    } catch {
+      return { note: 'not a git work tree' };
+    }
+    const changed = new Set(changedPaths);
+    const targets: string[] = [];
+    for (const node of this.deps.soul.iterate()) {
+      // symbol + file nodes carry a `file`; clusters do not (pathFromId(clusterId) is undefined), so
+      // clusters are added by the dedicated pass below, not the file match.
+      const p = node.file ?? pathFromId(node.id);
+      if (p !== undefined && changed.has(p)) targets.push(node.id);
+    }
+    for (const node of this.deps.soul.iterate('cluster')) targets.push(node.id);
+    targets.push('system:repo');
+    return { since, head, changedPaths, targets };
   }
 
   /**

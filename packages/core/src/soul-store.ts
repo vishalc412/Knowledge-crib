@@ -389,6 +389,27 @@ export class SoulStore {
     this.manifest.capabilities = { ...this.manifest.capabilities, ...patch };
   }
 
+  /**
+   * Bump the semantic-layer invalidation counter (`manifest.generation.semantic`) by one and persist
+   * it immediately. Called by `updateRepo` after `pruneSemanticArtifacts` deletes orphaned LLM
+   * artifacts so readers (`graphFingerprint`, `enrich_status`) see that the semantic cache has been
+   * invalidated and must not serve stale analysis of deleted symbols. Unlike `setVcsHead` /
+   * `setCapabilities`, this writes NOW rather than deferring to `commit()` — `updateRepo` has already
+   * committed the soul (the prune runs post-commit) and may not call `commit()` again, so a deferred
+   * bump would be lost. Mutating the cached `this.manifest` (not re-reading disk) keeps the in-memory
+   * manifest a caller may still hold consistent with disk, so a later `commit()` does not clobber the
+   * bump back to its pre-bump value (the divergence trap a disk-only write would create). A no-op on
+   * ephemeral stores (W6 working overlay — never owns the canonical manifest) and when no canonical
+   * graph manifest exists yet (fresh repo / legacy layout with nothing to bump).
+   */
+  bumpSemanticGeneration(): void {
+    if (this.ephemeral) return;
+    if (!existsSync(join(this.cribDirPrivate, 'graph', 'manifest.json'))) return;
+    const generation = this.manifest.generation ?? { extracted: 0, semantic: 0 };
+    this.manifest.generation = { ...generation, semantic: generation.semantic + 1 };
+    this.writeManifest();
+  }
+
   // ---------------------------------------------------------------------------
   // internals
   // ---------------------------------------------------------------------------

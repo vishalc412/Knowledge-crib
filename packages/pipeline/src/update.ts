@@ -14,7 +14,12 @@
  * Returns `null` when there is no anchor (fresh soul) or the repo isn't git — the caller degrades to a
  * full `indexRepo`. Does NOT touch the index; the caller applies `delta` via `index.applyDelta`.
  */
-import { buildDelta, fileScopedIds, pathFromId } from '@knowledge-crib/core';
+import {
+  buildDelta,
+  fileScopedIds,
+  pathFromId,
+  pruneSemanticArtifacts,
+} from '@knowledge-crib/core';
 import type { IndexDelta, SoulStore } from '@knowledge-crib/core';
 import { ExtractorRegistry } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
@@ -89,6 +94,10 @@ export interface UpdateReport {
   dossiers: DossierStats;
   ownership: OwnershipStats;
   artifacts: ArtifactStats;
+  /** count of persisted LLM semantic artifacts whose target node no longer exists, deleted by this
+   *  update's orphan-prune (the semantic-layer analogue of `dossiers.pruned`). Zero when nothing was
+   *  orphaned; bumped `manifest.generation.semantic` only when > 0. */
+  semanticPruned: number;
 }
 
 export interface UpdateNoopReport {
@@ -258,6 +267,22 @@ export async function updateRepo(
 
   const committedAt = opts.now ?? soul.getManifest().stats.lastUpdated;
   const dossiers = runDossiers(soul, root, committedAt);
+
+  // Semantic orphan-prune (the missing delta path): `soul.commit()` above has already written the
+  // refreshed soul, so symbols removed by `removeByFile` are gone from the graph but their persisted
+  // LLM artifacts linger under .crib/graph/semantic/artifacts (the enrich queue only re-offers STALE
+  // artifacts — a target node that simply vanished is never re-offered, and query/context still serve
+  // its stale analysis as if the code existed). Pruning orphans here — using the post-commit live node
+  // set — keeps the semantic cache consistent with the soul exactly once per update, mirroring what
+  // `runDossiers` already does for dossiers. Bumping `generation.semantic` only when something was
+  // pruned invalidates `graphFingerprint`'s semanticHash-derived half so semantic readers don't serve
+  // a stale composite cache; a zero-prune update (no symbols deleted) leaves the counter untouched so
+  // pure-additive edits don't needlessly invalidate the semantic cache.
+  const liveNodeIds = new Set<string>();
+  for (const node of soul.iterate()) liveNodeIds.add(node.id);
+  const semanticPruned = pruneSemanticArtifacts(soul.cribDir, liveNodeIds);
+  if (semanticPruned > 0) soul.bumpSemanticGeneration();
+
   const delta = buildDelta(soul, before, scope);
   return {
     delta,
@@ -273,5 +298,6 @@ export async function updateRepo(
     dossiers,
     ownership,
     artifacts,
+    semanticPruned,
   };
 }

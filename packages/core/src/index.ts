@@ -33,3 +33,4 @@ export * from './embeddings/types.js';
 export { CharNgramEmbedder, cosine, decodeVec, encodeVec } from './embeddings/char-ngram.js';
 export { resolveEmbedder, isDefaultProvider } from './embeddings/provider.js';
 export * from './rules/index.js';
+export * from './llm-prune.js';
